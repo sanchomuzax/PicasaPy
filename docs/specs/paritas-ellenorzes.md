@@ -1158,6 +1158,48 @@ A kollázs bemeneti halmazának és a kijelentkezett Upload gomboknak az eltér�
 
 ## Folyamatszintű összevetés (#6845)
 
-| Parancs | Eredeti | PicasaPy | Eltérés |
-|---|---|---|---|
-| Copy Full Path | Egy kijelölt képnél látható a Delete from Disk alatt, kettőnél hiányzik. | A javítás előtt két kijelöltnél is látszott; a javítás után csak egynél látszik. | A `PhotoContextMenu.qml` menüpontja nem vette figyelembe a kijelöltek számát; javítva. |
+Mérés dátuma: 2026-11-12 / 2026-11-13. Hatókör: a 20 mappanézetbeli fájl- és mappaművelet folyamatszintű paritása az eredeti Picasa 3.9 (Colab-végrehajtó, képernyőképek, lemez- és ablakállapot) és a PicasaPy (QML-funkcionális tesztek valós kattintással, lemez, index és felületi állapot ellenőrzésével) összevetésében.
+
+| Parancs | Belépési pontok | Eredeti (mért / viselkedés) | PicasaPy (mért / teszt) | Eredmény / Eltérés | Felelős felület |
+|---|---|---|---|---|---|
+| Áthelyezés új mappába (`ID_FILE_NEWFOLDER`) | Fájl menü, kép helyi menüje | Colab (helyi menü); Fájl menü: job-641 | #6844 | Eltért, javítva (#6844, kiadás: 1.0.103); a Fájl menüs tiszta újramérés (job-641) is a Folder Properties ablakot mutatja: egyezik | `FolderPropertiesDialog.qml`, `PhotoContextMenu.qml` |
+| Mappa felosztása itt | Kép helyi menüje | Colab #600-#608 | #6848 | Eltért, javítva (#6848, kiadás: 1.0.104) | `PhotoContextMenu.qml` |
+| Elrejtés | Kép helyi menüje, Kép menü | Colab #600-#608 | #6848 | Eltért, javítva (#6848, kiadás: 1.0.104) | `PhotoContextMenu.qml`, `PicasaPictureMenu.qml` |
+| Keresés a lemezen (`ID_FILE_LOCATEONDISK`, `ID_ALBUM_LOCATEONDISK`) | Kép és mappa helyi menüje, Fájl menü | job-642 (Fájl menü); Wine alatt nincs fájlkezelő ablak | #6845 (`test_kereses_es_gyujtemeny_folyamatok_6845.py`) | Eredeti oldalon Wine alatt nem nyílik Intéző ablak; PicasaPy-on mindhárom belépési pont a megfelelő `fileOpsController.revealPhoto`/`revealFolder` API-t hívja; 0 kijelölt képnél a Fájl menü letiltott, 1 és 2 képnél aktív; ablakot nem nyit, kijelölés megmarad | `PhotoContextMenu.qml`, `FolderContextMenu.qml`, `PicasaFileMenu.qml` |
+| Törlés a lemezről | Kép helyi menüje, Delete, Fájl menü | Colab #600-#608 | #6848 | Eltért, javítva (#6848, kiadás: 1.0.104) | `PhotoContextMenu.qml`, `PicasaFileMenu.qml` |
+| Teljes elérési út másolása | Kép helyi menüje | Colab #600-#608: 1 képnél látható, 2 képnél hiányzik | #6848 (`test_kereses_es_gyujtemeny_folyamatok_6845.py`) | Eltért, javítva (#6848, kiadás: 1.0.104): a menüpont 2 képnél rejtett, csak pontosan 1 kijelölt képnél jelenik meg | `PhotoContextMenu.qml` |
+| Átnevezés | F2, Fájl menü | Fájl menü: job-641 (tiszta) | #6845 (Q07) | Egyezik: Rename Files ablak („2 file(s) selected for rename.”) | `SaveDialogs.qml`, `PicasaFileMenu.qml` |
+| Forgatás jobbra/balra | Kép helyi menüje, eszköztár, Ctrl+]/[ | Colab #600-#608 | #6848 | Eltért, javítva (#6848, kiadás: 1.0.104) | `PhotoContextMenu.qml` |
+| Összes szerkesztés visszavonása | Kép helyi menüje, Kép menü | Colab (Kép menü) | #6845 (Q28) | Egyezik: Confirm ablak, Remove Edits / No gombok | `PicasaPictureMenu.qml`, `PhotoContextMenu.qml` |
+| Tulajdonságok | Kép helyi menüje, Alt+Enter, Nézet és Kép menü | Colab #600-#608 | #6848, #6845 (Q17, Q30) | Eltért, javítva (#6848, kiadás: 1.0.104); a menüből nyitott Properties panel egyezik | `PropertiesPanel.qml`, `PhotoContextMenu.qml` |
+| Mappaleírás szerkesztése | Mappa helyi menüje, Folder menü | Colab #613, #614 | felvevő, #6860 | Egyezik: Folder Properties ablak | `FolderPropertiesDialog.qml`, `PicasaFolderMenu.qml` |
+| Áthelyezés gyűjteménybe | Mappa helyi menüje | job-648 (az almenü: Exported Pictures, Folders, Hidden Folders, Other Stuff, Projects, Web Albums, New Collection...; a jelenlegi gyűjtemény pipált és tiltott); job-649 (Other Stuff: `P2category=Other Stuff`, a bal hasábban a mappa az Other Stuff csoportba kerül, ablak nélkül) | #6845 (`test_kereses_es_gyujtemeny_folyamatok_6845.py`) | Eltér: a PicasaPy almenüjéből hiányzik a hat beépített gyűjtemény, csak a saját gyűjtemények és a New Collection... van → #6883. A saját gyűjtemény útja (New Collection..., `P2category`, bal hasáb) működik | `FolderContextMenu.qml`, `FolderPane.qml` |
+| Indexképek frissítése | Mappa helyi menüje, Folder menü | Colab (Folder menü) | #6860 | A látható állapot egyezik; a frissítés tartalma nincs összevetve | `FolderContextMenu.qml`, `PicasaFolderMenu.qml` |
+| Mappa rendezésének alapja | Mappa helyi menüje | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104) | `FolderContextMenu.qml` |
+| Mappa elrejtése / megjelenítése | Mappa helyi menüje | Colab #613, #614 | felvevő | Egyezik: Add Password ablak | `FolderContextMenu.qml`, `PasswordDialog.qml` |
+| Eltávolítás a Picasából | Mappa helyi menüje, Folder menü | Colab #613, #614 | felvevő, #6860 | Eltért: helyi menü javítva (#6852), Folder menü javítva (#6861), kiadás: 1.0.104 | `FolderContextMenu.qml`, `PicasaFolderMenu.qml`, `MainDialogs.qml` |
+| Mappa áthelyezése | Mappa helyi menüje, húzás | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104); a húzás nincs összevetve | `FolderContextMenu.qml` |
+| Mappa törlése | Mappa helyi menüje | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104) | `FolderContextMenu.qml` |
+| Mentés / Visszaállítás | Fájl menü, kép helyi menüje | job-641 (tiszta) | #6845 (Q08, Q09) | Save As egyezik; Save a Copy eltér: két kijelölt képből az eredeti egy másolatot készít → #6866 | `SaveDialogs.qml`, `PicasaFileMenu.qml` |
+| Kép exportálása mappába | Fájl menü, alsó tálca | Colab (Fájl menü); tálca: job-639 | #6845 (Q10); tálca: #6862 | Eltér: tiszta profillal (job-642) is a Resize to 800 pixels az alap, nálunk Use original size → #6866 | `ExportDialogs.qml`, `PicasaFileMenu.qml`, `TrayActionArea.qml` |
+
+### Részletes folyamatmérések (#6845)
+
+#### 1. Keresés a lemezen (`Locate on Disk`)
+- **Belépési pontok:**
+  - Kép helyi menü (`contextMenuLocate`): 1 és 2 kijelölt képnél is elérhető. Kattintásra belső párbeszédablak nem nyílik; a lemezen, az adatbázis-indexben és a bal oldali hasábban semmi sem változik; a rácsban a kijelölés megmarad. A háttérben meghívja a `fileOpsController.revealPhoto(path)` metódust a kijelölt képre.
+  - Mappa helyi menü (`folderMenuLocate`): 1 és 2 kijelölt kép mellett is elérhető a mappán. Kattintásra belső ablak nem nyílik; sem a lemez, sem az index, sem a hasáb állapota nem változik, a rácsbeli kijelölés érintetlen marad. A háttérben meghívja a `fileOpsController.revealFolder(folderPath)` metódust.
+  - Fájl menü (`menuFileLocate`): 1 és 2 kijelölt képnél a menüpont aktív (`enabled: true`), kattintásra a kijelölt képek első elemére hívja a `revealPhoto`-t; kijelölés hiányában (0 kép) a menüpont tiltott (`enabled: false`).
+- **Eredeti összevetés:** Wine alatt a Windows Intéző hiánya miatt a `job-642` kattintása nem nyitott ablakot (külső fájlkezelő hívása Windows-környezetben mérendő); a PicasaPy oldalon a folyamat mindhárom belépési pontról szigorúan és platform-függetlenül ellenőrzött (`tests/app/qml_functional/test_kereses_es_gyujtemeny_folyamatok_6845.py`).
+
+#### 2. Áthelyezés gyűjteménybe (`Move into Collection`)
+- **Eredeti (job-648, job-649):** az almenü hat beépített gyűjteményt sorol (Exported Pictures, Folders, Hidden Folders, Other Stuff, Projects, Web Albums), alatta a New Collection...; az Other Stuff választása a `.picasa.ini`-be `P2category=Other Stuff`-ot ír, és a bal hasábban a mappa az Other Stuff csoportba kerül, megerősítő ablak nélkül. A PicasaPy-ból a beépített tételek hiányoznak → #6883.
+- **Belépési pontok:**
+  - Kizárólag a mappa helyi menüjéből érhető el (`folderContextMenuMoveToCollection`). A kép helyi menüjéből és a Fájl menüből hiányzik (nem képművelet).
+  - **Új gyűjtemény létrehozása:** a menüben a „New Collection...” (`folderContextMenuNewCollection`) kiválasztásakor megnyílik a `newCollectionDialog` („New Collection”). A gyűjtemény nevének megadása és jóváhagyása után:
+    1. Lemez: az érintett mappa könyvtárában a `.picasa.ini` fájl `[Picasa]` szakasza frissül: `P2category = <gyűjteménynév>`.
+    2. Index: a mappa bekerül az SQLite adatbázis / kontroller `customCollections` nyilvántartásába.
+    3. Bal hasáb: a mappapanelen (`FolderPane`) létrejön a gyűjtemény fejléce (`customCollection_<név>`) és alatta a mappa sora (`customCollectionFolder_<útvonal>`).
+    4. Rács: a rácsban lévő képek kijelölése nem sérül.
+  - **Meglévő gyűjteménybe áthelyezés:** ha létezik egyéni gyűjtemény, az almenüben közvetlenül megjelenik annak neve (`folderContextMenuMoveToCollectionItem_<név>`). Kattintásra külön megerősítő dialógus nélkül azonnal végbemegy az áthelyezés (a `.picasa.ini` `P2category` értéke és a bal hasáb struktúrája frissül).
+- **Tesztelt lefedettség:** `tests/app/qml_functional/test_kereses_es_gyujtemeny_folyamatok_6845.py` (valódi QTest kattintásokkal, 1 és 2 kijelölt képpel, lemez- és UI-invariánsok ellenőrzésével).
