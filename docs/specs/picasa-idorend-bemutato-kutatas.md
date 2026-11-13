@@ -2895,3 +2895,59 @@ A `0x004406f0` a `CSlice+0x64` posting-lista meglétét és pozitív elemszámá
 - A `thumbui/folderview` és `ShowAlbumThumbnails2` futásidejű értéke **NINCS MEG**; a statikus nulla-sor döntéshez nem szükséges, a mérést változatlan értékek mellett kell elvégezni.
 - A teljes Időrend minden látható elemének visszafejtése és a kiadásba való összehasonlító videó/képsor továbbra is nyitott.
 
+#### 38.2.124 Recently Updated: a 0x00425f60 típus-diszpécsere és a nullás visszatérés (#6532, 2026-11-13)
+
+**Kérdés és határ.** A 38.2.121/a és 38.2.123 nyitva hagyta, hogy a `0x00425f60` mely típusoknál és feltételekkel adhat nullás EAX-ot. A vizsgált Picasa3.exe 3.9.141.259 SHA-256 értéke `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`. A meglévő Ghidra-kimenetre cím szerint rákerestem a `0x00425f60` és `0x005b1570` címek használata előtt; új Ghidra-kör és futásidejű mérés nem történt.
+
+**A hívó által vizsgált eredmény.** A `0x00425f60` a `0x004264b1` címen hívja a `0x005b1570`-et, majd annak EAX-át a `[esp+0x3c]` címre menti (`0x004264b6`). A 38.2.121/a hét kilépési pontjából csak a `0x0042663c` adhat nullát: a `0x00426571` előző sentinel-ellenőrzése után a `0x004265d1` által ellenőrzött jelző nem lehet nulla, a mentett érték pedig nem lehet `0xf4242`; a visszatérési helyreállítás a mentett EAX-ot használja (`0x00426624`). A `0x0055ece0` DBLoader a `0x00425f60` után a `0x0055ef1a` címen teszteli az EAX-ot; nem nulla értéknél a `0x0055f849` elutasító ágra ugrik. Ez az eredményfeldolgozó kapu, nem a Timeline-kártyák dátumának vagy elrendezésének leírása.
+
+**Típus-diszpécser.** A `0x005b1570` a rekord típusából 2-t levon, majd a `0x005b1ba4` byte-táblával kiválasztja a `0x005b1b64` ugrótábla bejegyzését (`0x005b17ad-0x005b17c5`). A hívott segéd célok:
+
+| Típusérték | Hívott segéd | Megjegyzés |
+|---|---|---|
+| `0x02` | `0x005ad6f0` | a `string_xrefs` ehhez a függvényhez a `Preferences` és `DeferLoadJPEG` szövegeket rendeli |
+| `0x03` | `0x005ae450` | |
+| `0x06` | `0x005ae300` | |
+| `0x07` | `0x005ad9c0` | |
+| `0x08`, `0x0a`, `0x0b`, `0x0c`, `0x1d` | `0x005aecf0` | közös ág |
+| `0x09` | `0x005ae7a0` | csak ha a `0x00550c60` AL eredménye nem nulla; különben az alapérték marad |
+| `0x0d` | `0x005adb30` | |
+| `0x0e` | `0x005af040` | |
+| `0x0f`, `0x10`, `0x11` | `0x005aeeb0` | közös ág |
+| `0x12` | `0x005b0730` | a `0x005b1570` ezt követően külön ágban is folytathatja |
+| `0x15`, `0x17`, `0x18`, `0x1a` | `0x005af660` | közös ág |
+| `0x16` | `0x005ae610` | |
+| `0x1b` | `0x005af310` | második argumentum `0` |
+| `0x1c` | `0x005af310` | második argumentum `1` |
+| `0x1f` | `0x005add10` | |
+| a felsoroltakon kívüli érték | nincs típuság | a lokális alapérték `3` marad, kivéve a külön kezelt bemeneteket |
+
+Az `0x00` típus a `0x00a4c140` hívás eredményére cserélődik a diszpécser előtt. A `0x04` típus a `0x005b1570` elején korán kilép, és a `0x00425f60` saját, korábbi ágában is külön kezelve van (`0x00426081-0x00426089`). A `0x12` ág segédhívás utáni feldolgozása és a közös visszatérési út feltételei továbbra is számítanak a végső EAX-hoz.
+
+**Egy közvetlenül igazolt nullás út.** A `0x06` típus a `0x005ae300` segédet hívja. A segéd `0x005ae420` összehasonlítási ágánál, ha `EBX == ESI`, a `0x005ae43f` nullázza az EAX-ot, majd visszatér. A `0x005b1570` közös visszatérési útján a nulla lokális eredmény a `0x005b19b8-0x005b19c1` ágon EAX-ként megmarad. A gépi kód tehát ezen a típuságon nullát előállító utat mutat, amennyiben az egyenlőségi ág elérhető; az összehasonlítás operandusainak termék- vagy képformátum-jelentése, illetve a feltétel futásidejű teljesülése **NINCS MEG**.
+
+**A közös záró ág pontos szabálya.** A típuság által beállított érték a `0x005b197d` címen kerül a közös ellenőrzésbe. Ha ez `0xf4242`, a függvény ezt az értéket adja vissza (`0x005b1980-0x005b198a`). Más értéknél meghívja a `0x00a4c6e0` és `0x00a4c0a0` segédeket. Ha a lokális eredmény nulla, vagy a második segéd AL eredménye nulla, a `0x005acf40` után a lokális eredmény kerül EAX-ba (`0x005b19a0-0x005b19c1`). Ha a lokális eredmény nem nulla és a második segéd AL eredménye nem nulla, a `0x005b1460` visszatérési EAX-a lesz az eredmény (`0x005b19a0-0x005b19b3`). Így a normál közös záró ágban a típussegéd nullája megmarad; külön nullás lehetőség a `0x005b1460` út eredménye. A `0x12` külön folytatása és a bemenet-null / `0x04` korai kilépés ezt a közös szabályt megkerüli, ezért ezek teljes kimenete külön marad nyitva.
+
+**Két független út.**
+
+- **A út:** a helyi utasításolvasás követi a `type - 2` indexképzést (`0x005b17b0-0x005b17c5`), a nyers PE-ben külön olvassa a `0x005b1ba4` byte-táblát és a `0x005b1b64` dword ugrótáblát, majd a célcímeknél leolvassa a helperhívásokat. Ebből áll elő a fenti típuscsoportosítás.
+- **B út:** a már meglévő `2026-11-11-6532-colab-12-olvasok-hivok.txt` Ghidra-kimenet `FUN_005b1570` switch-e felsorolja a típusértékeket és a segédeket (17279-17495. sor). A dekompilált switch és az utasításokból külön kiolvasott PE-táblák ugyanazokat a hívási csoportokat adják.
+
+A két út a diszpécser hozzárendeléseire egyezik. Nem támasztják alá önmagukban az összes segéd nullás feltételét.
+
+**Cáfoló kísérlet.** Azt a lehetséges leegyszerűsítést próbáltam cáfolni, hogy minden típus saját, feltétel nélküli segédhívást kap. A `0x005b1ba4` és `0x005b1b64` táblái, a hívási utasítások és a Ghidra switch együttes ellenőrzése közös segédágakat mutat az `0x08/0x0a/0x0b/0x0c/0x1d`, `0x0f/0x10/0x11`, valamint `0x15/0x17/0x18/0x1a` csoportoknál. A `0x09` előfeltételes segédhívást kap; a `0x04` korán kilép; több más típus a `3` alapértéken marad. A cáfolatot ugyanazzal a két úttal ellenőriztem, és a két listázás egyezett.
+
+**PicasaPy-összevetés.** A feltárt kód a `Recently Updated` DBLoader rekordfeldolgozási kapujához tartozik. Nem rendeli a numerikus típusokat PicasaPy fotó-, videó- vagy timeline-rekordhoz, és nem bizonyít megjelenítési eltérést a Timeline nézetben. A `src/picasapy/timeline.py:53` `resolve_date()` függvénye az EXIF `taken_at` értéket részesíti előnyben, majd a befagyasztott `sort_mtime_ns` értékre esik vissza; a `src/picasapy/timeline.py:76` adja át az indexrekord dátumát. A `src/picasapy/app/qml/PicasaPy/TimelineView.qml:133` carousel- és a `:277` csúszka-mozgást kezel. Ezeket a jelen bináris típusértékekkel nem lehet megfeleltetni. Ezért a `picasa-idorend-viselkedes.md` „Eredeti / Nálunk / Teendő” táblája ebből az eredményből nem módosul.
+
+| Állítás | Forrás | Bizonyítottság |
+|---|---|---|
+| A `0x00425f60` a `0x005b1570` eredményét menti, és a `0x0055ece0` a `0x00425f60` EAX-át arra teszteli, hogy nulla-e. | bináris (`0x004264b1-0x004264b6`, `0x0055ef15-0x0055ef22`) | megerősített a hívási és kapu-utasításokra |
+| A `0x005b1570` típusonkénti dispatch táblája a fenti helper-csoportokat választja. | bináris (`0x005b17ad-0x005b17c5`, tábla `0x005b1ba4`, `0x005b1b64`, segédhívások `0x005b17cc-0x005b192e`); meglévő Ghidra switch | megerősített a hozzárendelésre |
+| A `0x06` dispatch-út egy feltételben nullát adhat, és a közös ág továbbadja a nullát. | bináris (`0x005ae420-0x005ae445`, `0x005b19b8-0x005b19c1`) | megerősített erre az egy útvonalra |
+| A segédhívások belső nullás feltételei típusonként, a `0x005b1460` rekurzív kimenete, valamint a `0x12` és korai kilépési ágak végső EAX-a. | **NINCS MEG** | nyitott |
+| A numerikus típusok emberi jelentése, és azok megfeleltetése a PicasaPy Időrend rekordsoraihoz. | **NINCS MEG** | nyitott |
+
+**A #6532 készültsége.** ✅ A meglévő Ghidra switch és a nyers PE-ugrótáblák alapján a vizsgált típus-diszpécser hívási hozzárendelése dokumentált; a közös záró ág visszatérési formulája is megvan. ⛔ A segédhívások belső nullás feltételei, a `0x005b1460` rekurzív kimenete, valamint a `0x12` és korai kilépési ágak végső EAX-a nincs lezárva. ⛔ E kör nem állapít meg termékszintű Timeline-eltérést, ezért fejlesztési táblabővítést nem javasol. ⛔ A teljes Időrend-specifikáció, a teljes felvételi összevetés és a kiadási összehasonlító videó vagy képsor ettől továbbra is nyitott.
+
+**Nyitott.** A következő statikus lépés mindegyik, a fenti táblában szereplő külön segédfüggvény nullás kilépéseinek feltétel szerinti követése, majd a `0x005b19a0-0x005b19c1` közös ág és a `0x005b1460` visszatérési út végigkövetése. A `0x00425f60` veremjelző `[esp+0x2fa]` íróját is vissza kell vezetni. Az `annot_disasm.py`-val rendelkezésre állnak a segédfüggvények határai; ehhez a jelenlegi kérdéshez új Ghidra-kör nem szükséges. A PicasaPy-val való fejlesztési eltérést csak akkor szabad felvenni, ha a típus numerikus értékének és a UI-rekordnak a megfeleltetése igazolt.
+
