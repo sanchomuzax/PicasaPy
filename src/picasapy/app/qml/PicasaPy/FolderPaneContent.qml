@@ -515,13 +515,51 @@ Flickable {
 
         CollectionHeader {
             Layout.fillWidth: true
-            label: qsTr("Other")
-            // #320: még nincs kijelölt tartalom-forrás ehhez a
-            // gyűjteményhez — a fejléc addig is látszik, üresen.
-            itemCount: 0
+            label: qsTr("Other Stuff")
+            itemCount: folderPane.otherStuffFolders.length
             labelObjectName: "otherHeader"
             collapsed: folderPane.otherCollapsed
             onToggled: folderPane.toggleCollection("other")
+        }
+
+        Repeater {
+            objectName: "otherStuffFolderRepeater"
+            model: folderPane.otherStuffFolders
+            delegate: Rectangle {
+                id: otherStuffItem
+                required property var modelData
+                objectName: "otherStuffFolder_" + modelData.path
+                visible: !folderPane.otherCollapsed
+                Layout.fillWidth: true
+                Layout.preferredHeight: folderPane.rowHeight
+                color: otherStuffMouse.containsMouse ? Theme.panelSelection
+                                                     : "transparent"
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 16
+                    text: otherStuffItem.modelData.name
+                          + " (" + otherStuffItem.modelData.count + ")"
+                    font.pixelSize: Theme.fontSize
+                    color: otherStuffMouse.containsMouse
+                           ? Theme.panelSelectionText : Theme.textDark
+                }
+                MouseArea {
+                    id: otherStuffMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: function(mouse) {
+                        if (mouse.button === Qt.RightButton)
+                            folderPane.openFolderContextMenu(
+                                otherStuffItem.modelData.path)
+                        else
+                            folderPane.folderChosen(
+                                otherStuffItem.modelData.path)
+                    }
+                    PressFeedbackOverlay { pressSource: parent }
+                }
+            }
         }
     }
 }

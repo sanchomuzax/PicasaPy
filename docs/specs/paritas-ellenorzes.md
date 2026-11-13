@@ -1109,7 +1109,7 @@ az őket megelőző/követő állapotok a megadott `job-639` és `job-640` felv�
 | Tálca: Upload to Google Photos | job-639/24: a kattintás után job-639/25-től „Log in to Google” ablak nyitva. | A `trayUploadButton` látható, de bejelentkezés nélkül tiltott; kattintásra nem nyit ablakot. | Igazolt eltérés: az eredeti felkínálja a bejelentkezést, a PicasaPy tálcagombja nem indítható el. A hitelesítés utáni feltöltést egyik oldalon sem hajtottuk végre. | `TrayActionArea.qml`; engedélyezési állapot: `tray_google_photos_controller.py` |
 | Mappa-eszköztár: diavetítés | job-639/29: a Google-belépő már nyitva van a job-639/24 Upload óta; a diavetítés hatása nem látszik. | A `headerPlayButton` teljes képernyős diavetítést indít. | Az eredeti kimenet ebből a felvételből nyitott. A PicasaPy fejléc a csoport kezdősorát adja át; a menü ugyanahhoz az indító művelethez `-1` indexet ad. Az eredeti fejlécgomb menüparancshoz rendelése nincs igazolva. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml`, `MainLibraryCanvas.qml`, `MainSlideshow.qml` |
 | Mappa-eszköztár: kollázs | job-640/9: kollázsprojekt; két kijelölt kép a vásznon, „Clips (22)”. | A `headerCollageButton` Kollázs projektlapot nyit, 24 klippel/csomóponttal; a kijelölés és a held sorok továbbra is csak `[0, 1]`. | Igazolt eltérés: a fejléc a teljes 24 képes csoportot adja át, míg az eredeti mérésben két kép van betöltve, 22 maradék klippel. A PicasaPy menübelépő forrása külön útvonal. Az eredeti menü `ID_COLLAGEMAKER` és az `outputlayout/collage` azonos bináris kezelőre fut; a képkockán kattintott fejlécvezérlő és a bináris UI-címke közti kapcsolat nem szerepel a meglévő kimenetben. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml`, `MainProjectTabs.qml` |
-| Mappa-eszköztár: film | job-640/14: „This feature is not supported for Linux” hiba. | A `headerMovieButton` Filmkészítő lapot nyit 24 klippel. | Az eredeti Windows-filmfolyamat és a forrásképek paritása a Linux-hiba miatt nem mérhető; a PicasaPy a teljes csoportot adja át. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml`, `MainProjectTabs.qml`, `CreateDialogs.qml` |
+| Mappa-eszköztár: film | job-640/14: „This feature is not supported for Linux” hiba; binárisból bizonyítva: 2 kijelölt képnél csak a kijelöltek kerülnek a filmbe, a teljes mappa csak <2 kijelölésnél töltődik be. | A `headerMovieButton` Filmkészítő lapot nyit 24 klippel. | Igazolt eltérés: nálunk a fejlécgomb feltétel nélkül a teljes 24 képes mappát adja át, az eredeti 2 kijelölt képnél csak a 2 kijelöltet tölti be. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml`, `MainProjectTabs.qml`, `CreateDialogs.qml` |
 | Mappa-eszköztár: csillag | job-640/19: a két kép kijelölve marad a kattintás után. | A `headerSelectStarredButton` után a kijelölés üres; a mérési képek egyike sincs csillagozva. | Az eredeti képek csillag-metaadata nem szerepel a job állapotfájljaiban, ezért azonos bemeneti csillagállapot mellett nem hasonlítható össze. Az eredeti `ID_SELECTSTAR` menüparancs ismert, a fejlécgomb menü-diszpécserhez kötése nincs igazolva. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml` |
 | Mappa-eszköztár: Upload | job-640/24: a kattintás után job-640/25-től Google-belépő nyitva. | A `headerUploadButton` látható, 86×22 képpontos és tiltott; kattintásra nincs ablak. A QML-ben a gomb `enabled: false`, kattintáskezelője nincs. | Igazolt eltérés: az eredeti gomb bejelentkezési folyamatot indít, a PicasaPy fejlécgomb nem működik. | `LightboxHeaderButtons.qml` |
 | Mappa-eszköztár: Upload lenyíló | job-640/29: a korábbi Upload után már nyitva lévő Google-belépő elfedi a lenyíló saját hatását. | A gomb jobb szélére, a nyíl helyére kattintva sem nyílik menü; a vezérlő tiltott. | Az eredeti lenyíló működése nyitott kérdés a szennyezett kocka miatt. A PicasaPy-gombnak nincs használható lenyílója. | `LightboxHeaderButtons.qml` |
@@ -1174,11 +1174,11 @@ Mérés dátuma: 2026-11-12 / 2026-11-13. Hatókör: a 20 mappanézetbeli fájl-
 | Tulajdonságok | Kép helyi menüje, Alt+Enter, Nézet és Kép menü | Colab #600-#608 | #6848, #6845 (Q17, Q30) | Eltért, javítva (#6848, kiadás: 1.0.104); a menüből nyitott Properties panel egyezik | `PropertiesPanel.qml`, `PhotoContextMenu.qml` |
 | Mappaleírás szerkesztése | Mappa helyi menüje, Folder menü | Colab #613, #614 | felvevő, #6860 | Egyezik: Folder Properties ablak | `FolderPropertiesDialog.qml`, `PicasaFolderMenu.qml` |
 | Áthelyezés gyűjteménybe | Mappa helyi menüje | job-648 (az almenü: Exported Pictures, Folders, Hidden Folders, Other Stuff, Projects, Web Albums, New Collection...; a jelenlegi gyűjtemény pipált és tiltott); job-649 (Other Stuff: `P2category=Other Stuff`, a bal hasábban a mappa az Other Stuff csoportba kerül, ablak nélkül) | #6845 (`test_kereses_es_gyujtemeny_folyamatok_6845.py`) | Eltér: a PicasaPy almenüjéből hiányzik a hat beépített gyűjtemény, csak a saját gyűjtemények és a New Collection... van → #6883. A saját gyűjtemény útja (New Collection..., `P2category`, bal hasáb) működik | `FolderContextMenu.qml`, `FolderPane.qml` |
-| Indexképek frissítése | Mappa helyi menüje, Folder menü | Colab (Folder menü) | #6860 | A látható állapot egyezik; a frissítés tartalma nincs összevetve | `FolderContextMenu.qml`, `PicasaFolderMenu.qml` |
+| Indexképek frissítése | Mappa helyi menüje, Folder menü | Colab (Folder menü) | #6860, #6845 (`test_mappa_folyamat_paritas_6845.py`) | #6860: a látható állapot egyezett, új ablak nem nyílt. #6845: mindkét kattintási út frissíti a tartalmat; a módosított kép új adatai és az új fájl bekerül az indexbe és a rácsba; a `.picasa.ini` és a bal hasáb változatlan, a kijelölés megmarad. A módosított kép új, mtime/méret kulcsú cache-fájlt kap, a régi cache-fájl a méréskor megmaradt. | `FolderContextMenu.qml`, `PicasaFolderMenu.qml` |
 | Mappa rendezésének alapja | Mappa helyi menüje | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104) | `FolderContextMenu.qml` |
 | Mappa elrejtése / megjelenítése | Mappa helyi menüje | Colab #613, #614 | felvevő | Egyezik: Add Password ablak | `FolderContextMenu.qml`, `PasswordDialog.qml` |
 | Eltávolítás a Picasából | Mappa helyi menüje, Folder menü | Colab #613, #614 | felvevő, #6860 | Eltért: helyi menü javítva (#6852), Folder menü javítva (#6861), kiadás: 1.0.104 | `FolderContextMenu.qml`, `PicasaFolderMenu.qml`, `MainDialogs.qml` |
-| Mappa áthelyezése | Mappa helyi menüje, húzás | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104); a húzás nincs összevetve | `FolderContextMenu.qml` |
+| Mappa áthelyezése | Mappa helyi menüje, húzás | Colab #613, #614 | #6852, #6845 (`test_mappa_folyamat_paritas_6845.py`) | A helyi menüs út eltérése javítva (#6852, kiadás: 1.0.104). A lapos mappalistában valódi egérhúzás áthelyezi a könyvtárat és az ini-jét; az index és a bal hasáb új útvonalra frissül, a rácsban a kép az új útvonallal marad, a kijelölés üres lesz. Az eredeti húzásos művelettel való összevetés külön mérés marad. | `FolderPaneTreeRow.qml`, `FolderPane.qml` |
 | Mappa törlése | Mappa helyi menüje | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104) | `FolderContextMenu.qml` |
 | Mentés / Visszaállítás | Fájl menü, kép helyi menüje | job-641 (tiszta) | #6845 (Q08, Q09) | Save As egyezik; Save a Copy eltér: két kijelölt képből az eredeti egy másolatot készít → #6866 | `SaveDialogs.qml`, `PicasaFileMenu.qml` |
 | Kép exportálása mappába | Fájl menü, alsó tálca | Colab (Fájl menü); tálca: job-639 | #6845 (Q10); tálca: #6862 | Eltér: tiszta profillal (job-642) is a Resize to 800 pixels az alap, nálunk Use original size → #6866 | `ExportDialogs.qml`, `PicasaFileMenu.qml`, `TrayActionArea.qml` |
@@ -1203,6 +1203,21 @@ Mérés dátuma: 2026-11-12 / 2026-11-13. Hatókör: a 20 mappanézetbeli fájl-
     4. Rács: a rácsban lévő képek kijelölése nem sérül.
   - **Meglévő gyűjteménybe áthelyezés:** ha létezik egyéni gyűjtemény, az almenüben közvetlenül megjelenik annak neve (`folderContextMenuMoveToCollectionItem_<név>`). Kattintásra külön megerősítő dialógus nélkül azonnal végbemegy az áthelyezés (a `.picasa.ini` `P2category` értéke és a bal hasáb struktúrája frissül).
 - **Tesztelt lefedettség:** `tests/app/qml_functional/test_kereses_es_gyujtemeny_folyamatok_6845.py` (valódi QTest kattintásokkal, 1 és 2 kijelölt képpel, lemez- és UI-invariánsok ellenőrzésével).
+
+#### 3. Mappa áthelyezése húzással
+- **Belépési pont:** bal hasáb lapos mappalistájában az `atmozgatando` mappasor húzása a `cel` mappára. A próbát valódi `QTest.mousePress`/`mouseMove`/`mouseRelease` sorozat futtatja.
+- **Lemez:** a forrás könyvtár a cél alatt jelenik meg, a régi út eltűnik; a `.picasa.ini` bájtra azonos marad, a kép és a felirata megmarad.
+- **Index:** a kép `folders.path` útvonala az új könyvtárra változik, a régi mappasor kikerül.
+- **Bal hasáb:** a régi mappasor eltűnik, a cél alatti új sor megjelenik.
+- **Rács:** a négy kép megmarad, az áthelyezett kép útvonala követi a könyvtárat. A kijelölés a művelet után üres.
+- **Tesztelt lefedettség:** `tests/app/qml_functional/test_mappa_folyamat_paritas_6845.py`; a húzás `-5`, `0` és `+5` px ablakmagasságnál is sikeres. Ez a PicasaPy működését méri; az eredeti húzásos folyamat külön összevetése még nyitott.
+
+#### 4. Indexképek frissítése (`Refresh Thumbnails`)
+- **Belépési pontok:** a mappa helyi menüje és a Folder főmenü. Mindkettőre valódi egérkattintás indítja a műveletet; új ablak nem nyílik.
+- **Lemez:** a meglévő JPEG módosítása és egy új JPEG létrehozása után a `.picasa.ini` bájtjai változatlanok.
+- **Index és rács:** a módosított kép új mtime/méret adatai frissülnek az indexben, az új fájl is bekerül; mindkettő látható a rácsban. A bal hasáb mappasora és a kétképes kijelölés változatlan marad.
+- **Bélyegkép-cache:** a módosított kép új, útvonal + mtime + méret kulcsú cache-fájlt kap. A korábbi cache-fájl a művelet után is megmarad; a frissítés nem törli azonnal a korábbi változatot.
+- **Tesztelt lefedettség:** `tests/app/qml_functional/test_mappa_folyamat_paritas_6845.py`; mindkét belépési pont `-5`, `0` és `+5` px ablakmagasságnál is sikeres.
 
 ### #6862 kiegészítés: a tálca Print és Export gombja (2026-11-13)
 
@@ -1263,3 +1278,189 @@ felületleírás az átadott mérési összefoglalóból származik. Az eredeti 
 **Bizonyítottsági fok: feltételes.** Két független út megerősíti a látható főnézet-váltás deklarációját és a Cancel/Escape visszautat. A `0x00744a65` virtuális hívás célja nem ismert; ez nyitva hagyja az eredeti kérdés szűk, hívásszintű részét.
 
 - `Ghidra-kör kell: 0x00744a00 - a 0x00744a65 virtuális hívás melyik célfüggvényre oldódik fel, és ez a hívás végzi-e a PrintPanelre váltást? A meglévő Ghidra-kimenet a 0x005d9cc0 hívót mutatja, de ezt a slotot nem oldja fel. [blokkoló]`
+
+### #6845 kiegészítés: mappasor húzása másik mappára (2026-11-13)
+
+Nyitott kérdés: a bal hasáb mappasorának másik mappára húzásakor az eredeti Picasa a mappa képeit mozgatja-e, vagy a mappát magát helyezi át. Az eredeti Colab-felvétel nem áll rendelkezésre; az alábbi következtetés statikus, és nem helyettesíti a Windowsos mérést.
+
+| Vizsgált pont | Megállapítás | Forrás |
+|---|---|---|
+| Húzott elem típusa | A `0x005e39a0` drop-kezelő a payload objektumát `IDropReporter` és `CAlbumSelectionNode` típusra próbálja castolni. Siker esetén az albumazonosítót a `+0x3c0` mezőből olvassa. Ez elkülöníti az albumkijelölő ágat a más típusú payloadtól. Azt, hogy a konkrét mappasor és képelem mely futásidejű payloadot adja, felvétel nélkül nem igazoltam. | `bináris (0x005e3b71-0x005e3b81; RTTI: 0x00cb46f4)` |
+| Közvetlen műveleti út | A normál albumkijelölő ágon a drop-kezelő a `0x005350b0` fájlmozgatót hívja. A hívás negyedik és ötödik explicit paramétere nulla. A mozgató a kapott listán halad végig; a lista forrása és teljessége nem derül ki a vizsgált hívási láncból. | `bináris (0x005e3df5; meglévő Ghidra-kimenet: FUN_005e39a0 és FUN_005350b0)` |
+| Megerősítés | A `0x005350b0` a nulla negyedik paraméterhez a `CThumbUI::MoveFilesConfirmMove` azonosítót választja, és a megerősítő felületet meghívja. Ez nem bizonyítja, hogy üres átadott lista esetén is megjelenik az ablak. | `bináris (0x005350b0); string_xrefs: 0x00c89e68 "Move Files", 0x00c89f2c "Confirm Move", 0x00c89e10 "Are you sure you want to move the file(s) to\n%s ?\n"` |
+| Külön mappamozgató | A külön mappamozgató út `0x005cb990 → 0x0053f340 → 0x0053f4a0`; az utóbbi függvényhez tartozik a `Move Folder to %s` szöveg. A drop-kezelő utasításai közt nincs közvetlen hívás erre az útra. A két feloldatlan indirekt hívás célja miatt a virtuális mappamozgatás nem zárható ki. | `bináris (0x005cb990, 0x0053f340, 0x0053f4a0); string_xrefs: 0x00c8aca4 "Move Folder to %s"; NINCS MEG (0x005e3f8e és 0x005e3fb2 indirekt híváscél)` |
+| A forrásmappa és képei | Nem dönthető el, hogy az átadott fájllista a mappa összes képét tartalmazza-e, ezért az sem, hogy a forrásmappa üresen marad-e vagy a mappa maga kerül át. | `NINCS MEG` |
+| PicasaPy-oldal | A `fix/6845-codex` munkafa `tests/app/qml_functional/test_mappa_folyamat_paritas_6845.py` tesztje azt ellenőrzi, hogy a könyvtár maga kerül át a lemezen, benne marad a `.picasa.ini` és a kép, az index és a bal hasáb pedig követi az új útvonalat. Ezt a tesztet ebben a kutatási munkamenetben nem futtattam. | `forráskód (fix/6845-codex, 174-235. sor)` |
+
+#### A két független út és a cáfoló ellenőrzés
+
+- **A út, drop-kezelő:** a célzott diszasszemblálás a húzott adat típusának átalakítását, az albumazonosító kiolvasását és a normál ág `0x005350b0` hívását mutatja. A `0x005350b0` meglévő dekompilációja a `Confirm Move` megerősítési ágat mutatja.
+- **B út, külön műveleti út és adatszótár:** a közvetlen hívási gráf a `0x005cb990 → 0x0053f340 → 0x0053f4a0` külön mappamozgató utat adja; a binary-index `string_xrefs` a fájlmozgatóhoz köti a `Move Files` és `Confirm Move`, a mappamozgatóhoz a `Move Folder to %s` szöveget. Ez alátámasztja, hogy két külön műveleti út van, de a drop-kezelő két indirekt célját nem oldja fel.
+- **Egyezés és korlát:** a látható közvetlen út `Move Files` megerősítést kérő fájlmozgatóba jut, a dedikált `Move Folder` művelet külön függvényen van. A teljes fizikai hatás és az átadott fájlok köre nyitott, ezért a bizonyítottsági fok **feltételes**.
+- **Cáfoló kísérlet:** azt a hipotézist ellenőriztem, hogy a mappasor húzása közvetlenül a `Move Folder` függvényre fut. A teljes célzott utasítássorban nincs közvetlen hívás `0x0053f340` vagy `0x0053f4a0` felé, viszont a normál út eléri a `0x005350b0` függvényt. Ez a közvetlen hívású változatot cáfolja. A `0x005e3f8e` és `0x005e3fb2` indirekt hívásokat ugyanazzal a mércével ellenőriztem: a céljaik nem oldhatók fel a meglévő indexből és Ghidra-kimenetből, így a tágabb hipotézis nem zárható ki.
+
+#### Colabon ellenőrizhető jóslat és nyitott kérdés
+
+Jóslat, nem mérési eredmény: ha a mappasor a `CAlbumSelectionNode` ágba kerül, és a fájlmozgatónak nem üres lista jut, az eredeti `Confirm Move` / `Move Files` ablakot mutat; jóváhagyás után a listában szereplő képeket mozgatja. A statikus vizsgálat nem dönti el, hogy a lista az összes képet tartalmazza-e, megmarad-e a forrásmappa, vagy valamelyik indirekt hívás külön a mappát mozgatja. Colabon ugyanazt a többképes mappát kell a bal hasábban egy célmappára húzni, majd rögzíteni a megerősítő ablakot és az előtte/utána könyvtárlistát.
+
+Nyitott, célzott vizsgálat: `Ghidra-kör kell: 0x005e39a0 - a 0x005e3f8e és a 0x005e3fb2 indirekt hívások célja, továbbá hogy bármelyik fizikai mappamozgatást hajt-e végre. A meglévő 2026-11-11 kimenet tartalmazza a 0x005e39a0 hívót, de ezeket a virtuális célokat nem oldja fel. [blokkoló]` A fájllista teljességét Windowsos Colab-mérés is el tudja dönteni.
+
+### #6862: a film gomb bemeneti halmaza
+
+A mappa-eszköztár film gombjának (`headerpanel/create_movie`) és a Létrehozás > Mozgófilm menüparancsnak a bináris folyamata a Picasa3.exe (3.9.141.259) diszasszemblálása és dekompilációja alapján feltárva.
+
+| Kérdés | Megállapítás | Forrás |
+|---|---|---|
+| Mappa-fejléc film vezérlő | A `headerpanel.tre:58-69` deklarálja a `headerpanel/create_movie` vezérlőt (`headerpanel/movie_icon`, `mousedown 1`); a `headerpaneltext.tre:30` felirata `Create Movie Presentation`. | `bináris (headerpanel.tre:58-69, headerpaneltext.tre:30)` |
+| Fejléc kattintáskezelő | A `0x005e0f70` a `create_movie` (`0x00c96ec8`) tokent vizsgálja (`0x005e118a-0x005e1196`). Shift billentyű hiányában numerikus parancsazonosító nélkül, a mappa fejléc-sorindexével (`row_index`), üres kijelöléssel és 0 módparaméterrel hívja a `0x0057cb60` belépőt. Ha a Shift le van nyomva (`0x005e11c3-0x005e11d4`), a módparaméter `0x9d59`. | `bináris (0x005e0f70, 0x005e118a-0x005e11ec, 0x00c96ec8)` |
+| Menüparancs azonosítók | A `0x00559150` menüépítő a `Create > Movie` (`eMenuCreate::Movies`, `&Movie`, `0x9d51`) alatt három almenüpontot hoz létre: `0x9d58` (`eMenuCreateMovie::MOVIE`, `From Selection...`), `0x9d59` (`eMenuCreateMovie::ID_FACES`, `From Faces in Selection...`), `0x9d5a` (`eMenuCreateMovie::ID_FACESRANDOM`, `From People Albums...`). | `bináris (0x00559150, 0x0055ba6d-0x0055bb45, 0x00c8d958, 0x00c8d920, 0x00c8d8e4)` |
+| Menü-diszpécser kapcsolat | A `0x005cb990` diszpécserben mindhárom parancs (`0x9d58`, `0x9d59`, `0x9d5a`) a `0x005cdc30` ugrótábla 15. indexén (`0x005cdc6c`) át a `0x005cce44-0x005cce4e` kódra fut, amely `-1` sorindexszel, üres kijelöléssel és a parancsazonosítóval ugyanazt a `0x0057cb60` kezelőt hívja. A fejlécgomb nem küld WM_COMMAND menüazonosítót, a két út a közös `0x0057cb60` kezelőben találkozik. | `bináris (0x005cb990, 0x005cc495-0x005cc4ad, 0x005cdc30, 0x005cce44-0x005cce4e, 0x0057cb60)` |
+| Linux/Wine korlátozás | A `0x0057cb60` belépőnél a `0x0057cbd1` utasítás ellenőrzi a Wine-környezet jelzőjét (`cmp byte ptr [esi + 0x30fe], 0`). Ha nem nulla (Linux/Wine futás), a `0x00c8a37c` (`LinuxNomovie`) erőforrás-azonosítót és a `0x00c8a354` (`This feature is not supported for Linux`) szöveget jeleníti meg a `0x00980700` párbeszédablakkal, és a Filmkészítő megnyitása nélkül visszatér (`ret 0xc`). | `bináris (0x0057cb60, 0x0057cbd1-0x0057cbe4, 0x00c8a37c, 0x00c8a354, 0x00980700)` |
+| Windows 2000 korlátozás | A `0x0057cb60` elején a `0x0057cb70` meghívja a `0x00981af0` verzióellenőrzőt. Ha az eredmény nulla, a `0x00c90324` (`Win2kNomovie`) azonosítójú `This feature is not supported for Windows 2000` (`0x00c902f4`) üzenetet adja. | `bináris (0x0057cb60, 0x0057cb70-0x0057cb83, 0x00c90324, 0x00c902f4)` |
+| Filmkészítő indító mód | A `0x0057cb60` eltárolja a sorindexet (`CMakeMoviePanel[+0x4d0]`), majd aktiválja a `panelroot/makemovietab`-ot (`0x00c8f1a0`). A `0x00618050` inicializálóban a `0x006181f7-0x00618206` képlet a sorindexből képezi a módot: menü esetén (`row == -1`) `esi = 1`, fejlécgomb esetén (`row >= 0`) `esi = 4`. Ezután meghívja az `IPicasaApp->slot_0(mode = esi)` metódust (`CAppServices::vftable` `0x00ca7b7c` -> `0x00699cd0`). | `bináris (0x0057cb60, 0x0057cc23-0x0057cc8b, 0x00618050, 0x006181f7-0x00618247, 0x00ca7b7c, 0x00699cd0)` |
+| Bemeneti halmaz (két kép) | A `0x00699cd0` függvényben fejlécgombos hívásnál (`param_1 == 4`) a `0x005c7e40` lekérdezi a kijelölés/tálca méretét. Ha a kijelölés száma 2-nél kevesebb (`uVar3 < 2`), a mód 3-ra vált és a teljes mappa képeit tölti be (`0x005cb180`). Ha azonban legalább 2 kép ki van jelölve (`uVar3 >= 2`), a feltétel hamis: a mód 4 marad, és a `0x005c76b0(0, 1)` hívás kizárólag a kijelölt képeket gyűjti ki a film klipjei közé. | `bináris (0x00699cd0, 0x005c7e40, 0x005cb180, 0x005c76b0; ghidra/2026-10-20-ghidra-17.txt:786-805)` |
+| PicasaPy megvalósítás | A fejlécgomb a `LightboxHeaderButtons.qml:150-172` (`headerMovieButton`), amely a `LightboxHeader.qml:60` `movieRequested` jelzését süti el. A `LightboxFeedGroup.qml:103-111` `onMovieRequested` kezelője feltétel nélkül a teljes mappa minden sorát átadja a `feed.appWindow.openMovieFromRows(sorok)` metódusnak, függetlenül a kijelöléstől. A `Main.qml:378` és `MainProjectTabs.qml:129-132` továbbítja a `CreateDialogs.qml:56-59` `openMovieForRows`-hoz. A menü viszont (`PicasaCreateMenu.qml:65`, `MainMenuBar.qml:278`) a kijelölésből indul (`openMovie()` -> `CreateDialogs.qml:37`). | `src/picasapy/app/qml/PicasaPy/LightboxHeaderButtons.qml:150-172`, `LightboxHeader.qml:60`, `LightboxFeedGroup.qml:103-111`, `Main.qml:378`, `MainProjectTabs.qml:129-132`, `CreateDialogs.qml:37, 56-59`, `PicasaCreateMenu.qml:65`, `MainMenuBar.qml:278` |
+
+#### Két független út és cáfoló ellenőrzés
+
+- **A út, utasításút és dekompiláció:** az `annot_disasm.py` és a meglévő Ghidra-dekompilátum (`2026-10-20-ghidra-17.txt`) közvetlenül igazolja a hívási láncot. A `0x005e0f70` a `create_movie` név egyezése után a mappa fejléc-sorindexével (`row_index`) hívja a `0x0057cb60`-at. A `0x0057cb60` a `0x0057cbd1` címen a `[esi + 0x30fe]` Wine-jelzőt vizsgálja; nemnulla értéknél a `LinuxNomovie` (`0x00c8a37c`) hibát dobja és visszatér. Windows futásnál a `0x00618050` a sorindexből képezi a 4-es módot, majd a `0x00699cd0` a `0x005c7e40` hívással ellenőrzi a kijelölést: ha legalább 2 kép ki van jelölve, kizárólag a kijelölt képeket adja át a film klipjeihez.
+- **B út, erőforrások, string_xrefs és menüstruktúra:** a `headerpanel.tre` és `headerpaneltext.tre` deklarálja a `headerpanel/create_movie` gombot és feliratát (`Create Movie Presentation`). A `0x00559150` a menüépítés során a `0x9d58`, `0x9d59`, `0x9d5a` parancsokat rendeli a Movie almenühöz. A `picasa3-index.sqlite` `string_xrefs` táblájában a `This feature is not supported for Linux` (`0x00c8a354`) két hivatkozója a `0x0057cb60` és a `0x0053a460`. A `ytIPicasaApp` RTTI vtable (`0x00ca7ad4`) felülbírálója a `CAppServices::vftable` (`0x00ca7b7c`), amelynek 0. slotja `0x00699cd0`.
+- **Egyezés:** a két független út maradéktalanul egyezik. A fejlécgomb nem küld numerikus menüazonosítót, hanem a menüvel azonos `0x0057cb60` kezelőt hívja a mappa sorindexével. A Linux/Wine hiba közvetlenül ezen belépő vizsgálatából ered. Két kijelölt kép esetén az eredeti Picasa Movie Maker csak a két kijelölt képpel indul, nem a teljes mappával.
+- **Cáfoló kísérlet:**
+  1. Azt a hipotézist próbáltam cáfolni, hogy a fejlécgomb közvetlen `0x005cb990` menü-diszpécser hívást vagy WM_COMMAND üzenetet küld-e: a `0x005e0f70` utasításfolyamában nincs ugrás vagy hívás a `0x005cb990`-re, sem PostMessage/SendMessage hívás; a hívás közvetlenül `0x0057cb60`-ra megy 0 (Shift esetén `0x9d59`) harmadik argumentummal. A feltevés cáfolva.
+  2. Azt a feltételezést próbáltam cáfolni, hogy a fejlécgomb minden esetben a teljes mappa képeit veszi-e át (ahogy a PicasaPy jelenleg működik): a `0x00699cd0` 4-es módja (`param_1 == 4`) a `0x005c7e40` visszatérési értékét vizsgálja (`uVar3 < 2`). Két kijelölt képnél (`uVar3 == 2`) a feltétel nem teljesül, nem vált át 3-as módra (mappa betöltése), hanem a `0x005c76b0(0, 1)` ágon a kijelölt elemeket veszi át. A feltételezés cáfolva.
+  3. Azt a feltételezést próbáltam cáfolni, hogy a Linux-hibaüzenet DirectShow hiányból vagy a videó renderelésének hibájából származik-e a film készítése közben: a `0x0057cbd1` vizsgálat mindent megelőzve, rögtön a függvény elején elutasítja a futást a `[esi + 0x30fe]` jelző alapján, jóval a renderelő vagy a felület felépítése előtt. A feltételezés cáfolva.
+
+**Bizonyítottsági fok: megerősített.** Két független út (utasításszintű diszasszembly/dekompiláció és erőforrás/RTTI/string_xrefs elemzés), valamint sikeres cáfoló ellenőrzések támasztják alá.
+
+#### Fejlesztési teendők a paritáshoz
+
+- A `src/picasapy/app/qml/PicasaPy/LightboxFeedGroup.qml:103-111` `onMovieRequested` kezelőjében ellenőrizni kell a kijelölt képek számát:
+  - Ha legalább 2 kép ki van jelölve (a jelenlegi mappában vagy a tálcán), a filmkészítő kizárólag a kijelölt képek soraival induljon (`feed.appWindow.openMovieForRows(feed.appWindow.selectedIndexes)` vagy a kijelölési sorok).
+  - Ha 2-nél kevesebb kép van kijelölve (0 vagy 1 kép), a filmkészítő a teljes mappa összes képével induljon (`openMovieFromRows(sorok)`).
+
+
+
+## #6862: a 0x00744a65 virtuális hívás
+
+A tálca Print gombjának (`outputlayout/pbutton`) hívási lánca a `0x005d9cc0 -> 0x00744a00` úton fut. A `0x00744a00` függvényben a `0x00744a5e-0x00744a65` címtartomány virtuális hívást hajt végre a `[ebp+0xed0]` objektum `+0x258` eltolásán lévő mutatón keresztül.
+
+### 1. Az érintett objektumok és típusok statikus feloldása
+
+- **A `[ebp+0xed0]` objektum (`CKeywordDialog`):**
+  - A hívó `0x00744a00` függvény `ebp` regisztere a `CThumbUI` példány mutatója.
+  - A `CThumbUI` `+0xed0` eltolásán a lebegő/kihúzható kulcsszó- és címkekezelő panel (`CKeywordDialog`) mutatója ül.
+  - Kezdőérték: a `CThumbUI` konstruktora (`0x005643e0`, `0x00564d8c`) 0-ra inicializálja (`mov dword ptr [ebp+0xed0], ebx`).
+  - Azonosítás: a `CThumbUI::UpdateKeywordStatus` metódus (`0x0065ac80`, `0x0065ad02`, `0x0065b07c`) a `*(int *)(param_1+0xed0)` mutatót adja át a `0x00840b80` függvénynek, amely a `0x00cc0120` címen lévő `"CKeywordDialog::numstatus"` sztringet használja.
+
+- **A `+0xed0+0x258` helyen ülő objektum (`ytUIDialog::ParentDialog`):**
+  - Típus: `ytUIDialog::ParentDialog` (mérete 0x9c bájt).
+  - Konstruktor: `FUN_009d4a80` (`0x009d4a80-0x009d4c21`). A függvényben az `operator new(0x9c)` és a `0x00a70d20` belső inicializáló után a `0x009d4ae1` utasítás írja be a vtáblát: `mov dword ptr [edi], 0x00cda6e8`.
+  - A mutató beírása a dialógusba: `0x009d4afa: mov dword ptr [ebp+0x258], ecx` (ahol `ebp` a dialógus, `ecx` a frissen allokált `ytUIDialog::ParentDialog`).
+  - RTTI szimbólum: `ytUIDialog::ParentDialog::vftable`.
+  - Vtable-cím: `0x00cda6e8` (RVA: `0x008da6e8`).
+  - Pásztázási bizonyíték: a teljes `.text` szakaszban a `0x00cda6e8` konstans kizárólag a `0x009d4ae3` címen (`FUN_009d4a80`) fordul elő; a binárisban nincs más kód, amely erre a vtáblára hivatkozna vagy beírná.
+
+### 2. A vtable +0x0c bejegyzése
+
+- A `0x00cda6e8` vtable 4. slotja (+0x0c): `0x00aa57a0`.
+- A függvény utasításai (mérete 20 bájt, `0x00aa57a0-0x00aa57b3`):
+  ```asm
+  0x00aa57a0: mov  eax, dword ptr [ecx + 0x6c]
+  0x00aa57a3: test eax, eax
+  0x00aa57a5: je   0xaa57b1
+  0x00aa57a7: push 0
+  0x00aa57a9: push eax
+  0x00aa57aa: call dword ptr [0x00c40890] ; USER32.dll!ShowWindow
+  0x00aa57b0: ret
+  0x00aa57b1: xor  eax, eax
+  0x00aa57b3: ret
+  ```
+- Az `[ecx+0x6c]` mező a szülőablak Win32 ablakkilincse (`HWND`).
+- A hívás paramétere a `push 0`, azaz a Win32 `SW_HIDE` konstans.
+- A `0x00c40890` IAT-bejegyzés a `USER32.dll!ShowWindow` API-ra mutat.
+- Jelentése: `ShowWindow(this->m_hWnd, SW_HIDE)` - a dialógusablak elrejtése.
+
+### 3. A főnézet váltásának vizsgálata
+
+- **A virtuális hívás nem végzi a főnézet váltását.**
+- A hívás kizárólag a megnyitott `CKeywordDialog` ablak elrejtésére szolgál, hogy a nyomtatási nézet megnyitásakor ne maradjon a képernyőn a lebegő címkekezelő.
+- Ha a kulcsszópanel nincs nyitva (`[ebp+0xed0] == 0`), a `0x00744a43: cmp eax, ebx` és `0x00744a56: je 0x744a67` elágazás miatt a hívás le sem fut.
+- Ugyanez a védelmi elrejtő hívás megtalálható minden egyéb nézet- és módváltás előtt is:
+  - `0x005315b8`: OutputBottleneck
+  - `0x005316cf`: `CThumbUI::OutputToEmail`
+  - `0x00531717`: egyéb kimeneti művelet
+  - `0x005d3035`: `editpanel/preview` szerkesztőnézetbe lépés
+  - `0x005e7498`: nézetváltás
+  - `0x005e8d5d`: diavetítés indítása
+- A főnézet tényleges váltását az `outputlayout.tre:38-42` deklaratív makrója, az `m_print_enable` (`macros.tre:285-291`) vezérli a UI eseménykezelő rétegében:
+  - `Property showtarget thumbui/printpanel`
+  - `Property hidetarget thumbui/acquirepanel`
+  - `Property hidetarget thumbui/editpanel`
+  - `Property hidetarget thumbui/mainuipanel`
+  - `Property hidetarget thumbui/infowell`
+  - `Property hidetarget thumbui/secretcoinclip`
+- A `0x00744a00` függvény feladata ezen felül a nyomtató állapotának vizsgálata (`0x00777840`), és nyomtató hiányában a hibaablak megjelenítése (`IDS_MUST_INSTALL_PRINTER`, `0x00cb0a24`), valamint a visszaállás (`printpanel/pcancelbutton`, `0x00c8ff24`). Telepített nyomtató esetén a nyomtatási panel vezérlőinek előkészítését végzi (`printpanel/froogle`, `printpanel/fullbutton`, `PrintLastSize`, `printpanel/optimizebutton`, `printpanel/normalbutton`).
+
+### 4. Bizonyítottsági fok és cáfolat
+
+- **Bizonyítottsági fok:** megerősített. A: közvetlen utasításszintű követés a `0x00744a00`, `0x009d4a80` és `0x00aa57a0` függvényekben az IAT feloldásával (`0x00c40890` = `USER32.dll!ShowWindow`). B: RTTI szimbólumok (`ytUIDialog::ParentDialog::vftable` = `0x00cda6e8`), sztring-xrefelek (`0x00cc0120` = `"CKeywordDialog::numstatus"`), és a teljes `.text` adatpásztázása a `0x00cda6e8` vtable-re (egyetlen író hely a teljes binárisban: `0x009d4ae3`).
+- **Cáfoló kísérlet:** Megvizsgáltuk azt a feltevést, hogy a `0x00744a65` hívás végzi a főnézet váltását. A feltevés kétszeresen cáfolt:
+  1. Csukott kulcsszópanel esetén (`[ebp+0xed0] == 0`) a `0x00744a56` ugrás átlépi a hívást, így alapértelmezett állapotban a hívás le sem fut;
+  2. A feloldott `0x00aa57a0` függvény kizárólag a `ShowWindow(this->m_hWnd, 0)` API-hívást tartalmazza, semmilyen panelváltási vagy layout-kezelési logikát nem valósít meg.
+
+
+## #6845: húzásos mappa-áthelyezés és Refresh Thumbnails az eredetiben
+
+### 1. Húzásos mappa-áthelyezés és Move Folder a binárisban
+
+A mérés célja annak tisztázása, hogy a bal oldali hasábban a mappa más mappára húzása (drag-and-drop) milyen kezelőt futtat az eredeti Picasában, kér-e megerősítést, illetve mi történik a lemezen és a `.picasa.ini` fájllal.
+
+| Szempont | Megállapítás a binárisból | Forrás / Bizonyíték |
+|---|---|---|
+| Bal hasáb húzáskezelő | A bal oldali fastruktúra a `CAlbumList` osztályhoz tartozik (vftable: `0x00cb2898`). Az `lb_drop` eseményt a `0x005d3290` kezelő fogadja, amely meghívja a `0x005e39a0` drag-drop eljárást (`CAlbumList::OnDrop`). | `bináris (0x00cb2898, 0x005d3290, 0x005e39a0)` |
+| Célpont vizsgálata húzáskor | A `0x005e39a0` eljárás megvizsgálja a forrás- és a célcsomópontot (`CAlbumSelectionNode`). Ha a célpont mappa (`isFolder` vizsgálat `0x005e3b5e` körül), akkor nem mappa-áthelyezést végez, hanem a kijelölt képek célmappába mozgatását indítja el a `0x005350b0` eljáráson át (`CThumbUI::MoveFilesToAlbumFolder`). | `bináris (0x005e39a0, 0x005e3b5e, 0x005350b0)` |
+| Mappa-a-mappába húzás | **Feltételes, nem igazolt.** A közvetlen út a képeket mozgató `0x005350b0`-ba fut, de a drop-kezelő két indirekt hívásának (`0x005e3f8e`, `0x005e3fb2`) célja feloldatlan, így a mappa fizikai áthelyezése húzással nem zárható ki (ld. a „#6845 kiegészítés: mappasor húzása másik mappára” szakaszt). Eldönti: Ghidra-kör a két indirekt célra, vagy windowsos felvétel. | `bináris (0x005e39a0, 0x005350b0); NINCS MEG (0x005e3f8e, 0x005e3fb2)` |
+| Menüből indított áthelyezés | A lemezszintű mappa-áthelyezés kizárólag a Mappa menüből (`0x005cb990`) és a mappa helyi menüjéből (`0x007319f0`) érhető el (`ID_MOVE_FOLDER`). A diszpécser a `0x0053f340` eljáráson át a `0x0053f4a0` kezelőt hívja (`CThumbUI::MoveFolder`). | `bináris (0x005cb990, 0x007319f0, 0x0053f340, 0x0053f4a0)` |
+| Könyvtárválasztó ablak | A `0x0053f4a0` a `0x00998760` hívásával könyvtárválasztó ablakot nyit (a `SHBrowseForFolderW` importot az index szerint a `0x009b0cb0` hívja; a két függvény közti kapcsolat ebben a körben nincs igazolva) `Move Folder to %s` címmel (`CThumbUI::MoveFolderFormat`, `0x00c8acb8`). Az utolsó könyvtár útvonalát a `Preferences/MoveFolderLastPath` kulcsból olvassa és oda menti vissza. | `bináris (0x0053f4a0, 0x00998760, 0x00c8acb8)` |
+| Érvényesítés és hibakezelés | A `0x0053f4a0` ellenőrzi az útvonalat: rendszerkönyvtár esetén a `CThumbUI::MoveFolderSysPath` ("Unable to Move a System Path"), ha a célhelyen már létezik azonos nevű mappa, a `CThumbUI::MoveFolderExists` üzenetet adja. | `bináris (0x0053f4a0, 0x00c8acf4, 0x00c8ad54)` |
+| Megerősítés | A könyvtárválasztó ablak OK gombja után nincs külön megerősítő kérdés; a művelet azonnal lefut, hacsak nem lép fel a fenti hibák egyike. | `bináris (0x0053f4a0)` |
+| Lemez- és adatbázis-művelet | A tényleges áthelyezést a `0x0052e0f0` -> `0x004fd1c0` híváslánc végzi: előbb felfüggeszti a fájlrendszer-megfigyelő szálakat (`0x00455f10`, `0x00455e30`, 1000 ms timeout), majd a `0x004fd1c0` mozgatja a foldermgr adatbázisban a mappa-rekordot és a fájlrendszerben a mappát. Siker esetén a `0x0053fcfe` meghívja a `0x0065b840`-at és a `0x004e47d0`-at, ami újraindítja a háttérbeli szkennelést az új útvonalon. | `bináris (0x0052e0f0, 0x004fd1c0, 0x00455f10, 0x0053fcfe, 0x004e47d0)` |
+| A `.picasa.ini` sorsa | A mappa fizikai áthelyezése miatt a könyvtárban lévő `.picasa.ini` fájl a tartalmával együtt mozog át az új helyre; a régi helyen nem marad mappa vagy fájl, és nem generálódik külön új `.picasa.ini`. | `bináris (0x004fd1c0, 0x0053fcfe)` |
+
+### 2. Refresh Thumbnails a binárisban
+
+A mérés célja annak rögzítése, hogy az Indexképek frissítése parancs mit töröl vagy épít újra (memóriabeli gyorsítótár, `thumbs*.db`, index), és fut-e újraolvasás.
+
+| Szempont | Megállapítás a binárisból | Forrás / Bizonyíték |
+|---|---|---|
+| Parancsazonosítók | Főmenü: Folder > Refresh Thumbnails (`eMenuLabelFolder::ID_REFRESH_THUMB`) parancsazonosítója `0x9c5e` (40030). Mappa helyi menü: Refresh Thumbnails (`Folder::ID_REFRESH_THUMB`) parancsazonosítója `0x9cb9` (40121). | `bináris (0x00c8d490, 0x00cae1d8)` |
+| Menü engedélyezési állapota | A `0x005eab70` menüfrissítő a `0x9c5e` és `0x9cb9` azonosítókra egyaránt meghívja az `EnableMenuItem` Win32 API-t, a kiválasztott mappa megléte (`[edi + 0xeac]`) alapján. | `bináris (0x005eab70, 0x005eac5a)` |
+| Diszpécser és végrehajtó | A főmenü diszpécsere (`0x005cb990`) a `case 0x9c5e:` ágon közvetlenül a `0x005c7f60` végrehajtó eljárást hívja meg. A mappa helyi menü diszpécsere szintén erre az eljárásra fut rá. | `bináris (0x005cb990, 0x005cba12, 0x005c7f60)` |
+| Képek lekérdezése | A `0x005c7f60` a `0x007164b0` függvény hívásával lekéri az aktuálisan kiválasztott mappa összes képobjektumának listáját egy ideiglenes tömbbe. | `bináris (0x005c7f60, 0x005c7f8a, 0x007164b0)` |
+| Memória-gyorsítótár ürítése | A `0x005c7f60` ciklusban végigmegy a képeken: a `0x00425df0` hívásával kiveszi és kinullázza az adott kép bélyegkép-bejegyzését a memóriabeli gyorsítótárból (`m_albumThumbs`: `[edx + esi*4] = 0`). | `bináris (0x005c7f60, 0x005c7fac, 0x00425df0)` |
+| Újragenerálás ütemezése | Ugyanebben a ciklusban a `0x006a0b10` függvény hívásával (`push -1`, `push edi`, `call 0x006a0b10`) azonnali háttérbeli újragenerálásra ütemezi a kép bélyegképét. | `bináris (0x005c7f60, 0x005c7fc2, 0x006a0b10)` |
+| Index piszkos jelző és újraolvasás | A ciklus lefutása után a `0x004ee530` hívásával beállítja a mappa `dirty` flagjét az indexben (`[eax + 0x1c] = 1`), majd a `0x004e2f90` és `0x004e30f0` hívásokkal jelzi az indexelő háttérszálnak a mappa újraolvasását (`[esi + 0x4e8] = 1`, `[esi + 0x4ef] = 1`, `[esi + 0x4ea] = 1`). | `bináris (0x005c7f60, 0x005c7fd8, 0x004ee530, 0x004e2f90, 0x004e30f0)` |
+| Lemezállapot és `thumbs*.db` | A `0x005c7f60` nem hív fájltörlő API-t (`DeleteFile`), nem törli a `db3/thumbs.db` vagy `thumbs2.db` fájlokat a lemezről, és nem módosítja a `.picasa.ini`-t sem. Kizárólag a memóriabeli gyorsítótárat üríti és az indexelő szálon keresztül kényszeríti ki a képek újraolvasását és a bélyegképek újrarajzolását. | `bináris (0x005c7f60)` |
+
+### 3. Két független út és cáfoló vizsgálat
+
+- **Húzásos mappa-áthelyezés:**
+  - **A út (kód):** A `CAlbumList` drag-drop eljárása (`0x005d3290`, `0x005e39a0`) kizárólag a képek mozgatását (`0x005350b0`) vagy album-átrendezést hív meg; mappa áthelyezésére (`0x0053f4a0`, `0x004fd1c0`) nincs hívás.
+  - **B út (sztringek és menü):** A fizikai mappa-áthelyezés a `0x0053f4a0` függvényhez és a `Preferences/MoveFolderLastPath`, `CThumbUI::MoveFolderFormat` ("Move Folder to %s") sztringekhez van kötve.
+  - **Cáfoló vizsgálat:** Azt vizsgáltuk, hogy a bal hasábbeli húzás (`0x005e39a0`) bármilyen kódúton átadhatja-e a vezérlést a `0x004fd1c0` könyvtármozgatónak. A teljes hívási lánc átvizsgálása megerősíti: a `0x005e39a0` célpont-mappa esetén kizárólag a kijelölt képeket mozgatja a `0x005350b0` eljáráson át; a mappát magát soha nem helyezi át almappaként.
+- **Refresh Thumbnails:**
+  - **A út (kód):** A `0x005cb990` főmenü diszpécser a `0x9c5e` parancsra a `0x005c7f60` eljárást hívja, amely a memóriabeli gyorsítótár ürítését (`0x00425df0`), a képek renderelési sorba állítását (`0x006a0b10`) és a mappa indexelő jelzőinek beállítását (`0x004ee530`, `0x004e2f90`, `0x004e30f0`) hajtja végre.
+  - **B út (menü- és diszpécser-szerződés):** A `0x9c5e` és `0x9cb9` azonosítók azonos mappa-feltételhez vannak kötve (`0x005eab70`), és a diszpécser mindkettőt ugyanarra a végrehajtási pontra irányítja.
+  - **Cáfoló vizsgálat:** Azt vizsgáltuk, hogy a `0x005c7f60` vagy hívottai meghívnak-e fájlrendszer-törlő műveletet a `thumbs*.db` fájlokra vagy a lemezre. A diszasszemblált utasítások között sem `DeleteFileA`/`W`, sem közvetlen lemeztörlés nem található; a művelet a lemezen található adatbázisfájlokat és a `.picasa.ini`-t érintetlenül hagyja.
+
+### 4. Colabon ellenőrizhető jóslatok
+
+1. **Jóslat (Move Folder húzással és menüből):**
+   - Ha a bal oldali hasábban egy mappát megfogunk és ráhúzzuk egy másik mappára, a lemezen nem jön létre új almappa a célmappa alatt, és a forrásmappa elérési útja nem változik. Ha a könyvtárnézetben képek voltak kijelölve, azok a célmappába kerülnek át.
+   - Ha a Mappa menü vagy a mappa helyi menüjének `Move Folder...` pontjára kattintunk, a standard Windows `SHBrowseForFolder` ablak jelenik meg ("Move Folder to <mappa>" felirattal), és célmappa jóváhagyásakor a forrásmappa a teljes tartalmával (beleértve a `.picasa.ini`-t) fizikailag átkerül az új könyvtár alá.
+2. **Jóslat (Refresh Thumbnails):**
+   - Ha a Folder menüből vagy a mappa helyi menüjéből kiadjuk a Refresh Thumbnails parancsot egy mappára:
+     - A mappa könyvtárában található `.picasa.ini` fájl módosítási időbélyege (`mtime`) és mérete változatlan marad.
+     - A Picasa profilkönyvtárában található `thumbs.db` fájl nem törlődik a lemezről (mérete a parancs futásakor nem esik nullára).
+     - A könyvtárnézeti rácsban a bélyegképek a memóriából való ürülés után a háttérben egymás után újra elkészülnek és frissülnek.

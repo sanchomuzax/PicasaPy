@@ -17,6 +17,7 @@ TrayBar {
     required property var hostDocumentTabStrip
 
     width: parent ? parent.width : 0
+    height: visible ? implicitHeight : 0
     visible: hostWindow.libraryFrameVisible && !hostWindow.quickViewerLaunch
     appWindow: hostWindow
 

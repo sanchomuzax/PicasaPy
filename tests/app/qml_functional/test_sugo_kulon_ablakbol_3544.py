@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
@@ -64,9 +65,16 @@ def test_shift_f1_a_parbeszed_sajat_fejezetet_nyitja_elol(
     window, _controller, _engine = qml_app
     parbeszed = _nyisd_meg(window, qt_app, nev, nyito)
 
-    parbeszed.requestActivate()
-    assert QTest.qWaitForWindowActive(parbeszed, 3000), f"a(z) {nev} nem lett aktív"
-    QTest.keyClick(parbeszed, Qt.Key.Key_F1, Qt.KeyboardModifier.ShiftModifier)
+    parbeszed_ablak = (
+        parbeszed.window() if isinstance(parbeszed, QQuickItem) else parbeszed
+    )
+    parbeszed_ablak.requestActivate()
+    assert QTest.qWaitForWindowActive(parbeszed_ablak, 3000), (
+        f"a(z) {nev} nem lett aktív"
+    )
+    QTest.keyClick(
+        parbeszed_ablak, Qt.Key.Key_F1, Qt.KeyboardModifier.ShiftModifier
+    )
 
     def _sugo():
         s = parbeszed.findChild(QObject, "helpWindow")
@@ -77,7 +85,7 @@ def test_shift_f1_a_parbeszed_sajat_fejezetet_nyitja_elol(
     sugo = _sugo()
     # ELÖL: a súgó a párbeszéd átmeneti gyermeke (az ablakkezelő fölé
     # rendeli), és maga is modális — a párbeszéd modalitása nem zárja ki.
-    assert sugo.transientParent() is parbeszed, (
+    assert sugo.transientParent() is parbeszed_ablak, (
         "a súgóablak nem a párbeszédhez tartozik — mögé kerülhet")
     assert sugo.modality() == Qt.WindowModality.ApplicationModal
     belso = sugo.findChild(QObject, "helpWindowDialog")

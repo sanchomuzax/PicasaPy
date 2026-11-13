@@ -369,7 +369,9 @@ ApplicationWindow {
     readonly property bool movieMakerActive: mainProjectTabs.movieMakerActive
     property alias backToMovieMakerPrompted: mainProjectTabs.backToMovieMakerPrompted
     readonly property var openProjectTabs: mainProjectTabs.openProjectTabs
-    readonly property bool libraryFrameVisible: mainProjectTabs.libraryFrameVisible
+    property bool printViewOpen: false
+    readonly property bool libraryFrameVisible:
+        mainProjectTabs.libraryFrameVisible && !printViewOpen
     readonly property bool slideshowRunning: mainProjectTabs.slideshowRunning
     property alias backToCollagePrompted: mainProjectTabs.backToCollagePrompted
 

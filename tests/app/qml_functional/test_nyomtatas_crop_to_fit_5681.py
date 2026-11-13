@@ -111,7 +111,9 @@ def test_elso_megnyitas_crop_to_fit_es_az_elonezet_a_valasztast_koveti(
     ), "a valódi Nyomtatás párbeszéd nem épült fel"
 
     celmagassag = round(dialog.height()) + magassag_elteres
-    dialog.setProperty("height", celmagassag)
+    dialog.window().setHeight(
+        dialog.window().height() + celmagassag - dialog.height()
+    )
     assert var_feltetelre(qt_app, lambda: round(dialog.height()) == celmagassag), (
         "a párbeszéd nem vette fel a próbamagasságot"
     )

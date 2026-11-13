@@ -274,11 +274,12 @@ class TestKimenet:
         assert _pdf_oldalszam(cel.read_bytes()) == 1
 
     def test_a_siker_visszajelzese_megjelenik(self, qml_app, qt_app, tmp_path):
-        """A `printFinished` nem tűnhet el: a felhasználó lássa, hova ment."""
+        """A siker eredménye megmarad, majd a nézet visszaadja a főablakot."""
         window, _controller, _engine = qml_app
         _kijelol(window, qt_app, [0])
         parbeszed = _menubol_nyit(window, qt_app)
-        parbeszed.setProperty("pdfTarget", (tmp_path / "ok.pdf").as_uri())
+        cel = tmp_path / "ok.pdf"
+        parbeszed.setProperty("pdfTarget", cel.as_uri())
         qt_app.processEvents()
 
         QMetaObject.invokeMethod(
@@ -288,9 +289,14 @@ class TestKimenet:
         )
         qt_app.processEvents()
 
-        eredmeny = _elem(window, "printResultText")
-        assert eredmeny.property("visible") is True
-        assert str(eredmeny.property("text")).strip()
+        assert cel.is_file(), "a nyomtatás nem készítette el a PDF-et"
+        assert parbeszed.property("visible") is False
+        assert _elem(window, "mainSplit").property("visible") is True
+        assert Path(str(parbeszed.property("lastResult"))) == cel
+        kijeloles = window.property("selectedIndexes")
+        if hasattr(kijeloles, "toVariant"):
+            kijeloles = kijeloles.toVariant()
+        assert list(kijeloles) == [0]
 
 
 class TestCelpont:
@@ -465,12 +471,14 @@ class TestReszlegesKihagyas:
 
         # a jó kép kiment…
         assert _pdf_oldalszam(cel.read_bytes()) == 1
-        # …de a kimaradt lapról a felhasználó is tud
-        figyelmeztetes = _elem(window, "printSkippedText")
-        assert figyelmeztetes.property("visible") is True, (
-            "egy kép kimaradt, és a párbeszéd sikert mutatott"
-        )
-        assert romlott in str(figyelmeztetes.property("text"))
+        # …a megőrzött eredményállapot megnevezi a kimaradt képet, a
+        # sikeres nyomtatás pedig a #6888 szerint visszaadja a könyvtárnézetet.
+        kimaradt = parbeszed.property("lastSkipped")
+        if hasattr(kimaradt, "toVariant"):
+            kimaradt = kimaradt.toVariant()
+        assert romlott in list(kimaradt)
+        assert parbeszed.property("visible") is False
+        assert _elem(window, "mainSplit").property("visible") is True
 
     def test_csak_olvashatatlan_kepeknel_az_uzenet_MEGNEVEZI_oket(
         self, qml_app, qt_app, tmp_path

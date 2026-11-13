@@ -708,13 +708,11 @@ def _radio_kattint(window, qt_app, nev: str) -> None:
     kattints(window, qt_app, gyerek(window, nev))
 
 
-def _nyomtatasi_elem(nev: str):
-    """A nyomtatás-párbeszéd eleme: a párbeszéd önálló ablak, ezért minden nyitott ablakban keresünk."""
-    for ablak in QGuiApplication.topLevelWindows():
-        elem = ablak.findChild(QObject, nev)
-        if elem is not None:
-            return elem
-    raise AssertionError(f"{nev} nem található a nyitott ablakokban")
+def _nyomtatasi_elem(window, nev: str):
+    """A főablakba ágyazott nyomtatási nézet eleme."""
+    elem = window.findChild(QObject, nev)
+    assert elem is not None, f"{nev} nem található a főablak nyomtatási nézetében"
+    return elem
 
 
 class TestNyomtatasSzegelyPanel:
@@ -736,13 +734,17 @@ class TestNyomtatasSzegelyPanel:
         panel = _nyomtatas_panel_megnyit(window, qt_app)
         if _beallitas(panel, "options", kulcs) == ertek:
             # a próba feltétele: más érték álljon, mint amit a rádió ad
-            kattints(window, qt_app, _nyomtatasi_elem(masik))
+            kattints(window, qt_app, _nyomtatasi_elem(window, masik))
         assert _beallitas(panel, "options", kulcs) != ertek, "a próba feltétele: más érték áll"
 
-        kattints(window, qt_app, _nyomtatasi_elem(nev))
+        kattints(window, qt_app, _nyomtatasi_elem(window, nev))
 
         assert _varj(qt_app, lambda: _beallitas(panel, "options", kulcs) == ertek), (
             f"a(z) {nev} rádió kattintás nem írta át a(z) {kulcs} beállítást"
         )
-        kattints(window, qt_app, _nyomtatasi_elem("printOptionsCancelButton"))
+        kattints(
+            window,
+            qt_app,
+            _nyomtatasi_elem(window, "printOptionsCancelButton"),
+        )
         _zar(qt_app, nyomtatas)

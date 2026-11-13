@@ -61,6 +61,16 @@ def _kattints(elem, qt_app):
     qt_app.processEvents()
 
 
+def _allit_nezetmagassagot(dialog, celmagassag, qt_app):
+    ablak = dialog.window()
+    ablak.setHeight(
+        round(ablak.height() + celmagassag - dialog.height())
+    )
+    assert _hataridon_belul(
+        lambda: round(dialog.height()) == celmagassag, qt_app
+    ), f"a főablak tartalmi nézete nem vette fel a {celmagassag} px magasságot"
+
+
 def _megnyit(window, qt_app):
     window.setProperty("selectedIndexes", [0])
     window.setProperty("selectedIndex", 0)
@@ -93,8 +103,7 @@ def test_valodi_kattintas_es_parbeszed_ujranyitas_visszaolvassa_a_modot(
 
     alapmagassag = int(dialog.height())
     for elteres in (-5, 0, 5):
-        dialog.setHeight(alapmagassag + elteres)
-        qt_app.processEvents()
+        _allit_nezetmagassagot(dialog, alapmagassag + elteres, qt_app)
         _kattints(optimalizalt, qt_app)
         assert _hataridon_belul(
             lambda radio=optimalizalt: radio.property("checked") is True,
