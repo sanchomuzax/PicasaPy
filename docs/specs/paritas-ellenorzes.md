@@ -1174,11 +1174,11 @@ Mérés dátuma: 2026-11-12 / 2026-11-13. Hatókör: a 20 mappanézetbeli fájl-
 | Tulajdonságok | Kép helyi menüje, Alt+Enter, Nézet és Kép menü | Colab #600-#608 | #6848, #6845 (Q17, Q30) | Eltért, javítva (#6848, kiadás: 1.0.104); a menüből nyitott Properties panel egyezik | `PropertiesPanel.qml`, `PhotoContextMenu.qml` |
 | Mappaleírás szerkesztése | Mappa helyi menüje, Folder menü | Colab #613, #614 | felvevő, #6860 | Egyezik: Folder Properties ablak | `FolderPropertiesDialog.qml`, `PicasaFolderMenu.qml` |
 | Áthelyezés gyűjteménybe | Mappa helyi menüje | job-648 (az almenü: Exported Pictures, Folders, Hidden Folders, Other Stuff, Projects, Web Albums, New Collection...; a jelenlegi gyűjtemény pipált és tiltott); job-649 (Other Stuff: `P2category=Other Stuff`, a bal hasábban a mappa az Other Stuff csoportba kerül, ablak nélkül) | #6845 (`test_kereses_es_gyujtemeny_folyamatok_6845.py`) | Eltér: a PicasaPy almenüjéből hiányzik a hat beépített gyűjtemény, csak a saját gyűjtemények és a New Collection... van → #6883. A saját gyűjtemény útja (New Collection..., `P2category`, bal hasáb) működik | `FolderContextMenu.qml`, `FolderPane.qml` |
-| Indexképek frissítése | Mappa helyi menüje, Folder menü | Colab (Folder menü) | #6860 | A látható állapot egyezik; a frissítés tartalma nincs összevetve | `FolderContextMenu.qml`, `PicasaFolderMenu.qml` |
+| Indexképek frissítése | Mappa helyi menüje, Folder menü | Colab (Folder menü) | #6860, #6845 (`test_mappa_folyamat_paritas_6845.py`) | #6860: a látható állapot egyezett, új ablak nem nyílt. #6845: mindkét kattintási út frissíti a tartalmat; a módosított kép új adatai és az új fájl bekerül az indexbe és a rácsba; a `.picasa.ini` és a bal hasáb változatlan, a kijelölés megmarad. A módosított kép új, mtime/méret kulcsú cache-fájlt kap, a régi cache-fájl a méréskor megmaradt. | `FolderContextMenu.qml`, `PicasaFolderMenu.qml` |
 | Mappa rendezésének alapja | Mappa helyi menüje | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104) | `FolderContextMenu.qml` |
 | Mappa elrejtése / megjelenítése | Mappa helyi menüje | Colab #613, #614 | felvevő | Egyezik: Add Password ablak | `FolderContextMenu.qml`, `PasswordDialog.qml` |
 | Eltávolítás a Picasából | Mappa helyi menüje, Folder menü | Colab #613, #614 | felvevő, #6860 | Eltért: helyi menü javítva (#6852), Folder menü javítva (#6861), kiadás: 1.0.104 | `FolderContextMenu.qml`, `PicasaFolderMenu.qml`, `MainDialogs.qml` |
-| Mappa áthelyezése | Mappa helyi menüje, húzás | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104); a húzás nincs összevetve | `FolderContextMenu.qml` |
+| Mappa áthelyezése | Mappa helyi menüje, húzás | Colab #613, #614 | #6852, #6845 (`test_mappa_folyamat_paritas_6845.py`) | A helyi menüs út eltérése javítva (#6852, kiadás: 1.0.104). A lapos mappalistában valódi egérhúzás áthelyezi a könyvtárat és az ini-jét; az index és a bal hasáb új útvonalra frissül, a rácsban a kép az új útvonallal marad, a kijelölés üres lesz. Az eredeti húzásos művelettel való összevetés külön mérés marad. | `FolderPaneTreeRow.qml`, `FolderPane.qml` |
 | Mappa törlése | Mappa helyi menüje | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104) | `FolderContextMenu.qml` |
 | Mentés / Visszaállítás | Fájl menü, kép helyi menüje | job-641 (tiszta) | #6845 (Q08, Q09) | Save As egyezik; Save a Copy eltér: két kijelölt képből az eredeti egy másolatot készít → #6866 | `SaveDialogs.qml`, `PicasaFileMenu.qml` |
 | Kép exportálása mappába | Fájl menü, alsó tálca | Colab (Fájl menü); tálca: job-639 | #6845 (Q10); tálca: #6862 | Eltér: tiszta profillal (job-642) is a Resize to 800 pixels az alap, nálunk Use original size → #6866 | `ExportDialogs.qml`, `PicasaFileMenu.qml`, `TrayActionArea.qml` |
@@ -1203,6 +1203,21 @@ Mérés dátuma: 2026-11-12 / 2026-11-13. Hatókör: a 20 mappanézetbeli fájl-
     4. Rács: a rácsban lévő képek kijelölése nem sérül.
   - **Meglévő gyűjteménybe áthelyezés:** ha létezik egyéni gyűjtemény, az almenüben közvetlenül megjelenik annak neve (`folderContextMenuMoveToCollectionItem_<név>`). Kattintásra külön megerősítő dialógus nélkül azonnal végbemegy az áthelyezés (a `.picasa.ini` `P2category` értéke és a bal hasáb struktúrája frissül).
 - **Tesztelt lefedettség:** `tests/app/qml_functional/test_kereses_es_gyujtemeny_folyamatok_6845.py` (valódi QTest kattintásokkal, 1 és 2 kijelölt képpel, lemez- és UI-invariánsok ellenőrzésével).
+
+#### 3. Mappa áthelyezése húzással
+- **Belépési pont:** bal hasáb lapos mappalistájában az `atmozgatando` mappasor húzása a `cel` mappára. A próbát valódi `QTest.mousePress`/`mouseMove`/`mouseRelease` sorozat futtatja.
+- **Lemez:** a forrás könyvtár a cél alatt jelenik meg, a régi út eltűnik; a `.picasa.ini` bájtra azonos marad, a kép és a felirata megmarad.
+- **Index:** a kép `folders.path` útvonala az új könyvtárra változik, a régi mappasor kikerül.
+- **Bal hasáb:** a régi mappasor eltűnik, a cél alatti új sor megjelenik.
+- **Rács:** a négy kép megmarad, az áthelyezett kép útvonala követi a könyvtárat. A kijelölés a művelet után üres.
+- **Tesztelt lefedettség:** `tests/app/qml_functional/test_mappa_folyamat_paritas_6845.py`; a húzás `-5`, `0` és `+5` px ablakmagasságnál is sikeres. Ez a PicasaPy működését méri; az eredeti húzásos folyamat külön összevetése még nyitott.
+
+#### 4. Indexképek frissítése (`Refresh Thumbnails`)
+- **Belépési pontok:** a mappa helyi menüje és a Folder főmenü. Mindkettőre valódi egérkattintás indítja a műveletet; új ablak nem nyílik.
+- **Lemez:** a meglévő JPEG módosítása és egy új JPEG létrehozása után a `.picasa.ini` bájtjai változatlanok.
+- **Index és rács:** a módosított kép új mtime/méret adatai frissülnek az indexben, az új fájl is bekerül; mindkettő látható a rácsban. A bal hasáb mappasora és a kétképes kijelölés változatlan marad.
+- **Bélyegkép-cache:** a módosított kép új, útvonal + mtime + méret kulcsú cache-fájlt kap. A korábbi cache-fájl a művelet után is megmarad; a frissítés nem törli azonnal a korábbi változatot.
+- **Tesztelt lefedettség:** `tests/app/qml_functional/test_mappa_folyamat_paritas_6845.py`; mindkét belépési pont `-5`, `0` és `+5` px ablakmagasságnál is sikeres.
 
 ### #6862 kiegészítés: a tálca Print és Export gombja (2026-11-13)
 
