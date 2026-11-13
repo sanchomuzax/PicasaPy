@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.107] - 2026-11-13
+
+- A bal hasáb referenciaképei a CI renderelése szerint (#6890).
+- Fix, docs, test: a Recently Updated dátumkulcsa (#6884), valamint a #6862, #6845, #6585 és #6532 mérési eredményei (#6862).
+- Fix, docs, test: a Recently Updated dátumkulcsa (#6884), valamint a #6862, #6845, #6585 és #6532 mérési eredményei (#6845).
+- Fix, docs, test: a Recently Updated dátumkulcsa (#6884), valamint a #6862, #6845, #6585 és #6532 mérési eredményei (#6585).
+- Fix, docs, test: a Recently Updated dátumkulcsa (#6884), valamint a #6862, #6845, #6585 és #6532 mérési eredményei (#6532).
+- A tömeges átnevezés leállításkor megvárja a háttérszál befejezését (#6858).
+- A Recently Updated album hétnapos tagsága a kép dátuma szerint dönt: kézi dátum vagy érvényes EXIF felvételi dátum esetén az számít, ennek hiányában vagy hibás voltánál a fájl módosítási ideje (#6884).
+
 ## [1.0.106] - 2026-11-13
 
 - Az Ajándék CD megjegyzi a Diavetítéssel együtt kapcsoló állását, és ennek megfelelően alakítja át a nem JPEG képeket (#6878).
