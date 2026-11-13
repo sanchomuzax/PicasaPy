@@ -41,8 +41,8 @@ megfelelése nincs megmérve. A PicasaPy a legkorábbi EXIF `datetime` értéket
 használja a kártyák rendezésére; a napra vetített `toordinal()` csak a csúszka
 koordinátáját képezi (38.2.111). Ez javítja a 38.2.109 korábbi állítását:
 forráskód alapján nem igazolt, hogy a PicasaPy a rendezéskor eldobja a
-napszakot. Nyitott továbbá a pontos billentyű-esemény
-és képkocka közti időzítés (38.2.104), a sliderthumb felhasználói művelete,
+napszakot. A sliderthumb felhasználói művelete és eseményútja lezárva (38.2.126).
+Nyitott továbbá a pontos billentyű-esemény és képkocka közti időzítés (38.2.104),
 valamint a kilépés utáni általános nézet és kijelölés (38.2.81-83).
 
 **A 38.2.107 pontosítása.** A `0x004b8ee0`/`0x004b8470` út `+0x148/+0x14c`
@@ -142,18 +142,19 @@ időzít, vagy hogy a fogantyú húzással mit állít.
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
 | A `0x005e8a70` út CAlbumState-elemekből indul; a qshow kártyalistáját a dátum-qword szerint növekvően rendezi (`0x007fc4c0`, `0x0049cd60`, 38.2.105). A `+0x138` sorok `+0x0c` mezőjét a `0x004b29d0` `2`-vel szűri, majd a qshow a köztes rekord `+0x30 == 1` és `+0x18 == 0` kapuit alkalmazza. A teljes CAlbumState-forráshalmaz és a numerikus kódok gyűjteménytípushoz rendelése **NINCS MEG** (38.2.111-112). | A `TimelineController.reload()` látható fotókból mappa-, valamint nem üres indexelt albumkártyákat készít. A dátum az egyes gyűjtemények legkorábbi EXIF `datetime` értéke; rendezéskor a teljes dátumot, majd a nevet és az azonosítót használja. A `toordinal()` csak a csúszka koordinátáját adja (`timeline_controller.py:218-239,269-320,357-382`). | Az eredeti qshow-sorokat és dátum-qwordot még nem kötöttük azonos mappákhoz/albumokhoz és EXIF-dátumokhoz, ezért látható sorrendi vagy gyűjteménytípus-eltérés **NINCS MEG**. A 38.2.111 korrigálja a 38.2.109 korábbi, napszak eldobására vonatkozó állítását. |
-| Az `oneup.tre` képnéző-, Exit/Timeline-, prev/next, automatikus lejátszás-, forgatás-, csillag-, átmenet-, felirat- és kijelzési idő vezérlőket sorol fel. Az overlay-rétegek között sáv, két pontgrafika és fogantyú van; a fogantyú szemantikus művelete **NINCS MEG**. | A PicasaPy jelenlegi Időrendje kártyapályát, dátumpont-sort, lapozást és OneUp-diavetítésre váltó útvonalat ad; a sliderthumb eredeti szemantikájával való megfelelés nincs igazolva. | A vezérlőút részben megfeleltethető; a sliderthumb pontos dátum-/fotóindex-hatását csak bináris út és eredeti futásidejű ellenőrzés után lehet egyezőnek vagy eltérőnek minősíteni. |
+| Az `oneup.tre` képnéző-, Exit/Timeline-, prev/next, automatikus lejátszás-, forgatás-, csillag-, átmenet-, felirat- és kijelzési idő vezérlőket sorol fel. Az overlay-rétegek között sáv, két pontgrafika és fogantyú van; a fogantyú szemantikus művelete lezárva (38.2.126): a `0x007fde80` sáv- és fogantyúhúzáskor (`+0x429 == 1`) a `0x007fdd00`-val normalizált x-arány alapján legközelebbi gyűjteményindexet választ (`[this+0x514]`, `[this+0x510]`), elengedéskor pedig a `0x007fd770`/`0x007fd0c0` úton a célkártyára animál; a háttérhúzás (`+0x428 == 1`) tehetetlenségi térbeli pásztázást végez (`speed * 0.95 + dx * c`). A fogantyú lebegtetéskor nem vált kurzort (`0x007fe540`). | A PicasaPy jelenlegi Időrendje kártyapályát, dátumpont-sort, lapozást és OneUp-diavetítésre váltó útvonalat ad; a `TimelineView.qml:277-290` `updateSliderFromX`/`releaseSlider` és a `timeline_motion.py:69-92` `slider_index`/`slider_thumb_x` az eredetivel egyező arány szerinti indexválasztást és elengedési animációt (`animateTo`) ad; a háttérhúzásra a `draggingCarousel` működik. | A sliderthumb szemantikája binárisan és funkcionálisan lezárva (38.2.126); a feliratok frissítése már húzás közben megtörténhet a PicasaPy-ban is, és az elengedési animáció ideje a távolsághoz igazítható. |
 | A `0x008032e0` és `0x00803180` gomb-, egér- és qshow-billentyűútja binárisan dokumentált (38.2.63, 38.2.101); az Exit host/callback-útja lezárva (38.2.68). A teljes billentyű-esemény/képkocka-időzítés és az általános visszatérési állapot **NINCS MEG** (38.2.104, 38.2.81-83). | A jelenlegi `TimelineView.qml` aktív Időrend-nézetet, lapozást és billentyűkezelést tartalmaz; forrás: `TimelineView.qml:82-115,393-406`. | A statikus kezelőutak ismertek; az eredeti és a PicasaPy futásidejű eseményidőzítését szinkron felvétel nélkül ne tekintsük egyezőnek vagy eltérőnek. |
 | A `thumbui/timelinebutton` akciónév létezik, de a csomagolt `thumbui.tre` rejtettnek jelöli (`m_hidden`); a súgó „Timeline view of all your photos”. | Nincs aktív főablaki Időrend-eszköztárgomb. | Az eredeti főablaki gomb láthatóságát ne következtessük ki a parancs létezéséből; ehhez futó Picasa-képernyőkép kell. |
 
 **Cáfoló kísérlet.** Megpróbáltam cáfolni azt az értelmezést, hogy a `timeline`
-sáv és a `sliderthumb` együtt fotó-/dátum-kereső csúszkát alkot. A teljes
-`oneup.tre`/`oneuptext.tre` leltárban nincs hozzájuk esemény- vagy értékkötés;
-a `0x007fb210` a rétegeket tölti be és az x-koordinátákat skálázza, míg
-a vizsgált `0x00803180`/`0x008032e0` eseményutak azonosíthatóan a görgőt és a
-megnevezett oneup-gombokat kezelik. Ez nem cáfolja, hogy közös alaposztályban
-vagy másik függvényben van húzáskezelés, ezért a fogantyú funkciója nyitva
-maradt. A korábbi „csak év/hónap-rács” magyarázatot a két független út
+sáv és a `sliderthumb` együtt fotó-/dátum-kereső csúszkát alkot. A korábbi
+vizsgálatban a `oneup.tre` nem mutatott közvetlen értékkötést; a teljes
+`QDrawable` eseményút feltárása viszont megerősítette a keresőcsúszka modellt:
+a `0x007fde80` a sávon belüli egérnyomást (`+0x429 = 1`) és húzást a
+`0x007fdd00` indexválasztóhoz rendeli, míg a felengedés a `0x007fd770`
+útján indítja az animációt. A csúszka húzása közben a 3D kameramozgás
+cáfoltan nem fut azonnal, csak a mutató és a fókusz-rekord frissül (38.2.124).
+A korábbi „csak év/hónap-rács” magyarázatot a két független út
 (`0x005e8a70`→oneup/overlay és az önálló erőforrás-leltár) cáfolja; ez viszont
 nem dönti el a bemutató képkockáinak tartalmát.
 
