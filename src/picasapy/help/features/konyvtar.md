@@ -134,6 +134,29 @@ frissíti**. Ez szándékos: a fájl módosítási idejét sok minden átírja
 rács elejére, hol a végére ugrott volna, a mappa fejléc-dátuma pedig
 elmozdult volna. Aminek van EXIF-felvételi ideje, arra ez nem hat.
 
+### A mappa fejlécének gombjai
+
+A mappa fejlécének jobb oldalán gombok állnak (hogy melyikek, azt az
+**Eszközök ▸ Gombok konfigurálása…** dönti el, lásd
+[Beállítások](beallitasok.md)):
+
+- Csillaggomb (súgója: **Csillagozott képek kijelölése**) - kijelöli a
+  mappa csillagozott képeit. Ha a mappában nincs csillagozott kép, a
+  gomb szürke.
+- **Mentés** - a kijelölt képek el nem mentett szerkesztéseit, illetve
+  forgatását írja a lemezre. Szürke, ha nincs mit menteni. Egy kép
+  elforgatása után azonnal használható.
+- Kollázsgomb - ha a mappában kijelöltél képeket, azokból nyit kollázst;
+  kijelölés nélkül a mappa összes képéből. Lásd [Kollázs](kollazs.md).
+- **Feltöltés** - a mappa összes képét feltölti a Google Fotókba, lásd
+  [Feltöltés a Google Fotókba](google-fotok.md). Mellette egy kis
+  nyílgomb (súgója: **Online opciók**) menüt nyit: a **Szinkronizálás
+  engedélyezése** tétel ugyanúgy a mappa feltöltését indítja, mint a
+  **Feltöltés** gomb. A menü többi tétele (láthatóság, méret, **Csak
+  csillagozott képek**, **Megtekintés online**, **Online állapot
+  frissítése**, **URL-cím másolása**, **Online album törlése**) szürke:
+  ezek a Picasa megszűnt online albumaihoz tartoztak, és nem működnek.
+
 ### A mappa tulajdonságai
 
 A mappa sorára jobbgombbal kattintva a **Mappaleírás szerkesztése…**
@@ -179,9 +202,9 @@ Megnyílik a **Mappa tulajdonságai** ablak az új mappa adataival: a neve
 **Névtelen**, a dátuma a kijelölt kép dátuma. Ezeket átírhatod, és itt a
 helyet, a leírást és a zenét is megadhatod. Az **OK** után a program a
 mappa mellé, **ugyanabba a szülőmappába** új mappát hoz létre, és a
-kijelölt képtől a mappa végéig minden képet átköltöztet bele. Ha a név
-már foglalt, a program számot tesz a végére (`_1`, `_2` …). A **Mégse**
-semmit nem változtat.
+kijelölt képtől a mappa végéig minden képet átköltöztet bele, majd
+átvált az új mappára. Ha a név már foglalt, a program számot tesz a
+végére (`_1`, `_2` …). A **Mégse** semmit nem változtat.
 
 A tétel csak mappában látszik - albumban és Emberek albumban nem.
 
@@ -258,9 +281,10 @@ több albumban is szerepelhet.
 
 - Új albumot a **Fájl ▸ Új album…** (Ctrl+N) paranccsal vagy a képek
   helyi menüjének **Új album…** tételével hozol létre a kijelölt
-  képekből. A program **nem kérdez nevet**: azonnal készít egy
-  **Névtelen** albumot a kijelölt képekből. A nevet utólag bármikor
-  átírod (lásd lentebb). Kijelölés nélkül nem történik semmi.
+  képekből. Megnyílik az **Album tulajdonságai** ablak (a név mezőben
+  **Névtelen** áll); itt megadod a nevet és a többi adatot, és az
+  **OK** után készül el az album a kijelölt képekkel. A **Mégse** után
+  nem készül album. Kijelölés nélkül nem történik semmi.
 - Az eszköztár **+** gombja másképp működik, ahogy az eredeti Picasában
   is: megnyitja az **Album tulajdonságai** ablakot (a név mezőben
   **Névtelen** áll), és az **OK** után egy **üres** albumot készít, a
@@ -299,6 +323,16 @@ több albumban is szerepelhet.
 
 A **Csillagozott képek** egy állandó album: minden csillaggal megjelölt
 képet mutatja.
+
+Fölötte áll a **Legutóbb frissítve** különleges album, a neve mellett
+zárójelben a képek számával. Azokat a képeket gyűjti össze, amelyeknek
+a fájlja az elmúlt hét napban változott, legfeljebb 250 darabot; a
+legutóbb felvett kép áll legelöl. Ezt az albumot nem te állítod össze,
+és nem is törölheted: a helyi menüjében az **Album törlése** szürke,
+ahogy a **Feltöltés a Google Fotókba...** is. A helyi menü **Az összes
+kép kijelölése**, **Kijelölés törlése** és **Kiválasztás megfordítása**
+tétele a rács kijelölését állítja, az **Exportálás HTML-oldalként...**
+pedig a weboldal-exportot nyitja meg.
 
 ### Az album nevének és adatainak átírása
 
@@ -607,14 +641,15 @@ program a régi dátumot látja.
 
 A jobb oldali fiók (a **Ctrl+0**-val, vagy a fiók szélén lévő keskeny,
 nem látható sávra kattintva nyitod és zárod) **Tulajdonságok** panelje
-(**Alt+Enter**, vagy a képtálca panelkapcsolójáról) a kijelölt kép adatait mutatja. Legfelül a **Fájl
-útvonala**, a **Fájlméret** és a **Méretek** áll, alattuk a felvétel adatai:
+(**Alt+Enter**, vagy a képtálca panelkapcsolójáról) a kijelölt kép adatait mutatja. A panel
+címe a kép nevével kezdődik („*kep.jpg* tulajdonságai:"). Legfelül a
+**Hely** (a fájl útvonala), a **Fájlméret** és a **Méretek** áll, alattuk a felvétel adatai:
 a **Fényképezőgép gyártmánya** és **típusa**, a felvétel és a digitalizálás
 ideje, a **Fájl dátuma**, a tájolás, a **Vaku** állása, az **Objektív**
 neve, a **Fókusztávolság**, a **CCD szélessége**, az **Exponálási idő**, a
 **Rekesz**, az **F-érték**, az ISO, a **Fehéregyensúly**, a **Fénymérés
 módja**, az **Exponálási program**, a **Tömörítés**, a **Színtér** és a
-**JPEG minőség**, végül a **Kulcsszavak**, a **Személycímkék** (a képen
+**JPEG minőség**, végül a **Címkék**, a **Személycímkék** (a képen
 megnevezett emberek, többször szereplő névnél a darabszámmal, például
 „Anna (2)") és a GPS-koordináták.
 
@@ -677,6 +712,10 @@ Egy képet a **Kép ▸ Elrejtés** paranccsal vagy a **kép helyi menüjének
 Elrejtés** tételével tüntethetsz el a nézetből — a fájl a lemezen marad.
 A **Kép ▸ Elrejtés** csak a kijelölés látható képeit rejti el; ha a
 kijelölésben már rejtett kép is van, azt nem hozza elő.
+A bal hasábon a mappa melletti szám csak a látható képeket számolja,
+tehát elrejtés után csökken (ha a **Nézet ▸ Rejtett képek** be van
+kapcsolva, a rejtetteket is beleszámolja). Az a mappa, amelyben már csak rejtett kép
+van, a hasábon marad, 0 darabszámmal.
 A rejtett képek előhozásához kapcsold be a **Nézet ▸ Rejtett képek**
 pontot. Visszahozni a **Kép ▸ Megjelenítés** paranccsal tudod: a
 kijelölt képek közül csak a rejtetteket teszi újra láthatóvá, a már

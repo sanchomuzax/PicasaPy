@@ -7,7 +7,9 @@ A kollázs több képből egyetlen új képet állít össze.
 Jelöld ki a képeket, majd:
 
 - **Létrehozás ▸ Képkollázs…**, vagy
-- a képtálca **Kollázs** gombja.
+- a képtálca **Kollázs** gombja, vagy
+- a rácsban a mappa fejlécének kollázsgombja: ez a mappában kijelölt
+  képekből nyit kollázst, kijelölés nélkül pedig a mappa összes képéből.
 
 Ha nincs kijelölés, a program szól: előbb jelölj ki képeket a
 könyvtárban, vagy tedd őket a képtálcára.

@@ -13,7 +13,9 @@ Beállítható:
 - **Exportálási hely** — a célmappa (**Tallózás…**).
 - **Az exportált mappa neve** — ide kerülnek a képek.
 - **Átméretezés**: **Eredeti méret használata**, vagy add meg a hosszabbik
-  oldal képpontban mért méretét. A csúszka mellett a program megírja,
+  oldal képpontban mért méretét. Ha még nincs elmentett exportbeállításod, az
+  ablak az átméretezéssel nyílik, 800 képpontra állítva, ahogy az
+  eredeti Picasa. A csúszka mellett a program megírja,
   mire számíts (kisebb fájl és némi minőségromlás, vagy nagy fájl és
   minden részlet).
 - **Képminőség**: **Automatikus** (megőrzi az eredeti képminőséget),
@@ -56,8 +58,9 @@ Beállítható:
 
 - **Weboldal címe:**,
 - **Mappa:** (**Tallózás…**) - első alkalommal előre kitöltve a
-  képmappádon belüli **Picasa HTML exportok** mappával (Windowson a
-  Dokumentumok mappádon belüli **Picasa HTML Exports** mappával). Ez csak
+  képmappádon belüli **Picasa HTML exportok** mappán (Windowson a
+  Dokumentumok mappádon belüli **Picasa HTML Exports** mappán) belül egy,
+  a megnyitott mappa nevét viselő almappával. Ez csak
   javaslat: a mappát a program csak az **Exportálás** gombra kattintva
   hozza létre, és bármikor átírhatod.
 - a **sablonlista**: a kész oldal kinézete (lásd lentebb),

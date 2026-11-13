@@ -5,7 +5,9 @@ A collage combines several photos into one new image.
 ## Start a collage
 
 Select photos, then use the collage command under **Create** or the
-**Collage** button in the photo tray. If nothing is selected, PicasaPy
+**Collage** button in the photo tray. The collage button in the folder
+header in the grid opens a collage from the photos selected in that
+folder, or from all of its photos when nothing is selected. If nothing is selected, PicasaPy
 asks you to select photos in the library or add them to the tray.
 
 The collage opens on its own tab with the editor panel on the left.

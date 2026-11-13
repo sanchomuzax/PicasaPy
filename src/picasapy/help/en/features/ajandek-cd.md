@@ -39,8 +39,11 @@ panel, but the Photo Tray contents are kept.
 ### Name the Gift CD
 
 - **CD Name** becomes the disc's name and can contain up to 16 characters.
-  The field prevents longer names. If you leave it empty, the file name is
-  also used as the disc name.
+  The field prevents longer names. When the panel opens, it contains the
+  open folder's name; you can change it. If you leave it empty, the file
+  name is also used as the disc name.
+- **Include Slideshow** appears selected. It does not yet affect what
+  goes on the disc.
 
 On the right, **Burn Disc** starts the operation. **Cancel** returns to the
 library, like Add More...; neither action clears the Photo Tray.

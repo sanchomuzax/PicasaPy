@@ -2,6 +2,60 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-13
+
+### Upload to Google Photos
+
+- You can upload a whole folder or one of your own albums: use
+  **Upload to Google Photos...** in its context menu in the left pane.
+- The green upload button in the photo tray is no longer disabled when
+  you are signed out: it starts sign-in first, then uploads
+  automatically.
+- The **Upload** button in the folder header in the grid uploads the
+  folder's photos; a small arrow button next to it opens the **Online
+  options** menu. See [Upload to Google Photos](features/google-fotok.md).
+
+### Library and albums
+
+- The special **Recently Updated** album now appears at the top of the
+  **Albums** group: pictures that changed in the last seven days. See
+  [The Library](features/konyvtar.md).
+- **File** ▸ **New Album...** and **New Album...** in the picture's
+  context menu open **Album Properties** and create the album only after
+  you click **OK**.
+- The folder header's star button is disabled when the folder has no
+  starred pictures; the collage button opens a collage from the selected
+  pictures (or the whole folder when nothing is selected); **Save**
+  becomes available right after you rotate a picture.
+- After hiding pictures, the folder count in the left pane includes only
+  visible pictures, and a folder that contains only hidden pictures no
+  longer disappears.
+- After **Split Folder Here...**, the program switches to the new
+  folder.
+- The **Properties** panel title shows the picture's name; the path row
+  is now **Location** and the keywords row is **Tags**.
+
+### File operations
+
+- After deleting a picture, the next picture is selected; **Copy Full
+  Path** appears only when a single picture is selected.
+- The confirmation for removing a folder from PicasaPy names the folder
+  even when started from the menu, with the Picasa logo before it. When
+  moving a folder, you choose the destination in the **Browse for
+  Folder** window. See [File operations](features/fajlmuveletek.md).
+- **File** ▸ **Save a Copy** copies only the highlighted picture when
+  several are selected. See [Saving](features/mentes.md).
+
+### Export and more
+
+- Without saved settings, folder export opens with resizing to 800
+  pixels; the HTML page export's destination folder is named after the
+  open folder. See [Export](features/exportalas.md).
+- The Gift CD name is filled in with the open folder's name. See
+  [Gift CD](features/ajandek-cd.md).
+- **Copy All Effects** warns you to choose one picture when several are
+  selected. See [Batch editing](features/csoportos-szerkesztes.md).
+
 ## 2026-11-12
 
 ### File operations

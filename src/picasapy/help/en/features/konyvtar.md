@@ -64,6 +64,15 @@ The folder date appears in the folder header in the grid. It comes from the earl
 
 The program records the file time the first time it scans the picture and does not update it later. This is intentional: many things change a file's modification time, such as saving, copying, or using another program. Without a fixed value, the same picture could jump from the beginning of the grid to the end, and the date in the folder header could move. This does not affect pictures that have an EXIF capture time.
 
+### Folder header buttons
+
+Buttons sit on the right side of the folder header. Which ones appear is set with the button configuration command under **Tools** (see [Settings](beallitasok.md)):
+
+- The star button (tooltip: **Select starred photos**) selects the folder's starred pictures. It is disabled when the folder has no starred pictures.
+- **Save** writes unsaved edits and rotations of the selected pictures to disk. It is disabled when there is nothing to save, and becomes available right after you rotate a picture.
+- The collage button opens a collage from the pictures selected in the folder, or from all of the folder's pictures when nothing is selected. See [Collages](kollazs.md).
+- **Upload** uploads all of the folder's pictures to Google Photos; see [Upload to Google Photos](google-fotok.md). The small arrow button next to it (tooltip: **Online options**) opens a menu. **Enable Sync** starts the same folder upload as the **Upload** button. The other items (visibility, size, **Starred Images Only**, **View Online**, **Refresh Online Status**, **Copy URL**, and **Delete Online Album**) are disabled: they belonged to Picasa's discontinued online albums and do not work.
+
 ### Folder Properties
 
 Right-click a folder row and choose **Edit Folder Description...**, or open the folder and choose **Folder** ▸ **Edit Folder Description...**, to open **Folder Properties**. Its fields are:
@@ -81,7 +90,7 @@ Album Properties opens in the same window (see below). The **Place taken (option
 
 If pictures from two events are mixed in one folder - for example, a trip and then a birthday - you can split the folder in two. Select the picture that should start the new folder, right-click it, and choose **Split Folder Here...**.
 
-**Folder Properties** opens with the new folder's details. Its name is **Untitled**, and its date is the selected picture's date. You can change these and enter a location, description, or music. After you click **OK**, the program creates a new folder next to the current one, in the same parent folder, and moves every picture from the selected one to the end of the folder into it. If the name is already taken, the program adds a number (_1, _2, and so on). **Cancel** makes no changes.
+**Folder Properties** opens with the new folder's details. Its name is **Untitled**, and its date is the selected picture's date. You can change these and enter a location, description, or music. After you click **OK**, the program creates a new folder next to the current one, in the same parent folder, and moves every picture from the selected one to the end of the folder into it, then switches to the new folder. If the name is already taken, the program adds a number (_1, _2, and so on). **Cancel** makes no changes.
 
 This command is available only in a folder, not in an album or a People album.
 
@@ -123,13 +132,15 @@ At the top and bottom of the grid scrollbar there is a double arrow: **Previous 
 
 An album does not move files; it is just a collection of pictures. The same picture can appear in several albums.
 
-- Create an album from the selected pictures with **File** ▸ **New Album...** (Ctrl+N), or choose **New Album...** from the pictures' context menu. The program does not ask for a name; it immediately creates an **Untitled** album from the selected pictures. You can rename it later (see below). Nothing happens if no pictures are selected.
+- Create an album from the selected pictures with **File** ▸ **New Album...** (Ctrl+N), or choose **New Album...** from the pictures' context menu. **Album Properties** opens (the name field says **Untitled**). Enter the name and other details; the album is created with the selected pictures only after you click **OK**. **Cancel** creates no album. Nothing happens if no pictures are selected.
 - The toolbar's **+** button works differently, just as it does in the original Picasa: it opens **Album Properties** (the name field says **Untitled**) and, after you click **OK**, creates an empty album without the selected pictures. Add pictures later, for example by dragging them in. While the album is empty, PicasaPy keeps it only in its own database and does not touch any folder's <code>.picasa.ini</code>. The album belongs to a picture folder: the folder open in the left pane, or in Timeline, search results, or an album view, the selected picture's folder (or the highlighted picture's folder when nothing is selected). If there is no such folder, or it is not part of the library, the program says “An album must be saved in an indexed photo folder.” and no album is created. When you add the first picture, the album and its details are written to that picture folder's <code>.picasa.ini</code>, like any other album. An empty album can also be renamed, edited, and deleted.
 - Add a picture to an existing album from the **Add to Album** submenu in its context menu. You can also use the album button on the Picture Tray, which opens a menu even when you do not have any albums of your own. Its rows are **Screensaver** (adds the selected pictures to the screensaver; see [Screensaver](kepernyovedo.md)), **Starred photos** (toggles the selected pictures' stars), your own albums, and **New Album...**. The last command opens **Album Properties** and, after you click **OK**, creates an album in the open folder with the selected pictures.
 - Remove a picture with **Remove from Album**. The program asks for confirmation in a window called **Remove Items**; its button says **Remove Image** or **Remove Images** when several pictures are selected. The file is untouched; the picture is only removed from the album. You can turn off the confirmation in **Settings** ▸ **General** with “Remove from album without confirmation.”
 - Drag pictures onto an existing album row to add them to that album. If you do not have any albums yet, a row under **Albums** says “You can drag and drop pictures here to make a new album.” Drop pictures there to create an album from them. While dragging, the destination row turns blue to show where the pictures will go.
 
 **Starred photos** is a permanent album that shows every picture marked with a star.
+
+Above it is the special **Recently Updated** album, with the number of pictures in parentheses after its name. It collects pictures whose files changed in the last seven days, up to 250; the most recently added picture comes first. You do not build this album yourself and cannot delete it: in its context menu, **Delete Album** is disabled, as is **Upload to Google Photos...**. The context menu's **Select All Pictures**, **Clear Selection**, and **Invert Selection** commands change the selection in the grid, and **Export as HTML Page...** opens the web page export.
 
 ### Changing an album's name and details
 
@@ -273,7 +284,7 @@ Writing the EXIF date works for JPEG pictures. For files that cannot store a dat
 
 ## The Properties panel
 
-The right-hand drawer opens and closes with Ctrl+0 or by clicking its narrow, normally invisible edge. Its **Properties** panel (also available with Alt+Enter or from the Picture Tray panel switch) shows details for the selected picture. At the top are **File Path**, **File Size**, and **Dimensions**. Below are capture details: **Camera Make**, model, capture and digitized dates, **File Date**, orientation, **Flash**, the **Lens** name, **Focal length**, **CCD Width**, **Exposure Time**, **Aperture**, **F Number**, ISO, **White balance**, **Metering Mode**, **Exposure Program**, **Compression**, **Color Space**, and **JPEG Quality**. The panel ends with **Keywords**, **People Tags** (the people named in the picture, with a count when a name appears more than once, such as “Anna (2)”), and GPS coordinates.
+The right-hand drawer opens and closes with Ctrl+0 or by clicking its narrow, normally invisible edge. Its **Properties** panel (also available with Alt+Enter or from the Picture Tray panel switch) shows details for the selected picture. The panel title names the picture, for example “Properties of kep.jpg:”. At the top are **Location** (the file path), **File Size**, and **Dimensions**. Below are capture details: **Camera Make**, model, capture and digitized dates, **File Date**, orientation, **Flash**, the **Lens** name, **Focal length**, **CCD Width**, **Exposure Time**, **Aperture**, **F Number**, ISO, **White balance**, **Metering Mode**, **Exposure Program**, **Compression**, **Color Space**, and **JPEG Quality**. The panel ends with **Tags**, **People Tags** (the people named in the picture, with a count when a name appears more than once, such as “Anna (2)”), and GPS coordinates.
 
 Right-click the panel to open its only command, **Edit Tags**, which opens the Tags panel.
 
@@ -297,7 +308,7 @@ The same applies to **White balance**: it shows **Auto** or **Manual**, and disp
 
 ## Hidden pictures
 
-Hide a picture with **Picture** ▸ **Hide** or **Hide** in its context menu. The file stays on disk. **Picture** ▸ **Hide** hides only visible pictures in the selection; if the selection already contains a hidden picture, it does not reveal it.
+Hide a picture with **Picture** ▸ **Hide** or **Hide** in its context menu. The file stays on disk. **Picture** ▸ **Hide** hides only visible pictures in the selection; if the selection already contains a hidden picture, it does not reveal it. The count next to a folder in the left pane includes only visible pictures, so it goes down after you hide pictures (with **View** ▸ **Hidden Pictures** turned on, it includes hidden ones too). A folder that contains only hidden pictures stays in the pane with a count of 0.
 
 To show hidden pictures, turn on **View** ▸ **Hidden Pictures**. Use **Picture** ▸ **Unhide** to reveal them. This reveals only hidden pictures in the selection; pictures that are already visible are not hidden. This command is available only if the selection contains a hidden picture; otherwise it is disabled. The picture's context menu has the same command, which changes to **Unhide** in place of **Hide**.
 

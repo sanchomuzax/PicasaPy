@@ -4,6 +4,59 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-13
+
+**Feltöltés a Google Fotókba**
+
+- Egy mappa vagy egy saját album teljes tartalmát is feltöltheted: a
+  bal hasábon a helyi menü **Feltöltés a Google Fotókba...** tételével.
+- A képtálca zöld feltöltőgombja már nem szürke kijelentkezett
+  állapotban: először a bejelentkezést indítja, utána magától feltölt.
+- A rácsban a mappa fejlécének **Feltöltés** gombja a mappa képeit
+  tölti fel; mellette egy kis nyílgomb nyitja az **Online opciók**
+  menüt. Lásd [Feltöltés a Google Fotókba](features/google-fotok.md).
+
+**Könyvtár és albumok**
+
+- Az **Albumok** csoport tetején megjelent a **Legutóbb frissítve**
+  különleges album: az elmúlt hét napban változott képek. Lásd
+  [A könyvtár](features/konyvtar.md).
+- A **Fájl ▸ Új album…** és a kép helyi menüjének **Új album…** tétele
+  az **Album tulajdonságai** ablakot nyitja, és csak az **OK** után
+  készít albumot.
+- A mappa fejlécének csillaggombja szürke, ha a mappában nincs
+  csillagozott kép; a kollázsgomb a kijelölt képekből (kijelölés
+  nélkül a teljes mappából) nyit kollázst; egy kép elforgatása után a
+  **Mentés** gomb azonnal használható.
+- A bal hasáb mappaszáma elrejtés után csak a látható képeket
+  számolja, és a csak rejtett képet tartalmazó mappa nem tűnik el.
+- A **Mappa felosztása itt...** után a program az új mappára vált.
+- A **Tulajdonságok** panel címe a kép nevét mutatja, az útvonal sora
+  **Hely**, a kulcsszavaké **Címkék** lett.
+
+**Fájlműveletek**
+
+- A kép törlése után a következő kép lesz kijelölve; a **Teljes
+  elérési út másolása** csak egyetlen kijelölt képnél látszik.
+- A **Mappa ▸ Eltávolítás a Picasából…** kérdése a menüből indítva is
+  megnevezi a mappát, és Picasa-logó áll előtte. A mappa áthelyezésekor
+  a cél a **Mappa tallózása** ablakban választható. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+- A **Fájl ▸ Másolat mentése** több kijelölt képnél csak a kiemelt
+  képről készít másolatot. Lásd [Mentés](features/mentes.md).
+
+**Exportálás és egyebek**
+
+- Az **Exportálás mappába** ablak elmentett beállítás nélkül 800
+  képpontos átméretezéssel nyílik; az **Exportálás HTML-oldalként**
+  célmappája a megnyitott mappa nevét viseli. Lásd
+  [Exportálás](features/exportalas.md).
+- Az **Ajándék CD** neve a megnyitott mappa nevével töltődik ki. Lásd
+  [Ajándék CD](features/ajandek-cd.md).
+- **Az összes effektus másolása** több kijelölt képnél figyelmeztet,
+  hogy egy képet válassz. Lásd
+  [Csoportos szerkesztés](features/csoportos-szerkesztes.md).
+
 ## 2026-11-12
 
 **Fájlműveletek**

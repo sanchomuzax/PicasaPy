@@ -57,7 +57,8 @@ gombra." Csak a legutóbbi mentésre hat.
 - **Fájl ▸ Mentés másként…** — a szerkesztett képet más néven, más helyre
   írja ki. JPEG és WebP formátumot kínál.
 - **Fájl ▸ Másolat mentése** — az eredeti mellé ír egy szerkesztett
-  másolatot, magától adott névvel.
+  másolatot, magától adott névvel. Ha több kép van kijelölve, csak a
+  kiemelt (fókuszban lévő) képről készül másolat.
 
 Ha a választott név foglalt, a program szól: „A fájl mentése nem
 lehetséges. Már van ilyen nevű fájl."

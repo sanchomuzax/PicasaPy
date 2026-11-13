@@ -157,7 +157,9 @@ then **Delete File** or **Delete Files**.
 
 The dialog has two buttons: the confirm button and **Cancel**.
 The **Cancel** button has focus when the dialog opens, so pressing
-`Enter` by accident does not delete anything. The option **Don't ask
+`Enter` by accident does not delete anything. After deleting, the
+program selects the next picture in place of the deleted ones, so you
+can continue in the grid. The option **Don't ask
 again, always remove** turns off future confirmations. The same
 preference can be changed under **Tools** ▸ **Options** ▸ **General**.
 
@@ -188,11 +190,14 @@ Other context-menu commands include:
   associated with the file type; choose **Open With...** to select one
   in a dialog, then choose **Open**. If none is associated, the dialog
   says so. The viewer's **Open With** command is not implemented yet.
-- **Copy Full Path** copies the file path to the clipboard.
+- **Copy Full Path** copies the file path to the clipboard. It appears
+  only when a single picture is selected.
 
 ## Folders
 
-The folder context menu lets you move an entire folder. If the move
+The folder context menu lets you move an entire folder. You choose the
+destination in the **Browse for Folder** window, which starts in the
+folder's current parent folder and has **OK** and **Cancel** buttons. If the move
 stops, the folder remains in its original location and no incomplete
 copy remains at the destination. For one step that cannot be rolled
 back, the error explains where the contents are.
@@ -200,6 +205,8 @@ back, the error explains where the contents are.
 The delete-folder command removes the folder from disk and asks for
 confirmation because it also deletes subfolders. The remove-from-library
 command hides the folder from PicasaPy while leaving its files in place.
-It asks first in a **Confirm** window that shows the folder's full path.
+It asks first in a **Confirm** window with the colorful Picasa logo
+before the question, which shows the folder's full path. The same
+question appears when you start from the folder's context menu.
 The two buttons are **Remove Folder** and **Cancel**; **Remove Folder**
 has focus, so `Enter` removes the folder.
