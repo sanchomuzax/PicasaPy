@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.109] - 2026-11-13
+
+- A háttérmunkák lezárása és hibajelzése a főszálon fut, így a háttérszál nem okoz összeomlást a szemétgyűjtés közben (#6858).
+- A mappa helyi menüjének Move to Collection almenüjéből a hat beépített gyűjtemény is választható, a mappa jelenlegi gyűjteménye pipával jelölt (#6883).
+- A tálca Print gombja és a Fájl > Print a főablakon belül nyitja meg a nyomtatási nézetet, amelyből a Cancel, az Escape vagy a nyomtatás befejezése után visszatér a könyvtárnézetbe (#6888).
+- A mappa-fejléc film gombja legalább két kijelölt képnél csak a kijelölteket, kevesebbnél a teljes mappát adja a Filmkészítőnek, ahogy az eredeti (#6889).
+- Az üres Recently Updated album sora nem jelenik meg a bal hasábban, és tartalom érkezésekor azonnal láthatóvá válik (#6892).
+
 ## [1.0.108] - 2026-11-13
 
 - Az új mappa útvonalát a windowsos rövid és hosszú név szerint is azonosnak veszi (#6894).
