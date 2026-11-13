@@ -3524,3 +3524,105 @@ Nyitott kérdések: 4 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kív�
 ##### Bizonyítottság
 
 **Megerősített:** a `0x007fe600` teljes lépésképlete (időlépés, pozíció, körbefordítás, véletlen járás, rekordszám, bélyegfrissítés) két úton: utasításolvasat és az eredeti gépi kód futtatása, 19 200 bitre egyező érték a hosszú pályákon, a hat átírásos kontroll eltérést ad. **Feltételes:** a rajzút leképezése, a hívás üteme, a `Ctrl+F`/`Ctrl+B` külön jelentése, a futó program FPU vezérlőszava és teljesítményszámlálója (a mérés vezérelt teljesítményszámlálóval és hamis szálblokkal futott, a rekordok kézzel épültek; Windows alatti futás nem volt).
+
+#### 38.2.200 Colab-mérésterv a #6532 látható, nyitott pontjaihoz (#6532, 2026-11-13)
+
+**Hatókör és állapot.** Ez a szakasz mérésterv, nem mérés: új eredeti-Picasa képernyőkép vagy felvétel ebben a körben nem készült, a feladatokat nem adtam fel (a feladást a hívó végzi). A §38.2.127 és a §38.2.160 azon látható pontjait fedi, amelyeket statikusan nem lehet eldönteni: (1) a Space első fotója és a szünetelés, (2) a Ctrl+Space látható hatása, (3) a `Preparing timeline...` betöltésjelző, (4) az Escape utáni szülőnézet-kijelölés. Nyolc feladat-JSON készült a munkafa `.bt/colab-6532/` mappájában (a mappa nem része a repónak; a lépéssorok az alábbi táblázatban teljesen olvashatók, tehát a fájlok újra előállíthatók). Mind a bevált job-239/241/373 vázat követi: `"indulas": "alapallapot"`, `"wine_desktop": true`, `"mintakeszlet": "idorend"`, `"kimenet": ["kepernyokep", "allapot"]`, és három tíz másodperces várakozással indul (a job-241 `allapot.json`-ja szerint a 2-4. kép dhash-e azonos, tehát a könyvtár az első várakozás végére betöltött). A JSON-okat a végrehajtó szabályainak tükrével ellenőriztem (a `v3` mezők, a billentyűminta, `var` > 0 és legfeljebb 10, legfeljebb 40 lépés, a felvételek összege legfeljebb `keret.perc * 60 - 120` mp): mind a nyolc érvényes.
+
+##### 1. Amit a végrehajtó nem enged, és a terv ehhez igazodik
+
+**Cáfoló kísérlet (15.2).** Első célpontom az volt, hogy a betöltésjelző „sűrű képernyőképekkel” mérhető-e, ahogy a feladat kérte. A végrehajtó forrása ezt cáfolja:
+
+- Minden lépés ELŐTT készül egy képernyőkép és egy állapotrekord: az N. kép az (N-1). lépés utáni állapot, az utolsó kép a záró lépés, annak 1,0 s szünete és még 2 másodperc várakozás után készül.
+- Minden lépés UTÁN fix 1,0 másodperces szünet van, ez a feladatból nem rövidíthető; a `var` értéke 0-nál nagyobb és legfeljebb 10 másodperc (a `0` érvénytelen).
+- Következmény: két kép között legalább kb. 1 másodperc és a kép elkészítésének ideje telik el, és a Ctrl+5 utáni első kép is legalább ennyivel a leütés után készül. A job-373 felvételén a 75. képkocka még a könyvtárnézet, a 76. már a teljes Időrend-panel, köztes képkocka nincs (38.2.85, 15 kép/mp, azaz 67 ms felbontás). Ha a betöltésnek van látható szakasza, az ennél rövidebb, ezért képernyőképpel nem kapható el; az egyetlen eszköz a `felvetel` lépés (15 kép/mp, legfeljebb 180 s). A leütés és a panel megjelenése közti idő így sem mérhető, mert a leütés időpontja nincs a felvételen (38.2.85).
+- A „rögtön Escape” a következő lépés, vagyis a Ctrl+5 után legalább 1,0 s + a kép ideje múlva érkezik. A megnyitó átmenet (38.2.85: 1,000 s) KÖZBEN küldött Escape ezzel a végrehajtóval nem kérhető; a 02b feladat a legkorábbi elérhető Escape-et méri, a felvétel megmutatja, hol érkezik az átmenethez képest.
+
+A betöltésjelzőhöz ezért nincs „sűrű képernyőkép” feladat: a 03a felvételre épül. A séma ellenőrzése is megtörtént: a `ctrl+space` megfelel a végrehajtó billentyűmintájának (`ctrl+` módosító és `space`), a `kattint [90, 311]` pedig a 1280×1024-es képernyőn belül van.
+
+##### 2. A nyolc feladat
+
+A „kép N” mindenhol a végrehajtó N. képernyőképe (az N. lépés előtti állapot). A táblázat a három kezdő `var 10` utáni lépéseket adja; a `keret.perc` a harmadik oszlopban.
+
+| Fájl (`6532-<név>.job.json`) | Lépéssor a kezdő várakozások után | Perc | Mit dönt el |
+|---|---|---:|---|
+| `01a-space-2019-marcius` | `ctrl+5`, 3, `Right`, 2.5, `Right`, 2.5, `space`, 2.5, 3, 4, `space`, 2.5, 3, `space`, 2.5, 4, `Escape`, 2, 2 | 15 | Space első fotója és szünetelése a 7 képes kártyán; a második és a harmadik Space |
+| `01b-space-2014-november` | `ctrl+5`, 3, `Right`, 2.5, `space`, 2.5, 4, `Escape`, 2, 2 | 12 | az első fotó a 3 képes kártyán; kijelölés Space+Escape után |
+| `01c-space-picasateszt` | `ctrl+5`, 3, négyszer (`Right`, 2.5), `space`, 2.5, 4, `Escape`, 2, 2 | 12 | az első fotó a 24 képes, felismerhető képű gyűjteményen |
+| `01d-ctrl-space` | `ctrl+5`, 3, `Right`, 2.5, `ctrl+space`, 2.5, 4, `space`, 2.5, 3, `Escape`, 2, 2 | 12 | a Ctrl+Space látható hatása |
+| `02a-visszateres-mappafokusz` | `kattint [90,311]` (2019_marcius), 2, `ctrl+5`, 3, `Right`, 2.5, `Left`, 2.5, `Escape`, 2, 2 | 12 | kijelölés valódi mappafókuszból, Right+Left után |
+| `02b-visszateres-azonnali-escape` | `kattint [90,311]`, 2, `felvetel 30`, `ctrl+5`, `Escape`, 2, 2 | 12 | kijelölés a legkorábbi Escape után, felvétellel az időzítéshez |
+| `02c-visszateres-album-es-gyujtemeny` | `ctrl+5`, 3, négyszer (`Right`, 2.5), `Escape`, 2, 2, `ctrl+5`, 4, ötször (`Right`, 2.5), `Escape`, 2, 2 | 15 | kijelölés a PicasaTeszt és a Recently Updated kártyáról, fókusz nélkül |
+| `03a-betoltesjelzo-felvetel` | `felvetel 100`, 10, 4, háromszor (`ctrl+5`, 5, `Escape`, 3) | 15 | látszik-e a betöltésjelző hideg és ismételt belépéskor |
+
+A `kattint [90, 311]` a bal oldali mappafa `2019_marcius (7)` sora (a job-241 `kepernyo__04.png` és `kepernyo__14.png` képéről: a sorok y értéke `PicasaTeszt` 223, `2021_eltero_fajlido` 267, `2019_marcius` 311, `2014_november` 355, `2009_majus` 399). A kezdő állapot a job-241 `kepernyo__04.png`-jén nincs kijelölt mappa; a `kepernyo__14.png` mutatja, hogyan néz ki a kijelölés: sötét sor a mappafában, kék keretes bélyegkép, a fájlnév az alsó állapotsorban.
+
+##### 3. Pontonként: jóslat a bináris alapján és mi cáfolná
+
+**3.1 Space első fotója és szünetelése (01a, 01b, 01c).**
+
+- *Bináris alap.* A `0x00801270` Space-ága a `[this+0x3bb]` állapotától függően a `0x00801130` váltóhoz vagy a `0x00803110` OneUp-objektumváltóhoz jut (38.2.127 §2); a `0x00803110` nem ad át fotóindexet vagy rekordazonosítót (38.2.160 §2), tehát a kezdőkép nem a qshow hívásparamétere. A job-373 felvételen az első Space szünetelő felületet hozott, az 1/7 kép 15,5 másodpercig pixelre azonos maradt (38.2.150 4. pont); a job-240 3 és 8 másodpercnél azonos képet adott (38.2.82).
+- *Jóslat.* A vetítés a kártya gyűjteményének első fotójával indul és szünetel: 01a kép 11-14: `1/7`, `2019-03-08 09:15`, a felirat `Exit Slideshow`, `Timeline`, `Display Time 3 seconds`, a négy kép pixelre azonos; 01b kép 9-11: `1/3`, `2014-11-02 15:30`; 01c kép 15-17: `1/24`. A 01c képazonosságára nincs bináris jóslat (a PicasaTeszt képein nincs beleégetett felirat): a 24 kép könyvtári sorrendjét a job-241 `kepernyo__04.png` adja, ebből látszik, hogy a vetítés a könyvtári sorrend, a dátum vagy a fájlnév szerint indul. Az Escape utáni kép (01b 12-14, 01c 18-20, 01a 21-23): a Space előtti kártya mappája marad kijelölve, egyedi fotókijelölés nélkül (ahogy a job-240: 2019_marcius, 38.2.82).
+- *Kiegészítő, bináris jóslat nélkül (01a második és harmadik Space).* A `0x00801130` a `+0x3bb` állapotot váltja, de hogy a OneUp felületen ez lejátszás/szünet váltás-e, nem ismert. Munkahipotézis: a második Space elindítja a lejátszást (a 15. kép még `1/7`, a 16. és a 17. képen a sorszám nagyobb, kb. 3 másodpercenként egy kép), a harmadik megállítja (a 18-20. kép azonos).
+- *Cáfolná.* A kép 11 nem `1/7` vagy más gyűjtemény képe; a kép 11-14 között a képterületen bármilyen pixelkülönbség (nem szünetel); `n/3`, `n/24` esetén n ≠ 1; a 15-17. képek azonosak a 11-14.-kel (a Space nem váltja a lejátszást, a hipotézis téves).
+
+**3.2 Ctrl+Space (01d).**
+
+- *Bináris alap.* A Ctrl+Space ág a `[this+0x3ba]` jelzőt 1-re írja (`0x008012fb`), és nem hívja a `0x00801130`-at vagy a `0x00803110`-et (38.2.127 §2). A `0x00800a30` rajzoló a jelzőtől függő ágon a `[this+0x3c4]` képobjektumot a teljes qshow rajzterületre adja a `0x008001c0` rajzolónak (38.2.160 §1).
+- *Jóslat.* A Ctrl+Space után a OneUp felület NEM indul (nincs `Exit Slideshow` felirat, a `qshow` marad az ablaklistában), és a qshow-panel (x=340, y=272, 600×480, 38.2.85) tartalma megváltozik az alapképhez (kép 8) képest, a változás a 9-11. képen állandó. A kép tartalma (a `+0x3c4` forrása) nincs meg, ezért a jóslat csak a hatás meglétét és helyét mondja ki, nem a tartalmát.
+- *Cáfolná.* A panel pixelre azonos a 8-11. képen (a jelző ebben az állapotban nem rajzol, vagy a billentyű nem jutott el a Picasáig: a Wine/X réteg a Ctrl+Space-t elnyelheti, ezért a null eredmény csak gyenge cáfolat; a kontroll a sima Space a 11. lépésben: ha a 12-14. kép pontosan a 01b 9-11. képével egyezik, az sem bizonyítja a jelző hatását); vagy a OneUp felület megnyílik (a 38.2.127 szerinti külön ág cáfolt).
+
+**3.3 Betöltésjelző (03a).**
+
+- *Bináris alap.* A `0x005e8a70` Időrend-belépő a `Preparing timeline...` szöveggel `ytProgress` objektumot készít; a fogadó (`CThumbUI+0x278`) `+0x14` célja (`0x00566630`) a `Press ESC key on keyboard to abort` szöveget állítja, a `+0x0c` cél (`0x00566320`) a `thumbui/modalprogressfloater` és `thumbui/progressbarfill` elemeket kezeli, de csak `DAT_00d67914 != 0` esetén (38.2.160 §3). Az `idorend` készlet hat kártyát ad (öt mappa és egy album), így a feldolgozó ciklus rövid. A job-373 felvételen a könyvtárnézet és a teljes panel között nincs köztes képkocka, tehát jelző nem látszott (38.2.85).
+- *Jóslat.* Mindhárom belépésnél (hideg indítás utáni első, majd két ismételt) az utolsó tiszta könyvtárkép és az első panelkép között vagy nincs köztes képkocka, vagy a köztes képkockán se lebegő ablak, se folyamatjelző sáv, se `Preparing timeline...` vagy `Press ESC key on keyboard to abort` szöveg nem látszik.
+- *Cáfolná.* Legalább egy köztes képkocka lebegő ablakkal, folyamatjelző sávval vagy a két szöveg valamelyikével (rögzítendő: a képkockák száma, a jelző helye és mérete, melyik belépésnél látszott).
+- *Határ.* A negatív eredmény nem választja szét azt, hogy a `DAT_00d67914` kapu nulla, vagy a betöltés ennél a hat kártyánál túl gyors a jelzőhöz: csak a pozitív eredmény dönt. Az sem mérhető, hogy a könyvtárnézet a leütés után mennyi ideig áll változatlanul a panel megjelenése előtt, mert a leütés időpontja nincs a felvételen.
+
+**3.4 Escape utáni kijelölés (02a, 02b, 02c).**
+
+- *Bináris alap.* Az Escape a `0x007fb820`-on át a `ytWindow` host `0x00983270` callbackjéig jut, ami saját ablakára `WM_CLOSE` üzenetet küld; ez az út nem nevez meg mappát vagy fotót (38.2.127 §4, 38.2.160 §4). A kijelölést tehát a qshow kártyaállapota vagy a könyvtári felület állítja be, a bináris út nem. A qshow a belépéskor a nulladik kártyával indul: `0x008037e0` → `0x008018a0(0)` (38.2.83); a job-241-ben az Escape után kijelölt `2021_eltero_fajlido` mappa ellenére a második Ctrl+5 a 2009-es kártyával nyílt.
+- *Mért előzmény.* job-241 (nincs kezdő fókusz, három Right): a 2021-es mappa és első képe kijelölt. job-239 (a `Recently Updated` albumkártyán, Home/End után): a visszatérés a belépés előtti `PicasaTeszt` mappanézet, a kijelölés nem lett olvasva (38.2.81). job-240 (Space, Escape): 2019_marcius maradt kijelölve.
+- *Jóslat (02a).* A Ctrl+5 a kattintott 2019_marcius fókusz ellenére a `2009_majus` kártyával nyílik (7-8. kép), a Right a `2014_november`, a Left megint a `2009_majus` kártyára visz (11-12. kép); az Escape után (13-15. kép) a `2009_majus` mappa és első képe (`2009_majus_01.jpg` az állapotsorban) kijelölt, vagyis az Escape pillanatában látott kártya számít, nem a belépési fókusz.
+- *Jóslat (02b).* Navigáció nélkül ugyanaz a szabály: a 9. képen a `2009_majus` mappa és első képe kijelölt. A felvétel megmutatja, a Ctrl+5 leütéséhez képest mikor tűnik el a qshow.
+- *Jóslat (02c).* A PicasaTeszt kártya után (kép 14, Escape: 15-17): a `PicasaTeszt` mappa és első képe kijelölt. A `Recently Updated` albumkártya után (kép 29, Escape: 30-32) bináris jóslat nincs, mert az album nem mappa: két lehetőség van, vagy a `Recently Updated` sor jelölődik ki az Albums alatt, vagy a mappafában nincs sötét sor (a job-239 a belépés előtti nézetet mutatta). A második belépés nyitókártyája (kép 19) a jóslat szerint újra `2009_majus`.
+- *Cáfolná.* 02a: a `2019_marcius` marad kijelölve (a belépési fókusz tér vissza), vagy a qshow nem nyílik meg (a 7-8. képen nincs `qshow` az ablaklistában; ekkor a Right és a Left a könyvtárban mozgat, és a feladat a „mappafókusz gátolja a belépést” kérdést dönti el; a job-241 második belépése 2021-es fókusszal megnyílt, a job-240 második belépése a OneUp utáni 2019-es fókusszal nem). 02b: a kijelölés eltér a 02a-étól (a közbeni navigáció számít). 02c: a PicasaTeszt kártya után más mappa jelölődik ki.
+
+##### 4. Olvasási rend (a kiértékeléshez)
+
+- **Kijelölés** a képernyőképen: (a) sötét sor a bal oldali mappafában, (b) kék keretes bélyegkép, (c) az alsó állapotsor fájlneve (minta: job-241 `kepernyo__14.png`).
+- **Szünetel-e:** a OneUp-képterület `ImageChops.difference(a, b).getbbox()` értéke a 01a 11-14., a 01b 9-11., a 01c 15-17. képek között; `None` = pixelre azonos.
+- **Ctrl+Space:** a qshow-panel (340, 272, 600×480) vágásának különbsége a 01d 8. és 9-11. képe között; a `qshow` jelenléte az `allapot.json` ablaklistájában.
+- **Videó (03a, 02b):** felbontás képkockákra, másodpercenként 15 képpel; a Ctrl+5 leütését a felvétel nem rögzíti (38.2.85), ezért a belépés pillanata az utolsó tiszta könyvtárkép és az első panelkép. A keresés a TELJES képre vonatkozik, mert a lebegő folyamatjelző a főablakban lenne, nem a 600×480-as panelben; a köztes képkockákat az előző könyvtárképhez kell hasonlítani a panelen kívüli területen.
+- A feladat jelentésében rögzítendő a végrehajtó tényleges futásideje és a képek sorszámozása; az első képek időzítése lépésenként kb. 1 másodperc és a kép elkészítési ideje, tehát a „kb. N másodperc” állítások ±0,5 másodperc pontosságúak.
+
+##### 5. Bizonyíték- és nyitottkérdés-tábla
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| A végrehajtó a lépések előtt készít képet, minden lépés után 1,0 s szünetet tart, `var` > 0. | a végrehajtó forrása (`picasa-colab-jobs` figyelő, lépésciklus és `var`-ellenőrzés) | olvasott kód, nem futtatott mérés |
+| A job-373 felvételén a könyvtárnézet és a panel között nincs köztes képkocka (75. könyvtár, 76. panel), jelző nem látszott. | mérés (job-373, 38.2.85) | korábbi mérés |
+| A Space a `0x00803110` útján indexet nem ad át; a kezdőkép nem a qshow paramétere. | bináris (38.2.160 §2) | megerősített az utasításolvasatban |
+| A Ctrl+Space a `+0x3ba` jelzőt írja, a rajzoló a `+0x3c4` képet a teljes rajzterületre adja. | bináris (38.2.160 §1, két független út) | megerősített; a kép tartalma NINCS MEG |
+| A `DAT_00d67914` kapu feltételesíti a lebegő ablakot és a folyamatjelző sávot. | bináris (38.2.160 §3) | feltételes a láthatóságra |
+| Az Escape után az utolsó látott kártya mappája és első képe kijelölt (job-241). | mérés (38.2.83) | feltételes, egy futás |
+| A 3.1-3.4 pontok jóslatai a fenti források következményei, nem mérések. | ez a szakasz | **jóslat, mérés nincs** |
+
+**A két független út.** Itt a „két út” a jóslat forrására értendő: A út a binárisból olvasott kapuk és kezelők (38.2.127, 38.2.160), B út a korábbi felvételek (job-239, 240, 241, 373). A Ctrl+Space és a betöltésjelző jóslata a bináris A útra épül, a Space-é és a visszatérésé a B útra; mindhárom pont kapja a másik utat kontrollnak a feladatokban (01b-01c a job-240/373 ellen, 02a-02c a job-241 ellen, 03a a job-373 ellen). A második út független megerősítését a mérés adja, nem ez a szakasz.
+
+**Nem tervezett, és miért.**
+
+- *Üres katalógusbeli belépés (`IDS_MUST_SELECT`).* Az `idorend` készlettel a katalógus sosem üres; a job-241 `kepernyo__01.png` üres könyvtára („No photos found”) a betöltés közbeni pillanat, így egy ott küldött Ctrl+5 eredménye nem determinisztikus, és a lépések közti 1,0 s miatt időzítve sem kérhető.
+- *A Space által átadott rekord bináris azonosítása.* A mérés csak a látható eredményt adja (melyik kép jelenik meg); a `0x00803110` rekordátadása Ghidra-kör marad ([blokkoló], 38.2.160 §6).
+- *Escape a megnyitó átmenet közben.* A végrehajtó rése miatt nem kérhető (1. rész).
+
+**Következő irány megnevezve.** (1) A hívó feladja a nyolc feladatot; javasolt sorrend a döntési értékük szerint: `02a`, `01a`, `03a`, `02c`, `01d`, `01b`, `01c`, `02b` (a végrehajtó egyszerre egyet futtat, a legkisebb jegyszám előbb). (2) Ha a `03a` negatív, a maradék statikusan dönthető: a `DAT_00d67914` íróinak és olvasóinak teljes `.text`-pásztázása (a `paszta.py` memóriakapuval, minden regiszterbázissal); ha az Időrend-belépéskor az érték mindig nulla, a lebegő ablak ebben a kiadásban sosem rajzolódik, és a PicasaPy-nak nem kell betöltésjelző. (3) A mérés után a 38.2.160 szerinti 12 nyitott A pont számát a megfelelő pontokkal kell frissíteni; ez a szakasz a pontszámot nem változtatja.
+
+Nyitott kérdések: 4 nyílt · 0 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| A Space első fotója és szünetelése az Időrendből | **NYÍLT**, terv kész | a `01a`-`01c` feladás és kiértékelés (3.1) |
+| A Ctrl+Space látható hatása | **NYÍLT**, terv kész | a `01d` feladás és kiértékelés (3.2) |
+| A betöltésjelző látható megjelenése | **NYÍLT**, terv kész | a `03a`; negatív eredménynél a `DAT_00d67914` írói (3.3) |
+| Az Escape utáni kijelölés általános szabálya | **NYÍLT**, terv kész | a `02a`-`02c` feladás és kiértékelés (3.4) |
