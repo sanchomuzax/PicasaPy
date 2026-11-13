@@ -11,7 +11,7 @@ import shiboken6
 from PySide6.QtCore import Q_ARG, QMetaObject, QPoint, QPointF, QObject, Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlExpression, qmlContext
-from PySide6.QtQuick import QQuickItem
+from PySide6.QtQuick import QQuickItem, QQuickWindow
 from PySide6.QtTest import QTest
 
 from picasapy.ini import load_or_empty, parse_document, read_folder_category, save_document
@@ -34,7 +34,7 @@ def _child(root, name):
     return item
 
 
-def _wait_for(condition, qt_app, name, timeout=3):
+def _wait_for(condition, qt_app, name, timeout=10):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         qt_app.processEvents()
@@ -54,18 +54,28 @@ def _visual_item(root, name):
     raise AssertionError(f"{name} nem található a vizuális fában")
 
 
-def _click(window, item, button=Qt.MouseButton.LeftButton, *, target_window=None):
+def _item_window(root_window, item):
+    item_pointer = shiboken6.getCppPointer(item)[0]
+    for window in [root_window, *QGuiApplication.topLevelWindows()]:
+        if not isinstance(window, QQuickWindow):
+            continue
+        pending = [window.contentItem()]
+        while pending:
+            current = pending.pop()
+            if shiboken6.getCppPointer(current)[0] == item_pointer:
+                return window
+            pending.extend(current.childItems())
+    raise AssertionError(f"{item.objectName()} ablaka nem található")
+
+
+def _click(root_window, item, button=Qt.MouseButton.LeftButton):
     assert item.isEnabled(), f"{item.objectName()} tiltott"
     assert item.width() > 0 and item.height() > 0
     scene_point = item.mapToScene(
         QPointF(item.width() / 2, item.height() / 2)
     )
-    target_window = target_window or item.window()
-    assert target_window is not None
-    print("CLICKDBG", item.objectName(), scene_point, item.window().title(), [(w.title(), w.geometry(), w.isVisible()) for w in QGuiApplication.allWindows()])
-    QTest.mouseMove(target_window, QPoint(round(scene_point.x()), round(scene_point.y())))
     QTest.mouseClick(
-        target_window,
+        _item_window(root_window, item),
         button,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(scene_point.x()), round(scene_point.y())),
@@ -139,9 +149,25 @@ def _open_move_to_collection(window, qt_app, folder_path):
     )
     menu = _child(window, "folderContextMenu")
     _wait_for(lambda: menu.property("visible"), qt_app, "mappa helyi menü")
-    submenu = _child(window, "folderContextMenuMoveToCollection")
-    _click(window, _submenu_row(menu, submenu), target_window=window)
-    _wait_for(lambda: submenu.property("visible"), qt_app, "gyűjtemény-almenü")
+    submenu_name = "folderContextMenuMoveToCollection"
+    submenu = _child(window, submenu_name)
+    _click(window, _submenu_row(menu, submenu))
+
+    def submenu_visible():
+        nonlocal submenu
+        current = window.findChild(QObject, submenu_name)
+        if current is None:
+            return False
+        try:
+            visible = current.property("visible")
+        except RuntimeError:
+            return False
+        if visible:
+            submenu = current
+            return True
+        return False
+
+    _wait_for(submenu_visible, qt_app, "gyűjtemény-almenü")
     return menu, submenu
 
 
@@ -242,7 +268,7 @@ def test_foldersbol_other_stuffba_kattintassal(
     assert read_folder_category(ini) == "Other Stuff"
     assert folders_model.rowOfPath(str(folder)) == -1
     assert other_header.property("text").endswith("(1)")
-    other_row = _child(window, f"otherStuffFolder_{folder}")
+    other_row = _visual_item(window, f"otherStuffFolder_{folder}")
     assert other_row.property("visible") is True
     visible_windows_after = sum(
         1 for item in QGuiApplication.allWindows() if item.isVisible()

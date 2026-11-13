@@ -110,7 +110,8 @@ PicasaMenu {
             text: qsTr("Exported Pictures")
             checkable: true
             checked: menu.currentCollection === "Exported Pictures"
-            enabled: menu.folderPath.length > 0 && !checked
+            enabled: menu.folderPath.length > 0
+                && menu.currentCollection !== "Exported Pictures"
             onTriggered: helyiMenu.moveToCollectionRequested("Exported Pictures")
         }
         MenuItem {
@@ -118,7 +119,8 @@ PicasaMenu {
             text: qsTr("Folders")
             checkable: true
             checked: menu.currentCollection === "Folders"
-            enabled: menu.folderPath.length > 0 && !checked
+            enabled: menu.folderPath.length > 0
+                && menu.currentCollection !== "Folders"
             onTriggered: helyiMenu.moveToCollectionRequested("Folders")
         }
         MenuItem {
@@ -126,7 +128,8 @@ PicasaMenu {
             text: qsTr("Hidden Folders")
             checkable: true
             checked: menu.currentCollection === "Hidden Folders"
-            enabled: menu.folderPath.length > 0 && !checked
+            enabled: menu.folderPath.length > 0
+                && menu.currentCollection !== "Hidden Folders"
             onTriggered: helyiMenu.hideFolderRequested(menu.folderPath)
         }
         MenuItem {
@@ -134,7 +137,8 @@ PicasaMenu {
             text: qsTr("Other Stuff")
             checkable: true
             checked: menu.currentCollection === "Other Stuff"
-            enabled: menu.folderPath.length > 0 && !checked
+            enabled: menu.folderPath.length > 0
+                && menu.currentCollection !== "Other Stuff"
             onTriggered: helyiMenu.moveToCollectionRequested("Other Stuff")
         }
         MenuItem {
@@ -142,7 +146,8 @@ PicasaMenu {
             text: qsTr("Projects")
             checkable: true
             checked: menu.currentCollection === "Projects"
-            enabled: menu.folderPath.length > 0 && !checked
+            enabled: menu.folderPath.length > 0
+                && menu.currentCollection !== "Projects"
             onTriggered: helyiMenu.moveToCollectionRequested("Projects")
         }
         MenuItem {
@@ -150,7 +155,8 @@ PicasaMenu {
             text: qsTr("Web Albums")
             checkable: true
             checked: menu.currentCollection === "Web Albums"
-            enabled: menu.folderPath.length > 0 && !checked
+            enabled: menu.folderPath.length > 0
+                && menu.currentCollection !== "Web Albums"
             onTriggered: helyiMenu.moveToCollectionRequested("Web Albums")
         }
         Instantiator {
@@ -162,7 +168,8 @@ PicasaMenu {
                 text: modelData.name
                 checkable: true
                 checked: helyiMenu.currentCollection === modelData.name
-                enabled: helyiMenu.folderPath.length > 0 && !checked
+                enabled: helyiMenu.folderPath.length > 0
+                    && helyiMenu.currentCollection !== modelData.name
                 onTriggered: helyiMenu.moveToCollectionRequested(modelData.name)
             }
             onObjectAdded: function(index, object) {

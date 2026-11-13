@@ -7797,6 +7797,13 @@ picasapy-origin-key: stringres:CAlbumLabel::Ignored</extracomment>
 picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;stringres:ytICDVDR::MFOther</extracomment>
             <translation>Egyéb</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="518" />
+            <source>Other Stuff</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_DEFAULTCAT</extracomment>
+            <translation>Egyebek</translation>
+        </message>
     </context>
     <context>
         <name>FolderPaneMenus</name>
