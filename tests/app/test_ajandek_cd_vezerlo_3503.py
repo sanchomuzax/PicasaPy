@@ -89,6 +89,54 @@ def test_a_talca_elemei_kerulnek_a_lemezkepre(controller, qt_app, library):
     assert cel.stat().st_size > 0
 
 
+def test_a_diavetito_beallitasa_alapbol_igaz_es_qsettingsbe_mentodik(
+    controller, library
+):
+    from picasapy.app.controller import AppController
+    from picasapy.app.thumbnail_provider import ThumbnailProvider
+
+    from PySide6.QtCore import QSettings
+
+    tmp_path, first, second, db = library
+    assert controller.giftCdSlideshowEnabled is True
+
+    controller.setGiftCdSlideshowEnabled(False)
+    assert controller.giftCdSlideshowEnabled is False
+
+    masik = AppController(
+        db, (str(first), str(second)),
+        ThumbnailProvider(ThumbnailCache(tmp_path / "masik-thumbs", size=32)),
+        settings=QSettings(
+            str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
+        ),
+    )
+    assert masik.giftCdSlideshowEnabled is False
+
+
+def test_a_diavetito_allapota_kapcsolja_a_nem_jpeg_atalakitasat(
+    controller, tmp_path, monkeypatch
+):
+    from picasapy.burn.ajandek_cd import AjandekCdEredmeny
+    import picasapy.app.ajandek_cd_controller as modul
+
+    kapott = {}
+
+    def lemezkep(*args, **kwargs):
+        kapott.update(kwargs)
+        return AjandekCdEredmeny(None, 0)
+
+    monkeypatch.setattr(modul, "ajandek_cd_lemezkep", lemezkep)
+    controller.setGiftCdSlideshowEnabled(False)
+
+    monkeypatch.setattr(
+        controller, "_start_background",
+        lambda target, **kwargs: target(*kwargs["args"]),
+    )
+    controller.ajandekCdIrasa(0, "X", str(tmp_path / "ajandek.iso"))
+
+    assert kapott["convert_non_jpeg"] is False
+
+
 def test_iso_kiterjesztes_nelkul_is_iso_lesz(controller, qt_app, library):
     tmp_path, first, second, _ = library
     _tartsd_mindkettot(controller, qt_app, first, second)

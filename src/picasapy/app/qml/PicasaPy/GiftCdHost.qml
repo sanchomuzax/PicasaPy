@@ -60,6 +60,8 @@ Rectangle {
     PublishPanel {
         id: panel
         uzemmod: "cd"
+        slideshowIncluded: host.appController
+            ? host.appController.giftCdSlideshowEnabled : true
         elemekSzama: host.appController && host.appController.heldCount !== undefined
                      ? host.appController.heldCount : 0
         dolgozik: host.dolgozik
@@ -70,6 +72,10 @@ Rectangle {
         }
         onMegseKert: host.nyitva = false
         onTovabbiakKert: host.nyitva = false
+        onSlideshowIncludedRequested: function (enabled) {
+            if (host.appController)
+                host.appController.setGiftCdSlideshowEnabled(enabled)
+        }
     }
 
     FileDialog {

@@ -177,5 +177,13 @@ def test_create_gift_cd_a_mappa_nevevel_es_mukodo_include_slideshow_valasztoval(
     assert slideshow.property("checked") is False, (
         "az Include Slideshow választó nem reagált a kattintásra"
     )
+    assert controller.giftCdSlideshowEnabled is False, (
+        "az Include Slideshow állása nem jutott el a mentett beállításhoz"
+    )
     _kattints(qt_app, _elem(window, "publishPresentCdCancel"))
     assert _varj(qt_app, lambda: host.property("visible") is False)
+
+    _menu_tetel(window, qt_app, "&Create", "menuCreateGiftCd")
+    assert _elem(window, "publishIncludeSlideshowCheck").property("checked") is False, (
+        "a panel újranyitáskor nem töltötte vissza a kapcsoló állását"
+    )
