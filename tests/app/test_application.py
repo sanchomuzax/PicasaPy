@@ -559,21 +559,15 @@ class TestEditControllerShutdownOnExit:
         assert "edit_controller.waitForBackgroundWorkers(" in szakasz
 
     def test_rename_worker_wait_precedes_controller_shutdown(self):
-        source = self._source()
-        smoke_start = source.index("def _startup_step_smoke_test")
-        smoke_end = source.index("def _reszletes_idovonal_kell", smoke_start)
-        smoke = source[smoke_start:smoke_end]
-        assert smoke.index("state.controller._wait_for_rename_workers(None)") < (
-            smoke.index("state.controller.shutdown()")
-        )
+        from pathlib import Path
 
-        exec_at = source.index("exit_code = app.exec()")
-        shutdown_at = source.index("\n    controller.shutdown()", exec_at)
-        rename_wait_at = source.index(
-            "controller._wait_for_rename_workers(None)", exec_at
-        )
-        return_at = source.index("return _shutdown_application_qml(state, exit_code)")
-        assert exec_at < rename_wait_at < shutdown_at < return_at
+        source = Path(
+            "src/picasapy/app/library_controller_activity.py"
+        ).read_text(encoding="utf-8")
+        shutdown_start = source.index("    def shutdown(self) -> None:")
+        wait_at = source.index("self._wait_for_rename_workers(None)", shutdown_start)
+        first_cleanup_at = source.index("self._watcher_start_pending = False", shutdown_start)
+        assert shutdown_start < wait_at < first_cleanup_at
 
     def test_wait_has_a_bounded_timeout(self):
         """A perces rendert NEM várjuk végig — az emit-ág már érvénytelen,

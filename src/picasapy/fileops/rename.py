@@ -159,6 +159,7 @@ class RenameItem:
     date: str | None = None  # ISO dátum(-idő), pl. a `taken_at`
     width: int | None = None
     height: int | None = None
+    formatted_date: str | None = None  # főszálon előre formázott fájlnév-utótag
 
 
 # A fájlnévben tiltott karakterek (a névmező `filter="filename"` párja, #4879).
@@ -229,7 +230,11 @@ def _build_stem(
     (nincs dátum/felbontás) a megfelelő utótag néma kihagyással marad el."""
     parts = [base_name]
     if include_date and item.date:
-        parts.append(format_taken_at(item.date, locale))
+        parts.append(
+            item.formatted_date
+            if item.formatted_date is not None
+            else format_taken_at(item.date, locale)
+        )
     if include_size and item.width and item.height:
         parts.append(f"{item.width}x{item.height}")
     return " ".join(parts)

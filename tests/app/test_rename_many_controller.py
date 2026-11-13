@@ -76,6 +76,79 @@ def _do_rename(controller, action) -> None:
     wait_for_photo_op(controller, action)
 
 
+def test_rename_worker_does_not_capture_qt_controller(
+    controller, monkeypatch
+):
+    """A fájlműveleti worker bemenetei ne tartsanak életben Qt-wrappert."""
+    from PySide6.QtCore import QLocale, QObject
+
+    targets = []
+
+    class InertThread:
+        def is_alive(self):
+            return False
+
+        def join(self, timeout=None):
+            return None
+
+    def capture_worker(target, **kwargs):
+        targets.append(target)
+        return InertThread()
+
+    monkeypatch.setattr(controller, "_start_background", capture_worker)
+    monkeypatch.setattr(controller, "_start_rename_result_dispatch", lambda: None)
+    rows = _rows_by_name(controller, "a.jpg", "b.jpg")
+    controller.renamePhotosMany(rows, "nyaralas", True, False)
+
+    assert len(targets) == 1
+    target = targets[0]
+    freevars = dict(zip(
+        target.__code__.co_freevars,
+        (cell.cell_contents for cell in target.__closure__ or ()),
+        strict=True,
+    ))
+    assert all(value is not controller for value in freevars.values())
+    assert not any(
+        isinstance(value, (QObject, QLocale)) for value in freevars.values()
+    )
+
+
+def test_rename_worker_formats_dates_before_starting(
+    controller, monkeypatch
+):
+    """A QLocale-alapú dátumformázás a controller GUI-szálán történjen."""
+    import threading
+
+    import picasapy.fileops.rename as rename_module
+
+    formatter_threads = []
+    original_format_taken_at = rename_module.format_taken_at
+
+    def track_formatter_thread(*args, **kwargs):
+        formatter_threads.append(threading.get_ident())
+        return original_format_taken_at(*args, **kwargs)
+
+    monkeypatch.setattr(rename_module, "format_taken_at", track_formatter_thread)
+    main_thread_id = threading.get_ident()
+    dispatch_threads = []
+    on_rename_done = controller._on_rename_batch_done
+
+    def track_dispatch_thread(folders):
+        dispatch_threads.append(threading.get_ident())
+        on_rename_done(folders)
+
+    monkeypatch.setattr(controller, "_on_rename_batch_done", track_dispatch_thread)
+    rows = _rows_by_name(controller, "a.jpg", "b.jpg")
+    _do_rename(
+        controller,
+        lambda: controller.renamePhotosMany(rows, "nyaralas", True, False),
+    )
+
+    assert formatter_threads
+    assert set(formatter_threads) == {main_thread_id}
+    assert dispatch_threads == [main_thread_id]
+
+
 class TestRenamePreview:
     def test_first_file_no_suffix_by_default(self, controller):
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")

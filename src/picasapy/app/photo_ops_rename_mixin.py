@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import threading
 import time
+from queue import Empty, SimpleQueue
 from pathlib import Path
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import QTimer, Signal, Slot
 
+import picasapy.fileops.rename as _rename
 from picasapy.fileops import PartialRenameError, RenameItem, preview_name, rename_photos_many
 from picasapy.index import open_index
 from picasapy.ini import IniConflictError, IniSaveError
@@ -22,6 +24,41 @@ from .photo_ops_compat import (
 
 class PhotoOpsRenameMixin:
     _renameBatchDone = Signal(list)
+
+    def _rename_result_queue(self) -> SimpleQueue:
+        try:
+            return self._rename_results
+        except AttributeError:
+            self._rename_results: SimpleQueue = SimpleQueue()
+            return self._rename_results
+
+    def _start_rename_result_dispatch(self) -> None:
+        """A worker Python-eredményét a controller GUI-szála dolgozza fel."""
+        timer = getattr(self, "_rename_result_timer", None)
+        if timer is None:
+            timer = QTimer(self)
+            timer.setInterval(10)
+            timer.timeout.connect(self._dispatch_rename_results)
+            self._rename_result_timer = timer
+        if not timer.isActive():
+            timer.start()
+
+    def _dispatch_rename_results(self) -> None:
+        results = self._rename_result_queue()
+        while True:
+            try:
+                folders, error_message = results.get_nowait()
+            except Empty:
+                break
+            if folders is not None:
+                self._renameBatchDone.emit(list(folders))
+            if error_message:
+                self.photoOpFailed.emit(error_message)
+
+        if not any(worker.is_alive() for worker in self._rename_worker_set()):
+            timer = getattr(self, "_rename_result_timer", None)
+            if timer is not None:
+                timer.stop()
 
     def _rename_worker_set(self) -> set[threading.Thread]:
         """A tömeges átnevezések szálfogantyúi a tényleges kilépésig."""
@@ -146,11 +183,18 @@ class PhotoOpsRenameMixin:
                 date=photo.taken_at,
                 width=photo.width,
                 height=photo.height,
+                formatted_date=(
+                    _rename.format_taken_at(photo.taken_at)
+                    if include_date and photo.taken_at else None
+                ),
             )
             for photo in photos
         ]
+        result_queue = self._rename_result_queue()
 
         def worker() -> None:
+            folders = None
+            error_message = None
             try:
                 rename_photos_many(
                     items, base_name,
@@ -160,15 +204,14 @@ class PhotoOpsRenameMixin:
                 # Részleges futásnál a fájlok/ini-szekciók egy része már
                 # megváltozott. Frissítsük ugyanazokat a mappákat, majd a
                 # strukturált hibaszöveg mutassa meg, mely nevek készültek el.
-                folders = sorted({str(item.path.parent) for item in items})
-                self._renameBatchDone.emit(folders)
-                self.photoOpFailed.emit(str(error))
-                return
+                folders = tuple(sorted({str(item.path.parent) for item in items}))
+                error_message = str(error)
             except (OSError, ValueError, IniSaveError, IniConflictError) as error:
-                self.photoOpFailed.emit(str(error))
-                return
-            folders = sorted({str(item.path.parent) for item in items})
-            self._renameBatchDone.emit(folders)
+                error_message = str(error)
+            else:
+                folders = tuple(sorted({str(item.path.parent) for item in items}))
+            finally:
+                result_queue.put((folders, error_message))
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         workers = self._rename_worker_set()
@@ -177,6 +220,7 @@ class PhotoOpsRenameMixin:
                 finished.join(0)
                 workers.discard(finished)
         workers.add(self._start_background(worker, name="picasapy-rename"))
+        self._start_rename_result_dispatch()
 
     @Slot(list)
     def _on_rename_batch_done(self, folders: list[str]) -> None:
