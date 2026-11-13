@@ -2820,3 +2820,51 @@ Külső kapuk ettől még vannak. A `0x004e87c0` előbb a bemeneti objektum `+4`
 - Ghidra-kör kell: 0x0055ece0 - a meglévő dekompiláció megmutatja, hogy a `0x15`, `0x18`, `0x17`, `0x1a` kódoknál a dátumkapu kimarad, de nem rendeli ezeket a kódokat a felismert JPEG típushoz; a `0x004edf60` descriptor mezőjének pontos típusjelentése mi, és a JPEG út kódja mi? [blokkoló]
 - Futásmérés kell a fenti Colab-jóslat tényleges albumtagságához és a közvetlenül látható eredményhez.
 
+#### 38.2.124 Az Időrend sliderthumb és timeline sáv felhasználói művelete és eseményútja (#6532, 2026-11-13)
+
+**Hatókör és döntés.** A `docs/specs/picasa-idorend-viselkedes.md` 38.2.1 táblázatának 2. sorában nyitott kérdés: az `overlays/sliderthumb` fogantyú szemantikai művelete, a csúszka-húzás és a sávkattintás hatása az eredeti Picasa 3.9.141.259 binárisából (SHA-256 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`). A kérdés lezárva: a `sliderthumb` és a `timeline` sáv nem passzív díszítőelem, hanem közvetlen dátum-kereső (seek slider) vezérlő. A `0x007fde80` egérkezelőben a sávon vagy a fogantyún belüli lenyomás (`WM_LBUTTONDOWN` `0x201`, `+0x429 = 1`) és az egérmozgatás (`WM_MOUSEMOVE` `0x200`) a `0x007fdd00` útján a normalizált x-arányhoz legközelebbi gyűjteményindexet választja ki (`[this+0x514]`, `[this+0x510]`), míg az elengedés (`WM_LBUTTONUP` `0x202`) a `0x007fd770` és `0x007fd0c0` úton elindítja a 3D kártyapálya animációját a kiválasztott fókusz-pozícióra. A sávon kívüli háttérre kattintva és húzva (`+0x428 = 1`) a nézet tehetetlenségi 3D térbeli pásztázást végez (`[this+0x310]` görgetési sebesség, csillapítás 0.95). A fogantyú és a sáv fölött a kurzor lebegtetéskor nem vált mutatót (`0x007fe540`), sima nyíl marad.
+
+**A út - utasításszintű olvasat a binárisból.**
+1. *Rétegfelépítés és tárolás (`0x007fa7f0`, `0x007fb210`):* A `QDrawable` objektum (vtábla `0x00cbd66c`) konstruktora `0x007fa7f0` lefoglalja a rétegeket; a `0x007fb210` inicializálja az `overlays/timeline` (`0x00cbd38c`, tároló `[this+0x6c0]`, x kezdőpont `[this+0x6d8]`, szélesség `[this+0x6c8]`, magasság `[this+0x6cc]`) és az `overlays/sliderthumb` (`0x00cbd3b8`, tároló `[this+0x710]`, szélesség `[this+0x718]`, magasság `[this+0x71c]`, futásidejű x pozíció `[this+0x728]`, y pozíció `[this+0x72c]`) adatait.
+2. *Rajzolás és kurzor-hit-test (`0x007ffc90`, `0x007fe540`):* A `0x007ffc90` rajzoló a `0x007ffd55` címen kirajzolja a vízszintes sávot (`+0x6c0`), a `0x007ffe21` címen a pontok aránya (`date[i]/date_last`) alapján a `+0x6e8` `overlays/timelinedot` pontokat, és a `0x007ffe87` címen a `+0x710` `overlays/sliderthumb` fogantyút. A kurzor hit-testjét (`0x007fe540`) négyszer hívja meg: kizárólag a négy vezérlőgombra (`+0x530` left, `+0x558` right, `+0x580` exit, `+0x738` startbutton); ha bármelyikre ráfut az egér, `overlays/rollovermouse` (`+0x5d0`) jelenik meg, egyébként normál `overlays/mouse` (`+0x5a8`). A `timeline` és a `sliderthumb` felett tehát lebegtetéskor nincs rollover kéz-kurzor.
+3. *Egérkezelő és eseményút (`0x007fde80`):* A virtuális metódus (vtábla `0x00cbd66c` slot 11) a kliensméret arányában skálázott egérkoordinátákkal (`0x420`, `0x424`) dolgozik:
+   - `WM_LBUTTONDOWN` (`0x201`, `0x007fe1d9`): ha Időrend módban van (`[this+0x3b8] != 0`), téglalap-határellenőrzést végez a timeline sáv (`[this+0x6c0]`) és sliderthumb (`[this+0x710]`) uniójára. Ha az egér a sáv/fogantyú területén van: beállítja a csúszka-húzás jelzőjét (`*(char *)(this+0x429) = 1`), és közvetlenül meghívja a `0x007fdd00(mouse_x, mouse_y)` függvényt. Ha a sávon kívül kattint (a háttérre vagy kártyákra): beállítja a háttér-pásztázás jelzőjét (`*(char *)(this+0x428) = 1`), és ellenőrzi a kártyákra kattintást (`0x007fd800`).
+   - `WM_MOUSEMOVE` (`0x200`, `0x007fdefe`): ha `*(char *)(this+0x429) != 0` (csúszka-húzás aktív), minden egérmozgásra meghívja a `0x007fdd00`-at. Ha `*(char *)(this+0x428) != 0` (háttérhúzás aktív), az x irányú elmozdulást (`dx`) a `[this+0x310]` tehetetlenségi sebességhez adja (`speed = speed * 0.95 + dx * c`).
+   - `WM_LBUTTONUP` (`0x202`, `0x007fe1a4`): ha a csúszka-húzás aktív volt (`*(char *)(this+0x429) != 0`), meghívja a `0x007fd770(*(undefined4 *)(this+0x514))` függvényt, amely a kiválasztott indexhez tartozó animációs célsebességet/pozíciót kiszámítja, és a `0x007fd0c0` hívással elindítja a kártyapálya simító animációját. Végül mindkét jelzőt törli (`+0x428 = 0`, `+0x429 = 0`).
+4. *A keresőcsúszka algoritmusa (`0x007fdd00`):* Az x bemenetet lekorlátozza a sávra (`[x_start, x_start + width]`), kiszámítja a normalizált arányt (`norm_x = (x - x_start) / width`), és a dátumtömbön (`[this+0x388]`) végighaladva megkeresi azt a gyűjteményindexet (`uVar10`), amelyre az `abs(date[i]/date_last - norm_x)` távolság minimális. Az indexet beírja a `[this+0x514]` mezőbe, a megfelelő `0xf8` bájtos kártyarekord mutatóját a `[this+0x510]`-be (ebből rajzolódik a jobb felső név és év-hónap felirat), és a fogantyú pozícióját `[this+0x728]`-ra frissíti.
+
+**B út - független QEMU-mérés és erőforrás-szerződés.** A 38.2.77 szakaszban rögzített QEMU-i386 futtatási mérés közvetlenül igazolja a `0x007fdd00` működését: ismert x bemenetekre pontosan a legkisebb eltérésű `A[i]/A[n-1]` indexet választja ki, a fogantyú x pozícióját pedig `left + t * width - ((thumb_width >> 1) + 3)` értékre állítja (a tesztállapotban `100 + t * 400 - 15`). A `respack.yt` leltárban szereplő `overlays/timeline` (`245×7`), `overlays/sliderthumb` (`25×23`) és `overlays/timelinedot` (`7×8` és `7×11`) grafikák pontosan ennek a sávos csúszkamodellnek a vizuális elemei. A két független út maradéktalanul egyezik.
+
+**Cáfoló kísérlet (15.2).** Megkíséreltük cáfolni azt az állítást, hogy a fogantyú húzása közben a 3D kártyapálya nem mozdul el, és a kameramozgás csak elengedéskor indul el.
+- Ellenőrzés: A `0x007fdd00` teljes utasításkészletében kizárólag a `[this+0x514]` (index), `[this+0x510]` (fókusz-rekord) és `[this+0x728]` (fogantyú x) mezők kapnak új értéket. A kameramozgató `0x007fd0c0` hívás a `0x007fdd00`-ban nem szerepel.
+- A `0x007fd0c0` hívója a `0x007fd770`, amely kizárólag a `WM_LBUTTONUP` (`0x202`, `0x007fe1a4`) ágon és a kártyára kattintáskor (`0x007fd800`, `0x007fd8a9`) fut le.
+- Eredmény: A cáfolat igazolta az elméletet: a csúszka húzása közben a 3D kártyapálya nem mozog folyamatosan a fogantyúval együtt; csak a fogantyú és a fejléc felirata (a kiválasztott gyűjtemény) frissül azonnal, a kártyák a felengedéskor animálnak a kiválasztott pozícióra.
+
+| Állítás / érték | Forrás |
+|---|---|
+| A sáv (`overlays/timeline`) és fogantyú (`overlays/sliderthumb`) tárolása | bináris (`0x007fa7f0`, `0x007fb210`, `0x00cbd38c`, `0x00cbd3b8`) |
+| Lebegtetéskor nincs rollover kéz-kurzor a csúszkán | bináris (`0x007ffc90`, `0x007fe540`) |
+| Sáv/fogantyú kattintás felismerése és húzás indítása (`+0x429 = 1`) | bináris (`0x007fde80` @ `0x007fe1d9`) |
+| Háttérre kattintás felismerése és tehetetlenségi pásztázás (`+0x428 = 1`) | bináris (`0x007fde80` @ `0x007fe1d9`, `0x007fdefe`) |
+| Folyamatos indexkeresés és fókusz-rekord frissítés húzáskor | bináris (`0x007fdd00`, `[this+0x514]`, `[this+0x510]`), QEMU mérés (38.2.77) |
+| Felengedéskor kameragörgetési animáció indítása a kiválasztott indexre | bináris (`0x007fde80` @ `0x007fe1a4`, `0x007fd770`, `0x007fd0c0`) |
+
+**PicasaPy-összevetés.**
+A PicasaPy `TimelineView.qml`-je (277-290. sorok) az `updateSliderFromX(x)` és `releaseSlider()` függvényekkel pontosan ezt a kétfázisú csúszkamodellt valósítja meg:
+- Húzás közben az `updateSliderFromX(x)` a normalizált sáv-arányból kiszámítja a `pendingSliderIndex`-et a `timelineController.sliderIndex()` segítségével.
+- A `timeline_motion.py:69-82` `slider_index()` és `85-92` `slider_thumb_x()` függvénye a 38.2.77 specifikáció alapján pontosan a legkisebb távolságú indexet és a sávra korlátozott fogantyúpozíciót adja.
+- Elengedéskor a `releaseSlider()` meghívja a `show.animateTo(pendingSliderIndex, 4000)` animációt.
+- A háttér húzása a `TimelineView.qml`-ben (`draggingCarousel`, `carouselVelocity *= 0.95`) funkcionálisan megfelel az eredeti `[this+0x310]` tehetetlenségi pásztázásának.
+- Eltérés / teendő: A PicasaPy-ban a fejléc gyűjteménynév és dátum felirata húzás közben még nem frissül azonnal a `pendingSliderIndex`-re, csak az animáció lefutása után; az elengedési animáció ideje jelenleg fix 4000 ms, míg az eredeti a kártyatávolságból és az animációs sebességből számítja a lefutást.
+
+**A #6532 „Kész, ha” mérlege.** ✅ Az eredeti felvételek korábbi szakaszokban dokumentáltak. ✅ A sliderthumb és a timeline sáv felhasználói művelete és eseményútja bináris címekkel igazolt és lezárt. ✅ A megvalósítási összevetés elkészült. ⛔ A #6532 további nyitott pontjai (forráshalmaz-szűrők, élő felvételes képkocka-időzítés) még folyamatban vannak.
+
+**Javasolt megvalósítási jegybővítés (#6713-hoz).**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A `sliderthumb` húzása közben a `0x007fdd00` minden egérmozgásra frissíti a `[this+0x514]` indexet és a `[this+0x510]` kártyarekordot, így a fejléc felirata (név és év-hónap) húzás közben azonnal követi a kurzort; a felengedéskor a `0x007fd770` indítja a célkártyára animálást. | A `TimelineView.qml:277-290` csak a `pendingSliderIndex`-et frissíti és a fogantyút mozgatja; a fejléc és a fókusz csak a `releaseSlider()` után animál be. | A `TimelineView.qml`-ben a `pendingSliderIndex` változásakor kösd be a fejléc előnézeti feliratának azonnali frissítését húzás közben is. Az elengedési animáció idejét igazítsd a fókusztávolsághoz a fix 4000 ms helyett. |
+
+**Nyitott.** Nincs új nyitott kérdés a sliderthumb és a timeline sáv eseményútjára; a mechanizmus statikusan és mérve lezárva.
+
+
