@@ -1279,6 +1279,32 @@ felületleírás az átadott mérési összefoglalóból származik. Az eredeti 
 
 - `Ghidra-kör kell: 0x00744a00 - a 0x00744a65 virtuális hívás melyik célfüggvényre oldódik fel, és ez a hívás végzi-e a PrintPanelre váltást? A meglévő Ghidra-kimenet a 0x005d9cc0 hívót mutatja, de ezt a slotot nem oldja fel. [blokkoló]`
 
+### #6845 kiegészítés: mappasor húzása másik mappára (2026-11-13)
+
+Nyitott kérdés: a bal hasáb mappasorának másik mappára húzásakor az eredeti Picasa a mappa képeit mozgatja-e, vagy a mappát magát helyezi át. Az eredeti Colab-felvétel nem áll rendelkezésre; az alábbi következtetés statikus, és nem helyettesíti a Windowsos mérést.
+
+| Vizsgált pont | Megállapítás | Forrás |
+|---|---|---|
+| Húzott elem típusa | A `0x005e39a0` drop-kezelő a payload objektumát `IDropReporter` és `CAlbumSelectionNode` típusra próbálja castolni. Siker esetén az albumazonosítót a `+0x3c0` mezőből olvassa. Ez elkülöníti az albumkijelölő ágat a más típusú payloadtól. Azt, hogy a konkrét mappasor és képelem mely futásidejű payloadot adja, felvétel nélkül nem igazoltam. | `bináris (0x005e3b71-0x005e3b81; RTTI: 0x00cb46f4)` |
+| Közvetlen műveleti út | A normál albumkijelölő ágon a drop-kezelő a `0x005350b0` fájlmozgatót hívja. A hívás negyedik és ötödik explicit paramétere nulla. A mozgató a kapott listán halad végig; a lista forrása és teljessége nem derül ki a vizsgált hívási láncból. | `bináris (0x005e3df5; meglévő Ghidra-kimenet: FUN_005e39a0 és FUN_005350b0)` |
+| Megerősítés | A `0x005350b0` a nulla negyedik paraméterhez a `CThumbUI::MoveFilesConfirmMove` azonosítót választja, és a megerősítő felületet meghívja. Ez nem bizonyítja, hogy üres átadott lista esetén is megjelenik az ablak. | `bináris (0x005350b0); string_xrefs: 0x00c89e68 "Move Files", 0x00c89f2c "Confirm Move", 0x00c89e10 "Are you sure you want to move the file(s) to\n%s ?\n"` |
+| Külön mappamozgató | A külön mappamozgató út `0x005cb990 → 0x0053f340 → 0x0053f4a0`; az utóbbi függvényhez tartozik a `Move Folder to %s` szöveg. A drop-kezelő utasításai közt nincs közvetlen hívás erre az útra. A két feloldatlan indirekt hívás célja miatt a virtuális mappamozgatás nem zárható ki. | `bináris (0x005cb990, 0x0053f340, 0x0053f4a0); string_xrefs: 0x00c8aca4 "Move Folder to %s"; NINCS MEG (0x005e3f8e és 0x005e3fb2 indirekt híváscél)` |
+| A forrásmappa és képei | Nem dönthető el, hogy az átadott fájllista a mappa összes képét tartalmazza-e, ezért az sem, hogy a forrásmappa üresen marad-e vagy a mappa maga kerül át. | `NINCS MEG` |
+| PicasaPy-oldal | A `fix/6845-codex` munkafa `tests/app/qml_functional/test_mappa_folyamat_paritas_6845.py` tesztje azt ellenőrzi, hogy a könyvtár maga kerül át a lemezen, benne marad a `.picasa.ini` és a kép, az index és a bal hasáb pedig követi az új útvonalat. Ezt a tesztet ebben a kutatási munkamenetben nem futtattam. | `forráskód (fix/6845-codex, 174-235. sor)` |
+
+#### A két független út és a cáfoló ellenőrzés
+
+- **A út, drop-kezelő:** a célzott diszasszemblálás a húzott adat típusának átalakítását, az albumazonosító kiolvasását és a normál ág `0x005350b0` hívását mutatja. A `0x005350b0` meglévő dekompilációja a `Confirm Move` megerősítési ágat mutatja.
+- **B út, külön műveleti út és adatszótár:** a közvetlen hívási gráf a `0x005cb990 → 0x0053f340 → 0x0053f4a0` külön mappamozgató utat adja; a binary-index `string_xrefs` a fájlmozgatóhoz köti a `Move Files` és `Confirm Move`, a mappamozgatóhoz a `Move Folder to %s` szöveget. Ez alátámasztja, hogy két külön műveleti út van, de a drop-kezelő két indirekt célját nem oldja fel.
+- **Egyezés és korlát:** a látható közvetlen út `Move Files` megerősítést kérő fájlmozgatóba jut, a dedikált `Move Folder` művelet külön függvényen van. A teljes fizikai hatás és az átadott fájlok köre nyitott, ezért a bizonyítottsági fok **feltételes**.
+- **Cáfoló kísérlet:** azt a hipotézist ellenőriztem, hogy a mappasor húzása közvetlenül a `Move Folder` függvényre fut. A teljes célzott utasítássorban nincs közvetlen hívás `0x0053f340` vagy `0x0053f4a0` felé, viszont a normál út eléri a `0x005350b0` függvényt. Ez a közvetlen hívású változatot cáfolja. A `0x005e3f8e` és `0x005e3fb2` indirekt hívásokat ugyanazzal a mércével ellenőriztem: a céljaik nem oldhatók fel a meglévő indexből és Ghidra-kimenetből, így a tágabb hipotézis nem zárható ki.
+
+#### Colabon ellenőrizhető jóslat és nyitott kérdés
+
+Jóslat, nem mérési eredmény: ha a mappasor a `CAlbumSelectionNode` ágba kerül, és a fájlmozgatónak nem üres lista jut, az eredeti `Confirm Move` / `Move Files` ablakot mutat; jóváhagyás után a listában szereplő képeket mozgatja. A statikus vizsgálat nem dönti el, hogy a lista az összes képet tartalmazza-e, megmarad-e a forrásmappa, vagy valamelyik indirekt hívás külön a mappát mozgatja. Colabon ugyanazt a többképes mappát kell a bal hasábban egy célmappára húzni, majd rögzíteni a megerősítő ablakot és az előtte/utána könyvtárlistát.
+
+Nyitott, célzott vizsgálat: `Ghidra-kör kell: 0x005e39a0 - a 0x005e3f8e és a 0x005e3fb2 indirekt hívások célja, továbbá hogy bármelyik fizikai mappamozgatást hajt-e végre. A meglévő 2026-11-11 kimenet tartalmazza a 0x005e39a0 hívót, de ezeket a virtuális célokat nem oldja fel. [blokkoló]` A fájllista teljességét Windowsos Colab-mérés is el tudja dönteni.
+
 ### #6862: a film gomb bemeneti halmaza
 
 A mappa-eszköztár film gombjának (`headerpanel/create_movie`) és a Létrehozás > Mozgófilm menüparancsnak a bináris folyamata a Picasa3.exe (3.9.141.259) diszasszemblálása és dekompilációja alapján feltárva.
