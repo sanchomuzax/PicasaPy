@@ -131,6 +131,24 @@ def test_a_soha_nem_regisztralt_vezerlot_kulon_jelenti(tmp_path: Path) -> None:
     assert arvak == {"Nyomtato"}
 
 
+def test_a_csak_belso_slotot_hordozo_osztaly_nem_arva(tmp_path: Path) -> None:
+    """A `_`-sal kezdődő slot szálközi jelzésfogadó, nem QML-tag (#6858).
+
+    Az `AppBusyRegistry` háttérszálról `QMetaObject.invokeMethod`-dal sorolt
+    belső slotjai miatt az osztály nem lehet "kontextusból el nem ért"."""
+    belso = """\
+from PySide6.QtCore import QObject, Slot
+
+
+class Nyilvantartas(QObject):
+    @Slot(int)
+    def _on_end(self, jegy):
+        pass
+"""
+    gyoker = _fa(tmp_path, vezerlok={"vezerlo.py": VEZERLO, "nyilvantartas.py": belso})
+    assert or_.elemez(gyoker).arva_osztalyok == []
+
+
 # -- 2. a MINŐSÍTETT keresés: a #1476 magja --------------------------------
 
 
