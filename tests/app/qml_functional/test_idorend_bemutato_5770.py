@@ -17,7 +17,7 @@ from tests.support.varakozas import var_feltetelre
 
 
 ALBUM_TOKEN = "57705770577057705770577057705770"
-KIADASKEP_KORNYEZET = "PICASAPY_5770_KIADASKEP_MAPPA"
+KIADASKEP_KORNYEZET = "PICASAPY_6902_KIADASKEP_MAPPA"
 
 
 def _fénykép(út: Path, dátum: str) -> None:
@@ -72,9 +72,12 @@ def _job239_mintakészlet(könyvtár: Path) -> None:
         név = f"PicasaTeszt_{index:02d}.jpg"
         _fénykép(picasa_teszt / név, "2026:10:01 08:00:00")
         album_sorok.extend((f"[{név}]", f"albums={ALBUM_TOKEN}"))
+    mai_dátum = datetime.now().strftime("%Y:%m:%d %H:%M:%S")
+    for index in range(1, 3):
+        _fénykép(picasa_teszt / f"friss_{index:02d}.jpg", mai_dátum)
     ini = [
         f"[.album:{ALBUM_TOKEN}]",
-        "name=Recently Updated",
+        "name=Job 239 Album",
         f"token={ALBUM_TOKEN}",
         *album_sorok,
         "",
@@ -139,6 +142,10 @@ def test_valodi_billentyuk_sorrend_felirat_escape_es_ujranyitas(
     qml_app_5770, qt_app, locál_en_us
 ):
     window, _controller, _engine = qml_app_5770
+    belépési_mappa = _controller.currentFolder
+    belépési_album = _controller.currentAlbumToken
+    belépési_kijelölés = window.property("selectedIndexes").toVariant()
+    belépési_index = window.property("selectedIndex")
     timeline = _nyit_időrendet(window, qt_app)
     controller = _engine.rootContext().contextProperty("timelineController")
     collections = controller.collections
@@ -147,6 +154,7 @@ def test_valodi_billentyuk_sorrend_felirat_escape_es_ujranyitas(
         "2014_november",
         "2019_marcius",
         "2021_eltero_fajlido",
+        "Job 239 Album",
         "PicasaTeszt",
         "Recently Updated",
     ]
@@ -157,29 +165,36 @@ def test_valodi_billentyuk_sorrend_felirat_escape_es_ujranyitas(
         "August 2021",
         "October 2026",
         "October 2026",
+        f"{QLocale().standaloneMonthName(datetime.now().month)} {datetime.now().year}",
     ]
     assert collections[3]["count"] == 2
 
     if output_dir := os.environ.get(KIADASKEP_KORNYEZET):
-        for _ in range(2):
+        for _ in range(len(collections) - 1):
             QTest.keyClick(timeline, Qt.Key.Key_Right)
         _vár(
             qt_app,
-            lambda: timeline.property("currentIndex") == 2,
-            "nem érte el a képköteges kártyát",
+            lambda: timeline.property("currentIndex") == len(collections) - 1,
+            "nem érte el a Recently Updated kártyát",
         )
         _vár(
             qt_app,
             lambda: timeline.property("currentCardsLoaded"),
             "a kártya bélyegképei nem töltődtek be",
         )
+        _vár(
+            qt_app,
+            lambda: timeline.property("motionMode") == "idle"
+            and _feliratok(timeline)[0] == "Recently Updated",
+            "a kiadáskép előtt nem fejeződött be a Recently Updated felirat áttűnése",
+        )
         image = timeline.grabWindow()
         assert not image.isNull(), "az Időrend kiadásképe üres"
         célmappa = Path(output_dir)
         célmappa.mkdir(parents=True, exist_ok=True)
-        cél = célmappa / "idorend_bemutato_5770.png"
+        cél = célmappa / "idorend_recently_updated_6902.png"
         assert image.save(str(cél), "PNG"), f"nem menthető a kiadáskép: {cél}"
-        for _ in range(2):
+        for _ in range(len(collections) - 1):
             QTest.keyClick(timeline, Qt.Key.Key_Left)
         _vár(
             qt_app,
@@ -215,11 +230,10 @@ def test_valodi_billentyuk_sorrend_felirat_escape_es_ujranyitas(
         lambda: window.property("timelineOpen") is False,
         "Escape nem zárta be az Időrendet",
     )
-    első_út = collections[3]["firstPhotoPath"]
-    assert _controller.currentFolder == str(Path(első_út).parent)
-    első_sor = _controller.photos.rowOfPath(első_út)
-    assert window.property("selectedIndex") == első_sor
-    assert window.property("selectedIndexes").toVariant() == [első_sor]
+    assert _controller.currentFolder == belépési_mappa
+    assert _controller.currentAlbumToken == belépési_album
+    assert window.property("selectedIndex") == belépési_index
+    assert window.property("selectedIndexes").toVariant() == belépési_kijelölés
 
     timeline = _nyit_időrendet(window, qt_app)
     _vár(
@@ -235,11 +249,11 @@ def test_space_album_elso_kepe_es_escape_utani_kijeloles(
 ):
     window, controller, _engine = qml_app_5770
     timeline = _nyit_időrendet(window, qt_app)
-    for _ in range(5):
+    for _ in range(4):
         QTest.keyClick(timeline, Qt.Key.Key_Right)
     _vár(
         qt_app,
-        lambda: timeline.property("currentIndex") == 5,
+        lambda: timeline.property("currentIndex") == 4,
         "nem érte el az albumkártyát",
     )
     QTest.keyClick(timeline, Qt.Key.Key_Space)

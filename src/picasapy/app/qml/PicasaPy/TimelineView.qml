@@ -106,6 +106,7 @@ Window {
     function step(delta) {
         if (currentIndex < 0 || !collectionsModel || collectionsModel.length === 0)
             return
+        pendingSliderIndex = -1
         beginCarouselMotion()
         var now = Date.now()
         updateCarouselAnimator(now / 1000)
@@ -155,6 +156,7 @@ Window {
     }
 
     function beginCarouselDrag(x) {
+        pendingSliderIndex = -1
         if (motionMode === "background")
             finishBackgroundTransition()
         if (motionMode === "carousel")
@@ -211,6 +213,7 @@ Window {
 
     function finishCarouselMotion() {
         if (!collectionsModel || collectionsModel.length === 0) {
+            pendingSliderIndex = -1
             motionMode = "idle"
             animating = false
             return
@@ -228,6 +231,7 @@ Window {
         if (focusedIndex >= 0 && focusedIndex !== currentIndex) {
             previousIndex = currentIndex
             currentIndex = focusedIndex
+            pendingSliderIndex = -1
             motionMode = "background"
             animationStartedAt = Date.now()
             transitionProgress = 0.6800000071525574
@@ -235,6 +239,7 @@ Window {
             return
         }
         previousIndex = currentIndex
+        pendingSliderIndex = -1
         transitionProgress = 1
         motionMode = "idle"
         animating = false
@@ -285,8 +290,16 @@ Window {
 
     function releaseSlider() {
         draggingSlider = false
-        if (pendingSliderIndex >= 0)
-            show.animateTo(pendingSliderIndex, 4000)
+        var target = pendingSliderIndex
+        if (target < 0)
+            return
+        if (target === currentIndex && motionMode === "idle"
+                && Math.abs(carouselVelocity) < 0.000001) {
+            pendingSliderIndex = -1
+            return
+        }
+        // #6902: a bináris 0x00c7e4a4 konstansa szerinti 4,0 másodperc.
+        show.animateTo(target, 4000)
     }
 
     readonly property var frameTransforms: (typeof timelineController !== "undefined" && timelineController)
@@ -400,8 +413,14 @@ Window {
             } else if (event.key === Qt.Key_Left) {
                 show.step(-1)
                 event.accepted = true
+            } else if (event.key === Qt.Key_Up) {
+                show.step(-1)
+                event.accepted = true
             } else if (event.key === Qt.Key_Space) {
                 show.startCurrentSlideshow()
+                event.accepted = true
+            } else if (event.key === Qt.Key_Down) {
+                show.step(1)
                 event.accepted = true
             }
         }

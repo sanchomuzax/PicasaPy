@@ -87,9 +87,7 @@ TimelineView {
     }
 
     function closeTimeline() {
-        var collection = timeline.collectionAt(timeline.currentIndex)
-        if (collection)
-            timeline.selectTimelineCollection(collection)
+        // Az Időrend böngészése nem írja át a belépés előtti főnézetet.
         hostWindow.timelineOpen = false
     }
 
