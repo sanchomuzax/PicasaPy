@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.108] - 2026-11-13
+
+- Az új mappa útvonalát a windowsos rövid és hosszú név szerint is azonosnak veszi (#6894).
 ## [1.0.107] - 2026-11-13
 
 - A bal hasáb referenciaképei a CI renderelése szerint (#6890).
