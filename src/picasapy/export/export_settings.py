@@ -38,6 +38,10 @@ class ExportSettings:
     # 4:4:4-et; a többi választás 4:2:0. Az Automatikus JPEG-forrásnál ezt
     # a forrás JPEG mintája felülírja.
     jpeg_subsampling: int = 2
+    # #6878: egyes kimeneteknél (Ajándék CD) a nem-JPEG forrás eredeti
+    # formátumban is átvihető, ha nem kell szerkesztést vagy átméretezést
+    # beleégetni.
+    convert_non_jpeg: bool = True
 
     def __post_init__(self) -> None:
         if self.max_dimension is not None and self.max_dimension < 1:

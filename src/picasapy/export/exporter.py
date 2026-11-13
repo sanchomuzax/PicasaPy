@@ -39,6 +39,7 @@ from .export_jpeg import (
     _WATERMARK_MIN_HEIGHT as _WATERMARK_MIN_HEIGHT,
     _apply_watermark as _apply_watermark_impl,
     _encode_jpeg as _encode_jpeg,
+    _encode_original_format as _encode_original_format,
     _encode_with_source_qtables as _encode_with_source_qtables,
     _first_frame as _first_frame,
     _is_noop_copy as _is_noop_copy,
@@ -218,6 +219,17 @@ def _export_one(
     )
     image = scale_down(image, settings.max_dimension)
     image = _apply_watermark(image, settings.watermark_text)
+
+    if (
+        not settings.convert_non_jpeg
+        and source.suffix.lower() not in _JPEG_EXTENSIONS
+    ):
+        target = _unique_target(
+            target_dir, number_prefix + source.stem, source.suffix.lower()
+        )
+        write_atomic(target, _encode_original_format(image, source))
+        return target
+
     height, width = image.shape[:2]
     taken_at_override = (
         datetime.fromisoformat(item.taken_at_override)

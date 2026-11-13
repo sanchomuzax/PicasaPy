@@ -20,9 +20,25 @@ from .export_settings import ExportSettings
 load_font = lazy_callable("picasapy.render.text_fonts", "load_font")
 
 
-# A bájthű (no-op) másolás csak valódi JPEG-forrásra alkalmazható — más
-# formátumot mindenképp JPEG-be kell kódolni (meglévő viselkedés).
+# A nem-JPEG forrás formátumának megőrzése a kimeneti beállítástól függ.
 _JPEG_EXTENSIONS = frozenset({".jpg", ".jpeg"})
+
+
+def _encode_original_format(image: np.ndarray, source: Path) -> bytes:
+    """A módosított nem-JPEG képet a forrás fájlformátumába kódolja."""
+    image_format = Image.registered_extensions().get(source.suffix.lower())
+    if not image_format or image_format == "JPEG":
+        raise ValueError(f"Nem támogatott eredeti képformátum: {source.suffix}")
+    try:
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        puffer = io.BytesIO()
+        Image.fromarray(rgb).save(puffer, format=image_format)
+    except (OSError, ValueError, TypeError, cv2.error) as exc:
+        raise ValueError(
+            f"Kép kódolása sikertelen az eredeti formátumba: {source}"
+        ) from exc
+    return puffer.getvalue()
+
 
 def _first_frame(source: Path) -> np.ndarray | None:
     """A videó ELSŐ olvasható képkockája BGR tömbként, vagy `None` (#1166).
@@ -134,14 +150,18 @@ def _is_noop_copy(
     settings: ExportSettings,
 ) -> bool:
     """Nincs mit beégetni: se forgatás, se tükrözés (#3977), se átméretezés,
-    se szerkesztés, se vízjel — és a forrás már JPEG. Ilyenkor a sima másolás a helyes (bájthű,
+    se szerkesztés, se vízjel — és a forrás JPEG, vagy a beállítás kéri a
+    nem-JPEG formátum megőrzését. Ilyenkor a sima másolás a helyes (bájthű,
     mtime-őrző); a sorszámozás (#369) csak a fájlnevet érinti, a bájthű
     másolást nem zárja ki. A nem üres nyers `filters=` láncot akkor is
     újrakódoljuk, ha a renderelés egyes vagy összes tagot kihagy: az eredeti
     Picasa ilyenkor is új JPEG-et ír, és a metaadatoknak is le kell futniuk
     (#3997, #4017)."""
     return (
-        source.suffix.lower() in _JPEG_EXTENSIONS
+        (
+            source.suffix.lower() in _JPEG_EXTENSIONS
+            or not settings.convert_non_jpeg
+        )
         and item.rotate_steps % 4 == 0
         and not int(item.flip_flags or 0) & FLIP_MASK
         and settings.max_dimension is None
