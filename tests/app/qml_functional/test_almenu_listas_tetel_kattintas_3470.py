@@ -81,7 +81,7 @@ ESETEK = (
     ),
     pytest.param(
         "FolderContextMenu",
-        'customCollections: [{"name": "Család"}]',
+        'folderPath: "/photos"; customCollections: [{"name": "Család"}]',
         "folderContextMenuMoveToCollection",
         "folderContextMenuMoveToCollectionItem_Család",
         "moveToCollectionRequested", "Család",

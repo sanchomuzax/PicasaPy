@@ -112,7 +112,12 @@ PicasaMenu {
             checked: menu.currentCollection === "Exported Pictures"
             enabled: menu.folderPath.length > 0
                 && menu.currentCollection !== "Exported Pictures"
-            onTriggered: helyiMenu.moveToCollectionRequested("Exported Pictures")
+            onTriggered: {
+                helyiMenu.moveToCollectionRequested("Exported Pictures")
+                checked = Qt.binding(function () {
+                    return menu.currentCollection === "Exported Pictures"
+                })
+            }
         }
         MenuItem {
             objectName: "folderContextMenuMoveToCollectionBuiltin_Folders"
@@ -121,7 +126,12 @@ PicasaMenu {
             checked: menu.currentCollection === "Folders"
             enabled: menu.folderPath.length > 0
                 && menu.currentCollection !== "Folders"
-            onTriggered: helyiMenu.moveToCollectionRequested("Folders")
+            onTriggered: {
+                helyiMenu.moveToCollectionRequested("Folders")
+                checked = Qt.binding(function () {
+                    return menu.currentCollection === "Folders"
+                })
+            }
         }
         MenuItem {
             objectName: "folderContextMenuMoveToCollectionBuiltin_HiddenFolders"
@@ -130,7 +140,12 @@ PicasaMenu {
             checked: menu.currentCollection === "Hidden Folders"
             enabled: menu.folderPath.length > 0
                 && menu.currentCollection !== "Hidden Folders"
-            onTriggered: helyiMenu.hideFolderRequested(menu.folderPath)
+            onTriggered: {
+                helyiMenu.hideFolderRequested(menu.folderPath)
+                checked = Qt.binding(function () {
+                    return menu.currentCollection === "Hidden Folders"
+                })
+            }
         }
         MenuItem {
             objectName: "folderContextMenuMoveToCollectionBuiltin_OtherStuff"
@@ -139,7 +154,12 @@ PicasaMenu {
             checked: menu.currentCollection === "Other Stuff"
             enabled: menu.folderPath.length > 0
                 && menu.currentCollection !== "Other Stuff"
-            onTriggered: helyiMenu.moveToCollectionRequested("Other Stuff")
+            onTriggered: {
+                helyiMenu.moveToCollectionRequested("Other Stuff")
+                checked = Qt.binding(function () {
+                    return menu.currentCollection === "Other Stuff"
+                })
+            }
         }
         MenuItem {
             objectName: "folderContextMenuMoveToCollectionBuiltin_Projects"
@@ -148,7 +168,12 @@ PicasaMenu {
             checked: menu.currentCollection === "Projects"
             enabled: menu.folderPath.length > 0
                 && menu.currentCollection !== "Projects"
-            onTriggered: helyiMenu.moveToCollectionRequested("Projects")
+            onTriggered: {
+                helyiMenu.moveToCollectionRequested("Projects")
+                checked = Qt.binding(function () {
+                    return menu.currentCollection === "Projects"
+                })
+            }
         }
         MenuItem {
             objectName: "folderContextMenuMoveToCollectionBuiltin_WebAlbums"
@@ -157,10 +182,15 @@ PicasaMenu {
             checked: menu.currentCollection === "Web Albums"
             enabled: menu.folderPath.length > 0
                 && menu.currentCollection !== "Web Albums"
-            onTriggered: helyiMenu.moveToCollectionRequested("Web Albums")
+            onTriggered: {
+                helyiMenu.moveToCollectionRequested("Web Albums")
+                checked = Qt.binding(function () {
+                    return menu.currentCollection === "Web Albums"
+                })
+            }
         }
         Instantiator {
-            objectName: "folderContextMenuMoveToCollectionInstantiator"
+            objectName: "folderContextMenuMoveToCollectionRepeater"
             model: menu.customCollections
             delegate: MenuItem {
                 required property var modelData
@@ -170,7 +200,12 @@ PicasaMenu {
                 checked: helyiMenu.currentCollection === modelData.name
                 enabled: helyiMenu.folderPath.length > 0
                     && helyiMenu.currentCollection !== modelData.name
-                onTriggered: helyiMenu.moveToCollectionRequested(modelData.name)
+                onTriggered: {
+                    helyiMenu.moveToCollectionRequested(modelData.name)
+                    checked = Qt.binding(function () {
+                        return helyiMenu.currentCollection === modelData.name
+                    })
+                }
             }
             onObjectAdded: function(index, object) {
                 moveToCollectionMenu.insertItem(6 + index, object)
