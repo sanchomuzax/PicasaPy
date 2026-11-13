@@ -1104,7 +1104,7 @@ az őket megelőző/követő állapotok a megadott `job-639` és `job-640` felv�
 | Gomb | Eredeti Picasa 3.9 | PicasaPy (2 kijelölés, QTest) | Eltérés / mérési korlát | Felelős PicasaPy-fájl |
 |---|---|---|---|---|
 | Tálca: Email | job-639/9: „Select Email”; Native Mail Client és Google Mail választás, emlékezzen jelölőnégyzet, Help/Cancel. | A `trayEmailButton` megnyitja az `emailChoiceDialog`-ot. | A folyamat egyezik. Az eredeti tálcagomb és a `0x005cb990` menü-diszpécser közötti konkrét hívási kapcsolat nincs igazolva; a PicasaPy tálca és Fájl/E-Mail ugyanarra a `sendSelectionByEmail()` műveletre fut. | `TrayActionArea.qml`, `MainTrayBar.qml`, `MainWindowCommands.qml` |
-| Tálca: Print | job-639/14: teljes Print Layout nézet, lap- és képelrendezés, nyomtatóválasztó, előnézet, Print/Cancel. | A `trayPrintButton` bal oldali `printDialog` panelt nyit, két kép számlálójával és előnézettel; nincs telepített nyomtató. | A nyomtatási folyamat megnyílik, de a felület és a nézet eltér. Nyomtatás végrehajtása nem mérhető nyomtató hiányában. A tálca és a PicasaPy menü ugyanazt az `openPrint()` műveletet hívja. | `TrayActionArea.qml`, `MainTrayBar.qml`, `MainWindowCommands.qml`, `MainWindowDialogStack.qml`, `PrintDialog.qml` |
+| Tálca: Print | job-639/14 átadott leírása: teljes Print Layout nézet, lap- és képelrendezés, nyomtatóválasztó, előnézet, Print/Cancel. | A korábbi QTest-összefoglaló bal oldali `printDialog` panelt említ. A jelenlegi `PrintDialog.qml:19-23` gyökéreleme külön, az egész alkalmazást blokkoló (modális) `Window`; a helyi QTest-képkocka hiányában a két leírás eltérése nem dönthető el újraméréssel. | Az eredeti főnézetváltást az erőforrásban a `m_print_enable` írja le. Nyomtatás végrehajtása nyomtató hiányában nem mérhető. | `TrayActionArea.qml`, `MainTrayBar.qml`, `Main.qml`, `PrintDialog.qml` |
 | Tálca: Export | job-639/19: Export to Folder, két kép, Resize to 800 pixels, minőség, film, vízjel, Export/Cancel. | Az `exportDialog` megnyílik; „Use original size” aktív, célhely `<Pictures>/Picasa/Exports`. | A párbeszéd folyamata egyezik, de az értékek eltérnek. Ez egy mentett profilállapot mérése, nem tiszta profil alapértékének összehasonlítása. A tálca és a PicasaPy menü ugyanazt az `openForSelection()` műveletet hívja. | `TrayActionArea.qml`, `MainTrayBar.qml`, `ExportDialogs.qml` |
 | Tálca: Upload to Google Photos | job-639/24: a kattintás után job-639/25-től „Log in to Google” ablak nyitva. | A `trayUploadButton` látható, de bejelentkezés nélkül tiltott; kattintásra nem nyit ablakot. | Igazolt eltérés: az eredeti felkínálja a bejelentkezést, a PicasaPy tálcagombja nem indítható el. A hitelesítés utáni feltöltést egyik oldalon sem hajtottuk végre. | `TrayActionArea.qml`; engedélyezési állapot: `tray_google_photos_controller.py` |
 | Mappa-eszköztár: diavetítés | job-639/29: a Google-belépő már nyitva van a job-639/24 Upload óta; a diavetítés hatása nem látszik. | A `headerPlayButton` teljes képernyős diavetítést indít. | Az eredeti kimenet ebből a felvételből nyitott. A PicasaPy fejléc a csoport kezdősorát adja át; a menü ugyanahhoz az indító művelethez `-1` indexet ad. Az eredeti fejlécgomb menüparancshoz rendelése nincs igazolva. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml`, `MainLibraryCanvas.qml`, `MainSlideshow.qml` |
@@ -1158,6 +1158,108 @@ A kollázs bemeneti halmazának és a kijelentkezett Upload gomboknak az eltér�
 
 ## Folyamatszintű összevetés (#6845)
 
-| Parancs | Eredeti | PicasaPy | Eltérés |
-|---|---|---|---|
-| Copy Full Path | Egy kijelölt képnél látható a Delete from Disk alatt, kettőnél hiányzik. | A javítás előtt két kijelöltnél is látszott; a javítás után csak egynél látszik. | A `PhotoContextMenu.qml` menüpontja nem vette figyelembe a kijelöltek számát; javítva. |
+Mérés dátuma: 2026-11-12 / 2026-11-13. Hatókör: a 20 mappanézetbeli fájl- és mappaművelet folyamatszintű paritása az eredeti Picasa 3.9 (Colab-végrehajtó, képernyőképek, lemez- és ablakállapot) és a PicasaPy (QML-funkcionális tesztek valós kattintással, lemez, index és felületi állapot ellenőrzésével) összevetésében.
+
+| Parancs | Belépési pontok | Eredeti (mért / viselkedés) | PicasaPy (mért / teszt) | Eredmény / Eltérés | Felelős felület |
+|---|---|---|---|---|---|
+| Áthelyezés új mappába (`ID_FILE_NEWFOLDER`) | Fájl menü, kép helyi menüje | Colab (helyi menü); Fájl menü: job-641 | #6844 | Eltért, javítva (#6844, kiadás: 1.0.103); a Fájl menüs tiszta újramérés (job-641) is a Folder Properties ablakot mutatja: egyezik | `FolderPropertiesDialog.qml`, `PhotoContextMenu.qml` |
+| Mappa felosztása itt | Kép helyi menüje | Colab #600-#608 | #6848 | Eltért, javítva (#6848, kiadás: 1.0.104) | `PhotoContextMenu.qml` |
+| Elrejtés | Kép helyi menüje, Kép menü | Colab #600-#608 | #6848 | Eltért, javítva (#6848, kiadás: 1.0.104) | `PhotoContextMenu.qml`, `PicasaPictureMenu.qml` |
+| Keresés a lemezen (`ID_FILE_LOCATEONDISK`, `ID_ALBUM_LOCATEONDISK`) | Kép és mappa helyi menüje, Fájl menü | job-642 (Fájl menü); Wine alatt nincs fájlkezelő ablak | #6845 (`test_kereses_es_gyujtemeny_folyamatok_6845.py`) | Eredeti oldalon Wine alatt nem nyílik Intéző ablak; PicasaPy-on mindhárom belépési pont a megfelelő `fileOpsController.revealPhoto`/`revealFolder` API-t hívja; 0 kijelölt képnél a Fájl menü letiltott, 1 és 2 képnél aktív; ablakot nem nyit, kijelölés megmarad | `PhotoContextMenu.qml`, `FolderContextMenu.qml`, `PicasaFileMenu.qml` |
+| Törlés a lemezről | Kép helyi menüje, Delete, Fájl menü | Colab #600-#608 | #6848 | Eltért, javítva (#6848, kiadás: 1.0.104) | `PhotoContextMenu.qml`, `PicasaFileMenu.qml` |
+| Teljes elérési út másolása | Kép helyi menüje | Colab #600-#608: 1 képnél látható, 2 képnél hiányzik | #6848 (`test_kereses_es_gyujtemeny_folyamatok_6845.py`) | Eltért, javítva (#6848, kiadás: 1.0.104): a menüpont 2 képnél rejtett, csak pontosan 1 kijelölt képnél jelenik meg | `PhotoContextMenu.qml` |
+| Átnevezés | F2, Fájl menü | Fájl menü: job-641 (tiszta) | #6845 (Q07) | Egyezik: Rename Files ablak („2 file(s) selected for rename.”) | `SaveDialogs.qml`, `PicasaFileMenu.qml` |
+| Forgatás jobbra/balra | Kép helyi menüje, eszköztár, Ctrl+]/[ | Colab #600-#608 | #6848 | Eltért, javítva (#6848, kiadás: 1.0.104) | `PhotoContextMenu.qml` |
+| Összes szerkesztés visszavonása | Kép helyi menüje, Kép menü | Colab (Kép menü) | #6845 (Q28) | Egyezik: Confirm ablak, Remove Edits / No gombok | `PicasaPictureMenu.qml`, `PhotoContextMenu.qml` |
+| Tulajdonságok | Kép helyi menüje, Alt+Enter, Nézet és Kép menü | Colab #600-#608 | #6848, #6845 (Q17, Q30) | Eltért, javítva (#6848, kiadás: 1.0.104); a menüből nyitott Properties panel egyezik | `PropertiesPanel.qml`, `PhotoContextMenu.qml` |
+| Mappaleírás szerkesztése | Mappa helyi menüje, Folder menü | Colab #613, #614 | felvevő, #6860 | Egyezik: Folder Properties ablak | `FolderPropertiesDialog.qml`, `PicasaFolderMenu.qml` |
+| Áthelyezés gyűjteménybe | Mappa helyi menüje | job-648 (az almenü: Exported Pictures, Folders, Hidden Folders, Other Stuff, Projects, Web Albums, New Collection...; a jelenlegi gyűjtemény pipált és tiltott); job-649 (Other Stuff: `P2category=Other Stuff`, a bal hasábban a mappa az Other Stuff csoportba kerül, ablak nélkül) | #6845 (`test_kereses_es_gyujtemeny_folyamatok_6845.py`) | Eltér: a PicasaPy almenüjéből hiányzik a hat beépített gyűjtemény, csak a saját gyűjtemények és a New Collection... van → #6883. A saját gyűjtemény útja (New Collection..., `P2category`, bal hasáb) működik | `FolderContextMenu.qml`, `FolderPane.qml` |
+| Indexképek frissítése | Mappa helyi menüje, Folder menü | Colab (Folder menü) | #6860 | A látható állapot egyezik; a frissítés tartalma nincs összevetve | `FolderContextMenu.qml`, `PicasaFolderMenu.qml` |
+| Mappa rendezésének alapja | Mappa helyi menüje | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104) | `FolderContextMenu.qml` |
+| Mappa elrejtése / megjelenítése | Mappa helyi menüje | Colab #613, #614 | felvevő | Egyezik: Add Password ablak | `FolderContextMenu.qml`, `PasswordDialog.qml` |
+| Eltávolítás a Picasából | Mappa helyi menüje, Folder menü | Colab #613, #614 | felvevő, #6860 | Eltért: helyi menü javítva (#6852), Folder menü javítva (#6861), kiadás: 1.0.104 | `FolderContextMenu.qml`, `PicasaFolderMenu.qml`, `MainDialogs.qml` |
+| Mappa áthelyezése | Mappa helyi menüje, húzás | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104); a húzás nincs összevetve | `FolderContextMenu.qml` |
+| Mappa törlése | Mappa helyi menüje | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104) | `FolderContextMenu.qml` |
+| Mentés / Visszaállítás | Fájl menü, kép helyi menüje | job-641 (tiszta) | #6845 (Q08, Q09) | Save As egyezik; Save a Copy eltér: két kijelölt képből az eredeti egy másolatot készít → #6866 | `SaveDialogs.qml`, `PicasaFileMenu.qml` |
+| Kép exportálása mappába | Fájl menü, alsó tálca | Colab (Fájl menü); tálca: job-639 | #6845 (Q10); tálca: #6862 | Eltér: tiszta profillal (job-642) is a Resize to 800 pixels az alap, nálunk Use original size → #6866 | `ExportDialogs.qml`, `PicasaFileMenu.qml`, `TrayActionArea.qml` |
+
+### Részletes folyamatmérések (#6845)
+
+#### 1. Keresés a lemezen (`Locate on Disk`)
+- **Belépési pontok:**
+  - Kép helyi menü (`contextMenuLocate`): 1 és 2 kijelölt képnél is elérhető. Kattintásra belső párbeszédablak nem nyílik; a lemezen, az adatbázis-indexben és a bal oldali hasábban semmi sem változik; a rácsban a kijelölés megmarad. A háttérben meghívja a `fileOpsController.revealPhoto(path)` metódust a kijelölt képre.
+  - Mappa helyi menü (`folderMenuLocate`): 1 és 2 kijelölt kép mellett is elérhető a mappán. Kattintásra belső ablak nem nyílik; sem a lemez, sem az index, sem a hasáb állapota nem változik, a rácsbeli kijelölés érintetlen marad. A háttérben meghívja a `fileOpsController.revealFolder(folderPath)` metódust.
+  - Fájl menü (`menuFileLocate`): 1 és 2 kijelölt képnél a menüpont aktív (`enabled: true`), kattintásra a kijelölt képek első elemére hívja a `revealPhoto`-t; kijelölés hiányában (0 kép) a menüpont tiltott (`enabled: false`).
+- **Eredeti összevetés:** Wine alatt a Windows Intéző hiánya miatt a `job-642` kattintása nem nyitott ablakot (külső fájlkezelő hívása Windows-környezetben mérendő); a PicasaPy oldalon a folyamat mindhárom belépési pontról szigorúan és platform-függetlenül ellenőrzött (`tests/app/qml_functional/test_kereses_es_gyujtemeny_folyamatok_6845.py`).
+
+#### 2. Áthelyezés gyűjteménybe (`Move into Collection`)
+- **Eredeti (job-648, job-649):** az almenü hat beépített gyűjteményt sorol (Exported Pictures, Folders, Hidden Folders, Other Stuff, Projects, Web Albums), alatta a New Collection...; az Other Stuff választása a `.picasa.ini`-be `P2category=Other Stuff`-ot ír, és a bal hasábban a mappa az Other Stuff csoportba kerül, megerősítő ablak nélkül. A PicasaPy-ból a beépített tételek hiányoznak → #6883.
+- **Belépési pontok:**
+  - Kizárólag a mappa helyi menüjéből érhető el (`folderContextMenuMoveToCollection`). A kép helyi menüjéből és a Fájl menüből hiányzik (nem képművelet).
+  - **Új gyűjtemény létrehozása:** a menüben a „New Collection...” (`folderContextMenuNewCollection`) kiválasztásakor megnyílik a `newCollectionDialog` („New Collection”). A gyűjtemény nevének megadása és jóváhagyása után:
+    1. Lemez: az érintett mappa könyvtárában a `.picasa.ini` fájl `[Picasa]` szakasza frissül: `P2category = <gyűjteménynév>`.
+    2. Index: a mappa bekerül az SQLite adatbázis / kontroller `customCollections` nyilvántartásába.
+    3. Bal hasáb: a mappapanelen (`FolderPane`) létrejön a gyűjtemény fejléce (`customCollection_<név>`) és alatta a mappa sora (`customCollectionFolder_<útvonal>`).
+    4. Rács: a rácsban lévő képek kijelölése nem sérül.
+  - **Meglévő gyűjteménybe áthelyezés:** ha létezik egyéni gyűjtemény, az almenüben közvetlenül megjelenik annak neve (`folderContextMenuMoveToCollectionItem_<név>`). Kattintásra külön megerősítő dialógus nélkül azonnal végbemegy az áthelyezés (a `.picasa.ini` `P2category` értéke és a bal hasáb struktúrája frissül).
+- **Tesztelt lefedettség:** `tests/app/qml_functional/test_kereses_es_gyujtemeny_folyamatok_6845.py` (valódi QTest kattintásokkal, 1 és 2 kijelölt képpel, lemez- és UI-invariánsok ellenőrzésével).
+
+### #6862 kiegészítés: a tálca Print és Export gombja (2026-11-13)
+
+Ez a kiegészítés a két nyitva maradt tálcagomb bináris útját és az Export
+alapértékeit rögzíti. A job-639/14 és job-639/19 képkockafájlok nem voltak
+benne a helyi `meroadat.tar` archívumban; a megfigyelésük az #6862 átadott
+mérési összefoglalójából és a korábbi táblázatból származik, nem újramért adat.
+
+| Kérdés | Megállapítás | Forrás |
+|---|---|---|
+| Tálca Export parancsazonosító | A `0x005d9cc0` eseménykezelő az `outputlayout/folderbutton` nevet vizsgálja, majd `0x005312b0`-t hívja. Ezen a gombúton numerikus parancsazonosító: **NINCS MEG**. | `bináris (0x005d9cc0, 0x00c8fb00)` |
+| Fájl > Export menü | `ID_FILE_EXPORTTOFOLDER = 0x9c81`; a `0x005cb990` menü-diszpécser `0x005312b0`-ra fut. A tálca és a menü ugyanazt a kezelőfüggvényt hívja, de nem bizonyított, hogy a tálcagomb a menü numerikus azonosítóját küldi. | `bináris (0x005cb990, 0x005312b0)` |
+| Tálca Print parancsazonosító | A `0x005d9cc0` az `outputlayout/pbutton` nevet a `0x00744a00` kezelőhöz irányítja. Ezen a gombúton numerikus parancsazonosító: **NINCS MEG**. | `bináris (0x005d9cc0, 0x00c8fae8, 0x00744a00)` |
+| Fájl > Print menü | `ID_FILE_PRINT = 0xe107`. A `0x005cb990` menüág egy állapotfeltételt vizsgál: az egyik ág az `outputlayout/pbutton` nevű műveletet küldi, a másik közvetlenül `0x00744d00`-t hív. Ezért a menü és a tálca közös útja feltételes, nem általános. | `bináris (0x005cb990, 0x005cd9bc-0x005cd9d6)` |
+| Print Layout nézet | A job-639/14 átadott leírása teljes Print Layout nézetet mutat. Az `outputlayout/pbutton` a `m_print_enable` makrót használja; ez megjeleníti a `thumbui/printpanel`-t és elrejti a `thumbui/mainuipanel`-t. A tálca kódútja `0x00744a00`-hoz, majd közvetlenül a panelépítő `0x00743700`-hoz vezet. A `0x00744a00`-ban talált `0x00744a65` virtuális hívás célja **NINCS MEG**. A `0x007448a0` a `pcancelbutton` és a nyomtatás utáni visszaút kezelője. | `mérés (job-639/14, átadott összefoglaló)`; `bináris (outputlayout.tre:38-43, macros.tre:285-291; 0x005d9cc0, 0x00744a00, 0x00743700, 0x007448a0)` |
+| Eredeti Export méret | A `0x00738c00` konstruktor a `FileExportSize` kulcs hiányakor 3-at ad át (`0x00738c58`). A méretlista 0-alapú 3. indexe 800 px. A mentés a `0x00739960` útban ugyanezt a kulcsot írja. A tiszta profilú job-645 mérés szintén 800 px átméretezést látott; a job-639 profilbeállítása nem ismert. | `bináris (0x00738c43, 0x00738c58, 0x00739960)`; `mérés (job-645, export-parbeszed.md 3.2)` |
+| Eredeti Export célhely | A konstruktor előbb a `CExportPrefsDialog::deffolder` kulcs nyers `Picasa\Exports\` alapját tölti be, majd a korábban mentett `DefaultExportPath` értékkel felülírhatja. A `0x00739960` mentési út a kiválasztott értéket tartósítja. A job-639 képen látható pontos célhely és a hozzá tartozó beállításérték: **NINCS MEG**. | `bináris (0x00738cd6, 0x00738d16, 0x00caf994, 0x00caf984, 0x00caf9b4, 0x00739960)` |
+| PicasaPy Export induló érték | A jelenlegi forrás tiszta beállításnál `resize=True`, `size=3`, azaz 800 px; a QML a megőrzött állapotból tölti vissza a rádiót és a méretet. A célhely a megőrzött út, ennek hiányában `<Pictures>/Picasa/Exports`. A korábban feljegyzett QTest „Eredeti méret” állapotának tényleges beállításértéke: **NINCS MEG**. | `src/picasapy/app/export_prefs.py:35-36, 91-110`; `src/picasapy/app/qml/PicasaPy/ExportDialogs.qml:179-199`; `src/picasapy/app/export_controller.py:143-154`; `mérés (korábbi QTest-összefoglaló)` |
+
+#### Két független út és cáfoló ellenőrzés
+
+- **A út, utasítások:** a tálca-eseménykezelő `0x005d9cc0` a két név szerinti műveletet külön kezeli; a `folderbutton` ága `0x005312b0`-ra fut, a `pbutton` ága `0x00744a00`-ra. A menü-diszpécser `0x005cb990` `0x9c81` ága szintén `0x005312b0`-ra jut. A `0xe107` ágnál viszont állapotfüggő a folytatás.
+- **B út, címkék, index és mérés:** az index `string_xrefs` táblája a `folderbutton` és `pbutton` neveket a tálca-eseménykezelőhöz köti; a menüazonosítók a meglévő `0x005cb990` Ghidra-kimenetben szerepelnek. Az Export `FileExportSize` és `DefaultExportPath` kulcsait külön olvasó `0x00738c00` és író `0x00739960` függvények, a tiszta job-645 felvétel pedig 800 px induló méretet mutat. A PrintPanel osztály RTTI-bejegyzése és a `thumbui/printpanel` erőforrásnév függetlenül támasztja alá a mérésben látott Print Layout felületet.
+- **Egyezés:** az Export gomb és menü ugyanazt a kezelőfüggvényt hívja, de a tálcaút nem küldött numerikus menüazonosítóként igazolható. Printnél a menüazonosító `0xe107`, a tálcaút név szerinti, és a menüág csak az egyik feltétel mellett irányít a `pbutton` műveletre.
+- **Cáfoló kör:** az Export közös útjára vonatkozó állítást az eltérő menüágak és a közvetlen utasításút ellenőrzésével próbáltam cáfolni; mindkét út `0x005312b0`-nál találkozik. A Print feltétel nélküli azonosságát a `0x005cb990` nemnulla állapotú ága cáfolja, amely `0x00744d00`-t hív. A `0x007448a0` címre mutató közvetlen hivatkozások `0x00743980` és `0x00745770` felől jönnek, nem a `0x00744a00`-ból, ezért ezt nem nevezem bizonyított tálcás nézetváltó hívásnak. A tiszta profilú job-645 800 px állapota cáfolja, hogy az 800 px és az eredeti méret közti különbség minden profilban alapérték-eltérés lenne; a konkrét job-639 előzményt nem dönti el.
+
+#### PicasaPy-kötés és hátralévő kérdések
+
+PicasaPyban a tálca Print `MainTrayBar.qml:56`-on és a Fájl > Print `MainMenuBar.qml:301`-en ugyanazt a `Main.qml:523` `openPrint()` műveletet hívja. Ez a `PrintDialog.qml:19-23` külön, az egész alkalmazást blokkoló (modális) `Window` ablakát nyitja. A korábbi QTest-leírás bal oldali panelt mond; ez a megfigyelés és a jelenlegi QML `Window` deklarációja nincs egymással összeegyeztetve, a felületet nem mértem újra. A tálca Export `MainTrayBar.qml:42`-n, a menü Export `MainMenuBar.qml:283-284`-en az `ExportDialogs.qml` `openForSelection()` műveletéhez jut; a menü nézőmódban külön átadja a célképsorokat. Az `export_prefs.py:20` modul elején álló megjegyzése az átméretezést hamis alapértékként írja le, miközben a tényleges mezőtérkép `:110` és a meglévő teszt `test_export_beallitasok_1138.py:63-64` igaz alapértéket ad meg. A gombok felelősségi fájljai: `TrayActionArea.qml`, `MainTrayBar.qml`, `MainMenuBar.qml`, `Main.qml`, `PrintDialog.qml` és `ExportDialogs.qml`.
+
+**Bizonyítottsági fok: feltételes.** Az Export kezelőfüggvény azonossága és a bináris beállításkulcsok megerősítettek. A Print teljes nézetváltó hívása, valamint a job-639/19 konkrét profilértékei nyitva maradnak. A PicasaPy aktuális tiszta Export-alapértéke átméretezés 800 px, ami egyezik a job-645 tiszta profilú mérésével; a korábbi QTest eredményhez használt profilérték nincs meg.
+
+- **NINCS MEG:** a job-639/14, job-639/19 és PicasaPy QTest képkockafájlok helyi példánya; megszerzés: az eredeti és a PicasaPy képkockákat tartalmazó fájlok felvétele a mérőarchívumhoz.
+- **NINCS MEG:** a job-639 Export célhely pontos szövege és mindkét program elmentett Export-profilja; megszerzés: azonos kétképes bemenet, külön tiszta profil és azonos újrahasznált profil mellett rögzíteni a beállításkulcsokat, a célhelyet és az Export képkockáját.
+
+#### Print Layout nézetváltás és visszaút (2026-11-13)
+
+A job-639/14 képkockafájlja nem szerepel a helyi `meroadat.tar`-ban, ezért a
+felületleírás az átadott mérési összefoglalóból származik. Az eredeti vezérlő
+útját a kódból és az eredeti `.tre` erőforrásokból külön ellenőriztem.
+
+| Lépés | Megállapítás | Forrás |
+|---|---|---|
+| Belépő vezérlő | Az `outputlayout.tre` az `outputlayout/pbutton` elemhez rendeli a `m_print_enable` makrót. | `bináris (0x00c8fae8; outputlayout.tre:38-43)` |
+| Főnézet váltása | A makró megjeleníti a `thumbui/printpanel`-t, és elrejti a `thumbui/mainuipanel`-t, az `acquirepanel`-t, az `editpanel`-t, az `infowell`-t és a `secretcoinclip`-et. Ez az erőforrásban deklarált főnézet-váltás; a végrehajtó virtuális hívás célja külön nyitott kérdés. | `bináris (0x00c8f0f0; macros.tre:285-291)` |
+| Kattintási kódút | A `0x005d9cc0` a `0x005da9af` helyen az `outputlayout/pbutton` nevet vizsgálja, majd `0x005da9f8`-nál meghívja a `0x00744a00` kezelőt. Ez a `0x00744a90` helyen közvetlenül meghívja a `0x00743700` panelépítőt. | `bináris (0x005da9af, 0x005da9f8, 0x00744a00, 0x00744a90, 0x00743700)` |
+| Indirekt hívás | A `0x00744a65` utasítás a `[ebp+0xed0+0x258]` objektum vtable-jének `+0x0c` slotját hívja. A slot tényleges célfüggvénye és az `m_print_enable` makróhoz való viszonya **NINCS MEG**. | `bináris (0x00744a5e-0x00744a65)`; `NINCS MEG` |
+| Visszatérés a könyvtárnézetbe | A PrintPanel erőforrásában nincs `Back` gomb; a `printpanel/pcancelbutton` vezérlő `escapekey 1` beállítást kap. A `0x00743980` kattintáskezelő `pcancelbutton` ága a `0x0074441e` helyen meghívja a `0x007448a0` panelállapot-kezelőt. A nyomtatás befejező útja is meghívja ugyanezt a kezelőt a `0x0074592a` címen. | `bináris (0x00c8ff24; printpanel.tre:199-201; 0x007443a1-0x0074441e; 0x0074592a)` |
+| PicasaPy tálca Print | A tálca `MainTrayBar.qml:56` sora a `Main.qml:523` `openPrint()` függvényéhez vezet; a `PrintDialog.qml:19-23` külön, az egész alkalmazást blokkoló (modális) `Window`-t deklarál. A régi QTest-összefoglaló bal oldali panelt ír, de a képkocka nincs meg az archívumban, így a két állapot eltérését nem tudtam újramérni. | `src/picasapy/app/qml/PicasaPy/MainTrayBar.qml:56`; `src/picasapy/app/qml/Main.qml:523`; `src/picasapy/app/qml/PicasaPy/PrintDialog.qml:19-23`; `NINCS MEG (helyi QTest-képkocka)` |
+
+#### Két független út és cáfoló ellenőrzés
+
+- **A út, kód:** az `annot_disasm.py` utasításai és a `paszta.py` teljes `.text`-pásztázása ugyanazt mutatja: a tálca a `0x00744a00` kezelőn át a panelépítőre jut; a `0x007448a0` közvetlen hívója a `pcancelbutton` ág és a nyomtatás utáni út.
+- **B út, erőforrás:** az `outputlayout.tre` és `macros.tre` deklarálja a PrintPanel megjelenítését és a fő könyvtárnézet elrejtését; a `printpanel.tre` a Cancel gombot és Escape-kötését nevezi meg. Ez a kódhívási lánctól függetlenül egyezik a job-639/14 leírt Print Layout állapotával.
+- **Egyezés:** a Print Layout nézetet az `m_print_enable` erőforrás-makró kapcsolja be; a `0x007448a0` nem közvetlen belépési hívás, hanem a `pcancelbutton` és a nyomtatás utáni visszaút része.
+- **Cáfoló kísérlet:** azt próbáltam cáfolni, hogy a `0x007448a0` lenne a tálca belépő hívása. A `paszta.py` a teljes `.text`-ben mind az öt közvetlen célhívást megtalálta a vizsgált címekre: `0x005da9f8 → 0x00744a00`, `0x00744a90 → 0x00743700`, `0x0074441e → 0x007448a0`, `0x0074592a → 0x007448a0` és a külön panelépítő `0x005cfdbb → 0x00743700`. A belépő útban nincs közvetlen hívás `0x007448a0`-ra. A `0x00744a65` indirekt slot célja viszont **NINCS MEG**, ezért az esetleges virtuális kapcsolatot nem állítom kizártnak.
+
+**Bizonyítottsági fok: feltételes.** Két független út megerősíti a látható főnézet-váltás deklarációját és a Cancel/Escape visszautat. A `0x00744a65` virtuális hívás célja nem ismert; ez nyitva hagyja az eredeti kérdés szűk, hívásszintű részét.
+
+- `Ghidra-kör kell: 0x00744a00 - a 0x00744a65 virtuális hívás melyik célfüggvényre oldódik fel, és ez a hívás végzi-e a PrintPanelre váltást? A meglévő Ghidra-kimenet a 0x005d9cc0 hívót mutatja, de ezt a slotot nem oldja fel. [blokkoló]`
