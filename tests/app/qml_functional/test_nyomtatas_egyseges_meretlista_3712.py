@@ -81,17 +81,30 @@ def _lista(ertek):
 def _kattints_kozepere(ablak, qt_app, elem):
     """Valódi bal kattintás `elem` közepére (a
     `test_beallitasok_legkisebb_szelesseg_3572.py` `_kattints_kozepere`
-    mintája) — `ablak` az az egyetlen `QQuickWindow`, amelynek koordináta-
-    rendszerében `elem` él (a `PrintDialog.qml` maga is `Window`, a
-    felugró `Popup` tartalma ugyanennek az ablaknak az overlay-rétegén
-    jelenik meg, tehát ugyanaz az `ablak` illik mindkettőre)."""
+    mintája) — a koordinátát az elem tényleges `QQuickWindow`-jére küldi.
+    A Print Layout maga már QQuickItem a főablakban."""
     pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
-    QTest.mouseClick(ablak, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, pont)
+    QTest.mouseClick(
+        elem.window(),
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        pont,
+    )
     qt_app.processEvents()
 
 
 def _varakozzon(qt_app, feltetel, hatarido_mp=10.0):
     return var_feltetelre(qt_app, feltetel, hatarido_mp)
+
+
+def _allit_nezetmagassagot(dialog, celmagassag, qt_app):
+    ablak = dialog.window()
+    ablak.setHeight(
+        round(ablak.height() + celmagassag - dialog.height())
+    )
+    assert _varakozzon(
+        qt_app, lambda: round(dialog.height()) == celmagassag
+    ), f"a nyomtatási nézet nem vette fel a {celmagassag} px magasságot"
 
 
 def _legordulo_tetele(qt_app, lista, index):
@@ -157,8 +170,9 @@ class TestAMeretlistaResze:
     ):
         window, _controller, _engine = qml_app
         dialog = _nyit_sima(window, qt_app, [0, 1])
-        dialog.setProperty("height", dialog.property("height") + magassag_elteres)
-        qt_app.processEvents()
+        _allit_nezetmagassagot(
+            dialog, round(dialog.height()) + magassag_elteres, qt_app
+        )
         azonositok = _lista(dialog.property("printSizeIds"))
         feliratok = _lista(dialog.property("printSizeLabels"))
 
@@ -201,8 +215,9 @@ class TestAMeretlistaResze:
     ):
         window, _controller, _engine = qml_app
         dialog = _nyit_indexkeppel(window, qt_app, [0, 1])
-        dialog.setProperty("height", dialog.property("height") + magassag_elteres)
-        qt_app.processEvents()
+        _allit_nezetmagassagot(
+            dialog, round(dialog.height()) + magassag_elteres, qt_app
+        )
         assert dialog.property("contactSheet") is True
 
         _valassz_a_legorduloben(dialog, qt_app, "M4X5")

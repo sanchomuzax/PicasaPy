@@ -32,7 +32,7 @@ def _kep(dialog, cel: Path, qt_app):
 
     def kep_stabil():
         nonlocal elozo_kep, valtozatlan_kockak, stabil_kep
-        aktualis_kep = dialog.grabWindow()
+        aktualis_kep = dialog.window().grabWindow()
         if elozo_kep is not None and aktualis_kep == elozo_kep:
             valtozatlan_kockak += 1
         else:
@@ -53,8 +53,8 @@ def _kep(dialog, cel: Path, qt_app):
     assert kep is not None, f"a nyomtatási kép nem stabilizálódott: {cel.name}"
     assert not kep.isNull(), f"üres nyomtatási képernyőkép: {cel.name}"
     assert (kep.width(), kep.height()) == (
-        round(dialog.width()),
-        round(dialog.height()),
+        round(dialog.window().width()),
+        round(dialog.window().height()),
     )
     assert kep.save(str(cel), "PNG"), f"nem menthető: {cel}"
     return kep.width(), kep.height()
@@ -82,7 +82,11 @@ def test_vegso_allapotkepek(qml_app, qt_app, monkeypatch, tmp_path, magassag_elt
         _var(qt_app, lambda: not dialog.property("meretezesFuggoben"))
         elvart_magassag = alap_magassag + magassag_elteres
         if round(dialog.height()) != elvart_magassag:
-            dialog.setHeight(elvart_magassag)
+            dialog.window().setHeight(
+                dialog.window().height()
+                + elvart_magassag
+                - round(dialog.height())
+            )
         _var(qt_app, lambda: round(dialog.height()) == elvart_magassag)
 
     alkalmaz_magassag_elterest()
@@ -121,7 +125,10 @@ def test_vegso_allapotkepek(qml_app, qt_app, monkeypatch, tmp_path, magassag_elt
     combo.setProperty("currentIndex", 1)
     pont = combo.mapToScene(QPointF(combo.width() / 2, combo.height() / 2)).toPoint()
     QTest.mouseClick(
-        dialog, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, pont
+        dialog.window(),
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        pont,
     )
     lista = _elem(combo, "picasaComboList")
     _var(qt_app, lambda: int(lista.property("count")) == 2)

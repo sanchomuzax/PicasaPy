@@ -110,7 +110,9 @@ class TestNyomtatoNelkulUzenet:
         qt_app.processEvents()
 
         magassag = parbeszed.height()
-        parbeszed.resize(parbeszed.width(), magassag + eltolas)
+        parbeszed.window().setHeight(
+            parbeszed.window().height() + eltolas
+        )
         assert _var(qt_app, lambda: parbeszed.height() == magassag + eltolas)
 
         uzenet = _elem(parbeszed, NINCS_NYOMTATO)
@@ -118,7 +120,9 @@ class TestNyomtatoNelkulUzenet:
         assert uzenet.property("text") == MAGYAR, (
             "az üzenet nem a hivatalos magyar szöveg"
         )
-        alja = uzenet.mapToScene(QPointF(0, uzenet.height())).y()
+        alja = uzenet.mapToItem(
+            parbeszed, QPointF(0, uzenet.height())
+        ).y()
         assert alja <= parbeszed.height(), (
             f"az üzenet alja ({alja}) kilóg az ablakból "
             f"({parbeszed.height()} px magas)"

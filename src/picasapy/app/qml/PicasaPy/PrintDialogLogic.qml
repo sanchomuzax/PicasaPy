@@ -1,7 +1,7 @@
 import QtQml
 
-// A nyomtatási párbeszéd állapotműveletei; gazda- és nézetobjektumait
-// kötelező tulajdonságokon kapja, a Window nyilvános metódusai delegálnak ide.
+// A nyomtatási nézet állapotműveletei; gazda- és nézetobjektumait
+// kötelező tulajdonságokon kapja, a gyökér nyilvános metódusai delegálnak ide.
 QtObject {
     id: printLogic
     required property var hostWindow

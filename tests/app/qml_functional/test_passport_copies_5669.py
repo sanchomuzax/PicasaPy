@@ -54,14 +54,17 @@ def qml_app(qt_app, tmp_path):
 
 
 def _parbeszedmagassag(nyomtatas: QObject, qt_app, elteres: int) -> None:
-    """A nyomtatási ablakot a tartalmi átméretezés után állítja be."""
+    """A főablakot úgy méretezi, hogy a tartalmi nézet eltérése pontos legyen."""
     assert var_feltetelre(
         qt_app,
         lambda: not nyomtatas.property("meretezesFuggoben"),
         5.0,
     ), "a nyomtatási ablak tartalmi átméretezése nem fejeződött be"
     celmagassag = int(nyomtatas.height()) + elteres
-    nyomtatas.setHeight(celmagassag)
+    foablak = nyomtatas.window()
+    foablak.setHeight(
+        int(foablak.height()) + celmagassag - int(nyomtatas.height())
+    )
     qt_app.processEvents()
     assert int(nyomtatas.height()) == celmagassag
 
@@ -112,7 +115,7 @@ def test_passport_megtartja_a_darabszamot_es_kilepeskor_visszaallitja(
     mappa = os.environ.get(KIADASKEP_MAPPA)
     if magassag_elteres == 0 and mappa:
         qt_app.processEvents()
-        kep = nyomtatas.grabWindow()
+        kep = nyomtatas.window().grabWindow()
         assert not kep.isNull(), "a kiadáskép üres"
         cel = Path(mappa) / "utlevel_peldanyszam_5669.png"
         assert kep.save(str(cel), "PNG"), f"nem menthető a kiadáskép: {cel}"
