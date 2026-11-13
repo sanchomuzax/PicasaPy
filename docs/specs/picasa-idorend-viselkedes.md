@@ -1,5 +1,76 @@
 # A Picasa Időrend-bemutatójának viselkedése (#4443, #5401)
 
+### Megvalósítási összevetés (zárókör)
+
+Állapot: 2026-11-13. A táblázat a felhasználó által látható vagy használható
+viselkedést veti össze. Az eredeti címek a Picasa binárisának címei; a
+felvételből származó tényeket külön jelölöm. Az `egyezik` csak az adott
+működésre vonatkozik, nem jelent képpontszintű azonosságot. Ez a táblázat
+felülírja a 38.2.1 korábbi, 2026-11-10-i összevetését.
+Az alábbi táblázatban a rövid QML-fájlnevek a
+`src/picasapy/app/qml/PicasaPy/`, a `timeline_controller.py` és a
+`timeline_background.py` a `src/picasapy/app/`, a `timeline_motion.py` a
+`src/picasapy/`, az `index/albums.py` pedig a `src/picasapy/index/` alatti
+fájlt jelöli.
+
+| Eredeti | PicasaPy, pontos kódhely | Eredmény |
+|---|---|---|
+| Ctrl+5 a `MakeTimeline` útba lép (`0x005e6279`, `0x005e8a70`); a lap 480 képpont magas, szélessége a képernyőarányból jön (`0x007fa730`). A `thumbui/timelinebutton` főablaki gomb rejtett. | Nézet menü (`src/picasapy/app/qml/PicasaPy/PicasaViewMenu.qml:180-185`), Ctrl+5 (`MainKeyboardShortcuts.qml:406-412`), teljes képernyő és 480 magas, arányos lap (`TimelineView.qml:16-20,319-324`). | **egyezik** |
+| A belépő út az `IDS_MUST_SELECT` üzenetet is meghívja (`0x005e97db`, `0x005e983e`, `0x009ae710`); ezek a címek önmagukban nem nevezik meg a közös kezelő futásidejű kapuját. | Kijelölés nélkül is megnyitja az Időrend-ablakot; üres modellnél `currentIndex = -1`, üresállapot-üzenet nélkül (`MainKeyboardShortcuts.qml:406-412`; `TimelineView.qml:259-265`; `MainTimeline.qml:96-104`). | **nem dönthető el: üres CAlbumState esetén melyik futásidejű feltétel aktiválja az `IDS_MUST_SELECT` ágat?** |
+| A qshow kártyalistája CAlbumState-leírókból épül (`0x005e8a70`, `0x007fc7c0`). A job-239 felvételen a mappák mellett a virtuális `Recently Updated` album is kártyaként megjelenik (38.2.81); a különleges album bináris útja `0x0055ece0`. | A vezérlő a látható fotókból mappát, az indexelt albumokból nem üres albumot készít (`timeline_controller.py:218-247,269-291`). Nem hívja az `album_photos()` virtuálisalbum-ágát; az indexelt albumlekérdezés az `albums` és `local_empty_albums` sorait olvassa (`index/albums.py:143-179,191-192`). | **eltér: a PicasaPy Időrendje nem állít elő `Recently Updated` kártyát.** |
+| A qshow teljes bemeneti halmaza és a két rekordkapun átjutó mappa-, album- és virtuális csoportok nincsenek teljesen azonosítva (`0x004b29d0`, `0x007fc7c0`; a job-239-ben látott csoportok: 38.2.81). | Mappák és szokásos indexelt albumok (`timeline_controller.py:218-300`); a különleges `Recently Updated` lista külön lekérdezésen érhető el (`index/albums.py:191-192`), amelyet az Időrend-vezérlő nem hív. | **nem dönthető el: mely eredeti CAlbumState-elemek felelnek meg a PicasaPy kártyáinak ugyanabban a katalógusban?** |
+| A qshow kártyáit dátum-qword szerint növekvően rendezi (`0x007fc7c0`, `0x007fc4c0`, `0x0049cd60`; 38.2.105). | A kártyadátum a csoport legkorábbi EXIF `taken_at` értéke; rendezési kulcs a dátum, a név és az azonosító (`timeline_controller.py:269-300,346-382`). | **nem dönthető el: ugyanazon katalógus teljes gyűjteménylistáján azonos-e a két kártyasorrend?** |
+| A kártyaképek a csoport képeiből épülnek, és a köteg tagjai szórást kapnak (`0x008014d0`, `0x007fd180`). | A köteg legfeljebb négy képet tartalmaz (`TimelinePanel.qml:238-260`); a vezérlő minden tagképet átad. | **nem dönthető el: az eredeti többképes köteg minden tagja külön kártyaképként megjelenik-e?** |
+| A kártyára kattintás a kijelölt gyűjtemény felé animálja a pályát (`0x007fd800`, `0x007fd770`, `0x007fd0c0`). | A kártya kattintása a megfelelő indexre animál (`TimelinePanel.qml:302-320`; `TimelineView.qml:82-104`). | **egyezik** |
+| A kártyapálya, láthatósági küszöb és mélységi alfa a `0x007fc010` és `0x007fd180` útból származik. | A pályamodell és az alfa (`timeline_motion.py:26-28,96-97,141-162`; `TimelinePanel.qml:177-208`). | **egyezik** |
+| A kötegen belüli véletlen eltolás a `0x008014d0` CRT véletlenszámából a `[-0.075,+0.075]` tartományba esik (`0x00cf3fd0`). | Indexekből magozott `xorshift` ugyanebbe a tartományba tér vissza (`timeline_motion.py:100-131`; alkalmazás: `TimelinePanel.qml:250-260`). | **egyezik** |
+| Az eredeti kötegszórás CRT véletlenszámból származik (`0x008014d0`); a konkrét kezdőmag és sorozat nincs meg. | A PicasaPy `xorshift` algoritmust használ (`timeline_motion.py:100-131`; `TimelinePanel.qml:250-260`). | **nem dönthető el: azonos katalógus újranyitásain ugyanúgy változik-e a kártyaköteg látható szórása?** |
+| A jobb felső név és dátum jobbra zárt; alapvonaluk `y=130` és `y=158`, árnyékuk egy képponttal lejjebb és jobbra rajzolódik (`0x007fee70`). | Név és dátum, jobbra zárás, alapvonal és egyképpontos árnyék (`TimelinePanel.qml:335-398`). | **egyezik** |
+| A vezetőív 10 pontból áll; `P1=P0+(0,50)`, `P2=P3-(0,50)`, végpontja a fókuszkártya teteje fölé esik (`0x007fee70`). | A képlet (`timeline_motion.py:134-162`); végpontok (`TimelinePanel.qml:137-149`); a szövegblokk alatti kezdőeltolást a job-373 felvétel mérése adja (38.2.102). | **egyezik** |
+| A fókuszfelirat dátuma és a dátumsáv két szélső hónap-éve a qshow rekordok dátumából készül (`0x007fee70`, `0x0044f7c0`; 38.2.103). A qword pontos naptári jelentése és a teljes bemeneti tömb nyitott (38.2.107-108). | A kártyafelirat a legkorábbi EXIF-dátum; a sávszél a nem rejtett fotók globális EXIF-minimuma és -maximuma (`timeline_controller.py:259-268,301-333,346-382`; `TimelinePanel.qml:381-398,571-674`). | **nem dönthető el: az eredeti első és utolsó qshow-rekord dátuma azonos-e a PicasaPy globális EXIF-határaival?** |
+| A sáv húzásakor a `0x007fdd00` azonnal frissíti a kiválasztott kártyát és fejlécét; a kameragörgetés felengedéskor indul (`0x007fde80`, `0x007fdd00`, `0x007fd770`, `0x007fd0c0`; 38.2.126). | Húzáskor csak `pendingSliderIndex` változik; a fejléc a `currentIndex`-et olvassa. Felengedéskor fix `4000` ms animáció indul (`TimelineView.qml:277-290`; `TimelinePanel.qml:381-398,647-659`). | **eltér: a fejléc nem követi húzás közben a fogantyút, és a felengedési idő fix.** |
+| Kilépés, előző, következő és lejátszás gomb kattintási útja az `0x008032e0` és `0x00803180` kezelőkön megy. | Kilépés, balra, lejátszás és jobbra gomb műveletei (`TimelinePanel.qml:424-568`; `TimelineView.qml:106-115,250-256`). | **egyezik** |
+| Az eredeti `oneup` és `overlays` gombképeket a `0x007fb210` tölti be; kattintásukat az `0x008032e0` út kezeli. | A vezérlőgrafikák QML Canvas/Rectangle elemek (`TimelinePanel.qml:400-568`). | **nem dönthető el: az eredeti gombképek látható alakját és méretét ugyanúgy adja-e vissza a PicasaPy kirajzolása?** |
+| Escape kilépteti a qshow-t; a job-239 felvételen a belépés előtti `PicasaTeszt` mappanézet tér vissza (`0x007fb820`; mérés: job-239, 38.2.81). | Kilépéskor a PicasaPy az aktuális fókuszkártyát nyitja meg és annak első fotóját jelöli ki (`MainTimeline.qml:77-94`). | **eltér: a job-239-ben mért úton az eredeti belépési mappanézetre tér vissza, a PicasaPy a fókuszkártyát választja.** |
+| Az Escape visszahívása virtuális hívásra jut (`0x007fb820`); a job-239 a `PicasaTeszt` mappanézetet mutatja kilépés után (38.2.81), más belépési helyzet nincs összevetve. | A PicasaPy záróútja mindig a fókuszkártyát nyitja meg (`MainTimeline.qml:77-94`). | **nem dönthető el: más belépési helyzetekből kilépve az eredeti Picasa melyik nézetet és fotót állítja vissza?** |
+| Escape, balra/fel, jobbra/le és szóköz kezelőútja a `0x00801270`-ben van; Ctrl+Space külön ágat kap. | Escape, balra és jobbra kezelve van; fel és le nincs (`TimelineView.qml:393-406`). | **eltér: a fel és le nyíl hiányzik.** |
+| Space a qshow diavetítési ágába lép (`0x00801270`, `0x00803110`, `0x00983270`); a pontos induló fotó nincs meg. | A fókuszált gyűjtemény diavetítése indul, a PicasaPy-modell 0. indexétől (`MainTimeline.qml:106-125`). | **nem dönthető el: melyik eredeti qshow-fotót mutatja elsőként a Space?** |
+| A bináris diavetítési alapérték egyszerű mód és 3 másodperces lépés (`0x00800295`, `0x00800620`, `0x007facd3`; 38.2.105); a job-373 tényleges beállításai nem ismertek. | A PicasaPy a szokásos diavetítés-indítást hívja a kiválasztott gyűjtemény modelljével (`MainTimeline.qml:106-125`). | **nem dönthető el: a job-373 futásban a Picasa diavetítési időbeállítása az alapértéken volt-e?** |
+| Ctrl+Space a `0x00801270` külön ágán halad, de látható hatása nincs meg. | A QML a `event.key` alapján kezeli a Space-t, a módosító billentyűt nem vizsgálja (`TimelineView.qml:393-406`). | **nem dönthető el: milyen látható műveletet végez az eredeti Ctrl+Space ág?** |
+| A kártyaváltás animációs útja ismert, de a job-446 képsorban a billentyű időbélyege és az első/utolsó mozgó képkocka nincs összerendelve (`0x007fc010`, `0x007fd8c0`; 38.2.104). | A balra/jobbra váltás 2000 ms-os QML animáció; a háttér átúszása 1400 ms (`TimelineView.qml:106-115,333-380`). | **nem dönthető el: melyik az első és az utolsó mozgó képkocka egy elkülönített eredeti jobbra nyíl leütés után?** |
+| A „Preparing timeline…” szöveget átadja a `0x009ae560` helpernek (`0x005e943d-0x005e944d`); a megjelenítő vezérlő nincs azonosítva. | Nincs hozzá kötött folyamatjelző a nyitó QML-útban (`MainTimeline.qml:96-104`; `TimelineView.qml:319-324`). | **nem dönthető el: rajzol-e a `0x009ae560` felhasználó által látható folyamatjelzőt az Időrend megnyitásakor?** |
+| A kijelölt kép szürke háttérként és az `overlays/overlay` réteggel kerül a lap mögé (`0x00802180`, `0x008001c0`; 38.2.94). | Szürkítés, kontrasztnyújtás és gamma (`timeline_background.py:76-83`); háttérkép-szolgáltató (`TimelinePanel.qml:34-88`). | **nem dönthető el: a PicasaPy által újrarajzolt fedőréteg látható képpontjai egyeznek-e az eredeti `overlays/overlay` réteggel?** |
+
+#### A még nyitott `NINCS MEG` pontok besorolása
+
+A besorolás a 38.2.1 jelenlegi nyitott állapotára és a későbbi, még nyitott
+38.2.81-112, 124-126 eredményekre vonatkozik. A korábbi körök `NINCS MEG`
+feliratai az akkori állapotot rögzítik; a későbbi szakaszban lezárt kérdés nem
+számít jelenlegi nyitott pontnak.
+
+**A. A látható vagy használható viselkedéshez kell.**
+
+- A qshow teljes gyűjteménylistája, virtuális csoportokkal együtt: mely eredeti CAlbumState-elemek felelnek meg a PicasaPy kártyáinak ugyanabban a katalógusban?
+- A kártyasorrend: azonos-e a teljes sorrend ugyanazon katalóguson?
+- A kártyánkénti képkészlet: minden eredeti csoporttag külön kártyaképként látszik-e?
+- A véletlen kártyaszórás látható mintája: azonos katalógus újranyitásain ugyanúgy változik-e az eredeti és a PicasaPy elrendezése?
+- A dátum-qword értelmezése és a két skálavég: az eredeti első és utolsó rekord dátuma azonos-e a PicasaPy globális EXIF-határaival?
+- Az üres belépés: melyik futásidejű feltétel aktiválja az `IDS_MUST_SELECT` ágat?
+- Az indítási jelzés: rajzol-e a `0x009ae560` folyamatjelzőt?
+- A Ctrl+Space: mit végez a külön kezelőág?
+- A Space: melyik qshow-fotó indul elsőként?
+- Az általános kilépés: melyik gyűjteményt és fotót jelöli ki az eredeti Picasa?
+- Az animáció időzítése: melyik az első és utolsó mozgó képkocka elkülönített billentyűnyomásnál?
+- Az eredeti vezérlőképek: a PicasaPy kirajzolása ugyanazt az alakot és méretet adja-e?
+- A háttérfedés: a PicasaPy kirajzolása ugyanazokat a képpontokat adja-e, mint az `overlays/overlay`?
+- A diavetítés beállítása: a job-373 futásban a Picasa a bináris alapértéket használta-e?
+
+**B. Belső részlet, látható hatás nélkül.**
+
+- A `CAlbumState+0x0c == 2` számkód emberi neve megvalósításhoz nem kell, mert a szükséges viselkedés a qshow-ba ténylegesen bekerülő látható gyűjtemények meghatározása.
+- A köztes rekord `+0x30 == 1` és `+0x18 == 0` kódjainak emberi jelentése megvalósításhoz nem kell, mert a kártyalista eredményhalmazát kell egyeztetni, nem a bináris belső enumjait.
+- A `csúszka` egérkezelőjének belső jelzőmezői (`+0x428`, `+0x429`, `+0x514`) megvalósításhoz nem kellenek, mert a sáv és a fogantyú felhasználói működése a 38.2.126-ban lezárult.
+
 ### 38.2 Idővonal - egy közös „bemutató-mód" kezelő
 
 A `0x9ccc` a binárisban nem jelenik meg közvetlen összehasonlításban
@@ -21,7 +92,7 @@ csomópontokat is kezeli - vagyis a **teljes képernyős** útra vált át. A
 eltávolítási blokkot adja. ⇒ Ez **akció-belépési pont**, nem bizonyíték arra,
 hogy a kiadott főablakban látható Idővonal-gombnak kell lennie.
 
-⇒ **Az Idővonal parancs egy előkészítő szöveget használó, `oneup` bemutató-útvonalat indít; nem a mai PicasaPy év/hónap-rács útvonala.** A teljes képernyős jelleg az útvonalból és a hozzá tartozó `oneup`/overlay erőforrásokból következik, a futó ablak tényleges megjelenése itt nincs megmérve.
+⇒ **Az Időrend parancs az eredeti teljes képernyős `oneup` bemutató-útvonalat indít; nem év/hónap-rácsot.** A lapméretet a `0x007fa730` adja; a 480 képpontos magasságot a 38.2.98 bináris és felvétel is alátámasztja. A 38.2.101-ben dokumentált felvételek a tényleges qshow megjelenését is rögzítik.
 
 #### 38.2.1 Az Időrend bemutató-útja és bizonyított határai (#4443 kutatás)
 
@@ -134,17 +205,15 @@ A csomag `overlays` rétegei között van egy vékony, vízszintes
 A háttérréteg forrás-rectje `0x002152fb`-nél `(0,0,640,480)`. Itt két
 külön erőforrásról van szó: a `oneup/timeline` a `Timeline` gomb, az
 `overlays/timeline` az alsó vízszintes vonal grafikája. Ezek a
-640×480-as erőforrásvászon koordinátái; a `0x007fb210` kód az overlayek
-x-koordinátáját futáskor skálázza. A képek igazolják a sávot és a két pont-
-grafikát, de az erőforrásnevek és a rajzolat nem bizonyítják, hogy a sáv mit
-időzít, vagy hogy a fogantyú húzással mit állít.
+640×480-as erőforrásvászon-koordinátái; a `0x007fb210` az overlayek
+x-koordinátáját futáskor skálázza. A képek önmagukban csak a grafikákat
+igazolják; a sáv és a fogantyú felhasználói műveletét a 38.2.126 teljes
+egér-eseményútja binárisból és független QEMU-mérésből lezárta.
 
-| Eredeti | Nálunk | Teendő |
-|---|---|---|
-| A `0x005e8a70` út CAlbumState-elemekből indul; a qshow kártyalistáját a dátum-qword szerint növekvően rendezi (`0x007fc4c0`, `0x0049cd60`, 38.2.105). A `+0x138` sorok `+0x0c` mezőjét a `0x004b29d0` `2`-vel szűri, majd a qshow a köztes rekord `+0x30 == 1` és `+0x18 == 0` kapuit alkalmazza. A teljes CAlbumState-forráshalmaz és a numerikus kódok gyűjteménytípushoz rendelése **NINCS MEG** (38.2.111-112). | A `TimelineController.reload()` látható fotókból mappa-, valamint nem üres indexelt albumkártyákat készít. A dátum az egyes gyűjtemények legkorábbi EXIF `datetime` értéke; rendezéskor a teljes dátumot, majd a nevet és az azonosítót használja. A `toordinal()` csak a csúszka koordinátáját adja (`timeline_controller.py:218-239,269-320,357-382`). | Az eredeti qshow-sorokat és dátum-qwordot még nem kötöttük azonos mappákhoz/albumokhoz és EXIF-dátumokhoz, ezért látható sorrendi vagy gyűjteménytípus-eltérés **NINCS MEG**. A 38.2.111 korrigálja a 38.2.109 korábbi, napszak eldobására vonatkozó állítását. |
-| Az `oneup.tre` képnéző-, Exit/Timeline-, prev/next, automatikus lejátszás-, forgatás-, csillag-, átmenet-, felirat- és kijelzési idő vezérlőket sorol fel. Az overlay-rétegek között sáv, két pontgrafika és fogantyú van; a fogantyú szemantikus művelete lezárva (38.2.126): a `0x007fde80` sáv- és fogantyúhúzáskor (`+0x429 == 1`) a `0x007fdd00`-val normalizált x-arány alapján legközelebbi gyűjteményindexet választ (`[this+0x514]`, `[this+0x510]`), elengedéskor pedig a `0x007fd770`/`0x007fd0c0` úton a célkártyára animál; a háttérhúzás (`+0x428 == 1`) tehetetlenségi térbeli pásztázást végez (`speed * 0.95 + dx * c`). A fogantyú lebegtetéskor nem vált kurzort (`0x007fe540`). | A PicasaPy jelenlegi Időrendje kártyapályát, dátumpont-sort, lapozást és OneUp-diavetítésre váltó útvonalat ad; a `TimelineView.qml:277-290` `updateSliderFromX`/`releaseSlider` és a `timeline_motion.py:69-92` `slider_index`/`slider_thumb_x` az eredetivel egyező arány szerinti indexválasztást és elengedési animációt (`animateTo`) ad; a háttérhúzásra a `draggingCarousel` működik. | A sliderthumb szemantikája binárisan és funkcionálisan lezárva (38.2.126); a feliratok frissítése már húzás közben megtörténhet a PicasaPy-ban is, és az elengedési animáció ideje a távolsághoz igazítható. |
-| A `0x008032e0` és `0x00803180` gomb-, egér- és qshow-billentyűútja binárisan dokumentált (38.2.63, 38.2.101); az Exit host/callback-útja lezárva (38.2.68). A teljes billentyű-esemény/képkocka-időzítés és az általános visszatérési állapot **NINCS MEG** (38.2.104, 38.2.81-83). | A jelenlegi `TimelineView.qml` aktív Időrend-nézetet, lapozást és billentyűkezelést tartalmaz; forrás: `TimelineView.qml:82-115,393-406`. | A statikus kezelőutak ismertek; az eredeti és a PicasaPy futásidejű eseményidőzítését szinkron felvétel nélkül ne tekintsük egyezőnek vagy eltérőnek. |
-| A `thumbui/timelinebutton` akciónév létezik, de a csomagolt `thumbui.tre` rejtettnek jelöli (`m_hidden`); a súgó „Timeline view of all your photos”. | Nincs aktív főablaki Időrend-eszköztárgomb. | Az eredeti főablaki gomb láthatóságát ne következtessük ki a parancs létezéséből; ehhez futó Picasa-képernyőkép kell. |
+**Összevetési állapot.** A fenti, a lap elején álló zárókör-táblázat a
+PicasaPy jelenlegi forrásához igazított összehasonlítás. Az alábbi szakaszok
+az eredeti kutatási napló korábbi állapotait őrzik; a bennük szereplő
+korabeli `NINCS MEG` megjegyzést a későbbi feloldás felülírja.
 
 **Cáfoló kísérlet.** Megpróbáltam cáfolni azt az értelmezést, hogy a `timeline`
 sáv és a `sliderthumb` együtt fotó-/dátum-kereső csúszkát alkot. A korábbi
@@ -158,21 +227,20 @@ A korábbi „csak év/hónap-rács” magyarázatot a két független út
 (`0x005e8a70`→oneup/overlay és az önálló erőforrás-leltár) cáfolja; ez viszont
 nem dönti el a bemutató képkockáinak tartalmát.
 
-**Bizonyítottsági fok: feltételes.** Az utasításolvasat és a `respack.yt`
-leltár egyezik abban, hogy az Időrend egyedi oneup bemutatóút saját gombokkal
-és alsó overlay-grafikákkal. A képi tartalom/rendezés, a sáv és fogantyú
-viselkedése, a módbeli billentyűk és az Exit célja nem zárható le e két úttal.
-Minden fent megadott cím, fájloffset, rect és méret bináris rekordból vagy
-utasításból származik; becsült érték nincs. A `CTransTimeline` név a
+**Bizonyítottsági fok.** A bemutatóút, a vezérlőrétegek és a slider művelete
+binárisból igazolt; a kártyák teljes forráslistája, a dátumok futásidejű
+megfelelése és néhány bemeneti állapot még nyitott (lásd a zárókör-táblázatot).
+Minden idézett cím, fájloffset, rect és méret bináris rekordból, utasításból
+vagy megjelölt mérésből származik; becsült érték nincs. A `CTransTimeline` név a
 film-/People Albums másik hívási láncában szerepel
 (`picasa-create-features.md` 2038-2138); itt nem használtam Időrend-bizonyítékként.
 
-**Korabeli nyitott pontok állapota (2026-11-10):**
+**Aktuális nyitott pontok röviden (2026-11-13):**
 
-- A CThumbUI+0x2c0 típusa és a qshow kártya dátumkulcs szerinti rendezése lezárva (38.2.69, 38.2.105). A CAlbumState-lista pontos forráshalmaza, a szűrők szemantikája és a teljes kártyakészlet **NINCS MEG**; meglévő Ghidra-kimeneteket a címre ellenőrizni kell, mielőtt új kört kérünk.
-- `Ghidra-kör kell: 0x00a52890 - az örökölt UI-eseménykezelő hogyan irányítja a OneUpUI egérle/fel/mozgatás eseményeit; a sliderthumb réteghez vezet-e húzásos hit-test vagy értékkötés. [blokkoló]`
-- A qshow billentyűút statikus kezelői és az Exit host/callback-útja lezárva (38.2.63, 38.2.68, 38.2.101); a teljes billentyű-képkocka-időzítés és az általános visszatérési állapot **NINCS MEG** (38.2.81-83, 38.2.104).
-- A kártyakép rajzolási modellje, a feliratok, a pálya és az overlay-háttérképlánc lezárva (38.2.93-94, 38.2.97-98, 38.2.102). A sliderthumb felhasználói művelete és a dátumsáv teljes állapotváltozása **NINCS MEG**.
+- A teljes CAlbumState-forráshalmaz, a dátum-qword pontos jelentése és az eredeti/PicasaPy-listák azonos katalóguson való megfelelése **NINCS MEG**.
+- A `0x007fde80` sáv- és fogantyúkezelő, a felengedési átmenet és a fókuszrekord frissítése lezárva (38.2.126); a PicasaPy eltérései a zárókör-táblázatban szerepelnek.
+- A billentyűkhöz kötött pontos animációs képkockák, a Ctrl+Space látható hatása és az általános kilépési kijelölés **NINCS MEG**.
+- Az `IDS_MUST_SELECT` futásidejű üresállapot-kapuja és a `0x009ae560` tényleges folyamatjelzője **NINCS MEG**.
 
 #### 38.2.2 Futás közbeni megfigyelés, job-102 (#4443)
 
