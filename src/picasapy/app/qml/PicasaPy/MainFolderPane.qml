@@ -120,6 +120,7 @@ FolderPane {
     exportedFolders: hostController ? hostController.exportedFolders : []
     // #1029: a Projektek gyűjtemény mappái (P2category)
     projectFolders: hostController ? hostController.projectFolders : []
+    otherStuffFolders: hostController ? hostController.otherStuffFolders : []
     ignoredFaceCount: (typeof hostFaceScanController !== "undefined" && hostFaceScanController)
                        ? (hostController ? hostController.photos.revision : 0,
                           hostFaceScanController.ignoredCount ?? 0)

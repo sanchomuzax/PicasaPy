@@ -38,6 +38,8 @@ PicasaMenu {
     property string folderPath: ""
     // a felhasználó egyéni gyűjteményei: {name, folders} elemek listája
     property var customCollections: []
+    // A jobbklikkelt mappa aktuális beépített vagy saját gyűjteménye.
+    property string currentCollection: "Folders"
     // #422: rejtett-e a jobbklikkelt mappa. A spec A.2 kimondja, hogy a
     // `Folder::ID_HIDEENTIREALBUM` „Mappa elrejtése" és a
     // `Folder::ID_UNHIDEENTIREALBUM` „Mappa megjelenítése" NEM két külön
@@ -99,22 +101,79 @@ PicasaMenu {
         onTriggered: menu.invertSelectionRequested()
     }
     PicasaMenu {
+        id: moveToCollectionMenu
         objectName: "folderContextMenuMoveToCollection"
         title: qsTr("Mo&ve to Collection")
 
-        Repeater {
-            objectName: "folderContextMenuMoveToCollectionRepeater"
+        MenuItem {
+            objectName: "folderContextMenuMoveToCollectionBuiltin_ExportedPictures"
+            text: qsTr("Exported Pictures")
+            checkable: true
+            checked: menu.currentCollection === "Exported Pictures"
+            enabled: menu.folderPath.length > 0 && !checked
+            onTriggered: helyiMenu.moveToCollectionRequested("Exported Pictures")
+        }
+        MenuItem {
+            objectName: "folderContextMenuMoveToCollectionBuiltin_Folders"
+            text: qsTr("Folders")
+            checkable: true
+            checked: menu.currentCollection === "Folders"
+            enabled: menu.folderPath.length > 0 && !checked
+            onTriggered: helyiMenu.moveToCollectionRequested("Folders")
+        }
+        MenuItem {
+            objectName: "folderContextMenuMoveToCollectionBuiltin_HiddenFolders"
+            text: qsTr("Hidden Folders")
+            checkable: true
+            checked: menu.currentCollection === "Hidden Folders"
+            enabled: menu.folderPath.length > 0 && !checked
+            onTriggered: helyiMenu.hideFolderRequested(menu.folderPath)
+        }
+        MenuItem {
+            objectName: "folderContextMenuMoveToCollectionBuiltin_OtherStuff"
+            text: qsTr("Other Stuff")
+            checkable: true
+            checked: menu.currentCollection === "Other Stuff"
+            enabled: menu.folderPath.length > 0 && !checked
+            onTriggered: helyiMenu.moveToCollectionRequested("Other Stuff")
+        }
+        MenuItem {
+            objectName: "folderContextMenuMoveToCollectionBuiltin_Projects"
+            text: qsTr("Projects")
+            checkable: true
+            checked: menu.currentCollection === "Projects"
+            enabled: menu.folderPath.length > 0 && !checked
+            onTriggered: helyiMenu.moveToCollectionRequested("Projects")
+        }
+        MenuItem {
+            objectName: "folderContextMenuMoveToCollectionBuiltin_WebAlbums"
+            text: qsTr("Web Albums")
+            checkable: true
+            checked: menu.currentCollection === "Web Albums"
+            enabled: menu.folderPath.length > 0 && !checked
+            onTriggered: helyiMenu.moveToCollectionRequested("Web Albums")
+        }
+        Instantiator {
+            objectName: "folderContextMenuMoveToCollectionInstantiator"
             model: menu.customCollections
             delegate: MenuItem {
                 required property var modelData
                 objectName: "folderContextMenuMoveToCollectionItem_" + modelData.name
                 text: modelData.name
+                checkable: true
+                checked: helyiMenu.currentCollection === modelData.name
+                enabled: helyiMenu.folderPath.length > 0 && !checked
                 onTriggered: helyiMenu.moveToCollectionRequested(modelData.name)
+            }
+            onObjectAdded: function(index, object) {
+                moveToCollectionMenu.insertItem(6 + index, object)
+            }
+            onObjectRemoved: function(_index, object) {
+                moveToCollectionMenu.removeItem(object)
             }
         }
         MenuSeparator {
-            visible: menu.customCollections.length > 0
-            height: visible ? implicitHeight : 0
+            objectName: "folderContextMenuMoveToCollectionSeparator"
         }
         MenuItem {
             objectName: "folderContextMenuNewCollection"

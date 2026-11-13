@@ -45,6 +45,7 @@ PROJECTS_CATEGORY = "Projects (internal)"
 FOLDERS_ON_DISK_CATEGORY = "Folders on Disk"
 OTHER_STUFF_CATEGORY = "Other Stuff"
 EXPORTED_PICTURES_CATEGORY = "Exported Pictures"
+WEB_ALBUMS_CATEGORY = "Web Albums"
 #: #4597: a „Mappa elrejtése" ide sorolja át a mappát (`0x005ee2a0`); a
 #: megjelenítés `Folders on Disk`-et ír vissza.
 HIDDEN_FOLDERS_CATEGORY = "Hidden Folders"
@@ -58,6 +59,7 @@ _BUILTIN_CATEGORIES = frozenset(
         PROJECTS_CATEGORY.casefold(),
         OTHER_STUFF_CATEGORY.casefold(),
         EXPORTED_PICTURES_CATEGORY.casefold(),
+        WEB_ALBUMS_CATEGORY.casefold(),
         HIDDEN_FOLDERS_CATEGORY.casefold(),
     }
 )
@@ -102,6 +104,18 @@ def with_folder_category(document: IniDocument, value: str) -> IniDocument:
     immutábilis round-trip API-n halad át, mint a többi INI-metaadat.
     """
     return document.with_value(FOLDER_SECTION, CATEGORY_KEY, value)
+
+
+def without_folder_category(document: IniDocument) -> IniDocument:
+    """Új dokumentum kategória-besorolás nélkül.
+
+    A Picasa `Folders` választása nem egy másik szöveget ír a kulcsba:
+    törli a modern és a régi kategóriakulcsot is, így nincs rejtett
+    visszaesés egy korábbi `category` értékre.
+    """
+    return document.with_removed(FOLDER_SECTION, CATEGORY_KEY).with_removed(
+        FOLDER_SECTION, LEGACY_CATEGORY_KEY
+    )
 
 
 def is_custom_collection_category(value: str | None) -> bool:

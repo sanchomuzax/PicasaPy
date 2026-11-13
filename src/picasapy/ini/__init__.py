@@ -86,6 +86,7 @@ from .folder_category import (
     HIDDEN_FOLDERS_CATEGORY,
     OTHER_STUFF_CATEGORY,
     PROJECTS_CATEGORY,
+    WEB_ALBUMS_CATEGORY,
     is_custom_collection_category,
     is_hidden_folders_category,
     is_projects_category,
@@ -93,6 +94,7 @@ from .folder_category import (
     read_folder_category,
     set_folder_hidden_in_ini,
     with_folder_category,
+    without_folder_category,
 )
 from .folder_date import (
     is_valid_folder_date,
@@ -143,6 +145,7 @@ __all__ = [
     "NO_SOURCE_FILE",
     "PROJECTS_CATEGORY",
     "OTHER_STUFF_CATEGORY",
+    "WEB_ALBUMS_CATEGORY",
     "DOWNLOADED_ALBUMS_PREFIX",
     "Rect64",
     "RawStroke",
@@ -207,6 +210,7 @@ __all__ = [
     "with_backuphash",
     "with_folder_date_override",
     "with_folder_category",
+    "without_folder_category",
     "with_folder_music",
     "with_contact",
     "with_reassigned_face",
