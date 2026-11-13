@@ -289,6 +289,10 @@ class _LibraryActivityMixin:
 
     def shutdown(self) -> None:
         """Leállítás: figyelő, időzítő és kért cache-takarítás (#5897)."""
+        self._wait_for_rename_workers(None)
+        rename_timer = getattr(self, "_rename_result_timer", None)
+        if rename_timer is not None:
+            rename_timer.stop()
         self._watcher_start_pending = False
         if getattr(self, "_watcher_start_timer", None) is not None:
             self._watcher_start_timer.stop()
