@@ -558,6 +558,17 @@ class TestEditControllerShutdownOnExit:
         assert "edit_controller.cancelPendingPreview()" in szakasz
         assert "edit_controller.waitForBackgroundWorkers(" in szakasz
 
+    def test_rename_worker_wait_precedes_controller_shutdown(self):
+        from pathlib import Path
+
+        source = Path(
+            "src/picasapy/app/library_controller_activity.py"
+        ).read_text(encoding="utf-8")
+        shutdown_start = source.index("    def shutdown(self) -> None:")
+        wait_at = source.index("self._wait_for_rename_workers(None)", shutdown_start)
+        first_cleanup_at = source.index("self._watcher_start_pending = False", shutdown_start)
+        assert shutdown_start < wait_at < first_cleanup_at
+
     def test_wait_has_a_bounded_timeout(self):
         """A perces rendert NEM várjuk végig — az emit-ág már érvénytelen,
         elég egy rövid, KORLÁTOS várakozás."""
