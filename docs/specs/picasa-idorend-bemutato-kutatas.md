@@ -2895,3 +2895,39 @@ A `0x004406f0` a `CSlice+0x64` posting-lista meglétét és pozitív elemszámá
 - A `thumbui/folderview` és `ShowAlbumThumbnails2` futásidejű értéke **NINCS MEG**; a statikus nulla-sor döntéshez nem szükséges, a mérést változatlan értékek mellett kell elvégezni.
 - A teljes Időrend minden látható elemének visszafejtése és a kiadásba való összehasonlító videó/képsor továbbra is nyitott.
 
+##### 38.2.170 A kártyaképen látható egymásra tolt, elforgatott lapok forrása és elrendezése (#6532, 2026-11-13)
+
+**Kérdés és eredmény.** Hogyan épül fel az Időrend gyűjtemény-kártyáin látható, egymásra tolt és elforgatott fotólapok kötege az eredeti Picasában, és mi a `0x004ae430 -> 0x00423300 -> 0x00448fb0 -> 0x004114e0` hívási lánc szerepe?
+A vizsgálat lezárta a kérdést:
+1. **Lapok száma:** legfeljebb **4 lap** (`min(4, elemszám)`, bináris cím: `0x004237ab`, `0x004237b6`).
+2. **Elforgatás:** a legfelső kártya (`index == 0`) **egyenes** (forgatási szög: `0.0°`); a mögötte lévő kártyák (`index > 0`) egyenletes eloszlású véletlen forgatást kapnak a **`[-5.73°, +5.73°]`** tartományban (`theta = (rand / 32768.0 - 0.5) * 0.2` radián; `0x00cf4748` = `0.2` double, `0x00c29d20` cos, `0x00c285f0` sin).
+3. **Eltolás:** a legfelső kártya eltolása `(0, 0)`; a mögötte lévő kártyák pixelben meghatározott eltolást kapnak: vízszintesen **`dx = 4.0 * index * (2.0 * rand1 / 32768.0 - 1.0)`** képpont (`[-4 * index, +4 * index]` px, konstans: `0x00c7d9d0` = `2.0` double), függőlegesen felfelé **`dy = -index * (4.0 * (rand2 / 32768.0) + 5.0)`** képpont (`-index * [5.0 .. 9.0]` px felfelé, konstansok: `0x00cf3b80` = `-2.0` double, `0x00c7d9d0` = `2.0` double).
+4. **Véletlenség és seed:** az elforgatás és eltolás véletlenszerű, az MSVC CRT `_rand()` (`0x00c08221`) függvényét hívja. Ugyanakkor a kötegkép előállítása előtt a `_srand()` (`0x00c08214`) inicializálja az állapotot a gyűjtemény azonosítójából származtatott seeddel: **`param_3 ^ 0x133475`** (`0x00423a2a`, `0x00423a6c`). Ezért egy adott gyűjtemény kártyaképe determinisztikus és stabil az újranyitások során.
+5. **Architektúra és hívási lánc:** az eredetiben a köteg nem a 3D nézetben külön rétegekből áll, hanem a `CThumbDB` képfeldolgozója (`0x00423780`) egyetlen, szoftveresen egymásra rajzolt 2D bélyegképet állít elő az affin transzformációs blitterrel (`0x009e6df0`), amit a `0x004115c0` eltárol a gyorsítótárban (`+0x2428`). A `0x004ae430` a `CAlbumState` oldaláról kéri le a bélyegképet a `CThumbDB::vftable` (`0x00c81f78`) `+0x20` slotján (`0x00423300`) át; ha a kép már a gyorsítótárban van, a `0x00448fb0` és `0x004114e0` ág azonnal visszaadja azt. A 3D Időrend (`0x007fc7c0`) ezt az egyetlen kész képet rajzolja textúraként a kártyára.
+
+**A vizsgálat két független útja.**
+- *A út (utasításszintű gépi kód):* A helyi `Picasa3.exe` `.text` szekciójának diszasszemblálása (`annot_disasm.py`, Capstone). A `0x00423780` belépési kapuja a `0x004237ab` (`cmp eax, 4`), `0x004237b6` (`mov dword ptr [esp+0x1c], 4`), `0x004237c0` (`mov [esp+0x1c], eax`) utasításokkal rögzíti a legfeljebb 4 lapos határt. A `0x00423a2a` (`xor eax, 0x133475`) és `0x00423a6c` (`call 0x00c08214`) az `_srand` determinisztikus magját adja. A forgatási és eltolási FPU kód a `0x00423ba6`-`0x00423d48` tartományban közvetlenül hivatkozza a `.rdata` lebegőpontos konstansait: `0x00cf4748` (`0.2` double), `0x00c7d9d0` (`2.0` double), `0x00cf3b80` (`-2.0` double), `0x00c7e328` (`1.0` double), `0x00c72150` (`0.5` double).
+- *B út (dekompiláció és RTTI / xref architektúra):* A meglévő `2026-10-22-ghidra-sor-247-251.txt` és `2026-10-17-qshow-diavetites.txt` elemzése. Az SQLite index RTTI táblája megerősíti a `CThumbDB::vftable` (`0x00c81f78`) `+0x20` slotjának (`0x00423300`) hovatartozását. A `0x004ae430` a `[esi+0xc4]` pointeren át a `+0x20` slotot hívja (`0x004ae481`). A `0x00423300` a `0x00448fb0` gyorsítótár-lekérdezés (`0x00423326`) és a `0x004114e0` visszatérés (`0x0042333b`) mellett hiány esetén a `0x00423500` hívásán át (`0x004234de`) indítja a `0x00423780` generátort (`0x004236ef`), amely a `0x004115c0` gyorsítótár-íróval menti az eredményt. A Ghidra AST kétmenetes kompozitálást mutat: az első menet a befoglaló téglalapot és a méretet számolja ki (`0x00a4a520`), a második menet az affin mátrixokkal rajzolja a lapokat (`0x009e6df0`).
+
+**Cáfoló kísérlet.**
+Azt a feltevést vizsgáltam, hogy a köteg lapjait nem a bélyegkép-kompozitáló állítja össze, hanem az Időrend (qshow) 3D jelenete rajzolja ki laponként külön-külön a `0x008014d0` hívásában, mivel ott is található `_rand()` (`0x00c08221`).
+*Cáfolat eredménye:* A `0x008014d0` nem egy kártyán belüli fotóköteget készít, hanem a teljes idősáv gyűjteményeit rendezi el a 3D virtuális térben a pályagörbe mentén. A `0x007fc7c0` (qshow kártyaépítő) a `0x004ae430` meghívásával egyetlen leírót és egyetlen képet rendel minden egyes gyűjteményhez. A `0x00423780` ezzel szemben a `param_4` felületre rendereli rá a lapokat a `0x009e6df0` 2D szoftveres blitterrel. A feltételezés megdőlt: a kártyán látható köteg a bélyegkép szintjén egyesített 2D bitmap, nem pedig futásidejű több kártyás 3D objektumhalmaz.
+
+**Összevetés a PicasaPy implementációjával.**
+
+| Tulajdonság | Eredeti Picasa | PicasaPy jelenleg | Teendő |
+|---|---|---|---|
+| Lapok maximális száma | Legfeljebb 4 lap (`min(4, count)`, `0x004237ab`, `0x004237b6`). | Legfeljebb 4 lap (`TimelinePanel.qml:242`: `Math.min(4, photos.length)`). | Megegyezik, teendőt nem igényel. |
+| Legfelső lap forgatása | Nincs elforgatva (`0.0°`, `0x00423ba6` feltétel átugorja). | El van forgatva (`TimelinePanel.qml:260`: `rotation: index % 2 === 0 ? -7 : 5` -> index 0 esetén `-7°`). | Javítandó: az index 0 kártya forgatása legyen 0°. |
+| Mögöttes lapok forgatása | Egyenletes véletlen szög `[-5.73°, +5.73°]` között (`[-0.1, +0.1]` rad, `0x00cf4748` = `0.2` double). | Fix, determinisztikusan váltakozó `-7°` és `+5°`. | Javítandó: a seedelt véletlenszám-generátorból számított `[-5.73°, +5.73°]` tartományú szög. |
+| Lapok eltolása | Vízszintesen: `[-4*i, +4*i]` pixel (`0x00c7d9d0` = `2.0`). Függőlegesen: `-i * [5.0 .. 9.0]` pixel felfelé (`0x00cf3b80` = `-2.0`). | Relatív arányszám: `(next_random() - 0.5) * 0.15 * width/height` (`timeline_motion.py:100-131`, `TimelinePanel.qml:257-258`). | Javítandó: relatív arány helyett pixelalapú eltolás, és a hátsó lapok aszimmetrikus felfelé tolása (negatív Y). |
+| Véletlenszám mag (seed) | `param_3 ^ 0x133475` (`0x00423a2a`), MSVC CRT `_rand()` / `_srand()`. | Saját, indexből magozott `xorshift` generátor (`timeline_motion.py:113-129`). | Igény szerint közelíthető az eredeti MSVC LCG-hez és a `collection_id ^ 0x133475` seedhez. |
+| Renderelési architektúra | 2D szoftveres kompozitálás egyetlen bélyegkép-bitmapbe (`0x00423780` + `0x009e6df0`). | Különálló QML `Item` rétegek a `TimelinePanel.qml` `Repeater`-ében. | A QML rétegzés megtartható, amennyiben a vizuális elrendezés (lapok száma, forgatás, pixel eltolás) megegyezik a binárisból feltárt értékekkel. |
+
+**Bizonyítottsági fok.**
+**Megerősített.** Két független forrás (célzott utasításszintű x86 FPU diszasszemblálás a nyers konstansokkal, illetve Ghidra C-dekompiláció és SQLite RTTI/vtábla kapcsolat) egyezik a lapok számában (`min(4, n)`), a forgatási tartományban (`0.2 rad`), az eltolási képletekben (`dx`, `dy`), a determinisztikus magképzésben (`0x133475`) és a hívási láncban.
+
+**Nyitott kérdések a témában.**
+Nincs nyitott pont a kártyaképen látható köteg elrendezésére és hívási láncára vonatkozóan. Minden vizsgált kérdés pontos bináris címmel és konstans értékkel igazolt.
+
+
