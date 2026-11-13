@@ -422,3 +422,64 @@ natív puffert kell összehasonlítani ezzel a PicasaPy-pufferrel. Ha az
 egyedi `colorfix` és `rainbow` lépések közti felelősséget is meg kell
 nevezni, mindkét lépés eredeti kimenetét külön kell rögzíteni. A 004 JPEG
 ehhez nem elég.
+
+## Eredeti Picasa veszteségmentes kimeneti utak vizsgálata a végrehajtóhoz (2026-11-13, #6585)
+
+### Cél és kontextus
+
+A #6585 differenciális láncméréseiben (különösen a `lanc-0132` autocolor-becslésénél) a lánc köztes RGB-pufferének kinyerése szükséges, mert a végső JPEG-export veszteséges és a kvantálási zaj megváltoztatja az autocolor hisztogramját. A vizsgálat tárgya, hogy az eredeti `Picasa3.exe` (3.9.141.259) biztosít-e bármilyen automatizálható felhasználói felületi utat veszteségmentes RGB kimenet előállítására:
+1. Megőrzi-e a forráskép formátumát a `File > Save`, `Save a Copy` vagy `Export`, ha a bemenet PNG, TIFF vagy BMP?
+2. Tartalmaz-e az Export dialógus formátumválasztót (pl. PNG vagy eredeti formátum)?
+3. Milyen formátumot helyez a vágólapra a `Ctrl+C` / `Edit > Copy` (`CF_DIB` vagy `CF_BITMAP`), és az mekkora felbontású?
+
+### 1. Forrásformátum megőrzése a mentési és exportálási műveletekben
+
+A bináris visszafejtése igazolja, hogy a Picasa sem a `File > Save` (`&Save`, `0x9d68`), sem a `File > Save As` / `Save a Copy` (`Save a Cop&y`, `0xe103`), sem pedig az Export művelet során **nem őrzi meg** a nem JPEG formátumú (PNG, TIFF, BMP) forrásképek formátumát.
+
+- **`File > Save` (`0x9d68`):** A `CThumbUI` parancskezelő (`0x005cb990` ág `0x9d68`) a `FUN_005e9940`-en át a `CFileSaveThread` indítót (`FUN_0053a790`, vtable: `0x00c8bbd8`) hívja. A `0x0053a790` ellenőrzi a forrásfájl kiterjesztését: nem JPEG fájl esetén a dialógus explicit figyelmeztetést jelenít meg a konverzióról (`typechange1`: `0x00c8a634` szöveg: `"This file will be saved as JPEG."`; több fájl esetén `typechangeX`: `0x00c8a4d8` szöveg: `"Non-JPEG files will be saved as JPEG. Click Skip to leave these files alone."`). A tényleges mentési szálban (`CFileSaveThread::Run`, `FUN_00539020`) a `FUN_00467ca0` mentőrutin a `0x0046b9cf` címen feltétel nélkül a `0x009d63f0` IJG JPEG kódolót hívja. Forrás: `bináris (0x005cb990, 0x005e9940, 0x0053a790, 0x00c8a634, 0x00c8a4d8, 0x00539020, 0x0046b9cf, 0x009d63f0)`.
+- **`File > Save As` / `Save a Copy` (`0xe103`):** A `FUN_005e6a20` dialóguskezelő a `0x005e6afb` ponton vizsgálja a forrástípust: kizárólag a `0x1f` belső típuskódú WebP fájloknál ajánlja fel a `SaveAsFilterWebP` szűrőt (`0x00c976c0`: `*.webp`). Minden más képtípusnál (JPEG, PNG, TIFF, BMP) a dialógus szűrője kizárólag `SaveAsFilterJPG` (`0x00c97690`: `*.jpg;*.jpeg`), és a fájlnév végéhez a `0x005e6b48` utasítás a `.jpg` kiterjesztést fűzi hozzá. Az írás a `0x0045c430` objektumon át szintén a JPEG csővezetékbe torkollik. Forrás: `bináris (0x005e6a20, 0x005e6afb, 0x00c976c0, 0x00c97690, 0x005e6b48)`.
+- **PNG/TIFF/BMP kódolók hiánya:**
+  - *PNG:* A `Picasa3.exe` `.text` szekciójában található befordított libpng (`0x00b10000-0x00b20000`) kizárólag dekódoló rutinokat tartalmaz (`png_read_*`, `png_create_read_struct` `0x00b14c30`). A könyvtár `PNG_NO_WRITE_SUPPORTED` konfigurációval készült: a `png_create_write_struct` és az összes `png_write_*` kódoló függvény teljesen hiányzik a binárisból. A Picasa3.exe fizikailag képtelen PNG fájlt írni. Forrás: `bináris (0x00b10000-0x00b20000, 0x00b14c30)`.
+  - *TIFF:* A libTIFF `TIFFClientOpen` (`0x00b4d410`) függvényét a `ytTIFFFileContainer` (`0x00a4f900`, `0x00a4f9d0`) kizárólag olvasási módban (`"r"`) hívja; mentési TIFF író hívás nincs a programban. Forrás: `bináris (0x00b4d410, 0x00a4f900, 0x00a4f9d0)`.
+  - *BMP:* A program egyetlen helyen ír BMP fájlt: a Háttérkép beállítása funkcióban (`0x0057aa10` -> `FUN_009ad2d0`), ahol a `0x009ad382` címen `picasabackground.bmp` néven menti a képet `BM` fejléccel (`0x42 0x4d`), a képernyő felbontására méretezve. Mentési vagy exportálási menüből elérhető BMP kimenet nem létezik. Forrás: `bináris (0x0057aa10, 0x009ad2d0, 0x009ad382)`.
+
+### 2. Export dialógus beállításai (`export.fen`, `CExportPrefsDialog`)
+
+Az Export funkció (`Ctrl+Shift+S` vagy menü `0x9d6b`) felülete és végrehajtó kódja nem tartalmaz formátumválasztó opciót:
+- **UI definíció:** A `runtime/export.fen` deklarációjában kizárólag a célmappa (`Location`), mappa elnevezése (`Export folder name`), méretezés (`Original size` vagy `Resize to:` pixelcsúszka), JPEG minőség (`Image quality:` `Automatic`, `Normal`, `Maximum`, `Minimum`, `Custom`), videó beállítások (`Movies`) és vízjel (`Watermark`) szerepel. Nem létezik formátumválasztó vezérlőelem (PNG, TIFF vagy eredeti formátum rádiógomb vagy legördülő menü). Forrás: `bináris (runtime/export.fen erőforrás és lefordított FENC tábla)`.
+- **Végrehajtási ág:** Az export dialógus vezérlője a `CExportPrefsDialog` (vtable: `0x00c8b764`, parancskezelő: `0x005312b0`). A háttérben futó motor a `CImageOutput::Execute` (`FUN_0073f320`, mérete 9396 bájt), amely fényképek esetén a `0x00740a0f` címen feltétel nélkül a `FUN_009d63f0` IJG JPEG tömörítőt hívja (`0x009d6280`, `0x009d5080`, `0x00ad0f70`). Nincs elágazás más képformátum felé. Forrás: `bináris (0x00c8b764, 0x005312b0, 0x0073f320, 0x00740a0f, 0x009d63f0)`.
+
+### 3. Vágólapra másolás formátuma és felbontása (Edit > Copy / Ctrl+C)
+
+A vágólapra másolás menüparancsa `eMenuEdit::ID_COPY` (`0x9d39`):
+- **Hívási lánc:** A `CThumbUI` parancskezelő `0x9d39` esetén meghívja a `FUN_005fe9f0(1)` függvényt. Ha az aktív nézet az `editpanel/preview` szerkesztő előnézet, a vezérlés a `FUN_0069b000` (mérete 565 bájt) függvénynek adódik át, amely az előnézeti felület eszközleírójából kimásolja a képet a `0x00a706f0` hívásával. Forrás: `bináris (0x005cb990, 0x005fe9f0, 0x0069b000, 0x00a706f0)`.
+- **Vágólap formátum:** A `USER32.DLL!SetClipboardData` API-nak az egész binárisban mindössze 2 hívása található:
+  1. `0x00a70610`: Szövegmásolás (`uFormat = 0x0000000d`, azaz `CF_UNICODETEXT`).
+  2. `0x00a706f0`: Képmásolás (`uFormat = 0x00000002`, azaz `CF_BITMAP`).
+  A `0x00a706f0` a `CreateCompatibleDC` és `CreateCompatibleBitmap` segítségével GDI DDB bitképet hoz létre, átmásolja a képpontokat a `0x009aa720` rutinnal, majd meghívja a `SetClipboardData(CF_BITMAP = 2, hBitmap)` függvényt a `0x00a70716` címen. Forrás: `bináris (0x00a70610, 0x00a706f0, 0x00a70716)`.
+- **DIB kompatibilitás és lekérdezés:** A Windows és a Wine vágólap-alrendszere a `CF_BITMAP` formátumból kérésre automatikusan és szintetikusan előállítja a `CF_DIB` (`8`) és `CF_DIBV5` (`17`) formátumokat a kiolvasó folyamat számára. Így a külső folyamat (pl. a Colab végrehajtó Python szkriptje) veszteségmentes 24/32 bites DIB-ként képes kinyerni a pixeleket.
+- **Felbontási korlát:** A `FUN_0069b000` a képet az `editpanel/preview` megjelenítő DC-jéből olvassa ki. Ha a kép a szerkesztőablakhoz van igazítva ("Fit to screen"), a vágólapra másolt bitmap mérete az előnézeti ablak méretéhez van méretezve, nem az eredeti kép méretéhez. A vágólap kizárólag akkor tartalmazza a teljes felbontású veszteségmentes képet, ha az előnézet 100%-os nagyításban áll ("Actual size", 1:1 nézet), vagy ha a forráskép kisebb a megjelenítő ablaknál és nem méreteződik át.
+
+### 4. Két független bizonyítási út és cáfoló kísérletek
+
+| Kérdés | Út A (Vezérlési gráf és hívások) | Út B (Erőforrás és könyvtáraudit) | Cáfoló kísérlet |
+|---|---|---|---|
+| **1. Forrásformátum megőrzése** | `0x0053a790` nem JPEG esetén figyelmeztet (`0x00c8a634`), `0x0046b9cf` és `0x005e6b48` kizárólag a `0x009d63f0` JPEG kódolót hívja. | A libpng (`0x00b10000-0x00b20000`) nem tartalmaz író rutint (`PNG_NO_WRITE_SUPPORTED`); a libTIFF (`0x00b4d410`) csak olvas (`"r"`). | Ha létezne PNG mentési ág, a binárisban szerepelnie kellene a `png_write_*` API hívásnak; a teljes `.text` pásztázás 0 találatot ad. |
+| **2. Export dialógus opciók** | `FUN_0073f320` (`CImageOutput::Execute`) a `0x00740a0f` címen feltétel nélkül a `0x009d63f0` JPEG kódolót indítja el. | Az `export.fen` UI leíróban kizárólag méret, JPEG minőség és vízjel opció van, formátumválasztó nincs. | Ha lenne rejtett PNG export beállítás, a `FUN_0073f320` elágazna a formátumkód szerint; a vezérlési gráfban nincs alternatív képíró hívás. |
+| **3. Vágólap formátum** | A `0x00a706f0` függvény a `0x00a70716` címen fix `push 2` paraméterrel hívja a `SetClipboardData(CF_BITMAP, hBitmap)`-ot. | A `USER32.DLL!SetClipboardData` import táblás hívásai között a képmásolásra egyetlen hely van (`0x00a706f0`), DIB formátumkód (`8`) közvetlenül nem szerepel. | Ha a Picasa közvetlenül `CF_DIB`-et írna, a `SetClipboardData` argumentumaként a `0x00000008` értéknek kellene megjelennie; a diszasszemblálás ezt kizárja. |
+
+### 5. Konkrét felhasználói / automatizálási lépéssorrend a végrehajtónak
+
+Mivel a Picasa nem támogat veszteségmentes fájlmentést és fájlexportot, a Colab végrehajtó nem tud közvetlen fájlírással (File > Save vagy Export) veszteségmentes köztes képet generálni. A végrehajtó két megvalósítható utat használhat a köztes RGB puffer megszerzésére:
+
+#### A módszer: Vágólap kiolvasása 1:1 nézet mellett (UI automatizálással)
+1. **Előkészítés:** A tesztkép és a szűrőlánc `.picasa.ini` fájljának elhelyezése a könyvtárban.
+2. **Megnyitás:** A Picasa elindítása és a kép megnyitása a szerkesztő előnézetben (`editpanel/preview`).
+3. **1:1 nagyítás beállítása:** Az előnézeti ablakban az 1:1 ("Actual size", 100%) zoom aktiválása (hogy a megjelenítő felület ne méretezze le a képet az ablakhoz). Kisebb tesztképeknél (pl. 720×1280-nál kisebb vagy akkora, amely a teljes virtuális kijelzőn méretezés nélkül elfér) az alapértelmezett nézet is elegendő.
+4. **Vágólapra másolás:** `Ctrl+C` (vagy `Alt+E` -> `C`, parancskód `0x9d39`) elküldése az aktív szerkesztőablaknak.
+5. **Vágólap lekérdezése:** A Colab Python segédfolyamatából a Windows/Wine vágólap megnyitása (`OpenClipboard`) és az automatikusan szintetizált `CF_DIB` (formátumkód `8`) lekérdezése (`GetClipboardData(8)`).
+6. **Kép kibontása:** A kapott memóriaterületből a `BITMAPINFOHEADER` fejléc (szélesség, magasság, bitmélység) és a 24/32 bites BGR pixeltömb kiolvasása, majd elmentése veszteségmentes PNG formátumban.
+
+#### B módszer: QEMU / GDB hook a belső memóriapufferre (ajánlott, determinisztikus)
+1. Mivel az UI automatizálás ablakméret- és fókuszfüggő, a determinisztikus szűrőlánc-kutatáshoz a legmegbízhatóbb út a `0x0090f8f0` (autocolor becslő) vagy a láncvégrehajtó `FUN_00907f30` (`0x00908077`) belépési pontján elhelyezett breakpoint / hook.
+2. A belépéskor az EAX-ban átadott képszerkezetből a nyers 24/32 bites RGB képpuffer és dimenziók közvetlenül kiolvashatók memóriából, megelőzve bármilyen ablakméretezést és a végső JPEG kódolást.
