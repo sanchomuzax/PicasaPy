@@ -2638,6 +2638,34 @@ A `3` értékű rekord tehát a `+0xe4/+0xe8` bemeneti lista egyik eleme. A feld
 * A kimeneti indexvektor rejtett alias útjának teljes kizárása: NINCS MEG.
 * A `3` rekord emberi jelentése és a bemeneti listák előzetes sorrendje: NINCS MEG.
 
+##### 38.2.121/b A hétnapos kapu és a DBLoader nulladik slotja (2026. november 12.)
+
+**Hatókör és bizalmi fok.** A helyi Picasa3.exe 3.9.141.259 SHA 256 értéke `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`. A `]updated` mezőpárja, a hétnapos küszöb és a DBLoader nulladik slotjának hívása **megerősített**, mert az utasításút és a külön rekordíró vagy vtable adatút egyezik. A lista összes kiváltó eseményének emberi jelentése **NINCS MEG**.
+
+**A `]updated` kapu az első FILETIME párt vizsgálja.** A `0x0055ece0` a `0x004edf60` lekérővel másolja ki a rekordot. A lekérő mindkét időpárt változatlanul viszi át: az elsőt a `+4/+8`, a másodikat a `+0xc/+0x10` mezőről (`0x004ee08a-0x004ee09f`). A kapu a kimeneti leíró `+4` címét adja a dátumkonverternek (`0x0055f093-0x0055f099`), ezért a `+4/+8` pár a bemenete, a második pár nem. A `0x0055f0a1` a 7 értéket adja át a `0x0098b770` segédnek; ez az aktuális időből `7 × 0x15180` másodpercet számol (`0x0098b77e-0x0098b78e`), ahol `0x15180` pontosan 86400 másodperc (`0x0098b783`). A határ és a rekordból átalakított dátum összevetése a `0x0055f0b3` utasításnál történik.
+
+**A mező jelentésének külön útja.** A `0x0040f980` rekordépítő a kapott FILETIME értékét mindkét párba bemásolja (`0x0040f9b6-0x0040f9db`). Ettől külön a metaadatíró út a `0x37` kulcshoz tartozó konvertált értéket a rekord `+4` címére írja (`0x00425f60`, `0x00427844`, `0x00427898`, `0x004eeb6d-0x004eebad`). A `0x37` kulcs `DateTimeOriginal` jelentését a metaadatkulcsok spec táblája és a bináris metaadatnév egymástól függetlenül támasztja alá (`0x00c9f064`). Így a kapu első párja olyan mező, amelyet az EXIF `DateTimeOriginal` felülírhat. A kapu nem a `+0xc/+0x10` mezőpárt olvassa.
+
+**A DBLoader regisztrációja és a listabejáró.** A `0x004e4ea0` a megadott objektumot a `+0x484` pointerlistába fűzi, és a `+0x488` elemszámot növeli (`0x004e4f5f-0x004e4f61`). A listát a `0x004e87c0` járja be. A `+0x488` kódolt darabszámát használja, a nemnullás bejegyzések vtable első slotját hívja, a listában levő objektumot `ECX` regiszterbe, a bemenetként kapott eseményobjektumot pedig argumentumként adja át (`0x004e8806-0x004e882d`). A DBLoader konstruktor a `0x00c7f5c0` vtable címét írja az objektumba (`0x004035f5`); a PE táblájának első szava `0x0055ece0`, tehát ez a DBLoader nulladik slotja. A `0x004183c0` regisztrációs hívó a létrehozott DBLoader objektumot a `0x004e4ea0` regisztrációs függvényhez adja (`0x00403614-0x0040361c`, `0x004188cf`).
+
+**Igazolt kiváltó út.** A `0x004e80d0` a `0x004e84a8-0x004e84bb` ágban meghívja a listabejárót, ha az új csoportkulcs eltér az előzőtől, és az előző kulcs nem `0xffffffff`. Argumentumként az előző eseményobjektum `EDI` mutatóját adja át. Ez a csoportkulcs váltásakor végrehajtott feldolgozási út. A `0x004e87c0` további közvetlen hívói miatt ez nem az egyetlen listafeldolgozási út: hét közvetlen hívó van az indexben, és a további helyek utasításai is a `0x004e87c0` hívását mutatják. A többi esemény teljes emberi jelentése **NINCS MEG**. A bejáró a bemeneti objektum `+4` virtuális lekérdezésének nemnullás eredményénél leáll, majd csak akkor hívja a listát, ha a `0x004e39c0` lekérdezés eredményének `+0x18` mezője 1 vagy `0x19` (`0x004e87c0-0x004e87f5`).
+
+**A két független út.** A út: a `0x0055ece0` utasításai a `0x004edf60` által kiadott rekord `+4/+8` párját alakítják dátummá, majd a hét napos küszöbhöz hasonlítják. B út: a rekord külön metaadatírója a `0x37` `DateTimeOriginal` értéket a `+4` mezőbe írja; a rekordépítő mindkét pár külön kezdeti helyét igazolja. A mezőazonosítás egyezik. A DBLoader esetén A út: a `0x004e87c0` betölti a listaobjektum vtable táblájának első szavát, és azt hívja. B út: a DBLoader konstruktorában beállított cím és a nyers PE vtable első szava ugyanazt a `0x0055ece0` célt adja; a regisztráció hívási útja ezt a DBLoader objektumot teszi a listába. A két út a hívott nulladik slot célfüggvényében egyezik. Az argumentumot a `0x004e80d0` hívó és a `0x004e87c0` bejáró utasításainak összekapcsolása határozza meg.
+
+**Cáfoló kísérlet.** Azt a lehetőséget vizsgáltam, hogy a `]updated` a második FILETIME párt olvassa. A getter valóban kiadja mindkét párt, de a kapu kizárólag a kimenet `+4` címét adja a dátumkonverternek; a külön metaadatíró út a `0x37` értéket ugyanerre a `+4` mezőre írja. A második pár hipotézise ezért cáfolódik két külön adatúton. Azt is vizsgáltam, hogy a bejáró a DBLoader másik metódusát hívja. Az utasítás `[vtable]` első szavát tölti be, a DBLoader nyers PE táblájának első szava pedig `0x0055ece0`, a második `0x0055ff50`; a második slot feltevése cáfolódik. Végül az egyetlen esemény hipotézisét a hét közvetlen hívó cáfolja. A megerősített gépi út azt rögzíti, hogy a csoportkulcs váltása egy igazolt kiváltó ok; a többi esemény emberi szemantikáját nem állítja.
+
+**Bizonyíték.**
+
+* A `]updated` kapu a `+4/+8` párt alakítja dátummá. Forrás: bináris (`0x004edf60`, `0x0055f093-0x0055f0b3`).
+* A hétnapos időhatár pontos szorzója `7 × 0x15180`, ahol `0x15180` 86400. Forrás: bináris (`0x0055f0a1`, `0x0098b770`, `0x0098b783`).
+* A `+4` mezőt `DateTimeOriginal` felülírhatja. Forrás: bináris (`0x00425f60`, `0x004eeb10`, `0x00c9f064`).
+* A `+0x484` listát a `0x004e87c0` járja be, és a vtable első slotját hívja az eseményobjektummal. Forrás: bináris (`0x004e4ea0`, `0x004e87c0`, `0x004e8815-0x004e882d`).
+* A DBLoader nulladik slotja `0x0055ece0`. Forrás: bináris (`0x004035f5`, `0x00c7f5c0`, `0x004e881b`).
+* Csoportkulcs váltásakor az előző eseményobjektum a callback argumentuma. Forrás: bináris (`0x004e80d0`, `0x004e84a8-0x004e84bb`).
+* A többi kiváltó esemény emberi jelentése: NINCS MEG.
+
+**A 38.2.121/a pontosítása.** A `0x004e87c0` bejáróra és a DBLoader slotjára vonatkozó korábbi nyitott kérdés most lezárható a fenti gépi feltételekkel. A bejáró összes eseményének termékszintű megnevezése továbbra is nyitott. A hétnapos kapu a `+4/+8` első párt olvassa; ez nem bizonyítja, hogy minden rekordban ez a pár EXIF dátumot tartalmaz.
+
 #### 38.2.122 Recently Updated: az új rekordok indexeinek előállítása (#6532, 2026-11-11)
 
 **Hatókör.** A 38.2.121 négy kérdéséhez a `2026-11-11-6532-colab-12-olvasok-hivok.txt` és a `2026-11-11-6532-colab-decomp-12.txt` meglévő dekompilációit, valamint a 3.9.141.259 bináris helyi utasításait vizsgáltam. A SHA-256 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`. Új Ghidra-futtatás és új felvétel nem történt.
