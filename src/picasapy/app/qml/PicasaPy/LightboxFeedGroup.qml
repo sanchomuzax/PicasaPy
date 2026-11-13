@@ -98,15 +98,26 @@ Column {
             }
             feed.appWindow.openCollageFromRows(sorok)
         }
-        //: #4539: a mappa-fejléc film-gombja mindig az egész csoportot
-        //: adja át, a kijelöléstől függetlenül.
+        //: #4539 / #6889: a mappa-fejléc film gombja legalább két kijelölt
+        //: képnél csak a kijelölteket adja a Filmkészítőnek, kevesebbnél a
+        //: teljes mappát.
         onMovieRequested: {
             if (!feed.appWindow || !feed.appWindow.openMovieFromRows)
                 return
-            var sorok = []
             var kezdet = groupCol.modelData.start
-            for (var i = 0; i < groupCol.modelData.count; ++i)
-                sorok.push(kezdet + i)
+            var veg = kezdet + groupCol.modelData.count
+            var sorok = []
+            var kijeloltek = feed.appWindow.selectedIndexes || []
+            for (var i = 0; i < kijeloltek.length; ++i) {
+                var kijeloltSor = Number(kijeloltek[i])
+                if (kijeloltSor >= kezdet && kijeloltSor < veg)
+                    sorok.push(kijeloltSor)
+            }
+            if (sorok.length < 2) {
+                sorok = []
+                for (var csoportSor = kezdet; csoportSor < veg; ++csoportSor)
+                    sorok.push(csoportSor)
+            }
             feed.appWindow.openMovieFromRows(sorok)
         }
         // A mappa feltöltése a csoport minden képével indul; a vezérlő
