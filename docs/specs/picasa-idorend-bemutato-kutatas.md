@@ -3360,4 +3360,74 @@ A qshow animációinak indulási és leállási határait az alábbi események 
 - ✅ **Az animációs képkockahatárok**: a nyitó animáció (1,0 mp), a lapozási animáció (2,0 mp, 0.95 csillapítás) és az automatikus diavetítés eseményei és határai bináris címekkel és konstansokkal igazolva (megerősített).
 - ⛔ A teljes jegy lezárásához a videofelvétel integrációja és a párhuzamos billentyű-ág lezárása szükséges.
 
+#### §38.2.160 Zárókör: Ctrl+Space, első dia, betöltésjelző és visszatérés (#6532, 2026-11-13)
+
+**Hatókör.** A §38.2.127 négy nyitott pontját vizsgálja: a Ctrl+Space `[this+0x3ba]` jelzőjének olvasóit és képi hatását; a Space vetítés első elemét; a `ytProgress` fogadó látható UI-útját; valamint a nem job-239 út utáni szülőnézet-kijelölést. A kártyaképek belső forrása és a `0x007fe600` nincs vizsgálva. Új videó nem készült. A korábbi job-240 és job-241 megfigyelés csak a már dokumentált mérésekből vehető át: a mostani `meroadat.tar` nem tartalmazza e feladatok nyers képkockáit, ezért itt nem állítok friss újramérést.
+
+##### 1. Ctrl+Space: a jelző rajzolási hatása
+
+**Bináris út.** A teljes `.text` pásztázása a `paszta.py`-val, első műveletként `paszta.memoria_kapu()` hívással, majd az összes x86 általános regiszterbázissal végezve a qshow `[this+0x3ba]` mezőjének íróit és olvasóit azonosította. A `0x007fad15` konstruktorútból írja, a `0x007fda54` visszaállítja; a Ctrl+Space kezelő `0x00801270` a `0x008012fb` címen 1-et ír. A `0x00800a30` rajzoló a `0x00800b60` és `0x00800be5` olvasóknál a jelzőtől függő ágat vesz. Aktív állapotban a `0x00aa6f40` után a `[this+0x3c4]` képobjektumot a `0x008001c0` rajzolónak adja át a teljes qshow rajzterületre; a rajzoló `+0x474/+0x478` méretmezőket használ. A `0x00801f50` frissítési út szintén ellenőrzi a jelzőt és a `+0x3c4` képet. A `0x00801130` a jelző aktív állapotában kihagy egy segédhívást (`0x0080115e`). A `0x006d911c` találat más osztályhoz, `CPVRenderer`-hez tartozik, nem qshow-mező.
+
+**Független kezelőazonosítás.** A qshow `QDrawable` vtable `+0x30` eseményhelye a `0x00801270` billentyűkezelőre mutat, a `+0x40` rajzolóhely pedig a `0x00800a30`-ra (`0x00cbd66c`). Ez külön út a közvetlen billentyű- és rajzolóutasítások olvasatától.
+
+**PicasaPy-összevetés.** A `TimelineView.qml:393-406` csak az esemény `key` értékét vizsgálja, a módosítókat nem, ezért Ctrl+Space-re a Space-hez hasonlóan a `startCurrentSlideshow()` fut. Ez eltér az eredeti külön, a `+0x3c4` képet a rajzterületre tevő ágtól.
+
+**Következtetés.** A látható művelet binárisból megvan: külön képi objektum kerül a teljes qshow rajzterületre, nem a normál Space vetítés indul. A `+0x3c4` képobjektum tényleges forrása és képtartalma **NINCS MEG**; ezért nem állítom, hogy melyik fotót vagy képet látja a felhasználó.
+
+##### 2. Space: az első vetített elem
+
+**Bináris út.** A `0x00801270` Space-ág a `[this+0x3bb]` állapotától függően a `0x00801130` váltóhoz vagy a `0x00803110` OneUp/host objektumváltóhoz jut. A `0x00803110` meglévő Ghidra-kimenete mutatja az aktív OneUp objektum és a host cseréjét, de nem ad át explicit fotóindexet vagy rekordazonosítót; az első fotó rekordja ebből önmagában nem állapítható meg.
+
+**Mérés és PicasaPy-összevetés.** A korábbi job-240 felvétel dokumentált képkockáján a `2019_marcius` gyűjtemény `1/7` képe látszott, `2019-03-08 09:15` dátumfelirattal (§38.2.82). Ez a gyűjtemény első eleme. A PicasaPy a fókuszált gyűjtemény modelljét adja át, és a 0. indexről indítja a vetítést (`MainTimeline.qml:106-125`). Az első elem szintjén tehát egyezik a két út. A konkrét fájlnév PicasaPy-beli azonosítása és az eredeti OneUp objektum által kapott rekordcím bináris visszakövetése **NINCS MEG**.
+
+##### 3. Betöltésjelző: `ytProgress` fogadó
+
+**Bináris hívási út.** A `0x005e8a70` Időrend-belépő `0x005e9476` útja a `Preparing timeline...` szöveget készíti elő, majd a `CThumbUI+0x278` fogadót adja a `0x00415500` konstruktor-segédnek. A `ytProgress` `0x00415500`-ban inicializálódik, frissítője a `0x00415380`; a folyamatjelző objektum a fogadó `+0x14` metódusát hívja a szöveggel, majd a feldolgozás végén a `+0x0c` metódust.
+
+**A fogadó két független azonosítása.** A CThumbUI konstruktor (`0x005643e0`) a beágyazott `+0x278` fogadóra állítja a CThumbUI vtable-t (`0x00c90694`). Az RTTI/vtable módsor a `+0x14` slotot a `0x00566630`-hoz, a `+0x0c` slotot a `0x00566320`-hoz rendeli; ez egybevág a `ytProgress` virtuális hívásaival. A `0x00566630` a `modalprogress/escmessage` szövegobjektumán a `Press ESC key on keyboard to abort` szöveget állít be (az Időrend-hívás 1 argumentummal jut ide; más esetben `Please wait`). A `0x00566320` a `DAT_00d67914 != 0` feltétel mellett a `thumbui/modalprogressfloater` és `thumbui/progressbarfill` elemeket kéri le, azok `+0x68` virtuális metódusait hívja, majd a folyamatjelző állapotát frissíti.
+
+**PicasaPy-összevetés és határ.** A PicasaPy Timeline megnyitó QML útja (`MainTimeline.qml:96-104`, `TimelineView.qml:319-324`) nem tartalmaz folyamatjelzőt. Az eredeti binárisban azonosított felületi cél a modális lebegő ablak, a folyamatjelző sáv és az ESC-üzenet, de a rajzoló kódot a `DAT_00d67914` kapu feltételesíti; annak Időrend-futás alatti értéke és egy ténylegesen látható képkocka **NINCS MEG**. Így az eltérés lehetséges, nem bizonyított futásidejű eltérés.
+
+##### 4. Nem job-239 visszatérés: szülőnézet és kijelölés
+
+**Bináris út.** A `0x007fb820` Escape útja a qshow `ytWindow` gazdaablakának `0x00983270` callbackjáig jut; a normál állapotban az saját HWND-re `WM_CLOSE` üzenetet küld. Ez a statikus út ablakbezárást igazol, de nem nevezi meg a bezárás után kijelölt mappát vagy képet.
+
+**Mérés és PicasaPy-összevetés.** A korábban dokumentált job-241-ben a közvetlen qshow-belépés után három Right következett; Escape után a `2021_eltero_fajlido` mappa és annak első képe, `2021_eltero_fajlido_01.jpg` volt kijelölve (§38.2.83). A PicasaPy záróútja a fókuszált gyűjteményt és annak első fotóját nyitja meg (`MainTimeline.qml:77-94`), tehát e mért út eredménye egyezik. A job-239 belépés előtti `PicasaTeszt` mappájába tért vissza (§38.2.81); a különböző belépési állapotok eredménye nem ad általános visszaállítási szabályt. A job-241 állítás itt a korábbi dokumentált videómérésen alapul; a nyers felvétel a jelenlegi mérőadat-archívumból hiányzik.
+
+##### 5. Bizonyítékok, független utak és cáfoló kísérlet
+
+| Érték / állítás | Forrás | Fok |
+|---|---|---|
+| A Ctrl+Space a `+0x3ba` jelzőt 1-re írja; a qshow rajzolója a jelző aktív állapotában a `+0x3c4` képet a teljes rajzterületre adja. | bináris (`0x00801270`, `0x008012fb`, `0x00800a30`, `0x00800b60`, `0x00800be5`, `0x008001c0`) | megerősített a vezérlő-/rajzolóút tekintetében; képforrás NINCS MEG |
+| A Space út első látható eleme a mért `2019_marcius` csoport `1/7` képe, dátuma `2019-03-08 09:15`. | mérés (korábban dokumentált job-240, §38.2.82; a nyers képkocka ebben a munkamenetben nem volt elérhető) | feltételes |
+| A PicasaPy a fókuszált gyűjtemény 0. elemével indít. | PicasaPy-forrás (`MainTimeline.qml:106-125`) | megerősített forrásolvasat |
+| Az Időrend `ytProgress` fogadó `+0x14` célja az ESC-üzenetet állítja, a `+0x0c` célja a modális lebegő ablak és folyamatjelző sáv erőforrásait kezeli a `DAT_00d67914` kapu mellett. | bináris (`0x005e8a70`, `0x00415500`, `0x00415380`, `0x005643e0`, `0x00566630`, `0x00566320`, `0x00c90694`) | feltételes a futásidejű láthatóságra |
+| A job-241 Escape után a `2021_eltero_fajlido` mappa és első képe maradt kijelölve. | mérés (korábban dokumentált job-241, §38.2.83; a nyers felvétel ebben a munkamenetben nem volt elérhető) | feltételes |
+| A PicasaPy a fókuszált gyűjteményt és annak első képét nyitja meg visszatéréskor. | PicasaPy-forrás (`MainTimeline.qml:77-94`) | megerősített forrásolvasat |
+
+**A két független út.**
+
+- **Ctrl+Space:** A út a teljes mezőhivatkozás-pásztázás és a `0x00801270`/`0x00800a30` diszasszembly; B út a `QDrawable` vtable `+0x30`/`+0x40` slotja, amely a billentyűkezelőt és a képkockarajzolót külön azonosítja. Egyeznek: a Ctrl+Space által állított jelzőt a qshow kirajzoló olvassa, és rajzolóágat vezérel. A kép forrását egyik út sem azonosítja.
+- **Space:** A út a billentyűkezelő és a `0x00803110` meglévő Ghidra-kimenete; ez az objektumcserét azonosítja, de a fotóindexet nem. B út a job-240 dokumentált videóképkockája (`1/7`, `2019-03-08 09:15`), amely a fókuszgyűjtemény első képét mutatja. A mérés választ ad az adott feladatra, de a két út nem igazolja egymást az átadott rekord kérdésében; ezért az eredeti rekordazonosítás **feltételes/nyitott**. A PicasaPy 0. indexe ugyanilyen sorszintű kezdést valósít meg.
+- **Betöltésjelző:** A út a `ytProgress` virtuális hívási lánca; B út a CThumbUI konstruktor, vtable/RTTI és a célfüggvényekben használt erőforrás-nevek. Egyeznek a fogadó, az ESC-üzenet, a modális lebegő ablak és a folyamatjelző sáv azonosításában. A tényleges látható képkockát a globális kapu miatt egyik út sem igazolja.
+- **Visszatérés:** A út a `0x007fb820` statikus bezáró callbackja; B út a job-241 felvétel dokumentált kijelölése. A bináris út nem dönti el a szülő kijelölést; a mért út a PicasaPy záróforrásával egyezik, de ez nem független bináris bizonyíték a Picasa eredményére, és csak a job-241 belépési állapotra érvényes.
+
+**Cáfoló kísérlet (módszertan 15.2).** Először azt próbáltam cáfolni, hogy a `+0x3ba` csak nem látható belső jelző. A teljes `.text` pásztázást újrafuttattam `eax/ebx/ecx/edx/esi/edi/ebp/esp` bázisokkal, mert az első keresőminta kihagyta az EBP-t; az így kapott összes qshow-olvasó között ott van a `0x00800a30` rajzolási feltétele, és az út a `0x008001c0` képkirajzolóig ér. A külön vtable-slot ellenőrzés a `0x00800a30`-at render-metódusként igazolja, tehát a cáfoló eredménye ugyanazzal a kétutas mércével ellenőrzött. Másodszor azt próbáltam cáfolni, hogy a progress callback csak könyvelést végez: a `+0x14` cél ESC-feliratot, a `+0x0c` cél UI-erőforrásokat kezel. Ez cáfolja a „csak számláló” feltevést, de a kapu miatt nem bizonyítja a képernyőn ténylegesen megjelent képkockát.
+
+**A §38.2.127 szerinti 14 A pont állása.** A korábbi 13 nyitott A pontból e körben csak a Ctrl+Space rajzolóágat zárja le két független, egyező bináris út. A job-240 első diáját mérő felvétel és a job-241 visszatérés mért eredményt ad, de az adott eredményhez nincs második, független eredeti-Picasa út; ezek feltételesek. A `ytProgress` futásidejű láthatósága is nyitott. Így **12 A pont marad nyitva a 14-ből**; ez a teljes #6532-t nem zárja le.
+
+##### 6. Nyitott
+
+- A `[this+0x3c4]` képobjektum forrása/tartalma: **NINCS MEG**; további lépésként a `0x007fa855` konstruktor és a `0x007fee06`/`0x00800a30` használati út adatbetöltőjét kell követni, kártyakép- és `0x007fe600` vizsgálat nélkül.
+- A Space által ténylegesen az OneUp objektumnak átadott fotórekord/fájlazonosító: **NINCS MEG**. Ha ezt a bináris kézfogást kell bizonyítani, Ghidra-kör kell: `0x00803110` - mely rekordot/indexet teszi az aktív OneUp képforrásává az objektumcsere előtt? A meglévő Ghidra-kimenet az objektumcserét mutatja, a rekordazonosítót nem. [blokkoló]
+- A `DAT_00d67914` értéke az Időrend-betöltés alatt, és a floater tényleges megjelenése: **NINCS MEG**; Colab-videón kell mérni a betöltés fázisát és az ablakban látható jelzőt.
+- A job-241-től eltérő belépési nézetek általános visszaállítási szabálya: **NINCS MEG**; külön, megnevezett mappából és fotóból belépő mérés szükséges.
+
+**A #6532 „Kész, ha” pontjai ebből a körből:**
+
+- ⛔ Teljes eredeti Picasa Időrend-videó a belépéssel, lapozással, gyűjteményváltással, kártyákkal, billentyűkkel és kilépéssel: itt nem készült, a korábbi részfelvételek teljes lefedettsége nincs igazolva.
+- ⛔ Minden megvalósítandó pont bináris címmel igazolva: a jelen négy kérdésből a Space-rekord pontos azonosítása, a progressz futásidejű láthatósága, a `+0x3c4` képtartalma és az általános visszatérési szabály nyitott; a teljes 14 A pontból 12 nyitott.
+- ✅ Megvalósítási jegy: az előzmény #6713-at nevezi meg; GitHubot ebben a körben nem ellenőriztem.
+- ⛔ Összehasonlító videó vagy képsor a kiadáshoz: nem készült.
+
 
