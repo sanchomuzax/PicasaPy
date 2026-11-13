@@ -22,7 +22,7 @@ from PySide6.QtCore import (
     Qt,
 )
 from PySide6.QtGui import QHoverEvent
-from PySide6.QtQuick import QQuickWindow
+from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 from conftest import _build_qml_app
@@ -161,26 +161,25 @@ def test_a_nyomtatas_sugogombja_es_beallitas_sugoja_a_foablakbol_elerheto(
         ablak, "openPrint", Qt.ConnectionType.DirectConnection
     )
     nyomtatas = _elem(ablak, "printDialog")
-    assert isinstance(nyomtatas, QQuickWindow)
+    assert isinstance(nyomtatas, QQuickItem)
+    assert nyomtatas.window() == ablak, "a nyomtatási nézet nincs a főablakba ágyazva"
     assert _var(qt_app, lambda: nyomtatas.property("visible")), (
-        "a főablak nem nyitotta meg a nyomtatási párbeszédet"
+        "a főablak nem nyitotta meg a nyomtatási nézetet"
     )
-    # #4795: a kezdőmagasságot az ablak az első elrendezés után állítja be
-    assert _var(qt_app, lambda: not nyomtatas.property("meretezesFuggoben"))
-    celmagassag = nyomtatas.height() + magassag_elteres
-    nyomtatas.setHeight(celmagassag)
-    assert _var(qt_app, lambda: nyomtatas.height() == celmagassag), (
-        "a Nyomtatás párbeszéd nem vette fel a tesztmagasságot"
+    celmagassag = ablak.height() + magassag_elteres
+    ablak.setHeight(celmagassag)
+    assert _var(qt_app, lambda: ablak.height() == celmagassag), (
+        "a főablak nem vette fel a tesztmagasságot"
     )
 
     beallitas = _elem(nyomtatas, "printOptionsButton")
     assert _tooltip(
-        beallitas, "printOptionsTooltip", qt_app, nyomtatas
+        beallitas, "printOptionsTooltip", qt_app, ablak
     ) in {
         "Configure borders and text for Photos to be printed",
         "A nyomtatni kívánt fotók szegélyeinek és szövegének beállítása",
     }
-    _kattint(nyomtatas, beallitas)
+    _kattint(ablak, beallitas)
     panel = _elem(nyomtatas, "printOptionsPanel")
     assert _var(qt_app, lambda: panel.property("visible")), (
         "a Nyomtatás beállításgombja nem nyitotta meg a panelt"
@@ -189,7 +188,7 @@ def test_a_nyomtatas_sugogombja_es_beallitas_sugoja_a_foablakbol_elerheto(
 
     sugo = _elem(nyomtatas, "printHelpButton")
     assert str(sugo.property("text")) in {"Help", "Súgó"}
-    _kattint(nyomtatas, sugo)
+    _kattint(ablak, sugo)
     help_window = _elem(nyomtatas, "helpWindow")
     assert _var(qt_app, lambda: help_window.property("visible")), (
         "a Nyomtatás Súgó gombja nem nyitotta meg a saját súgóablakát"
@@ -197,8 +196,9 @@ def test_a_nyomtatas_sugogombja_es_beallitas_sugoja_a_foablakbol_elerheto(
     help_window.setProperty("visible", False)
     nyomtatas.setProperty("visible", False)
     assert _var(qt_app, lambda: not nyomtatas.property("visible")), (
-        "a nyomtatási próba végén modális ablak maradt nyitva"
+        "a nyomtatási próba végén a nézet maradt nyitva"
     )
+    assert _elem(ablak, "mainSplit").property("visible") is True
 
     sorok = _csv_sorok()
     for nev in ("printpanel/captionoptionsbutton", "printpanel/phelpbutton"):

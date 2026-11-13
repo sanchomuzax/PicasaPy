@@ -177,12 +177,11 @@ def _valassz_legordulobol(qt_app, ablak, legordulo, szoveg: str) -> None:
 
 
 def _nyomtatas_megnyit(window, qt_app, menu_bar):
-    """Fájl ▸ Print… valódi kattintással; visszaadja a nyomtatás párbeszédet.
+    """Fájl ▸ Print… valódi kattintással; visszaadja a főablak nézetét.
 
-    A nyomtatás önálló ablak, alapméretben (480x420) a tartalma nagyrészt az
-    ablakon kívül esik, és a kattintás ott nem érne a gombhoz. Ezért a
-    tesztelt tételek elérhetőségéhez az ablakot megnagyobbítjuk (ez
-    előkészítés, nem a tesztelt művelet).
+    A Print Layout a főablakban él, ezért a vezérlők helyét is a főablak
+    magassága adja. A nagyobb ablak csak a teszteléshez szükséges, hogy a
+    lentebb lévő vezérlők is kattinthatók legyenek.
     """
     _megnyit(menu_bar, qt_app, "&File")
     _kattints(qt_app, _gyerek(window, "menuFilePrint"))
@@ -190,8 +189,7 @@ def _nyomtatas_megnyit(window, qt_app, menu_bar):
         "a Fájl ▸ Print… nem nyitotta meg a nyomtatást"
     )
     nyomtatas = _gyerek(window, "printDialog")
-    nyomtatas.setProperty("width", 900)
-    nyomtatas.setProperty("height", 1000)
+    window.resize(max(900, int(window.width())), max(1000, int(window.height())))
     qt_app.processEvents()
     return nyomtatas
 
@@ -306,7 +304,7 @@ class TestNyomtatasVezerlok:
         assert nyomtatas.property("orientation") == "auto"
 
         _valassz_legordulobol(
-            qt_app, nyomtatas, _gyerek(window, "printOrientationBox"), "Landscape"
+            qt_app, window, _gyerek(window, "printOrientationBox"), "Landscape"
         )
         assert _varj(
             qt_app, lambda: nyomtatas.property("orientation") == "landscape"

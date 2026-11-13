@@ -292,7 +292,7 @@ class TestKimenet:
         assert cel.is_file(), "a nyomtatás nem készítette el a PDF-et"
         assert parbeszed.property("visible") is False
         assert _elem(window, "mainSplit").property("visible") is True
-        assert str(parbeszed.property("lastResult")) == str(cel)
+        assert Path(str(parbeszed.property("lastResult"))) == cel
         kijeloles = window.property("selectedIndexes")
         if hasattr(kijeloles, "toVariant"):
             kijeloles = kijeloles.toVariant()

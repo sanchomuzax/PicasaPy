@@ -191,7 +191,7 @@ class TestKimenet:
         assert cel.is_file()
         assert parbeszed.property("visible") is False
         assert _elem(window, "mainSplit").property("visible") is True
-        assert str(parbeszed.property("lastResult")) == str(cel)
+        assert Path(str(parbeszed.property("lastResult"))) == cel
 
 
 class TestCelpont:

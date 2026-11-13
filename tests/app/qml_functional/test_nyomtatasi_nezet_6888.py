@@ -67,16 +67,22 @@ def _talcaval_nyit(window, qt_app):
     _kattints(qt_app, gomb)
 
 
+@pytest.mark.parametrize("entrypoint", ["tray", "file"])
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])
-def test_talca_print_a_fomablakba_valt_es_cancellel_visszater(
-    qml_app, qt_app, height_delta
+def test_print_parancs_a_fomablakba_valt_es_cancellel_visszater(
+    qml_app, qt_app, entrypoint, height_delta
 ):
     window, _controller, _engine = qml_app
     kijeloles = _kijelol(window, qt_app)
     window.resize(window.width(), window.height() + height_delta)
     qt_app.processEvents()
 
-    _talcaval_nyit(window, qt_app)
+    if entrypoint == "tray":
+        _talcaval_nyit(window, qt_app)
+    else:
+        menu_bar = window.property("menuBar")
+        _megnyit(menu_bar, qt_app, "&File")
+        _kattints(qt_app, _elem(window, "menuFilePrint"))
     _ellenoriz_beagyazott_nezet(window, qt_app, kijeloles)
 
     cancel = _elem(window, "printCloseButton")
@@ -87,16 +93,6 @@ def test_talca_print_a_fomablakba_valt_es_cancellel_visszater(
     ), "a Cancel nem zárta be a nyomtatási nézetet"
     assert _elem(window, "mainSplit").property("visible") is True
     assert _kijelolt_sorok(window) == kijeloles
-
-
-def test_file_print_valodi_kattintassal_a_fomablakba_valt(qml_app, qt_app):
-    window, _controller, _engine = qml_app
-    kijeloles = _kijelol(window, qt_app)
-    menu_bar = window.property("menuBar")
-    _megnyit(menu_bar, qt_app, "&File")
-    _kattints(qt_app, _elem(window, "menuFilePrint"))
-
-    _ellenoriz_beagyazott_nezet(window, qt_app, kijeloles)
 
 
 def test_escape_visszavisz_a_konyvtarnezetbe(qml_app, qt_app):

@@ -10,6 +10,7 @@ import numpy as np
 from PySide6.QtCore import QLocale, QMetaObject, QObject, QPointF, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtQml import QQmlExpression, qmlContext
+from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 from PIL import Image
 
@@ -66,7 +67,13 @@ def _kattints(ablak, qt_app, elem):
         f"{elem.objectName()}: nincs kattintható mérete"
     )
     pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
-    QTest.mouseClick(ablak, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, pont)
+    kattinthato_ablak = elem.window() if isinstance(elem, QQuickItem) else ablak
+    QTest.mouseClick(
+        kattinthato_ablak,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        pont,
+    )
     qt_app.processEvents()
 
 
