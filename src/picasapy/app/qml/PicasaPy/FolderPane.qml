@@ -61,6 +61,8 @@ Rectangle {
     // `.picasa.ini` `[Picasa]` `P2category=Projects (internal)` kulcsából
     // (Kollázsok, Filmek, Rögzített videoklipek, …)
     property var projectFolders: []
+    // #6883: az Other Stuff P2category-hez tartozó mappák.
+    property var otherStuffFolders: []
     property bool ignoredFacesActive: false
     // #5341: a People-csoport LÁTHATÓ sorai. Az eredetiben (job-210, 13. és
     // 16. kép) a Névtelenek és a mellőzött sor ugyanazon a helyen váltja
@@ -319,6 +321,9 @@ Rectangle {
         paneMenus.folderContextMenu.folderPath = path
         paneMenus.folderContextMenu.customCollections = pane.customCollectionsModel
         if (controller) {
+            paneMenus.folderContextMenu.currentCollection =
+                (controller.folderCollectionName !== undefined)
+                    ? controller.folderCollectionName(path) : "Folders"
             // #1637: a tétel felirata állapotfüggő („Mappa elrejtése" ↔
             // „Megjelenítés"), tehát a menü NYITÁSAKOR kell megkérdezni.
             // A `!== undefined` a #1572-őr mintája.

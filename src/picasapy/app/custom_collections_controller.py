@@ -17,12 +17,19 @@ from pathlib import Path
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.ini import (
+    EXPORTED_PICTURES_CATEGORY,
     FOLDERS_ON_DISK_CATEGORY,
+    HIDDEN_FOLDERS_CATEGORY,
+    OTHER_STUFF_CATEGORY,
+    PROJECTS_CATEGORY,
+    WEB_ALBUMS_CATEGORY,
     is_custom_collection_category,
     is_hidden_folders_category,
+    load_or_empty,
     read_folder_category,
     update_document,
     with_folder_category,
+    without_folder_category,
 )
 from picasapy.hidden_password import egyezik as jelszo_egyezik
 from picasapy.hidden_password import picasa_lenyomat
@@ -43,6 +50,15 @@ from .custom_collections import (
 )
 
 logger = logging.getLogger(__name__)
+
+_BUILTIN_COLLECTION_CATEGORIES = {
+    "exported pictures": EXPORTED_PICTURES_CATEGORY,
+    "folders": None,
+    "hidden folders": HIDDEN_FOLDERS_CATEGORY,
+    "other stuff": OTHER_STUFF_CATEGORY,
+    "projects": PROJECTS_CATEGORY,
+    "web albums": WEB_ALBUMS_CATEGORY,
+}
 
 
 class CustomCollectionsMixin:
@@ -85,7 +101,7 @@ class CustomCollectionsMixin:
         if hasattr(self, "_custom_collection_categories"):
             return
         self._custom_collection_categories: dict[str, tuple[str, ...]] = {}
-        self._pending_custom_category_paths: dict[str, str] = {}
+        self._pending_custom_category_paths: dict[str, str | None] = {}
         self._migrate_legacy_collection_folders()
 
     def _apply_custom_collection_folders(
@@ -341,7 +357,26 @@ class CustomCollectionsMixin:
             return None
         return effective
 
-    def _set_cached_folder_category(self, folder_path: str, category: str) -> None:
+    def _clear_folder_category(self, folder_path: str) -> bool:
+        """A Folders célérték mindkét Picasa-kategóriakulcsot törli."""
+        try:
+            update_document(
+                Path(folder_path) / PICASA_INI_NAME,
+                without_folder_category,
+                backup=True,
+            )
+        except (OSError, RuntimeError, ValueError):
+            logger.warning(
+                "nem sikerült törölni a mappa kategória-besorolását: %s",
+                folder_path,
+                exc_info=True,
+            )
+            return False
+        return True
+
+    def _set_cached_folder_category(
+        self, folder_path: str, category: str | None
+    ) -> None:
         """A lokális ini-pillanatképet az imént sikeres íráshoz igazítja."""
         categories = {
             name: [path for path in paths if path != folder_path]
@@ -421,21 +456,55 @@ class CustomCollectionsMixin:
             # #4597: rejtett mappa nem helyezhető át gyűjteménybe
             self.folderHideFailed.emit(folder_path, "hidden-move")
             return
+        if not folder_path or not Path(folder_path).is_dir():
+            return
+        builtin_key = collection_name.strip().casefold()
+        if builtin_key == "hidden folders":
+            toggle_hidden = getattr(self, "toggleFolderHidden", None)
+            if callable(toggle_hidden) and not self._folder_is_hidden(folder_path):
+                toggle_hidden(folder_path)
+            return
+
         current = self._load_custom_collections()
         target = next(
             (c.name for c in current if c.name.casefold() == collection_name.casefold()),
             "",
         )
-        category = target or FOLDERS_ON_DISK_CATEGORY
-        if (
-            self._write_folder_category(
-                folder_path, category, overwrite_hidden=True
-            )
-            is None
-        ):
+        if builtin_key in _BUILTIN_COLLECTION_CATEGORIES:
+            category = _BUILTIN_COLLECTION_CATEGORIES[builtin_key]
+        else:
+            category = target or FOLDERS_ON_DISK_CATEGORY
+        if category is None:
+            if not self._clear_folder_category(folder_path):
+                return
+        elif self._write_folder_category(
+            folder_path, category, overwrite_hidden=True
+        ) is None:
             return
         self._set_cached_folder_category(folder_path, category)
+        update_live = getattr(self, "_set_live_side_pane_folder_category", None)
+        if callable(update_live):
+            update_live(folder_path, category)
         self._save_custom_collections(current)
+
+    @Slot(str, result=str)
+    def folderCollectionName(self, folder_path: str) -> str:  # noqa: N802
+        """A mappa jelenlegi gyűjteményének menüben használt neve."""
+        category = read_folder_category(
+            load_or_empty(Path(folder_path) / PICASA_INI_NAME)
+        )
+        if not category or category.casefold() == FOLDERS_ON_DISK_CATEGORY.casefold():
+            return "Folders"
+        for name, value in _BUILTIN_COLLECTION_CATEGORIES.items():
+            if value is not None and category.casefold() == value.casefold():
+                return {
+                    "exported pictures": "Exported Pictures",
+                    "hidden folders": "Hidden Folders",
+                    "other stuff": "Other Stuff",
+                    "projects": "Projects",
+                    "web albums": "Web Albums",
+                }[name]
+        return category
 
     # -- #461: bezárás/megnyitás -------------------------------------------
 

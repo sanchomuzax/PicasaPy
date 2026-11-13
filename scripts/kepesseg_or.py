@@ -865,10 +865,13 @@ def elemez(app_gyoker: Path) -> Elemzes:
 
     for osztaly in kontextusok.values():
         _bejar(osztaly)
+    # A `_`-sal kezdődő slot itt sem felületi tag: a szálközi
+    # `QMetaObject.invokeMethod` fogadója (#6858), ugyanúgy, mint fent.
     arvak = [
-        ArvaOsztaly(nev=nev, fajl=adat[0], tagszam=len(adat[2]))
+        ArvaOsztaly(nev=nev, fajl=adat[0], tagszam=len(felulet))
         for nev, adat in sorted(osztalyok.items())
-        if nev not in elert and adat[2]
+        if nev not in elert
+        and (felulet := [t for t in adat[2] if not t.nev.startswith("_")])
     ]
 
     return Elemzes(

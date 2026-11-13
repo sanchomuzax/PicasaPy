@@ -255,7 +255,7 @@ def test_search_caption_and_tag_fields_keep_their_keys(
 def test_all_shortcut_sequences_are_silent_while_search_has_focus(
     qml_app, qt_app, height_delta
 ):
-    """Mind az 57 QML-kötés szekvenciáját valódi leütéssel próbálja szövegfókuszban."""
+    """Mind a 65 QML-kötés szekvenciáját valódi leütéssel próbálja szövegfókuszban."""
     window, _controller, _engine = qml_app
     window.setHeight(window.height() + height_delta)
     window.show()
@@ -271,7 +271,7 @@ def test_all_shortcut_sequences_are_silent_while_search_has_focus(
 
     qml_root = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml"
     sequences = _declared_shortcut_sequences(qml_root)
-    assert len(sequences) == 64, f"a QML-leltár {len(sequences)} Shortcut-kötést ad"
+    assert len(sequences) == 65, f"a QML-leltár {len(sequences)} Shortcut-kötést ad"
 
     for sequence in sequences:
         parsed = QKeySequence(sequence)

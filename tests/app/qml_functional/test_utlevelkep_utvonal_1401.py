@@ -67,14 +67,17 @@ def _elem(root, nev):
     return obj
 
 
-def _kattints(window, qt_app, elem) -> None:
+def _kattints(_window, qt_app, elem) -> None:
     """Valódi bal kattintás a vezérlő KÖZEPÉRE."""
     assert _var(qt_app, lambda: elem.width() > 0 and elem.height() > 0), (
         f"{elem.objectName()}: nincs mérete, nem kattintható"
     )
     pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
     QTest.mouseClick(
-        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, pont
+        elem.window(),
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        pont,
     )
     qt_app.processEvents()
 

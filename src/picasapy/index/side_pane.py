@@ -12,6 +12,7 @@ from picasapy.ini import (
     ContactNameResolver,
     ini_source_path,
     is_custom_collection_category,
+    OTHER_STUFF_CATEGORY,
     is_projects_category,
     parse_faces,
     read_folder_category,
@@ -30,6 +31,7 @@ class SidePaneCollections:
     people: tuple[PersonRecord, ...]
     project_folders: tuple[ProjectFolder, ...]
     custom_collection_folders: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    other_stuff_folders: tuple[ProjectFolder, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,6 +43,7 @@ class _FolderIniCacheEntry:
     size: int | None
     face_data: FaceData | None
     is_project: bool
+    is_other_stuff: bool
     custom_category: str | None
 
 
@@ -119,7 +122,9 @@ def refresh_side_pane_cache(
             ini_path = Path(folder_path) / PICASA_INI_NAME
             source = ini_source_path(ini_path)
             if source is None:
-                current = _FolderIniCacheEntry(None, None, None, None, False, None)
+                current = _FolderIniCacheEntry(
+                    None, None, None, None, False, False, None
+                )
                 if _SIDE_PANE_CACHE.get(folder_path) != current:
                     _SIDE_PANE_CACHE[folder_path] = current
                     changed = True
@@ -155,6 +160,9 @@ def refresh_side_pane_cache(
                 size=stat.st_size,
                 face_data=face_data,
                 is_project=is_projects_category(category),
+                is_other_stuff=bool(
+                    category and category.casefold() == OTHER_STUFF_CATEGORY.casefold()
+                ),
                 custom_category=(
                     category if is_custom_collection_category(category) else None
                 ),
@@ -195,6 +203,11 @@ def cached_side_pane_collections(
         for path, entry in zip(folder_paths, entries, strict=True)
         if entry.is_project
     )
+    other_stuff_paths = tuple(
+        path
+        for path, entry in zip(folder_paths, entries, strict=True)
+        if entry.is_other_stuff
+    )
     custom_folders: dict[str, list[str]] = {}
     for path, entry in zip(folder_paths, entries, strict=True):
         if entry.custom_category is not None:
@@ -210,6 +223,7 @@ def cached_side_pane_collections(
         people=people_in_index(conn, face_rows, central_path=central_path),
         project_folders=project_folders_from_paths(conn, project_paths),
         custom_collection_folders=custom_collections,
+        other_stuff_folders=project_folders_from_paths(conn, other_stuff_paths),
     )
 
 

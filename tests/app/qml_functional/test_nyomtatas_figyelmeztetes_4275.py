@@ -121,7 +121,16 @@ def test_a_harom_kimenet_valodi_kattintassal_magyarul_es_valtozo_ablakmagassagga
     alapmagassag = int(dialog.property("height"))
 
     for elteres in (-5, 0, 5):
-        dialog.setProperty("height", alapmagassag + elteres)
+        foablak = dialog.window()
+        foablak.setHeight(
+            foablak.height() + alapmagassag + elteres - dialog.height()
+        )
+        assert varj_feltetelre(
+            qt_app,
+            lambda cel=alapmagassag + elteres:
+                round(dialog.height()) == cel,
+            3.0,
+        ), f"a tartalmi nézet nem vette fel a {alapmagassag + elteres} px magasságot"
         qt_app.processEvents()
 
         panel = _nyisd_meg_az_atnezest(dialog, qt_app)
