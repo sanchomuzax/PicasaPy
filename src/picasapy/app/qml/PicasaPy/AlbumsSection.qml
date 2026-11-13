@@ -48,9 +48,11 @@ ColumnLayout {
     CollectionHeader {
         Layout.fillWidth: true
         label: qsTr("Albums")
-        // #9, #6851: a Recently Updated + a csillagozott sor + a virtuális albumok;
+        // #9, #6851, #6892: a nem üres Recently Updated + a csillagozott sor
+        // + a virtuális albumok;
         // #5194: kereséskor az új találatsor is a csoport része.
-        itemCount: 2 + section.albumsModel.length
+        itemCount: 1 + (section.recentlyUpdatedCount > 0 ? 1 : 0)
+                   + section.albumsModel.length
                    + (section.searchResultsText.length > 0 ? 1 : 0)
         labelObjectName: "albumsHeader"
         collapsed: section.collapsed
@@ -141,7 +143,7 @@ ColumnLayout {
     Rectangle {
         id: recentlyUpdatedItem
         objectName: "recentlyUpdatedItem"
-        visible: !section.collapsed
+        visible: !section.collapsed && section.recentlyUpdatedCount > 0
         Layout.fillWidth: true
         Layout.preferredHeight: section.rowHeight
         color: section.recentlyUpdatedActive ? Theme.panelSelectionActive
