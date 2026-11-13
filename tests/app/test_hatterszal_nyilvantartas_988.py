@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import re
 import threading
+import time
 from pathlib import Path
 
 import picasapy.app
@@ -177,48 +178,77 @@ class TestABevarasVerdiktjeIgaz:
     SIGSEGV eltűnése.
     """
 
-    def test_a_szal_a_nyilvantartasban_marad_az_utolso_qt_hivasaig(
-        self, monkeypatch
-    ):
-        """A `registry.end()` Qt-jelzést emitál — a szál addig látszódjon.
-
-        A `_start_background` `finally`-ága korábban ELŐBB vette ki a szálat
-        a nyilvántartásból, és csak AZUTÁN hívta a `registry.end()`-et
-        (`busy_registry.AppBusyRegistry.end` → `_endRequested.emit()`). A
-        bevárás így egy még emitáló szálat sem látott.
-
-        Mérve a javítás előtt: a `wait_for_all_background_workers()` 0,000
-        mp alatt `True`-t adott, miközben a szál bent állt az `end()`-ben.
-        """
+    def test_a_registry_end_a_gui_szalrol_fut(self, qt_app, monkeypatch):
+        """A worker a regisztrátum lezárását sorba állítja a GUI-szálra."""
         from picasapy.app import busy_registry
 
-        benne_van = threading.Event()
-        elengedheto = threading.Event()
-        eredeti_end = busy_registry.AppBusyRegistry.end
+        end_meghivva = threading.Event()
+        end_szalazonositok: list[int] = []
+        gui_szal = threading.get_ident()
+        registry = busy_registry.get_app_busy_registry()
+        worker_jegyek: list[int] = []
+        eredeti_begin = registry.begin
+        eredeti_end = registry.end
 
-        def lassu_end(maga, jegy=0):
-            benne_van.set()
-            elengedheto.wait(10.0)
-            return eredeti_end(maga, jegy)
+        def kovetett_begin(label=""):
+            jegy = eredeti_begin(label)
+            worker_jegyek.append(jegy)
+            return jegy
 
-        monkeypatch.setattr(busy_registry.AppBusyRegistry, "end", lassu_end)
+        def kovetett_end(jegy=0):
+            if jegy in worker_jegyek:
+                end_szalazonositok.append(threading.get_ident())
+                end_meghivva.set()
+            eredeti_end(jegy)
+
+        monkeypatch.setattr(registry, "begin", kovetett_begin)
+        monkeypatch.setattr(registry, "end", kovetett_end)
 
         pelda = _Pelda()
-        szal = pelda._start_background(lambda: None, name="utolso-qt-hivas-999")
-        try:
-            assert benne_van.wait(10.0), "a szál nem ért el a registry.end()-ig"
+        szal = pelda._start_background(lambda: None, name="end-a-gui-szalon")
+        szal.join(10.0)
+        assert not szal.is_alive(), "a háttérszál nem állt le"
 
-            # EBBEN A PILLANATBAN a szál ÉL, és épp Qt-jelzést emitál.
-            assert szal.is_alive()
-            assert "utolso-qt-hivas-999" in running_background_workers(), (
-                "a szál kikerült a nyilvántartásból, MIELŐTT az utolsó "
-                "Qt-hívása lefutott volna — a bevárás így nem várja be (#999)"
-            )
-        finally:
-            elengedheto.set()
+        hatarido = time.monotonic() + 5.0
+        while not end_meghivva.is_set() and time.monotonic() < hatarido:
+            qt_app.processEvents()
+            time.sleep(0.005)
 
-        assert wait_for_all_background_workers(10.0)
+        assert end_meghivva.is_set(), "a busy-bejegyzés nem zárult le"
+        assert end_szalazonositok == [gui_szal], (
+            "a registry.end() még mindig a Python-háttérszálból fut"
+        )
         assert running_background_workers() == ()
+
+    def test_a_workerhiba_visszahivasa_a_gui_szalrol_fut(self, qt_app):
+        """A hibavisszahívás is futhat Qt-jelzést kibocsátó kódot."""
+        gui_szal = threading.get_ident()
+        visszahivas_kesz = threading.Event()
+        visszahivas_szalai: list[int] = []
+        pelda = _Pelda()
+
+        def worker() -> None:
+            raise ValueError("teszthiba")
+
+        def hiba_visszahivas(_error: Exception) -> None:
+            visszahivas_szalai.append(threading.get_ident())
+            visszahivas_kesz.set()
+
+        szal = pelda._start_background(
+            worker, name="hiba-visszahivas-a-gui-szalon", on_error=hiba_visszahivas
+        )
+        szal.join(10.0)
+        assert not szal.is_alive(), "a háttérszál nem állt le"
+
+        hatarido = time.monotonic() + 5.0
+        while not visszahivas_kesz.is_set() and time.monotonic() < hatarido:
+            qt_app.processEvents()
+            time.sleep(0.005)
+
+        assert visszahivas_kesz.is_set(), "a hibavisszahívás nem futott le"
+        assert visszahivas_szalai == [gui_szal], (
+            "az on_error callback még mindig a Python-háttérszálból fut"
+        )
 
     def test_a_bevaras_alatt_indult_szalat_is_bevarja(self, monkeypatch):
         """Nem egyetlen pillanatkép: a menet közben induló szál is számít.

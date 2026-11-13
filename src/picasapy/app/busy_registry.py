@@ -25,16 +25,11 @@ külön be kellene jelentkeznie (ld. a `worker_thread.py` docstringjét).
 **Küszöb + minimális láthatóság** (a jegy kifejezett kérése — ne
 villogjon): ld. a `SHOW_DELAY_MS`/`MIN_VISIBLE_MS` konstansok mellett.
 
-**Szál-biztonság**: a `begin()`/`end()` bármely szálról hívható (a
-háttérszálak worker-függvénye is hívja, ld. `worker_thread.py`). Mindkettő
-csak egy Qt-jelzést emitál (`_beginRequested`/`_endRequested`) — a TÉNYLEGES
-számlálás/időzítés a jelzésre kötött belső slotban fut, ami a regisztrátum
-SAJÁT szálán (a regisztrátum létrehozásának szálán, jellemzően a GUI-szálon)
-hívódik: a Qt az `AutoConnection`-t szál-határon átmenő hívásnál
-automatikusan `QueuedConnection`-né alakítja (ugyanez a minta, mint a
-`LibraryMixin.syncProgress` workerből jövő jelzésénél). Emiatt nincs
-szükség Lock-ra — csak a GUI-szál nyúl a `_active`/`_visible`/időzítő
-állapothoz."""
+**Szál-biztonság**: a `begin()`/`end()` bármely szálról hívható, de a
+Qt-jelzéseket és az állapotot csak a regisztrátum saját szála kezeli.
+Háttérszálról a `QMetaObject.invokeMethod(..., QueuedConnection)` teszi
+sorba a belső slotot; így a Python worker nem bocsát ki Qt-jelzést. A
+`_active`/`_visible`/időzítő állapothoz továbbra is csak a GUI-szál nyúl."""
 
 from __future__ import annotations
 
@@ -45,7 +40,7 @@ import time
 from collections.abc import Callable
 
 import shiboken6
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QTimer, Qt, Signal, Slot
 
 logger = logging.getLogger(__name__)
 
@@ -96,14 +91,9 @@ class AppBusyRegistry(QObject):
     #: sarki jelző megszakítás-gombjának láthatósága erre köt.
     cancellableChanged = Signal()
 
-    # belső, szál-határon átmenő "kérés" jelzések (ld. modul docstring) —
-    # a begin()/end() csak ezeket emitálja, a tényleges állapotváltás a
-    # rájuk kötött _on_begin/_on_end slotban, a regisztrátum szálán fut.
-    _beginRequested = Signal(int, str)
-    _endRequested = Signal(int)
-
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
+        self._owner_thread_ident = threading.get_ident()
         self._active = 0
         # #6440: a nyitott munkák NEVE, indulási sorrendben (a legrégebbi elöl).
         # Csak a GUI-szálon változik (`_on_begin`/`_on_end`), ezért nem kell rá zár.
@@ -124,12 +114,9 @@ class AppBusyRegistry(QObject):
         self._long_spin_timer.setSingleShot(True)
         self._long_spin_timer.timeout.connect(self._on_long_spin)
         self._shown_at: float | None = None
-        self._beginRequested.connect(self._on_begin)
-        self._endRequested.connect(self._on_end)
         # #2966: a leállítható munkák visszahívásai. A regisztráció a hívó
-        # (GUI-) szálon, a kijelentkezés a WORKER szálán történik (a
-        # `_start_background` `finally` ágán), ezért a szótárat zár védi —
-        # a `visible` állapottal ellentétben ide két szál is nyúl.
+        # (GUI-) szálon, a kijelentkezés a worker lezáró GUI-slotjában
+        # történik, ezért a zár a többi hívótól is védi a szótárat.
         self._cancel_lock = threading.Lock()
         self._cancel_callbacks: dict[int, Callable[[], None]] = {}
         self._cancel_counter = itertools.count(1)
@@ -150,10 +137,17 @@ class AppBusyRegistry(QObject):
         """Egy háttérmunka indul. BÁRMELY szálról hívható.
 
         A visszaadott jegy az `end` bemenete. A `label` az emberi nyelvű név,
-        amit az állapotsáv mutat (#6440); üresen az általános szöveg jelenik meg."""
+        amit az állapotsáv mutat (#6440); üresen az általános szöveg jelenik meg.
+        Háttérszálról a Qt-slot hívása sorba áll, jelzés kibocsátása nélkül."""
         with self._jegy_lock:
             jegy = next(self._jegy_counter)
-        self._emit_ha_el(self._beginRequested, jegy, label)
+        if threading.get_ident() == self._owner_thread_ident:
+            if shiboken6.isValid(self):
+                self._on_begin(jegy, label)
+        else:
+            self._invoke_queued(
+                "_on_begin", Q_ARG(int, jegy), Q_ARG(str, label)
+            )
         return jegy
 
     def end(self, jegy: int = 0) -> None:
@@ -164,7 +158,41 @@ class AppBusyRegistry(QObject):
 
         A `jegy` a `begin` visszatérési értéke. `0` (jegy nélkül) a LEGRÉGEBBI
         még nyitott munkát zárja, így a jegy nélküli régi hívók is működnek."""
-        self._emit_ha_el(self._endRequested, jegy)
+        if threading.get_ident() == self._owner_thread_ident:
+            if shiboken6.isValid(self):
+                self._on_end(jegy)
+        else:
+            self._invoke_queued("_on_end", Q_ARG(int, jegy))
+
+    def _invoke_queued(self, method: str, *arguments) -> bool:
+        """Qt-slot sorba állítása a regisztrátum saját szálára."""
+        if not shiboken6.isValid(self):
+            return False
+        try:
+            return bool(
+                QMetaObject.invokeMethod(
+                    self, method, Qt.ConnectionType.QueuedConnection, *arguments
+                )
+            )
+        except RuntimeError:
+            # A QApplication lebontása és a hívás között megszűnhet a C++ oldal.
+            return False
+
+    @Slot(int, int)
+    def _finish_background(self, munka_jegy: int, cancel_jegy: int) -> None:
+        """A worker bejegyzéseinek lezárása a registry GUI-szálán."""
+        if cancel_jegy:
+            self.unregister_cancel(cancel_jegy)
+        if munka_jegy:
+            self.end(munka_jegy)
+
+    @Slot("QVariant", "QVariant")
+    def _dispatch_worker_error(self, callback, error) -> None:
+        """A worker on_error callbackjének futtatása a GUI-szálon."""
+        try:
+            callback(error)
+        except BaseException:  # noqa: BLE001 - a callback-hiba se jusson ki
+            logger.exception("háttérszál hiba-visszajelzése is hibával állt le")
 
     def aktiv_munkak(self) -> tuple[str, ...]:
         """A még nyitott munkák nevei, a legrégebbi elöl (#6440).
@@ -172,31 +200,11 @@ class AppBusyRegistry(QObject):
         return tuple(self._munkak.values())
 
     def _emit_ha_el(self, jelzes: object, *args: object) -> None:
-        """A belső kérés-jelzés kibocsátása, ha a C++ oldal MÉG LÉTEZIK (#1457).
+        """Qt-jelzés kibocsátása, ha a C++ oldal MÉG LÉTEZIK (#1457).
 
-        ⛔ **Ezt mérés kényszerítette ki, nem óvatosság.** A 2026-09-15-i
-        CI-körökben (`34927349614` ubuntu 3/4 és még tizenöt körben) a
-        dirty-szinkron háttérszál így halt meg, a tesztek UTÁN:
-
-            File ".../worker_thread.py", line 277, in _run
-                registry.end()
-            File ".../busy_registry.py", line 115, in end
-                self._endRequested.emit()
-            RuntimeError: Signal source has been deleted
-
-        A lánc: a teszt-teardown lebontja a `QApplication`-t, ami minden
-        gyermek `QObject`-jét törli; a Python-példány viszont ÉL (a
-        `reset_app_busy_registry` szándékosan tartja életben, #519/#430),
-        tehát a háttérszál még hívhatja. A `Signal.emit()` ilyenkor
-        `RuntimeError`-t dob, a `threading` excepthookja a `stderr`-re ír,
-        és ha ez az értelmező leállása közben történik, a CPython
-        ABORTÁL (windowson `0xC0000409`).
-
-        ⚠️ Ez **nem elnémítás**: ha a C++ oldal megszűnt, nincs többé
-        felület, amit a jelzés frissíthetne, és a számláló is a példánnyal
-        együtt szűnt meg — a kibocsátás így tárgytalan, nem elmaradt.
-        A `RuntimeError` elkapása a versenyhelyzet miatt kell: az
-        `isValid` és az `emit` közt is megszűnhet az objektum.
+        A busy registry belső állapotát módosító slotok csak a saját
+        szálán futnak. A Qt-jelzések kibocsátása is ott történik; ez a
+        védelem a maradék késői hívásoknál fogja meg a lebontási versenyt.
         """
         if not shiboken6.isValid(self):
             return
@@ -227,7 +235,7 @@ class AppBusyRegistry(QObject):
             self._cancel_callbacks[jegy] = callback
             elso = len(self._cancel_callbacks) == 1
         if elso:
-            self._emit_ha_el(self.cancellableChanged)
+            self._notify_cancellable_changed()
         return jegy
 
     def unregister_cancel(self, jegy: int) -> None:
@@ -237,7 +245,17 @@ class AppBusyRegistry(QObject):
             self._cancel_callbacks.pop(jegy, None)
             ures = not self._cancel_callbacks
         if ures:
+            self._notify_cancellable_changed()
+
+    def _notify_cancellable_changed(self) -> None:
+        if threading.get_ident() == self._owner_thread_ident:
             self._emit_ha_el(self.cancellableChanged)
+        elif not self._invoke_queued("_emit_cancellable_changed"):
+            logger.debug("a megszakíthatóság-jelzés nem került sorba")
+
+    @Slot()
+    def _emit_cancellable_changed(self) -> None:
+        self._emit_ha_el(self.cancellableChanged)
 
     def request_cancel(self) -> None:
         """MINDEN futó, leállítható munka megszakítása.
@@ -256,6 +274,7 @@ class AppBusyRegistry(QObject):
 
     # -- belső: MINDIG a regisztrátum szálán fut (ld. modul docstring) ------
 
+    @Slot(int, str)
     def _on_begin(self, jegy: int, label: str) -> None:
         self._munkak[jegy] = label
         self._active = len(self._munkak)
@@ -264,6 +283,7 @@ class AppBusyRegistry(QObject):
         if self._active == 1 and not self._visible and not self._show_timer.isActive():
             self._show_timer.start(SHOW_DELAY_MS)
 
+    @Slot(int)
     def _on_end(self, jegy: int) -> None:
         if jegy == 0 and self._munkak:
             jegy = next(iter(self._munkak))
