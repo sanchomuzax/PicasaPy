@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.106] - 2026-11-13
+
+- Az Ajándék CD megjegyzi a Diavetítéssel együtt kapcsoló állását, és ennek megfelelően alakítja át a nem JPEG képeket (#6878).
+
 ## [1.0.105] - 2026-11-12
 
 - A mappa fejlécének Upload gombja külön Online options menüt nyit, az Enable Sync pedig elindítja a mappa feltöltését (#6870).
