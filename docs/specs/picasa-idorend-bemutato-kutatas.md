@@ -3431,3 +3431,96 @@ A qshow animációinak indulási és leállási határait az alábbi események 
 - ⛔ Összehasonlító videó vagy képsor a kiadáshoz: nem készült.
 
 
+#### 38.2.180 A `0x007fe600` kártyamozgás-képlete: második út QEMU-val (#6532, 2026-11-13)
+
+**Hatókör és módszer.** A 38.2.150 §3 a `0x007fe600` mozgásképletét csak utasításolvasattal (A út) vezette le, ezért feltételesnek hagyta. Ez a kör a B utat adja: az eredeti `Picasa3.exe` (3.9.141.259) gépi kódját `qemu-i386` alatt futtattam a privát repó `qemu_harness/hb.py` helyi másolatával. A `0x007fe600`, az időlépést adó `0x009a51b0` és a `_rand` (`0x00c08221`) valódi kódja fut; kézzel épített elem: a `this` (`esi`), a `[this+0x2ec]` rekordtömb (0xf8 bájtos rekordok, a `+0xcc`, `+0xd0`, `+0xd4`, `+0xd8` mezőkkel) és a `[this+0x2f0]` számláló. Helyettesítettem a `QueryPerformanceCounter` (`0xc40298`) és a `QueryPerformanceFrequency` (`0xc404a0`) importot (vezérelt teljesítményszámláló-érték és gyakoriság), valamint a `__getptd` (`0x00bf0583`) függvényt (hamis szálblokk, `+0x14` a `_rand` állapota). Az FPU vezérlőszó `0x27f` (53 bites pontosság), kivéve a §4 külön mérését. A mérés minden esetben a függvény teljes futása a belépéstől a `ret`-ig, nem a közepéről indított szakasz. Az ideiglenes fájlok a munkafa `.bt/` mappájában voltak, a kör végén törölve. A kimenetet a 38.2.150 §3 képletéből írt Python-modellel vetettem össze, bitre (f32 tárolás, f64 számítás).
+
+**Rövid eredmény.**
+
+1. **A képlet igazolt, két úton.** Három ismert bemenetre (egy rekord, három rekord körbefordulással, nagy időlépés), öt számlálóesetre és két hosszú pályára (6 rekord x 200 képkocka, 12 rekord x 300 képkocka, együtt 19 200 érték) az eredeti gépi kód kimenete **minden értékben bitre egyezik** az A úton levezetett képlettel, a `_rand` utána hagyott állapota és a bélyeg is. A 38.2.150 §3 feltételes bekezdése ezzel megerősített.
+2. **Három pontosítás az A úthoz,** mindhárom a futtatásból és az újraolvasásból jön: (a) a `T` és a `T * v` szorzatok, valamint az összegek f32-be kerekednek (`0x007fe616`, `0x007fe65a`, `0x007fe668`, `0x007fe676`, `0x007fe68e`); (b) a körbefordítás **egyetlen** hozzáadás vagy levonás tengelyenként, nem ciklus, és a tartomány zárt: 0 és 1 maga marad; (c) a pozíció a **régi** sebességgel lép, a sebesség csak utána kap véletlen járást.
+3. **A `[this+0x528]` kezdőértékét a konstruktor írja** (`0x007fa7f0`, `0x007faa31`-`0x007faa41`): egy `QueryPerformanceCounter`-hívás értéke, f64-ként. A 38.2.27 "NINCS MEG"-je ezzel lezárt. Következmény: az első `0x007fe600`-hívás időlépése a qshow létrehozása óta eltelt idő, mert a függvény csak a `Ctrl+F` vagy `Ctrl+B` után fut (38.2.150 §2).
+4. **PicasaPy-val összevetve: eltér, de nem felhasználói eltérés.** A PicasaPy-ban nincs kártyánkénti helyzet- és sebességlépés, és nincs `Ctrl+F`/`Ctrl+B` sem. Megvalósítást nem javaslok (§5).
+
+##### §1 A képlet, két úton
+
+| Állítás | A út (utasításolvasat) | B út (QEMU, valódi kód) |
+|---|---|---|
+| Az időlépés: `T = f32((QPC_most - [this+0x528]) * (1 / QPF))`, másodpercben | `0x009a51b0`: a `QueryPerformanceCounter` értékét f64-be vált (`0x009a51bd`-`0x009a51c0`); ha `[0xd678e8] == 0`, a `QueryPerformanceFrequency` reciprokát számolja és eltárolja (`0x009a51d7`-`0x009a51ec`); `(most - [bélyeg]) * c` (`0x009a51f2`-`0x009a51fc`); a hívó f32-be tárolja (`0x007fe616`) | A valódi `0x009a51b0` futott, három gyakorisággal (3 579 545, 10 000 000 és 1 000 000 ütem/s) és vezérelt teljesítményszámlálóval: az időlépés f32-ben bitre egyezik a képlettel (B1: 0,0166666433; B2: 0,100000001; B3: 1,70000005) |
+| A rekordok száma `n = [this+0x2f0] >> 1`; `n == 0` esetén a bélyeg akkor is frissül | `0x007fe61c` `test [esi+0x2f0], 0xfffffffe`, `jbe 0x7fe7a5`; ciklusszámláló `0x007fe78f`-`0x007fe799`; a bélyeg tárolása `0x007fe7aa`-`0x007fe7b6` a ciklus után, a kapu ugrása is ide érkezik | Számláló 0, 1, 2, 3, 5: rekordszám 0, 0, 1, 1, 2; a többi rekord érintetlen; a `_rand` állapota 0 és 1 számlálónál változatlan, 2 és 3 esetén két, 5 esetén négy hívással lép; a bélyeg mind az öt esetben az új mérőállás |
+| Pozíció: `x = f32(x + f32(T * vx))`, `y = f32(y + f32(T * vy))`, a **régi** sebességgel | `0x007fe650`-`0x007fe696`: a szorzatok `0x007fe65a`-ba és `0x007fe668`-ba f32-ként tárolódnak, az összegek `0x007fe676`-ba és `0x007fe68e`-be, majd a rekordba | B1: `x = 0,501666665` (0,5 + 0,0166666433 * 0,1), `y = 0,499166667`; a sebesség az új értékével (`0,0995012522`) csak a lépés után látszik |
+| Körbefordítás tengelyenként legfeljebb egyszer: `x < 0`: `+1`; `y < 0`: `+1`; `x > 1`: `-1`; `y > 1`: `-1`; a 0 és az 1 maga marad | `0x007fe69e`-`0x007fe6fc`: `fcom` a 0-val (`jp` átugorja a hozzáadást, ha nem kisebb), majd az 1-gyel (`jp` átugorja a levonást, ha nem nagyobb); a négy `jp`: `0x007fe6a5`, `0x007fe6bc`, `0x007fe6d9`, `0x007fe6f4` | B2: `0,99 + 0,05 = 1,04 -> 0,04`; `0,01 - 0,03 = -0,02 -> 0,98`; a `(1,0; 0,0)` rekord helyben marad. B3: `0,2 - 1,53 = -1,33 -> -0,33` és `0,9 + 1,36 = 2,26 -> 1,26`, vagyis egyszeri korrekció után is a tartományon kívül marad |
+| Véletlen járás: `vx += u1 * 0,001 - 0,0005`, majd `vy += u2 * 0,001 - 0,0005`, `u = r / 32768`, rekordonként ebben a sorrendben; f32-ben tárolva | `0x007fe713`-`0x007fe78d`: `_rand`, `(r + 0x3f8000) << 8` mint f32, `- 1,0` (`0xc7e328`), `* 0,001` (`0xcf3db0`), `- 0,0005` (`0xcf4858`), `+ [rekord]` | A `_rand` állapota három magnál (1, `0x3039`, `0xdeadbeef`) és a hosszú pályákon bitre a modell szerint lép, rekordonként két hívással, az index szerinti sorrendben |
+
+##### §2 A három ismert bemenet és a mért kimenet
+
+A bemenet f32-ként került a rekordba. Az időlépést a teljesítményszámláló különbsége adja.
+
+| Eset | Bemenet (`x`, `y`, `vx`, `vy`) | Mag | Időlépés | Kimenet (QEMU, a modell ugyanezt adja) |
+|---|---|---:|---:|---|
+| B1 egy rekord | 0,5; 0,5; 0,1; -0,05 | 1 | 0,0166666433 (59 659 ütem, 3 579 545 ütem/s) | 0,501666665; 0,499166667; 0,0995012522; -0,0499364324; mag utána 3 357 800 067 |
+| B2 rekord 0 | 0,99; 0,01; 0,5; -0,3 | `0x3039` | 0,100000001 (1 000 000 ütem, 10 000 000 ütem/s) | 0,0399999619; 0,980000019; 0,499731451; -0,299915165 |
+| B2 rekord 1 | 0,2; 0,8; -0,9; 0,9 | | | 0,110000007; 0,889999986; -0,899712801; 0,900175154 |
+| B2 rekord 2 | 1,0; 0,0; 0,0; 0,0 | | | 1; 0; -0,000322143547; 0,000214263913; mag utána 3 681 394 607 |
+| B3 nagy időlépés | 0,2; 0,9; -0,9; 0,8 | `0xdeadbeef` | 1,70000005 (1 700 000 ütem, 1 000 000 ütem/s) | -0,329999924; 1,25999999; -0,899940372; 0,800016344; mag utána 1 108 892 897 |
+
+Minden bemenet után az x87 verem üres (az állapotszó `TOP` mezője 0, csak a pontossági jelző áll), tehát a függvény nem szivárogtat lebegőpontos veremet.
+
+##### §3 Hosszú pálya, pontosság és kezdőérték
+
+- **Hosszú pálya (B5).** 6 rekord, 200 képkocka, 3 579 545 ütem/s, ingadozó képkockaidővel (a 60 kép/mp 70-130 százaléka), magja 1: 4800 érték, mind egyezik. 12 rekord, 300 képkocka, 10 000 000 ütem/s, magja 777: 14 400 érték, mind egyezik. Minden képkockában a bélyeg és a `_rand` állapota is egyezik.
+- **A pontossági vezérlőszó (B6).** `0x27f` (53 bit) és `0x37f` (64 bit): a két futás azonos, 0 eltérő érték. `0x07f` (24 bit): a 4800 értékből 3319 különbözik, a legnagyobb eltérés 6,02e-05 az egységnégyzetben. A futó Picasa vezérlőszava nincs mérve; a képlet a `0x27f`/`0x37f` esetben bitre pontos, a `0x07f` esetben legfeljebb ennyi a szórás. Megvalósításhoz ez nem számít.
+- **A kezdőérték hiánya (B8).** Ha a bélyeg 0, és a teljesítményszámláló 1 000 000 000 000 (279 365 s időlépés), az első lépés után `x = 27 936,0137`, `y = -13 966,7568`: az egyetlen körbefordítás nem hozza vissza az egységnégyzetbe. A konstruktor `0x007faa31`-`0x007faa41` tárolása ezt zárja ki, a valódi első időlépés a qshow létrehozása óta eltelt idő. A rajzút `y`-t egy helyen lineárisan használja (`0x007fea80`-`0x007feaac`), ezért a tartományon kívüli érték látható hatása nincs mérve.
+
+##### §4 Kontroll: a mérőpad érzékeny a kódra
+
+Ha egy mérés csak zöld, az még nem mér. Ezért a kódot átírtam, és a modellel összevetettem:
+
+| Átírás | Eredeti kód | Átírt kód |
+|---|---|---|
+| `0x007fe6a5` `jp` -> `jmp` (az `x < 0` ág kiesik), bemenet `x = 0,01`, `vx = -0,5` | 4/4 érték egyezik | 3/4 egyezik, eltér |
+| `0x007fe6bc` `jp` -> `jmp` (`y < 0`), bemenet `y = 0,01`, `vy = -0,5` | 4/4 | 3/4, eltér |
+| `0x007fe6d9` `jp` -> `jmp` (`x > 1`), bemenet `x = 0,99`, `vx = 0,5` | 4/4 | 3/4, eltér |
+| `0x007fe6f4` `jp` -> `jmp` (`y > 1`), bemenet `y = 0,99`, `vy = 0,5` | 4/4 | 3/4, eltér |
+| `0xcf3db0`: 0,001 -> 0,002 | 8/8 | 4/8, eltér |
+| `0xc7e328`: 1,0 -> 0,5 | 8/8 | 6/8, eltér |
+
+Mind a hat átírás eltérést ad, tehát a mérőpad látja a kódot, és a négy körbefordító ág mindegyikét a megfelelő bemenet ténylegesen érinti. (Az első kísérletemben két ágat olyan bemenettel írtam át, amely az ágat nem érintette; az a két sor nem bizonyított semmit, és kikerült a fenti táblából.)
+
+##### §5 Összevetés a PicasaPy-val és megvalósítási javaslat
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A `0x007fe600` a rekordok helyzetét (`[0, 1]` tórusz) és sebességét képkockánként lépteti, véletlen járással; csak `Ctrl+F` vagy `Ctrl+B` után fut (38.2.150 §2). | `timeline_motion.py` (423 sor) nem tartalmaz kártyánkénti helyzet- és sebességlépést; a `card_stack_offset` (`timeline_motion.py:100-131`) statikus, indexmagos eltolás, a `TimelinePanel.qml:250-260` ezt írja a kártyaköteg `x`, `y` mezőjébe. A panelben nincs időzítő vagy animáció; a `TimelineView.qml:333` 16 ms-os időzítője a lapozó pályát és a háttér átúszását hajtja, nem a kártyák sodródását. A `TimelineView.qml:393-406` csak az Escape, jobbra, balra és Space billentyűt kezeli. | **Eltér, de nincs felhasználói következménye:** a PicasaPy-ban a rejtett mód nincs meg, az alap Időrendben pedig az eredeti sem mozgat semmit. |
+
+**Javaslat (a hívónak, kódot nem módosítottam).**
+
+1. **Termékkódhoz ne nyúlj.** Az alap Időrend nem hívja a `0x007fe600`-at, a rejtett mód nem szerepel az eredeti felhasználói felületén, és a PicasaPy `card_stack_offset` statikus eltolása nem ennek a mozgásnak a megfelelője. A 38.2.150 §5 javaslata (a `timeline_motion.py:100-110` docstring téves hivatkozásának javítása) változatlanul él, ehhez ez a kör nem tesz hozzá.
+2. **Ha a tulajdonos a rejtett módot kéri,** a Qt-mentes lépés a `timeline_motion.py`-ba kerülne. Bemenet: a rekordok `(x, y, vx, vy)` f32 értékei, az `n` és a `T`. Lépés rekordonként, sorrendben: `x = f32(x + f32(T * vx))`, `y = f32(y + f32(T * vy))`; `x < 0`: `x += 1`; `y < 0`: `y += 1`; `x > 1`: `x -= 1`; `y > 1`: `y -= 1` (mindegyik legfeljebb egyszer, a 0 és az 1 maga marad); majd `vx = f32(vx + (u1 * 0,001 - 0,0005))`, `vy = f32(vy + (u2 * 0,001 - 0,0005))`, ahol `u` egyenletes `[0, 1)`. A `T` másodperc, a lépés a bélyeg frissítésével zárul, `n == 0` esetén is. Elfogadási próba: a §2 B1-B3 sorai ellenőrző értékek (a bemenet, az időlépés és a `_rand` sorozat adott). A pontos véletlen sorozat nem elvárás: a qshow a szál `_rand` állapotát folytatja (38.2.150 §1), így bitre azonos sorozat nem várható el, csak az `[-0,0005; 0,0005)` egyenletes eloszlás.
+3. **A képlet önmagában nem elég a látható viselkedéshez.** Akadály, pontosan körülhatárolva: (a) a hívás üteme (`0x00800a30` hívója: nincs meg); (b) a rajzút `(x, y)` leképezése: a `0x007fe7c0` az `x` és `y` mezőt `2π`-vel szorozza és a `0x00c29d20` függvénybe adja (`0x007fe81c`-`0x007fe863`, `0x007fea0c`-`0x007fea2f`); a QEMU hét bemenettel megmutatta, hogy a `0x00c29d20` koszinusz (`cos(0) = 1`, `cos(π/2) = 0`, `cos(π) = -1`, `cos(2π) = 1`, `cos(0,628) = 0,809`, `cos(7,854) = 0`, `cos(-1,885) = -0,309`), de a rajzút többi része, köztük az `y` lineáris használata (`0x007fea80`), nem futott; (c) a `Ctrl+F` és a `Ctrl+B` külön jelentése (a kapu mindkettőre ugyanúgy nyit); (d) a valódi FPU vezérlőszó és a valódi teljesítményszámláló a futó programban. A következő irány megnevezve: a `0x007fe7c0` rajzút futtatása vagy Colab-felvétel `Ctrl+F` lenyomásával az Időrendben (nem készült).
+
+##### Nyitott kérdések mérlege
+
+Nyitott kérdések: 4 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva"
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| A `0x007fe600` mozgásképletének második útja (QEMU) | **LEZÁRVA** (§1-§4) | |
+| A `[this+0x528]` kezdőértéke | **LEZÁRVA** (a konstruktor írja, §3) | |
+| Az időlépés képlete a valódi `0x009a51b0`-val | **LEZÁRVA** (§1, három gyakorisággal) | |
+| A `0x007fe600` hívási üteme | **NYÍLT**, a rejtett mód miatt alacsony prioritás | A `0x00800a30` hívója, a periodikus hívás. |
+| A `0x007fe7c0` rajzút leképezése `(x, y)`-ból képpé | **NYÍLT**, alacsony prioritás | A rajzút futtatása; az `y` lineáris használata (`0x007fea80`-`0x007feaac`). |
+| A `Ctrl+F` és a `Ctrl+B` külön jelentése | **NYÍLT**, alacsony prioritás | A `[this+0x3bc]` és a `[this+0x3bd]` külön fogyasztóinak olvasása a `0x007fe7c0`-ban. |
+| A valódi FPU vezérlőszó és teljesítményszámláló a futó programban | **NYÍLT**, alacsony prioritás | Colab-futás naplózással; a hatás legfeljebb 6e-05 az egységnégyzetben. |
+
+##### Amit kizártam
+
+- **"A körbefordítás ciklussal visszahoz a `[0, 1]` tartományba"**: cáfolt (B3: `-0,33` és `1,26` marad; B8: `27 936` marad).
+- **"A pozíció a frissített sebességgel lép"**: cáfolt (B1, bitre).
+- **"A bélyeg csak nem üres listánál frissül"**: cáfolt (számláló 0 és 1: a bélyeg frissül, rekord és `_rand` nem).
+- **"A `[this+0x528]` kezdőértéke 0"**: cáfolt (konstruktor, `0x007faa41`).
+- **"A `0x00c29d20` szinusz"**: cáfolt (QEMU: koszinusz).
+
+##### Bizonyítottság
+
+**Megerősített:** a `0x007fe600` teljes lépésképlete (időlépés, pozíció, körbefordítás, véletlen járás, rekordszám, bélyegfrissítés) két úton: utasításolvasat és az eredeti gépi kód futtatása, 19 200 bitre egyező érték a hosszú pályákon, a hat átírásos kontroll eltérést ad. **Feltételes:** a rajzút leképezése, a hívás üteme, a `Ctrl+F`/`Ctrl+B` külön jelentése, a futó program FPU vezérlőszava és teljesítményszámlálója (a mérés vezérelt teljesítményszámlálóval és hamis szálblokkal futott, a rekordok kézzel épültek; Windows alatti futás nem volt).
