@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from picasapy.paths import normalize_path
+from picasapy.paths import normalize_path, path_key
 
 from tests.app.qml_functional._mappa_kep_menu_5150_helpers import (
     app_epitese, elokeszit, tetel_kattintasa, varj,
@@ -12,6 +12,33 @@ from tests.app.qml_functional._mappa_kep_menu_5150_helpers import (
 from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
     gyerek, jobbklikk_fotón, kattints, kijelol, vizualis_bejaras,
 )
+
+
+def _azonos_utvonal(elso, masodik):
+    """A mappautak összehasonlítása a 8.3-as Windows-aliasokat is kezelje."""
+    return path_key(elso) == path_key(masodik)
+
+
+def test_windows_rovid_es_hosszu_mappaut_azonos(monkeypatch):
+    """A Windows rövid és hosszú neve ugyanazt a mappát jelenti."""
+    from picasapy import paths
+
+    hosszú = r"C:\Users\felhasznalo\Pictures\Untitled"
+    rövid = r"C:\Users\felhasznalo\PICTUR~1\Untitled"
+    feloldas = {
+        hosszú.casefold(): hosszú,
+        rövid.casefold(): hosszú,
+    }
+    monkeypatch.setattr(
+        paths, "normalize_path",
+        lambda ut: feloldas.get(str(ut).casefold(), str(ut)),
+    )
+    monkeypatch.setattr(
+        paths.os.path, "normcase",
+        lambda ut: str(ut).replace("/", "\\").casefold(),
+    )
+
+    assert _azonos_utvonal(rövid, hosszú)
 
 
 @pytest.fixture
@@ -42,15 +69,18 @@ def test_uj_mappa_kattintassal(app, qt_app, height_offset, entry, count):
     kattints(window, qt_app, gyerek(dialog, 'folderPropertiesOkButton'))
     target = source / 'Untitled'
     assert varj(qt_app, lambda: all((target / p.name).is_file() for p in paths))
-    assert varj(qt_app, lambda: Path(controller.currentFolder) == target)
+    assert varj(qt_app, lambda: _azonos_utvonal(controller.currentFolder, target))
     assert varj(qt_app, lambda: all(
-        str(target / p.name) in [controller.photos.filePathAt(i)
-                                 for i in range(controller.photos.rowCount())]
+        any(_azonos_utvonal(target / p.name, controller.photos.filePathAt(i))
+            for i in range(controller.photos.rowCount()))
         for p in paths
     ))
     assert varj(qt_app, lambda: controller.folders.rowOfPath(str(target)) >= 0)
     pane = gyerek(window, 'folderPane')
-    assert varj(qt_app, lambda: Path(pane.property('selectedPath')) == target)
+    assert varj(
+        qt_app,
+        lambda: _azonos_utvonal(pane.property('selectedPath'), target),
+    )
     assert controller.folders.data(
         controller.folders.index(controller.folders.rowOfPath(str(target)), 0),
         controller.folders.CountRole,
