@@ -44,8 +44,9 @@ Ajándék CD panel becsukódik (a képtálca tartalma megmarad).
 - **CD neve** — ez lesz a lemez neve, **legfeljebb 16 karakter** (a mező
   nem is engedi hosszabbat). Megnyitáskor a megnyitott mappa neve áll
   benne; átírhatod. Ha üresen hagyod, a fájl neve lesz a lemez neve is.
-- **Diavetítéssel együtt** - bepipálva jelenik meg. Ma még nincs hatása
-  arra, mi kerül a lemezre.
+- **Diavetítéssel együtt** - alapból be van pipálva, és a program megjegyzi
+  az állását. Bekapcsolva a nem-JPEG képek is JPEG-ként kerülnek a lemezre;
+  kikapcsolva ezek a képek az eredeti formátumukban maradnak.
 
 Jobb oldalon a **Lemezre írás** indítja a munkát. A **Mégse** ugyanúgy
 visszavisz a könyvtárba, mint a Továbbiak hozzáadása — a tálca tartalmát
@@ -76,9 +77,10 @@ el."
 ## Mi kerül a lemezre
 
 - A képek **egyetlen mappában**, aminek a neve **Képek**.
-- A képek **JPEG**-ként, a szerkesztéseiddel együtt: a vágás, a forgatás
-  és az effektek bele vannak sütve, pontosan úgy, ahogy a rácson látszanak.
-  Ami nem JPEG volt, JPEG lesz.
+- A JPEG-k a szerkesztéseiddel együtt kerülnek fel: a vágás, a forgatás és
+  az effektek bele vannak sütve, pontosan úgy, ahogy a rácson látszanak. A
+  nem-JPEG képek a **Diavetítéssel együtt** jelölő állásától függően
+  JPEG-ként vagy az eredeti formátumukban kerülnek a lemezre.
 - A **filmek bájtra változatlanul**, átalakítás nélkül.
 
 Ami **nem** kerül rá:

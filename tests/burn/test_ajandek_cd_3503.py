@@ -156,6 +156,32 @@ class TestALemezTartalma:
             talca[2].source.read_bytes()
         )
 
+    @pytest.mark.parametrize(
+        "diavetito, kiterjesztes",
+        [(False, ".png"), (True, ".jpg")],
+    )
+    def test_a_diavetito_kapcsolja_a_nem_jpeg_atalakitasat(
+        self, tmp_path, diavetito, kiterjesztes
+    ):
+        forras = tmp_path / "forras.png"
+        kep = np.full((24, 32, 3), (20, 80, 160), dtype=np.uint8)
+        sikeres, kodolt = cv2.imencode(".png", kep)
+        assert sikeres
+        forras.write_bytes(kodolt.tobytes())
+        cel = tmp_path / "ajandek.iso"
+
+        eredmeny = ajandek_cd_lemezkep(
+            [ExportItem(source=forras)], cel, meret_index=0, cd_nev="X",
+            kepek_mappa="Képek", convert_non_jpeg=diavetito,
+        )
+
+        assert eredmeny.darab == 1
+        kibontva = tmp_path / "bontas"
+        _kicsomagol(cel, kibontva)
+        assert sorted(p.suffix for p in (kibontva / "Képek").iterdir()) == [
+            kiterjesztes,
+        ]
+
 
 class TestAKotetnev:
     def test_a_cd_neve_a_kotetnev(self, tmp_path, talca):
