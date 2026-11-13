@@ -18,6 +18,13 @@ def _variant(value):
     return value.toVariant() if hasattr(value, "toVariant") else value
 
 
+def _set_view_height(dialog, height):
+    ablak = dialog.window()
+    ablak.setHeight(round(ablak.height() + height - dialog.height()))
+    QCoreApplication.processEvents()
+    assert round(dialog.height()) == height
+
+
 @pytest.fixture
 def magyar_forditas(qt_app):
     from picasapy.app import application
@@ -59,8 +66,7 @@ class TestPrintOptionsPanel:
         alapmagassag = int(dialog.height())
         gomb = _child(dialog, "printOptionsButton")
         for elteres in (-5, 0, 5):
-            dialog.setHeight(alapmagassag + elteres)
-            qt_app.processEvents()
+            _set_view_height(dialog, alapmagassag + elteres)
 
             # Determinisztikus platformpróba: egy ablak- vagy fókuszeseményből
             # származó, gombkattintás nélküli nyitást injektálunk.

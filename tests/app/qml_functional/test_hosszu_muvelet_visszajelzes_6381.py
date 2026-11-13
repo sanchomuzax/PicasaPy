@@ -110,10 +110,10 @@ def test_nyomtatas_valodi_kattintasra_az_elso_festesi_kockaban_foglalt(
     assert _var(qt_app, lambda: not dialog.property("meretezesFuggoben"))
     dialog.setProperty("pdfTarget", (tmp_path / "nyomtatas.pdf").as_uri())
     qt_app.processEvents()
-    alapmagassag = round(dialog.height())
-    dialog.setHeight(alapmagassag + height_offset)
+    alapmagassag = round(window.height())
+    window.setHeight(alapmagassag + height_offset)
     assert _var(
-        qt_app, lambda: round(dialog.height()) == alapmagassag + height_offset
+        qt_app, lambda: round(window.height()) == alapmagassag + height_offset
     )
     busy = _elem(dialog, "printStartingBusyIndicator")
     megfigyelt = []
@@ -128,7 +128,7 @@ def test_nyomtatas_valodi_kattintasra_az_elso_festesi_kockaban_foglalt(
     assert button.property("enabled") is True
     center = button.mapToScene(QPointF(button.width() / 2, button.height() / 2))
     QTest.mouseClick(
-        dialog,
+        window,
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(center.x()), round(center.y())),

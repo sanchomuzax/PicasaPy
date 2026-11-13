@@ -315,7 +315,7 @@ Item {
     DeferredDialog {
         id: printDialog
         anchors.fill: parent
-        sourceComponent: Component { PrintDialog { } }
+        sourceComponent: Component { PrintDialog { appWindow: dialogStack.hostWindow } }
     }
 
     // #368: adatbázis-áthelyezés dialógus (relocateController hídon)
