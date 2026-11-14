@@ -4413,3 +4413,16 @@ Csak a binárisból igazolt eltérések; kódot nem módosítottam. A helyek az 
 | 1 | EXIF nélküli kép dátuma (§2, §6/1) | `app/timeline_controller.py:280-286` (`all_dates`), `:367-394` (`_append_collection`), `:396-404` (`_exif_date`); kész függvény: `index/photo_date.py:13-46` (`photo_date`) | `_exif_date` helyett `photo_date(record)`: `taken_at`, tartaléka a befagyasztott fájlidő (a #6807 időzóna-kezelését megtartva); a dátumsáv `first_date` és `last_date` értékét ugyanebből | csupa EXIF nélküli (`taken_at=None`, `first_seen_mtime_ns` 2015-05-10) mappa 2014-es és 2016-os mappa mellett: a kártya a kettő között áll, `dateLabel` "May 2015", `sliderPosition` nem `1,0` |
 | 2 | A virtuális sor dátuma nem tartalmi (§4, §6/3) | `app/timeline_controller.py:244-262` (`recent_album`, `date=None`), `:390` | a virtuális kártyára külön ág: dátuma a sor rögzített bélyege, nem a tagok `min`-je; **az érték (az index létrehozási ideje, importált db3-nál az `albumdata_date`) termékdöntés**, a binárisból csak az dől el, hogy nem tartalmi | `Recently Updated` tagjai 2005-ös `taken_at`-tal, bélyeg 2026-11: a kártya a rendezett lista végén áll, `dateLabel` a bélyeg hónapja, nem 2005 |
 | 3 | A beírt albumdátum rögzített (§3, §6/2) | `app/timeline_controller.py:367-394` (albumág); az index új mezője a `#2486` mintájára (`index/schema.py:375-401`, `index/sync_photos.py:202-240`) | az albumkártya dátuma az első nem üres tagságnál rögzül (a tagok `photo_date`-minimuma), és tag hozzáadására vagy törlésére nem változik | 2020-as képekkel létrehozott album: kártya 2020; utóbb hozzáadott 2010-es kép után a kártya marad 2020 (a mai kód 2010-re ugrik); a 2020-as kép törlése után is marad |
+
+### 38.2.260 Az Időrendből indított lejátszás időköze és átmenetei: a 08a mérés (#6532)
+
+**Mérés:** Colab job-681 (`08a`, a job-680 sémahiba miatt újra), `video__04.mp4`: 1280x1024, 15 kép/mp, 675 kocka. Lépéssor: Időrend, két `Right`, `space` (szünetelő vetítés), `space` (lejátszás), 20 s, `space` (megállít), `Escape`.
+
+| Állítás | Érték | Forrás |
+|---|---|---|
+| A második Space után a fotóváltások időköze | 45-46 kocka = 3,0-3,07 s (a váltások kezdete: kb. 493, 539, 585, 630. kocka) | mérés: képkockánkénti eltérés a felirat-területen, két független kiértékelés |
+| A szünetelő nézetből a lejátszásba lépés | 24 kockás (1,6 s) felúszás a 447-470. kockán | mérés (két kiértékelés egyezik) |
+| A fotók közti átmenet | áttűnés, az 5-95% közötti szakasz 11-12 kocka (kb. 0,75-0,8 s), a teljes áttűnés kb. 14-15 kocka (kb. 1,0 s) | mérés: lineáris keverési arány illesztése a 540-550., 585-596., 631-642. kockán |
+| A harmadik Space megállít | a `kepernyo__17.png` és a `kepernyo__18.png` (2 s különbség) pixelre azonos | mérés |
+
+**Összevetés a PicasaPy-val:** a 3 s-os időköz egyezik (`SlideshowTiming`, alapérték 3). Az áttűnés hossza **eltér**: nálunk `slideshowTransitionMs`, alapérték 700 ms, legfeljebb 500 ms-ra szorítva (`controller_slideshow_mixin.py`), az eredetiben kb. 1,0 s. Az eredeti átmenetidő-állandójának bináris címe még **NINCS MEG**; feltárása: #6916, a megvalósítás csak utána.
