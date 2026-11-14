@@ -115,6 +115,9 @@ TimelineView {
         if (!collectionModel || collectionModel.rowCount() <= 0)
             return
         timeline.selectTimelineCollection(collection)
+        // Mappakártya vetítéséből kilépve csak a mappa marad kijelölve (#6909).
+        if (collection.kind !== "album")
+            hostWindow.clearSelection()
         hostWindow.timelineOpen = false
         hostWindow.timelineSlideshowModel = collectionModel
         hostWindow.timelineSlideshowActive = true

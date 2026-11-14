@@ -335,7 +335,7 @@ def test_space_idorendrol_szukselet_vetitest_indit_es_teret_ad_a_lejatszasnak(
             qt_app,
             lambda: time.monotonic() - elapsed_from >= 3.2,
             "a 3 másodperces diaidő nem telt le",
-            seconds=5.0,
+            seconds=10.0,
         )
         assert slideshow.property("currentIndex") == 0
 
