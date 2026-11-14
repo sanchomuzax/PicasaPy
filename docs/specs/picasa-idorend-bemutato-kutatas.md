@@ -1725,6 +1725,8 @@ A kártya mélységi alfája a távolodással nemlineárisan csökken:
 
 **3. Kötegen belüli kártyák véletlen szórása és LOD-választása (`0x008014d0`, `0x00a6ac90`).**
 
+**HELYESBÍTVE a 38.2.150-ben: a `0x008014d0` kapuzott (`Ctrl+F`/`Ctrl+B` nélkül `_rand`-hívás nélkül kilép), és mezői helyzet és sebesség, nem kártyaeltolás; az alábbi "köteg szórása" olvasat megdőlt. A LOD-választás (`0x00a6ac90`) állítása érintetlen.**
+
 - **Véletlen eltolás a kötegben (`0x008014d0:83-95`, `0x008015ad`-`0x008016c6`):**
   A gyűjtemény képeit bejárva a kód a CRT `_rand()` (`0x00c08221`) hívásaiból IEEE-754 bitmanipulációval `[0.0, 1.0)` lebegőpontos számokat állít elő, kivon `0.5`-öt (`0x00c72150`), majd megszorozza a `0x00cf3fd0` qword konstanssal (`0.15000000596046448`):
   - `dx = (rand_x - 0.5) · 0.15` → tartomány `[-0.075, +0.075]`.
@@ -1880,7 +1882,7 @@ A dobozok `y` koordinátája is változik: az 1. váltás előtt/után a piros-k
 | Eredeti Időrend-videó | mérés (job-373 és job-446) | Mindkét videó helyben elérhető; a job-446 teljes felvételét a 38.2.104 elemzi. | 38.2.101, 38.2.104 |
 | Lap mérete | bináris (0x007fa730) | Az Időrend gombja 480 px magas, képernyőarányos lapot kér. | 38.2.98 |
 | Kártyák pályája, láthatósága és mélységi alfája | bináris (0x007fc010, 0x007fd180, 0x00cf3ef8, 0x00cf3ec4) | A 3D pálya, Z > 0.1 szűrő, alfa-képlet és a nyitó alfa útja leírt. | 38.2.102 |
-| Kötegen belüli szórás | bináris (0x008014d0, 0x00cf3fd0) | Az eredeti kártyánként két CRT rand értékből számol eltolást a [-0.075,+0.075] tartományban. | 38.2.102 |
+| Kötegen belüli szórás | HELYESBÍTVE (38.2.150) | A `0x008014d0` kapuzott rejtett módú függvény (`Ctrl+F`/`Ctrl+B`), helyzet- és sebességmezőket ír; a régi "kártyaeltolás" olvasat megdőlt. | 38.2.150 |
 | Bélyegkép-forrás és háttér | bináris (0x00424b10, 0x00802180, 0x008001c0) | A háttér a középső kártya képéből készül; a szolgáltató legalább 640 px-es forráságát a korábbi kör azonosította. | 38.2.94, 38.2.97 |
 | Dátum-idő felirat és ferde csíkok | mérés (job-373 mintakép és 2009_majus_01.jpg) | A felirat és a csíkozás a mintakép része, nem a qshow felület rajzolja rá. | 38.2.93 |
 | Jobb felső felirat és vezetőív | bináris (0x007fee70, 0x00cf4e8c, 0x00cf4e88, 0x00cf3bd8) | Név y=130, hónap-év y=158, 1 px fekete árnyék, 10 pontú Bézier-ív. | 38.2.102 |
@@ -2895,3 +2897,1192 @@ A `0x004406f0` a `CSlice+0x64` posting-lista meglétét és pozitív elemszámá
 - A `thumbui/folderview` és `ShowAlbumThumbnails2` futásidejű értéke **NINCS MEG**; a statikus nulla-sor döntéshez nem szükséges, a mérést változatlan értékek mellett kell elvégezni.
 - A teljes Időrend minden látható elemének visszafejtése és a kiadásba való összehasonlító videó/képsor továbbra is nyitott.
 
+#### 38.2.124 Recently Updated: a 0x00425f60 típus-diszpécsere és a nullás visszatérés (#6532, 2026-11-13)
+
+**Kérdés és határ.** A 38.2.121/a és 38.2.123 nyitva hagyta, hogy a `0x00425f60` mely típusoknál és feltételekkel adhat nullás EAX-ot. A vizsgált Picasa3.exe 3.9.141.259 SHA-256 értéke `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`. A meglévő Ghidra-kimenetre cím szerint rákerestem a `0x00425f60` és `0x005b1570` címek használata előtt; új Ghidra-kör és futásidejű mérés nem történt.
+
+**A hívó által vizsgált eredmény.** A `0x00425f60` a `0x004264b1` címen hívja a `0x005b1570`-et, majd annak EAX-át a `[esp+0x3c]` címre menti (`0x004264b6`). A 38.2.121/a hét kilépési pontjából csak a `0x0042663c` adhat nullát: a `0x00426571` előző sentinel-ellenőrzése után a `0x004265d1` által ellenőrzött jelző nem lehet nulla, a mentett érték pedig nem lehet `0xf4242`; a visszatérési helyreállítás a mentett EAX-ot használja (`0x00426624`). A `0x0055ece0` DBLoader a `0x00425f60` után a `0x0055ef1a` címen teszteli az EAX-ot; nem nulla értéknél a `0x0055f849` elutasító ágra ugrik. Ez az eredményfeldolgozó kapu, nem a Timeline-kártyák dátumának vagy elrendezésének leírása.
+
+**Típus-diszpécser.** A `0x005b1570` a rekord típusából 2-t levon, majd a `0x005b1ba4` byte-táblával kiválasztja a `0x005b1b64` ugrótábla bejegyzését (`0x005b17ad-0x005b17c5`). A hívott segéd célok:
+
+| Típusérték | Hívott segéd | Megjegyzés |
+|---|---|---|
+| `0x02` | `0x005ad6f0` | a `string_xrefs` ehhez a függvényhez a `Preferences` és `DeferLoadJPEG` szövegeket rendeli |
+| `0x03` | `0x005ae450` | |
+| `0x06` | `0x005ae300` | |
+| `0x07` | `0x005ad9c0` | |
+| `0x08`, `0x0a`, `0x0b`, `0x0c`, `0x1d` | `0x005aecf0` | közös ág |
+| `0x09` | `0x005ae7a0` | csak ha a `0x00550c60` AL eredménye nem nulla; különben az alapérték marad |
+| `0x0d` | `0x005adb30` | |
+| `0x0e` | `0x005af040` | |
+| `0x0f`, `0x10`, `0x11` | `0x005aeeb0` | közös ág |
+| `0x12` | `0x005b0730` | a `0x005b1570` ezt követően külön ágban is folytathatja |
+| `0x15`, `0x17`, `0x18`, `0x1a` | `0x005af660` | közös ág |
+| `0x16` | `0x005ae610` | |
+| `0x1b` | `0x005af310` | második argumentum `0` |
+| `0x1c` | `0x005af310` | második argumentum `1` |
+| `0x1f` | `0x005add10` | |
+| a felsoroltakon kívüli érték | nincs típuság | a lokális alapérték `3` marad, kivéve a külön kezelt bemeneteket |
+
+Az `0x00` típus a `0x00a4c140` hívás eredményére cserélődik a diszpécser előtt. A `0x04` típus a `0x005b1570` elején korán kilép, és a `0x00425f60` saját, korábbi ágában is külön kezelve van (`0x00426081-0x00426089`). A `0x12` ág segédhívás utáni feldolgozása és a közös visszatérési út feltételei továbbra is számítanak a végső EAX-hoz.
+
+**Egy közvetlenül igazolt nullás út.** A `0x06` típus a `0x005ae300` segédet hívja. A segéd `0x005ae420` összehasonlítási ágánál, ha `EBX == ESI`, a `0x005ae43f` nullázza az EAX-ot, majd visszatér. A `0x005b1570` közös visszatérési útján a nulla lokális eredmény a `0x005b19b8-0x005b19c1` ágon EAX-ként megmarad. A gépi kód tehát ezen a típuságon nullát előállító utat mutat, amennyiben az egyenlőségi ág elérhető; az összehasonlítás operandusainak termék- vagy képformátum-jelentése, illetve a feltétel futásidejű teljesülése **NINCS MEG**.
+
+**A közös záró ág pontos szabálya.** A típuság által beállított érték a `0x005b197d` címen kerül a közös ellenőrzésbe. Ha ez `0xf4242`, a függvény ezt az értéket adja vissza (`0x005b1980-0x005b198a`). Más értéknél meghívja a `0x00a4c6e0` és `0x00a4c0a0` segédeket. Ha a lokális eredmény nulla, vagy a második segéd AL eredménye nulla, a `0x005acf40` után a lokális eredmény kerül EAX-ba (`0x005b19a0-0x005b19c1`). Ha a lokális eredmény nem nulla és a második segéd AL eredménye nem nulla, a `0x005b1460` visszatérési EAX-a lesz az eredmény (`0x005b19a0-0x005b19b3`). Így a normál közös záró ágban a típussegéd nullája megmarad; külön nullás lehetőség a `0x005b1460` út eredménye. A `0x12` külön folytatása és a bemenet-null / `0x04` korai kilépés ezt a közös szabályt megkerüli, ezért ezek teljes kimenete külön marad nyitva.
+
+**Két független út.**
+
+- **A út:** a helyi utasításolvasás követi a `type - 2` indexképzést (`0x005b17b0-0x005b17c5`), a nyers PE-ben külön olvassa a `0x005b1ba4` byte-táblát és a `0x005b1b64` dword ugrótáblát, majd a célcímeknél leolvassa a helperhívásokat. Ebből áll elő a fenti típuscsoportosítás.
+- **B út:** a már meglévő `2026-11-11-6532-colab-12-olvasok-hivok.txt` Ghidra-kimenet `FUN_005b1570` switch-e felsorolja a típusértékeket és a segédeket (17279-17495. sor). A dekompilált switch és az utasításokból külön kiolvasott PE-táblák ugyanazokat a hívási csoportokat adják.
+
+A két út a diszpécser hozzárendeléseire egyezik. Nem támasztják alá önmagukban az összes segéd nullás feltételét.
+
+**Cáfoló kísérlet.** Azt a lehetséges leegyszerűsítést próbáltam cáfolni, hogy minden típus saját, feltétel nélküli segédhívást kap. A `0x005b1ba4` és `0x005b1b64` táblái, a hívási utasítások és a Ghidra switch együttes ellenőrzése közös segédágakat mutat az `0x08/0x0a/0x0b/0x0c/0x1d`, `0x0f/0x10/0x11`, valamint `0x15/0x17/0x18/0x1a` csoportoknál. A `0x09` előfeltételes segédhívást kap; a `0x04` korán kilép; több más típus a `3` alapértéken marad. A cáfolatot ugyanazzal a két úttal ellenőriztem, és a két listázás egyezett.
+
+**PicasaPy-összevetés.** A feltárt kód a `Recently Updated` DBLoader rekordfeldolgozási kapujához tartozik. Nem rendeli a numerikus típusokat PicasaPy fotó-, videó- vagy timeline-rekordhoz, és nem bizonyít megjelenítési eltérést a Timeline nézetben. A `src/picasapy/timeline.py:53` `resolve_date()` függvénye az EXIF `taken_at` értéket részesíti előnyben, majd a befagyasztott `sort_mtime_ns` értékre esik vissza; a `src/picasapy/timeline.py:76` adja át az indexrekord dátumát. A `src/picasapy/app/qml/PicasaPy/TimelineView.qml:133` carousel- és a `:277` csúszka-mozgást kezel. Ezeket a jelen bináris típusértékekkel nem lehet megfeleltetni. Ezért a `picasa-idorend-viselkedes.md` „Eredeti / Nálunk / Teendő” táblája ebből az eredményből nem módosul.
+
+| Állítás | Forrás | Bizonyítottság |
+|---|---|---|
+| A `0x00425f60` a `0x005b1570` eredményét menti, és a `0x0055ece0` a `0x00425f60` EAX-át arra teszteli, hogy nulla-e. | bináris (`0x004264b1-0x004264b6`, `0x0055ef15-0x0055ef22`) | megerősített a hívási és kapu-utasításokra |
+| A `0x005b1570` típusonkénti dispatch táblája a fenti helper-csoportokat választja. | bináris (`0x005b17ad-0x005b17c5`, tábla `0x005b1ba4`, `0x005b1b64`, segédhívások `0x005b17cc-0x005b192e`); meglévő Ghidra switch | megerősített a hozzárendelésre |
+| A `0x06` dispatch-út egy feltételben nullát adhat, és a közös ág továbbadja a nullát. | bináris (`0x005ae420-0x005ae445`, `0x005b19b8-0x005b19c1`) | megerősített erre az egy útvonalra |
+| A segédhívások belső nullás feltételei típusonként, a `0x005b1460` rekurzív kimenete, valamint a `0x12` és korai kilépési ágak végső EAX-a. | **NINCS MEG** | nyitott |
+| A numerikus típusok emberi jelentése, és azok megfeleltetése a PicasaPy Időrend rekordsoraihoz. | **NINCS MEG** | nyitott |
+
+**A #6532 készültsége.** ✅ A meglévő Ghidra switch és a nyers PE-ugrótáblák alapján a vizsgált típus-diszpécser hívási hozzárendelése dokumentált; a közös záró ág visszatérési formulája is megvan. ⛔ A segédhívások belső nullás feltételei, a `0x005b1460` rekurzív kimenete, valamint a `0x12` és korai kilépési ágak végső EAX-a nincs lezárva. ⛔ E kör nem állapít meg termékszintű Timeline-eltérést, ezért fejlesztési táblabővítést nem javasol. ⛔ A teljes Időrend-specifikáció, a teljes felvételi összevetés és a kiadási összehasonlító videó vagy képsor ettől továbbra is nyitott.
+
+**Nyitott.** A következő statikus lépés mindegyik, a fenti táblában szereplő külön segédfüggvény nullás kilépéseinek feltétel szerinti követése, majd a `0x005b19a0-0x005b19c1` közös ág és a `0x005b1460` visszatérési út végigkövetése. A `0x00425f60` veremjelző `[esp+0x2fa]` íróját is vissza kell vezetni. Az `annot_disasm.py`-val rendelkezésre állnak a segédfüggvények határai; ehhez a jelenlegi kérdéshez új Ghidra-kör nem szükséges. A PicasaPy-val való fejlesztési eltérést csak akkor szabad felvenni, ha a típus numerikus értékének és a UI-rekordnak a megfeleltetése igazolt.
+
+#### 38.2.125 Recently Updated: a nullás segédágak, a fájl-újraolvasás és a veremjelző (#6532, 2026-11-13)
+
+**Kérdés és határ.** A 38.2.124 nyitva hagyta a `0x005b1570` típus-diszpécser segédfüggvényeinek nullás visszatérési feltételeit, a `0x005b1460` fájl-újraolvasó teljes normál visszatérési útját, a `0x12` külön ág és a korai kilépések EAX-át, valamint a `0x00425f60` `[esp+0x2fa]` jelzőjének íróját. A vizsgált Picasa3.exe 3.9.141.259 SHA-256 értéke `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`. A függvénybelépők és az indexelt méretek a `functions` táblából valók; az utasításokat helyben, `annot_disasm.py`-val olvastam. A `0x005b1570` indexelt mérete 1166 bájt, de a `0x005b15fe` közvetlen ágcélja, `0x005b1b1c` a mérettartományon kívül van; ezt a külön ágcélt is dekódoltam a tényleges EAX megállapításához. A `0x005b1570` és `0x00425f60` meglévő Ghidra-kimenetét cím szerint ellenőriztem, új Ghidra-kört és futásidejű mérést nem használtam.
+
+**A típussegédek nullás visszatérései.** Az alábbi feltételek az utasításszintű bejárásból származnak. A `megerősített` címkét csak a kétutas egyezést mutató diszpécser- és veremjelző-állításokra használom; a segédfüggvények belső nullás feltételei egyetlen helyi utasításolvasási úton állnak, ezért **feltételesek**.
+
+| Eredeti típus / út | Nulla EAX feltétele | Bináris nyom |
+|---|---|---|
+| `0x02` → `0x005ad6f0` | A `0x005ad270` nulla eredménye közvetlenül nullára fut. Másik nullás ág: a `0x005ad270` nem nulla, a `[this+0xfd]`, a `DeferLoadJPEG` beállítás és a `[this+0xff]` kapu átenged (`0x005ad779`-`0x005ad802`), a `0x009d63f0` után a `[this+0xbc]` és `[this+0xc0]` mező is nem nulla. Egyébként a `0x009d5b90` eredménye jut vissza. | Eredeti: `0x005ad774`, `0x005ad802`-`0x005ad87d`, `0x005ad858`-`0x005ad87d`, `0x005ad997`-`0x005ad9aa` |
+| `0x03` → `0x005ae450` | A `0x00a97640` és a `0x00a976c0` egyaránt nullát ad; a következő `0x00a978c0` eredménye nem `0xf4242` és nem `-1`. | Eredeti: `0x005ae493`-`0x005ae50c`, `0x005ae552`-`0x005ae5a1`, `0x005ae5cb`-`0x005ae608` |
+| `0x06` → `0x005ae300` | A korai ágak nem nullás eredményt vagy `2`-t adnak. A fő feldolgozás a `0x00aa0f20` hívás nullás EAX-át közvetlenül visszaadja. | Eredeti: `0x005ae31e`-`0x005ae392`, `0x005ae395`-`0x005ae445` |
+| `0x07` → `0x005ad9c0` | A segéd a `0x009d5b90` EAX-át adja vissza; nulla pontosan akkor, ha ez a hívás nullát ad. | Eredeti: `0x005ad997`-`0x005ad9b1` |
+| `0x08`, `0x0a`, `0x0b`, `0x0c`, `0x1d` → `0x005aecf0` | Nulla lehet a `0x005ad270` nulla eredményénél; a `0x08` ágon a `0x00551f40` nullája és a `[this+0xbc]`, `[this+0xc0]` nem nulla értéke mellett; a `0x0b/0x0c` ágon a `0x00a9b320` nullájánál; vagy a közös `0x005aea90` záró hívás nullájánál. | Eredeti: `0x005aed9e`-`0x005aedb9`, `0x005aee08`-`0x005aee34`, `0x005aee5b`-`0x005aee76`, `0x005aee85`-`0x005aeea1` |
+| `0x09` → `0x005ae7a0` | A diszpécser csak a `0x00550c60` igaz AL-eredményénél hívja. Ekkor a `0x005550d0` nullája a segéd további feldolgozásán át `0`-val tér vissza; nem nulla eredményét közvetlenül továbbadja. | Eredeti: `0x005b1836`-`0x005b184b`, `0x005ae80d`-`0x005ae81a`, `0x005ae993`-`0x005ae9a6`, `0x005ae9a9`-`0x005ae9c2` |
+| `0x0d` → `0x005adb30` | A `0x00a4f6a0` nulla eredménye után a `0x00a4f9d0` is nulla; a `0x00a4fe30` eredménye ekkor `0xf4242` és `-1` helyett más érték. Ez utóbbi esetben a segéd nullával tér vissza. | Eredeti: `0x005adb79`-`0x005adb82`, `0x005adc1d`-`0x005adc28`, `0x005adc5e`-`0x005adce7` |
+| `0x0e` → `0x005af040` | A `0x00b0dd60` és a `0x00b0e2d0` egyaránt nullát ad. | Eredeti: `0x005af095`, `0x005af140`, nulla zárás `0x005af2f9`-`0x005af2ff` |
+| `0x0f`, `0x10`, `0x11` → `0x005aeeb0` | Normál befejezéskor feltétel nélkül nullát ad. | Eredeti: `0x005aeeb0` függvénytest, `0x005aefc0`-`0x005aefc6` |
+| `0x12` → `0x005b0730` | A két lehetséges `0x005ad270` képkérés bármelyikének nullája a `0x005b0f86` nullás zárásra jut. A későbbi ágban a `0x008cfeb0` EAX-a legyen `0`, a `[esp+0xa8]` jelző legyen `0`, és a `[this+0xbc]`, `[this+0xc0]` méret mind legfeljebb `0x3e80`; a feldolgozás ekkor a `0x005b0f86` nullás zárásig jut. A `0x008cfeb0` `0xf4242` eredménye külön visszatérési útra vezet; a sikertelen méretkapu `3`-as ágra visz. | Eredeti: képkérések `0x005b087a`, `0x005b096f`; kapuk `0x005b0986`, `0x005b0d59`-`0x005b0dd4`; nulla `0x005b0f86`-`0x005b0f9c`; `3` `0x005b0fd5`-`0x005b0fe2` |
+| `0x15`, `0x17`, `0x18`, `0x1a` → `0x005af660` | A `0x0093df20` nullát ad, ezért a másodlagos `0x009d5e90` út fut; ha ez is nulla, a segéd `0`-val tér vissza. Nem nulla másodlagos eredmény `3`-at, különleges érték `0xf4242`-t ad. | Eredeti: `0x005b0494`-`0x005b04b4`, `0x005b0558`-`0x005b0568`, `0x005b0636`-`0x005b06c8` |
+| `0x16` → `0x005ae610` | A `0x00a98370` nulla eredménye után a `0x00a983d0` eredménye sem `0xf4242`, sem `-1`; ekkor a képlet nullát állít elő. | Eredeti: `0x005ae610` függvénytest, `0x005ae6f7`-`0x005ae797` |
+| `0x1b`, `0x1c` → `0x005af310` | A betűkészlet- és szövegkapukon átjutó ágban a `0x009a9c90` nem nulla eredménye közvetlenül visszatér; a nulla eredménye a további műveletek után `0`-val zár. A betűkészlet-hiány `-1`-et, az érvénytelen/üres szöveg `3`-at ad. | Eredeti: `0x005af35c`-`0x005af3f4`, `0x005af4be`-`0x005af501`, `0x005af651`-`0x005af65b` |
+| `0x1f` → `0x005add10` | A `0x00a50c80` nullája a `0x005ade0f` záráson át visszatér; nem nulla eredményét közvetlenül továbbadja. | Eredeti: `0x005add95`-`0x005addaa`, `0x005ade0f`-`0x005ade15` |
+
+**A `0x005b1460` teljes normál visszatérési útja.** A `0x0099d0c0` fájlmegnyitó hívás `rb` módot és `0x2000` paramétert kap. Ha a kapott fájlkezelő nulla, a felszabadító ág után EAX=`-1`. Sikeres megnyitásnál a `0x00c08d3e` olvasás nulla eredménye EAX=`2`-vel tér vissza. Nem nulla olvasás után a `0x00a4c600` értelmezés nullája, illetve az aktuális rekordtípussal (`*esi`) egyező értéke EAX=`-1`-et ad. Új, nem nulla típusnál a kód beírja az `*esi` mezőbe, meghívja a `0x005b1570`-et, eltárolja annak EAX-át a `EDI`-ben, elvégzi a fájl-erőforrás takarítását, majd pontosan ezt az értéket adja vissza. Ezért a `0x005b1460` saját normál útján közvetlenül `0`-val nem tér vissza; nulla csak a sikeres újratípusozás `0x005b1570` eredményéből jöhet. | Eredeti: `0x005b1460`-`0x005b1560` |
+
+**A `0x005b1570` külön és korai ágai.** Ha a `param_2` null értékű mutató (`EDI==0` a `0x005b15fc` ellenőrzésnél), vagy a típusérték `0x04` (`[param_3]==4`), a közös korai kilépés EAX=`2`-t ad (`0x005b1b1c`-`0x005b1b5e`). A `0x00` rekordtípust a `0x00a4c140` előbb átírja. A `0x12` típuság elmenti a `0x005b0730` EAX-át; ha az `3` és a `[this+0xfd]` bájt nulla, elvégzi a `0x009a9c90`/`0x009a91a0` műveleteket, majd a külön záró út EAX=`0`-val tér vissza (`0x005b186a`-`0x005b191a`, `0x005b1b30`-`0x005b1b5e`). Más esetben a segéderedmény a közös útba jut. A közös út a `0xf4242` különleges értékét megőrzi; ha az eredmény nulla, vagy a `0x00a4c0a0` AL eredménye nulla, a `0x005acf40` után a segéderedmény kerül vissza EAX-ba. Nem nulla és elfogadott eredmény esetén a `0x005b1460` EAX-a tér vissza (`0x005b197d`-`0x005b19c1`). A normál vezérlési utak után álló `0x005b19c6` kódrészlet EAX=`1`-et állít; az aktiválási feltételét nem vizsgáltam, és nem tartozik a normál típuságakhoz.
+
+**A `[esp+0x2fa]` jelző és az író keresése.** A jelző olvasási helye `0x004265d1`; a meglévő Ghidra-kimenet (`2026-11-11-6532-colab-decomp-11.txt`, `FUN_00425f60`) ezt a `cStack_1586` helyi változóként azonosítja, és a függvény dekompilált törzsében csak az olvasása szerepel. Az utasítássorban sincs hozzá tartozó közvetlen tárolás. A közeli `0x00426526` cím a helyi adatterület címét átadja a `0x004efa20`-nak. A `0x004efa20` első szavát olvassa, majd a kivett kulcsszöveget átadja a `0x004ed7d0` keresőnek; a megtalált eredményt a második argumentum kimeneti mutatójába írja (`0x004efa6c`-`0x004efa8d`). A helyi adatterület címére nem ír. Így ebben a függvényben és a címátadás vizsgált útjában **nincs azonosított író**. A jelző kezdeti futásidejű értéke/eredete **NINCS MEG**; a bájt az adott kódban írás nélkül olvasódik. A `0x00426383`, `0x004263a8`, `0x004263b2`, `0x004263d4` más veremhelyekre író utasításokat a Ghidra-változótérkép is külön kezeli; ezek nem bizonyítják a `cStack_1586` inicializálását.
+
+**A két független út.**
+
+- **A út:** az index `functions` táblájával határolt függvénytestek helyi utasításszintű olvasása. A diszpécser táblaképzését, a segédek visszatérési utasításait, a `0x005b1460` ágait, a `0x12` zárását és a `0x004265d1` olvasási helyet a binárisban követtem.
+- **B út:** a meglévő `2026-10-22-idorend-42.txt` Ghidra kapcsolóág-listája külön felsorolja a típus-segédfüggvény hozzárendeléseket és a `0x12` feltételt; a `2026-11-11-6532-colab-decomp-11.txt` `0x00425f60` változótérképe külön `cStack_1586`-ként azonosítja a jelzőt, csak olvasó használattal. A két út a diszpécser térképén, a `0x12` ág feltételén és a jelző olvasásán egyezik. A Ghidra-kimenet nem mutatja a segédek belső nullás feltételeit, és nem határozza meg a külön ágak EAX-át; ezek ezért feltételesek maradnak.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy a `0x004efa20` hívás vagy egy közeli veremírás előállítja a `cStack_1586` jelző értékét. A teljes `0x00425f60` utasításlistában a jelzőhöz nincs közvetlen írás; az egyetlen közeli címátadásnál a `0x004efa20` az első argumentumból csak az első szót olvassa, és a találatot a második argumentumú kimenetbe írja. A `0x004ed7d0` kulcsszöveg-összehasonlító útja a kulcs bájtjait olvassa, a kulcs helyére nem ír. A Ghidra-változótérkép sem rendel írást a `cStack_1586`-hoz. A jelzőre író hívás hipotézise nem állt meg; a kezdeti érték ettől még NINCS MEG.
+
+**PicasaPy-összevetés.** A feltárt numerikus típusok emberi jelentése, vagyis a Picasa- és PicasaPy-rekordokhoz rendelése továbbra is **NINCS MEG**. A `src/picasapy/timeline.py:53` dátumfeloldása, a `TimelineView.qml:133` képsorozat-léptetése és `:277` csúszkája nem feleltethető meg a most feltárt kódnak. A `picasa-idorend-viselkedes.md` sorát ezért nem módosítottam; termékszintű eltérés és fejlesztési teendő ebből a körből nem következik.
+
+| Állítás | Forrás | Bizonyítottság |
+|---|---|---|
+| A `0x005b1570` típus-segédfüggvény hozzárendelései. | bináris (`0x005b17ad`-`0x005b19c1`), Ghidra kapcsolóág-listája `FUN_005b1570` | megerősített |
+| A típussegédek fent felsorolt nullás ágai. | bináris (típusonként a táblázatban megadott `0x...` utasításhelyek) | feltételes; egy utasításszintű út |
+| A `0x005b1460` normál kilépési EAX-ai: `-1`, `2`, vagy új típusnál a diszpécser EAX-a. | bináris (`0x005b1498`-`0x005b1560`) | feltételes; helyi utasításszintű út |
+| A diszpécser paraméter-null és `0x04` korai EAX-a `2`; a `0x12` külön záróág EAX-a `0`. | bináris (`0x005b15fc`-`0x005b1609`, `0x005b1b1c`-`0x005b1b5e`, `0x005b186a`-`0x005b191a`, `0x005b1b30`-`0x005b1b5e`) | feltételes; a végső EAX-t egy helyi utasításszintű út igazolja |
+| A `0x00425f60` törzsében a `cStack_1586` olvasódik, közvetlen írása nem látszik. | bináris (`0x004265d1`), Ghidra-változótérkép `FUN_00425f60` | megerősített a függvényen belüli használatra |
+| A vizsgált `0x004efa20` címátadási út nem ír a helyi adatterületre; az eredményt a második argumentumú kimenetbe teszi. | bináris (`0x004efa20`, `0x004ed7d0`, `0x004efa6c`-`0x004efa8d`) | feltételes; helyi utasításszintű út |
+| A `cStack_1586` kezdeti futásidejű értéke vagy külső eredete. | **NINCS MEG** | nyitott |
+| A numerikus típusok emberi jelentése és Időrend-rekordhoz rendelése. | **NINCS MEG** | nyitott |
+
+**A #6532 „Kész, ha” pontjainak állása ebből a körből.** ✅ A célzott segédfüggvények nullás visszatérési útjai és a `0x005b1460` normál kimenete egy utasításszintű úton végigkövetve; a diszpécser `0x12` külön útjának és korai ágainak EAX-a feltételesen dokumentálva. ⛔ A segédfüggvények emberi rekordszerepe nem derült ki; a `cStack_1586` írója/kezdeti értéke NINCS MEG. ⛔ Az egész Időrend-funkció teljes bináris specifikációja és tételes PicasaPy-összevetése továbbra sem teljes. ⛔ Az eredeti Időrend minden kért műveletét lefedő videó/képsor és a kiadási összehasonlító anyag ettől a célzott statikus körtől nem készült el. ✅ A korábban átadott információ szerint a #6713 megvalósítási jegy nyitva van; GitHub-állapotot ebben a körben nem ellenőriztem.
+
+**Nyitott.**
+
+- **NINCS MEG:** a numerikus típusok emberi neve és megfeleltetése a PicasaPy Időrend rekordjaihoz. Ezt a rekordsorok tényleges adatforrásának Ghidra- vagy Colab-videós azonosítása döntheti el; a mostani segédágak önmagukban nem nevezik meg a típust.
+- **NINCS MEG:** a `cStack_1586`/`[esp+0x2fa]` futásidejű kezdeti értéke és eredete. A függvényen belüli közvetlen írás és a vizsgált `0x004efa20` címátadási út írása kizárva; további döntő lépés a Colab-futásban a bájt rögzítése a `0x004265d1` olvasás előtt, több friss indítással.
+- A segédfüggvény-ágak részletes visszatérési feltételei az utasításolvasási úton feltételesek; az eredeti bináris futásidejű bemenetein nem mértem őket.
+#### 38.2.126 Az Időrend sliderthumb és timeline sáv felhasználói művelete és eseményútja (#6532, 2026-11-13)
+
+**Hatókör és döntés.** A `docs/specs/picasa-idorend-viselkedes.md` 38.2.1 táblázatának 2. sorában nyitott kérdés: az `overlays/sliderthumb` fogantyú szemantikai művelete, a csúszka-húzás és a sávkattintás hatása az eredeti Picasa 3.9.141.259 binárisából (SHA-256 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`). A kérdés lezárva: a `sliderthumb` és a `timeline` sáv nem passzív díszítőelem, hanem közvetlen dátum-kereső (seek slider) vezérlő. A `0x007fde80` egérkezelőben a sávon vagy a fogantyún belüli lenyomás (`WM_LBUTTONDOWN` `0x201`, `+0x429 = 1`) és az egérmozgatás (`WM_MOUSEMOVE` `0x200`) a `0x007fdd00` útján a normalizált x-arányhoz legközelebbi gyűjteményindexet választja ki (`[this+0x514]`, `[this+0x510]`), míg az elengedés (`WM_LBUTTONUP` `0x202`) a `0x007fd770` és `0x007fd0c0` úton elindítja a 3D kártyapálya animációját a kiválasztott fókusz-pozícióra. A sávon kívüli háttérre kattintva és húzva (`+0x428 = 1`) a nézet tehetetlenségi 3D térbeli pásztázást végez (`[this+0x310]` görgetési sebesség, csillapítás 0.95). A fogantyú és a sáv fölött a kurzor lebegtetéskor nem vált mutatót (`0x007fe540`), sima nyíl marad.
+
+**A út - utasításszintű olvasat a binárisból.**
+1. *Rétegfelépítés és tárolás (`0x007fa7f0`, `0x007fb210`):* A `QDrawable` objektum (vtábla `0x00cbd66c`) konstruktora `0x007fa7f0` lefoglalja a rétegeket; a `0x007fb210` inicializálja az `overlays/timeline` (`0x00cbd38c`, tároló `[this+0x6c0]`, x kezdőpont `[this+0x6d8]`, szélesség `[this+0x6c8]`, magasság `[this+0x6cc]`) és az `overlays/sliderthumb` (`0x00cbd3b8`, tároló `[this+0x710]`, szélesség `[this+0x718]`, magasság `[this+0x71c]`, futásidejű x pozíció `[this+0x728]`, y pozíció `[this+0x72c]`) adatait.
+2. *Rajzolás és kurzor-hit-test (`0x007ffc90`, `0x007fe540`):* A `0x007ffc90` rajzoló a `0x007ffd55` címen kirajzolja a vízszintes sávot (`+0x6c0`), a `0x007ffe21` címen a pontok aránya (`date[i]/date_last`) alapján a `+0x6e8` `overlays/timelinedot` pontokat, és a `0x007ffe87` címen a `+0x710` `overlays/sliderthumb` fogantyút. A kurzor hit-testjét (`0x007fe540`) négyszer hívja meg: kizárólag a négy vezérlőgombra (`+0x530` left, `+0x558` right, `+0x580` exit, `+0x738` startbutton); ha bármelyikre ráfut az egér, a fölé húzási kurzorkép (`+0x5d0`) jelenik meg, egyébként normál `overlays/mouse` (`+0x5a8`). A `timeline` és a `sliderthumb` felett tehát lebegtetéskor nincs kéz alakú kurzor.
+3. *Egérkezelő és eseményút (`0x007fde80`):* A virtuális metódus (vtábla `0x00cbd66c` slot 11) a kliensméret arányában skálázott egérkoordinátákkal (`0x420`, `0x424`) dolgozik:
+   - `WM_LBUTTONDOWN` (`0x201`, `0x007fe1d9`): ha Időrend módban van (`[this+0x3b8] != 0`), téglalap-határellenőrzést végez a timeline sáv (`[this+0x6c0]`) és sliderthumb (`[this+0x710]`) uniójára. Ha az egér a sáv/fogantyú területén van: beállítja a csúszka-húzás jelzőjét (`*(char *)(this+0x429) = 1`), és közvetlenül meghívja a `0x007fdd00(mouse_x, mouse_y)` függvényt. Ha a sávon kívül kattint (a háttérre vagy kártyákra): beállítja a háttér-pásztázás jelzőjét (`*(char *)(this+0x428) = 1`), és ellenőrzi a kártyákra kattintást (`0x007fd800`).
+   - `WM_MOUSEMOVE` (`0x200`, `0x007fdefe`): ha `*(char *)(this+0x429) != 0` (csúszka-húzás aktív), minden egérmozgásra meghívja a `0x007fdd00`-at. Ha `*(char *)(this+0x428) != 0` (háttérhúzás aktív), az x irányú elmozdulást (`dx`) a `[this+0x310]` tehetetlenségi sebességhez adja (`speed = speed * 0.95 + dx * c`).
+   - `WM_LBUTTONUP` (`0x202`, `0x007fe1a4`): ha a csúszka-húzás aktív volt (`*(char *)(this+0x429) != 0`), meghívja a `0x007fd770(*(undefined4 *)(this+0x514))` függvényt, amely a kiválasztott indexhez tartozó animációs célsebességet/pozíciót kiszámítja, és a `0x007fd0c0` hívással elindítja a kártyapálya simító animációját. Végül mindkét jelzőt törli (`+0x428 = 0`, `+0x429 = 0`).
+4. *A keresőcsúszka algoritmusa (`0x007fdd00`):* Az x bemenetet lekorlátozza a sávra (`[x_start, x_start + width]`), kiszámítja a normalizált arányt (`norm_x = (x - x_start) / width`), és a dátumtömbön (`[this+0x388]`) végighaladva megkeresi azt a gyűjteményindexet (`uVar10`), amelyre az `abs(date[i]/date_last - norm_x)` távolság minimális. Az indexet beírja a `[this+0x514]` mezőbe, a megfelelő `0xf8` bájtos kártyarekord mutatóját a `[this+0x510]`-be (ebből rajzolódik a jobb felső név és év-hónap felirat), és a fogantyú pozícióját `[this+0x728]`-ra frissíti.
+
+**B út - független QEMU-mérés és erőforrás-szerződés.** A 38.2.77 szakaszban rögzített QEMU-i386 futtatási mérés közvetlenül igazolja a `0x007fdd00` működését: ismert x bemenetekre pontosan a legkisebb eltérésű `A[i]/A[n-1]` indexet választja ki, a fogantyú x pozícióját pedig `left + t * width - ((thumb_width >> 1) + 3)` értékre állítja (a tesztállapotban `100 + t * 400 - 15`). A `respack.yt` leltárban szereplő `overlays/timeline` (`245×7`), `overlays/sliderthumb` (`25×23`) és `overlays/timelinedot` (`7×8` és `7×11`) grafikák pontosan ennek a sávos csúszkamodellnek a vizuális elemei. A két független út maradéktalanul egyezik.
+
+**Cáfoló kísérlet (15.2).** Megkíséreltük cáfolni azt az állítást, hogy a fogantyú húzása közben a 3D kártyapálya nem mozdul el, és a kameramozgás csak elengedéskor indul el.
+- Ellenőrzés: A `0x007fdd00` teljes utasításkészletében kizárólag a `[this+0x514]` (index), `[this+0x510]` (fókusz-rekord) és `[this+0x728]` (fogantyú x) mezők kapnak új értéket. A kameramozgató `0x007fd0c0` hívás a `0x007fdd00`-ban nem szerepel.
+- A `0x007fd0c0` hívója a `0x007fd770`, amely kizárólag a `WM_LBUTTONUP` (`0x202`, `0x007fe1a4`) ágon és a kártyára kattintáskor (`0x007fd800`, `0x007fd8a9`) fut le.
+- Eredmény: A cáfolat igazolta az elméletet: a csúszka húzása közben a 3D kártyapálya nem mozog folyamatosan a fogantyúval együtt; csak a fogantyú és a fejléc felirata (a kiválasztott gyűjtemény) frissül azonnal, a kártyák a felengedéskor animálnak a kiválasztott pozícióra.
+
+| Állítás / érték | Forrás |
+|---|---|
+| A sáv (`overlays/timeline`) és fogantyú (`overlays/sliderthumb`) tárolása | bináris (`0x007fa7f0`, `0x007fb210`, `0x00cbd38c`, `0x00cbd3b8`) |
+| Lebegtetéskor nincs kéz alakú kurzor a csúszkán | bináris (`0x007ffc90`, `0x007fe540`) |
+| Sáv/fogantyú kattintás felismerése és húzás indítása (`+0x429 = 1`) | bináris (`0x007fde80` @ `0x007fe1d9`) |
+| Háttérre kattintás felismerése és tehetetlenségi pásztázás (`+0x428 = 1`) | bináris (`0x007fde80` @ `0x007fe1d9`, `0x007fdefe`) |
+| Folyamatos indexkeresés és fókusz-rekord frissítés húzáskor | bináris (`0x007fdd00`, `[this+0x514]`, `[this+0x510]`), QEMU mérés (38.2.77) |
+| Felengedéskor kameragörgetési animáció indítása a kiválasztott indexre | bináris (`0x007fde80` @ `0x007fe1a4`, `0x007fd770`, `0x007fd0c0`) |
+
+**PicasaPy-összevetés.**
+A PicasaPy `TimelineView.qml`-je (277-290. sorok) az `updateSliderFromX(x)` és `releaseSlider()` függvényekkel pontosan ezt a kétfázisú csúszkamodellt valósítja meg:
+- Húzás közben az `updateSliderFromX(x)` a normalizált sáv-arányból kiszámítja a `pendingSliderIndex`-et a `timelineController.sliderIndex()` segítségével.
+- A `timeline_motion.py:69-82` `slider_index()` és `85-92` `slider_thumb_x()` függvénye a 38.2.77 specifikáció alapján pontosan a legkisebb távolságú indexet és a sávra korlátozott fogantyúpozíciót adja.
+- Elengedéskor a `releaseSlider()` meghívja a `show.animateTo(pendingSliderIndex, 4000)` animációt.
+- A háttér húzása a `TimelineView.qml`-ben (`draggingCarousel`, `carouselVelocity *= 0.95`) funkcionálisan megfelel az eredeti `[this+0x310]` tehetetlenségi pásztázásának.
+- Eltérés / teendő: A PicasaPy-ban a fejléc gyűjteménynév és dátum felirata húzás közben még nem frissül azonnal a `pendingSliderIndex`-re, csak az animáció lefutása után; az elengedési animáció ideje jelenleg fix 4000 ms, míg az eredeti a kártyatávolságból és az animációs sebességből számítja a lefutást.
+
+**A #6532 „Kész, ha” mérlege.** ✅ Az eredeti felvételek korábbi szakaszokban dokumentáltak. ✅ A sliderthumb és a timeline sáv felhasználói művelete és eseményútja bináris címekkel igazolt és lezárt. ✅ A megvalósítási összevetés elkészült. ⛔ A #6532 további nyitott pontjai (forráshalmaz-szűrők, élő felvételes képkocka-időzítés) még folyamatban vannak.
+
+**Javasolt megvalósítási jegybővítés (#6713-hoz).**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A `sliderthumb` húzása közben a `0x007fdd00` minden egérmozgásra frissíti a `[this+0x514]` indexet és a `[this+0x510]` kártyarekordot, így a fejléc felirata (név és év-hónap) húzás közben azonnal követi a kurzort; a felengedéskor a `0x007fd770` indítja a célkártyára animálást. | A `TimelineView.qml:277-290` csak a `pendingSliderIndex`-et frissíti és a fogantyút mozgatja; a fejléc és a fókusz csak a `releaseSlider()` után animál be. | A `TimelineView.qml`-ben a `pendingSliderIndex` változásakor kösd be a fejléc előnézeti feliratának azonnali frissítését húzás közben is. Az elengedési animáció idejét igazítsd a fókusztávolsághoz a fix 4000 ms helyett. |
+
+**Nyitott.** Nincs új nyitott kérdés a sliderthumb és a timeline sáv eseményútjára; a mechanizmus statikusan és mérve lezárva.
+
+#### 38.2.127 A billentyű-, üres belépési, betöltési és visszatérési utak (#6532, 2026-11-13)
+
+**Hatókör.** Ez a célzott zárókör a viselkedési lap öt kiválasztott A pontjából vizsgálja a Ctrl+Space-t, a Space első képét, az üres belépést, a betöltésjelzőt, valamint az Escape/Vissza általános visszatérését. Nem vizsgálja a gombképeket, a fedőréteget, az animációs képkockahatárokat, a kártyaforrás-listát vagy a dátumtömböt. Wine és előkészített PE→QEMU harness nem érhető el; a `qemu-i386` csak Linux i386 ELF-et futtat, a helyi C fordító AArch64 célú. Emiatt új futásidejű képkocka- vagy UI-mérés nem készült.
+
+##### 1. Üres belépés - feltétel és PicasaPy-eltérés
+
+**A út - eredeti bináris.** A `0x005e8a70` közös bemutató-mód kezelő a `0x005d2a70` eredményét vizsgálja. Ha ez 0, vagy ha a `CThumbUI+0x2c0` objektum `+0x154` mezőjének `0xfffffffe` maszkolt értéke 0, a `0x005e8a70` az `IDS_MUST_SELECT` sztringet (`0x009ae710`) kéri le, majd a `0x009807f0` üzenetutat hívja. A `0x005d2a70` a `CThumbUI+0x2bc` szolgáltató elemsorán végighalad, és a nem nulla `state` értékű rekordokat számolja. A gyűjtemények feldolgozása után a függvény az összegyűjtött rekordok kódolt darabszámát (`uStack_d0 & 0xfffffffe`) is vizsgálja; 0 esetén ugyanazt az üzenetet adja. A MakeTimeline hívóút a `0x005da7ab`-`0x005da7ae` helyen vezet a `0x005e8a70` felé.
+
+**B út - független adat- és forrásellenőrzés.** A szöveg-erőforrás xrefje a `0x00e01776` UTF-16 szöveget a `0x005e8a70` függvényhez köti: `You must have images in the Picture Tray to do this.` A `CThumbUI+0x2c0` mező `CAlbumState` típusa a konstruktor/RTTI-útból ismert; a MakeTimeline külön count/index útja a `0x005e9434` címen a `0x004a0980`-nak adja át ugyanezt az objektumot, amely a `[state+0x13c] >> 1` elemszámot adja vissza (38.2.63). Üres CAlbumState-listánál a MakeTimeline feldolgozó ciklusa ezért nulla iterációt végez, az eredménylista üres marad, és a `uStack_d0` utólagos kapuja ugyanazt az üzenetet küldi. A `+0x2bc` ettől külön `CThumbDB` szolgáltató. A PicasaPy forrásában a Ctrl+5 út újratölti és megnyitja az Időrend panelt akkor is, ha a modell üres; a `TimelineView.qml` ilyenkor `currentIndex = -1` értéket állít be, és nincs üresállapot-üzenet (`MainKeyboardShortcuts.qml:406-412`; `MainTimeline.qml:96-104`; `TimelineView.qml:259-265`).
+
+**Következtetés.** Az eredeti nem indít bemutatót, ha nincs állapotképrekord, ha a kódolt CAlbumState-listaszám maszkja nulla, vagy ha a szűrés után üres a qshow bemeneti rekordlistája; mindhárom eset az `IDS_MUST_SELECT` üzenethez vezet. A PicasaPy megnyitja az üres Időrend nézetet. Az `+0x154` mező emberi jelentését nem állítom; a gyűjtemény nélküli esetet a külön, `+0x13c` elemszámot olvasó MakeTimeline út is alátámasztja.
+
+**Cáfoló kísérlet (15.2).** Azt próbáltam cáfolni, hogy az `IDS_MUST_SELECT` lelet az Időrend belépésére vonatkozik, nem csak valamelyik másik közös bemutató-módra. A `0x005da7ab` timeline parancs-hívásától a `0x005e8a70` közös kezelőig követtem az utat, és ellenőriztem, hogy ugyanebben a függvényben szerepel a `Preparing timeline...` út is. Ez a leletet az Időrend-belépőhöz köti. A cáfoló kontrollja az erőforrás-xref: az `IDS_MUST_SELECT` szöveg hivatkozása ugyancsak a `0x005e8a70`-re mutat. A vizsgálat nem nevezi meg emberi nyelven a `+0x154` mezőt; csak a maszkolt bináris feltételt rögzíti.
+
+##### 2. Ctrl+Space és Space első képe
+
+**A út - billentyűágak.** A `0x00801270` `WM_KEYDOWN`/Space-kezelőjében a Ctrl+Space ág a `[this+0x3ba]` jelzőt 1-re írja (`0x008012fb`) és kezelt eredménnyel tér vissza; ebből az ágból nem hívja közvetlenül a `0x00801130` normál Space-váltót vagy a `0x00803110` objektumváltót. A külön normál Space-ág `[this+0x3bb] == 0` esetén a `0x00801130`-at hívja (`0x00801334`), nem nulla esetén a `0x00803110`-et (`0x0080131f`). A `0x00801130` a `+0x3bb` állapotot fordítja át, majd a `+0x3ba` értékétől függően a `0x00aa6f40` segédhívást kihagyhatja. A `0x00803110` az objektum állapotát módosítja és a host aktív objektumát cserélő `0x00802be0`-t hívja.
+
+**B út - kezelőazonosítás és PicasaPy-forrás.** A qshow `QDrawable` vtable-jének `+0x30` slotja a `0x00801270`; a vtable/RTTI-út és a közvetlen billentyűág-olvasat külön vizsgálatból egyezik (38.2.63). A PicasaPy `TimelineView.qml` ugyanazt az ágat futtatja minden Space eseményre, mert a QML az `event.key` mezőt vizsgálja, a `event.modifiers` értékét nem (`TimelineView.qml:393-406`). A Ctrl+Space ezért PicasaPy-ban a `startCurrentSlideshow()` műveletet kéri.
+
+**Következtetés.** A két program billentyűútja eltér. Az eredeti Ctrl+Space elsődlegesen a `[this+0x3ba]` jelzőt írja; a PicasaPy közvetlenül elindítja az aktuális gyűjtemény diavetítését. Az eredeti jelző látható következménye nem ismert, mert a `0x00aa6f40` meglévő dekompilálása csak a `+0x84` virtuális hívást mutatja, a célosztályt/hatást nem. A Ctrl+Space megvalósítási eltérés ezért nem kap fejlesztői javaslatot, amíg a hatás nem tisztázódik.
+
+**Space első fotója.** A normál Space eredeti belépőága ismert, de a qshow fókuszrekordjából átadott első fotó nem. A `0x00803110` meglévő Ghidra-kimenete a qshow belső objektumát és host-váltását mutatja, de nem nevezi meg az első vetített rekordot. A PicasaPy `MainTimeline.qml` az aktuális kollekció diavetítési modelljének 0. sorával indul (`MainTimeline.qml:106-125`). Az eredeti első fotó kérdésére nincs bizonyított válasz.
+
+##### 3. Betöltésjelző
+
+A `0x005e8a70` timeline ága a `Preparing timeline...` szöveget a `0x009ae560` szövegkezelőn át előkészíti, majd a `0x00415500` folyamatjelző segédhez jut (`0x005e9476`). A segéd `ytProgress::vftable` objektumot inicializál, meghívja a `0x00415380` frissítőt, majd ha a folyamatjelző fogadójának mutatója nem nulla, meghívja annak virtuális `+0x14` metódusát a szöveggel. A feldolgozás végén a fogadó virtuális `+0x0c` metódusát hívja. A `string_xrefs.csv` külön xrefje a `Preparing timeline...` szöveget a `0x005e8a70`-hez rendeli.
+
+**Következtetés és határ.** Bizonyított, hogy a timeline belépőút folyamatjelző objektumot és visszahívó fogadót használ. Nem bizonyított, hogy az adott futásban a fogadó mutatója nem nulla-e, melyik konkrét UI-objektum a cél, vagy a callback felhasználó által látható jelzőt rajzol-e. A PicasaPy QML nyitóútja nem jelenít meg folyamatjelzőt (`MainTimeline.qml:96-104`; `TimelineView.qml:319-324`), ezért a látható eltérés még nem dönthető el.
+
+##### 4. Escape és Vissza: általános visszatérési út
+
+Az Escape handler (`0x007fb820`) a oneup gazdaobjektum vtable `+0x14` metódusát hívja; a `0x008032e0` `oneup/exit` ága ettől független eseményútból ugyanezt teszi. A `0x008037e0` a oneup `+0x50` mezőjébe a `0x00982bf0` által létrehozott `ytWindow` qshow hostot teszi; a RTTI a host vtable-ját `0x00cd87fc` címen azonosítja, a `+0x14` slot célja `0x00983270`. A `0x00983270` normál ágában a host saját `[this+0x6c]` HWND-jére `PostMessageA(WM_CLOSE=0x10,0,0)` hívás kerül, ha a `DAT_00d67858` értéke 1-nél kisebb; másik globális állapotnál szálablak-felsoroló ág fut.
+
+**B út - külön Vissza gomb és host callback.** A Vissza/Exit esemény kezelője (`0x008032e0`) Escape-től külön ágon, a oneup `+0x50` host pointerének vtable `+0x14` slotján át jut a `0x00983270`-hez. Ez a host-művelet bezárási üzenetet küld, nem választ a qshow kártyalistájából új fotót. A két hívóág ezért egyezik abban, hogy ugyanazon qshow host visszatérési útját zárja.
+
+**PicasaPy-összevetés.** A QML zárófüggvény (`MainTimeline.qml:89-94`) kifejezetten a fókuszált kollekciót nyitja meg és annak `firstPhotoPath` képét választja ki, majd bezárja a Timeline ablakot. Az eredeti bizonyított művelete a qshow host bezárása; a host mögötti UI pontos gyűjtemény-/fotókijelölését a statikus callback nem nevezi meg. A viselkedési táblázat ezért nyitva hagyja a nem job-239 belépési út utáni pontos kijelölést, miközben a közös Escape/Vissza záróutat dokumentálja.
+
+**Cáfoló kísérlet (15.2).** Azt az ellenhipotézist próbáltam megcáfolni, hogy a Vissza gomb másik, helyi navigációs parancsot hajt végre, mint az Escape. A két eseménykezelő külön ágát önállóan követtem a `ytWindow` vtable `+0x14` slotjáig, majd a cél `0x00983270` törzsét ellenőriztem. Mindkét út a qshow host bezárási/ablak-enumerációs callbackjére jut; egyik hívóban sem szerepel külön fókuszkártya- vagy fotóindex-kiválasztás. A cáfoló eredménye a callback út azonosságát támasztja alá, de nem zárja ki a Windows `WM_CLOSE` utáni külső, futásidejű állapot-helyreállítást.
+
+##### 5. Bizonyíték- és nyitottkérdés-tábla
+
+| Állítás | Forrás | Bizonyítottság |
+|---|---|---|
+| Az üres belépés `IDS_MUST_SELECT` ága: nincs állapotképrekord, nulla kódolt CAlbumState elemszám, vagy üres szűrt qshow-rekordlista. | bináris (`0x005e8a70`, `0x005d2a70`, `0x005e9434`, `0x004a0980`); üzenet-xref (`0x00e01776`); PicasaPy-forrás (`MainKeyboardShortcuts.qml:406-412`, `TimelineView.qml:259-265`, `MainTimeline.qml:96-104`) | feltételes; a kapu utasításútja és a független count/index út egyezik, élő üres katalógus nem lett mérve |
+| Ctrl+Space közvetlenül a `[this+0x3ba]` jelzőt írja, nem a normál Space kezelőt hívja. | bináris (`0x00801270` @ `0x008012fb`); QDrawable vtable (`0x00cbd66c` `+0x30` → `0x00801270`); PicasaPy QML (`TimelineView.qml:393-406`) | feltételes a látható következményre; a közvetlen flag-írás bizonyított |
+| A normál Space az eredeti lejátszási útba lép, de az első fotó nincs azonosítva. | bináris (`0x00801270`, `0x00801130`, `0x00803110`); PicasaPy (`MainTimeline.qml:106-125`) | nyitott |
+| A timeline megnyitása `ytProgress` callbackot készít elő a `Preparing timeline...` üzenettel. | bináris (`0x005e8a70`, `0x009ae560`, `0x00415500`, `0x00415380`); string-xref (`0x005e8a70`) | feltételes a látható rajzolásra; callback-út bizonyított |
+| Escape és `oneup/exit` külön útból a qshow `ytWindow` host callbackját hívja. | bináris (`0x007fb820`, `0x008032e0`, `0x008037e0`, `0x00982bf0`, `0x00983270`); RTTI/vtable (`0x00cd87fc`) | megerősített a hívásút egyezésére; a pontos szülőválasztás nyitott |
+
+**Nyitott, pontos megszerzési út.**
+
+- Ghidra-kör kell: 0x00aa6f40 - mi a `[qshow+0x26c]` vtable `+0x84` célművelete, amelynek hívását a Ctrl+Space által beírt `+0x3ba` jelző kihagyja, és van-e ennek felhasználó által látható következménye? A meglévő dekompiláció a virtuális hívás célját és hatását nem nevezi meg. [blokkoló]
+- Ghidra-kör kell: 0x00803110 - a qshow Space-átmenetében mely képrekordot és indexet adja át elsőként az aktív OneUp vetítési objektumnak? A meglévő kimenet csak az állapotváltást és a host aktívobjektum-cseréjét mutatja. [blokkoló]
+- Ghidra-kör kell: 0x005e8a70 - a timeline ág `0x00415500` hívásának mely konkrét progress-sink objektum a tulajdonosa, és mely vtable-implementáció fogadja/rajzolja a `Preparing timeline...` üzenetet? A meglévő kimenetben a `piStack_6c` target és az `0x00415500` virtuális `+0x14` callback célja nincs feloldva. [blokkoló]
+- A nem job-239 belépési út szülőablakának tényleges kijelölése (`collection`, `photo`, `index`) **NINCS MEG**. Megszerzése: az eredeti Picasa futó Colab-mérésében a timeline megnyitása előtt rögzíteni a szülőnézetet és kijelölt fotót; ezután Escape, majd a külön `oneup/exit` Vissza gomb; a két zárás után képernyőképen és ablaklistán rögzíteni a szülőnézetet és a kijelölést.
+
+**A kiválasztott 5 pont állapota.** ✅ Az üres belépés kapujának bináris feltétele és PicasaPy-eltérése dokumentálva. ⛔ Ctrl+Space látható következménye, ⛔ Space első fotója, ⛔ a `ytProgress` tényleges látható rajzolása, ⛔ a nem job-239 visszatérés pontos szülőkijelölése nyitott. A viselkedési lap 14 eredeti A pontjából így **13 marad nyitva**; a #6532 nem zárható le.
+
+
+#### 38.2.150 A kártyák véletlen szórása és az Időrendből indított diavetítés beállítása (#6532, 2026-11-13)
+
+**Hatókör és módszer.** A #6532 két nyitott pontja: (1) milyen generátor, milyen mag, mely kártyatulajdonság és milyen tartomány áll a kártyák véletlen szórása mögött, és ez egyezik-e a PicasaPy `timeline_motion.py:100-131` és `TimelinePanel.qml:250-260` megoldásával; (2) az Időrendből indított diavetítés melyik beállítást (időköz, átmenet) használja a job-373 felvételen, és a PicasaPy ugyanezt teszi-e. A helyi `Picasa3.exe` (3.9.141.259, SHA-256 `644b7bec...`) utasításait capstone-nal olvastam; a teljes bináris bájtpásztázása és a mezőírók listája a `paszta.memoria_kapu()` mellett, függvényenként futott. A mérések két forrásból jönnek: (a) `qemu-i386` alatt az eredeti gépi kód futtatása (a privát repó `qemu_harness/hb.py` helyi másolatával: a `__getptd` `0x00bf0583` hamis szálankénti adatblokkot ad vissza, az FPU vezérlőszó `0x27f`, a vizsgált szakasz végén, a `0x008016cd`, illetve a `0x0080150d` és `0x0080188b` címeken egy kiíró rutin veszi át a futást); (b) a job-373 felvétel (`picasa-colab-jobs` kiadás, `video__04.mp4`, SHA-256 eleje `be0ba93e5ac9863f`, 1280x1024, 15 kép/mp, 1500 képkocka) képkockáinak közvetlen vizsgálata. A feladat csak egy Space-t küld, Play-t nem (`ctrl+5`, `Right`, `Right`, `space`, 15 s várakozás, `Escape`). A felvételen futó program hash-e továbbra sincs rögzítve. Az ideiglenes fájlok a munkafa `.bt/` mappájában voltak, a kör végén törölve.
+
+**Rövid eredmény.**
+
+1. **Helyesbítés (38.2.102 §3, 38.2.105, a viselkedési lap összevetése): a `0x008014d0` nem a kártyák kötegszórása.** A függvény a rekordépítés előtt kaput tartalmaz: ha a qshow `+0x3bc` és `+0x3bd` jelzője is nulla, a függvény a régi rekordsort felszabadítja, `rand()` hívása nélkül visszatér. A két jelzőt kizárólag a konstruktor nullázza, és a billentyűkezelő állítja 1-re, `Ctrl+F` (`+0x3bc`), illetve `Ctrl+B` (`+0x3bd`) hatására. Alap Időrend-használatban (nyilak, Space, Escape) tehát a `0x008014d0` nem szór semmit. Az `[-0,075; +0,075)` tartomány csak a rejtett módban a sebességvektor egyik összetevője, nem kártyaeltolás.
+2. **A generátor: az MSVC CRT `_rand` (`0x00c08221`)**, szálanként külön 32 bites állapottal (`ptd+0x14`), `állapot = állapot * 214013 + 2531011`, kimenet `(állapot >> 16) & 0x7fff`. A kezdőérték szálanként 1 (`0x00bf0471`-`0x00bf0474`), amíg ugyanazon a szálon `_srand` nem fut. A qshow kódjában nincs `_srand`; a tíz `_srand`-hívó közül három időből magoz (`0x0085b730`, `0x00917f50`, `0x00990000`). Hogy a qshow szálán ezek előbb lefutnak-e, nyitott (lásd lent).
+3. **A kártyák kötegszerű kinézete létezik az eredetiben** (job-373, 12, 19 és 28 s: a piros kártya egy lap, a kék és a zöld több, egymásra tolt, kissé elforgatott lap), de a kártyarajzoló (`0x007fd180`) rekordonként egyetlen képet rajzol, a `0x007fc7c0` pedig a CThumbDB rekordképét másolja a kártyarekord `+4` képébe. A lapok elhelyezésének forrása ezért a kártyakép előállítója, ami **NYITOTT** (cím lent). A PicasaPy `card_stack_offset` `xorshift` eltolásának `[-0,075; +0,075)` tartományára és a `-7/+5` fokos váltakozó elforgatására nincs bináris vagy mért forrás.
+4. **A diavetítés időköze a job-373 felvételen 3 másodperc** (a felvételen olvasható `Display Time 3 seconds` felirat és a bináris alapérték egyezik). **A diavetítés nem indul lejátszással:** az Időrendből az első Space szünetelő állapotú diavetítő felületet hoz be, az 1/7 kép 15,5 másodpercig pixelre azonos marad. A PicasaPy `start(0)` útja `playing = true` értékkel indul, és 3 másodperc múlva lép. **Eltérés.**
+5. Az átmenet fajtáját és időtartamát az Időrendből indított diavetítésre a felvétel nem méri (nincs képlépés benne): **NYITOTT**.
+
+##### §1 A generátor és a mag
+
+| Állítás | A út (utasításszint) | B út (adat, hívó vagy mérés) |
+|---|---|---|
+| `0x00c08221` az MSVC CRT `_rand` | `call 0xbf0583` (`__getptd`), `ecx = [eax+0x14]`, `imul ecx, ecx, 0x343fd`, `add ecx, 0x269ec3`, `[eax+0x14] = ecx`, `(ecx >> 16) & 0x7fff` (`0x00c08221`-`0x00c08242`) | QEMU az eredeti kódon, hamis szálblokkal, négy maggal (1, `0x3039`, `0xdeadbeef`, 0), mindegyikből hat hívás: minden kimenet egyezik a `s = s*214013 + 2531011; (s >> 16) & 0x7fff` képlettel és a végállapottal. Mag 1 kimenete: 41, 18467, 6334, 26500, 19169, 15724. Az index és a nyers `E8`/`E9` bájtpásztázás ugyanazt a 43 hívó függvényt adja (két további hívás a `0x00b6a0e0` és `0x00b6a133` címen az indexelt függvénytáblán kívül esik, nem qshow-tartomány). |
+| A szálanként külön állapot `ptd+0x14`, kezdőértéke 1 | `0x00bf0471` `xor edi, edi`, `0x00bf0473` `inc edi`, `0x00bf0474` `mov [esi+0x14], edi` a `__initptd`-ben (`0x00bf044d`) | A CRT-tartomány (`0x00bef000`-`0x00c0b000`) összes `[reg+0x14]` tárolásának bejárásában a szálállapotot csak a `__initptd` (`0x00bf0474`), a `_srand` (`0x00c0821d`, `[ptd+0x14] = arg`) és a `_rand` (`0x00c08235`) írja; a többi találat helyi változó vagy más szerkezet (`strtoxl`, `gmtime`, `qsort`). A `__mtinit` a fő szálra a `0x00bf0887` hívással futtatja a `__initptd`-t. |
+| A qshow nem hív `_srand`-ot | A `_srand` (`0x00c08214`) hívói: `0x00423780`, `0x00565920`, `0x00680370`, `0x0071d940`, `0x0071e120`, `0x0085b730`, `0x0087cb70`, `0x0088fcf0`, `0x00917f50`, `0x00990000`; egyik sem esik a `0x007f9000`-`0x00804000` tartományba | A nyers `E8`/`E9` pásztázás ugyanezt a 10 függvényt adja. |
+| Három `_srand`-hívó időből magoz | `0x0085b76d` (a `0x0085b730` GUID-képző, sztringjei `%I64x`, `%x%x%x%x-`), `0x009180df` (`0x00917f50`, az online ellenőrzés), `0x009902b8` (`0x00990000`, az összeomlás-kezelő): mindegyik előtt `call 0xc0a421` (`time`) | A másik hét hívó közvetlen környezete nem időt ad át: `0x00565920` és `0x00680370` szöveg-ujjlenyomat, `0x0071d940` `index * 0xee6d00b1`, `0x0087cb70` `[ebx+0x10]`, `0x0088fcf0` argumentum (a `0x00423780` és `0x0071e120` forrása a közvetlen környezetből nem olvasható ki). |
+
+**Mag, kimondva.** A qshow a szál `_holdrand` állapotát folytatja, saját magválasztása nincs. Ha az adott szálon `_srand` nem futott, a sorozat az 1-es magról indul, és ugyanazon a szálon minden `_rand`-hívás előrelépteti. Hogy a qshow szálán futott-e korábban időből magozó függvény, **NYITOTT**: ehhez a qshow szálát létrehozó út (a `0x008037e0` hívói) és a három magozó függvény hívói (`0x0085b7e0`, `0x00918290`, `0x009184e0`, `0x009907c0`) szála kell, futásidejű szálazonosítóval (`GetCurrentThreadId`) mérve.
+
+**Hol lép előre az állapot alap Időrendben.** A qshow-tartományban a `_rand` hívói pontosan négyen vannak: `0x007fe600` (képkockánként, kapuzott), `0x008014d0` (kapuzott), `0x00802230` (két hívás, kapu nélkül; `0x007fb540`, `0x007fda00`, `0x00801130`, `0x00801cf0`, `0x00802630` hívja) és a `0x007f9a40` (a `ytAnimSprite` konstruktora, `0x00cbd2a4`, a főablak értékelő csillagjainak `0x005e81e0` hívójától, nem Időrend). A `0x00802230` kimenete (38.2.62: `0 <= x < 0,15 * W`, `0 <= y < 0,075 * H`) a `0x007fff30` `SimpleSlideshow == 0` ágában kerül transzformációba; az alapértelmezett `SimpleSlideshow = 1` mellett (38.2.100) ez a kimenet nem látszik. A kártyák elhelyezéséhez tehát az alap Időrendben nem járul hozzá.
+
+##### §2 A `0x008014d0` kapuja
+
+| Állítás | A út | B út |
+|---|---|---|
+| `0x008014d0` kilép, ha `[this+0x3bc] == 0 && [this+0x3bd] == 0` | `0x008014f7` `cmp byte [edi+0x3bc], 0`, `jne 0x80150d`; `0x00801500` `cmp byte [edi+0x3bd], 0`, `je 0x80188b`; a `0x0080188b` pop-ok és `ret` | QEMU, a teljes függvény futtatva `edi = this`, a listában 6 elem (`[this+0x3f0] = 12`, `[this+0x3ec]` kitöltve), jelzők 0: a visszatérési érték 0, a CRT állapot a futás után változatlan (mag 1 maradt 1, mag 777 maradt 777), vagyis nulla `_rand`-hívás. A kapu elágazása a valódi bájtokon: (0,0) a `0x80188b` kilépésre, (1,0), (0,1) és (1,1) a `0x80150d` folytatásra jut. |
+| A két jelző kizárólag a konstruktor nullázza és a billentyűkezelő állítja be | A konstruktor `0x007fad21`, `0x007fad27` nullázza; a `0x00801270` `0x008013c5` (`Ctrl+F`, billentyűkód `0x46`) és `0x008013fe` (`Ctrl+B`, `0x42`) 1-et ír; a feltétel: `[0xd67849] != 0` és `GetAsyncKeyState(0x11)` felső bitje (`0x008013a5`-`0x008013bf`, `0x008013de`-`0x008013f8`) | A teljes bináris pásztázása a `+0x3bc`/`+0x3bd` bájtra író utasításokra: a qshow osztályban más író nincs (a többi találat más osztály dword-mezője). A `[0xd67849]` írói: `0x0057641b` (ablakállapot-visszaállítás után 1) és `0x00a52e66`, ahol `[edi+4] == 0x1c` (`WM_ACTIVATEAPP`) esetén `[0xd67849] = wParam` bájtja: alkalmazás-aktív jelző. |
+| A `0x007fe7c0` és a `0x007fe600` ugyanazzal a kapuval fut | `0x007fe7cf`, `0x007fe7da` ugyanaz a két bájtos vizsgálat, `je 0x7fee5f` kilépés; a `0x007fe600` csak innen hívódik (`0x007fe7e9`) | Az index hívói: a `0x007fe7c0` egyetlen hívója a `0x007ffc90`; a `0x007fe600` egyetlen hívója a `0x007fe7c0`. |
+
+##### §3 Mit szór a rejtett módban, és milyen tartományban
+
+A `0x008014d0` a `[this+0x3ec]` azonosítólista minden elemére (a fókuszgyűjtemény fotói) négy `_rand`-értéket használ; `u = r / 32768`, `r1`..`r4` az egymás utáni hívások. A mezők a 0xf8 bájtos rekordban vannak, amely a `[this+0x2ec]` sorba másolódik (`0x008017ed` `lea eax, [esp+0x50]`, `0x00803b50`). A rekordcímzés A útja: a `0x007fa5b0` konstruktor a `0x0080157c` `ecx = esp+0x50` címen épül, a `0x00a6aa00` hívás `ret 0x14`-gyel tisztítja a rakott téglalapot és célmutatót (`0x00a6aa27`), így a `0x008015ad`-nál az `esp+0x11c`..`esp+0x128` helyi változók a rekord `+0xcc`..`+0xd8` mezői:
+
+| Rekordmező | Képlet (utasítások) | Tartomány |
+|---|---|---|
+| `+0xcc` (x helyzet) | `u4 - 0,5` (`_rand` `0x00801644`, tárolás `0x0080167d`) | `[-0,5; 0,5)` |
+| `+0xd0` (y helyzet) | `u3 - 0,5` (`_rand` `0x00801633`, tárolás `0x008016a7`) | `[-0,5; 0,5)` |
+| `+0xd4` (x sebesség) | `0,15 * (u2 - 0,5)` (`_rand` `0x008015be`, szorzás `0x008016ae`-`0x008016b8`), a szorzó az f64 `0,15000000596046448` (`0x00cf3fd0`) | `[-0,075; 0,075)` |
+| `+0xd8` (y sebesség) | `[this+0x3bc] == 0`: `0,15 * (-u1)`; `[this+0x3bc] != 0`: `0,15 * (0,5 - u1)` (`_rand` `0x008015ad`, előjelváltás `0x00801611`, feltételes összeadás `0x00801624`, szorzás `0x008016bf`-`0x008016c6`) | `(-0,15; 0]`, illetve `(-0,075; 0,075]` |
+
+**B út (QEMU, az eredeti `0x008015ad`-`0x008016c6` szakasz, a futás a `0x008016cd` címen kiírásra terelve; a QEMU az `esp`-relatív értékeket méri, a rekordmezőkhöz rendelésük a fenti A út számítása).** Négy mag (1, `0x3039`, `0xdeadbeef`, `0x7a69`) és mindkét `+0x3bc` érték mellett az eredeti kód mezői bitre egyeznek a fenti képletek f32-értékeivel (8 futás, 8 egyezés). Mérés (`+0xcc`, `+0xd0`, `+0xd4`, `+0xd8`):
+
+| `+0x3bc` | mag | `+0xcc` | `+0xd0` | `+0xd4` | `+0xd8` |
+|---:|---:|---:|---:|---:|---:|
+| 0 | 1 | 0,30871582 | -0,30670166 | 0,009535218 | -0,000187683 |
+| 0 | `0x3039` | 0,175201416 | 0,287200928 | 0,012725831 | -0,0347168 |
+| 0 | `0xdeadbeef` | 0,10333252 | 0,071655273 | 0,002453613 | -0,083940126 |
+| 0 | `0x7a69` | 0,027435303 | 0,179534912 | -0,037197877 | -0,018621827 |
+| 1 | 1 | 0,30871582 | -0,30670166 | 0,009535218 | 0,074812323 |
+| 1 | `0x3039` | 0,175201416 | 0,287200928 | 0,012725831 | 0,040283203 |
+| 1 | `0xdeadbeef` | 0,10333252 | 0,071655273 | 0,002453613 | -0,008940125 |
+| 1 | `0x7a69` | 0,027435303 | 0,179534912 | -0,037197877 | 0,056378175 |
+
+A régi olvasat (`dx = (rand - 0,5) * 0,15`, `dy` előjeles korrekcióval, mindkettő `record[+0xd4]` és `record[+0xd8]`, "a köteg kártyáinak szórása") hibás volt két ponton: a `+0xd4`/`+0xd8` sebesség, nem eltolás, és `+0x3bc == 0` mellett az y összetevő `(-0,15; 0]`, egyirányú. A másik két `_rand` a `+0xcc`/`+0xd0` helyzetet adja, amit a régi olvasat kihagyott.
+
+**Képkockánkénti mozgás (csak A út, feltételes).** A `0x007fe600` minden rekordra: `dt` a `0x009a51b0` QPC-másodperce a `[this+0x528]` bélyegtől; `x += dt * vx`, `y += dt * vy` (`0x007fe650`-`0x007fe696`); ha `x` vagy `y` 0 alá esik, 1-et ad hozzá, ha 1 fölé, 1-et von le (`0x007fe69e`-`0x007fe6fc`): az egységnégyzet tóruszán kering. Utána mindkét sebességkomponens kap egy-egy `_rand`-ból: `v += 0,001 * u - 0,0005` (f64 `0x00cf3db0 = 0,001`, `0x00cf4858 = 0,0005`; `0x007fe713`-`0x007fe78d`), azaz `[-0,0005; 0,0005)` véletlen járás képkockánként. A `0x007fe7c0` a helyzet `2π`-szeresének szinuszából/koszinuszából (f64 `0x00cf4350 = 6,2831854820251465`) számolja a lapok méretét és sorrendjét, majd rajzol. Ez a rajzút csak a jelzőkkel fut; a fejlesztői átadásban nem kérek belőle semmit. A mozgásképlet második független útja (QEMU a `0x007fe600`-ra, rögzített `dt`-vel) nincs meg, ezért a bekezdés feltételes.
+
+##### §4 A kártyák kötegszerű kinézete: mérés, forrása nyitott
+
+| Állítás | A út | B út |
+|---|---|---|
+| A kártyarajzoló rekordonként egy képet rajzol | `0x007fd180` a látható rekordokon (`[obj+0x80]`) végigmenve a rekord `+4` képét kéri a `0x00a6ac90` LOD-választón át, a `0x009e6df0` rajzolóval: lapsor, több kép per rekord nincs (`0x007fd1b8`-`0x007fd35d`) | A `0x007fc7c0` rekordonként egyetlen `0x00a6aa00` másolással tölti a `+4` képet (38.2.92); a kártyarekord konstruktora `0x007fa5b0`. A rekord `+0xcc`-`+0xd8` mezőit a `0x007fd180` nem olvassa (a tagpásztázás `0x007fd180`-ban csak `esp`-relatív helyi változót talál). |
+| A felvételen a kártyák egy része több lapból áll | | job-373, 12 s: a piros 2009_majus kártya egy lap, a kék 2014_november és a zöld 2019_marcius több, egymásra tolt, kissé elforgatott lap; 19 s és 28 s: ugyanaz a három kártya másik pályahelyen, a kék és a zöld lapelrendezése a szemrevételezés szerint azonos (képpontos összevetés nem készült). |
+
+Következtetés: a lapok elrendezése a kártyakép része (a rekord `+4` képe), nem a `0x008014d0`-ból jön, és a felvétel szerint a fókuszváltások közt látszólag változatlan. Hogy ez a kép mikor és melyik függvényben áll össze, és kap-e véletlenszámot, **NYITOTT**. A lapok száma és a gyűjtemény fotószáma közti kapcsolat is mérés nélkül maradt (a piros 1/1, a zöld 1/7; a többi gyűjtemény fotószáma a felvételről nem olvasható).
+
+##### §5 Összevetés a PicasaPy-val (1. pont) és megvalósítási javaslat
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Az alap Időrendben a qshow nem szór véletlenül kártyaeltolást; a `0x008014d0` rejtett `Ctrl+F`/`Ctrl+B` módban fut, és helyzet- és sebességvektort ad a fókuszgyűjtemény fotóihoz. A kártyák kötegszerű kinézete a kártyakép része, forrása nyitott. | `card_stack_offset` (`timeline_motion.py:100-131`) a gyűjtemény- és fotóindexből magozott `xorshift` algoritmussal `[-0,075; +0,075)` eltolást ad a kártyaméret arányában; `TimelinePanel.qml:250-260` ezt, `-7` és `+5` fokos váltakozó elforgatással alkalmazza, legfeljebb négy fotóra kártyánként. | **Eltér a forrás szerint: az eltolás-tartomány és az elforgatás bináris eredete megdőlt**; a docstring ("A qshow minden kártyánál két `_rand()` értéket használ") téves. A látható viselkedésből egyezik, hogy a köteg stabil és fókuszváltáskor nem változik (a PicasaPy index-magos, az eredeti felvétel szerint látszólag rögzített). |
+
+**Javaslat (a hívónak, kódot nem módosítottam).** (1) A `timeline_motion.py:100-110` docstringből és a `TimelinePanel.qml:250-260` környéki megjegyzésből töröld a `0x008014d0`-re hivatkozást; a tartomány és az elforgatás "mérésből származó, bináris forrás nélküli" jelölést kapjon. (2) A stabil, indexmagos elrendezést tartsd meg: a felvétel szerint a köteg fókuszváltások közt nem változik, ezért a PRNG-algoritmus különbsége nem felhasználói eltérés. (3) Új szórási kód ne készüljön, amíg a kártyakép előállítója nincs azonosítva; a következő bináris irány lent szerepel. (4) A `Ctrl+F`/`Ctrl+B` rejtett mód felhasználói felületen nem szerepel; megvalósítást nem javaslok.
+
+##### §6 A diavetítés beállítása job-373-ban
+
+| Állítás | A út | B út |
+|---|---|---|
+| Az időköz 3 másodperc | A qshow konstruktora a `Preferences\SlideshowEffectTime` kulcsot a `[this+0x760]` objektumhoz köti, alapérték 3 (`0x007face5`, `0x007facd3`); a `Display Time` `+`/`-` kezelője `0x00802b40` ugyanezt az objektumot olvassa (`0x00802b4c`) és írja (`0x00802bc5`), 1 és 20 közé szorítva (`0x00802b6d` `fld1`, `0x00802b7e`, f32 `0x00cf4974 = 20,0`) | job-373, 31,0 s (465. képkocka), a diavetítő alsó sávja: `Display Time`, `3 seconds`. A felvétel nem állít be Preferences-értéket (alapállapot). |
+| Az Időrendből az első Space szünetelő diavetítő felületet hoz be, automatikus léptetés nélkül | `0x007fda5b` `[this+0x3bb] = 0` az Időrend indításakor; `0x00801310` `+0x3bb == 0` esetén `0x00801332` → `0x00801130`, ami `+0x3bb`-t 1-re billenti (`0x0080113f`) és a felületet hozó `0x00802c20`/`0x00aa6f40` ágat hívja (`0x00801159`, `0x0080116a`); a `0x00802060` automatikus léptető `+0x3bb != 0` esetén azonnal kilép (`0x00802066`-`0x00802078` → `0x00802121`) | job-373: a Space körül (30,8-33,8 s) a sáv beúszik, majd a 800x600-as fotóterület (`240,212`) az 507.-739. képkockán (33,800-49,267 s, 233 képkocka) pixelre azonos, az `1/7` felirattal; az Escape 49,3 s körül jön. A lejátszás gomb a felvételen `▶` alakú (szünetel). A job-240 felvétel 3 és 8 s utáni azonos képe (38.2.82) ugyanezt mutatta. |
+
+**Mit jelent ez.** A job-373 futása az alapértelmezett 3 másodperces `SlideshowEffectTime` értéken volt. Az első Space után az eredeti nem lépteti magától a képet; a lejátszáshoz újabb beavatkozás kell (a második Space a `0x00803110`-re vezet, 38.2.65; a Play gomb hatása nincs mérve).
+
+##### §7 Összevetés a PicasaPy-val (2. pont) és megvalósítási javaslat
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Időköz: `SlideshowEffectTime`, alapérték 3 s, 1-20 s között (`0x007facd3`, `0x00802b6d`, `0x00802b7e`); job-373: 3 s. | `slideshowSeconds`, alapérték 3, tartomány 1-20 (`controller_slideshow_mixin.py:95-125`); az Időrend-Space ugyanazt a beállítást használja (`MainTimeline.qml:106-125` → `SlideshowView.qml:50,201-215`, `SlideshowTiming.qml:11-16`). | **Egyezik** (az alapértéken és a tartományon). PicasaPy-futás nem mért. |
+| Indulás: az első Space után szünetelő felület, nincs automatikus léptetés (`0x00801130`, `0x00802060`; job-373: 15,5 s pixelre azonos fotó, `▶` gomb). | `SlideshowView.start(index)` `playing = true` értékkel indul (`SlideshowView.qml:212`), a lépésidőzítő futása `visible && playing` (`SlideshowTiming.qml:16`): 3 s után lép. | **Eltér.** A fejlesztői teendő a lenti javaslat. |
+| Átmenet: a qshow `SimpleSlideshow` alapértéke 1 (`0x00800297`-`0x008002be`), pixelkeverés nemlineáris görbével, `p = min(1,5 * t / T, 1)` bemenettel (38.2.100). A felvétel képlépést nem tartalmaz. | `slideshowTransition` alapértéke `dissolve`, `slideshowTransitionMs` alapértéke 700 (felső korlát 500, `controller_slideshow_mixin.py:81-89`), a görbe lineáris. | **Nem dönthető el:** az Időrendből indított, lejátszó diavetítés első átmenete nincs mérve. |
+
+**Javaslat (a hívónak, kódot nem módosítottam).** (1) Az Időrend-Space a PicasaPy-ban az első képen szünetelő állapotban nyissa meg a vetítőt (`playing = false` az Időrendből indított `start(0)` után, a lejátszás gomb `▶` állapotával), és a következő Space/lejátszás indítsa az automatikus léptetést a meglévő `slideshowSeconds` értékkel. Ez csak az Időrendből indított vetítésre vonatkozzon, a szokásos (nem Időrendes) indításhoz ne nyúljon. (2) Az átmenet-időzítés ne változzon, amíg a Play utáni átmenet nincs mérve. (3) Ellenőrzés a javítás után: a `SlideshowView` Időrend-indításánál `playing == false`, és `slideshowTimer.running == false`; a szokásos indításnál `true`.
+
+##### Nyitott kérdések mérlege
+
+Nyitott kérdések: 4 nyílt · 5 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva"
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| Melyik generátor áll a szórás mögött | **LEZÁRVA** (CRT `_rand`, §1) | |
+| Mely tulajdonságot szórja a `0x008014d0`, és milyen tartományban | **LEZÁRVA** (§3; rejtett módban helyzet és sebesség; a régi "kártyaeltolás" olvasat megdőlt) | |
+| Szór-e véletlenül az alap Időrend kártyaeltolást a `0x008014d0`-val | **LEZÁRVA** (nem, §2) | |
+| Az Időrendből indított diavetítés időköze job-373-ban | **LEZÁRVA** (3 s, §6) | |
+| Az Időrendből indított diavetítés indulási állapota | **LEZÁRVA** (szünetel, §6) | |
+| Mi a kártyakép kötegszerű lapelrendezésének forrása és szabálya (lapszám, eltolás, elforgatás, véletlenszám-e) | **NYÍLT, következő irány megnevezve** | A CThumbDB rekordkép előállítója: `0x004ae430` → `0x00423300` → `0x00448fb0` → `0x004114e0` (a `0x007fc7c0` `0x007fcca7` és `0x008014d0` `0x008015a8` másolásának forrása), és a rekord `+8`/`+0xc` méretű képét ténylegesen feltöltő út. Mérés: ugyanazon gyűjtemények kártyaképe két külön Időrend-megnyitásban (a job-373 második `Ctrl+5` nem nyitott Időrendet, 38.2.82 szerint sem). |
+| Melyik szálon fut a qshow, és futott-e rajta időből magozó `_srand` | **NYÍLT** (a szórás alapesetben nem használja, ezért alacsony prioritás) | A `0x008037e0` hívó lánca és a `0x0085b7e0`, `0x00918290`, `0x009184e0`, `0x009907c0` hívók szála (`GetCurrentThreadId` a Colab-futásban). |
+| Az Időrendből indított, lejátszó diavetítés első átmenete (fajta, időtartam, görbe) | **NYÍLT** | Colab-feladat: `ctrl+5`, `space`, majd a lejátszás indítása (második `space`, `0x00803110` útja), 8 s felvétel képkockánkénti méréssel; közben a `[this+0x760]` és a `SimpleSlideshow` Preferences-érték naplózása. |
+| A `0x007fe600` mozgásképletének második útja (QEMU rögzített `dt`-vel) | **NYÍLT** (a rejtett mód miatt alacsony prioritás) | A `0x009a51b0` visszatérésének rögzítése a QEMU-harnessben, a `[this+0x528]` bélyeggel. |
+
+##### Amit kizártam
+
+- **"A `0x008014d0` kártyánként két `_rand`-ból számol `[-0,075; +0,075]` eltolást, ez a köteg szórása"** (38.2.102 §3, 38.2.105, a viselkedési lap egyezik-sora): megdőlt. Négy `_rand`-ból két helyzet- és két sebességmező lesz, a függvény kapuzott, és nem a kártyarajzoló fogyasztja a rekordot.
+- **"A kártyakép több kártyarekordból vagy a `0x007fd180`-ban rétegzett képből áll"**: a rajzoló rekordonként egy képet rajzol; a lapok a kártyakép tartalmában vannak.
+- **"A második `Ctrl+5` a job-373 felvételen újranyitja az Időrendet"**: a 60-100 s tartomány képkockái csak a könyvtárnézetet mutatják; az újranyitás-összevetés ebből a felvételből nem végezhető el.
+- **"Az Időrendből indított diavetítés magától léptet 3 másodpercenként"**: cáfolt, 15,5 s pixelre azonos fotóval, és a `0x00802060` kilépésével.
+
+##### Bizonyítottság
+
+**Megerősített:** a generátor képlete (két út, QEMU-méréssel) és a szálanként 1-es kezdőállapot (két út: a `__initptd` olvasata és a CRT-tárolások teljes bejárása), a `0x008014d0` kapuja és a jelzők íróinak teljes listája (két út, mérés is), a rejtett módban szórt mezők képletei (két út, mérés is), az időköz 3 s a job-373 felvételen (két út), a szünetelő indulás (két út). **Feltételes:** a `0x007fe600` mozgásképlete (csak A út), a `[0xd67849]` alkalmazás-aktív értelmezése (a `WM_ACTIVATEAPP` ágból olvasva, futásidejű mérés nélkül), a kártyakép-lapok rögzítettsége (szemmel nézve, képpontos összevetés nélkül). **Független újralevezetés (#140) ebben a körben nem futott;** az indítóra marad. A QEMU-mérés szakaszai a valódi gépi kódon futottak, de a vizsgált szakasz a függvény közepéről indult (a `0x008015ad`-`0x008016c6` rész), a teljes függvény pozitív esetű (jelző = 1, lista nem üres) futtatása a segédhívások miatt nem készült; ezt a kapu elágazásának külön mérése (§2) és a mezőképletek mérése együtt fedi.
+
+
+#### 38.2.140 Gombképek, rétegsorrend és animációs képkockahatárok (#6532, 2026-11-13)
+
+**Hatókör.** A #6532 Időrend-kutatás három nyitott kérdésének lezárása az eredeti `Picasa3.exe` binárisából és a `runtime/respack.yt` erőforráscsomagból:
+1. a gombképek (erőforrások és állapotok: alap, lebegés, lenyomott),
+2. a fedőréteg (overlay) rétegei és pontos rajzolási sorrendje,
+3. az animációs képkockahatárok (indulási és leállási események).
+
+##### §1 A gombképek erőforrásai és állapotai
+
+**Bináris út és erőforrások.** A qshow bemutató-mód overlay-erőforrásait a `0x007fb210` konstruktor-függvény tölti be a `Picasa3.exe` fájlból a `0x00410fa0` betöltővel a `qshow` (`esi`) objektum mezőibe. A vezérlősávhoz négy gomb tartozik:
+- **Balra gomb**: `overlays/left` (ASCII sztring a `0x00cbd334` címen; objektummező: `[this+0x530]`; betöltés: `0x007fb223`; kirajzolás és hit-teszt: `0x007fe540` / `0x007ffe97`; kattintáskor: `0x007fd120`). A `runtime/respack.yt` csomagban 31×31 képpontos RGBA réteg, authorolt tervezési téglalapja: `(243, 405, 274, 436)`.
+- **Jobbra gomb**: `overlays/right` (ASCII sztring a `0x00cbd344` címen; objektummező: `[this+0x558]`; betöltés: `0x007fb261`; kirajzolás és hit-teszt: `0x007fe540` / `0x007ffead`; kattintáskor: `0x007fd150`). A `runtime/respack.yt` csomagban 31×31 képpontos RGBA réteg, authorolt tervezési téglalapja: `(366, 405, 397, 436)`.
+- **Kilépés (rácsra vissza) gomb**: `overlays/exit` (ASCII sztring a `0x00cbd37c` címen; objektummező: `[this+0x580]`; betöltés: `0x007fb31b`; kirajzolás és hit-teszt: `0x007fe540` / `0x007ffec1`; kattintáskor: `0x007fb820`). A `runtime/respack.yt` csomagban 43×28 képpontos RGBA réteg, authorolt tervezési téglalapja: `(8, 404, 51, 432)`.
+- **Indító (diavetítés) gomb**: `overlays/startbutton` (ASCII sztring a `0x00cbd3d0` címen; objektummező: `[this+0x738]`; betöltés: `0x007fb413`; kirajzolás és hit-teszt: `0x007fe540` / `0x007ffed5`; kattintáskor: `0x007fb820`, majd `[this+0x2e8]` vtable `+0x18`). A `runtime/respack.yt` csomagban 43×28 képpontos RGBA réteg, authorolt tervezési téglalapja: `(298, 404, 341, 432)`.
+
+**Állapotok (alap, lebegés, lenyomott):**
+- **Nincs külön gomb-állapotkép**: A `respack.yt` bináris rétegjegyzékében az `overlays/` névtérben semmilyen állapotváltozat (`_hover`, `_down`, `_pressed`, `_active`) nem létezik. Mind a négy gomb egyetlen statikus RGBA képpel rendelkezik.
+- **Lebegés (hover)**: A gombon magán nincs szín- vagy képi változás. A lebegést az egérmutató váltása jelzi: a `0x007ffc90` rajzoló a `0x007fe540` találati ellenőrzései után (`0x007ffe97`-`0x007ffee5`), ha a kurzor (`[this+0x420]`, `[this+0x424]`) a 4 gomb bármelyikének téglalapján belül van, az egérmutatót átváltja a `[this+0x5d0]` rétegre (`overlays/rollovermouse`, `0x00cbd364`, 15×18 képpont); ha kívül van, a normál `[this+0x5a8]` réteget rajzolja (`overlays/mouse`, `0x00cbd354`, 12×19 képpont).
+- **Lenyomott (pressed)**: A gomb lenyomásakor (`WM_LBUTTONDOWN = 0x201` a `0x007fde80`-ban) a `0x007fda80` hit-teszt közvetlenül meghívja az adott gomb parancsfüggvényét. Nem állít be vizuális lenyomási elmozdulást, sötétítést vagy alternatív réteget.
+
+**PicasaPy-összevetés:** A `TimelinePanel.qml:424-570` jelenleg QML `Button` elemeket használ, egyedi `Canvas`-szal rajzolt vektoros ikonokkal (`timelineExitIcon`, `timelineLeftIcon`, `timelinePlayIcon`, `timelineRightIcon`), és mesterséges `down` állapot-színezést (`timelineExitButton.down ? ... : ...`). Az eredeti működésben nincsenek ilyen állapot-színezések, és a gombok a csomagolt képeket használják.
+
+##### §2 A fedőréteg (overlay) rétegei és pontos rajzolási sorrendje
+
+A `0x00800a30` fő képernyőrajzoló és a `0x007ffc90` előtérrajzoló utasításszintű végigkövetése alapján a felület rétegei alulról felfelé (z-sorrendben) a következő sorrendben kerülnek a közös háttérpufferbe:
+
+1. **Alap háttérréteg és ovális shell**: `[this+0x46c]` puffer. Ezt a `0x00802180` inicializálja az aktuális fókuszfotó szürkítésével (`0x00802130`), kontrasztnyújtásával (`0x009db610`), valamint az ablakméretre nyújtott `overlays/overlay` (`0x00cbd3e8`, `[this+0x648]`, 640×480 RGBA kép) ráterítésével (`0x009ab410`). A render-ciklusban a `0x008001c0` rajzolja ki legalsó rétegként. Ez a réteg adja az ovális ablakkeretet és az alsó vezérlősáv sötét hátterét.
+2. **Szövegfeliratok és vezetőpontok**: A `0x007fee70` (hívva a `0x007ffca2` címről) rajzolja:
+   - A kijelölt gyűjtemény nevét (jobbra zárva, 130 képpont magasan, 1 px fekete árnyékkal, `HelveticaNeue MediumCond`, `0x00a48e10`).
+   - A hónap/év feliratot (jobbra zárva, 158 képpont magasan, `ytDateTime::Format2` `%s %d` formátummal, `0x00cd89c4`, `0x00c87dd0`).
+   - A dátumskála két végfeliratát (pl. `May 2009` és `November 2026`).
+   - A címtől a fókuszkártyához vezető 10 pontból álló pontozott ívet.
+3. **Beúsztatási segédrétegek (nem használtak)**: `[this+0x620]` és `[this+0x5f8]` rétegek (`0x009ab690` hívások `0x007ffcc9` és `0x007ffcf7` címeken), a megnyitáskor max. 39%-os átlátszósággal (értékük üres, nem rajzolnak képpontot).
+4. **Fotókártyák rétege**: A `0x007fd180` (hívva a `0x007ffd05` címről) rajzolja a köbös racionális Bézier-görbe (`0x007fbab0`) mentén elhelyezett kártyákat. A mélységi sorrendet a `0x007fe7c0` előzetesen megállapítja (`FUN_00604480` rendezés).
+5. **Időskála tengelyvonal**: `overlays/timeline` (`0x00cbd38c`, `[this+0x6c0]`, 245×7 px, authorolt: `(197, 461, 442, 468)`), kirajzolva a `0x009ab690` által a `0x007ffd2b` címen.
+6. **Időskála dátumpontok**: `overlays/timelinedot` (`0x00cbd3a0`, `[this+0x6e8]`, 7×8 px, authorolt: `(215, 462, 222, 470)`), ciklusban kirajzolva a tengely mentén a `0x009ab690` által a `0x007ffe4a` címen.
+7. **Időskála csúszka-fogantyú**: `overlays/sliderthumb` (`0x00cbd3b8`, `[this+0x710]`, 25×23 px, authorolt: `(260, 457, 285, 480)`), kirajzolva a fókuszgyűjtemény pozíciójában a `0x009ab690` által a `0x007ffe90` címen.
+8. **Vezérlőgombok**: A négy gomb kirajzolása és hit-tesztje a `0x007fe540` függvénnyel (`0x009ab690` blit):
+   - `overlays/left` (`[this+0x530]`, `0x007ffe97`-`0x007ffea0`),
+   - `overlays/right` (`[this+0x558]`, `0x007ffead`-`0x007ffeb4`),
+   - `overlays/exit` (`[this+0x580]`, `0x007ffec1`-`0x007ffec8`),
+   - `overlays/startbutton` (`[this+0x738]`, `0x007ffed5`-`0x007ffedc`).
+9. **Egérmutató kurzor**: A legfelső réteg a kurzor (`0x007ffee9`-`0x007ffef7`): `overlays/rollovermouse` (`[this+0x5d0]`, 15×18 px), ha a kurzor a 4 gomb bármelyike felett áll; egyébként `overlays/mouse` (`[this+0x5a8]`, 12×19 px), kirajzolva a `0x009ab690` által.
+10. **Képernyőre másolás**: A `0x007fe470` MMX-alapú pixelmásoló (`emms`, `0x009dd4f0`) a kész puffert a képernyőablakra másolja.
+
+**PicasaPy-összevetés:** A `TimelinePanel.qml` rétegei eltérnek: a vezérlősáv külön téglalapként (`timelineControlBar`, 400-422. sor) rajzolódik ki, a csúszkatengely és a gombok Canvas/Rectangle elemekből épülnek, és hiányzik a natív kurzorréteg.
+
+##### §3 Animációs képkockahatárok és események
+
+A qshow animációinak indulási és leállási határait az alábbi események és függvények vezérlik:
+
+1. **Belépési (nyitó) animáció**:
+   - *Indulási esemény*: Időrend megnyitása (`0x005e8a70` -> `0x008037e0` -> `0x007fda00`). A `0x007fda00` rögzíti a kezdő QPC időbélyeget a `[this+0x430]` mezőbe (`0x007fda3d`), és beállítja a `[this+0x3b8]=1`, `[this+0x3b9]=1`, `[this+0x3be]=1` jelzőket.
+   - *Képkocka-lefutás*: A `0x00800a30` minden képkockán a `0x009a51b0` függvénnyel számítja az eltelt másodperceket a `[this+0x430]` bázisból; az értéket a `[0.0, 1.0]` tartományba szorítja (`0x00c79c88` = 1.0f), megszorozza `256.0`-val (`0x00cf39d8`), és ezt a `p` skálát adja át a `0x007ffc90`-nek.
+   - *Leállási határ*: Pontosan 1,0 másodperc elteltével (`t >= 1.0s`) a `p` eléri a 256 felső korlátot. A feliratok és skálaelemek beállnak a 100%-os végértékre. További elmozdulás vagy áttűnés nincs.
+
+2. **Gyűjteményváltó / lapozási animáció (kártyamozgás)**:
+   - *Indulási események*:
+     - Bal nyíl billentyű (`VK_LEFT = 0x25`) vagy egérgörgő fel (`0x008011b0`),
+     - Jobb nyíl billentyű (`VK_RIGHT = 0x27`) vagy egérgörgő le (`0x00801210`),
+     - Balra overlay gombkattintás (`0x007fda80` -> `0x007fd120`),
+     - Jobbra overlay gombkattintás (`0x007fda80` -> `0x007fd150`),
+     - Időskála csúszka felengedése húzás után (`WM_LBUTTONUP = 0x202` a `0x007fde80`-ban -> `0x007fd770`).
+   - *Kezdőpont*: A fenti hívók mind a `0x007fd0c0` függvényt hívják a `+2.0f` vagy `-2.0f` (`0x00cf3a48`) irányparaméterrel. A `0x007fd0c0` a `0x009a5210` segítségével rögzíti a kezdő QPC-másodpercet, hozzáadja a 2,0 másodpercet végidőként, és a `0x009e6010` segéddel új animátorrekordot ütemez a `[this+0x2f8+0x38]` tárolóba.
+   - *Képkocka-lefutás és csillapítás*: A `QDrawable` tick metódusa (`vtable +0x60`, `0x00803ab0` -> `0x00802060`) minden képkockán meghívja a `0x00801cb0`-at, amely a `0x007fc010`-et futtatja. A `0x007fc010` kiértékeli az animátort a `0x009e5f90` függvénnyel, és a sebességet minden lépésben megszorozza a `0x00cf40b0` címen levő `0.95` lebegőpontos konstanssal (`v = v * 0.95`).
+   - *Leállási határ*: Az ütemezett rekord futása 2,0 másodperc után lejár (`0x009e5e70`). A látható mozgás az exponenciális 0.95-ös csillapítás miatt már kb. 1,40-1,47 másodpercnél a képponthatár alá csillapodik (ezzel magyarázható a job-373 felvételen mért 1.400 és 1.467 mp-es mozgásablak). Amikor a mozgás lecseng, a `0x007fd8c0` kiválasztja a `0.666`-hoz (`0x00cf4860`) legközelebb eső kártyát (`[this+0x510]`), és ha gyűjteményhatár lépett át, a `0x008018a0` újraépíti a kártyakészletet.
+
+3. **Diavetítés automatikus léptetési animációja**:
+   - *Indulási esemény*: Szóköz billentyű (`0x00801270` -> `0x00801130`) vagy az indító overlay gomb (`0x007fda80` startbutton ág).
+   - *Kezdőpont és időzítés*: A `0x00802060` rögzíti a QPC időbélyeget a `[this+0x520]` mezőbe. A `0x009a51b0` méri az eltelt időt.
+   - *Képkockahatárok és léptetés*: Amikor az eltelt idő eléri a beállított diaidőt (`SlideshowEffectTime` = 3 mp, `0x007facd3`, vagy 4,0 mp az igazolt profilban):
+     - A `0x00802630` lapoz a következő diára és elindítja a képkocka-átmenetet.
+     - Újra beolvassa a QPC-t (`QueryPerformanceCounter`) a `[this+0x520]` mezőbe, újraindítva a következő dia várakozási ciklusát.
+   - *Leállítási esemény*: Escape billentyű (`0x00801270` -> `0x007fb820`) vagy újabb Szóköz leállítja a diavetítést és visszatér Időrend-módba.
+
+##### §4 Bizonyítottság, utak és cáfoló kísérletek
+
+**Bizonyítottsági fok: megerősített.**
+- A gombképek, azok overlay mezői és az állapotok hiánya két független úton megerősített (bináris kódút + respack rétegfa).
+- A 10 rétegből álló fedőréteg-sorrend megerősített (bináris utasításolvasat + Ghidra dekompilátumok).
+- Az animációk kezdő- és végpontjai, a QPC bázisidők, az 1.0 mp-es clamp, a 2.0 mp-es rekordidő és a 0.95-ös csillapítási szorzó megerősített (bináris diszasszembly + konstans-kiolvasás + korábbi QEMU/videómérések).
+
+| Állítás | Forrás | Bizonyítottság |
+|---|---|---|
+| A négy vezérlőgomb erőforrása: `overlays/left`, `overlays/right`, `overlays/exit`, `overlays/startbutton` | bináris (`0x007fb210`, `0x00cbd334`, `0x00cbd344`, `0x00cbd37c`, `0x00cbd3d0`) | megerősített |
+| A gomboknak nincs külön hover/pressed képe a csomagban; a lebegést a kurzor váltása jelzi (`overlays/mouse` vs `overlays/rollovermouse`) | bináris (`0x007fe540`, `0x007ffe97`-`0x007ffef7`, `0x00cbd354`, `0x00cbd364`) + `respack.yt` | megerősített |
+| A lenyomás (`WM_LBUTTONDOWN`) nem vált képet, azonnal a műveletet hívja | bináris (`0x007fde80`, `0x007fda80`) | megerősített |
+| A fedőréteg rajzolási sorrendje: háttér shell -> feliratok/ívek -> kártyák -> időskála tengely -> pontok -> csúszka -> 4 gomb -> kurzor -> blit | bináris (`0x00800a30`, `0x008001c0`, `0x007ffc90`, `0x007fe470`) | megerősített |
+| Belépési animáció: 1,0 mp-es felső korlát (`0.0 .. 1.0 * 256.0`), QPC bázis `[this+0x430]` | bináris (`0x007fda00`, `0x00800a30`, `0x00c79c88=1.0f`, `0x00cf39d8=256.0`) | megerősített |
+| Lapozási animáció: 2,0 mp-es rekordidő (`0x00cf3a48=2.0f`), lépésenkénti 0.95-ös sebességcsillapítás | bináris (`0x007fd0c0`, `0x007fc010`, `0x00cf40b0=0.95`) | megerősített |
+| Megállási fókusz: a 0.666-hoz legközelebbi kártya kiválasztása | bináris (`0x007fd8c0`, `0x00cf4860=0.666`) | megerősített |
+| Diavetítési léptetés: `[this+0x520]` QPC időzítő, automatikus léptetés `0x00802630` | bináris (`0x00802060`, `0x009a51b0`) | megerősített |
+
+**A két független út:**
+- **A út (bináris utasításolvasat):** A `Picasa3.exe` gépi kódjának diszasszemblye capstone-nal (`0x007fb210`, `0x007fe540`, `0x007ffc90`, `0x007fde80`, `0x007fda80`, `0x007fd0c0`, `0x007fc010`, `0x00802060`) és a PE adatszekciójából kiolvasott pontos lebegőpontos konstansok (`0x00c79c88` = 1.0, `0x00cf39d8` = 256.0, `0x00cf3a48` = 2.0, `0x00cf40b0` = 0.95, `0x00cf4860` = 0.666).
+- **B út (független erőforrás- és dekompiláció-vizsgálat):** A `respack.yt` fájl rétegindexének és fejléceinek közvetlen dekódolása (`tools/picasa/respack.py`), amely bizonyítja az `overlays/` rétegek pontos méreteit és a külön állapotképek teljes hiányát; valamint a Ghidra-dekompilátumok (`2026-10-21-koteg-1021c.txt`, `2026-10-21-idorend-12.txt`, `2026-10-20-idorend-5.txt`, `2026-11-05-idorend-6532-retegek.txt`) és a korábbi Colab videómérések (job-373, job-446). A két út maradéktalanul egyezik.
+
+**Cáfoló kísérletek:**
+1. *Gombállapotok cáfolata:* Megpróbáltam cáfolni azt az állítást, hogy a gomboknak nincs külön lenyomott vagy lebegő állapotképe. A `0x007fe540` és a `0x007fda80` részletes kódjában nincs gombonkénti állapotváltó kép vagy elmozdulás; a `respack.yt` rétegjegyzéke kizárja az ilyen nevű rétegek létezését. Az egyetlen interaktív vizuális visszajelzés a kurzor átváltása `overlays/rollovermouse`-ra (`0x007ffee9`).
+2. *Rétegsorrend cáfolata:* Megpróbáltam cáfolni a rétegek egymásra rajzolását, feltételezve, hogy a vezérlősáv különálló UI elemként nem része a fő rajzolóhuroknak. A `0x00800a30` és `0x007ffc90` kódja ezt cáfolta: minden elem egyetlen szoftveres pufferbe rajzolódik szigorú sorrendben (háttér -> szöveg/pontok -> kártyák -> skála -> gombok -> kurzor), és a végén a `0x007fe470` egyszerre blitteli a képernyőre.
+3. *Animációs időtartam cáfolata:* Megpróbáltam cáfolni a lapozás 2,0 mp-es rekordidejét az 1,4 másodperces videómérés alapján. A bináris utasításai cáfolták az 1,4 másodperces beégetett értéket: a bejegyzett időtartam 2,0 mp (`0x00cf3a48`), de a `0x007fc010` minden híváskor `0.95`-tel csökkenti a sebességet (`0x00cf40b0`), így a látható mozgás exponenciálisan lecseng már 1,4 mp körül.
+
+##### §5 Összevetés a PicasaPy-jal és teendők
+
+| Eredeti (bináris és respack) | PicasaPy (QML) | Teendő |
+|---|---|---|
+| A négy gomb egyetlen statikus kép (`overlays/left`, `overlays/right`, `overlays/exit`, `overlays/startbutton`). Nincs hover/pressed kép. | `TimelinePanel.qml:424-570`: QML `Button` elemek, Canvas rajzolta ikonok, és `timelineExitButton.down ? ... : ...` stílusú pressed háttérszín-váltás. | Cseréld le a Canvas ikonokat és a szintetikus gombháttereket a natív `overlays/*` képekre. Szüntesd meg a lenyomott/lebegő gombszínezést. |
+| A lebegést az egérmutató váltása jelzi: `overlays/mouse` (12×19) -> `overlays/rollovermouse` (15×18), ha a 4 gomb bármelyike felett áll. | Nincs egyedi kurzorváltás az overlay gombok felett (alapértelmezett rendszerkurzor látható). | A gombok fölé érve válts az `overlays/rollovermouse` kurzorképre (vagy `Qt.PointingHandCursor`-ra). |
+| A vezérlősáv sötét háttere a háttérképbe ágyazott `overlays/overlay` keret része, nem külön sáv. | `TimelinePanel.qml:400-422`: Külön `Rectangle` (`timelineControlBar`) mesterséges színátmenettel (`GradientStop`). | A vezérlősáv téglalapja helyett az `overlays/overlay` keretet használd, a gombokat és a skálát e fölé rétegezd. |
+| Rétegsorrend: Háttér (`+0x46c`) -> Feliratok és vezetőpontok (`0x007fee70`) -> Fotókártyák (`0x007fd180`) -> Skálatengely (`+0x6c0`) -> Pontok (`+0x6e8`) -> Csúszka (`+0x710`) -> 4 Gomb (`+0x530..+0x738`) -> Kurzor (`+0x5a8/+0x5d0`). | `TimelinePanel.qml`: A rétegek sorrendje részben eltér; a csúszka és a gombok nincsenek szigorúan a kártyák és a skála fölé zárolva. | Biztosítsd a fenti 9 lépéses szigorú Z-sorrendet a QML elemek egymásutániságával. |
+| Nyitó animáció: pontosan 1,0 másodperces progressz-korlát (`0x00c79c88`), a feliratok és skála 0..100%-ra, a segédrétegek 0..39%-ra futnak be. | `TimelineView.qml`: nincs nyitó progressz-skála, a panel azonnal láthatóvá válik. | Vezess be egy 1,0 másodperces nyitó progressz átmenetet a feliratok és a skála beúszásához. |
+| Lapozási mozgás: 2,0 mp-es rekordidő (`0x00cf3a48`), képkockánként 0.95-ös sebességcsillapítás (`0x00cf40b0`), a megállási fókusz a 0.666-os Bézier-pont (`0x00cf4860`). | `TimelineView.qml:45,82-100`: `backgroundFadeDurationMs: 1400`, tetszőleges sebesség és időzítő. | Alkalmazd a bináris 2,0 mp-es bázisidejét és a 0.95-ös csillapítási képletét a kártyamozgatásra, és a 0.666 fókuszválasztást a gyűjteményváltáshoz. |
+
+**A #6532 „Kész, ha” pontjainak állása ebből a vizsgálatból:**
+- ✅ **A gombképek és állapotaik**: bináris címekkel és erőforrás-azonosítókkal igazolva (megerősített).
+- ✅ **A fedőréteg rétegei és rajzolási sorrendje**: a teljes 10 lépéses rajzolási sorrend bináris címekkel igazolva (megerősített).
+- ✅ **Az animációs képkockahatárok**: a nyitó animáció (1,0 mp), a lapozási animáció (2,0 mp, 0.95 csillapítás) és az automatikus diavetítés eseményei és határai bináris címekkel és konstansokkal igazolva (megerősített).
+- ⛔ A teljes jegy lezárásához a videofelvétel integrációja és a párhuzamos billentyű-ág lezárása szükséges.
+
+#### §38.2.160 Zárókör: Ctrl+Space, első dia, betöltésjelző és visszatérés (#6532, 2026-11-13)
+
+**Hatókör.** A §38.2.127 négy nyitott pontját vizsgálja: a Ctrl+Space `[this+0x3ba]` jelzőjének olvasóit és képi hatását; a Space vetítés első elemét; a `ytProgress` fogadó látható UI-útját; valamint a nem job-239 út utáni szülőnézet-kijelölést. A kártyaképek belső forrása és a `0x007fe600` nincs vizsgálva. Új videó nem készült. A korábbi job-240 és job-241 megfigyelés csak a már dokumentált mérésekből vehető át: a mostani `meroadat.tar` nem tartalmazza e feladatok nyers képkockáit, ezért itt nem állítok friss újramérést.
+
+##### 1. Ctrl+Space: a jelző rajzolási hatása
+
+**Bináris út.** A teljes `.text` pásztázása a `paszta.py`-val, első műveletként `paszta.memoria_kapu()` hívással, majd az összes x86 általános regiszterbázissal végezve a qshow `[this+0x3ba]` mezőjének íróit és olvasóit azonosította. A `0x007fad15` konstruktorútból írja, a `0x007fda54` visszaállítja; a Ctrl+Space kezelő `0x00801270` a `0x008012fb` címen 1-et ír. A `0x00800a30` rajzoló a `0x00800b60` és `0x00800be5` olvasóknál a jelzőtől függő ágat vesz. Aktív állapotban a `0x00aa6f40` után a `[this+0x3c4]` képobjektumot a `0x008001c0` rajzolónak adja át a teljes qshow rajzterületre; a rajzoló `+0x474/+0x478` méretmezőket használ. A `0x00801f50` frissítési út szintén ellenőrzi a jelzőt és a `+0x3c4` képet. A `0x00801130` a jelző aktív állapotában kihagy egy segédhívást (`0x0080115e`). A `0x006d911c` találat más osztályhoz, `CPVRenderer`-hez tartozik, nem qshow-mező.
+
+**Független kezelőazonosítás.** A qshow `QDrawable` vtable `+0x30` eseményhelye a `0x00801270` billentyűkezelőre mutat, a `+0x40` rajzolóhely pedig a `0x00800a30`-ra (`0x00cbd66c`). Ez külön út a közvetlen billentyű- és rajzolóutasítások olvasatától.
+
+**PicasaPy-összevetés.** A `TimelineView.qml:393-406` csak az esemény `key` értékét vizsgálja, a módosítókat nem, ezért Ctrl+Space-re a Space-hez hasonlóan a `startCurrentSlideshow()` fut. Ez eltér az eredeti külön, a `+0x3c4` képet a rajzterületre tevő ágtól.
+
+**Következtetés.** A látható művelet binárisból megvan: külön képi objektum kerül a teljes qshow rajzterületre, nem a normál Space vetítés indul. A `+0x3c4` képobjektum tényleges forrása és képtartalma **NINCS MEG**; ezért nem állítom, hogy melyik fotót vagy képet látja a felhasználó.
+
+##### 2. Space: az első vetített elem
+
+**Bináris út.** A `0x00801270` Space-ág a `[this+0x3bb]` állapotától függően a `0x00801130` váltóhoz vagy a `0x00803110` OneUp/host objektumváltóhoz jut. A `0x00803110` meglévő Ghidra-kimenete mutatja az aktív OneUp objektum és a host cseréjét, de nem ad át explicit fotóindexet vagy rekordazonosítót; az első fotó rekordja ebből önmagában nem állapítható meg.
+
+**Mérés és PicasaPy-összevetés.** A korábbi job-240 felvétel dokumentált képkockáján a `2019_marcius` gyűjtemény `1/7` képe látszott, `2019-03-08 09:15` dátumfelirattal (§38.2.82). Ez a gyűjtemény első eleme. A PicasaPy a fókuszált gyűjtemény modelljét adja át, és a 0. indexről indítja a vetítést (`MainTimeline.qml:106-125`). Az első elem szintjén tehát egyezik a két út. A konkrét fájlnév PicasaPy-beli azonosítása és az eredeti OneUp objektum által kapott rekordcím bináris visszakövetése **NINCS MEG**.
+
+##### 3. Betöltésjelző: `ytProgress` fogadó
+
+**Bináris hívási út.** A `0x005e8a70` Időrend-belépő `0x005e9476` útja a `Preparing timeline...` szöveget készíti elő, majd a `CThumbUI+0x278` fogadót adja a `0x00415500` konstruktor-segédnek. A `ytProgress` `0x00415500`-ban inicializálódik, frissítője a `0x00415380`; a folyamatjelző objektum a fogadó `+0x14` metódusát hívja a szöveggel, majd a feldolgozás végén a `+0x0c` metódust.
+
+**A fogadó két független azonosítása.** A CThumbUI konstruktor (`0x005643e0`) a beágyazott `+0x278` fogadóra állítja a CThumbUI vtable-t (`0x00c90694`). Az RTTI/vtable módsor a `+0x14` slotot a `0x00566630`-hoz, a `+0x0c` slotot a `0x00566320`-hoz rendeli; ez egybevág a `ytProgress` virtuális hívásaival. A `0x00566630` a `modalprogress/escmessage` szövegobjektumán a `Press ESC key on keyboard to abort` szöveget állít be (az Időrend-hívás 1 argumentummal jut ide; más esetben `Please wait`). A `0x00566320` a `DAT_00d67914 != 0` feltétel mellett a `thumbui/modalprogressfloater` és `thumbui/progressbarfill` elemeket kéri le, azok `+0x68` virtuális metódusait hívja, majd a folyamatjelző állapotát frissíti.
+
+**PicasaPy-összevetés és határ.** A PicasaPy Timeline megnyitó QML útja (`MainTimeline.qml:96-104`, `TimelineView.qml:319-324`) nem tartalmaz folyamatjelzőt. Az eredeti binárisban azonosított felületi cél a modális lebegő ablak, a folyamatjelző sáv és az ESC-üzenet, de a rajzoló kódot a `DAT_00d67914` kapu feltételesíti; annak Időrend-futás alatti értéke és egy ténylegesen látható képkocka **NINCS MEG**. Így az eltérés lehetséges, nem bizonyított futásidejű eltérés.
+
+##### 4. Nem job-239 visszatérés: szülőnézet és kijelölés
+
+**Bináris út.** A `0x007fb820` Escape útja a qshow `ytWindow` gazdaablakának `0x00983270` callbackjáig jut; a normál állapotban az saját HWND-re `WM_CLOSE` üzenetet küld. Ez a statikus út ablakbezárást igazol, de nem nevezi meg a bezárás után kijelölt mappát vagy képet.
+
+**Mérés és PicasaPy-összevetés.** A korábban dokumentált job-241-ben a közvetlen qshow-belépés után három Right következett; Escape után a `2021_eltero_fajlido` mappa és annak első képe, `2021_eltero_fajlido_01.jpg` volt kijelölve (§38.2.83). A PicasaPy záróútja a fókuszált gyűjteményt és annak első fotóját nyitja meg (`MainTimeline.qml:77-94`), tehát e mért út eredménye egyezik. A job-239 belépés előtti `PicasaTeszt` mappájába tért vissza (§38.2.81); a különböző belépési állapotok eredménye nem ad általános visszaállítási szabályt. A job-241 állítás itt a korábbi dokumentált videómérésen alapul; a nyers felvétel a jelenlegi mérőadat-archívumból hiányzik.
+
+##### 5. Bizonyítékok, független utak és cáfoló kísérlet
+
+| Érték / állítás | Forrás | Fok |
+|---|---|---|
+| A Ctrl+Space a `+0x3ba` jelzőt 1-re írja; a qshow rajzolója a jelző aktív állapotában a `+0x3c4` képet a teljes rajzterületre adja. | bináris (`0x00801270`, `0x008012fb`, `0x00800a30`, `0x00800b60`, `0x00800be5`, `0x008001c0`) | megerősített a vezérlő-/rajzolóút tekintetében; képforrás NINCS MEG |
+| A Space út első látható eleme a mért `2019_marcius` csoport `1/7` képe, dátuma `2019-03-08 09:15`. | mérés (korábban dokumentált job-240, §38.2.82; a nyers képkocka ebben a munkamenetben nem volt elérhető) | feltételes |
+| A PicasaPy a fókuszált gyűjtemény 0. elemével indít. | PicasaPy-forrás (`MainTimeline.qml:106-125`) | megerősített forrásolvasat |
+| Az Időrend `ytProgress` fogadó `+0x14` célja az ESC-üzenetet állítja, a `+0x0c` célja a modális lebegő ablak és folyamatjelző sáv erőforrásait kezeli a `DAT_00d67914` kapu mellett. | bináris (`0x005e8a70`, `0x00415500`, `0x00415380`, `0x005643e0`, `0x00566630`, `0x00566320`, `0x00c90694`) | feltételes a futásidejű láthatóságra |
+| A job-241 Escape után a `2021_eltero_fajlido` mappa és első képe maradt kijelölve. | mérés (korábban dokumentált job-241, §38.2.83; a nyers felvétel ebben a munkamenetben nem volt elérhető) | feltételes |
+| A PicasaPy a fókuszált gyűjteményt és annak első képét nyitja meg visszatéréskor. | PicasaPy-forrás (`MainTimeline.qml:77-94`) | megerősített forrásolvasat |
+
+**A két független út.**
+
+- **Ctrl+Space:** A út a teljes mezőhivatkozás-pásztázás és a `0x00801270`/`0x00800a30` diszasszembly; B út a `QDrawable` vtable `+0x30`/`+0x40` slotja, amely a billentyűkezelőt és a képkockarajzolót külön azonosítja. Egyeznek: a Ctrl+Space által állított jelzőt a qshow kirajzoló olvassa, és rajzolóágat vezérel. A kép forrását egyik út sem azonosítja.
+- **Space:** A út a billentyűkezelő és a `0x00803110` meglévő Ghidra-kimenete; ez az objektumcserét azonosítja, de a fotóindexet nem. B út a job-240 dokumentált videóképkockája (`1/7`, `2019-03-08 09:15`), amely a fókuszgyűjtemény első képét mutatja. A mérés választ ad az adott feladatra, de a két út nem igazolja egymást az átadott rekord kérdésében; ezért az eredeti rekordazonosítás **feltételes/nyitott**. A PicasaPy 0. indexe ugyanilyen sorszintű kezdést valósít meg.
+- **Betöltésjelző:** A út a `ytProgress` virtuális hívási lánca; B út a CThumbUI konstruktor, vtable/RTTI és a célfüggvényekben használt erőforrás-nevek. Egyeznek a fogadó, az ESC-üzenet, a modális lebegő ablak és a folyamatjelző sáv azonosításában. A tényleges látható képkockát a globális kapu miatt egyik út sem igazolja.
+- **Visszatérés:** A út a `0x007fb820` statikus bezáró callbackja; B út a job-241 felvétel dokumentált kijelölése. A bináris út nem dönti el a szülő kijelölést; a mért út a PicasaPy záróforrásával egyezik, de ez nem független bináris bizonyíték a Picasa eredményére, és csak a job-241 belépési állapotra érvényes.
+
+**Cáfoló kísérlet (módszertan 15.2).** Először azt próbáltam cáfolni, hogy a `+0x3ba` csak nem látható belső jelző. A teljes `.text` pásztázást újrafuttattam `eax/ebx/ecx/edx/esi/edi/ebp/esp` bázisokkal, mert az első keresőminta kihagyta az EBP-t; az így kapott összes qshow-olvasó között ott van a `0x00800a30` rajzolási feltétele, és az út a `0x008001c0` képkirajzolóig ér. A külön vtable-slot ellenőrzés a `0x00800a30`-at render-metódusként igazolja, tehát a cáfoló eredménye ugyanazzal a kétutas mércével ellenőrzött. Másodszor azt próbáltam cáfolni, hogy a progress callback csak könyvelést végez: a `+0x14` cél ESC-feliratot, a `+0x0c` cél UI-erőforrásokat kezel. Ez cáfolja a „csak számláló” feltevést, de a kapu miatt nem bizonyítja a képernyőn ténylegesen megjelent képkockát.
+
+**A §38.2.127 szerinti 14 A pont állása.** A korábbi 13 nyitott A pontból e körben csak a Ctrl+Space rajzolóágat zárja le két független, egyező bináris út. A job-240 első diáját mérő felvétel és a job-241 visszatérés mért eredményt ad, de az adott eredményhez nincs második, független eredeti-Picasa út; ezek feltételesek. A `ytProgress` futásidejű láthatósága is nyitott. Így **12 A pont marad nyitva a 14-ből**; ez a teljes #6532-t nem zárja le.
+
+##### 6. Nyitott
+
+- A `[this+0x3c4]` képobjektum forrása/tartalma: **NINCS MEG**; további lépésként a `0x007fa855` konstruktor és a `0x007fee06`/`0x00800a30` használati út adatbetöltőjét kell követni, kártyakép- és `0x007fe600` vizsgálat nélkül.
+- A Space által ténylegesen az OneUp objektumnak átadott fotórekord/fájlazonosító: **NINCS MEG**. Ha ezt a bináris kézfogást kell bizonyítani, Ghidra-kör kell: `0x00803110` - mely rekordot/indexet teszi az aktív OneUp képforrásává az objektumcsere előtt? A meglévő Ghidra-kimenet az objektumcserét mutatja, a rekordazonosítót nem. [blokkoló]
+- A `DAT_00d67914` értéke az Időrend-betöltés alatt, és a floater tényleges megjelenése: **NINCS MEG**; Colab-videón kell mérni a betöltés fázisát és az ablakban látható jelzőt.
+- A job-241-től eltérő belépési nézetek általános visszaállítási szabálya: **NINCS MEG**; külön, megnevezett mappából és fotóból belépő mérés szükséges.
+
+**A #6532 „Kész, ha” pontjai ebből a körből:**
+
+- ⛔ Teljes eredeti Picasa Időrend-videó a belépéssel, lapozással, gyűjteményváltással, kártyákkal, billentyűkkel és kilépéssel: itt nem készült, a korábbi részfelvételek teljes lefedettsége nincs igazolva.
+- ⛔ Minden megvalósítandó pont bináris címmel igazolva: a jelen négy kérdésből a Space-rekord pontos azonosítása, a progressz futásidejű láthatósága, a `+0x3c4` képtartalma és az általános visszatérési szabály nyitott; a teljes 14 A pontból 12 nyitott.
+- ✅ Megvalósítási jegy: az előzmény #6713-at nevezi meg; GitHubot ebben a körben nem ellenőriztem.
+- ⛔ Összehasonlító videó vagy képsor a kiadáshoz: nem készült.
+
+
+#### 38.2.180 A `0x007fe600` kártyamozgás-képlete: második út QEMU-val (#6532, 2026-11-13)
+
+**Hatókör és módszer.** A 38.2.150 §3 a `0x007fe600` mozgásképletét csak utasításolvasattal (A út) vezette le, ezért feltételesnek hagyta. Ez a kör a B utat adja: az eredeti `Picasa3.exe` (3.9.141.259) gépi kódját `qemu-i386` alatt futtattam a privát repó `qemu_harness/hb.py` helyi másolatával. A `0x007fe600`, az időlépést adó `0x009a51b0` és a `_rand` (`0x00c08221`) valódi kódja fut; kézzel épített elem: a `this` (`esi`), a `[this+0x2ec]` rekordtömb (0xf8 bájtos rekordok, a `+0xcc`, `+0xd0`, `+0xd4`, `+0xd8` mezőkkel) és a `[this+0x2f0]` számláló. Helyettesítettem a `QueryPerformanceCounter` (`0xc40298`) és a `QueryPerformanceFrequency` (`0xc404a0`) importot (vezérelt teljesítményszámláló-érték és gyakoriság), valamint a `__getptd` (`0x00bf0583`) függvényt (hamis szálblokk, `+0x14` a `_rand` állapota). Az FPU vezérlőszó `0x27f` (53 bites pontosság), kivéve a §4 külön mérését. A mérés minden esetben a függvény teljes futása a belépéstől a `ret`-ig, nem a közepéről indított szakasz. Az ideiglenes fájlok a munkafa `.bt/` mappájában voltak, a kör végén törölve. A kimenetet a 38.2.150 §3 képletéből írt Python-modellel vetettem össze, bitre (f32 tárolás, f64 számítás).
+
+**Rövid eredmény.**
+
+1. **A képlet igazolt, két úton.** Három ismert bemenetre (egy rekord, három rekord körbefordulással, nagy időlépés), öt számlálóesetre és két hosszú pályára (6 rekord x 200 képkocka, 12 rekord x 300 képkocka, együtt 19 200 érték) az eredeti gépi kód kimenete **minden értékben bitre egyezik** az A úton levezetett képlettel, a `_rand` utána hagyott állapota és a bélyeg is. A 38.2.150 §3 feltételes bekezdése ezzel megerősített.
+2. **Három pontosítás az A úthoz,** mindhárom a futtatásból és az újraolvasásból jön: (a) a `T` és a `T * v` szorzatok, valamint az összegek f32-be kerekednek (`0x007fe616`, `0x007fe65a`, `0x007fe668`, `0x007fe676`, `0x007fe68e`); (b) a körbefordítás **egyetlen** hozzáadás vagy levonás tengelyenként, nem ciklus, és a tartomány zárt: 0 és 1 maga marad; (c) a pozíció a **régi** sebességgel lép, a sebesség csak utána kap véletlen járást.
+3. **A `[this+0x528]` kezdőértékét a konstruktor írja** (`0x007fa7f0`, `0x007faa31`-`0x007faa41`): egy `QueryPerformanceCounter`-hívás értéke, f64-ként. A 38.2.27 "NINCS MEG"-je ezzel lezárt. Következmény: az első `0x007fe600`-hívás időlépése a qshow létrehozása óta eltelt idő, mert a függvény csak a `Ctrl+F` vagy `Ctrl+B` után fut (38.2.150 §2).
+4. **PicasaPy-val összevetve: eltér, de nem felhasználói eltérés.** A PicasaPy-ban nincs kártyánkénti helyzet- és sebességlépés, és nincs `Ctrl+F`/`Ctrl+B` sem. Megvalósítást nem javaslok (§5).
+
+##### §1 A képlet, két úton
+
+| Állítás | A út (utasításolvasat) | B út (QEMU, valódi kód) |
+|---|---|---|
+| Az időlépés: `T = f32((QPC_most - [this+0x528]) * (1 / QPF))`, másodpercben | `0x009a51b0`: a `QueryPerformanceCounter` értékét f64-be vált (`0x009a51bd`-`0x009a51c0`); ha `[0xd678e8] == 0`, a `QueryPerformanceFrequency` reciprokát számolja és eltárolja (`0x009a51d7`-`0x009a51ec`); `(most - [bélyeg]) * c` (`0x009a51f2`-`0x009a51fc`); a hívó f32-be tárolja (`0x007fe616`) | A valódi `0x009a51b0` futott, három gyakorisággal (3 579 545, 10 000 000 és 1 000 000 ütem/s) és vezérelt teljesítményszámlálóval: az időlépés f32-ben bitre egyezik a képlettel (B1: 0,0166666433; B2: 0,100000001; B3: 1,70000005) |
+| A rekordok száma `n = [this+0x2f0] >> 1`; `n == 0` esetén a bélyeg akkor is frissül | `0x007fe61c` `test [esi+0x2f0], 0xfffffffe`, `jbe 0x7fe7a5`; ciklusszámláló `0x007fe78f`-`0x007fe799`; a bélyeg tárolása `0x007fe7aa`-`0x007fe7b6` a ciklus után, a kapu ugrása is ide érkezik | Számláló 0, 1, 2, 3, 5: rekordszám 0, 0, 1, 1, 2; a többi rekord érintetlen; a `_rand` állapota 0 és 1 számlálónál változatlan, 2 és 3 esetén két, 5 esetén négy hívással lép; a bélyeg mind az öt esetben az új mérőállás |
+| Pozíció: `x = f32(x + f32(T * vx))`, `y = f32(y + f32(T * vy))`, a **régi** sebességgel | `0x007fe650`-`0x007fe696`: a szorzatok `0x007fe65a`-ba és `0x007fe668`-ba f32-ként tárolódnak, az összegek `0x007fe676`-ba és `0x007fe68e`-be, majd a rekordba | B1: `x = 0,501666665` (0,5 + 0,0166666433 * 0,1), `y = 0,499166667`; a sebesség az új értékével (`0,0995012522`) csak a lépés után látszik |
+| Körbefordítás tengelyenként legfeljebb egyszer: `x < 0`: `+1`; `y < 0`: `+1`; `x > 1`: `-1`; `y > 1`: `-1`; a 0 és az 1 maga marad | `0x007fe69e`-`0x007fe6fc`: `fcom` a 0-val (`jp` átugorja a hozzáadást, ha nem kisebb), majd az 1-gyel (`jp` átugorja a levonást, ha nem nagyobb); a négy `jp`: `0x007fe6a5`, `0x007fe6bc`, `0x007fe6d9`, `0x007fe6f4` | B2: `0,99 + 0,05 = 1,04 -> 0,04`; `0,01 - 0,03 = -0,02 -> 0,98`; a `(1,0; 0,0)` rekord helyben marad. B3: `0,2 - 1,53 = -1,33 -> -0,33` és `0,9 + 1,36 = 2,26 -> 1,26`, vagyis egyszeri korrekció után is a tartományon kívül marad |
+| Véletlen járás: `vx += u1 * 0,001 - 0,0005`, majd `vy += u2 * 0,001 - 0,0005`, `u = r / 32768`, rekordonként ebben a sorrendben; f32-ben tárolva | `0x007fe713`-`0x007fe78d`: `_rand`, `(r + 0x3f8000) << 8` mint f32, `- 1,0` (`0xc7e328`), `* 0,001` (`0xcf3db0`), `- 0,0005` (`0xcf4858`), `+ [rekord]` | A `_rand` állapota három magnál (1, `0x3039`, `0xdeadbeef`) és a hosszú pályákon bitre a modell szerint lép, rekordonként két hívással, az index szerinti sorrendben |
+
+##### §2 A három ismert bemenet és a mért kimenet
+
+A bemenet f32-ként került a rekordba. Az időlépést a teljesítményszámláló különbsége adja.
+
+| Eset | Bemenet (`x`, `y`, `vx`, `vy`) | Mag | Időlépés | Kimenet (QEMU, a modell ugyanezt adja) |
+|---|---|---:|---:|---|
+| B1 egy rekord | 0,5; 0,5; 0,1; -0,05 | 1 | 0,0166666433 (59 659 ütem, 3 579 545 ütem/s) | 0,501666665; 0,499166667; 0,0995012522; -0,0499364324; mag utána 3 357 800 067 |
+| B2 rekord 0 | 0,99; 0,01; 0,5; -0,3 | `0x3039` | 0,100000001 (1 000 000 ütem, 10 000 000 ütem/s) | 0,0399999619; 0,980000019; 0,499731451; -0,299915165 |
+| B2 rekord 1 | 0,2; 0,8; -0,9; 0,9 | | | 0,110000007; 0,889999986; -0,899712801; 0,900175154 |
+| B2 rekord 2 | 1,0; 0,0; 0,0; 0,0 | | | 1; 0; -0,000322143547; 0,000214263913; mag utána 3 681 394 607 |
+| B3 nagy időlépés | 0,2; 0,9; -0,9; 0,8 | `0xdeadbeef` | 1,70000005 (1 700 000 ütem, 1 000 000 ütem/s) | -0,329999924; 1,25999999; -0,899940372; 0,800016344; mag utána 1 108 892 897 |
+
+Minden bemenet után az x87 verem üres (az állapotszó `TOP` mezője 0, csak a pontossági jelző áll), tehát a függvény nem szivárogtat lebegőpontos veremet.
+
+##### §3 Hosszú pálya, pontosság és kezdőérték
+
+- **Hosszú pálya (B5).** 6 rekord, 200 képkocka, 3 579 545 ütem/s, ingadozó képkockaidővel (a 60 kép/mp 70-130 százaléka), magja 1: 4800 érték, mind egyezik. 12 rekord, 300 képkocka, 10 000 000 ütem/s, magja 777: 14 400 érték, mind egyezik. Minden képkockában a bélyeg és a `_rand` állapota is egyezik.
+- **A pontossági vezérlőszó (B6).** `0x27f` (53 bit) és `0x37f` (64 bit): a két futás azonos, 0 eltérő érték. `0x07f` (24 bit): a 4800 értékből 3319 különbözik, a legnagyobb eltérés 6,02e-05 az egységnégyzetben. A futó Picasa vezérlőszava nincs mérve; a képlet a `0x27f`/`0x37f` esetben bitre pontos, a `0x07f` esetben legfeljebb ennyi a szórás. Megvalósításhoz ez nem számít.
+- **A kezdőérték hiánya (B8).** Ha a bélyeg 0, és a teljesítményszámláló 1 000 000 000 000 (279 365 s időlépés), az első lépés után `x = 27 936,0137`, `y = -13 966,7568`: az egyetlen körbefordítás nem hozza vissza az egységnégyzetbe. A konstruktor `0x007faa31`-`0x007faa41` tárolása ezt zárja ki, a valódi első időlépés a qshow létrehozása óta eltelt idő. A rajzút `y`-t egy helyen lineárisan használja (`0x007fea80`-`0x007feaac`), ezért a tartományon kívüli érték látható hatása nincs mérve.
+
+##### §4 Kontroll: a mérőpad érzékeny a kódra
+
+Ha egy mérés csak zöld, az még nem mér. Ezért a kódot átírtam, és a modellel összevetettem:
+
+| Átírás | Eredeti kód | Átírt kód |
+|---|---|---|
+| `0x007fe6a5` `jp` -> `jmp` (az `x < 0` ág kiesik), bemenet `x = 0,01`, `vx = -0,5` | 4/4 érték egyezik | 3/4 egyezik, eltér |
+| `0x007fe6bc` `jp` -> `jmp` (`y < 0`), bemenet `y = 0,01`, `vy = -0,5` | 4/4 | 3/4, eltér |
+| `0x007fe6d9` `jp` -> `jmp` (`x > 1`), bemenet `x = 0,99`, `vx = 0,5` | 4/4 | 3/4, eltér |
+| `0x007fe6f4` `jp` -> `jmp` (`y > 1`), bemenet `y = 0,99`, `vy = 0,5` | 4/4 | 3/4, eltér |
+| `0xcf3db0`: 0,001 -> 0,002 | 8/8 | 4/8, eltér |
+| `0xc7e328`: 1,0 -> 0,5 | 8/8 | 6/8, eltér |
+
+Mind a hat átírás eltérést ad, tehát a mérőpad látja a kódot, és a négy körbefordító ág mindegyikét a megfelelő bemenet ténylegesen érinti. (Az első kísérletemben két ágat olyan bemenettel írtam át, amely az ágat nem érintette; az a két sor nem bizonyított semmit, és kikerült a fenti táblából.)
+
+##### §5 Összevetés a PicasaPy-val és megvalósítási javaslat
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A `0x007fe600` a rekordok helyzetét (`[0, 1]` tórusz) és sebességét képkockánként lépteti, véletlen járással; csak `Ctrl+F` vagy `Ctrl+B` után fut (38.2.150 §2). | `timeline_motion.py` (423 sor) nem tartalmaz kártyánkénti helyzet- és sebességlépést; a `card_stack_offset` (`timeline_motion.py:100-131`) statikus, indexmagos eltolás, a `TimelinePanel.qml:250-260` ezt írja a kártyaköteg `x`, `y` mezőjébe. A panelben nincs időzítő vagy animáció; a `TimelineView.qml:333` 16 ms-os időzítője a lapozó pályát és a háttér átúszását hajtja, nem a kártyák sodródását. A `TimelineView.qml:393-406` csak az Escape, jobbra, balra és Space billentyűt kezeli. | **Eltér, de nincs felhasználói következménye:** a PicasaPy-ban a rejtett mód nincs meg, az alap Időrendben pedig az eredeti sem mozgat semmit. |
+
+**Javaslat (a hívónak, kódot nem módosítottam).**
+
+1. **Termékkódhoz ne nyúlj.** Az alap Időrend nem hívja a `0x007fe600`-at, a rejtett mód nem szerepel az eredeti felhasználói felületén, és a PicasaPy `card_stack_offset` statikus eltolása nem ennek a mozgásnak a megfelelője. A 38.2.150 §5 javaslata (a `timeline_motion.py:100-110` docstring téves hivatkozásának javítása) változatlanul él, ehhez ez a kör nem tesz hozzá.
+2. **Ha a tulajdonos a rejtett módot kéri,** a Qt-mentes lépés a `timeline_motion.py`-ba kerülne. Bemenet: a rekordok `(x, y, vx, vy)` f32 értékei, az `n` és a `T`. Lépés rekordonként, sorrendben: `x = f32(x + f32(T * vx))`, `y = f32(y + f32(T * vy))`; `x < 0`: `x += 1`; `y < 0`: `y += 1`; `x > 1`: `x -= 1`; `y > 1`: `y -= 1` (mindegyik legfeljebb egyszer, a 0 és az 1 maga marad); majd `vx = f32(vx + (u1 * 0,001 - 0,0005))`, `vy = f32(vy + (u2 * 0,001 - 0,0005))`, ahol `u` egyenletes `[0, 1)`. A `T` másodperc, a lépés a bélyeg frissítésével zárul, `n == 0` esetén is. Elfogadási próba: a §2 B1-B3 sorai ellenőrző értékek (a bemenet, az időlépés és a `_rand` sorozat adott). A pontos véletlen sorozat nem elvárás: a qshow a szál `_rand` állapotát folytatja (38.2.150 §1), így bitre azonos sorozat nem várható el, csak az `[-0,0005; 0,0005)` egyenletes eloszlás.
+3. **A képlet önmagában nem elég a látható viselkedéshez.** Akadály, pontosan körülhatárolva: (a) a hívás üteme (`0x00800a30` hívója: nincs meg); (b) a rajzút `(x, y)` leképezése: a `0x007fe7c0` az `x` és `y` mezőt `2π`-vel szorozza és a `0x00c29d20` függvénybe adja (`0x007fe81c`-`0x007fe863`, `0x007fea0c`-`0x007fea2f`); a QEMU hét bemenettel megmutatta, hogy a `0x00c29d20` koszinusz (`cos(0) = 1`, `cos(π/2) = 0`, `cos(π) = -1`, `cos(2π) = 1`, `cos(0,628) = 0,809`, `cos(7,854) = 0`, `cos(-1,885) = -0,309`), de a rajzút többi része, köztük az `y` lineáris használata (`0x007fea80`), nem futott; (c) a `Ctrl+F` és a `Ctrl+B` külön jelentése (a kapu mindkettőre ugyanúgy nyit); (d) a valódi FPU vezérlőszó és a valódi teljesítményszámláló a futó programban. A következő irány megnevezve: a `0x007fe7c0` rajzút futtatása vagy Colab-felvétel `Ctrl+F` lenyomásával az Időrendben (nem készült).
+
+##### Nyitott kérdések mérlege
+
+Nyitott kérdések: 4 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva"
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| A `0x007fe600` mozgásképletének második útja (QEMU) | **LEZÁRVA** (§1-§4) | |
+| A `[this+0x528]` kezdőértéke | **LEZÁRVA** (a konstruktor írja, §3) | |
+| Az időlépés képlete a valódi `0x009a51b0`-val | **LEZÁRVA** (§1, három gyakorisággal) | |
+| A `0x007fe600` hívási üteme | **NYÍLT**, a rejtett mód miatt alacsony prioritás | A `0x00800a30` hívója, a periodikus hívás. |
+| A `0x007fe7c0` rajzút leképezése `(x, y)`-ból képpé | **NYÍLT**, alacsony prioritás | A rajzút futtatása; az `y` lineáris használata (`0x007fea80`-`0x007feaac`). |
+| A `Ctrl+F` és a `Ctrl+B` külön jelentése | **NYÍLT**, alacsony prioritás | A `[this+0x3bc]` és a `[this+0x3bd]` külön fogyasztóinak olvasása a `0x007fe7c0`-ban. |
+| A valódi FPU vezérlőszó és teljesítményszámláló a futó programban | **NYÍLT**, alacsony prioritás | Colab-futás naplózással; a hatás legfeljebb 6e-05 az egységnégyzetben. |
+
+##### Amit kizártam
+
+- **"A körbefordítás ciklussal visszahoz a `[0, 1]` tartományba"**: cáfolt (B3: `-0,33` és `1,26` marad; B8: `27 936` marad).
+- **"A pozíció a frissített sebességgel lép"**: cáfolt (B1, bitre).
+- **"A bélyeg csak nem üres listánál frissül"**: cáfolt (számláló 0 és 1: a bélyeg frissül, rekord és `_rand` nem).
+- **"A `[this+0x528]` kezdőértéke 0"**: cáfolt (konstruktor, `0x007faa41`).
+- **"A `0x00c29d20` szinusz"**: cáfolt (QEMU: koszinusz).
+
+##### Bizonyítottság
+
+**Megerősített:** a `0x007fe600` teljes lépésképlete (időlépés, pozíció, körbefordítás, véletlen járás, rekordszám, bélyegfrissítés) két úton: utasításolvasat és az eredeti gépi kód futtatása, 19 200 bitre egyező érték a hosszú pályákon, a hat átírásos kontroll eltérést ad. **Feltételes:** a rajzút leképezése, a hívás üteme, a `Ctrl+F`/`Ctrl+B` külön jelentése, a futó program FPU vezérlőszava és teljesítményszámlálója (a mérés vezérelt teljesítményszámlálóval és hamis szálblokkal futott, a rekordok kézzel épültek; Windows alatti futás nem volt).
+
+#### 38.2.190 Az Időrend kártyáinak forráscsoportjai és a kártyadátum írója (#6532, 2026-11-13)
+
+**Hatókör és módszer.** Két blokkoló kérdés: (1) a `0x006dc4c0` által a `0x004b8ee0` → `0x004b8470` → `0x004b29d0` láncnak átadott `CThumbUI+0x2c0` objektum (`CAlbumState`) mely sorai jutnak a qshow `+0x3a8` kártyalistájába, és milyen sorrendben; (2) melyik út írja a `0x0044f7c0` getter által olvasott dátumtömböt, és mit tárol. **A út:** a friss Ghidra-kimenet (`picasapy-agent/referencia/ghidra/2026-11-13-6845-6532-colab-decomp.txt`, az öt kért cím), a korábbi kimenetek (`2026-11-11-6532-colab-decomp-3/-5/-9/-10.txt`) és utasításszintű olvasat (`pe_dis.py`, `picasa_dis.py`); két teljes `.text` pásztázás a `paszta.py` kapujával (`+0x162` bájtra író utasítás, `+0xd8` dword-írás; csúcs 42 MiB). **B út:** az eredeti Picasa saját adata (`research/testdata`: három katalógus `db3` mappája, `albumdata`, `catdata`, `thumbindex.db`) a PicasaPy `pmpimport` olvasóival, és a job-239 felvétel dokumentált tényei (38.2.81). Becsült értéket nem használtam.
+
+##### §1 A lánc: mi jut át a `+0x2c0` objektumból a kártyalistáig (A út)
+
+1. **Átadás.** `0x006dc626`-`0x006dc62c`: `EAX = [EBP+0x2c0]`, hívás: `0x004b8ee0`. A `0x006dc4c0` (az első paraméter a `CThumbUI`, 38.2.108) hívói közt van a `0x004afcb0` (`0x004afd3c`; ez előbb a `0x004aae90`-et hívja, `0x004afd1a`) és a `0x004b07c0` (`0x004b0803`), tehát a lista a főablak minden állapotváltozásakor újraépül.
+2. **Sorok.** A `CAlbumState` `+0x138` mutatójú, `0x24` bájtos sorai az albumtábla sorai: ugyanaz a sorszám megy a `CThumbDB` oszlopolvasóinak (`+0x14` fájlnév, `+0x18` név, `+0x20` dátum, `+0x28` token; a kategóriát a `0x0044ddd0` adja). Az oszlop-objektumok a `CThumbDB`-ben: `token +0xaf0`, `name +0xb50`, `filename +0xbb0`, `date +0xc10`, `category +0xc78` (konstruktor: `0x004158ee`-`0x00415999`, a kulcsszövegek `0x00c80d68`, `0x00c7fa20`, `0x00c80d70`, `0x00c80d7c`, `0x00c80d84`); az albumtábla az `+0x988`, a kategóriatábla (`catdata`) a `+0x760` címen (`0x00415866`, `0x004158c9`). A virtuális albumokat a `0x004abe70` hozza létre (`0x004ad220` hívásai: `]star`, `]screensaver`, `]updated`, `]history:email`, `]history:upload`); a `0x004ad220` alapértelmezett kategórianeve a `Labels` (`0x004ad286`, sztring `0x00c7ec5c`).
+3. **Sorszámlista.** `0x004b8ee0` minden sort, amelynek `+0x0c` állapota nem nulla, felvesz a `+0x148` sorszámlistába, majd a `0x004baaa0` rendezi (`0x004a7890` összehasonlítóval), és hívja a `0x004b8470`-et (`0x004b9192`).
+4. **Rekordlista.** `0x004b8470` üríti a `+0x158` listát, hívja a `0x004b80d0`-t (társgazda- és nyilvános gazda-rekordok, 2-es és 9-es típus), majd sorszámonként a `0x004b29d0`-t, ha a `+0x9d` (`folderview`, 38.2.108) nulla, vagy a `0x004461a0` igaz (`0x004b85a0`-`0x004b85c8`); a fa nézetben (`+0x9d` nem nulla) a mappákat a `0x004b6190` hozza (5-ös, 8-as, 2-es típus, 38.2.112), ezek nem kártyák.
+5. **A kártyarekord.** `0x004b29d0`: a sor `+0x0c` állapota 2 kell legyen, különben nincs rekord (`0x004b2a1a`, 38.2.110). Ezután a kategória a `0x0044ddd0`-val (`0x004b2a11`); kategóriaváltáskor fejlécrekord (`0x004b2e10`, 3-as típus, `0x004b2a29`-`0x004b2a40`); ha a környezetrekord `+0x00` mezője egyenlő a sor kategóriájával, a sor kimarad (`0x004b2a49`-`0x004b2a4c`); különben a `0x004a0720(1, sor, 0, ...)` hívás az 1-es típusú rekordot adja (`0x004b2aa3`-`0x004b2ab4`).
+6. **A kártyalista.** A qshow `0x007fc7c0` csak az `+0x30 == 1` és `+0x18 == 0` rekordokból vesz sort (38.2.110); az 1-es típusú, nulla `+0x18`-as rekord egyedül a `0x004b29d0`-ból jön (38.2.112), tehát **minden `0x004b29d0`-rekord kártya**. A dátumot a sorszámhoz a `0x0044f7c0` adja (`IThumbDB +0x20`), a kártyarekord tartalmát a `0x004ae430` és a `0x007fa5b0` állítja elő; a `0xf8` bájtos kártyák a qshow `+0x3a8` listájába kerülnek (a függvényben `+0xb0`/`+0xb4`).
+
+##### §2 Mely sorok jutnak 2-es állapotba (az `+0x0c` állapotgép)
+
+Az állapot írója a `0x004ab520`; átmenetek: `0x004a8bb0` (1 → 3, 2 → 4), `0x004a8bf0` (3 → 1, 4 → 2). A 0 → 1 lépést a `0x004aa9f0` adja, az 1 → 2 lépést a `0x004aae90` (a `0x004b0190` nézetlekérés sikere esetén; Ghidra: `2026-11-11-6532-colab-decomp-10.txt`). A sorrekord mezői, amelyek a döntésben részt vesznek:
+
+| mező | érték és forrás |
+|---|---|
+| `+0x1a` érvényes | első kiértékelésnél a név (`IThumbDB +0x18`, `name` oszlop) nem üres és nem `root` (`0x004aab27`-`0x004aabaa`, a `root` sztring `0x00c817d4`); különben állapot 0 és a sor végleg kimarad |
+| `+0x18` album | a fájlnév üres (`0x004461a0`, `IThumbDB +0x14`) |
+| `+0x00` virtuális | a token nem üres, és nem `]album:`-nal (`0x00c811c4`) és nem `]facealbum:`-nal (`0x00c83408`) kezdődik (`0x004aca00`; az előtag-összehasonlító `0x00987030`) |
+| `+0x19` | a `0x004aa9f0` elején nullázza (`0x004aaa46`) |
+
+Döntés (`0x004aac38`-`0x004aae67`; a `CAlbumState` `+0x162` és `+0x310` jelzője nulla, vagyis nincs keresés):
+
+- **Felhasználói album** (album, nem virtuális): 2-es állapotba jut, ha a nézetlekérés sikeres (a tagsági listák megvannak); az elemszám nem számít, az üres album is 2-es állapotot kap (`0x004aae90`: üres tagságnál `+0x14 = 1`, állapot 2). A `+0x162` vagy a `+0x310` bekapcsolt állapotában az album a mappa szabályát követi (`0x004aac7a`-`0x004aac96`: a `+0x15` jelző nullázódik).
+- **Mappa és virtuális album:** a tagság elemszáma nagyobb nulla, a dátum nem nulla (nulla dátumnál a `0x00441ac0` automatikus dátumot próbál adni, `0x004aadc9`, 3. szakasz), és a `0x004afd60` nulla értéket ad (nem üres elemlista és jelzőtömb; a `+0x167` jelzőnél legalább egy tagnak 1 jelzőbájtja kell; a `+0x167` jelentése nincs meg). Ez a feltétel a gyakorlatban a nem üres tagságra szűkül.
+- **Sor a kategóriája miatt kimarad** (§1/5), ha a kategória lecsukott: a `0x004b2e10` a `0x004b3443`-`0x004b3469` címeken a környezetrekord `+0x00` mezőjét -1-re állítja (látható), ha a `catdata` `state` bájtja nem nulla (`0x004b3211`-`0x004b3226`: `0x006a5e60(CThumbDB+0x760, "state", kategória)`; sztring `0x00c817f0`) és a `+0x1d` jelző nem nulla; különben a kategória azonosítójára (rejtett). Keresési módban (`CAlbumState+0x162` nem nulla) a `state` nem számít (`0x004b3232`-`0x004b3256`: csak a `catdata` `info` oszlopa, `0x004ab5e0`, `0x00c812cc`, zárhatja ki).
+- A `+0x162` az **egyetlen** bájtra író utasítás a teljes `.text`-ben a konstruktoron (`0x004a17d6`) kívül a `0x00662c53`: a keresési kezelő `0x00662b20` (sztringek: `Search results for "%s"`, `CThumbUI::searchmatchstr`, `%d results: `) állítja, tehát **keresési mód jelző**.
+
+##### §3 B út: valódi katalógus és felvétel
+
+**A `category` oszlop a `catdata` sorára mutat.** Az `albumdata_category.pmp` 0-19 közti értékei a 20 soros `catdata` sorszámai (`research/testdata/Picasa2/db3`, 2371 `albumdata`-sor). Egyező példák: a 12-es kategória `Csilla` (47 sor, pl. `2014-01-25 Csilla kreatív dolgai`), a 13-as `Camera` (3 sor, `Instagram SGS3`), az 5-ös `Exported Pictures` (3 sor, `... export`), a 14-es `Downloaded Albums~sipos.aniko13` (2 sor, `Ovis Farsang...`), a 0-s `Labels` (41 sor: 7 virtuális token, 17 `]album:` felhasználói album fájlnév nélkül, 18 üres token- és nevű, `949998.0` dátumú sor), a 2-es `Folders on Disk` (2063 sor), a 8-as `People` (`]unknownface`, `Név nélküliek`), a 7-es `Hidden Folders` (1 sor). A `0x004ad220` `Labels` alapértelmezése (§1/2) ugyanezt a kapcsolatot adja a binárisból.
+
+**A `state` oszlop a gyakorlatban nulla is.** A tulajdonos katalógusában a `Labels` `state = 0` (lecsukott), minden más kategória 1; a `Picasa2-arcok` katalógusban két mappakategória (`PicasaPy-golden-kit`, `PicasaPy-merokit`) 0. Ebből a katalógusból az Időrendben **nem lenne** albumkártya, ha a §2 szabálya érvényes.
+
+**A job-239 felvétel egyezik a szabállyal** (38.2.81, `pmp-database.md` 4551. sor környéke): a kártyák: négy fixture-mappa, `PicasaTeszt`, `Recently Updated` (mind tagsággal, kibontott csoportokban); az `Unnamed` (`]unknownface`, nincs tagja) sor nem kártya. Két másik futás tárolt dátumpárja (`pmp-database.md`, 4551. és 4617. sor, nem a job-239 saját adata) szerint a `Recently Updated` dátuma mindkét futásban nagyobb, mint a `PicasaTeszt`-é (`46309,3385` és `46309,3243` a `46309,3217` ellen; `46309,4432` és `46309,4455` a `46309,4430` ellen), ami a látott PicasaTeszt → Recently Updated sorrenddel egyezik. Ez **egyezés, nem bizonyíték** a lecsukott kategóriára és a fa nézetre: ilyen felvétel nincs.
+
+##### §4 A kártyák sorrendje
+
+A `0x007fc7c0` a kártyák sorszámaihoz a dátumot a `0x0044f7c0`-val olvassa (`+0x88` tömb), a `0x007fc4c0` a `0x0049cd60`-nal **növekvő `double` kulcs szerint, alulról felépülő összefésüléses rendezéssel** állítja sorrendbe (sorszámok permutációja a `+0x98` tömbben). A rendezés **stabil**: az első menetek egyenlőségnél nem cserélnek (`<` csere, illetve `<=` megtartás, `0x0049cd60`), az összefésülő `0x0049ecd0`-t nem vizsgáltam. Azonos dátumnál ezért a `+0x148` sorszámlista sorrendje dönt, amit a `0x004baaa0` a `0x004a7890` összehasonlítóval állít elő (a kulcs nincs azonosítva). Valódi példa azonos dátumra: a `]screensaver`, `]updated`, `]history:email`, `]history:upload` sor mind `45772,771782407406` (a tulajdonos katalógusában).
+
+A rendezés **után** a `0x007fc4c0` a `+0x88` tömb minden elemét dekódolja (`0x0098b320`), két mezőjét kiolvassa (`0x0098ba30` → `+0x10`, `0x0098b9e0` → `+0x14`), majd újrakódolja a `0x0098b550(1, 0, 0, 0, ...)` hívással (`0x007fc510`-`0x007fc562`). A kártyarendezést ez nem érinti (az sorszámlista már kész); a mezők naptári jelentése nincs azonosítva (feltevés: hónap első napja, nem bizonyított).
+
+##### §5 A dátumtömb: ki írja, és mit tárol
+
+**A út (a getter és az író ugyanaz az oszlop).** A `0x0044f7c0` az `IThumbDB` `+0xc20` mezőjén át a `date` oszlop gyorsítótárának `+0x234` tömbjéből olvas: `[tömb+0x48] + sor*8`, az elemszám `[+0x4c] >> 1`, határon kívül a `+0xc28` tartalék (Ghidra: `0x0044f7c0`; `IThumbDB` = a teljes objektum `+0x48`). Az oszlop a `CThumbDB` konstruktorában születik: kulcs `date` (`0x00c80d7c`), kezelő tábla `ebp+0x988` (`0x00415950`-`0x0041596f`, `0x00495d30`). Az író a `IThumbDB` vtábla **3. rése, `0x004460a0`** (`0x00c81fb0`; thunk `0x0049f390`): `0x004460c3`-`0x004460d8` a `0x006a5c60(tábla = IThumbDB+0x940 = teljes+0x988, "date", sor, double)` hívás. A `0x006a5c60` a `0x006a41e0(tábla, név, 0x13320002)` hívással ugyanazt a gyorsítótár-bejegyzést keresi meg, amelyet a getter lusta betöltője (`0x00499650`) is, majd a `+0x234` tömbbe ír (`0x006a5d95`-`0x006a5db1`: `fcom [tömb+sor*8]`, azonosnál kihagyja, különben `fstp [tömb+sor*8]`; módosítás-jelzés `0x006a2a60`). **Ugyanaz a tábla, ugyanaz a név, ugyanaz a tömb: az író megerősített.**
+
+**Ki hívja az írót (az index pozitív találatai; kimerítő lista nincs):** a `0x00441ac0` (`0x004aa9f0` sorfrissítés, `0x00441e00` mappafelvétel a `Folders on Disk` és `Other Stuff` sztringekkel, `0x0055d320` átnevezési ág), a Mappa-tulajdonságok `autodate` kezelője (`0x00849dc0` → `0x00441760`), és az online album (`0x006f2fc0`, DB és ini is; `pmp-database.md`, 12. szakasz). A `0x00441ac0` (disszasszemblálva): a getterrel olvassa az aktuális dátumot; **ha az pontosan nulla**, a `0x00441760`-nal számolja az automatikus értéket (kezdőérték `949998.0`, `0x00c7ccf8`), és sikernél a 3. réssel írja, `bool = 0` (csak DB, ini nem). A `0x00441760` a mappa elemeinek **legkisebb** 64 bites időértékét veszi (`0x004419d6`-`0x004419e6`, a `0x004edf60` rekordlekérő mezője), és a `0x0098b650` alakítja `double`-ré: `FileTimeToSystemTime` → `SystemTimeToTzSpecificLocalTime(NULL)` → `Ordinal_184` (helyi `SYSTEMTIME` → változatidő).
+
+**B út (a tárolt érték = a legkorábbi képidő, helyi időre váltva).** Mérés a tulajdonos katalógusán: minden `albumdata` sor, amelynek `filename` mappájában a `thumbindex.db` talál képet (2305 sor; a `thumbindex` 1. időbélyege, a kép metaadat-dátuma, UTC-ként értve, `Europe/Budapest` helyi időre váltva, a mappa minimumához hasonlítva, ±1,5 s tűréssel):
+
+| katalógus | összehasonlítható sor | pontos egyezés a minimummal | tárolt későbbi | tárolt korábbi |
+|---|---:|---:|---:|---:|
+| `Picasa2/db3` | 2305 | **1983 (86,0%)** | 207 | 115 |
+| `Picasa2-arcok/Picasa2/db3` | 110 | 72 (65,5%) | 38 | 0 |
+| `1557-masolat-mentese/db3-utana/db3` | 108 | 71 (65,7%) | 37 | 0 |
+
+Az időzóna-váltás nélkül a pontos egyezés 0, az eltérés pontosan 1 óra télen és 2 óra nyáron: ez a `0x0098b650` helyi időre váltása. **A tárolt érték tehát első beíráskor a legkorábbi képidő, utána nem számolódik újra** (a "később" és "korábbi" eltérések a mappa tartalmának utólagos változásából vagy kézi beállításból adódnak: `.picasa.ini` `date=`, Mappa-tulajdonságok). A `pmp-database.md` korábbi "0/23 egyezik a legkorábbi képidővel" mérése a teljes katalógusos méréssel nem egyeztethető össze, ha ugyanazt az egyenlőséget vizsgálta; a mostani mérés időzóna-helyes és 2305 sorra fut. A felhasználói albumok (`]album:` fájlnév nélkül) és a virtuális sorok dátumának forrása **nincs mérve**: a virtuális sorok dátuma létrehozási bélyegnek látszik (négy sor azonos `45772,771782407406`), az albumsorok forrása (ini `[.album:token] date=` vagy első tag) a tagságadat hiányában nem vethető össze.
+
+**Mit tárol a kártya?** A kártya dátuma a sor **tárolt `albumdata_date` értéke** (OLE-változatidő, napok 1899-12-30 óta, a nap törtrésze az idő, helyi időben): mappánál az első beíráskor a legkorábbi képidő (vagy a `.picasa.ini` `date=` értéke, vagy kézi beállítás), nem a mappa fájlrendszer-ideje és nem az élő legkorábbi kép. A dátumsáv két vége (`0x007fee70`, 38.2.103) a rendezett lista **első és utolsó kártyájának** ugyanez a dátuma, nem a képek globális szélsőértéke.
+
+##### §6 Összevetés a PicasaPy-val és megvalósítási javaslat
+
+| Eredeti | Nálunk | Eredmény |
+|---|---|---|
+| A kártya = a lista minden 2-es állapotú sora: mappa (nem üres tagsággal), felhasználói album (üres is), virtuális album (nem üres tagsággal); a lecsukott kategória és a fa nézet kihagyhat sorokat (§1, §2). | Mappa: a látható fotókból; album: az `albums_in_index` nem üres sorai (`timeline_controller.py:218-247,269-291`). Virtuális album nincs. Kategóriaállapot és fa nézet nincs. | **eltér a virtuális albumokban** (a `Recently Updated` hiányzik, 38.2.81 szerint kártya); **egyezik a mappákban**; a kategória- és nézetfeltétel hatása **nem dönthető el** futásidőben (§3). |
+| A kártyadátum a tárolt `albumdata_date`: első beíráskor a legkorábbi képidő, utána állandó (§5). | A legkorábbi `taken_at` az élő, látható fotók közül (`timeline_controller.py:341-382`), fájlidő-tartalék nélkül. A `folders.date` (`index/sync_photos.py:202-240`: ini `date=` elsőbbség, különben a legkorábbi `taken_at_override`/`taken_at`/befagyasztott fájlidő) megvan az indexben, az Időrend nem használja. | **eltér:** az eredeti perzisztens dátumot használ (a mért katalógusban 14% eltérés a mai legkorábbi képidőtől), nálunk a dátum élő. |
+| A dátumsáv két vége az első és az utolsó kártya dátuma. | A sávszélek az összes látható fotó EXIF-szélsői (`timeline_controller.py:223-231,301-333`). | **eltér:** az utolsó kártya a mappa **legkorábbi** idejét viseli, nálunk a legkésőbbi fotóét. |
+| Azonos dátumnál a stabil rendezés a `+0x148` sorrendet tartja (kulcsa nincs meg). | Dátum, név (kisbetűs), azonosító (`timeline_controller.py:293-299`). | **nem dönthető el** (a `0x004a7890` kulcsa). |
+
+**Javaslat a hívónak (kódot nem módosítottam).** Csak a bizonyított pontok:
+
+1. **Mappakártya dátuma:** a `folders.date` (a `collage_album_fields.folder_date_iso` már olvassa, `collage_album_fields.py:65`) legyen az elsődleges dátumkulcs, a legkorábbi `taken_at` csak tartalék; az albumkártyánál az `albums.date`, tartaléka a legkorábbi tag. A rendezés maradjon teljes időponton (az eredeti `double` kulcs napszakot is tartalmaz, 38.2.108). A `folders.date` élő számítású, az eredeti első beírás után állandó: a felhasználói különbség csak azoknál a mappáknál várható, amelyek képei utólag változtak (a mért katalógusban 14%).
+2. **A dátumsáv két vége** a rendezett kártyalista első és utolsó kártyadátumából jöjjön, ne az összes fotó szélsőiből.
+3. **A virtuális albumok** (`Recently Updated`, `Starred`, `Screensaver`, `Emailed`, `Uploaded`) kártyáját **ne** adja hozzá a fejlesztő, amíg a dátumuk forrása nincs meg (§5, utolsó pont): becsült dátummal az eredeti sorrendje nem reprodukálható.
+4. **A lecsukott kategória és a fa nézet hatását** ne valósítsa meg, amíg a Colab-mérés (lent) nem készült el.
+
+**Kész, ha** (a hívó által kiadott fejlesztői jegyhez):
+
+- [ ] a mappakártya dátuma a `folders.date`, és egy teszt egy ini `date=` értékű mappán az ini dátumát adja (nem a legkorábbi képét);
+- [ ] a dátumsáv két vége az első és az utolsó kártyadátum, teszttel olyan katalógusra, ahol az utolsó kártya mappájában van a legkésőbbi fotónál korábbi dátumú kép;
+- [ ] a rendezés kulcsa teljes időpont, azonos dátumnál megnevezett, dokumentált tartaléksorrenddel;
+- [ ] vizuális egyezés: az eredeti `job-239` kártyasorrendje (4 fixture-mappa, `PicasaTeszt`) változatlan.
+
+**Mérési feladat (Colab, 1 feladat, a hívó adhatja fel):** Ctrl+5 három állapotban ugyanabban a katalógusban: (a) lapos mappanézet, a `Folders on Disk` csoport lecsukva; (b) fa mappanézet; (c) minden csoport kibontva, lapos nézet. Mérés: a kártyák neve és sorrendje. Ez dönti el a §2 lecsukási szabályának és a `+0x9d` szűrésnek a hatását.
+
+##### Nyitott kérdések mérlege
+
+Nyitott kérdések: 7 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva"
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| A `+0x2c0` objektumból a kártyalistáig vezető lánc és a sorok forrása (mappa, album, virtuális) | **LEZÁRVA** (§1-§3) | |
+| A getter által olvasott dátumtömb írója | **LEZÁRVA** (§5: `0x004460a0` → `0x006a5c60`) | |
+| A mappakártya dátuma | **LEZÁRVA** (§5: első beíráskor a legkorábbi képidő, utána tárolt; 86,0%/65,5%/65,7% pontos egyezés) | |
+| A lecsukott kategória és a fa nézet futásidejű hatása a kártyákra | **NYÍLT** | A fenti Colab-mérés. |
+| A `0x004b2e10` `+0x1d` jelzőjének forrása | **NYÍLT** | Ghidra-kör kell: `0x004a4710` - a `CAlbumState+0xe4`/`+0xe0` objektum és a `0x004143c0` keresés jelentése (kategórianév egy halmazban). |
+| A `CAlbumState+0xd8` nézetmód értékei | **NYÍLT** | Ghidra-kör kell: `0x005d9cc0` - melyik parancs milyen módot állít a `0x004b07c0`-nal; a `+0xd8 == 3` ág nem hívja a fejlécépítőt (`0x004b2a2c`), így a kategóriarejtés nem érvényesül. |
+| Az üres felhasználói album kártyája | **NYÍLT** | Ghidra-kör kell: `0x007fc7c0` - a `0x00a6aa00` nem nulla eredménye megszakítja-e a kártyaépítést, és a `0x004ae430` üres taggal mit ad. |
+| Azonos dátumú kártyák sorrendje | **NYÍLT** | Ghidra-kör kell: `0x004a7890` - a sorszámlista rendezőkulcsa; és a `0x0049ecd0` összefésülés stabilitása. |
+| A virtuális és az albumsor dátumának forrása | **NYÍLT** | Ghidra-kör kell: `0x0055d730` és `0x00452a30` - az új sor dátuma (a `0x004ad220` hívásai); albumsorra a tagságot is tartalmazó katalógus. |
+| A `0x007fc4c0` rendezés utáni dátumátalakítása | **NYÍLT** (a kártyasorrendet nem érinti) | Ghidra-kör kell: `0x0098b550` - a `(1, 0, 0, 0)` argumentumok és a két kiolvasott mező jelentése. |
+
+##### Amit kizártam
+
+- **"A kártyadátum a mappa fájlrendszer-ideje"**: cáfolt (a tároló oszlop értéke 86,0%-ban a képek legkorábbi idejével egyezik, nem a mappáéval).
+- **"A kártyadátum a mappa legkésőbbi képe"**: cáfolt (a mért 2305 sorból 0 sor egyezik a legkésőbbivel az egyezők között; a minimum 1983).
+- **"A qshow a teljes katalógust listázza"**: cáfolt (a `0x004b29d0` állapot-, kategória- és `+0x9d` kapukat alkalmaz, §1-§2; teljes katalógusra csak keresési módban vagy `+0xd8 == 3` esetén emlékeztet, ez utóbbi nincs igazolva).
+- **"A `0x00477920` a dátumíró"** (38.2.105): marad cáfolva, az író a `0x004460a0` → `0x006a5c60`.
+- **"A `+0x0c == 2` gyűjteménytípus"** (38.2.110 cáfolata megerősítve): az állapot a sor kiértékelt állapota, nem típus; a típust a token és a fájlnév adja (§2 táblázat).
+
+##### Bizonyítottság
+
+**Megerősített:** a getter, az író és a tábla azonossága (két út: utasítás- és konstruktor-olvasat; ugyanaz az oszlopkulcs és tábla); az `autodate` képlete és a `0x0098b650` helyi időre váltása (utasítás és a katalógus-mérés pontosan az 1-2 órás eltolással egyezik); a `category` → `catdata` kapcsolat (a binárisban a `Labels` alapértelmezés és a konstruktor, az adatban hat nevesített egyezés). **Erős:** a sorállapot-gép döntési szabálya (utasításszinten olvasva, a job-239 katalógus kártyahalmaza egyezik); a `catdata` `state` hatása a rekordok kimaradására (két helyen olvasott, felvétel nélkül). **Feltételes:** a `+0x167` és `+0x1d` jelzők jelentése, a `+0xd8` mód, a `0x007fc4c0` utáni átalakítás, a stabilitás az összefésülő lépésben, a virtuális és albumsorok dátuma.
+
+**Módosított fájlok ebben a szakaszban.** Ez a 38.2.190 szakasz és a `picasa-idorend-viselkedes.md` két érintett sora. Kódot, tesztet, eredeti binárist, felvételt vagy mérőadatot nem módosítottam; az ideiglenes mérőszkriptek a munkafa `.bt/` mappájából törölve.
+
+#### 38.2.200 Colab-mérésterv a #6532 látható, nyitott pontjaihoz (#6532, 2026-11-13)
+
+**Hatókör és állapot.** Ez a szakasz mérésterv, nem mérés: új eredeti-Picasa képernyőkép vagy felvétel ebben a körben nem készült, a feladatokat nem adtam fel (a feladást a hívó végzi). A §38.2.127 és a §38.2.160 azon látható pontjait fedi, amelyeket statikusan nem lehet eldönteni: (1) a Space első fotója és a szünetelés, (2) a Ctrl+Space látható hatása, (3) a `Preparing timeline...` betöltésjelző, (4) az Escape utáni szülőnézet-kijelölés. Nyolc feladat-JSON készült a munkafa `.bt/colab-6532/` mappájában (a mappa nem része a repónak; a lépéssorok az alábbi táblázatban teljesen olvashatók, tehát a fájlok újra előállíthatók). Mind a bevált job-239/241/373 vázat követi: `"indulas": "alapallapot"`, `"wine_desktop": true`, `"mintakeszlet": "idorend"`, `"kimenet": ["kepernyokep", "allapot"]`, és három tíz másodperces várakozással indul (a job-241 `allapot.json`-ja szerint a 2-4. kép dhash-e azonos, tehát a könyvtár az első várakozás végére betöltött). A JSON-okat a végrehajtó szabályainak tükrével ellenőriztem (a `v3` mezők, a billentyűminta, `var` > 0 és legfeljebb 10, legfeljebb 40 lépés, a felvételek összege legfeljebb `keret.perc * 60 - 120` mp): mind a nyolc érvényes.
+
+##### 1. Amit a végrehajtó nem enged, és a terv ehhez igazodik
+
+**Cáfoló kísérlet (15.2).** Első célpontom az volt, hogy a betöltésjelző „sűrű képernyőképekkel” mérhető-e, ahogy a feladat kérte. A végrehajtó forrása ezt cáfolja:
+
+- Minden lépés ELŐTT készül egy képernyőkép és egy állapotrekord: az N. kép az (N-1). lépés utáni állapot, az utolsó kép a záró lépés, annak 1,0 s szünete és még 2 másodperc várakozás után készül.
+- Minden lépés UTÁN fix 1,0 másodperces szünet van, ez a feladatból nem rövidíthető; a `var` értéke 0-nál nagyobb és legfeljebb 10 másodperc (a `0` érvénytelen).
+- Következmény: két kép között legalább kb. 1 másodperc és a kép elkészítésének ideje telik el, és a Ctrl+5 utáni első kép is legalább ennyivel a leütés után készül. A job-373 felvételén a 75. képkocka még a könyvtárnézet, a 76. már a teljes Időrend-panel, köztes képkocka nincs (38.2.85, 15 kép/mp, azaz 67 ms felbontás). Ha a betöltésnek van látható szakasza, az ennél rövidebb, ezért képernyőképpel nem kapható el; az egyetlen eszköz a `felvetel` lépés (15 kép/mp, legfeljebb 180 s). A leütés és a panel megjelenése közti idő így sem mérhető, mert a leütés időpontja nincs a felvételen (38.2.85).
+- A „rögtön Escape” a következő lépés, vagyis a Ctrl+5 után legalább 1,0 s + a kép ideje múlva érkezik. A megnyitó átmenet (38.2.85: 1,000 s) KÖZBEN küldött Escape ezzel a végrehajtóval nem kérhető; a 02b feladat a legkorábbi elérhető Escape-et méri, a felvétel megmutatja, hol érkezik az átmenethez képest.
+
+A betöltésjelzőhöz ezért nincs „sűrű képernyőkép” feladat: a 03a felvételre épül. A séma ellenőrzése is megtörtént: a `ctrl+space` megfelel a végrehajtó billentyűmintájának (`ctrl+` módosító és `space`), a `kattint [90, 311]` pedig a 1280×1024-es képernyőn belül van.
+
+##### 2. A nyolc feladat
+
+A „kép N” mindenhol a végrehajtó N. képernyőképe (az N. lépés előtti állapot). A táblázat a három kezdő `var 10` utáni lépéseket adja; a `keret.perc` a harmadik oszlopban.
+
+| Fájl (`6532-<név>.job.json`) | Lépéssor a kezdő várakozások után | Perc | Mit dönt el |
+|---|---|---:|---|
+| `01a-space-2019-marcius` | `ctrl+5`, 3, `Right`, 2.5, `Right`, 2.5, `space`, 2.5, 3, 4, `space`, 2.5, 3, `space`, 2.5, 4, `Escape`, 2, 2 | 15 | Space első fotója és szünetelése a 7 képes kártyán; a második és a harmadik Space |
+| `01b-space-2014-november` | `ctrl+5`, 3, `Right`, 2.5, `space`, 2.5, 4, `Escape`, 2, 2 | 12 | az első fotó a 3 képes kártyán; kijelölés Space+Escape után |
+| `01c-space-picasateszt` | `ctrl+5`, 3, négyszer (`Right`, 2.5), `space`, 2.5, 4, `Escape`, 2, 2 | 12 | az első fotó a 24 képes, felismerhető képű gyűjteményen |
+| `01d-ctrl-space` | `ctrl+5`, 3, `Right`, 2.5, `ctrl+space`, 2.5, 4, `space`, 2.5, 3, `Escape`, 2, 2 | 12 | a Ctrl+Space látható hatása |
+| `02a-visszateres-mappafokusz` | `kattint [90,311]` (2019_marcius), 2, `ctrl+5`, 3, `Right`, 2.5, `Left`, 2.5, `Escape`, 2, 2 | 12 | kijelölés valódi mappafókuszból, Right+Left után |
+| `02b-visszateres-azonnali-escape` | `kattint [90,311]`, 2, `felvetel 30`, `ctrl+5`, `Escape`, 2, 2 | 12 | kijelölés a legkorábbi Escape után, felvétellel az időzítéshez |
+| `02c-visszateres-album-es-gyujtemeny` | `ctrl+5`, 3, négyszer (`Right`, 2.5), `Escape`, 2, 2, `ctrl+5`, 4, ötször (`Right`, 2.5), `Escape`, 2, 2 | 15 | kijelölés a PicasaTeszt és a Recently Updated kártyáról, fókusz nélkül |
+| `03a-betoltesjelzo-felvetel` | `felvetel 100`, 10, 4, háromszor (`ctrl+5`, 5, `Escape`, 3) | 15 | látszik-e a betöltésjelző hideg és ismételt belépéskor |
+
+A `kattint [90, 311]` a bal oldali mappafa `2019_marcius (7)` sora (a job-241 `kepernyo__04.png` és `kepernyo__14.png` képéről: a sorok y értéke `PicasaTeszt` 223, `2021_eltero_fajlido` 267, `2019_marcius` 311, `2014_november` 355, `2009_majus` 399). A kezdő állapot a job-241 `kepernyo__04.png`-jén nincs kijelölt mappa; a `kepernyo__14.png` mutatja, hogyan néz ki a kijelölés: sötét sor a mappafában, kék keretes bélyegkép, a fájlnév az alsó állapotsorban.
+
+##### 3. Pontonként: jóslat a bináris alapján és mi cáfolná
+
+**3.1 Space első fotója és szünetelése (01a, 01b, 01c).**
+
+- *Bináris alap.* A `0x00801270` Space-ága a `[this+0x3bb]` állapotától függően a `0x00801130` váltóhoz vagy a `0x00803110` OneUp-objektumváltóhoz jut (38.2.127 §2); a `0x00803110` nem ad át fotóindexet vagy rekordazonosítót (38.2.160 §2), tehát a kezdőkép nem a qshow hívásparamétere. A job-373 felvételen az első Space szünetelő felületet hozott, az 1/7 kép 15,5 másodpercig pixelre azonos maradt (38.2.150 4. pont); a job-240 3 és 8 másodpercnél azonos képet adott (38.2.82).
+- *Jóslat.* A vetítés a kártya gyűjteményének első fotójával indul és szünetel: 01a kép 11-14: `1/7`, `2019-03-08 09:15`, a felirat `Exit Slideshow`, `Timeline`, `Display Time 3 seconds`, a négy kép pixelre azonos; 01b kép 9-11: `1/3`, `2014-11-02 15:30`; 01c kép 15-17: `1/24`. A 01c képazonosságára nincs bináris jóslat (a PicasaTeszt képein nincs beleégetett felirat): a 24 kép könyvtári sorrendjét a job-241 `kepernyo__04.png` adja, ebből látszik, hogy a vetítés a könyvtári sorrend, a dátum vagy a fájlnév szerint indul. Az Escape utáni kép (01b 12-14, 01c 18-20, 01a 21-23): a Space előtti kártya mappája marad kijelölve, egyedi fotókijelölés nélkül (ahogy a job-240: 2019_marcius, 38.2.82).
+- *Kiegészítő, bináris jóslat nélkül (01a második és harmadik Space).* A `0x00801130` a `+0x3bb` állapotot váltja, de hogy a OneUp felületen ez lejátszás/szünet váltás-e, nem ismert. Munkahipotézis: a második Space elindítja a lejátszást (a 15. kép még `1/7`, a 16. és a 17. képen a sorszám nagyobb, kb. 3 másodpercenként egy kép), a harmadik megállítja (a 18-20. kép azonos).
+- *Cáfolná.* A kép 11 nem `1/7` vagy más gyűjtemény képe; a kép 11-14 között a képterületen bármilyen pixelkülönbség (nem szünetel); `n/3`, `n/24` esetén n ≠ 1; a 15-17. képek azonosak a 11-14.-kel (a Space nem váltja a lejátszást, a hipotézis téves).
+
+**3.2 Ctrl+Space (01d).**
+
+- *Bináris alap.* A Ctrl+Space ág a `[this+0x3ba]` jelzőt 1-re írja (`0x008012fb`), és nem hívja a `0x00801130`-at vagy a `0x00803110`-et (38.2.127 §2). A `0x00800a30` rajzoló a jelzőtől függő ágon a `[this+0x3c4]` képobjektumot a teljes qshow rajzterületre adja a `0x008001c0` rajzolónak (38.2.160 §1).
+- *Jóslat.* A Ctrl+Space után a OneUp felület NEM indul (nincs `Exit Slideshow` felirat, a `qshow` marad az ablaklistában), és a qshow-panel (x=340, y=272, 600×480, 38.2.85) tartalma megváltozik az alapképhez (kép 8) képest, a változás a 9-11. képen állandó. A kép tartalma (a `+0x3c4` forrása) nincs meg, ezért a jóslat csak a hatás meglétét és helyét mondja ki, nem a tartalmát.
+- *Cáfolná.* A panel pixelre azonos a 8-11. képen (a jelző ebben az állapotban nem rajzol, vagy a billentyű nem jutott el a Picasáig: a Wine/X réteg a Ctrl+Space-t elnyelheti, ezért a null eredmény csak gyenge cáfolat; a kontroll a sima Space a 11. lépésben: ha a 12-14. kép pontosan a 01b 9-11. képével egyezik, az sem bizonyítja a jelző hatását); vagy a OneUp felület megnyílik (a 38.2.127 szerinti külön ág cáfolt).
+
+**3.3 Betöltésjelző (03a).**
+
+- *Bináris alap.* A `0x005e8a70` Időrend-belépő a `Preparing timeline...` szöveggel `ytProgress` objektumot készít; a fogadó (`CThumbUI+0x278`) `+0x14` célja (`0x00566630`) a `Press ESC key on keyboard to abort` szöveget állítja, a `+0x0c` cél (`0x00566320`) a `thumbui/modalprogressfloater` és `thumbui/progressbarfill` elemeket kezeli, de csak `DAT_00d67914 != 0` esetén (38.2.160 §3). Az `idorend` készlet hat kártyát ad (öt mappa és egy album), így a feldolgozó ciklus rövid. A job-373 felvételen a könyvtárnézet és a teljes panel között nincs köztes képkocka, tehát jelző nem látszott (38.2.85).
+- *Jóslat.* Mindhárom belépésnél (hideg indítás utáni első, majd két ismételt) az utolsó tiszta könyvtárkép és az első panelkép között vagy nincs köztes képkocka, vagy a köztes képkockán se lebegő ablak, se folyamatjelző sáv, se `Preparing timeline...` vagy `Press ESC key on keyboard to abort` szöveg nem látszik.
+- *Cáfolná.* Legalább egy köztes képkocka lebegő ablakkal, folyamatjelző sávval vagy a két szöveg valamelyikével (rögzítendő: a képkockák száma, a jelző helye és mérete, melyik belépésnél látszott).
+- *Határ.* A negatív eredmény nem választja szét azt, hogy a `DAT_00d67914` kapu nulla, vagy a betöltés ennél a hat kártyánál túl gyors a jelzőhöz: csak a pozitív eredmény dönt. Az sem mérhető, hogy a könyvtárnézet a leütés után mennyi ideig áll változatlanul a panel megjelenése előtt, mert a leütés időpontja nincs a felvételen.
+
+**3.4 Escape utáni kijelölés (02a, 02b, 02c).**
+
+- *Bináris alap.* Az Escape a `0x007fb820`-on át a `ytWindow` host `0x00983270` callbackjéig jut, ami saját ablakára `WM_CLOSE` üzenetet küld; ez az út nem nevez meg mappát vagy fotót (38.2.127 §4, 38.2.160 §4). A kijelölést tehát a qshow kártyaállapota vagy a könyvtári felület állítja be, a bináris út nem. A qshow a belépéskor a nulladik kártyával indul: `0x008037e0` → `0x008018a0(0)` (38.2.83); a job-241-ben az Escape után kijelölt `2021_eltero_fajlido` mappa ellenére a második Ctrl+5 a 2009-es kártyával nyílt.
+- *Mért előzmény.* job-241 (nincs kezdő fókusz, három Right): a 2021-es mappa és első képe kijelölt. job-239 (a `Recently Updated` albumkártyán, Home/End után): a visszatérés a belépés előtti `PicasaTeszt` mappanézet, a kijelölés nem lett olvasva (38.2.81). job-240 (Space, Escape): 2019_marcius maradt kijelölve.
+- *Jóslat (02a).* A Ctrl+5 a kattintott 2019_marcius fókusz ellenére a `2009_majus` kártyával nyílik (7-8. kép), a Right a `2014_november`, a Left megint a `2009_majus` kártyára visz (11-12. kép); az Escape után (13-15. kép) a `2009_majus` mappa és első képe (`2009_majus_01.jpg` az állapotsorban) kijelölt, vagyis az Escape pillanatában látott kártya számít, nem a belépési fókusz.
+- *Jóslat (02b).* Navigáció nélkül ugyanaz a szabály: a 9. képen a `2009_majus` mappa és első képe kijelölt. A felvétel megmutatja, a Ctrl+5 leütéséhez képest mikor tűnik el a qshow.
+- *Jóslat (02c).* A PicasaTeszt kártya után (kép 14, Escape: 15-17): a `PicasaTeszt` mappa és első képe kijelölt. A `Recently Updated` albumkártya után (kép 29, Escape: 30-32) bináris jóslat nincs, mert az album nem mappa: két lehetőség van, vagy a `Recently Updated` sor jelölődik ki az Albums alatt, vagy a mappafában nincs sötét sor (a job-239 a belépés előtti nézetet mutatta). A második belépés nyitókártyája (kép 19) a jóslat szerint újra `2009_majus`.
+- *Cáfolná.* 02a: a `2019_marcius` marad kijelölve (a belépési fókusz tér vissza), vagy a qshow nem nyílik meg (a 7-8. képen nincs `qshow` az ablaklistában; ekkor a Right és a Left a könyvtárban mozgat, és a feladat a „mappafókusz gátolja a belépést” kérdést dönti el; a job-241 második belépése 2021-es fókusszal megnyílt, a job-240 második belépése a OneUp utáni 2019-es fókusszal nem). 02b: a kijelölés eltér a 02a-étól (a közbeni navigáció számít). 02c: a PicasaTeszt kártya után más mappa jelölődik ki.
+
+##### 4. Olvasási rend (a kiértékeléshez)
+
+- **Kijelölés** a képernyőképen: (a) sötét sor a bal oldali mappafában, (b) kék keretes bélyegkép, (c) az alsó állapotsor fájlneve (minta: job-241 `kepernyo__14.png`).
+- **Szünetel-e:** a OneUp-képterület `ImageChops.difference(a, b).getbbox()` értéke a 01a 11-14., a 01b 9-11., a 01c 15-17. képek között; `None` = pixelre azonos.
+- **Ctrl+Space:** a qshow-panel (340, 272, 600×480) vágásának különbsége a 01d 8. és 9-11. képe között; a `qshow` jelenléte az `allapot.json` ablaklistájában.
+- **Videó (03a, 02b):** felbontás képkockákra, másodpercenként 15 képpel; a Ctrl+5 leütését a felvétel nem rögzíti (38.2.85), ezért a belépés pillanata az utolsó tiszta könyvtárkép és az első panelkép. A keresés a TELJES képre vonatkozik, mert a lebegő folyamatjelző a főablakban lenne, nem a 600×480-as panelben; a köztes képkockákat az előző könyvtárképhez kell hasonlítani a panelen kívüli területen.
+- A feladat jelentésében rögzítendő a végrehajtó tényleges futásideje és a képek sorszámozása; az első képek időzítése lépésenként kb. 1 másodperc és a kép elkészítési ideje, tehát a „kb. N másodperc” állítások ±0,5 másodperc pontosságúak.
+
+##### 5. Bizonyíték- és nyitottkérdés-tábla
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| A végrehajtó a lépések előtt készít képet, minden lépés után 1,0 s szünetet tart, `var` > 0. | a végrehajtó forrása (`picasa-colab-jobs` figyelő, lépésciklus és `var`-ellenőrzés) | olvasott kód, nem futtatott mérés |
+| A job-373 felvételén a könyvtárnézet és a panel között nincs köztes képkocka (75. könyvtár, 76. panel), jelző nem látszott. | mérés (job-373, 38.2.85) | korábbi mérés |
+| A Space a `0x00803110` útján indexet nem ad át; a kezdőkép nem a qshow paramétere. | bináris (38.2.160 §2) | megerősített az utasításolvasatban |
+| A Ctrl+Space a `+0x3ba` jelzőt írja, a rajzoló a `+0x3c4` képet a teljes rajzterületre adja. | bináris (38.2.160 §1, két független út) | megerősített; a kép tartalma NINCS MEG |
+| A `DAT_00d67914` kapu feltételesíti a lebegő ablakot és a folyamatjelző sávot. | bináris (38.2.160 §3) | feltételes a láthatóságra |
+| Az Escape után az utolsó látott kártya mappája és első képe kijelölt (job-241). | mérés (38.2.83) | feltételes, egy futás |
+| A 3.1-3.4 pontok jóslatai a fenti források következményei, nem mérések. | ez a szakasz | **jóslat, mérés nincs** |
+
+**A két független út.** Itt a „két út” a jóslat forrására értendő: A út a binárisból olvasott kapuk és kezelők (38.2.127, 38.2.160), B út a korábbi felvételek (job-239, 240, 241, 373). A Ctrl+Space és a betöltésjelző jóslata a bináris A útra épül, a Space-é és a visszatérésé a B útra; mindhárom pont kapja a másik utat kontrollnak a feladatokban (01b-01c a job-240/373 ellen, 02a-02c a job-241 ellen, 03a a job-373 ellen). A második út független megerősítését a mérés adja, nem ez a szakasz.
+
+**Nem tervezett, és miért.**
+
+- *Üres katalógusbeli belépés (`IDS_MUST_SELECT`).* Az `idorend` készlettel a katalógus sosem üres; a job-241 `kepernyo__01.png` üres könyvtára („No photos found”) a betöltés közbeni pillanat, így egy ott küldött Ctrl+5 eredménye nem determinisztikus, és a lépések közti 1,0 s miatt időzítve sem kérhető.
+- *A Space által átadott rekord bináris azonosítása.* A mérés csak a látható eredményt adja (melyik kép jelenik meg); a `0x00803110` rekordátadása Ghidra-kör marad ([blokkoló], 38.2.160 §6).
+- *Escape a megnyitó átmenet közben.* A végrehajtó rése miatt nem kérhető (1. rész).
+
+**Következő irány megnevezve.** (1) A hívó feladja a nyolc feladatot; javasolt sorrend a döntési értékük szerint: `02a`, `01a`, `03a`, `02c`, `01d`, `01b`, `01c`, `02b` (a végrehajtó egyszerre egyet futtat, a legkisebb jegyszám előbb). (2) Ha a `03a` negatív, a maradék statikusan dönthető: a `DAT_00d67914` íróinak és olvasóinak teljes `.text`-pásztázása (a `paszta.py` memóriakapuval, minden regiszterbázissal); ha az Időrend-belépéskor az érték mindig nulla, a lebegő ablak ebben a kiadásban sosem rajzolódik, és a PicasaPy-nak nem kell betöltésjelző. (3) A mérés után a 38.2.160 szerinti 12 nyitott A pont számát a megfelelő pontokkal kell frissíteni; ez a szakasz a pontszámot nem változtatja.
+
+Nyitott kérdések: 4 nyílt · 0 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| A Space első fotója és szünetelése az Időrendből | **NYÍLT**, terv kész | a `01a`-`01c` feladás és kiértékelés (3.1) |
+| A Ctrl+Space látható hatása | **NYÍLT**, terv kész | a `01d` feladás és kiértékelés (3.2) |
+| A betöltésjelző látható megjelenése | **NYÍLT**, terv kész | a `03a`; negatív eredménynél a `DAT_00d67914` írói (3.3) |
+| Az Escape utáni kijelölés általános szabálya | **NYÍLT**, terv kész | a `02a`-`02c` feladás és kiértékelés (3.4) |
+
+#### 38.2.170 A kártyaképen látható egymásra tolt, elforgatott lapok forrása és elrendezése (#6532, 2026-11-13)
+
+**Kérdés és eredmény.** Hogyan épül fel az Időrend gyűjtemény-kártyáin látható, egymásra tolt és elforgatott fotólapok kötege az eredeti Picasában, és mi a `0x004ae430 -> 0x00423300 -> 0x00448fb0 -> 0x004114e0` hívási lánc szerepe?
+A vizsgálat lezárta a kérdést:
+1. **Lapok száma:** legfeljebb **4 lap** (`min(4, elemszám)`, bináris cím: `0x004237ab`, `0x004237b6`).
+2. **Elforgatás:** a legfelső kártya (`index == 0`) **egyenes** (forgatási szög: `0.0°`); a mögötte lévő kártyák (`index > 0`) egyenletes eloszlású véletlen forgatást kapnak a **`[-5.73°, +5.73°]`** tartományban (`theta = (rand / 32768.0 - 0.5) * 0.2` radián; `0x00cf4748` = `0.2` double, `0x00c29d20` cos, `0x00c285f0` sin).
+3. **Eltolás:** a legfelső kártya eltolása `(0, 0)`; a mögötte lévő kártyák pixelben meghatározott eltolást kapnak: vízszintesen **`dx = 4.0 * index * (2.0 * rand1 / 32768.0 - 1.0)`** képpont (`[-4 * index, +4 * index]` px, konstans: `0x00c7d9d0` = `2.0` double), függőlegesen felfelé **`dy = -index * (4.0 * (rand2 / 32768.0) + 5.0)`** képpont (`-index * [5.0 .. 9.0]` px felfelé, konstansok: `0x00cf3b80` = `-2.0` double, `0x00c7d9d0` = `2.0` double).
+4. **Véletlenség és seed:** az elforgatás és eltolás véletlenszerű, az MSVC CRT `_rand()` (`0x00c08221`) függvényét hívja. Ugyanakkor a kötegkép előállítása előtt a `_srand()` (`0x00c08214`) inicializálja az állapotot a gyűjtemény azonosítójából származtatott seeddel: **`param_3 ^ 0x133475`** (`0x00423a2a`, `0x00423a6c`). Ezért egy adott gyűjtemény kártyaképe determinisztikus és stabil az újranyitások során.
+5. **Architektúra és hívási lánc:** az eredetiben a köteg nem a 3D nézetben külön rétegekből áll, hanem a `CThumbDB` képfeldolgozója (`0x00423780`) egyetlen, szoftveresen egymásra rajzolt 2D bélyegképet állít elő az affin transzformációs blitterrel (`0x009e6df0`), amit a `0x004115c0` eltárol a gyorsítótárban (`+0x2428`). A `0x004ae430` a `CAlbumState` oldaláról kéri le a bélyegképet a `CThumbDB::vftable` (`0x00c81f78`) `+0x20` slotján (`0x00423300`) át; ha a kép már a gyorsítótárban van, a `0x00448fb0` és `0x004114e0` ág azonnal visszaadja azt. A 3D Időrend (`0x007fc7c0`) ezt az egyetlen kész képet rajzolja textúraként a kártyára.
+
+**A vizsgálat két független útja.**
+- *A út (utasításszintű gépi kód):* A helyi `Picasa3.exe` `.text` szekciójának diszasszemblálása (`annot_disasm.py`, Capstone). A `0x00423780` belépési kapuja a `0x004237ab` (`cmp eax, 4`), `0x004237b6` (`mov dword ptr [esp+0x1c], 4`), `0x004237c0` (`mov [esp+0x1c], eax`) utasításokkal rögzíti a legfeljebb 4 lapos határt. A `0x00423a2a` (`xor eax, 0x133475`) és `0x00423a6c` (`call 0x00c08214`) az `_srand` determinisztikus magját adja. A forgatási és eltolási FPU kód a `0x00423ba6`-`0x00423d48` tartományban közvetlenül hivatkozza a `.rdata` lebegőpontos konstansait: `0x00cf4748` (`0.2` double), `0x00c7d9d0` (`2.0` double), `0x00cf3b80` (`-2.0` double), `0x00c7e328` (`1.0` double), `0x00c72150` (`0.5` double).
+- *B út (dekompiláció és RTTI / xref architektúra):* A meglévő `2026-10-22-ghidra-sor-247-251.txt` és `2026-10-17-qshow-diavetites.txt` elemzése. Az SQLite index RTTI táblája megerősíti a `CThumbDB::vftable` (`0x00c81f78`) `+0x20` slotjának (`0x00423300`) hovatartozását. A `0x004ae430` a `[esi+0xc4]` pointeren át a `+0x20` slotot hívja (`0x004ae481`). A `0x00423300` a `0x00448fb0` gyorsítótár-lekérdezés (`0x00423326`) és a `0x004114e0` visszatérés (`0x0042333b`) mellett hiány esetén a `0x00423500` hívásán át (`0x004234de`) indítja a `0x00423780` generátort (`0x004236ef`), amely a `0x004115c0` gyorsítótár-íróval menti az eredményt. A Ghidra AST kétmenetes kompozitálást mutat: az első menet a befoglaló téglalapot és a méretet számolja ki (`0x00a4a520`), a második menet az affin mátrixokkal rajzolja a lapokat (`0x009e6df0`).
+
+**Cáfoló kísérlet.**
+Azt a feltevést vizsgáltam, hogy a köteg lapjait nem a bélyegkép-kompozitáló állítja össze, hanem az Időrend (qshow) 3D jelenete rajzolja ki laponként külön-külön a `0x008014d0` hívásában, mivel ott is található `_rand()` (`0x00c08221`).
+*Cáfolat eredménye:* A `0x008014d0` nem egy kártyán belüli fotóköteget készít, hanem a teljes idősáv gyűjteményeit rendezi el a 3D virtuális térben a pályagörbe mentén. A `0x007fc7c0` (qshow kártyaépítő) a `0x004ae430` meghívásával egyetlen leírót és egyetlen képet rendel minden egyes gyűjteményhez. A `0x00423780` ezzel szemben a `param_4` felületre rendereli rá a lapokat a `0x009e6df0` 2D szoftveres blitterrel. A feltételezés megdőlt: a kártyán látható köteg a bélyegkép szintjén egyesített 2D bitmap, nem pedig futásidejű több kártyás 3D objektumhalmaz.
+
+**Összevetés a PicasaPy implementációjával.**
+
+| Tulajdonság | Eredeti Picasa | PicasaPy jelenleg | Teendő |
+|---|---|---|---|
+| Lapok maximális száma | Legfeljebb 4 lap (`min(4, count)`, `0x004237ab`, `0x004237b6`). | Legfeljebb 4 lap (`TimelinePanel.qml:242`: `Math.min(4, photos.length)`). | Megegyezik, teendőt nem igényel. |
+| Legfelső lap forgatása | Nincs elforgatva (`0.0°`, `0x00423ba6` feltétel átugorja). | El van forgatva (`TimelinePanel.qml:260`: `rotation: index % 2 === 0 ? -7 : 5` -> index 0 esetén `-7°`). | Javítandó: az index 0 kártya forgatása legyen 0°. |
+| Mögöttes lapok forgatása | Egyenletes véletlen szög `[-5.73°, +5.73°]` között (`[-0.1, +0.1]` rad, `0x00cf4748` = `0.2` double). | Fix, determinisztikusan váltakozó `-7°` és `+5°`. | Javítandó: a seedelt véletlenszám-generátorból számított `[-5.73°, +5.73°]` tartományú szög. |
+| Lapok eltolása | Vízszintesen: `[-4*i, +4*i]` pixel (`0x00c7d9d0` = `2.0`). Függőlegesen: `-i * [5.0 .. 9.0]` pixel felfelé (`0x00cf3b80` = `-2.0`). | Relatív arányszám: `(next_random() - 0.5) * 0.15 * width/height` (`timeline_motion.py:100-131`, `TimelinePanel.qml:257-258`). | Javítandó: relatív arány helyett pixelalapú eltolás, és a hátsó lapok aszimmetrikus felfelé tolása (negatív Y). |
+| Véletlenszám mag (seed) | `param_3 ^ 0x133475` (`0x00423a2a`), MSVC CRT `_rand()` / `_srand()`. | Saját, indexből magozott `xorshift` generátor (`timeline_motion.py:113-129`). | Igény szerint közelíthető az eredeti MSVC LCG-hez és a `collection_id ^ 0x133475` seedhez. |
+| Renderelési architektúra | 2D szoftveres kompozitálás egyetlen bélyegkép-bitmapbe (`0x00423780` + `0x009e6df0`). | Különálló QML `Item` rétegek a `TimelinePanel.qml` `Repeater`-ében. | A QML rétegzés megtartható, amennyiben a vizuális elrendezés (lapok száma, forgatás, pixel eltolás) megegyezik a binárisból feltárt értékekkel. |
+
+**Bizonyítottsági fok.**
+**Megerősített.** Két független forrás (célzott utasításszintű x86 FPU diszasszemblálás a nyers konstansokkal, illetve Ghidra C-dekompiláció és SQLite RTTI/vtábla kapcsolat) egyezik a lapok számában (`min(4, n)`), a forgatási tartományban (`0.2 rad`), az eltolási képletekben (`dx`, `dy`), a determinisztikus magképzésben (`0x133475`) és a hívási láncban.
+
+**Nyitott kérdések a témában.**
+Nincs nyitott pont a kártyaképen látható köteg elrendezésére és hívási láncára vonatkozóan. Minden vizsgált kérdés pontos bináris címmel és konstans értékkel igazolt.
+
+#### 38.2.210 A #6532 hat Ghidra-kérdésének lezárása: szupercsoport-jelző, nézetmód, üres album, azonos dátum, sordátum, rendezés utáni átalakítás (#6532, 2026-11-14)
+
+**Hatókör és módszer.** A 38.2.190 végén felsorolt hat kérdés. **A út:** a friss Ghidra-kimenet (`picasapy-agent/referencia/ghidra/2026-11-13-6845-6532-colab-decomp-2.txt`: `0x004a4710`, `0x005d9cc0`, `0x007fc7c0`, `0x00a6aa00`, `0x004a7890`, `0x0049ecd0`, `0x0055d730`, `0x00452a30`, `0x0098b550`), az előző kimenet (`...-6532-colab-decomp.txt`: `0x004b8ee0`, `0x004b29d0`) és utasításszintű olvasat (`picasa_dis.py`, capstone). **B út:** hívók és adat (az index xref-táblája; a db3 `repository.dat`, `catdata`, `albumdata` a PicasaPy `pmpimport` olvasóival), négy teljes `.text` pásztázás a `paszta.py` memóriakapujával (2 884 879 utasítás, mért csúcs-RSS 41,7 MiB: a `+0x2b28`, `+0xd8`, `+0xe0/+0xe4` operandusok; az `0xa09d` és a `0xd67678` cím; a `[x+0x48]` objektum 3. virtuális rése), és hét mérés az eredeti gépi kódon `qemu-i386` alatt (a privát repó `qemu_harness/hb.py` helyi másolata, `timeout 60`, a CRT-allokátor és az inicializáló helyettesítve). Becsült értéket nem használtam. A mérőszkriptek a munkafa `.bt/` mappájában készültek, a szakasz végén törölve.
+
+| # | Kérdés | Válasz | A út | B út | Fok |
+|---|---|---|---|---|---|
+| 1 | `0x004a4710`: a `+0x1d` jelző forrása | a **szupercsoport kibontottsága**: a `Név~Alnév` alakú kategórianév `~` előtti részéhez tartozó `super:<név>` kulcs szerepel-e a `repository.dat` térképben; szupercsoport nélküli kategóriánál mindig 1 | dekompiláció + `0x004b2e10` hívási környezet | `repository.dat` három katalógusból; az író- és kapcsolófüggvények | **erős** |
+| 2 | `0x005d9cc0`: a `+0xd8` nézetmód | 0 dátum, 1 legutóbbi változtatás, 2 név, 3 (nincs menüparancsa) kategóriarejtés nélküli lista, 4 (csak a rendszerleíró adatbázisból), 5 méret; `0xa0cf` megfordít | a hat hívóhely argumentumai | menü- és olvasóoldal, `.text`-pásztázás | **megerősített** |
+| 3 | `0x007fc7c0` / `0x00a6aa00`: az üres felhasználói album | nem kap kártyát; a kártyaépítés a hibánál **megszakad**, a hívó eldobja a hibakódot | dekompiláció + utasításszint | QEMU (`0x00a6aa00`) + hibakód-lánc | **erős** (futásidejű felvétel nincs) |
+| 4 | `0x004a7890` / `0x0049ecd0`: azonos dátumú kártyák | az összefésülés **stabil**; azonos dátumnál a `0x004a7890` sorrendje marad: kategória, típus, majd név | dekompiláció + oszlopazonosítás | QEMU: 265 rendezés + 44 névpár | **megerősített** (stabilitás), **erős** (kulcssorrend) |
+| 5 | `0x0055d730` / `0x00452a30`: sordátum forrása | **egyik sem dátumforrás** (sztring-értékadó, illetve kategória-keresés/létrehozás); a forrás nyitott | dekompiláció + hívási kép | `albumdata` dátumai | a negatív **megerősített**; a forrás **NYÍLT** |
+| 6 | `0x0098b550`: rendezés utáni átalakítás | hónap első napjára kerekítés (`COleDateTime(év, hónap, 1, 0, 0, 0)`), és a `[this+0x90]` (az "A tömb") előállítása | utasításszint | QEMU: a valódi `0x007fc4c0` 6 forgatókönyvön, a `0x0098b550` 33 bemeneten | **megerősített** |
+
+##### §1 A `+0x1d` jelző (`0x004a4710`)
+
+1. **A függvény.** `0x004a4710` (324 bájt, `ret 4`): `EAX` a `CAlbumState`, a verem első eleme a kulcs (`char*`, 0 = üres). A táblát így választja: `[+0xe4]`, ha nem nulla; különben `[+0xe0]`; különben `[[+0xc4]+0x2b28]` (`0x004a4716`-`0x004a472a`, `0x004a47a2`-`0x004a47a8`). Zárat tart (a tábla vtáblájának `+0x18`/`+0x1c` rése, vagy `EnterCriticalSection`), majd a `0x004143c0`-t hívja.
+2. **A keresés** (`0x004143c0`, 153 bájt): `EDX` a kulcs, a verem a tábla. A kulcsból `CString` lesz (`0x00985ff0`), a kivonatot a `0x00409df0` adja a tábla `+0x60` méretére, a lánc a `[tábla+0x68]` vödrökben van, az összehasonlítás a `0x006f9890` a csomópont `+4` mezőjén. Találatnál az érték (`[csomópont+8]`) nem üres sztring kell legyen: `[érték] & 0xffffff00 != 0` és `[érték+4] != 0` (`0x00414442`-`0x00414455`). Az eredmény igaz, ha van ilyen bejegyzés.
+3. **Polaritás.** A perzisztens táblánál a jelző a találat (`0x004a47fc`-`0x004a4800`: `bl = al`); a felülbíráló táblánál a **hiány** (`0x004a4771`-`0x004a4773`: `test al, al; sete bl`).
+4. **A felülbíráló táblák** (`+0xe0`, `+0xe4`) a `0x004a4c80`-nal jönnek létre (0x70 bájtos üres tábla, konstruktor `0x00414100`) és szűnnek meg; hívója a `0x00662b20` (a keresés kezelője: `Search results for "%s"`, ez írja a `+0x162` jelzőt, 38.2.190 §2) és a `0x0067be30`. A konstruktor nullázza őket (`0x004a17ac`, `0x004a17b2`). Keresésen és ezen a másik módon kívül tehát a perzisztens tábla dönt.
+5. **A perzisztens tábla a `CThumbDB+0x2b28`**: a db3 `repository.dat` tartalma. Más kulcsait is ide írják: `DBID` (`0x004199d0`), `IDPersist`, `KeywordVersion` (`0x0041c340`), `rawversion`, `colorspaceversion`, `gpsversion` (`0x0041ee10`), `frversion`, `contactsversion` (`0x00488880`).
+6. **A hívó** a `0x004b2e10` (kategóriaváltáskor futó fejlécépítő; hívási hely `0x004b2f7d`): a kategórianevet a `0x004b0880` a `~`-nél bontja (`_strchr(név, 0x7e)`, `0x004b08ba`-`0x004b08bd`): az előtag a szupercsoport, az utótag az alnév. Ha az új szupercsoport neve azonos az előzővel, a jelző marad (`0x004b2ef8`-`0x004b2f11` → `0x004b3211`). Ha nincs szupercsoport: `+0x1c = 0`, `+0x1d = 1` (`0x004b31fd`-`0x004b3201`). Egyébként a kulcs `"super:" + szupercsoport-név` (`0x004b2f2a`-`0x004b2f4c`, sztring `0x00c832d0`); keresési módban (`CAlbumState+0x162` nem nulla) `+0x1d = 1` (`0x004b2f59`-`0x004b2f62`), különben `+0x1d = 0x004a4710(kulcs)` (`0x004b2f6d`-`0x004b2f82`).
+7. **A hatás** (`0x004b3440`-`0x004b3469`): a környezetrekord `+0x00` mezője -1 (látható), ha a kategória "látszik" (a `catdata` `state` nem nulla, vagy keresés van, 38.2.190 §2) **és** `+0x1d` nem nulla; különben a kategória azonosítója. A `0x004b29d0` a sort kihagyja, ha a kategóriája egyenlő ezzel a mezővel (`*piVar3 == iVar2` → `return 0`). A `+0xd8 == 3` módban a `0x004b2e10` nem is fut (`0x004b2a2c`), tehát a rejtés nem érvényesül (§2).
+8. **Az írók** (kibontás és összecsukás): `0x004a4860` (557 bájt) a kulcsot `"1"` (`0x00c81288`) vagy üres értékre állítja a `0x004141d0`-nel (`0x004a48f3`); `0x004a4a90` váltja; a `"super:"` kulcsot a `0x004abba0` állítja össze (`0x004abbcc`), a fejlécrekord sorszáma szerinti kibontást a `0x004ab9a0` végzi (5-ös, 6-os, 7-es típusú fejlécrekord; 1 kibont, -1 vált). A hívók a parancskezelők: `0x005cb990` (`0x005cc252`, `0x005cc25f`), `0x005d3290`, `0x005f9ce0`.
+
+**B út: a három katalógus `repository.dat` fájlja.** A fájl kulcs-érték párokból áll (a kulcs után a `1` vagy a verziószöveg).
+
+| katalógus | `super:` kulcsok | a `catdata` nevei, amelyekben van `~` | következtetés |
+|---|---|---|---|
+| tulajdonos (`Picasa2`, 140 bájt) | nincs | `Downloaded Albums~sipos.aniko13`, `Downloaded Albums~krisztuka76`, `Downloaded Albums~103651636470512534794` | a `Downloaded Albums` szupercsoport lecsukott, e három kategória sorai nem kártyák |
+| `Picasa2-arcok` (1386 bájt) | `super:golden-kit3` | `golden-kit3~export`, `golden-kit-fix~export`, `golden-kit~export`, `PicasaPy-merokit~export` | csak a `golden-kit3` kibontott; a másik három szupercsoport lecsukott |
+| `1557-masolat-mentese` (1386 bájt) | `super:golden-kit3` | ugyanaz a négy | ugyanaz |
+
+A kulcs (`super:golden-kit3`) pontosan a kulcsképzés szerinti alak a `golden-kit3~export` kategóriára. A térkép ugyanitt tárolja a fanézet kibontott csomópontjait (fordított perjelre végződő útvonalak, érték `1`), valamint a `flat`, `all`, `Folders`, `Mappák` kulcsokat; ezek jelentését nem vizsgáltam. **Amit az adat nem bizonyít:** a polaritást (találat = kibontott) csak a kód mondja ki, élő felvétel nincs; a kibontás parancsok (`1` = kibont) és a lekérdezés együtt adják az irányt.
+
+##### §2 A `+0xd8` nézetmód (`0x005d9cc0`, `0x004b07c0`)
+
+**A beállító** a `0x004b07c0` (75 bájt, `ret 4`): a verem a `CAlbumState`, `EDX` a mód, `CL` a megfordítás. Azonos mód és megfordítás esetén `0x000f4242`-t ad; különben beírja a `+0xd8`, `+0x165` mezőt (`0x004b07dc`-`0x004b07e2`), és a `0x006dc4c0(…, 1)` hívással újraépíti a listát (`0x004b0803`). A `0x005d9cc0` két hívása a szöveges parancsoké (`thumbui/namesort` → `EDX = 2`, `0x005db20c`; `thumbui/datesort` → `EDX = 0`, `0x005db26f`); a menüparancsok a `0x005cb990` kapcsolójából a `0x005d30f0`-n át érik el (hat hívás: `0x005cbbfa`, `0x005cbc17`, `0x005cbc34`, `0x005cc70a`, `0x005cd5f9`, `0x005cd61e`; a `0x005d30f0` hívása `0x004b07c0`-ra: `0x005d3127`). A parancsazonosítókat a `0x005cb990` három ugrótáblájából (`0x005cd9fc`, `0x005cdc30`, `0x005cdefc`) olvastam ki.
+
+| `+0xd8` | beállító | az összehasonlító (`0x004a7890`) |
+|---|---|---|
+| 0 | `thumbui/datesort`; `0x9c8b` `ID_VIEWBYDATE` (`0x005cbbea`) | a `date` oszlop double értéke, csökkenő (az újabb előbb) |
+| 1 | `0x9cbd` `ID_VIEWBYRECENT` (`0x005cbc21`) | a `0x004ae0d0` double értéke, csökkenő |
+| 2 | `thumbui/namesort`; `0x9c8c` `ID_VIEWBYNAME` (`0x005cbc04`) | nincs külön ág: a név ága |
+| 3 | `0xa09d` (`0x005cd5e6`) | nincs külön ág (név); a `0x004b29d0` nem hívja a `0x004b2e10`-et, tehát nincs kategória- és szupercsoport-rejtés |
+| 4 | nincs parancs; csak a `Preferences\datesort` rendszerleíró értékből (`0x004a195f`-`0x004a1991`, mentés `0x004a3790`) | a `0x004502e0` double értéke, csökkenő |
+| 5 | `0x9dc8` `ID_VIEWBYSIZE` (`0x005cc6f7`) | 64 bites bájtösszeg (`0x004507e0`), csökkenő |
+| (fordítás) | `0xa0cf` `ID_VIEWREVERSE` (`0x005cd603`: ugyanaz a mód, `+0x165` ellentettje) | az eredmény előjelét váltja |
+
+Az irány: a rendező hívás `(a = második elem, b = első elem)`, negatív eredmény = a előbb; az összefésülő `>= 0` esetén az első marad elöl (`0x004bab56`, `0x004bb071`). Ezért `a < b` esetén a pozitív `+1` csökkenő sorrendet ad.
+
+**B út.** A menüoldal (a spec `picasa-menu-parancsok-viselkedes.md` 36.3-36.5 és `picasa-konyvtar-eszkoztar-viselkedes.md` 4/b pontja, a pipázó `0x00574b70`) ugyanazt a 0, 1, 2, 5 négyest és a `0xa0cf` megfordítást adja; a 3 és a 4 az olvasók oldaláról jön (`0x004a7890`, `0x004b29d0`). A `0xa09d` azonosító közvetlen operandusként a teljes `.text`-ben **sehol** nincs (0 találat), a menüépítő `0x00559150` nem tartalmazza, és a `.rsrc`-ben nincs menü, ezért a parancs neve és forrása nincs meg. Ez nem blokkoló: a 3-as mód a felhasználónak ismert menüből nem érhető el.
+
+**Az Időrend szempontjából:** a kártyalista a nézetmódtól függetlenül dátum szerint újrarendeződik (§4, §6), tehát a mód csak az azonos dátumú kártyák sorrendjére és a 3-as mód rejtésmentességére hat.
+
+##### §3 Az üres felhasználói album kártyája (`0x007fc7c0`, `0x00a6aa00`)
+
+1. **A ciklus** (`0x007fc7c0`, kártyánként, rendezett sorrendben): `0x004ae430(sor, &rekord)` (a rekordot előtte nullázza: `rekord+8` szélesség, `rekord+0xc` magasság `0`), `0x007fa5b0` a kártya konstruktora, majd `0x00a6aa00(…, -1, -1, -1, -1)` másolja a rekord képét a kártyába (`0x007fcca7`). A `0x004ae430` visszatérési értékét a ciklus **eldobja**.
+2. **A `0x00a6aa00`**: a forrás (`EAX` = a rekord) szélessége és magassága is nagyobb kell legyen nullánál, különben `4`-gyel tér vissza. **Nem nulla eredménynél a `0x007fc7c0` megszakad** (`0x007fccae`-`0x007fccb0` → `0x007fcf7a`): a hibakóddal visszatér, a már felvett kártyák a `+0xb0` listában maradnak, a hátralévőket nem építi, és a fókuszeltolás számítása (`[this+0x20] = [this+8] - sorszám * [this+0x30]`) **kimarad**.
+3. **A hívó** (`0x008037e0`, `0x008039c5`) a `0x007fc7c0` visszatérési értékét **nem vizsgálja**: a következő utasítás `mov eax, esi` és a `0x007fb210` hívása. Tehát a qshow hibajelzés nélkül, csonka kártyalistával és be nem állított fókuszeltolással indul.
+4. **Mi kap képet** (`0x00423300`, `CThumbDB` `+0x20`): a gyorsítótár találata (`0x00448fb0`) kész képet ad; a `0x00448a10` a sor tokenjét a `CThumbDB+0x2e98` sztringjével hasonlítja, és ha igaz értéket ad, a `0x00423300` `0`-val tér vissza kép nélkül (a feltétel jelentését nem bontottam tovább); nem üres tagság esetén a kártyakép készül (`0x00423500`); **nulla tag esetén `3` a visszatérési érték és a rekord üres marad** (`uVar1 >> 1 == 0` → `return 3`). Mindkét kép nélküli út a `0x00a6aa00`-nál `4`-et ad.
+5. **Következmény.** Az üres felhasználói album sora (2-es állapotú, 38.2.190 §2) nem lesz kártya. A kártyák **növekvő dátum szerint** épülnek (§6), tehát a megszakadás a hibás sor dátumától kezdve minden **későbbi** kártyát elveszít; egy dátum nélküli (949998,0) sor a sor végén van, ezért ott semmi nem vész el, csak a fókuszeltolás marad ki.
+
+**B út (QEMU).** A valódi `0x00a6aa00` négy bemenetre (szélesség, magasság: `0,0`; `0,5`; `5,0`; `-1,5`) mind a négyszer `4`-et adott. A hibakód-láncot (`0x00423300` → `3`, `0x004ae430` továbbadja, `0x007fc7c0` eldobja, `0x00a6aa00` → `4`, megszakadás, `0x008037e0` eldobja) utasításszinten olvastam végig. **Adat:** a tulajdonos katalógusában 17 felhasználói album van (üres `filename`, `]album:` token, `Labels` kategória), valós dátummal (40 180,73 és 40 950,79 között); a tagságuk a db3-ban nem olvasható, ezért nem eldönthető, van-e köztük üres. Futásidejű felvétel üres albummal nincs.
+
+##### §4 Azonos dátumú kártyák sorrendje (`0x004a7890`, `0x0049ecd0`)
+
+1. **Az összefésülés stabil** (A út). A `0x0049ecd0` `fld` + `fcomp` + `test ah, 0x41`: a jobb elem csak akkor megy előre, ha a bal **szigorúan nagyobb** (`0x0049ecf2`-`0x0049ecff`); egyenlőségnél a bal marad. A `0x0049cd60` első menetei ugyanígy cserélnek csak szigorú nagyobbnál (`0x0049ce0b`-`0x0049ce19`, `0x0049ce5c`-`0x0049ce6d`). A rendezés **növekvő** a `double` kulcson.
+2. **Mérés (B út, QEMU).** Az eredeti `0x0049cd60`-t 265 forgatókönyvön futtattam (n = 2-től 32-ig, sok ismétlődő kulccsal; a CRT-allokátor helyettesítve): **mind rendezett, permutáció és stabil** (egyezés a Python stabil rendezésével). Köztük a kártyadátumhoz hasonló vegyes kulcsok (`46296,0`, `45748,0`, `949998,0` többszörösen) is.
+3. **Mi adja a bemeneti sorrendet.** A `0x007fc7c0` a `+0x158` rekordlistából veszi a sorokat; ezt a `0x004b8ee0` állítja elő a `+0x148` sorszámlistából, amelyet a `0x004baaa0` (ugyanaz az alulról felépülő összefésülés; a hívó a `>= 0` esetben az elsőt tartja elöl: `0x004bab56`, `0x004bb071`) rendez a `0x004a7890` összehasonlítóval. Az összehasonlító oszlopai a `0x004a6dc0` betöltőből: `D+4` `CThumbDB+0x8c8`, `D+8` `+0x928`, `D+0xc` `+0xb50` (`albumdata name`), `D+0x10` `+0xbb0` (`filename`), `D+0x14` `+0xaf0` (`token`), `D+0x18` `+0xc10` (`date`), `D+0x1c` `+0xc78` (`category`); `D` a `0x00d67678` globális, amelyet a `0x004b8ee0` a rendezés idejére állít be (`0x004b9150`-`0x004b9176`); ha a három oszlop-gyorsítótár nem fedi az összes sort, `D` nulla marad, és az összehasonlító a `0x00453da0` név-útjára esik (ezt nem vizsgáltam).
+4. **A kulcssorrend** (a = második, b = első elem; a negatív eredmény a-t előre teszi):
+   1. a `D+8` oszlop bájtértéke a kategória sorszámán át, **csökkenő** (a `catdata` `catpri` oszlopa, 0 és 100 közötti értékekkel; az oszlop nevét a betöltő nem mondja ki: feltételes);
+   2. a kategória neve (`D+4`, `0x004a71e0`), kisbetűsített ASCII-összehasonlítással, növekvő;
+   3. ha **mindkét** sor `filename` oszlopa üres (album vagy virtuális sor): a `]album` előtagú token a nem ilyen után áll (`0x004a7ad4`-`0x004a7b09`); azonos besorolásnál a `]facealbum` előtagú áll a nem ilyen után (`0x004a7b0b`-`0x004a7b48`); két arcalbumnál a személyrendezés (`+0xdc`) dönt;
+   4. a mód szerinti kulcs (§2), a `+0x165` szerint megfordítva;
+   5. a név (`D+0xc`), kisbetűsített ASCII-összehasonlítással, majd a `0x004a76a0` döntése; a megfordítás itt is előjelet vált (`0x004a8039`-`0x004a8046`);
+   6. egyenlőségnél (0, illetve `+1`, lásd lent) az összefésülés a korábbi sorindexűt tartja elöl.
+5. **A név ága a valódi kódon (B út, QEMU: `0x004a76a0`, 44 névpár).** Az eredmény az egyszerű, kisbetűsített összehasonlítás, **kivéve** ha mindkét név **1800 és 2100 közötti évszámmal kezdődik**, és a számcsoportjaik mind egyeznek: ekkor az eredmény mindkét sorrendben `+1`, azonos nevekre is (`2014 A` ~ `2014 B`, `2014-01-25 Anna` ~ `2014-01-25 Csilla`, `2014_marcius` ~ `2014_aprilis`, `2019_marcius` ~ `2019_marcius`). Ha a számok valamelyike eltér (`2014-01-25` ~ `2014-01-26`), a rendezés szokásos (`-1`/`+1`). Az összehasonlító az egyező számú esetben nem antiszimmetrikus; mivel a `>= 0` a korábbit tartja elöl, az ilyen párok az `albumdata`-sorok eredeti sorrendjében maradnak. A nem a név elején álló év (`x 2014-01-25 A`) és a kis számok (`Album 2` ~ `Album 10`: a szöveg szerinti `album 10` van előbb) nem kapnak külön kezelést. Az összehasonlítás előjeles bájtokon fut (`jl`/`jg`), így a 0x80 feletti bájtok az ASCII elé kerülnének; a tárolt kódolást nem vizsgáltam.
+6. **A végeredmény.** A kártyák **dátum szerint növekvő** sorrendben állnak (az újabb hátul); azonos dátumnál a `+0x148` sorrend marad: kategória-prioritás csökkenő, kategórianév, besorolás (virtuális, felhasználói album, arcalbum), név növekvő (kisbetűsített ASCII), azonos számcsoportú, évszámmal kezdődő nevek esetén a táblasorrend. A tulajdonos katalógusában négy virtuális sor azonos dátumú (`]screensaver`, `]updated`, `]history:email`, `]history:upload`: `45772,771782407406`): ezek a nevük (`Képernyővédő`, `Legutóbb frissítve`, `Elküldve e-mailben`, `Feltöltve`) szerinti sorrendbe kerülnének, ha kártyát kapnának.
+
+##### §5 Az album- és a virtuális sor dátuma (`0x0055d730`, `0x00452a30`)
+
+**A két cím nem dátumforrás (A út és hívási kép).** A `0x0055d730` egy sztring-értékadó és -ürítő (`CString` felépítése a `char*`-ból `0x00985ff0`-val, a `param_3+0x14` régi értékének felszabadítása); hívói a sorlétrehozók (`0x004ad010`, `0x004ad220`, `0x004ad570`, `0x004ad680`, `0x00561840`...). A `0x00452a30` a kategória **keresése vagy létrehozása**: a `0x00453970` megkeresi a nevet (`-1` esetén a `0x00452ad0` létrehozza a `catdata` sort, a `state` oszloppal), és ha a név `People`, a sorszámot a `CThumbDB+0x2ea0`-ban gyorsítótárazza. A 38.2.190 §5 utolsó pontja (a két cím "az új sor dátuma") ezzel **cáfolt**.
+
+**Mi igazolható az adatból (B út).** A három katalógus fájlnév nélküli sorai:
+
+| sor | dátum | megfigyelés |
+|---|---|---|
+| virtuális (`]star`, `]screensaver`, `]updated`, `]history:email`, `]history:upload`, `]unknownface`, `]search`) | időbélyeg: pl. `]updated` `2026-07-18 14:45:36`, `]screensaver` `2026-08-17 23:33:36`, `]search` `2026-08-22 20:36:25` | egyszerre létrejött sorok **azonos** bélyeget kapnak (a tulajdonosnál négy sor `2025-04-25 18:31:22`); a `]search` a legfrissebb: létrehozási vagy utolsó érintési időpont, **nem tartalmi dátum** |
+| felhasználói album (`]album:`, üres `filename`) | pl. `2012-02-11 19:00:11`, `2010-12-31 12:16:32`, `2010-11-14 11:42:52` | a név dátumával többnyire egyezik, de nem névből jön: a `2010-10-03 Régi fotók szkennelve BéHának` album dátuma `2010-09-22 21:55:47`, a `2010-10-xx Panoráma fotók...` albumé `2010-09-30 17:56:18`; tartalmi vagy ini-eredetű érték |
+| üres token és név | `949998,0` (4501-01-01) | törölt sorok: nincs név, a `0x004aab27` szerint állapot 0, sosem kártya |
+
+Az ini-szinkron (`0x00441ed0`, 7449 bájt) a `[Picasa]` fejlécből `date=`-et olvas (`_atof`, alapérték `949998,0`: `0x0044246a`-`0x0044248d`), a mappákra ez a 38.2.190 §5 szabálya. A 3. virtuális rés (a dátumíró) hívóinak mintaalapú pásztázása (`[x+0x48]` objektum, `mov r, [r2+0xc]`, `call r`) négy helyet adott: `0x00514180` (importálás: `%d-%02d-%02d`), `0x00613b50` (filmkészítő), `0x006e3990` (indítás), `0x006f2fc0` (online album); **az album-létrehozó kódban (`0x004abe70`, `0x004ad220`, `0x004ada80`, `0x0055d120`) nincs dátumírás**.
+
+**Ami nyitott:** a virtuális és a frissen létrehozott albumsor **kezdeti dátumának írója**. Ghidra-kör kell: 0x004ada80 és 0x00441ed0 (az album-szakaszok ága) - a `date` oszlop kezdeti értékének írója az album- és virtuális soroknál; a `0x00441ed0` ini-szinkron album-szakasz feldolgozása (`_sscanf` `0x00441fcc`, `__strnicmp` `0x0044203e`).
+
+##### §6 A rendezés utáni átalakítás (`0x0098b550`, `0x007fc4c0`)
+
+**A függvények.** `0x0098b550` (249 bájt, `ret 0x14`) egy `COleDateTime(év, hónap, nap, óra, perc, másodperc)` jellegű kódoló: `ECX` az év, `ESI` a hónap, a verem a nap, az óra, a perc, a másodperc és a kimeneti `double*`. Érvénytelen bemenetnél (év >= 10 000, hónap 0 vagy 13-tól) a kimenet `949998,0` (`0x00c7ccf8`). `0x0098ba30` a hónapot (`1..12`), `0x0098b9e0` az évet adja egy `0x0098b320`-cal dekódolt `tm`-szerkezet `+0x10`, illetve `+0x14` mezőjéből (érvénytelen dátumnál 0).
+
+**A `0x007fc4c0`** (754 bájt, `EDI` = a `this`, a qshow `+0x2f8`):
+
+1. a `[+0x88]` `double`-tömböt (a kártyadátumok, a qshow `+0x380`) rendezi a `0x0049cd60`-nal növekvően, stabilan; a permutáció a `[+0x98]` tömbbe kerül (`0x007fc4f2`);
+2. **minden elemet a hónap első napjára kerekít**, a tömb eredeti sorrendjében, helyben: `0x0098ba30` → hónap, `0x0098b9e0` → év, majd `0x0098b550(év, hónap, 1, 0, 0, 0)` (a verem tetején `1`, alatta három `0`, `0x007fc510`-`0x007fc54d`);
+3. a `[+0x90]` tömböt (qshow `+0x388`, a 38.2.25-38.2.34 **"A tömb"**) a rendezett sorrendben tölti: `A[0] = 0`, `A[j] = A[j-1] + ln(max(1 + (d[j] - d[j-1]), 1))`, ahol `d` a kerekített napszám (`0x007fc740`-`0x007fc7a7`: `fld1`, `fsub`, `fadd`, `fcom`, `0x00c0b6a0` = természetes logaritmus).
+
+**B út (QEMU).** (a) A `0x0098b550` 16 bemenettel: `(1899,12,30)` → `0,0`; `(1900,1,1)` → `2,0`; `(1900,3,1)` → `61,0`; `(2000,1,1)` → `36 526,0`; `(2025,4,27,18,30,0)` → `45 774,770833`; `(2024,2,29,12,0,0)` → `45 351,5`; `(2025,13,1)`, `(2025,0,1)`, `(10000,1,1)` → `949 998,0`; `(9999,12,31,23,59,59)` → `2 958 465,999988`. (b) A dekódoló-kódoló ciklus (a `0x007fc510`-`0x007fc54d` pontos hívássorrendje) 17 bemeneten: mind a hónap első napját adta (pl. `45 772,771782` → `2025`, `4` → `45 748,0`; `46 309,3217`, `46 309,3385`, `46 309,443` → `2026`, `10` → `46 296,0`; `949 998,0` változatlan). (c) A **valódi `0x007fc4c0`** hat forgatókönyvön (`bemenet` → `+0x88`, `+0x90`, `+0x98`): mind a három tömb **egyezik** a fenti képlettel (a `+0x90` eltérése < 1e-9). Egy minta: bemenet `[45748,1; 45778,1; 45809,1; 45839,1]` → `+0x88 = [45748; 45778; 45809; 45839]`, `+0x90 = [0; 3,433987; 6,899723; 10,33371]`; azonos hónap kártyái `+0x90`-ben egyenlők (`[46309,3217; 46309,3385; 46309,443; 46296,2]` → `[0; 0; 0; 0]`); a dátum nélküli (`949998,0`) elem a végén `+13,7`-et ad (`[46296,5; 45748,2; 46296,9; 45748,7; 46309,3; 949998,0]` → `[0; 0; 6,308098; 6,308098; 6,308098; 20,022354]`).
+
+**Következmények.**
+- **Az "A tömb" lezárva** (a viselkedési lap K9 pontja és a 38.2.25-38.2.34, 38.2.77-78 nyitott kérdése): az **író a `0x007fc4c0`**, a `this+0x90` címen át, ezért nem találtak közvetlen `+0x388` író utasítást a korábbi pásztázások; a tartalom **dátumsor** (hónap-lépcsős, logaritmikusan nyújtott kumulált eltérés), nem sorszám. A `0x007ffc90` az `A[i] / A[n-1]` hányadosokat használja (38.2.34); az **egyenlő hányadosok futama az azonos hónapba eső kártyák csoportja**.
+- A kártyadátum a rendezés **után** hónap-pontosságú; a `0x007fee70` `%s %d` (hónapnév és év) felirata ehhez illik. A rendezés kulcsa (§4) a kerekítés előtti, teljes időpontú dátum.
+- A dátum nélküli kártya (`949998,0`) a hozzáadott `ln(...) ≈ 13,7` miatt **nyújtja az egész skálát**: a többi kártya hányadosa összesűrűsödik a skála alsó részében.
+
+##### §7 Összevetés a PicasaPy-val és megvalósítási javaslat
+
+| Eredeti | PicasaPy | Eredmény és javaslat |
+|---|---|---|
+| A szupercsoport (`Név~Alnév` kategória `~` előtti része) lecsukva (a `repository.dat`-ban nincs `super:<név>`) → a kategória sorai nem kártyák (§1). | Az Időrend kategóriát nem ismer (`timeline_controller.py:218-300`); a bal hasáb a `.picasa.ini` `P2category` értékét olvassa (`index/side_pane.py`), a `repository.dat`-ot nem. | **eltér.** **Javaslat: ne valósítsa meg**, amíg a bal hasáb nem kap szupercsoport-állapotot; futásidejű felvétel a polaritásra nincs. |
+| A `+0xd8` mód csak az azonos dátumú kártyák sorrendjére és a 3-as módban a rejtésre hat; a végső rend dátum szerint növekvő (§2, §4). | A kártyarend dátum, név, azonosító (`timeline_controller.py:293-300`), a bal hasáb rendezési módjától független. | **egyezik** a végső sorrendben. Teendő nincs. |
+| Az üres felhasználói album nem kap kártyát; a kártyaépítés ott megszakad, a hívó eldobja a hibát (§3). | `if not photos: continue` (`timeline_controller.py:281-282`), az üres album kimarad. | **egyezik a kártya hiányában.** **Az eredeti hibaútját (a későbbi kártyák elvesztése, kimaradó fókuszeltolás) ne másolja.** Colab-mérés (üres album + későbbi dátumú mappák) megerősítené. |
+| Azonos dátumnál: kategória-prioritás, kategórianév, besorolás, név (kisbetűsített ASCII), azonos számcsoportú, évszámmal kezdődő nevek esetén a táblasorrend (§4). | `(date is None, date, name.casefold(), collectionId.casefold())` (`timeline_controller.py:293-300`). | **egyezik** a dátum és a név szerinti sorrendben; **eltér** a kategória és besorolás szerinti döntésben, az évszám-előtagos nevekben (a PicasaPy névrendezést ad) és a nem ASCII betűk kezelésében (`casefold`). A gyakorlati hatás kicsi (azonos dátum ritka). Javaslat: a döntetlenre `(album ? 0 : 1)` rang beépítése csak akkor, ha a kategória elérhető. |
+| A kártyadátum a tárolt `albumdata_date`; mappánál a legkorábbi képidő első beíráskor; albumsornál ini- vagy tartalmi eredetű; virtuális sornál időbélyeg (§5, 38.2.190 §5). | A legkorábbi élő `taken_at`; a `folders.date` és `albums.date` megvan az indexben, az Időrend nem használja. | **eltér** (változatlan a 38.2.190 §6 szerint). A virtuális sor kártyáját továbbra se adja hozzá: a dátum forrása nyitott. |
+| A kártyadátum a rendezés után hónap első napja; az `A[i] = A[i-1] + ln(max(1 + Δnap, 1))` és a pozíció `A[i] / A[n-1]` (§6). | `sliderPosition = (dátum_sorszám - első) / (utolsó - első)` lineáris, napokban (`timeline_controller.py:301-333`, `slider_position` a `313-321` sorban); a `dateValue` napsorszám. | **eltér: az eredeti hónap-lépcsős és logaritmikus.** **Javaslat:** a rendezett kártyákra `d = date(év, hónap, 1)`, `A[0] = 0`, `A[i] = A[i-1] + ln(max(1 + (d[i] - d[i-1]).days, 1))`, `sliderPosition = A[i] / A[n-1]`; azonos hónap kártyái azonos helyre kerülnek. A `A[n-1] = 0` esetet (egy hónap, egy kártya) az eredeti védelme nincs megnézve, ezért a PicasaPy-ban `0,0` legyen, és ezt a jegy mondja ki eltérésként. |
+
+**Javaslat a hívónak (kódot nem módosítottam).** Csak a bizonyított pontok:
+
+1. A `sliderPosition` számítása a §6 képlet szerint (a legnagyobb nyereség: ez a sáv pontjainak látható helyét változtatja).
+2. A többi pontban (§1, §3, §4) **ne** változtasson: a PicasaPy viselkedése a látható eredményben egyezik, vagy az eltérés megvalósítása becslésre épülne.
+3. A virtuális albumok kártyáját ne adja hozzá (§5).
+
+**Kész, ha** (a hívó által kiadott fejlesztői jegyhez):
+
+- [ ] a `sliderPosition` az `A[i] / A[n-1]` képlet szerinti; teszt a mért vektorral: bemeneti dátumok `[45748,1; 45778,1; 45809,1; 45839,1]` → `A = [0; 3,433987; 6,899723; 10,33371]`, tehát a pozíciók `[0; 0,332309; 0,667691; 1]` (hat tizedesre);
+- [ ] azonos hónap kártyái azonos pozíciót kapnak (teszt: `[46309,3217; 46309,3385; 46296,2]`);
+- [ ] a dátum nélküli kártya viselkedése kimondva (az eredeti nyújtása vagy a PicasaPy 1,0 pozíciója), teszttel;
+- [ ] vizuális egyezés: az eredeti `job-239` felvétel dátumsávjának pontjai a PicasaPy hat kártyás készletén (mért eltéréssel; a számolt geometria nem helyettesíti).
+
+**Mérési feladat (Colab, 1 feladat, a hívó adhatja fel):** Ctrl+5 egy katalógusban, ahol egy felhasználói album **üres** és más mappák dátuma későbbi (§3), valamint egy másikban, ahol van lecsukott és kibontott `Név~Alnév` szupercsoport (§1). Mérés: a kártyák neve és sorrendje, a dátumsáv pontjainak helye (az `A[i] / A[n-1]` képlet ellenőrzéséhez).
+
+##### Nyitott kérdések mérlege
+
+Nyitott kérdések: 4 nyílt · 5 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva"
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| A `+0x1d` jelző forrása (`0x004a4710`) | **LEZÁRVA** (§1) | |
+| A `+0xd8` nézetmód értékei (`0x005d9cc0`) | **LEZÁRVA** (§2) | |
+| Az üres felhasználói album kártyája | **LEZÁRVA** (§3: kódolvasat és QEMU; futásidejű felvétel nincs) | |
+| Azonos dátumú kártyák sorrendje | **LEZÁRVA** (§4) | |
+| A rendezés utáni átalakítás és az "A tömb" írója | **LEZÁRVA** (§6) | |
+| Az album- és a virtuális sor dátumának kezdeti írója | **NYÍLT** | Ghidra-kör kell: 0x004ada80 és 0x00441ed0 - a date oszlop kezdeti értékének írója az album- és virtuális soroknál (a 0x0055d730 és a 0x00452a30 nem az).` |
+| A lecsukott kategória (`catdata` `state`) és a fa nézet futásidejű hatása | **NYÍLT** | a fenti Colab-mérés (a szupercsoport-szabály kódból és adatból lezárt) |
+| Az `A[i] / A[n-1]` hányados védelme, ha `A[n-1] = 0` (egy hónap vagy egy kártya) | **NYÍLT** | `Ghidra-kör kell: 0x007ffc90 - az A[i] / A[n-1] osztás nullával szembeni védelme; az utolsó elem 0 esetén a futam- és pontképzés.` |
+| A `0xa09d` parancs forrása (a 3-as mód) | **NYÍLT**, nem blokkoló | a gyorsbillentyűk vagy az eszköztár táblázatának keresése; a teljes `.text`-ben nincs közvetlen operandusa |
+
+##### Amit kizártam
+
+- **"A `0x0055d730` és a `0x00452a30` az új sor dátumának forrása"** (38.2.190 §5 utolsó pont): cáfolt (§5): sztring-értékadó, illetve kategória-keresés/létrehozás.
+- **"A `+0x1d` a kategória saját kibontottsága"**: cáfolt (§1): a szupercsoport kibontottsága; a `~` nélküli kategóriánál mindig 1.
+- **"A kártyasorrend a `+0xd8` móddal változik"**: cáfolt (§4, §6): a kártyák mindig dátum szerint növekvők, a mód csak a döntetlent hangolja.
+- **"Az "A tömb" sorszámsor"** (38.2.25): cáfolt (§6): kumulált logaritmikus dátumsor.
+- **"A rendezés utáni átalakítás nem érinti a pozíciókat"** (38.2.190 §4 utolsó bekezdés): cáfolt; a `0x007fc4c0` ugyanabban a függvényben állítja elő az "A tömb"-öt a kerekített dátumokból.
+- **"A virtuális sorok dátuma tartalmi dátum"**: cáfolt (§5): közös időbélyeg.
+
+##### Bizonyítottság
+
+**Megerősített:** a hat `+0xd8` beállító és értékei (két út: hívóhely-argumentumok és az olvasók; a `0xa09d` neve kivételével); a `0x0049cd60`/`0x0049ecd0` stabilitása és iránya (utasításolvasat és 265 QEMU-rendezés); a `0x0098b550` kódolása és a `0x007fc4c0` kerekítése és `+0x90` képlete (utasításolvasat, a valódi függvény hat forgatókönyvön, a kódoló 33 bemeneten); a `0x00a6aa00` `4`-es visszatérése üres képre (QEMU); a `0x0055d730` és a `0x00452a30` szerepe. **Erős:** a `+0x1d` szupercsoport-jelentése és hatása (a hívási környezet utasításszinten, a kulcs az adatban megtalálható; a polaritás élő felvétellel nem igazolt); a kártyaépítés megszakadása üres albumnál (a hibakód-lánc utasításszinten és részben QEMU-val; felvétel nincs); a döntetlen kulcssorrendje (dekompiláció és oszlopazonosítás; a `D+4`, `D+8` oszlopnevei feltételesek, a név ága QEMU-val mért). **Feltételes:** a `catpri` oszlopnév a `D+8`-hoz; az album- és virtuális sorok dátumának forrása (nyitott).
+
+**Módosított fájlok ebben a szakaszban.** Ez a 38.2.210 szakasz és a `picasa-idorend-viselkedes.md` érintett sorai. Kódot, tesztet, eredeti binárist, felvételt vagy mérőadatot nem módosítottam; az ideiglenes mérőszkriptek és kimenetek a munkafa `.bt/` mappájából törölve.
+
+#### 38.2.220 A #6532 nyolc Colab-mérésének kiértékelése képekből: Space, Ctrl+Space, betöltésjelző, Escape utáni kijelölés (#6532, 2026-11-14)
+
+**Hatókör és módszer.** A 38.2.200 által tervezett nyolc feladat megérkezett eredményének kiértékelése. Forrás: a `6532-colab` mappa `job-662` ... `job-669` almappája; minden képernyőkép 1280x1024, mellettük az `allapot.json` (ablaklista és `dhash`; az `ocr` mező minden rekordban üres) és két videó (`job-664/video__01.mp4`, 100 s, és `job-669/video__06.mp4`, 30 s; mindkettő 15 kép/mp, 1280x1024). Feladat-hozzárendelés: 662 = 02a, 663 = 01a, 664 = 03a, 665 = 02c, 666 = 01d, 667 = 01b, 668 = 01c, 669 = 02b. A képnév alakja `job-663/kepernyo__12.png`; a videóknál az "N. képkocka" az 1-től számozott képkockát jelöli. A képsorszám a 38.2.200 szerinti: az N. kép az (N-1). lépés utáni állapot (ellenőrizve: a job-663 11. képe az első Space után készült, ezen jelenik meg először a OneUp).
+
+**Két út.** *A út:* minden döntő képet megnéztem (a panelre vágott kontaktlap, teljes képernyő, a könyvtárnézeteknél a mappafa, az állapotsor és a tálca). *B út (gépi):* minden képre kiszámoltam a nyers képpontok ujjlenyomatát (MD5), a képpárok különbségének határolótéglalapját (`ImageChops.difference(...).getbbox()`), és a OneUp képének nem fekete téglalapját; a két videót képkockánként dolgoztam fel (átlagos szürkeérték, kockák közti változás, a nem fekete terület határa). A két út a döntésekben egyezik; ahol csak az egyik támasztja alá az állítást, jelzem.
+
+##### 1. Döntéstábla
+
+| Feladat | Kérdés | 38.2.200 jóslata | Mért eredmény (képfájl) | Döntés |
+|---|---|---|---|---|
+| 01a (job-663) | Space első fotója, szünetelés, 2. és 3. Space | `1/7`, `2019-03-08 09:15`, szünetel; a 2. Space indít, a 3. megállít | 11-12. kép: `1/7`, `2019-03-08 09:15` (`kepernyo__11.png`, `kepernyo__12.png`); a 12-14. kép pixelre azonos (`kepernyo__12.png`, `kepernyo__13.png`, `kepernyo__14.png`); 15-17. kép: `1/7`, `2/7`, `4/7` (`kepernyo__15.png`, `kepernyo__16.png`, `kepernyo__17.png`); 18-20. kép pixelre azonos, `4/7` (`kepernyo__18.png`) | **jóslat igaz** |
+| 01b (job-667) | az első fotó a 3 képes kártyán | `1/3`, `2014-11-02 15:30`; Escape után a mappa kijelölt, fotó nélkül | `kepernyo__09.png`, `kepernyo__10.png`: `1/3`, `2014-11-02 15:30`; Escape után `kepernyo__12.png`: `2014_november (3)` mappa kijelölt, `Folder Selected - 3 photos` | **jóslat igaz** |
+| 01c (job-668) | az első fotó a 24 képes gyűjteményen | az első fotó; Escape után mappa, fotó nélkül | `kepernyo__16.png`: az 1024x256 méretű `gray_ramp` (a könyvtár első bélyegképe), sorszám nincs a képen; Escape után `kepernyo__18.png`: `PicasaTeszt (24)` mappa ÉS a `gray_ramp.jpg` fotó kijelölt | **az első fotó igaz; a "fotó nélkül" TÉVES** |
+| 01d (job-666) | a Ctrl+Space látható hatása | a panel tartalma megváltozik, a OneUp nem nyílik | `kepernyo__08.png`, `kepernyo__09.png`, `kepernyo__10.png`, `kepernyo__11.png` pixelre azonos; `qshow` marad az ablaklistában | **a változás jóslata CÁFOLT** (gyenge nulla, §3) |
+| 03a (job-664) | `Preparing timeline...` betöltésjelző | nincs köztes kocka, vagy a köztes kockán nincs jelző | három belépés, mindegyiken legfeljebb egy (majdnem) fekete kocka, jelző nincs (§4) | **jóslat igaz** |
+| 02a (job-662) | kijelölés mappafókuszból, Right+Left után | a belépés a `2009_majus` kártyával; Escape után `2009_majus` és `2009_majus_01.jpg` | `kepernyo__07.png`, `kepernyo__08.png`: `2009_majus`; `kepernyo__09.png`, `kepernyo__10.png`: `2014_november`; `kepernyo__11.png`, `kepernyo__12.png`: `2009_majus`; `kepernyo__14.png`, `kepernyo__15.png`: `2009_majus (1)` és `2009_majus_01.jpg` kijelölt | **jóslat igaz** |
+| 02b (job-669) | kijelölés a legkorábbi Escape után | ugyanaz, mint 02a | `kepernyo__10.png`, `kepernyo__11.png`: `2009_majus (1)` és `2009_majus_01.jpg` kijelölt; a videón az Escape az első panelkép után 29 képkockával érkezik (§4) | **jóslat igaz** |
+| 02c (job-665) | kijelölés `PicasaTeszt` és `Recently Updated` kártyáról | `PicasaTeszt` mappa és első képe; az albumnál két lehetőség | `kepernyo__16.png`: `PicasaTeszt (24)` és `gray_ramp.jpg`; az album: `kepernyo__31.png`: `PicasaTeszt (24)` kijelölt, az `Albums` alatti sor nem, és egy fotó kijelölt; a második belépés kártyája `2009_majus` (`kepernyo__19.png`) | **`PicasaTeszt` igaz; az album mindkét jósolt lehetősége téves** (a harmadik: mappanézet és fotó); a második belépés igaz |
+
+##### 2. Space (01a, 01b, 01c)
+
+1. **A OneUp felület nyílik, a `qshow` marad az ablaklistában** (`job-663/allapot.json`, 11-20. rekord). Fekete teljes képernyő, a fotó természetes méretben, középen: az 800x600-as mintaképek a 240,212 ponttól (nem fekete téglalap 240,212-1039,811: `job-663/kepernyo__12.png`, `job-667/kepernyo__10.png`, `job-666/kepernyo__12.png`), az 1024x256-os `gray_ramp` a jobb szélén az 1151. oszlopig és a 384-639. sorban (`job-668/kepernyo__16.png`).
+2. **Vezérlősáv csak az első képen.** A Space utáni első képen halványan látszik az alsó sáv (`Exit Slideshow`, `Timeline`, két forgatógomb, lejátszás, következő, csillag, `Display Time 3 seconds`; `job-663/kepernyo__11.png`, `job-668/kepernyo__15.png`, `job-667/kepernyo__09.png`, `job-666/kepernyo__12.png`: legnagyobb szürkeérték az y >= 940 sávban 29-30), a következő képen már nincs (`job-663/kepernyo__12.png`, `job-668/kepernyo__16.png`, `job-667/kepernyo__10.png`, `job-666/kepernyo__13.png`: 0). A két kép különbsége kizárólag a 274,960-1022,996 sávban van. A sáv a 663-ban később sem tér vissza (`kepernyo__15.png` ... `kepernyo__19.png`: 0).
+3. **Szünetel.** A fotó területén (y < 940) nincs különbség a 12-14. kép közt (`job-663/kepernyo__12.png`, `kepernyo__13.png`, `kepernyo__14.png`; köztük legalább 9 s telt el: két várakozás, 3 s és 4 s, plusz két 1,0 s-os szünet), a 667-ben a 10-11. kép (`kepernyo__10.png`, `kepernyo__11.png`), a 668-ban a 16-17. kép (`kepernyo__16.png`, `kepernyo__17.png`) azonos.
+4. **A második Space lejátszást indít** (`job-663/kepernyo__15.png`, `kepernyo__16.png`, `kepernyo__17.png`): a kép a qshow-panel 600x480 területére illesztve áll (600x450, a 340,287 ponttól), a felirat `1/7 2019-03-08 09:15`, majd `2/7 2019-03-08 09:32`, majd `4/7 2019-03-08 10:06`. A harmadik Space megállít az aktuális fotón: a `kepernyo__18.png`, `kepernyo__19.png`, `kepernyo__20.png` pixelre azonos, az 800x600-as természetes méretben, `4/7`. A sorszám 2/7 és 4/7 közti ugrása és az időköz: lásd §7 (nem mérhető).
+5. **A kezdőfotó azonosítása.** A 01a és 01b képein a fotóba égetett felirat adja az azonosítást (`2019_marcius 1/7 2019-03-08 09:15`; `2014_november 1/3 2014-11-02 15:30`); a 01c-n nincs felirat, ott a `gray_ramp` a könyvtár első bélyegképe (`job-668/kepernyo__18.png` állapotsora: `gray_ramp.jpg`, 1024x256), az azonosság a képi egyezésből következik (vízszintes szürke átmenet, 1024x256), a `1/24` sorszám nem olvasható.
+6. **Escape a OneUp-ból** egy lépésben a könyvtárba vezet (`qshow` nincs az ablaklistában: `job-663` 21. rekord, `job-667` 12., `job-668` 18., `job-666` 15.). A kijelölésről: §5.
+
+##### 3. Ctrl+Space (01d, job-666)
+
+- A 8. kép a `2014_november` kártya (a Right és a 2,5 s várakozás után); a Ctrl+Space (8. lépés) utáni 9. kép és a két következő kép pixelre azonos vele (`kepernyo__08.png` = `kepernyo__09.png` = `kepernyo__10.png` = `kepernyo__11.png`, ujjlenyomat `12e73c`, ugyanez a hely a 663, 665, 667, 668 feladatban is). A `qshow` az ablaklistában marad (`allapot.json`, 9-11. rekord), a OneUp nem nyílik.
+- **Kontroll.** Az ezután adott sima Space ugyanazt a képsort adja, mint a Ctrl+Space nélküli job-667: `job-666/kepernyo__12.png` = `job-667/kepernyo__09.png`, `job-666/kepernyo__13.png` = `job-667/kepernyo__10.png`, és a végállapot `job-666/kepernyo__15.png` = `job-667/kepernyo__12.png`, mind pixelre azonos. Tehát (a) a billentyűcsatorna a Ctrl+Space után is működött (a Space megnyitotta a OneUp-ot), (b) a Ctrl+Space nem értelmeződött sima Space-ként (azt a OneUp megnyitása követte volna), (c) a `[this+0x3ba]` jelző beírása sem hagyott látható nyomot sem a panelen, sem a következő Space eredményén.
+- **A korlát (gyenge nulla).** A képek nem igazolják, hogy a Ctrl+Space a Picasáig ért; a 38.2.200 3.2 pontja ezt előre kimondta. A jóslat "a panel tartalma megváltozik" része a mérés szerint nem teljesült, a "OneUp nem nyílik" része igen.
+
+##### 4. Betöltésjelző és belépési átmenet (03a, 02b videó)
+
+A `job-664/video__01.mp4` három Ctrl+5 belépését képkockánként vizsgáltam (a Ctrl+5 időpontja nincs a felvételen, a belépés a könyvtárkép és az első panelkép határa).
+
+| Belépés | utolsó könyvtárkocka | köztes kocka | első panelkocka | megjegyzés |
+|---|---|---|---|---|
+| 03a, 1. (hideg) | 311. | 312.: teljesen fekete (legnagyobb szürkeérték 5) | 313. (átlag 30,1, a 328. kockára 26,0) | a 310. kockán a kurzor a `PicasaTeszt` sor fölött áll, a 311. kockán a sor kijelölődik (§7) |
+| 03a, 2. | 539. | nincs külön fekete kocka | 540. (átlag 0,3, a panelen kívül nincs 8-nál világosabb képpont; 558. kockára 25,4) | feketéből világosodik |
+| 03a, 3. | 774. | 775.: fekete (legnagyobb szürkeérték 8) | 776. (a nem fekete terület 344,372-939,746, tehát a panelen belül) | feketéből világosodik |
+| 02b (`job-669/video__06.mp4`) | 28. | nincs | 29. (átlag 27,2) | a 29. kocka már a halvány panel |
+
+- **Egyik köztes vagy első kockán sincs a panel téglalapján (340,272, 600x480) kívül 8-nál világosabb képpont**: se lebegő ablak, se folyamatjelző sáv, se `Preparing timeline...` vagy `Press ESC key on keyboard to abort` szöveg. Ez a 38.2.200 3.3 pontjának jóslata. A 312. kocka teljes képe és a 311-313. kockák kontaktlapja megtekintve.
+- **Bezárás.** Escape után a panel feketére sötétedik (job-664: 445-459. kocka, 15 kocka; job-669: 58-73. kocka, 16 kocka), és a kép a job-664-ben a 462., a job-669-ben a 76. kockáig fekete marad, majd a könyvtár két lépésben festődik: az első kocka csak a címsort és a menüt mutatja fekete munkaterülettel (job-664 463.), a másodikon az előző kijelölés látszik (464.: `PicasaTeszt` mappa és `gray_ramp.jpg`), a harmadikon már a végleges (465.: `2009_majus`). A job-669-ben ugyanez 77-79. kocka (a 77-en a fában már a `2009_majus` sor kijelölt, de a tálcán még a `Folder Selected - 7 photos` áll).
+- **Az Escape időzítése (02b).** Az első panelkockától (29.) a sötétedés kezdetéig (58.) 29 kocka telt el (29/15 = 1,93 s, a pontosság egy kocka, 0,07 s): az Escape a megnyitó áttűnés (29-44. kocka, a cím a 44. kockára teljes fehér) befejezése UTÁN érkezett, tehát az "Escape az áttűnés közben" állapotot ez a végrehajtó nem adja (ahogy a 38.2.200 1. része előre kimondta).
+- **A felirat a nyitás első kockáin.** A fókuszos belépésnél (job-669, 29-34. kocka) a nagy halvány felirat először a belépési mappa gyűjteményét (`2019_marcius`, `2019-03-08 09:15`) mutatja, és a 34-40. kockán úszik át a `2009_majus`, `2009-05-14 10:00` feliratra, miközben a jobb felső cím (`2009_majus`, `May 2009`) az első kockától ezt mutatja. Ugyanabban az időpontban (az első Ctrl+5 utáni kép) fókusz nélkül a nagy felirat tiszta `2009_majus` (`job-663/kepernyo__05.png`), a fókuszos `job-662/kepernyo__07.png` képén még látszik az átúszás maradványa (`9_majus` és `ius` egymásra csúszva).
+
+##### 5. Az Escape utáni kijelölés (02a, 02b, 02c és a Space utáni esetek)
+
+| Job (feladat) | Belépési fókusz | Kártya az Escape előtt | Space? | Mappafa | Kijelölés a főnézetben | Képfájl |
+|---|---|---|---|---|---|---|
+| 662 (02a) | `2019_marcius` (kattintva, `kepernyo__05.png`) | `2009_majus` (Right, Left után: `kepernyo__12.png`) | nem | `2009_majus (1)` | `2009_majus_01.jpg` | `kepernyo__14.png`, `kepernyo__15.png` |
+| 669 (02b) | `2019_marcius` (kattintva) | `2009_majus` (navigáció nélkül) | nem | `2009_majus (1)` | `2009_majus_01.jpg` | `kepernyo__10.png`, `kepernyo__11.png` |
+| 664 (03a) | nincs | `2009_majus` | nem | `2009_majus (1)` | `2009_majus_01.jpg` | `kepernyo__08.png`, `kepernyo__12.png`, `kepernyo__16.png` |
+| 665, 1. Escape | nincs | `PicasaTeszt` (`kepernyo__14.png`) | nem | `PicasaTeszt (24)` | `gray_ramp.jpg` | `kepernyo__16.png` |
+| 665, 2. Escape | `PicasaTeszt` marad az előző Escape-ből | `Recently Updated` album (`kepernyo__29.png`) | nem | `PicasaTeszt (24)`; az `Albums` alatti sor nem kijelölt | egy tájkép-fotó (állapotsor: `_d0ccc81b-5e41-40...967b3dc.jpg`, 1024x1024) | `kepernyo__31.png` (= `kepernyo__32.png`) |
+| 663 (01a) | nincs | `2019_marcius` | igen, 3 Space | `2019_marcius (7)` | csak mappa: `Folder Selected - 7 photos`, fotó nincs | `kepernyo__21.png` (= `kepernyo__22.png` = `kepernyo__23.png`) |
+| 667 (01b) | nincs | `2014_november` | igen | `2014_november (3)` | csak mappa: `Folder Selected - 3 photos` | `kepernyo__12.png` (= `kepernyo__13.png` = `kepernyo__14.png`) |
+| 666 (01d) | nincs | `2014_november` | igen (Ctrl+Space, Space) | `2014_november (3)` | csak mappa: `Folder Selected - 3 photos` | `kepernyo__15.png` (= `job-667/kepernyo__12.png`) |
+| 668 (01c) | nincs | `PicasaTeszt` | igen | `PicasaTeszt (24)` | `gray_ramp.jpg` | `kepernyo__18.png` (= `kepernyo__19.png` = `kepernyo__20.png`) |
+
+1. **A belépési fókusz nem számít** (02a, 02b: a `2019_marcius` fókusz ellenére a belépő kártya `2009_majus`: `job-662/kepernyo__07.png`, `kepernyo__08.png`, `job-669/video__06.mp4` 40-46. kocka; és az Escape után sem a belépési mappa jelölődik ki). A fókuszos belépésnél a `qshow` megnyílik (`job-662/allapot.json` 7-12. rekord), tehát a 38.2.200 3.4 pontjának cáfoló feltétele (a `qshow` nem nyílik meg) nem teljesült.
+2. **A belépő kártya mindig a legkorábbi (`2009_majus`)**: `job-662/kepernyo__08.png`, `job-663/kepernyo__06.png`, `job-665/kepernyo__06.png`. **A második belépés is `2009_majus`-sal nyílik** (`job-665/kepernyo__19.png`; a 38.2.83 nyitott pontja lezárva).
+3. **Közvetlen Escape mappakártyán** (Space nélkül): a kártya mappája és az első fotója kijelölt (`2009_majus` három feladatban, `PicasaTeszt` egyben, és a korábbi job-241-ben a `2021_eltero_fajlido`). A 02b jóslata ("a közbeni navigáció nem számít") igaz: a 02a és a 02b végállapota azonos.
+4. **Albumkártya** (`Recently Updated`): a mappafában a `PicasaTeszt (24)` sor kijelölt, az `Albums` alatti `Recently Updated (24)` sor nem, a főnézet a `PicasaTeszt` mappa, és egy fotó kijelölt (`job-665/kepernyo__31.png`). A tálca bélyegképe a `kepernyo__29.png` album-kártyája felső lapjára hasonlít (bolygós tájkép); képpontos azonosítás nem történt. Hogy a `PicasaTeszt` fasort az Escape jelölte-e ki, nem dönthető el (az első Escape után is az volt kijelölt, `kepernyo__16.png`). A job-239 (38.2.81) "a belépés előtti `PicasaTeszt` mappanézet tér vissza" állítása ezzel összhangban van.
+5. **Space és Escape után két eset van** (az ellentmondás): `2019_marcius` (7 fotó) és `2014_november` (3 fotó): csak a mappa kijelölt; `PicasaTeszt` (24 fotó): a mappa és az első fotó. A lehetséges magyarázó változók és amit a mért cellák mondanak: (a) a Space: a 663, 666, 667 Space-es esete mappát ad, de a 668 is Space-es, és fotót is ad, tehát a Space önmagában nem magyaráz; (b) a kártya sorszáma: a csak-mappa esetek az 1. és a 2. indexű kártyák, a fotós esetek a 0. és a 4. indexűek, nincs monoton szabály; (c) a fotók száma: 3 és 7 csak-mappa, 1 és 24 fotós; (d) hogy a mappa a belépés előtt látszott-e a főnézetben: a `PicasaTeszt` látszott (fotós), a `2009_majus` nem látszott (fotós, 662), a `2019_marcius` és a `2014_november` nem látszott (csak-mappa). Egyik változó sem ad egyetlen szabályt a kilenc állapotra. Két kimérhető cella hiányzik, amely szétválasztaná őket: Space és Escape a `2009_majus`-on, valamint Escape Space nélkül a `2014_november`-en és a `2019_marcius`-on (§8).
+6. **A szomszéd megnézve:** a végállapot minden esetben stabil (a 663, 667, 668 három utolsó képe pixelre azonos, a 665 két utolsó képe is), tehát nem időzítésfüggő késői kijelölés. A könyvtár a kijelölést két lépésben alkalmazza (§4, 464-465. és 77-79. kocka); a job-664 `kepernyo__15.png` képe teljesen fekete, miközben az `allapot.json` 15. rekordjának `dhash` értéke könyvtárnézetet mutat: a képernyőkép és az állapotrekord nem ugyanabban a pillanatban készül.
+7. **Mellékes megfigyelés (a 38.2.94 háttérkérdéséhez):** az album-kártya fókuszában a panel hátterében kiszürkített tájkép látszik (`job-665/kepernyo__29.png`), a `PicasaTeszt` kártya fókuszában (2,5 s várakozás után, `kepernyo__14.png`) nem.
+
+##### 6. Eltérések a PicasaPy mostani viselkedéséhez és megvalósítási javaslatok
+
+A kódhelyek a `src/picasapy/app/qml/PicasaPy/` alatt vannak. A javaslatok a hívó által kiadott fejlesztői jegyeknek szólnak; kódot ebben a körben nem változtattam.
+
+| # | Mért eltérés | PicasaPy most | Megvalósítási javaslat | Teszt és elfogadás |
+|---|---|---|---|---|
+| J1 | Az Időrendből az első Space szünetelő OneUp-ot nyit, a fotó nem lép (`job-663/kepernyo__12.png`, `kepernyo__13.png`, `kepernyo__14.png`); a második Space indít (`kepernyo__15.png` ... `kepernyo__17.png`), a harmadik megállít (`kepernyo__18.png` ... `kepernyo__20.png`). | `MainTimeline.qml:122` `hostWindow.startSlideshow(0)`, `MainSlideshow.qml:60-72`, `SlideshowView.qml:201-215`: `playing = true`, 3 s után lép. | `SlideshowView.start(index, paused)` (alapérték `false`, a többi hívó változatlan): `playing = !paused`. `MainSlideshow.startSlideshow(fromIndex, paused)` továbbadja, `MainTimeline.startTimelineSlideshow` `startSlideshow(0, true)`-t hív. A `SlideshowTiming` csak `playing` mellett fut (`SlideshowTiming.qml:16`), tehát az első fotó áll; a `Keys.onSpacePressed` már `togglePause`-t hív (`SlideshowView.qml:566-570`), így a második Space indít, a harmadik megállít. A vezérlősáv induláskor látszódjon: `slideshowControls.controls.shown = true` és `slideshowControls.autoHideTimer.restart()` (az 1500 ms-os `SlideshowControls.qml:100-105` rejti; az eredetiben a Space után legalább 4,5 s-mal készült képen már nincs sáv: 1,0 s szünet, 2,5 s várakozás, 1,0 s szünet). | `tests/app/test_qml_timeline.py` bővítése: Space az Időrenden: a vetítés látható, `playing === false`, `currentIndex === 0`; az időzítő óráját 3 s-nál tovább léptetve is 0; második Space: `playing`; harmadik: nem; Escape: a vetítés bezár, `timelineOpen` hamis. Elfogadás (látás): a PicasaPy renderelt képe az első Space után egybevetve a `job-663/kepernyo__11.png` és `kepernyo__12.png` képpel (fekete háttér, középre igazított fotó, a sáv csak az elsőn); a kép mérete J7 szerint külön kérdés. |
+| J2 | A Ctrl+Space nem változtat a képen (`job-666/kepernyo__08.png` = `kepernyo__09.png` = `kepernyo__10.png` = `kepernyo__11.png`). | `TimelineView.qml:403-405`: a `Qt.Key_Space` ág a módosítótól függetlenül `startCurrentSlideshow()`-t hív. | A Space ág elé: `else if (event.key === Qt.Key_Space && (event.modifiers & Qt.ControlModifier)) { event.accepted = true }` (nincs hatás, és a billentyű nem szivárog tovább). A sima Space marad. | Ctrl+Space után `timelineOpen` igaz, vetítés nincs, a panel renderelt képe pixelre azonos a Ctrl+Space előttivel; utána a sima Space megnyitja a vetítést. Mérce: `job-666` 8-11. képe és a 12. kép egyezése a `job-667/kepernyo__09.png`-nel. |
+| J3 | Albumkártyáról Escape után a mappanézet marad (`PicasaTeszt`), az `Albums` alatti sor nem kijelölt, és egy fotó kijelölt (`job-665/kepernyo__31.png`). | `MainTimeline.qml:79-82`: albumnál `hostController.showAlbum(...)`, a főnézet albumra vált. | Ha a `collection.firstPhotoPath` sora (`hostController.photos.rowOfPath`) benne van az aktuális mappanézetben, ne hívjon `showAlbum`-ot, csak jelölje ki a fotót (a `selectedIndex` és a `selectedIndexes` a sor); egyébként marad a mostani út. A mérés csak azt az esetet fedi, amikor az album fotója a belépés előtt nézett mappában van (§8, 02g). | Katalógus, ahol az album fotója az aktuális mappában van: albumkártyáról Escape után a nézet a mappa marad, `selectedIndex` a fotó sora, az `Albums` sor nem aktív; a mappakártyás esetek változatlanok. Mérce: `job-665/kepernyo__31.png` (mappafa, a rács kijelölt fotója, a tálca). |
+| J4 | Space és Escape után a `2019_marcius` és a `2014_november` esetén csak a mappa kijelölt (`job-663/kepernyo__21.png`, `job-667/kepernyo__12.png`, `job-666/kepernyo__15.png`), a `PicasaTeszt`-nél a mappa és az első fotó is (`job-668/kepernyo__18.png`). | A Space az indítás előtt ugyanazt a kijelölést végzi, mint az Escape (`MainTimeline.qml:116`): mappa és első fotó. | **Kódváltoztatás most nincs:** az ok nem ismert, a mostani út a közvetlen Escape öt mérésével és a 668-cal egyezik, a 663, 666, 667 eseteivel nem. A §8 három mérése után: ha a Space-mentes Escape a `2014_november`-en és a `2019_marcius`-on is csak mappát ad, a szabály a mappához kötődik (`selectTimelineCollection` kapjon "csak mappa" ágat); ha fotót ad, a Space a tényező, és az `exitSlideshow` Időrendes ágában (`MainSlideshow.qml:94-97`) kell a fotókijelölést visszavonni. | A mérés után: a döntési tábla minden cellájára egy teszt, a `job-663`, `job-667`, `job-668` végállapotával mint mércével. |
+| J5 (opcionális, kozmetikai) | Nyitáskor a panel halványból áttűnik (`job-669/video__06.mp4` 29-44. kocka), bezáráskor 15-16 kockán sötétedik, a kép a `job-664/video__01.mp4` 462., a `job-669/video__06.mp4` 76. kockájáig fekete (§4). | Nincs nyitási vagy bezárási animáció a `TimelineView.qml`-ben és a `TimelinePanel.qml`-ben; a `visible` kötés azonnal mutat és rejt. | A `TimelineView` ablak `opacity` értékére 1000 ms-os `NumberAnimation` (a 38.2.85 szerinti 1,000 s) a megnyitáskor (0 -> 1), és bezáráskor a `closed()` jelzés a sötétedés végén. A nyitás kezdete belépésenként eltér (feketéből a 03a 2. és 3. belépésén, halványból az 1. belépésen és a 02b-ben, §4); a javaslat a feketéből világosodó változat. | Időzített teszt: 500 ms-nál az `opacity` 0 és 1 között, 1100 ms-nál 1. Elfogadás (látás): a `job-669/video__06.mp4` 29-46. képkockájával egybevetve. |
+| J6 | A betöltésjelző a látható futásban nincs (§4). | Az Időrend QML-nyitó útján nincs folyamatjelző. | **Nincs teendő.** A `DAT_00d67914` kapu értéke csak azt dönti el, mikor jelenhetne meg jelző (nem blokkoló). | Nincs. |
+| J7 | A szünetelő OneUp a fotót természetes méretben, fekete teljes képernyő közepén mutatja (800x600 a 240,212 ponttól: `job-663/kepernyo__12.png`; 1024x256 a 128,384 ponttól: `job-668/kepernyo__16.png`), lejátszás közben a 600x480 panel területére illesztve (600x450: `job-663/kepernyo__16.png`). | `SlideshowCurrentImage.qml:79`: `PreserveAspectFit`. Hogy a kis mintaképeket nagyítja-e, nincs mérve. | **Kódjavaslat nincs, két mérés kell:** (1) a PicasaPy renderelt vetítőképe az 800x600-as `2009_majus_01.jpg`-vel a 1280x1024-es képernyőn; (2) az eredeti viselkedése a képernyőnél nagyobb fotónál (§8). | A (1) mérés után dönthető, kell-e változtatás. |
+
+##### 7. Bizonyítottság és korlátok
+
+**Megerősített (két út):** a Space első fotója és szünetelése (A út: a képek a 663, 667, 668 három független feladatban; B út: az ujjlenyomatok és a különbség-határoló, valamint a korábbi job-240 és job-373 mérés, 38.2.82 és 38.2.150); a második Space indít és a harmadik megállít (egy feladat, a képsorozat két útja); a belépő kártya (`2009_majus`) minden belépésnél, a másodiknál is (öt feladat); a belépési fókusz hatástalansága az Escape utáni kijelölésre (662, 669 és fókusz nélkül 664, 665); a betöltésjelző hiánya a látható futásban (A út: a kontaktlapok; B út: a pixelhatárok a három belépésen és a 02b-n).
+
+**Erős:** a Ctrl+Space látható hatásának hiánya (egy feladat; a kontroll a Space-sor pixelre azonos egyezése a Ctrl+Space nélküli job-667-tel); a közvetlen Escape kijelölése (öt mérés); az albumkártya kijelölése (egy mérés).
+
+**Feltételes:** a Space és Escape utáni kijelölés (két egymásnak ellentmondó eset, az ok nyitott); a lejátszás időköze és átmenete.
+
+**Korlátok.**
+- A felvételek 15 kép/mp-esek (67 ms); a leütés időpontja nincs a felvételen; az `ocr` mező üres, a feliratokat szemmel olvastam.
+- A Ctrl+Space null eredménye gyenge: a képek nem igazolják, hogy a billentyű a Picasáig ért, csak azt, hogy sima Space-ként nem értelmeződött és a következő Space működött.
+- A betöltésjelző hiánya a hat kártyás készletre és a látható felületre szól; a `DAT_00d67914` kapu értéke nem dönthető el, és egy 67 ms-nál rövidebb jelző nem zárható ki.
+- A lejátszás időköze nem mérhető: a `job-663/kepernyo__16.png` (`2/7`) és a `kepernyo__17.png` (`4/7`) közt két léptetés történt legalább 4 s alatt (a várakozás 3 s plusz az 1,0 s-os szünet); a képek elkészítési ideje nincs a rekordban, így a 3 s időköz sem megerősíthető, sem cáfolható. A `Display Time 3 seconds` felirat (`kepernyo__11.png`) az alapértéket mutatja.
+- Az áttűnés a lejátszásban nem látszik a két mintán (`kepernyo__16.png`, `kepernyo__17.png`: éles felirat, nincs szellemkép), de két minta nem dönt.
+- A 03a videóján a kurzor a `PicasaTeszt` sor fölött áll (310. kocka), és a Ctrl+5 pillanatában (311. kocka) a sor kijelölődik (`Folder Selected - 24 photos`); a feladat leírása kattintást nem tartalmaz, ezért az eredete nem dönthető el a képekből. Az Escape utáni végállapotot ez nem érinti (`2009_majus`, 465. kocka és `job-664/kepernyo__08.png`).
+- A képernyőkép és az `allapot.json` rekordja nem ugyanabban a pillanatban készül (§5.6).
+
+##### 8. Nyitott kérdések és következő irány
+
+A 38.2.200 négy nyílt sora közül az 1-3. lezárult, a 4. szétbomlott (5-7. sor).
+
+Nyitott kérdések: 4 nyílt · 5 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| A Space első fotója és szünetelése az Időrendből | **LEZÁRVA** (§2) | |
+| A Ctrl+Space látható hatása | **LEZÁRVA** (§3; gyenge nulla) | |
+| A betöltésjelző látható megjelenése | **LEZÁRVA** (§4; a kapu értéke nem blokkoló) | |
+| Az Escape utáni kijelölés közvetlen Escape után, mappakártyán | **LEZÁRVA** (§5.3) | |
+| Az Escape utáni kijelölés albumkártyáról (az album fotója az előző nézetben van) | **LEZÁRVA** (§5.4) | |
+| Space és Escape után: csak mappa, vagy mappa és fotó | **NYÍLT** | a `02d`, `02e`, `02f` feladat |
+| Albumkártyáról Escape más belépési nézetből | **NYÍLT** | a `02g` feladat |
+| Az Időrendből indított lejátszás időköze és első átmenete | **NYÍLT** | a `08a` feladat (videó) |
+| A OneUp képmérete a képernyőnél nagyobb fotónál, és a PicasaPy nagyítása | **NYÍLT**, nem blokkoló | nagy mintakép a mintakészletbe (a hívó dolga), és a PicasaPy renderelt vetítőképe |
+
+**Következő irány megnevezve (a hívó adja fel; mind a bevált váz: `"indulas": "alapallapot"`, `"wine_desktop": true`, `"mintakeszlet": "idorend"`, a három kezdő `var 10` után):**
+
+| Fájl (`6532-<név>.job.json`) | Lépéssor a kezdő várakozások után | Perc | Mit dönt el |
+|---|---|---:|---|
+| `02d-space-2009-majus` | `ctrl+5`, 3, `space`, 2.5, 4, `Escape`, 2, 2 | 12 | Space és Escape a 0. kártyán (1 fotós mappa): mappa, vagy mappa és fotó |
+| `02e-escape-2014-november` | `ctrl+5`, 3, `Right`, 2.5, `Escape`, 2, 2 | 12 | Escape Space nélkül, a `job-667` párja |
+| `02f-escape-2019-marcius` | `ctrl+5`, 3, `Right`, 2.5, `Right`, 2.5, `Escape`, 2, 2 | 12 | Escape Space nélkül, a `job-663` párja |
+| `02g-album-escape-mas-nezetbol` | `kattint [90,311]`, 2, `ctrl+5`, 3, ötször (`Right`, 2.5), `Escape`, 2, 2 | 15 | albumkártyáról Escape, miközben a belépés előtt a `2019_marcius` mappa látszik |
+| `08a-lejatszas-videon` | `felvetel 45`, `ctrl+5`, 3, `Right`, 2.5, `Right`, 2.5, `space`, 2.5, `space`, 20, `space`, 2, `Escape`, 2, 2 | 15 | a lejátszás időköze és az első átmenet 15 kép/mp-en (a fotóváltások közti kockaszám, van-e köztes kocka) |
+
+Döntési szabály a `02d`-`02f` eredményére: ha a `02e` és a `02f` is fotót ad (mappa és első fotó), akkor a Space a tényező, és a `job-663`, `job-666`, `job-667` mappa-csak állapota a OneUp-ból kilépés sajátossága; ha a `02e` és a `02f` is csak mappát ad, a mappa vagy a kártya sorszáma a tényező, és a `02d` mondja meg, melyik csoportba esik a 0. kártya. A mérés után a J4 javaslat konkrét kóddá válik.
+
+**A 38.2.200 3. következő irányához** (a 38.2.160 szerinti nyitott A pontok számának frissítése): a viselkedési lap A listáján az indítási jelzés, a Ctrl+Space és a Space tétele LEZÁRVA, az általános kilépés RÉSZBEN LEZÁRVA; a 38.2.160 12-es számát nem számoltam újra, mert a számlálás alapjául szolgáló lista nincs egyben ebben a fájlban (számlálót nem találtam).
+
+**Módosított fájlok ebben a szakaszban.** Ez a 38.2.220 szakasz és a `picasa-idorend-viselkedes.md` érintett sorai (az állapot dátuma, az Escape-, Space-, diavetítés-időköz-, Ctrl+Space- és betöltésjelző-sor, az új átmenet-sor és az A lista négy tétele). Kódot, tesztet, eredeti binárist, felvételt vagy mérőadatot nem módosítottam; az ideiglenes mérőszkriptek és kimenetek a munkafa `.bt/` mappájából törölve.

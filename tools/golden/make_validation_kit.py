@@ -143,6 +143,11 @@ HEX_SLOT = re.compile(r"^[0-9a-fA-F]{8}$")
 #: néma „nem történt semmi" jönne, amit tévesen „nem működik"-nek olvasnánk.
 KNOWN_CHAINS = "docs/specs", "tests", "tools"
 
+#: A differenciális teszt VÉLETLEN GENERÁLT láncait tartalmazó lap (#6912):
+#: ezek nem a Picasa által írt minták, a színrekeszeik véletlen értékek, tehát
+#: sablonnak nem valók (azonos rangnál ábécérendben megelőznék a valódit).
+GENERATED_CHAIN_DOCS = frozenset({"docs/specs/differencialis-szuro-lancok.md"})
+
 
 def _template_rank(params: list[str]) -> tuple[int, int]:
     """A sablon rangja: előbb a hossz, azonos hossznál a tizedespontos mezők
@@ -163,6 +168,8 @@ def harvest_templates(repo_root: Path) -> dict[str, list[str]]:
     for folder in KNOWN_CHAINS:
         for path in sorted((repo_root / folder).rglob("*")):
             if not path.is_file() or path.suffix not in (".md", ".py", ".txt", ".ini"):
+                continue
+            if path.relative_to(repo_root).as_posix() in GENERATED_CHAIN_DOCS:
                 continue
             text = path.read_text(encoding="utf-8", errors="ignore")
             for match in pattern.finditer(text):
