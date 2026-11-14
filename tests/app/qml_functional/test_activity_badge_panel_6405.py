@@ -86,10 +86,13 @@ def test_a_jelzo_a_keresomezotol_jobbra_vele_egy_sorban_all(qml_app, qt_app, hei
         # a mezőtől jobbra, rés nélküli ráfedés nélkül, az eszközsáv jobb szélén
         assert badge_rect.left() >= search_rect.right() + 3
         assert abs(badge_rect.right() - (toolbar_rect.right() - 5)) <= 2
-        # a verziófelirat átadja a helyét
-        assert not version.isVisible(), "a verziófelirat a jelzővel együtt látszik"
+        # #6946: a verziófelirat háttérmunka közben is látszik, a háttérjelző mellett
+        assert version.isVisible(), "a verziófelirat a jelzővel együtt nem látszik (#6946)"
+        version_rect = _item_rect(version, root)
+        assert version_rect.right() <= badge_rect.left() - 2, "a verziócímke fedi a háttérjelzőt"
+        assert search_rect.right() <= version_rect.left() - 2, "a keresőmező a verziócímkére lóg"
 
-        for name in ("searchField", "toolbarImportButton", "toolbarNewAlbumButton"):
+        for name in ("searchField", "toolbarImportButton", "toolbarNewAlbumButton", "versionLabel"):
             item = _find_item(root, name)
             assert item is not None, f"a szomszédos elem nem található: {name}"
             if item.isVisible() and item.width() > 0 and item.height() > 0:
