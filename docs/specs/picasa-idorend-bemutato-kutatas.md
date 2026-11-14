@@ -4550,9 +4550,11 @@ Ha a 447. kockát t=0-nak vennénk, a fotóáttűnési képlet első, 1/15 s-os 
 | 466 | 0,999 | 0,988 (253/256) |
 | 470 | 1,000 | 0,996 (255/256) |
 
-A bináris görbével a 24 kockára (447-470) az RMSE **0,0120**, a legnagyobb eltérés 0,029. A kezdet fázisa az egyetlen szabadság: ha a görbe kezdetét a 447. kockához képest -1, -0,5, 0, +0,5, +1 kockával tolom (a pozitív érték korábbi kezdetet jelent), az RMSE 0,069, 0,039, 0,012, 0,029, 0,060; a legjobb eltolás +0,03 kocka, tehát az időbélyeg és az első látható kocka egybeesik (a tick a `0x00802108`-on az órát közvetlenül a rajzoló `0x00802110` hívása előtt indítja). Az utolsó százalék (466. kocka után 0,999-1,000) a videótömörítés kerekítése, nem a görbe tulajdonsága: a bináris szerint 255/256 áll fenn a 23. mintától.
+A bináris görbével a 24 kockára (447-470) az RMSE **0,0120**, a legnagyobb eltérés 0,029. Az időtartamot és a kezdőfázist nem illesztettem: a bináris `0x00802108`-on írja újra a QPC-órát a `+0x520` mezőbe, majd közvetlenül hívja a `0x00801f50` rajzoló útvonalat (`0x00802110`). A mérés a második Space-t a 447. kockán jelöli; ott a csatornaalapú alfa -0,021 (a mérési zajjal 0), a 448. kockán 0,027, szemben a bináris 8/256 = 0,03125 értékével. Ez a közvetlen időbélyeg- és képkockasorrend a kezdőpontot támasztja alá, szabad illesztett fázis nélkül. Az utolsó százalék (466. kocka után 0,999-1,000) a videótömörítés kerekítése, nem a görbe tulajdonsága: a bináris szerint 255/256 áll fenn a 23. mintától.
 
-**A T kiolvasása a videóból (kontroll, nem forrás).** Ha a T-t szabadon illesztem (eltolás 0), a legjobb érték 2,95 s (RMSE 0,0115); T = 2,8 s-ra 0,021, T = 3,2 s-ra 0,026, T = 3,5 s-ra 0,053. A videó tehát a binárisból olvasott T = 3 s-ot ±0,1 s-on belül megerősíti; a T értékének forrása a bináris (`0x007facd3`, `0x00564a24`) és a beállítás, nem az illesztés.
+**A T forrása.** A `T`-t nem a videóból becsülöm: a `0x007fa7f0` konstruktor `0x007facd3` utasítása 3-at ad a `Preferences\SlideshowEffectTime` beállítás alapértékének. A videó-összevetés a binárisból rögzített `T=3 s` értékkel fut; nem használtam szabadon illesztett `T`-t.
+
+**Független újraszámolás (2026-11-14).** Ugyanazt a csatornakülönbség-módszert a `.meres/video__04.mp4` nyers képkockáin újraszámolva 249 560 maszkpixelt kaptam, az RMSE 0,0119655, a legnagyobb abszolút alfaeltérés 0,028495. A kritikus mért alfák: 447: -0,020997; 448: 0,027223; 451: 0,427914; 462: 0,965063; 470: 1,000001. A korábbi kiértékelés 246 302 maszkpixelt ír; annak forráskódja nincs a mérőcsomagban, ezért a pixelek elemszámának eltérését nem oldom fel. A rögzített `T=3 s` bináris görbéhez kapott alfa- és RMSE-eredmény egyezik.
 
 **A címkártya recept ellenőrzése.** A binárisból levezetett kártya (`Y=(77R+151G+28B)>>8`, `LUT[Y]=rint(255·sqrt(Y/255))`, szorzás `(255-160)/255`-tel) a végképből számolva a 447. kockára a G csatornán átlagosan -0,9 szürkeszint eltéréssel, RMSE 2,1 szürkeszinttel egyezik; a pixelek 92%-a ±3 szürkeszinten belül van (a gyűjteménynév rajzának dobozát kihagyva). A gyűjteménynév rajza a 447-449. kockán 130x21 képpontos dobozban látszik (`x=576..705`, `y=479..499` a teljes képen, vízszintesen a kivágás közepén); a pontos betűméret képlete (a `0x00a48e10` paraméterei, `0x00cf4144` = 0,7142857) **NINCS MEG** a binárisból, a mért doboz az átvehető érték.
 
@@ -4626,3 +4628,92 @@ Nyitott kérdések: 0 nyílt · 7 lezárva · 0 blokkolt · 1 hatókörön kív�
 - A szünetelő OneUp kép mint kiinduló kép.
 
 **Módszertani tanulság.** Fekete-alapú fényerő-projekció csak akkor alfa, ha a kiinduló kép tényleg fekete. Neutrális (R=G=B) kiinduló képnél a csatornakülönbség (`X_G - X_R`) a kiinduló kép ismerete nélkül adja az alfát, és a mérés egyúttal bizonyítja a kiinduló kép neutralitását (a recept szürkítése miatt).
+
+### 38.2.290 A főnézetből indított vetítés címkártyája és folytatása: a job-682 mérés (#6916)
+
+**Eredmény.** A job-682 felvétele **nem tartalmaz diavetítést**, ezért a 38.2.280 két statikusan feltételes jóslata, (a) a normál indításnál is címkártya -> 1. fotó felúszás és (b) a Space-szel szüneteltetett, majd folytatott vetítés azonnali áttűnése a következő fotóra, egyaránt **nem dönthető el**: sem igazolva, sem cáfolva nincs. A `ctrl+4` a kijelölés nélküli főnézetben egyetlen látható változást sem okozott; a két `space` a főnézetet görgette (egy-egy lapozás), nem vetítést indított és nem folytatott; az `Escape` után sem látszik képváltozás. A mérés tehát a Ctrl+4 és a Space **kijelölés nélküli főnézeti** viselkedését írja le, nem a vetítését.
+
+**Mérés.** Colab job-682, `video__04.mp4` (SHA-256 `a018d1074df8...`; H.264, 1280x1024, 15 kép/mp, 600 kocka = 40,0 s; kulcskockák a 0., 250. és 500. kockán), a 14 képernyőkép (`kepernyo__01.png` - `kepernyo__14.png`) és az `allapot.json`. Lépéssor: felvétel 40 s, 2 s, `ctrl+4`, 8 s, `space`, 3 s, `space`, 9 s, `Escape`. A kockákat 0-tól számozom, a videó olvasási sorrendjében.
+
+**Módszer.** (1) A teljes felbontású, szürkeárnyalatos kockák egymás utáni átlagos abszolút eltérése mind a 600 kockán. (2) A 320x256-ra kicsinyített kockákon a 12 szürkeszintnél nagyobb változású pixelek száma és befoglaló doboza. (3) A kulcskockák és a képernyőképek szemrevételezése. (4) A görgetés elmozdulása sablonillesztéssel (`cv2.matchTemplate`, normalizált korreláció) a nézetablakban (`y=84..916`, `x=300..1200`). (5) A képernyőképek SHA-256 azonossága és pixelkülönbsége. A feldolgozás 1200 MB-os memóriaplafon alatt, swap nélkül, kockánként streamelve futott.
+
+#### Bizonyíték-táblázat
+
+| Állítás | Mért érték | Forrás |
+|---|---|---|
+| A felvételen csak két nagy változássáv van | a 276-287. és a 382-385. kocka; a többi kockán az átlagos eltérés legfeljebb 0,73 szürkeszint (ezek a kulcskockák körüli kodekzaj: a 4-8., 250. és 500. kocka, legnagyobb pixelváltozás 6 szürkeszint) | 1. módszer; `ffprobe` kulcskocka-lista |
+| Az eltérés az első sávban | 276. kocka: 34,6; 277: 43,7; 278: 35,3; 279: 32,8; 280: 20,9; 281: 15,4; 282: 9,8; 283: 7,1; 284: 4,7; 285: 4,3; 286: 2,3; 287: 2,7; utána 0,2 alatt | 1. módszer |
+| Az eltérés a második sávban | 382. kocka: 11,1; 383: 23,6; 384: 21,7; 385: 17,7; a 386. kockától 0,2 alatt | 1. módszer |
+| A változás helye | mindkét sávban a jobb oldali nézetablakban (`x=244..1272`, `y=84..916`); a menüsor, az eszköztár, a bal oldali fa és a tálca nem változik; sehol nincs teljes képernyős csere, fekete vagy szürkített kocka | 2. módszer (befoglaló doboz) |
+| A Ctrl+4 nem hozott látható változást | a 9. és a 275. kocka között a legnagyobb pixelváltozás 3,3 szürkeszint (a 250. kulcskocka zaja); a 0. és a 275. kocka átlagos eltérése 0,58. A lépéssor szerint a Ctrl+4 kb. a 30. kockánál (2 s) megy; a gombnyomás pillanatát a felvétel nem jelöli | 1. és 2. módszer; lépéssor |
+| Az első Space a 276. kockán a főnézetet görgeti | a nézetablak tartalma tiszta eltolással **667 px**-szel feljebb kerül (korreláció 1,000 a 02. és a 09. képernyőkép között; a nézetablak 832 px magas). Elmozdulás kockánként a Space előtti állapothoz képest: 276: 29; 277: 176; 278: 399; 279: 519; 280: 584 px (korreláció legalább 0,998); 281: 624; 282: 643 px (gyengébb illesztés, 0,75 és 0,66, mert a sablon kicsúszik a nézetből). A mozgás lecsengő, kb. 12 kockás (0,8 s) | 4. módszer |
+| A második Space a 382. kockán újra görget | az első három kockán a két görgetés elmozdulása egyezik (29 és 32; 176 és 181; 399 és 406 px), tehát ugyanaz az idő-görbe fut; a második a **496 px**-nél, 4-5 kocka után megáll (korreláció 1,000 a 09. és a 11. képernyőkép között; a 11. képernyőkép alsó sávja, `y=800..915`, egyszínű, tehát az utolsó kártya alatt üres hely van: a lista végén áll meg) | 4. módszer |
+| A két Space távolsága | 106 kocka = 7,07 s (276. és 382. kocka), a lépéssor 3 s-ot ír elő; a különbség a lépések közti képernyőkép-készítés ideje lehet, ezt a felvétel nem mutatja | 1. módszer; lépéssor |
+| A képernyőképek | a 02-08. kép bájtra azonos (SHA-256 `5f7afa4df9cb...`, a főnézet teteje, a Space előtt); a 09-10. kép azonos (egy lapozás után); a 11., 12. és 14. kép azonos (két lapozás után); a 13. kép 14 pixelben tér el (`x=777`, `y=56..69`): a keresőmező szövegkurzora. Vetítésről nincs kép; a 01. kép a betöltés előtti üres könyvtár ("No photos found") | 5. módszer |
+| Szövegkurzor a keresőmezőben | a 566. kockától (37,7 s) kb. 0,5 s-os ütemben villog (566, 574, 581, 589, 596; `x=776`, `y=56..68`); előtte nem látszik. Az oka **NINCS MEG**: az `Escape` lehetséges kiváltó, de a felvétel nem jelöli | 2. módszer |
+| A mérő kontrollja | ugyanaz a detektor mindkét görgetést kockánként követi (11,1-43,7 szürkeszint átlagos eltérés); egy teljes képernyős vetítésindítás ennél nem kisebb változás volna, a 38.2.280 felúszása pedig a 447-470. kockán folyamatosan mérhető volt | 1. módszer; 38.2.280 |
+
+#### A négy kérdés
+
+1. **Van-e címkártya és felúszás a vetítés indulásánál?** Nincs: vetítés nem indult. A felvételen nincs szürkített végkép, nincs gyűjteménynév és nincs alfa-sor, amit a bináris görbéhez (`0, 8, 30, 63, 104, ... /256`) lehetne hasonlítani. Az RMSE-t ezért nem számoltam, mert nincs mit számolni (nincs kiinduló és célkép).
+2. **A szüneteltetés és a folytatás.** Nem történt: a két Space a könyvtárat lapozta. A "második Space után azonnali áttűnés" és a "következő váltás T múlva" nincs mérve.
+3. **Ítélet.** (a) **NEM DÖNTHETŐ.** (b) **NEM DÖNTHETŐ.** Cáfolatot csak vetítés látásával lehetne adni; a 38.2.280 statikus jóslatai ezért **feltételes** fokon maradnak, szó szerint úgy, ahogy a 38.2.280 "Bizonyítottsági fok" szakasza rögzíti.
+4. **PicasaPy-eltérés.** Lásd alább; kódváltoztatást csak a Space-lapozásra javaslok, és azt is feltételesen.
+
+#### Cáfoló kísérletek
+
+| Ellenhipotézis | Eredmény | Mérce |
+|---|---|---|
+| A vetítés elindult, de a felvétel nem rögzítette (DirectDraw, fekete kép) | **Megdőlt.** A Space a főnézetet görgette (667 px, tiszta eltolás, korreláció 1,000), tehát a billentyűzet a főnézeté volt, nem egy vetítésablaké; ráadásul a paritás-lap szerinti fekete kép is változás volna a főnézethez képest, de nincs fekete kocka | a 276-287. kockák elmozdulás-sora; a teljes kockasor |
+| A vetítés a felvétel előtt indult és már le is zárult | **Megdőlt.** A 0. kocka és a 02-08. képernyőkép főnézet, és a 9. és a 275. kocka között nincs változás (legfeljebb 3,3 szürkeszint kodekzaj) | 1. és 5. módszer |
+| A Ctrl+4 indított vetítést, de az az első Space-re azonnal kilépett | **Megdőlt.** A 276-287. kockán folyamatos görgetés látszik (kockánként 29, 147, 223, 120, 65, 40, 19 px növekmény), nem ablakváltás; fotó vagy címkártya egyetlen kockán sincs | az elmozdulás-sor; a kulcskockák szemrevételezése |
+| A két Space különböző műveletet végzett | **Megdőlt.** Mindkettő ugyanazt a görgetési görbét futtatja (az első három kockán 29/32, 176/181, 399/406 px); a másodikat a lista vége állítja meg | 4. módszer |
+
+#### Mit mond a mérés a Ctrl+4 elmaradásáról, és mit nem
+
+A mért tény: **kijelölés nélküli főnézetben, ezen az egy Wine-futáson** a Ctrl+4 nem hozott látható hatást. A bal oldali fában nincs kijelölt sor, a tálcán csak a "Selection" alapfelirat látszik, és a lépéssor nem kattint sehova. Az eddigi, a 38.2.240 és a 38.2.260 által idézett mérések (job-663 és társai, job-676 - job-681) az Időrend-bemutatót (mód 1) vizsgálták; a normál, mód 0 vetítést a 38.2.280 "Bizonyítottsági fok" szerint addig nem mérték. A job-681 `ctrl+5`-e (Időrend) ugyanebből a főnézetből, kattintás nélkül elindult, tehát a Ctrl+billentyű célba érhet; a különbség a mód 0 ága lehet, de ezt ez a mérés nem döntötte el.
+
+A binárisból, **statikusan** (picasa-idorend-viselkedes.md 38.2.14, itt nem mértem újra): a Ctrl+4 a `0x005e625e` ágon a `0x005696c0` kapun át `0x005e8a70(this, 0)`-t hív; a mód 0 a `0x005e8b10` ágon indul, a gyűjteményt a `this[0xaf]+0xf8` objektumból tölti, és három kapuval rendelkezik, köztük a `this[0x3aa]` `+0xb4` vtábla-hívásával, amelynek nulla eredménye `-1`-gyel kilépteti. Hogy a kijelölés nélküli főnézetben **melyik kapu zárt**, és hogy a Wine-környezet (a paritás-lap szerint a vetítés Wine alatt fekete képet ad, a 38.2.15 szerint a qshow korábban megfagyott) szerepet játszik-e, **NINCS MEG**: ehhez kapu-értékeket naplózó futás kell, amit a Colab-végrehajtó nem ad. Ezért a "kijelölés nélkül az eredeti nem indít vetítést" állítás **nem általánosítható** egyetlen futásból.
+
+A Space-lapozás bináris útja szintén **NINCS MEG**: a 38.2.8 szerint a főablak billentyűkapcsolója (`0x005e60d0`) nem kezeli a Space-t, tehát a görgetést valószínűleg a rácsvezérlő végzi; ezt nem azonosítottam.
+
+#### PicasaPy-eltérés és megvalósítási javaslat
+
+| Eredeti (mért) | PicasaPy jelenleg | Teendő, kódhely |
+|---|---|---|
+| Ctrl+4 kijelölés nélkül a főnézetben: nincs látható hatás (egy futás, Wine; az oka NINCS MEG) | `MainKeyboardShortcuts.qml:318-323`: a `Ctrl+4` kijelölés nélkül is `startSlideshow(-1)`-et hív (csak szövegmező-fókusz tiltja); `MainSlideshow.qml:60-71`: kijelölés hiányában a 0. indexről, teljes képernyőn indít | **Nincs teendő most.** Egyetlen Wine-futásból nem következik, hogy az eredeti nem indul. A döntés a Colab-ismétlés (lásd alább) után esedékes. |
+| A normál indításnál címkártya -> 1. fotó felúszás, és a szünet-folytatás azonnali áttűnése (a 38.2.280 (a) és (b) jóslata) | a 38.2.280 táblája érvényes: a `SlideshowView.qml:201-221` (`start(index, paused)`) és a `:421` (`togglePause`) nem indít felúszást | **Nincs új javaslat.** A 38.2.280 Időrend-ágra szóló javaslata változatlan; a normál ágra kiterjeszteni csak akkor szabad, ha a (a) és (b) jóslat mérve igazolódik. Mérés nélkül a normál ág viselkedését nem módosítom. |
+| Space kijelölés nélküli főnézetben: **egy lapozás** (667 px a 832 px magas nézetablakban), lecsengő mozgással, kb. 0,8 s (12 kocka); a lista vége megállítja | `LightboxFeed.qml:375` (`Keys.onPressed`): a `:384` ág a PageUp/PageDown billentyűt kezeli (`pageStep`, `:370`), a Space-t a forrás nem kezeli (nincs `Key_Space` ág; futásban nem próbáltam) | **Feltételes javaslat, a bináris út azonosítása után:** a `:384` ág mellé egy `Qt.Key_Space` ág, módosító nélkül és `appWindow.selectedIndex < 0` esetén `pageStep(true)`. Mérési korlát: csak a kijelölés nélküli, vetítésmentes eset mért; a Shift+Space, a kijelöléses Space (a 38.2.240 szerint vetítést nyit) és a lapozás pixeltávolságának egyezése a `pageStep` sorlépésével nincs összevetve, a lecsengési görgetési görbe pontos alakját nem illesztettem. |
+
+**A kód nem módosult** (a brief tiltotta a kódírást); a sorszámok az `origin/main` 1.0.112 szerintiek.
+
+#### Következő, felvehető irány: a vetítésindítás újramérése kijelölt mappával
+
+Mivel a job-682 nem mért vetítést, a két jóslat mérése a következő Colab-feladat dolga (a jegyet a hívó nyitja, a kutatói kör GitHubra nem írt). A feladat két változata, mindkettő **felvétel legalább 60 s**-sal (a job-682-ben a két Space távolsága 7,07 s volt a tervezett 3 s helyett, és a felvétel utolsó eseménye a 37,7 s-nál kezdődő kurzorvillogás, tehát a 40 s-os felvételben alig maradt tartalék; vetítésnél a T = 3 s-os váltások és a 2 s-os áttűnések miatt több idő kell):
+
+| Változat | Lépéssor | Mit dönt el |
+|---|---|---|
+| A | a bal oldali fában a `PicasaTeszt` sor kijelölése (kattintás `x=87`, `y=222`), 2 s, `ctrl+4`, 8 s, képernyőkép, `space`, 3 s, `space`, 9 s, `Escape` | indul-e a vetítés kijelölt mappával; ha igen, az (a) jóslat (címkártya, felúszás) és a (b) jóslat (szünet, folytatás) mérhető |
+| B | ugyanaz, de a `ctrl+4` helyett kattintás a `PicasaTeszt` kártya zöld lejátszás gombjára (`x=268`, `y=149`) | a billentyű-kaput megkerüli; ha az A nem indul, de a B igen, a kapu a kijelölés/billentyű oldali |
+
+Kiértékelés a kész videón: (a) a vetítés indulásától kockánként a csatornakülönbségből számolt alfa (`X_G - X_R`, mint a 38.2.280 B útja) a bináris alfa-sorhoz (`0, 8, 30, 63, 104, ... /256`) RMSE-vel; (b) a második Space utáni kockákon a kimenő kép azonosítása (a folytatás azonnal a következő fotóra tűnik át az aktuálisból?) és az első következő váltás időpontja a második Space-hez képest (a jóslat szerint T = 3 s). Ha mindkét változat vetítés nélkül marad, az eredmény kimondott negatív: a Wine-környezet nem indít normál vetítést, és a (a) és (b) jóslat Wine alatt nem mérhető; ekkor a statikus jóslatok feltételesek maradnak, és a megvalósítás nem épít rájuk.
+
+#### Bizonyítottsági fok
+
+- A job-682 felvétele nem tartalmaz vetítést: a Ctrl+4 kijelölés nélkül a főnézetben nem hozott látható változást; a Space kijelölés nélkül egy lapozás (667 px); **megerősített** (két független út: a teljes kockasor eltérés-görbéje és a sablonillesztéses elmozdulás-sor, a 14 képernyőkép SHA-256 azonosságával).
+- A 38.2.280 (a) és (b) jóslata: **NEM DÖNTHETŐ**, a **feltételes** fok változatlan.
+- A Ctrl+4 elmaradásának oka (melyik kapu, szerepe-e a Wine-nak): **NINCS MEG**.
+- A Space-lapozás bináris útja: **NINCS MEG**; a PicasaPy-javaslat ezért **feltételes**.
+
+#### Nyitott kérdések mérlege
+
+| Tétel | Állapot | Indoklás |
+|---|---|---|
+| (a) a normál vetítésindításnál címkártya -> 1. fotó felúszás | NYÍLT, megnevezett következő irány | a fenti A/B Colab-feladat |
+| (b) a szünet-folytatás azonnali áttűnése, a következő váltás T múlva | NYÍLT, megnevezett következő irány | ugyanaz a Colab-feladat |
+| Miért nem indult a Ctrl+4 kijelölés nélkül | NYÍLT, megnevezett következő irány | az A/B feladat kijelöléssel; kapu-értékek naplózása csak futásidejű eszközzel (nincs) |
+| A Space-lapozás bináris útja | HATÓKÖRÖN KÍVÜL | a kérdés (a vetítés) nem igényli; a PicasaPy-javaslat feltételes marad |
+
+Nyitott kérdések: 3 nyílt (mindháromnak megnevezett következő iránya van) · 0 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 "csak nyitva".
+
+**Módszertani tanulság.** A felvétel eleje és vége a kérdéses esemény nélkül is "sikeres futás" (a lépéssor lefut, a videó 40 s hosszú, a képernyőképek elkészülnek). A kiértékelés első lépése ezért az legyen, hogy a kockasor egyáltalán tartalmaz-e a keresett eseményt (kockánkénti eltérés-görbe és a befoglaló doboz), mielőtt alfa-sort vagy időközt keresnénk; különben a nulla látott változásból hiba nélkül "nincs animáció" következtetés születne, pedig csak a vetítés maradt el.
