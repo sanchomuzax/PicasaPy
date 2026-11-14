@@ -429,7 +429,7 @@ def test_album_drag_rewrites_albumorder_through_the_ini_api(
 
 
 @pytest.mark.parametrize("height_delta", _HEIGHT_DELTAS)
-def test_folder_drag_moves_directory_in_flat_and_tree_views(
+def test_folder_drag_leaves_directory_in_place_in_flat_and_tree_views(
     dnd_qml_app, qt_app, height_delta
 ):
     window, controller, engine = dnd_qml_app
@@ -438,6 +438,7 @@ def test_folder_drag_moves_directory_in_flat_and_tree_views(
     library = Path(controller.currentFolder)
     source_path = library / "atmozgatando"
     target_path = library / "cel"
+    source_ini = (source_path / ".picasa.ini").read_bytes()
     source_row = _folder_row(window, source_path)
     target_drop = _find_visual(
         window,
@@ -454,22 +455,19 @@ def test_folder_drag_moves_directory_in_flat_and_tree_views(
     _real_drag(window, qt_app, engine, folder_proxy, source_mouse, target_drop)
     folder_pane = _child(window, "folderPane")
     moved = target_path / source_path.name
-    _wait(
-        qt_app,
-        lambda: moved.is_dir() and not source_path.exists(),
-        "a mappasor húzása nem helyezte át a forrásmappát",
+    assert source_path.is_dir() and not moved.exists(), (
+        "a lapos mappasorok egymásra húzása áthelyezte a forrásmappát"
     )
-    moved_ini = load_or_empty(moved / ".picasa.ini")
-    assert moved_ini.section("mappakep.jpg").get("caption") == (
+    assert (source_path / ".picasa.ini").read_bytes() == source_ini
+    source_document = load_or_empty(source_path / ".picasa.ini")
+    assert source_document.section("mappakep.jpg").get("caption") == (
         "A mappával együtt költöző felirat"
     )
-    from picasapy.app.worker_thread import wait_for_all_background_workers
 
-    assert wait_for_all_background_workers(30.0)
-
-    # A mappafa alternatív nézetében is ugyanaz a húzásos áthelyezés él.
+    # A mappafa alternatív nézetében sem helyezheti át a mappasor a könyvtárat.
     tree_source_path = library / "fanegyed"
     tree_target_path = library / "facel"
+    tree_ini = (tree_source_path / ".picasa.ini").read_bytes()
     folder_pane = _child(window, "folderPane")
     hierarchy = engine.rootContext().contextProperty("folderHierarchyController")
     hierarchy.setSimplified(True)
@@ -494,7 +492,6 @@ def test_folder_drag_moves_directory_in_flat_and_tree_views(
         "a húzandó mappasorok nem jelentek meg a fában: "
         f"hierarchy.rows={hierarchy.rows!r}"
     )
-    tree_target_row = _find_visual(window, "hierRow:" + str(tree_target_path))
     tree_target_drop = _find_visual(
         window, "hierFolderDropArea:" + str(tree_target_path)
     )
@@ -503,15 +500,15 @@ def test_folder_drag_moves_directory_in_flat_and_tree_views(
         window, "hierRowMouse:" + str(tree_source_path)
     )
     tree_drag_proxy = _find_visual(window, "folderTreeDragProxy")
-    _real_drag(
-        window, qt_app, engine, tree_drag_proxy, tree_source_mouse, tree_target_row
-    )
+    _real_drag(window, qt_app, engine, tree_drag_proxy, tree_source_mouse, tree_target_drop)
 
-    _wait(
-        qt_app,
-        lambda: (tree_target_path / tree_source_path.name).is_dir()
-        and not tree_source_path.exists(),
-        "a fanézetbeli húzás nem helyezte át a forrásmappát",
+    assert tree_source_path.is_dir() and not (
+        tree_target_path / tree_source_path.name
+    ).exists(), "a fanézet mappasorainak egymásra húzása áthelyezte a könyvtárat"
+    assert (tree_source_path / ".picasa.ini").read_bytes() == tree_ini
+    tree_dialogs = window.findChildren(QObject, "moveFolderDialog")
+    assert tree_dialogs and all(not dialog.property("visible") for dialog in tree_dialogs), (
+        "a fanézetbeli mappasor-húzás ablakot nyitott"
     )
 def _prepare_face_drag(qml_app, qt_app, tmp_path):
     from picasapy.app.worker_thread import wait_for_all_background_workers
