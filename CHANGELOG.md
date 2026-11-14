@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.116] - 2026-11-14
+
+- A diavetítés vezérlősávja Space-szünetkor azonnal megjelenik, a szünet végéig látszik, és folytatáskor azonnal eltűnik, mint az eredetiben (#6933).
+
 ## [1.0.115] - 2026-11-14
 
 - A szüneteltetett diavetítés folytatáskor azonnal a következő fotóra lép, mint az eredetiben (#6929).
