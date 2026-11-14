@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.113] - 2026-11-14
+
+- A diavetítés áttűnése az eredeti görbéjét és diaidőhöz igazított hosszát követi; az Időrendből folytatva az első fotó a gyűjtemény címkártyájából úszik fel (#6920).
+- A normál diavetítés áttűnése ismét a korábbi, egyenletes áttűnés; az eredeti görbéje csak az Időrendből indított vetítésre érvényes (#6926).
+
 ## [1.0.112] - 2026-11-14
 
 - Az Időrend az EXIF nélküli képekhez a rögzített fájlidőt használja, a Recently Updated dátumát megnyitáskor, az albumét pedig első tagságkor rögzíti (#6914).
