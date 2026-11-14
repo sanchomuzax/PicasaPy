@@ -94,6 +94,7 @@ SlideshowView {
         if (wasTimelineSlideshow) {
             hostWindow.timelineSlideshowActive = false
             hostWindow.timelineSlideshowModel = null
+            hostWindow.clearSelection()
             return
         }
         if (slideshow.currentIndex >= 0) {
