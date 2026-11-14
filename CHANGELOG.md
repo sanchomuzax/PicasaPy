@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.119] - 2026-11-15
+
+- A kilépési kérdés „Kilépés most” gombja háttérmunka közben is kiléptet, és nem teszi fel újra a kérdést. Ha a rendezett leállás elakad, a program a beállításai mentése után legfeljebb 8 másodperccel akkor is kilép (#6945).
+- A jobb felső verziócímke háttérmunka közben is látható marad a háttérjelző mellett (#6946).
+- A háttérszinkron megvárja a közös indexíró zárát, így zárütközés miatt nem áll le és nem indul újra (#6947).
+
 ## [1.0.118] - 2026-11-14
 
 - A bal hasábban mappasorra húzott mappa nem mozdul el; áthelyezéshez a „Mappa > Mappa áthelyezése…” menüpont használható. (#6907).
