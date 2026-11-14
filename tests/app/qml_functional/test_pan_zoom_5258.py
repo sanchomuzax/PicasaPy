@@ -94,7 +94,8 @@ def test_kattintasra_a_pan_and_zoom_eltolt_kivagast_mutat(
     controller.setSlideshowCaptionMode("none")
     controller.setSlideshowSeconds(20)
     QMetaObject.invokeMethod(
-        show, "start", Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 0)
+        show, "start", Qt.ConnectionType.DirectConnection,
+        Q_ARG("QVariant", 0), Q_ARG("QVariant", False)
     )
     show.setProperty("playing", False)
     show.setProperty("transitionMs", 400)

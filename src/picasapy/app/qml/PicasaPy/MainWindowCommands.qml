@@ -399,8 +399,8 @@ Item {
     function toggleViewerFullscreen() {
         hostWindow.ensureSlideshow().toggleViewerFullscreen()
     }
-    function startSlideshow(fromIndex) {
-        hostWindow.ensureSlideshow().startSlideshow(fromIndex)
+    function startSlideshow(fromIndex, paused) {
+        hostWindow.ensureSlideshow().startSlideshow(fromIndex, paused)
     }
     function startScreensaverPreview() {
         hostWindow.ensureSlideshow().startScreensaverPreview()
