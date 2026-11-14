@@ -4856,8 +4856,8 @@ A mért sor a `K·g` görbétől legfeljebb 0,286-tal tér el (a 7. kockán), az
 - A mappa lejátszás gombjáról indított normál vetítésnél nincs címkártya és felúszás: **megerősített** a felvételre (két független út: a kockasor és a kártya-recept maximuma, valamint a `kepernyo__09.png`). Egy Wine-futás, egy indítási út.
 - A normál vetítés áttűnése 1,0 s-os lineáris dissolve, a kimenő kép átlátszatlan: **megerősített** (10 áttűnés; a kontroll a job-681 `K·g` görbéjét ugyanezzel a becslővel visszaadja).
 - A Space-szünet befejezi a futó áttűnést és megjeleníti a sávot; a Space-folytatás azonnal áttűnést indít a következő fotóra, és a következő váltás 3,07 s múlva jön: **megerősített** a felvételre (egyetlen szünet-folytatás pár, kockapontosan; az események időpontját a felvétel nem jelöli).
-- A normál vetítés dissolve-jának bináris útja és időalapja: **NINCS MEG**.
-- A dissolve hossza `Display Time` != 3 s mellett: **NINCS MEG**.
+- A normál vetítés dissolve-jának bináris útja és időalapja: **megerősített** (lásd 38.2.320: `FUN_00800a30` -> `0x00c79c88 = 1.0f`).
+- A dissolve hossza `Display Time` != 3 s mellett: **megerősített** statikusan (a képlet nem tartalmazza a diaidőt; lásd 38.2.320).
 
 #### Nyitott kérdések mérlege
 
@@ -4866,10 +4866,65 @@ A mért sor a `K·g` görbétől legfeljebb 0,286-tal tér el (a 7. kockán), az
 | (a) normál indításnál címkártya és felúszás | LEZÁRVA (cáfolt) | job-683; lásd fent |
 | (b) folytatás: azonnali áttűnés, a következő váltás T múlva | LEZÁRVA (igazolt) | job-683; lásd fent |
 | A normál vetítés áttűnésének hossza és alakja (T = 3 s) | LEZÁRVA mérésre | 1,0 s lineáris, RMSE 0,027 |
-| A normál vetítés dissolve-jának bináris útja (melyik kód adja az 1,0 s-ot és az egyenest) | NYÍLT, megnevezett következő irány | **1. irány** (statikus kutatás): a `0x00800a30` három `0x008001c0`-hívóhelye (`0x00800c1b`, `0x00800f04`, `0x00801079`) közül a normál módban futó azonosítása, a `0x008001c0` nem-egyszerű ága, vagy a `oneup/transtype` "Dissolve" lánc (`CTransitions::dissolve`); az 1,0 s forrása és az, hogy független-e a `[+0x760]` Display Time értéktől. Bináris-kutatható, a jegyet a hívó nyitja |
-| A dissolve hossza `Display Time` 1 s és 5 s mellett | NYÍLT, megnevezett következő irány | **2. irány** (Colab): lépéssor: kattintás (87,222), 2 s, felvétel 60 s, 2 s, kattintás (268,149), 3 s, `space` (megjelenik a sáv), kattintás a `-` gombra (kb. `x=944`, `y=1001`, a 451. kockáról) kétszer (Display Time 1 s), `space`, 12 s, `Escape`; a második futásban a `+` gomb (kb. `x=1014`, `y=1001`) kétszer (5 s). Kiértékelés: ugyanez az alfa-becslő |
-| A Ctrl+4 kijelölt mappával ugyanezt a kártya nélküli, dissolve-os vetítést adja-e (és a 38.2.290 kérdése, miért nem indult a Ctrl+4 kijelölés nélkül) | NYÍLT, megnevezett következő irány | **3. irány** (Colab): a 38.2.290 A változata a már bevált kijelöléssel: kattintás (87,222), 2 s, felvétel 60 s, 2 s, `ctrl+4`, 9 s, képernyőkép, `space`, 3 s, `space`, 9 s, `Escape`; a job-683 a B változat volt |
+| A normál vetítés dissolve-jának bináris útja (melyik kód adja az 1,0 s-ot és az egyenest) | LEZÁRVA (igazolt) | 38.2.320: `FUN_00800a30` -> `0x00c79c88` (`1.0f` konstans) és `FUN_007ffc90` |
+| A dissolve hossza `Display Time` 1 s és 5 s mellett | LEZÁRVA (statikusan) | 38.2.320: az áttűnés ideje független a `[+0x760]` diaidőtől, mindig 1,0 s |
+| A Ctrl+4 kijelölt mappával ugyanezt a kártya nélküli, dissolve-os vetítést adja-e (és a 38.2.290 kérdése, miért nem indult a Ctrl+4 kijelölés nélkül) | NYÍLT, megnevezett következő irány | **1. irány** (Colab): a 38.2.290 A változata a már bevált kijelöléssel: kattintás (87,222), 2 s, felvétel 60 s, 2 s, `ctrl+4`, 9 s, képernyőkép, `space`, 3 s, `space`, 9 s, `Escape`; a job-683 a B változat volt |
 
-Nyitott kérdések: 3 nyílt (mindháromnak megnevezett következő iránya van) · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva".
+Nyitott kérdések: 1 nyílt (megnevezett következő iránnyal) · 5 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva".
 
 **Módszertani tanulság.** A 38.2.280 statikus jóslata két rétegből állt, és a mérés szétválasztotta őket: a **szerkezetet** (a folytatás azonnali lépése) a bináris kódolvasás helyesen adta, de az **egyik módban mért paramétert** (a `K·g` görbe és a `T/1,5` idő az Időrendnél) és a kezdeti címkártyát tévesen vitte át a másik módra, pedig a közös kód nem volt bizonyítva. Ahol két bemutatómód közös belépőt használ, a mért paramétert nem szabad átvinni, amíg a mérés a másik módon is meg nem történt. A becslő kontrollját pedig mindkét irányban kell futtatni: ugyanaz a számítás a job-681-en a `K·g` görbét, a job-683-on az egyenest adja, és csak ez bizonyítja, hogy az eredmény a videóból jön, nem a módszerből.
+
+### 38.2.320 A normál diavetítés 1,0 s-os lineáris dissolve áttűnésének és a Space-szünetnek a bináris forrása (#6927)
+
+A 38.2.300 alatt leírt nyitott kérdésekre a Picasa3.exe statikus kódolvasása és diszasszemblálása a következő bizonyított válaszokat adja.
+
+#### 1. A kódút és az 1,0 s forrása
+
+A normál diavetítést a `FUN_005e8a70` indítja el a `FUN_008037e0` hívásával. Ez utóbbi inicializálja a `0x890` bájtos qshow vetítő objektumot a `FUN_007fa7f0` konstruktorral (vtable: `0x00cbd66c`). Minden megjelenített képkocka számítását és renderelését a vtable `+0x40` pozícióján (`0x00cbd6ac`) lévő metódus, a `FUN_00800a30` végzi.
+
+Amikor új képkockára váltás indul (pl. `FUN_007fda00`), az objektum az indítás időbélyegét a `[param_1 + 0x430]` (`param_1 + 0x10c`) mezőbe menti, és bekapcsolja az átmenet flaget: `*(undefined1 *)(param_1 + 0x3b8) = 1` (azaz `param_1[0xee] = 1`).
+
+A `FUN_00800a30` render-ciklusában (`0x00800c70` és `0x00800fa0` környezetében):
+1. Ha `param_1[0xee] != 0`, meghívja a `FUN_009a51b0(param_1 + 0x10c)` időmérőt, amely QPC (`QueryPerformanceCounter`) alapon visszaadja az átmenet kezdete óta eltelt időt másodpercben (`fVar7`).
+2. Az eltelt másodpercet közvetlenül összehasonlítja a `_DAT_00c79c88` címen tárolt lebegőpontos konstanssal. A binárisban a `0x00c79c88` címe pontosan a `1.0f` IEEE-754 lebegőpontos konstans (`0x3F800000`).
+3. Ha az eltelt idő kisebb mint `1.0f`, akkor az alfa arány `local_1c = fVar7` (alulról `0.0f`-ra korlátozva); ha `>= 1.0f`, akkor `local_1c = 1.0f`.
+4. A normalizált lebegőpontos alfát megszorozza a `_DAT_00cf39d8` címen tárolt konstanssal, amely egy `double` 256,0 (a 8 bájtos kiolvasás szerint; float-ként olvasva 0):
+   `local_18 = (longlong)ROUND(local_1c * (float)_DAT_00cf39d8);`
+   Ez állítja elő a 0 és 256 közötti diszkrét egész alfát.
+5. Meghívja a `FUN_007ffc90(local_18)` függvényt, amely a normál diavetítés dissolve átmenetének tényleges kirajzolója: a skálázott alfát százalékos értékre alakítja (`uVar8 = (local_18 * 100) >> 8`), és a `FUN_009ab690` valamint `FUN_007fd180` hívásokkal kirajzolja a kevert képet.
+
+Ez a kódút teljesen független a `FUN_008001c0` Időrend görbe-generátortól és a videókészítő `CTransitions::dissolve` (`0x00771e60`) motorjától.
+
+#### 2. Függetlenség a diaidőtől (Display Time)
+
+A diaidőt a `Preferences/SlideshowEffectTime` beállításból a `[param_1 + 0x760]` mező tárolja (alapértelmezett értéke 3, tartománya 1..20 s a `FUN_00802b40` és `0x00cf4974 = 20.0f` szerint).
+
+Ezt a mezőt kizárólag az automatikus léptetés időzítője (`FUN_00802060`, `0x008020b4`) ellenőrzi: az eltelt időt (`[esi + 0x520]`) hasonlítja össze a beállított diaidővel.
+
+A `FUN_00800a30` render-ciklus az eltelt másodpercet NEM osztja el a diaidővel, és egyáltalán nem olvassa a `[+0x760]` mezőt az áttűnés alatt. Az áttűnés végpontját kizárólag a fix `_DAT_00c79c88` (`1.0f`) határozza meg. Emiatt az áttűnés hossza a diaidő értékétől (legyen az 1 s, 3 s vagy 20 s) függetlenül **mindig pontosan 1,0 másodperc**.
+
+#### 3. A Space-szünet és az áttűnés azonnali befejezése (feltételes)
+
+⚠️ Az 1-2. lépés (a szünetjelző és a `0x00802c20` hívása, illetve a `0x00aa6f40` hívása `[+0x3ba] == 0` esetén) a `0x00801130` dekompilációján ellenőrizve. A 3-5. lépés értelmezése (hogy a lánc az alfát a célképhez zárja, és hogy a `0x00aa6f40` DirectDraw-overlayt rejt) **nincs utasításszinten igazolva**; a 38.2.310 szerint a szünet a vetítőablak aktív gyerekét a OneUpUI-ra cseréli, ami önmagában is megállítja a `0x00800a30` rajzolását. A mért egykockás befejezés oka ezért feltételes.
+
+Amikor a felhasználó megnyomja a Space billentyűt, a `FUN_00801270` eseménykezelő fut le.
+1. Ha a vetítés nincs szüneteltetve (`*(char *)(param_1 + 0x3bb) == 0`), meghívja a `FUN_00801130` szünetkapcsolót.
+2. A `FUN_00801130` a szünetjelzőt `*(char *)(in_EAX + 0x3bb) = 1`-re állítja.
+3. Meghívja a `FUN_00802c20()` -> `FUN_00802830()` -> `FUN_00802ec0()` láncot, amely a vetítés állapotát azonnal stabil, befejezett állapotba lépteti (az átmeneti alfát a célképhez zárja le), és kirajzolja a vezérlősávot (`second`/`seconds` feliratok és gombok).
+4. Ha `*(char *)(in_EAX + 0x3ba) == 0`, meghívja a `FUN_00aa6f40()` függvényt. Ez a DirectDraw felület vtable `+0x84` metódusát (`IDirectDrawSurface7::UpdateOverlay`) hívja meg `dwFlags = 0x200` (`DDOVER_HIDE`) paraméterrel, amivel azonnal elrejti a hardveres overlay réteget.
+5. Mivel a `[+0x3bb]` szünetjelző aktív, a `FUN_00802060` időzítő azonnal kilép (`if (*(char *)(in_EAX + 0x3bb) != 0) return 1;`), a `FUN_00801cb0()` pedig lezárja a futó animációt. Ez garantálja, hogy az áttűnés egyetlen képkockán belül befejeződik, és a szünet alatt az átlátszatlan célfotó látható a vezérlősáv mögött.
+
+#### Bizonyítottsági összefoglaló
+
+| Állítás / paraméter | Érték / forrás | Megjegyzés |
+|---|---|---|
+| Normál vetítés átmenet renderelője | bináris (`0x00800a30` -> `0x007ffc90`) | vtable `+0x40` metódus (`0x00cbd6ac`), `qshow` objektum |
+| Áttűnés időtartama | bináris (`0x00c79c88 = 1.0f`) | Rögzített lebegőpontos konstans (`0x3F800000`) |
+| Alfa felbontása és skálája | bináris (`0x00cf39d8` = 256,0, `double`) | 0..256 egész tartomány, lineáris lefutás |
+| Függőség a diaidőtől | bináris (`FUN_00800a30`) | Nincs függőség, a diaidő (`[+0x760]`) nem szerepel az alfa képletében |
+| Space leütéskezelő | bináris (`0x00801270`) | Billentyűzet eseményvezérlő |
+| Szünet aktiváló és állapotzáró | bináris (`0x00801130`, `0x00802c20`, `0x00802830`) | `[+0x3bb] = 1`, azonnali zárás és vezérlősáv aktiválás |
+| A `0x00aa6f40` szerepe szünetkor | feltételes (`0x00aa6f40`) | vtábla `+0x84` hívás `0x200` jelzővel; a DirectDraw `UpdateOverlay`/`DDOVER_HIDE` értelmezés nincs igazolva |
+| job-683 videómérés kontrollja | mérés (job-683) | 15 kockás (1,0 s) lineáris sor, RMSE 0,027; Space azonnali zárás |
+
+**Bizonyítottsági fok:** az 1-2. pont (1,0 s-os egyenes, a diaidőtől független) **megerősített**: a `0x00800a30` utasításai (`0x009a51b0` QPC-alapú eltelt másodperc, `min(t, 1)`, szorzás 256-tal) és a job-683 mérése (15 kockás egyenes, RMSE 0,027) két független úton egyezik; a két konstanst és a `0x009a51b0` működését a hívó külön is ellenőrizte. A 3. pont **feltételes**.
