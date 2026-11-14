@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.114] - 2026-11-14
+
+- A normál diavetítés áttűnése fix 1,0 s-os egyenes: forrás a binárisban (#6927).
+- A diavetítés vezérlősávja szünetkor: forrás a binárisban (#6930).
 ## [1.0.113] - 2026-11-14
 
 - A diavetítés áttűnése az eredeti görbéjét és diaidőhöz igazított hosszát követi; az Időrendből folytatva az első fotó a gyűjtemény címkártyájából úszik fel (#6920).
