@@ -33,6 +33,8 @@ Rectangle {
     //: vár címkártyát; a beállított fotóátmenet ettől nem változik.
     property bool _cimkartyaFuggo: false
     property bool _cimkartyaFeluszas: false
+    //: #6933: Space-szünetkor a vezérlősáv áttűnés nélkül váltson állapotot.
+    property bool _spacePauseControls: false
     property string _timelineCollectionName: ""
     readonly property string _atmenetTipus:
         _cimkartyaFeluszas ? "dissolve" : transitionKind
@@ -218,6 +220,7 @@ Rectangle {
     function start(index, paused) {
         screensaverMode = false
         screensaverInputArmed = false
+        _spacePauseControls = false
         slideshowTiming.inputArmTimer.stop()
         var target = clampToPhoto(index)
         if (target < 0) return   // nincs vetíthető fotó
@@ -264,6 +267,7 @@ Rectangle {
         var wasScreensaver = screensaverMode
         slideshowTiming.inputArmTimer.stop()
         screensaverInputArmed = false
+        _spacePauseControls = false
         playing = false
         visible = false
         show.closed()
@@ -439,7 +443,22 @@ Rectangle {
     }
 
     function togglePause() {
-        playing = !playing
+        var resumes = !playing
+        if (!timelineSlideshow) {
+            if (resumes) {
+                // Előbb a rejtett állapotot állítjuk be, amíg az azonnali
+                // átmenetjelző aktív; így a folytatás nem futtat 1200 ms-os
+                // elhalványulást.
+                slideshowControls.controls.shown = false
+                slideshowControls.autoHideTimer.stop()
+                _spacePauseControls = false
+            } else {
+                _spacePauseControls = true
+                slideshowControls.controls.shown = true
+                slideshowControls.autoHideTimer.stop()
+            }
+        }
+        playing = resumes
         if (playing && _cimkartyaFuggo) {
             _cimkartyaFuggo = false
             show._felusztat()
