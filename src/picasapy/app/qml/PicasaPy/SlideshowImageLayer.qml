@@ -17,10 +17,11 @@ QtObject {
         objectName: "slideshowTransition"
         //: a wipe a kimenő képet kicsúsztatja, a push mindkét képet mozgatja,
         //: a kör/négyszög nagyítással nyit, az időgyorsítás rövid zoommal
-        //: vált. Az Időrend Dissolve-ja a #6920 görbét (#6926), a többi a korábbi átmenetet tartja.
+        //: vált. A normál Dissolve 1 s-os lineáris alfát használ (#6935),
+        //: az Időrend és a címkártya felúszása a #6920 görbét (#6926) tartja.
         ParallelAnimation {
             NumberAnimation {
-                target: slideshow._gorbesDissolve
+                target: slideshow._atmenetTipus === "dissolve"
                         ? null : imageLayer.previousImage
                 property: "opacity"
                 to: slideshow._kilepoKepMozog() ? 1 : 0
@@ -37,18 +38,20 @@ QtObject {
                 duration: slideshow.transitionMs
             }
             NumberAnimation {
-                target: slideshow._gorbesDissolve
+                target: slideshow._atmenetTipus === "dissolve"
                         ? null : imageLayer.currentImage
                 property: "opacity"; to: 1
-                duration: slideshow.transitionKind === "timelapse"
-                          ? slideshow.transitionMs * 0.35 : slideshow.transitionMs
+                duration: slideshow._atmenetTipus === "dissolve"
+                          ? 0
+                          : (slideshow.transitionKind === "timelapse"
+                             ? slideshow.transitionMs * 0.35 : slideshow.transitionMs)
             }
             NumberAnimation {
-                target: slideshow._gorbesDissolve ? slideshow : null
+                target: slideshow._atmenetTipus === "dissolve" ? slideshow : null
                 property: "dissolveProgress"
                 from: 0
                 to: 1
-                duration: slideshow._gorbesDissolve
+                duration: slideshow._atmenetTipus === "dissolve"
                           ? slideshow.dissolveTransitionMs : 0
                 easing.type: Easing.Linear
             }
@@ -76,16 +79,20 @@ QtObject {
                 target: imageLayer.veil; property: "opacity"
                 to: slideshow._atmenetTipus === "dissolveblack"
                         || slideshow._atmenetTipus === "dissolvewhite" ? 1 : 0
-                duration: slideshow._atmenetTipus === "dissolveblack"
+                duration: slideshow._atmenetTipus === "dissolve"
+                          ? (slideshow._gorbesDissolve ? 1 : 0)
+                          : (slideshow._atmenetTipus === "dissolveblack"
                           || slideshow._atmenetTipus === "dissolvewhite"
-                          ? slideshow.transitionMs / 2 : 1
+                          ? slideshow.transitionMs / 2 : 1)
             }
         }
         NumberAnimation {
             target: imageLayer.veil; property: "opacity"; to: 0
-            duration: slideshow._atmenetTipus === "dissolveblack"
+            duration: slideshow._atmenetTipus === "dissolve"
+                      ? (slideshow._gorbesDissolve ? 1 : 0)
+                      : (slideshow._atmenetTipus === "dissolveblack"
                       || slideshow._atmenetTipus === "dissolvewhite"
-                      ? slideshow.transitionMs / 2 : 1
+                      ? slideshow.transitionMs / 2 : 1)
         }
         ScriptAction { script: slideshow._atmenetVege() }
     }

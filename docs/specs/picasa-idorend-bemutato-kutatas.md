@@ -5010,6 +5010,10 @@ Ezt a mezőt kizárólag az automatikus léptetés időzítője (`FUN_00802060`,
 
 A `FUN_00800a30` render-ciklus az eltelt másodpercet NEM osztja el a diaidővel, és egyáltalán nem olvassa a `[+0x760]` mezőt az áttűnés alatt. Az áttűnés végpontját kizárólag a fix `_DAT_00c79c88` (`1.0f`) határozza meg. Emiatt az áttűnés hossza a diaidő értékétől (legyen az 1 s, 3 s vagy 20 s) függetlenül **mindig pontosan 1,0 másodperc**.
 
+#### 2/b. Mérés: a hossz 5 s-os diaidőnél is 1 s (job-684)
+
+picasa-colab-jobs job-684 (`video__06.mp4`, 15 kép/mp, 2250 kocka): a mappa lejátszás gombjáról indított vetítés, szünetben a vezérlősáv `+` gombjával 3 s-ról 5 s-ra állított diaidővel. A kockánkénti változás futamai (a sáv sávja nélkül, küszöb 0,6 szürkeszint): 3 s-nál a váltások 44-47 kockánként jönnek (134, 178, 224, 269), 5 s-nál 75-76 kockánként (880, 955, 1030, 1105, 1181, 1256). Az áttűnés futama mindkét diaidőnél 15-19 kocka (a küszöb a kodek utólagos igazítását is beleszámolja; a 38.2.300 alfa-illesztése 3 s-nál 15,2 kockát adott). Ha a hossz a diaidővel arányos volna, 5 s-nál 25 kocka (`T/3`) vagy 50 kocka (`T/1,5`) lenne. Az 1 s-os szakasz a felvétel végéig nem indult el (a lépések közti képernyőkép-idő miatt), ezért 1 s-ra nincs mérés. Ítélet: a diaidő-függetlenség az 5 s-os mérésen **megerősített**, a `0x00800a30` képletével egyezően.
+
 #### 3. A Space-szünet és az áttűnés azonnali befejezése (feltételes)
 
 ⚠️ Az 1-2. lépés (a szünetjelző és a `0x00802c20` hívása, illetve a `0x00aa6f40` hívása `[+0x3ba] == 0` esetén) a `0x00801130` dekompilációján ellenőrizve. A 3-5. lépés értelmezése (hogy a lánc az alfát a célképhez zárja, és hogy a `0x00aa6f40` DirectDraw-overlayt rejt) **nincs utasításszinten igazolva**; a 38.2.310 szerint a szünet a vetítőablak aktív gyerekét a OneUpUI-ra cseréli, ami önmagában is megállítja a `0x00800a30` rajzolását. A mért egykockás befejezés oka ezért feltételes.
