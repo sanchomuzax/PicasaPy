@@ -404,13 +404,11 @@ Item {
                             row.modelData.path, source.photoRows.slice())
                         return
                     }
-                    if (source.payload !== "folders"
-                            || !source.folderPath
-                            || source.folderPath === row.modelData.path)
+                    if (source.payload === "folders") {
+                        // #6907: az eredeti Picasában a mappasor nem ad át
+                        // fájllistát; mappasorra ejtve ezért nincs művelet.
                         return
-                    drop.accept()
-                    root.folderDroppedOnFolder(
-                        source.folderPath, row.modelData.path)
+                    }
                 }
             }
         }
