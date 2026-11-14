@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.117] - 2026-11-14
+
+- A lejátszás közbeni kattintás-szünet: statikus út és mérés (#6942).
 ## [1.0.116] - 2026-11-14
 
 - A diavetítés vezérlősávja Space-szünetkor azonnal megjelenik, a szünet végéig látszik, és folytatáskor azonnal eltűnik, mint az eredetiben (#6933).
