@@ -171,12 +171,13 @@ Rectangle {
     readonly property real searchContainerLeft: width * 0.4
     readonly property real searchContainerRight: width - 70
     // a látható mező (`searchbase`) jobb széle: a konténeren túl 23-mal
+    property real activityBadgeReserve: 0 // #6946: az activityBadge által lefoglalt jobb oldali hely
     property real activityReserve: 47 // #6474: a háttérjelző igénye (szélesebb, ha megszakítható)
     readonly property real searchBoxRight: width - Math.max(
         activityReserve,
-        updateAgent && updateAgent.updateAvailable !== undefined
+        activityBadgeReserve + (updateAgent && updateAgent.updateAvailable !== undefined
             && updateAgent.updateAvailable && updateNoticeIsAllowed()
-            ? versionLabel.implicitWidth + 28 : 47) // #6473: 10 belső + 4 köz + 14 margó
+            ? versionLabel.implicitWidth + 28 : 47)) // #6473: 10 belső + 4 köz + 14 margó; #6946: a címke mellette elfér
     Item {
         id: content
         anchors.fill: parent
@@ -669,7 +670,7 @@ Rectangle {
             objectName: "versionLabel"
             visible: !toolbar.versionHidden
             anchors.right: content.right
-            anchors.rightMargin: updateTagVisible ? 14 : 4
+            anchors.rightMargin: toolbar.activityBadgeReserve + (updateTagVisible ? 14 : 4)
             anchors.verticalCenter: content.verticalCenter
             readonly property string fullText: appVersion
             readonly property bool updateTagVisible: toolbar.updateAgent
