@@ -4500,6 +4500,8 @@ Ha a 447. kockát t=0-nak vennénk, a fotóáttűnési képlet első, 1/15 s-os 
 - A `SlideshowImageLayer.qml` az eredeti nemlineáris görbét alkalmazza a fotóáttűnésre; a szünetből lejátszásba váltó 1,533 s-os mért szakasz ne kapjon ebből automatikusan forrás-hozzárendelést.
 - A külön lejátszásindítási út csak saját, teljes időbélyeges képkockaméréssel és az animált property bináris útjának azonosításával legyen késznek jelölve.
 
+⛔ **HELYESBÍTVE a 38.2.300-ban (#6916):** a fenti „Kész, ha” második és harmadik pontjának `K·g` görbéje és `T/1,5` ideje az **Időrend-bemutatóra** érvényes. A normál (nem Időrendből indított) vetítés fotóváltása a job-683 szerint 1,0 s-os lineáris dissolve (RMSE 0,027; a `K·g(T=3)` ellenmodellé 0,181).
+
 **Bizonyítottsági fok.** A fotók közti alfa-görbe és T=3 s alatti 2 s telítési pontja **megerősített**: A út a `0x008001c0` utasításai és a `0x009e5ac0` normalizálója; B út a videó négy, független pixelmérése. ~~A lejátszásindítási felúszás kódja, teljes kezdőpontja és pontos időtartama **nyitott**; a 447-470 közötti fényerő-projekció csak a felvételen látható szakaszt írja le.~~ **HELYESBÍTVE: a 38.2.280 szerint megerősített** (kód, kezdőpont és idő).
 
 ### 38.2.280 A lejátszásindítási felúszás (#6916, 2026-11-14)
@@ -4523,6 +4525,7 @@ Ha a 447. kockát t=0-nak vennénk, a fotóáttűnési képlet első, 1/15 s-os 
 | Az alfa az `[+0x520]` óta eltelt időből, `T = [+0x760]`-ből és az 1,5-ös szorzóból jön | `0x008001c0` (38.2.270): `x = min(1, 1,5·elapsed/T)`, `alpha256 = min(256, trunc(256·K·g(8x)))`; az `elapsed` a `0x009a51b0` (QPC különbség · 1/QPF) | bináris; 38.2.270 |
 | A `0x00802be0` a gazdaablak `+0x64` gyerekét cseréli; a gyerek a `QDrawable`, a vtable `+0x28` slot (`0x007fa480`) csak a gazdát köti | `0x00802be1`-`0x00802c0c`; `0x007fa480`: `[this+0x50] = host`, `0x00aa67f0` (`DirectDrawCreate`, `__controlfp`); a `0x00803110` (`0x00803161`-`0x0080316e`) és a `oneup/timeline` ág (`0x00803504`-`0x00803513`) ugyanazt az `[oneup+0x25c]` objektumot adja át; ha a gazda `+0x64` gyereke már ez, a `cmp ecx, edi; je` (`0x00802be4`-`0x00802be6`) miatt a hívás üres (ezt futás közben nem mértem) | bináris |
 | A gazdakötés útvonalában nincs időforrás | `0x00983430`: `GetClientRect`, `0x00983a60`: `GetWindowRect`, `MoveWindow`; `0x00aa67f0`: `DirectDrawCreate`, `IsWindow`, `GetDesktopWindow`; sehol `QueryPerformanceCounter`, `GetTickCount`, `SetTimer`, `timeSetEvent` | bináris (IAT-nevek a PE importtáblából: `0x00c40814`, `0x00c4081c`, `0x00c40824`, `0x00c406b4`, `0x00c40868`) |
+| A négy függvény dekompilált C-kódja, hívói és hívottai ellenőrizhetők | `0x00802be0`, `0x00803110`, `0x00802c20`, `0x00801130`; a `0x00803110` a `[+0x3be] != 0` feltétellel hívja a `0x00801cf0`-et, majd `[+0x518] = 1`, QPC a `[+0x520]`-ba, `[+0x3b8] = 0`, `[+0x428] = 0`, `0x00801130`, végül (ha a gazda `+0x50` mezője nem nulla) `0x00802be0` | Ghidra-kimenet: `referencia/ghidra/2026-11-14-6916-colab-decomp.txt` (a privát `picasapy-agent` repóban, 142 sor) |
 
 #### A út - a bináris lánc (összefoglalva)
 
@@ -4589,6 +4592,8 @@ A bináris görbével a 24 kockára (447-470) az RMSE **0,0120**, a legnagyobb e
 
 **A kód nem módosult** (a brief tiltotta a kódírást); a fenti sorszámok az `origin/main` 1.0.111 szerintiek.
 
+⛔ **HELYESBÍTVE a 38.2.300-ban (#6916):** a fenti tábla `kgAlfa` és `1000·T/1,5` sorai, valamint a 38.2.270 „Kész, ha” harmadik pontja a **fotók közti áttűnésre** csak az **Időrend-bemutatóra** (`SlideshowView.timelineSlideshow`) érvényes. A normál vetítés (a vezérlősáv szerint „Dissolve”, Display Time 3 seconds) mért áttűnése **1,0 s-os lineáris**, és a kimenő kép átlátszatlan marad.
+
 **Fejlesztői jegyhez javasolt „Kész, ha”:**
 
 - [ ] T = 3 s mellett az Időrendből szüneteltetve indított vetítés első folytatásakor a kimenő kép a címkártya (a fenti recept), a bejövő az 1. fotó; a kimenő kép átlátszatlan marad.
@@ -4603,7 +4608,7 @@ A bináris görbével a 24 kockára (447-470) az RMSE **0,0120**, a legnagyobb e
 - A felúszás = a `0x008001c0` áttűnés, `T/1,5` idő alatt, a `0x00803110` -> tick -> `0x00802630` láncon át indulva: **megerősített** (A út: utasításlánc és IAT; B út: pixelenkénti alfa-sor, RMSE 0,012, ellenmodellek 0,107-0,532).
 - A kiinduló kép a `0x00801cf0` címkártyája és a recept: **megerősített** (a recept a binárisból, a 447. kockával 2,1 szürkeszint RMSE).
 - A `0x00802be0` nem animál (QDrawable gazdakötés): **megerősített**.
-- A nem Időrendből indított vetítés és a címke nélküli (`[+0x3be] == 0`) szünet-folytatás viselkedése: **feltételes**, csak statikus. A konstruktor `[+0x518] = 1`-et ír (`0x007fae0a`), a `0x008037e0` nulla ága a `0x00801cf0`-et hívja (38.2.65 §2), tehát a normál vetítés is címkártyával kezdődhet; címke nélküli folytatásnál a `0x00803110` nem csökkenti az indexet, a `[+0x518] = 1` miatt az első tick azonnal a **következő** fotóra lépne, az aktuálisból áttűnéssel. Mindkettő **NINCS MÉRVE**.
+- A nem Időrendből indított vetítés és a címke nélküli (`[+0x3be] == 0`) szünet-folytatás viselkedése: **feltételes**, csak statikus. A konstruktor `[+0x518] = 1`-et ír (`0x007fae0a`), a `0x008037e0` nulla ága a `0x00801cf0`-et hívja (38.2.65 §2), tehát a normál vetítés is címkártyával kezdődhet; címke nélküli folytatásnál a `0x00803110` nem csökkenti az indexet, a `[+0x518] = 1` miatt az első tick azonnal a **következő** fotóra lépne, az aktuálisból áttűnéssel. ~~Mindkettő **NINCS MÉRVE**.~~ **MÉRVE a 38.2.300-ban (job-683, #6916):** a mappa lejátszás gombjáról indított normál vetítésnél **nincs címkártya és nincs felúszás** (az (a) jóslat cáfolt); a folytatás **azonnal a következő fotóra tűnik át** az aktuálisból, és a következő váltás 3,07 s múlva jön (a (b) jóslat szerkezete igazolt), de az áttűnés **1,0 s-os lineáris dissolve**, nem a `T/1,5` idejű `K·g` görbe.
 
 #### Nyitott kérdések mérlege
 
@@ -4616,7 +4621,7 @@ A bináris görbével a 24 kockára (447-470) az RMSE **0,0120**, a legnagyobb e
 | A teljes animáció kezdőpontja (örökölt, 38.2.270) | LEZÁRVA | 447. kocka, alfa 0; a korábbi olvasat helyesbítve |
 | A címkártya névszövegének mérete | LEZÁRVA mérésre | 130x21 px; a képlet binárisból NINCS MEG, de a PicasaPy-hoz a mért doboz elég |
 | A `0x00800a30` három `0x008001c0`-hívóhelye közül a futó | HATÓKÖRÖN KÍVÜL | a válaszhoz nem kell: az idő-alap a `0x008001c0`-ban van (döntés: a #6916 kutatási köre, 2026-11-14) |
-| A normál vetítésindítás és a címke nélküli folytatás viselkedése | LEZÁRVA statikusan, **feltételes** fokon | a mérés a megnevezett következő irány, lásd alább |
+| A normál vetítésindítás és a címke nélküli folytatás viselkedése | LEZÁRVA statikusan, **feltételes** fokon; ~~a mérés a megnevezett következő irány~~ **MÉRVE a 38.2.300-ban** | a job-683 felvétel eldöntötte (lásd 38.2.300) |
 
 Nyitott kérdések: 0 nyílt · 7 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 „csak nyitva”. A munkasorba kerül: egy 15 fps-es Colab-felvétel két esetről (1. normál vetítésindítás egy mappából, Space nélkül; 2. ugyanaz Space-szel szüneteltetve, majd Space-szel folytatva) a jóslatok ellenőrzésére: (a) a normál indításnál is címkártya -> 1. fotó felúszás látszik; (b) a folytatás azonnal a következő fotóra tűnik át az aktuálisból, `T/1,5` alatt, és a következő váltás a folytatás után T múlva jön. Ennek jegyét a hívó nyitja (a kutatói kör GitHubra nem írt).
 
@@ -4717,3 +4722,154 @@ Kiértékelés a kész videón: (a) a vetítés indulásától kockánként a cs
 Nyitott kérdések: 3 nyílt (mindháromnak megnevezett következő iránya van) · 0 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 "csak nyitva".
 
 **Módszertani tanulság.** A felvétel eleje és vége a kérdéses esemény nélkül is "sikeres futás" (a lépéssor lefut, a videó 40 s hosszú, a képernyőképek elkészülnek). A kiértékelés első lépése ezért az legyen, hogy a kockasor egyáltalán tartalmaz-e a keresett eseményt (kockánkénti eltérés-görbe és a befoglaló doboz), mielőtt alfa-sort vagy időközt keresnénk; különben a nulla látott változásból hiba nélkül "nincs animáció" következtetés születne, pedig csak a vetítés maradt el.
+
+### 38.2.300 A lejátszás gombról indított vetítés címkártyája és folytatása: a job-683 mérés (#6916)
+
+**Eredmény.** A job-683 felvétele **tartalmaz vetítést**, ezért a 38.2.280 két statikusan feltételes jóslata eldőlt, de nem úgy, ahogy a statikus olvasat várta. (a) **CÁFOLT:** a mappa lejátszás gombjáról indított normál vetítésnél nincs címkártya és nincs felúszás; az 1. fotó a kattintás után 0,27 s-mal azonnal, teljes fényerővel jelenik meg, és 3,0 s-ig áll, mielőtt az első áttűnés indul. (b) **szerkezetében IGAZOLT, mennyiségileg CÁFOLT:** a Space-szel szüneteltetett vetítés a második Space-re azonnal a következő fotóra tűnik át az aktuálisból, és a következő váltás 3,07 s múlva jön; de az áttűnés **15,2 ± 0,3 kockás (1,01 s) lineáris dissolve**, nem a `T/1,5` idejű (2 s) `K·g` görbe. A mért 10 teljes áttűnés alfa-sorára a bináris `K·g(T=3)` görbe RMSE-je **0,181**, az 1 s-os lineáris modellé **0,027**. A kimenő kép az áttűnés alatt átlátszatlan marad (`F = (1-a)·A + a·B`, a két együttható összege 0,991-0,997). Előre nem jósolt, de mért: az első Space a futó áttűnést **azonnal befejezi** (a 327. kockán 0,216, a 328.-on 0,991), és megjeleníti a vezérlősávot, amely a szünet végéig látszik. **Következmény a beolvadt kódra:** a #6920 (`948f5e953`) a `K·g`/2 s értéket a normál vetítésre is bevezette, ez a mérés szerint hibás (lásd a "PicasaPy-eltérés" szakasz táblázatát).
+
+**Mérés.** Colab job-683, `.meres/job-683/job-683/video__06.mp4` (SHA-256 `6a1f7f656306948b...`; H.264, 1280x1024, 15 kép/mp, 900 kocka = 60,0 s), a 16 képernyőkép (`kepernyo__01.png` - `kepernyo__16.png`) és az `allapot.json`. Lépéssor: kattintás a `PicasaTeszt` mappára (87,222), 2 s, felvétel 60 s, 2 s, kattintás a mappa zöld lejátszás gombjára (268,149), 9 s, `space`, 3 s, `space`, 9 s, `Escape`. A kockákat 0-tól számozom, a videó olvasási sorrendjében (1 kocka = 1/15 s = 0,0667 s). A gombnyomások pillanatát a felvétel nem jelöli; az eseményeket a kockasorból olvastam ki, kockapontosan. A két Space távolsága 124 kocka = 8,27 s a lépéssor 3 s-a helyett (a lépések közti képernyőkép-készítés ideje, mint a job-682-ben).
+
+**Módszer.** (1) Kockánkénti eltérés-görbe mind a 900 kockán (teljes felbontású szürkeárnyalat átlagos abszolút eltérése; 320x256-ra kicsinyítve a 12 szürkeszintnél nagyobb változású pixelek száma és befoglaló doboza). (2) Kulcskockák és képernyőképek szemmel átnézése. (3) Minden váltásra alfa-sor: az áttűnés előtti (A) és utáni (B) stabil kockából `F = A + a·(B - A)` legkisebb négyzetes alfa kockánként, azokon a pixeleken, ahol `|B - A|` csatornaösszege 90 felett van (0,66-1,24 millió pixel váltásonként); szabad paraméter nincs. A 38.2.280 csatornakülönbség-módszere itt nem használható, mert a kiinduló kép nem neutrális szürke kártya. (4) A keverés alakja: `F = c1·A + c2·B` szabad `c1`, `c2` együtthatókkal kockánként, és a két kötött modell maradéka: az eredeti `(1-a)·A + a·B`, illetve a PicasaPy két átlátszóság-animációjának `(1-a)^2·A + a·B` alakja. (5) A vezérlősáv jelenléte: a sáv területe (`x=240..1039`, `y=964..1021`) a 400. kockához (szünet, sáv látszik) képest. (6) A vetített fotók és a főnézeti rács bélyegképeinek párosítása 16x16-os szürkeárnyalatos korrelációval. (7) Kontroll: ugyanez az alfa-becslő a job-681 Időrend-felúszásán. A feldolgozás 1200 MB-os memóriaplafon alatt, swap nélkül, kockánként streamelve futott (a keverésalak-illesztés minden 37. pixelen).
+
+#### Bizonyíték-táblázat
+
+| Állítás | Mért érték | Forrás |
+|---|---|---|
+| A kattintás a lejátszás gombon | 93. kocka (6,20 s): a változás doboza `x=84..383`, `y=124..235`, ebben van a kattintás pontja (268,149); átlagos eltérés 0,05 | 1. és 2. módszer |
+| A főablak újrarajzolódik, vetítéskép még nincs | 95. kocka: átlagos eltérés 21,6, de mindkét kép a főablak (a 94. és a 95. kocka szemrevétele); a 96. kocka a 95.-kel azonos (0,02) | 1. és 2. módszer |
+| A vetítés első kockája | 97. kocka (6,47 s), 4 kocka = 0,27 s a kattintás után; a kocka átlaga 39,0 | 1. módszer |
+| **Nincs címkártya:** teljes fényerejű 1. fotó | a 97. kockán a legnagyobb szürkeérték 252; a címkártya-recept szerinti kép legnagyobb értéke `253·95/255 = 94` lenne (luma-gyök, 160/255 fekete fedéssel, 38.2.280); a sávon kívül (`y<352` és `y>671`) a legnagyobb érték 0 (nincs sötétített kép, nincs szöveg); a sávban az oszlopok szórása a sorok között legfeljebb 1,0 (nincs gyűjteménynév) | 97. és 120. kocka; `kepernyo__09.png` (ugyanaz a vízszintes színátmenet, átlag 39,5) |
+| Nincs felúszás: a 97-141. kocka állókép | a 98-141. kockák átlagos eltérése mind 0,0; a 97. és a 141. kocka legnagyobb pixeleltérése 6 szürkeszint (kodekzaj) | 1. módszer |
+| Az első váltás a megjelenés után T múlva indul | 142. kocka (9,47 s): 97 -> 142 = 45 kocka = 3,00 s; itt `a = 0,021` | 1. és 3. módszer |
+| A vetítés sorrendje a rács sorrendje, minden váltás egy fotót lép | a 12 vetített fotó a rács 1-12. bélyegképével párosodik (hasonlóság 0,63-0,95, a második helyezettnél legalább 0,23-mal nagyobb; az 1. fotónál, a színátmenetnél 0,31 (feltehetően a méretarány miatt), szemmel egyértelmű); a szünet alatt a 6. fotó látszik, a folytatás utáni első új kép a 7. | 6. módszer; 130, 175, 220, 265, 310, 345, 480, 525, 570, 615, 660, 710. kocka |
+| A váltások ütemezése | váltáskezdetek: 142, 188, 233, 279, 324 (köztük 46, 45, 46, 45 kocka, átlag 45,5 = 3,03 s), majd a folytatás után 452, 498, 543, 588, 633, 679 (46, 45, 45, 45, 46 kocka, átlag 45,4 = 3,03 s): a Display Time **a váltás kezdetétől** számít, az áttűnés a dia idején belül fut | 1. módszer |
+| Az áttűnés hossza és alakja | tíz teljes áttűnés (142, 188, 233, 279, 452, 498, 543, 588, 633, 679. kockánál kezdődnek): egyenes, meredekség 0,0629-0,0671 kockánként, hossz 14,9-15,9 kocka, átlag 15,2 ± 0,3 kocka = 1,01 s; az alfa a 15. mintán 0,974 (0,949-0,999), a 16.-on 0,991 | 3. módszer; alfa-táblázat lent |
+| A keverés alakja | a szabad illesztés `c1 + c2` összege a 188-202. kockás váltásnál 0,991-0,997; a kötött `(1-a)·A + a·B` maradéka 1,4-2,4 szürkeszint, a PicasaPy-féle `(1-a)^2·A + a·B` maradéka a váltás közepén (196-197. kocka) 30,3 szürkeszint; a maszk a két kép fekete sávjainak pixeleit is tartalmazza | 4. módszer |
+| Az 5. áttűnés (324-327. kocka) lineárisan indul | alfa 0,060, 0,116, 0,186, 0,216; lineáris `n/15`: 0,067, 0,133, 0,200, 0,267; `K·g(T=3)`: 0,031, 0,117, 0,246, 0,406 | 3. módszer (323:340) |
+| **Az első Space (szünet) azonnal befejezi a futó áttűnést** | 328. kocka (21,87 s): az alfa 0,216 -> 0,991 egyetlen kockán (átlagos eltérés 32,8; a 320x256-ra kicsinyített kockán 49 531 pixel változott); a 329-334. kockán 0,992 -> 1,000 (a kodek utólagos igazítása, ugyanez van minden áttűnés végén) | 1. és 3. módszer |
+| A vezérlősáv a szünettel egy kockán jelenik meg | a sáv területe a 326. és 327. kockán 60,0-60,2 átlagos eltérésre van a 400. kockától (nincs sáv), a 328. és 329. kockán 3,9-4,0-ra (a sáv ott van; a maradék a kodek utólagos igazítása a befejezés után), a 450. és 451. kockán 0,0 | 5. módszer |
+| A szünet alatt nincs váltás | 329-451. kocka (123 kocka = 8,2 s): a 335-451. kockán a legnagyobb kockánkénti átlagos eltérés 0,47; a 3 s-os ütem szerint a 370. és a 415. kockán váltás lett volna | 1. módszer |
+| A vezérlősáv tartalma szünetben | "Exit" gomb, csúszka, két forgató gomb, lejátszás gomb ▶ (szünetel), léptető nyilak, csillag, **átmenet-választó: "Dissolve"**, felirat-kapcsoló, **"Display Time 3 seconds"** a `-` és `+` gombbal | 451. kocka 2,4-szeres kivágása; `kepernyo__11.png` és `kepernyo__12.png` (azonos állapot) |
+| **A második Space (folytatás) azonnal áttűnést indít, és a sáv eltűnik** | 451. kocka: a sáv ott van (0,0); 452. kocka (30,13 s): nincs sáv (59,9) és `a = 0,071` (az első változó kocka) | 5. és 3. módszer |
+| A folytatás utáni áttűnés ugyanaz a lineáris dissolve | a 452-472. kockán a mért alfa 0,071, 0,135, 0,199, 0,251, 0,321, 0,382, ...; illesztett hossz 15,9 kocka (a sáv hirtelen eltűnése a kimenő képről növeli a maradékot) | 3. módszer (451:473) |
+| A következő váltás a folytatás után 46 kockával jön | 452 -> 498 = 46 kocka = 3,07 s, utána 45, 45, 45, 46 kocka | 1. módszer |
+| Az Escape bezárja a vetítést | a 719-727. kockán a vetítés bezáródik (a 720. kocka majdnem fekete, átlag 8,0; a 721-727. kockán a főablak szerkesztőnézete, majd a rács tér vissza); az Escape utáni rácson a 12. bélyegkép kijelölt (`kepernyo__15.png`), az utolsó vetített fotó a 12. | 1., 2. és 6. módszer |
+
+**Az alfa-sorok összevont táblája.** A tíz teljes áttűnés alfája az első változó kockától számított `n`-edik kockán (`n = 1` az első kocka, amelyen az alfa 0,02 fölé ér):
+
+| n | mért átlag (legkisebb - legnagyobb) | lineáris 1 s (`n/15`) | `K·g(T=3)` (38.2.270, `alpha256/256`) |
+|---:|---|---:|---:|
+| 1 | 0,051 (0,021 - 0,071) | 0,067 | 0,031 |
+| 2 | 0,119 (0,082 - 0,139) | 0,133 | 0,117 |
+| 3 | 0,187 (0,149 - 0,215) | 0,200 | 0,246 |
+| 4 | 0,248 (0,217 - 0,269) | 0,267 | 0,406 |
+| 5 | 0,316 (0,285 - 0,348) | 0,333 | 0,547 |
+| 6 | 0,380 (0,356 - 0,407) | 0,400 | 0,652 |
+| 7 | 0,448 (0,418 - 0,478) | 0,467 | 0,734 |
+| 8 | 0,516 (0,491 - 0,545) | 0,533 | 0,797 |
+| 9 | 0,581 (0,547 - 0,612) | 0,600 | 0,844 |
+| 10 | 0,646 (0,620 - 0,679) | 0,667 | 0,879 |
+| 11 | 0,709 (0,678 - 0,743) | 0,733 | 0,906 |
+| 12 | 0,773 (0,748 - 0,815) | 0,800 | 0,930 |
+| 13 | 0,846 (0,817 - 0,877) | 0,867 | 0,945 |
+| 14 | 0,910 (0,884 - 0,944) | 0,933 | 0,957 |
+| 15 | 0,974 (0,949 - 0,999) | 1,000 | 0,969 |
+| 16 | 0,991 (0,981 - 1,000) | 1,000 | 0,973 |
+
+A mért sor a `K·g` görbétől legfeljebb 0,286-tal tér el (a 7. kockán), az egyenestől legfeljebb 0,027-tel. Az első kocka alfája (0,021-0,071) a felvétel és az áttűnés kezdete közti, kockánál rövidebb fázis szórása (az áttűnésenként illesztett kezdeti eltolás -0,10 és 0,74 kocka között van).
+
+| Modell | összevont RMSE (n = 1..16, 10 áttűnés) |
+|---|---:|
+| lineáris, 1 s (`n/15`), illesztett paraméter nélkül | **0,0268** (áttűnésenként 0,0071 - 0,0448) |
+| lineáris, szabad fázis és hossz (illesztve: 15,2 kocka, -0,2 kocka fázis) | 0,0184 |
+| `K·g`, T = 3 s (a bináris, 2 s telítéssel) | 0,1806 (áttűnésenként 0,156 - 0,201) |
+| `K·g`, T = 3 s, szabad fázissal (±3 kocka; a legjobb -2,35 kocka, ami fizikailag kizárt, mert a megelőző kocka változatlan) | 0,1026 |
+| `K·g`, T = 1,5 s (1 s telítés) | 0,3658 |
+| `K·g`, T = 2 s | 0,3006 |
+| `K·g`, T = 4,5 s (nem a beállított érték; a sáv "3 seconds"-ot mutat) | 0,0607 |
+| lineáris, 3 s (`n/45`; a `SimpleSlideshow=0` ág 3 s-os telítése, 38.2.270) | 0,4057 |
+
+#### A jóslatok ítélete
+
+| Jóslat (38.2.280) | Ítélet | Indoklás |
+|---|---|---|
+| (a) A normál, nem Időrendből indított vetítésnél is címkártya, majd az 1. fotó felúszása (`T/1,5` = 2 s, a `0x008001c0` görbéjével) | **CÁFOLT** (a mappa lejátszás gombjáról indított vetítésre; egy Wine-futás) | nincs kártya (legnagyobb szürkeérték 252 a várt 94 helyett, nincs sötétített sáv, nincs gyűjteménynév), nincs felúszás (a 97-141. kocka állókép); az 1. fotó azonnal teljes fényerővel áll 3,0 s-ig |
+| (b/1) A folytatás azonnal a következő fotóra tűnik át az aktuálisból | **IGAZOLT** | a 452. kockán `a = 0,071` ugyanazon a kockán, ahol a vezérlősáv eltűnik; a 6. fotóról a 7.-re (rács szerinti sorrend) |
+| (b/2) Az áttűnés `T/1,5` alatt, a `K·g` görbével | **CÁFOLT** | 1,0 s-os lineáris dissolve; RMSE 0,027 az 1 s-os egyenessel, 0,181 a `K·g(T=3)` görbével |
+| (b/3) A következő váltás a folytatás után T (3 s) múlva jön | **IGAZOLT**, kockapontossággal | 452 -> 498 = 46 kocka = 3,07 s; a további ütem 3,03 s |
+
+**Mit jelent ez a binárisra.** A 38.2.280 statikus olvasata a **szerkezetet** eltalálta: a folytatás (`0x00803110`) `[+0x518] = 1`-et ír és újraindítja az órát, ezért az első tick azonnal lép, és a `[+0x3be] == 0` miatt nincs címkártya a folytatáskor. A **kezdeti címkártyát és a `0x008001c0` görbéjét** viszont tévesen vitte át a normál vetítésre: a mért normál vetítés kártya nélkül indul, és egyenes, 1 s-os dissolve-ot futtat. Hogy a normál vetítés dissolve-ja melyik kódból jön (a `0x008001c0` nem-egyszerű ága, vagy a vezérlősáv "Dissolve" választójához tartozó `oneup/transtype`-lánc, a `CTransitions::dissolve`, lásd picasa-create-features.md "Három bemutató-üzemmód"), **NINCS MEG**; ez nem állítás, hanem az 1. nyitott irány (lent). A `play` gomb belépője statikusan a `0x005e8a70` (picasa-arcfelismeres.md, `play` sor), ugyanaz a függvény, amelyet a Ctrl+4 is hív (38.2.290); a módparamétere a `play` gombnál itt NINCS MEG.
+
+#### Cáfoló kísérletek és kontrollok
+
+| Ellenhipotézis / kontroll | Eredmény | Mérce |
+|---|---|---|
+| A normál indítás is a 38.2.280 címkártyájával kezdődik | **Megdőlt.** A 97. kocka teljes fényerejű színátmenet (max 252, a kártya 94 lenne), a sávon kívül nulla, a sávban nincs szövegre utaló szórás | kockamérés; `kepernyo__09.png` |
+| Az áttűnés a bináris `K·g(T=3)` görbe (2 s) | **Megdőlt.** RMSE 0,181 (fázis nélkül), 0,103 (±3 kocka fázissal); a 4-12. mintán a mért sor 0,16-0,29-del alatta marad | alfa-táblázat; modelltábla |
+| Az áttűnés más `T`-vel futó `K·g` (1,5 / 2 / 4,5 s) | **Megdőlt.** 0,366 / 0,301 / 0,061; a 0,061 sem éri el az egyenes 0,027-ét, és a beállított érték 3 s | modelltábla |
+| Az áttűnés 3 s-os lineáris (`SimpleSlideshow=0` ág) | **Megdőlt.** RMSE 0,406; a mért alfa a 15. mintán már 0,974 | modelltábla |
+| A kimenő kép is halványul (a PicasaPy `(1-a)^2·A + a·B` alakja) | **Megdőlt.** A szabad `c1 + c2` összege 0,991-0,997; a kötött modell maradéka 1,4-2,4 szürkeszint, a PicasaPy-alaké legfeljebb 30,3 | 4. módszer (188-202. kocka) |
+| A szünet csak az órát állítja meg, a futó áttűnést nem érinti | **Megdőlt.** A 328. kockán az alfa 0,216 -> 0,991 egy kockán belül, nem a hátralévő 0,78-del 11 kockán át | alfa-sor (323:340) |
+| A folytatás után a következő váltás T-nél korábban vagy később jön | **Megdőlt.** 46 kocka (3,07 s), a rendes 45,5 kocka ±0,5 kockán belül | váltáskezdetek |
+| **Kontroll:** az alfa-becslő nem eleve egyenest ad | **Megfelelt.** Ugyanez a becslő a job-681 Időrend-felúszásán (`.meres/video__04.mp4`, 447-470. kocka, A = a 447. kocka; 24 pont) a `K·g` sort adja: RMSE 0,0152 (legnagyobb eltérés 0,042), az 1 s-os egyeneshez 0,1437, a 2 s-oshoz 0,4077 | a 3. módszer a job-681 felvételen |
+| **Kontroll:** a becslő a stabil szakaszon 1,000-t ad | **Megfelelt.** Az áttűnések utáni kockákon 0,999-1,000; a kockánkénti maradék 1,4-2,4 szürkeszint a tiszta váltásokon | 3. és 4. módszer |
+
+**Amit a mérés nem mér:** a vezérlősáv alakjának és pontos helyének egyezését (csak a jelenlétét és tartalmát olvastam), a Ctrl+4 és a menü útján indított vetítést (a `play` gomb volt az egyetlen indítási út), a `Display Time` más értékeit (csak 3 s), a lista végén való viselkedést, és a hangot. Az események időpontja kockapontos (0,067 s).
+
+#### PicasaPy-eltérés és megvalósítási javaslat
+
+| Eredeti (mért) | PicasaPy jelenleg | Teendő, kódhely |
+|---|---|---|
+| A mappa lejátszás gombja: az 1. fotó azonnal, címkártya és felúszás nélkül, 3,0 s-ig áll | `MainLibraryCanvas.qml:268` a gomb `onSlideshowRequested` jelére `startSlideshow(startRow)`-t hív; `SlideshowView.qml:201-221` (`start(index, paused)`) a megadott fotót azonnal mutatja, kártya nincs | **Egyezik, nem kell módosítani.** A 38.2.280 `_cimkartyaFuggo` javaslatát csak az Időrendből indított (`timelineSlideshow`, `SlideshowView.qml:41`) vetítésre szabad bevezetni, a normál ágra **nem** |
+| Dissolve: egyenes, 1,0 s, a kimenő kép átlátszatlan, a bejövő alfája `n/15` | **`425069be9` (a mérés alapja):** `controller_slideshow_mixin.py:81-89`: alapérték 700 ms, felső korlát 500 ms; `SlideshowView.qml:93` és `MainSlideshow.qml:139-140`: 700 ms tartalék; `SlideshowImageLayer.qml:21-42`: a kimenő kép `opacity` 1 -> 0 és a bejövő 0 -> 1, mindkettő lineárisan `transitionMs` alatt, tehát a keverés `a·B + (1-a)^2·A`: a váltás közepén (a = 0,5) két azonos fényerejű kép keveréke 25%-kal sötétebb. **`948f5e953` (#6920 után):** a kimenő kép átlátszatlan marad (egyezik), de az alfa `K·g` és az idő 2 s minden módban (nem egyezik a normál vetítéssel): lásd a következő táblát | A normál ágon az eredeti lineáris, 1000 ms-os dissolve kell (a T-függés nincs mérve, 2. irány); a konkrét teendő és kódhelyek a következő táblában. Az eredeti, #6920 előtti javaslat (a 500 ms-os korlát helyett a diaidő mint korlát; a bejövő képnek teljes képernyős fekete háttér, különben a kimenő kép a bejövő fekete sávjaiban nem halványul, mert a mérés maszkja ezeket a pixeleket is tartalmazza) ugyanúgy érvényes |
+| A Space (szünet) azonnal befejezi a futó áttűnést, és megjelenik a vezérlősáv, amely a szünet végéig látszik | `SlideshowView.qml:421` `togglePause()` csak a `playing`-et váltja: a futó áttűnés a maradék idő alatt lefut; a sáv nem jelenik meg (csak egérmozgásra, `SlideshowControls.qml:40-56`, 1,5 s után elrejtve `:100`; szünetből indításkor `SlideshowView.qml:215-218`) | `togglePause()`: szünetbe váltáskor `imageLayer.transitionAnimation.complete()` (ellenőrizni, hogy a záró `ScriptAction` lefut-e; ha nem, `_atmenetVege()` hívandó), `slideshowControls.controls.shown = true` és `autoHideTimer.stop()`; folytatáskor `shown = false`. Mérve csak a normál vetítésben |
+| A Space (folytatás) azonnal áttűnést indít a következő fotóra, a következő váltás T múlva jön | `SlideshowView.qml:421` és `SlideshowTiming.qml:11-17`: a `stepTimer` a `playing` igazra váltásától T múlva lép először, azonnali lépés nincs | `togglePause()`: ha a `playing` hamisról igazra vált, azonnal `advance()` (`SlideshowView.qml:254`); a `Timer` (`running: visible && playing`) a hamis -> igaz váltással újraindul, így a következő lépés T múlva jön (mért: 3,07 s). A lista végén az `advance()` a `stop()`-ot hívja; ezt a felvétel nem érte el. Az Időrend-ágon (38.2.280) a folytatás első lépését a `_cimkartyaFuggo` kezeli, ott ne fusson kétszer |
+| T-nként váltás, a Display Time a váltás kezdetétől számít | `SlideshowTiming.qml:11-17`: ismétlődő `stepTimer`, `interval = intervalMs = T·1000` | **Egyezik** (mért ütem 3,03 s), nem kell módosítani |
+
+**A kód nem módosult** (a brief tiltotta a kódírást); a fenti táblázat sorszámai az `origin/main` 1.0.112 szerintiek (`425069be9`, a mérés alapja). **A #6920 közben beolvadt (`948f5e953`), ezért a táblázat "PicasaPy jelenleg" oszlopa a Dissolve-ra részben elavult: lásd a következő táblát.**
+
+**⚠️ Az `origin/main` közben megváltozott: a #6920 (`948f5e953`) a 38.2.270 és a 38.2.280 javaslatai alapján a `K·g` görbét és a `T/1,5` időt minden vetítésre bevezette, a normálra is.** Amit a 38.2.300 mérése ehhez képest jelent:
+
+| `948f5e953` állapota | Egyezik-e a méréssel | Teendő |
+|---|---|---|
+| A Dissolve alfája `K·g`, 2,0 s minden módban: `slideshow_transition.py` (`dissolve_alpha256`, `dissolve_duration_ms`); `SlideshowView.qml:103` (`dissolveTransitionMs`) és `:507-518` (`_dissolveOpacitasFrissit`); `SlideshowImageLayer.qml:47-52` (`dissolveProgress` animáció); `controller_slideshow_mixin.py:82-84` (`slideshowTransitionMs` = `T/1,5`); `MainSlideshow.qml` (`dissolveAlphaProvider: slideshow`) | **Nem egyezik a normál vetítésre** (mért: egyenes, 1,0 s; a `K·g`-vel RMSE 0,181). Az Időrendre továbbra is érvényes | A görbe és az idő a `timelineSlideshow` igaz ágára korlátozandó; hamis ágon `dissolveTransitionMs = 1000` és `alpha = dissolveProgress` (egyenes; a 1/256-os kvantálás a mérésből nem látszik). A #6920 tesztjei a normál vetítésre a **hibás** értéket rögzítik: `tests/app/qml_functional/test_diavetites_gorbe_6920.py` Ctrl+4-gyel normál vetítést nyit, és `dissolveTransitionMs == 2000`-et, `248/256`-ot vár; ugyanígy `tests/app/test_slideshow_transition_curve_6920.py`. Ezeket a normál ágra át kell írni, az Időrend-ágra külön teszt kell |
+| A kimenő kép Dissolve-nál átlátszatlan marad (`SlideshowImageLayer.qml:23` a Dissolve-nál nem animálja a kimenő képet) | **Egyezik** a mért `c1 + c2 = 0,99-1,00` keveréssel | Nincs teendő; a fenti tábla "keverés" sora a #6920 előtti állapotra szólt |
+| A címkártya csak `startsPaused && timelineSlideshow` esetén áll elő (`SlideshowView.qml:219-220`) | **Egyezik** az (a) cáfolattal: a normál indítás nem kap kártyát | Nincs teendő |
+| `togglePause()` (`SlideshowView.qml:436`) csak az Időrend címkártyás folytatását kezeli | **Hiányos a normál vetítésre** | A szünet-befejezi-az-áttűnést, a vezérlősáv és az azonnali folytatási lépés (a fenti 3. és 4. táblasor) továbbra is teendő |
+
+**Állapot (#6926, #6927).** A #6926 a `K·g` görbét az Időrend-ágra (`timelineSlideshow`) és a címkártya felúszására szűkítette (`SlideshowView._gorbesDissolve`); a normál vetítés a #6920 előtti, 500 ms-os lineáris animációt kapta vissza, a kimenő kép ott ismét halványul. Az alábbi lista első két pontja (az 1,0 s-os egyenes és az átlátszatlan kimenő kép a normál ágon) a #6927-re vár: a normál áttűnés forrása a binárisban még nincs meg, egyetlen felvételből pedig nem vezetünk be működést.
+
+**Fejlesztői jegyhez javasolt „Kész, ha”:**
+
+- [ ] Normál (nem Időrend) vetítésben T = 3 s mellett a fotóváltás alfája `n/15` (`n = 1..15`), 1,0 s alatt éri el az 1-et; a kimenő kép átlátszatlan; a 15 fps-es renderelt alfa-sor RMSE-je az `n/15` sorhoz <= 0,03 (az eredeti mért: 0,027), és ugyanez a mérés a `K·g(T=3)` ellenmodellen (0,181) bukjon el.
+- [ ] A kimenő kép nem halványul: a szabad `c1 + c2` összege 0,99 és 1,01 között marad a renderelt váltáson (a mért 0,991-0,997); a `(1-a)^2·A + a·B` alak (maradék 30 szürkeszint a váltás közepén) bukjon el.
+- [ ] Az Időrend-bemutató (`timelineSlideshow`) fotóváltása marad a 38.2.270 `K·g` görbéjén `T/1,5` idővel; a két mód ne keveredjen (egy teszt mindkét ágra: `timelineSlideshow = false` -> egyenes 1000 ms, `true` -> `K·g`).
+- [ ] A #6920 normál vetítésre rögzített tesztjei (`test_diavetites_gorbe_6920.py`: `dissolveTransitionMs == 2000`, `248/256`) átírva a normál ágra (1000 ms, egyenes), és az Időrend-ágnak saját tesztje van.
+- [ ] Szünet közben futó áttűnésnél az alfa egy kockán belül 1-re ugrik, a vezérlősáv megjelenik és a szünet végéig látszik; folytatáskor eltűnik.
+- [ ] Folytatáskor az áttűnés ugyanazon a kockán indul, ahol a sáv eltűnik (`n = 1`: 0,05-0,07 alfa), és a következő váltás 46 +/- 1 kockával (3,07 s) később jön.
+- [ ] A mappa lejátszás gombjáról indított vetítés címkártya nélkül, az 1. fotóval indul, és az első váltás 45 kockával (3,0 s) később jön.
+- [ ] A szomszéd: a zene, a léptetés ütemezése (`SlideshowTiming`), a vezérlősáv mozgásra történő megjelenése és 1,5 s utáni elrejtése, valamint az Időrend-ág címkártyás folytatása nem változik.
+- [ ] Kimondva marad: a teszt az alfa-sort és a keverés alakját méri; a vezérlősáv alakját és a gyűjteménynevet nem.
+
+#### Bizonyítottsági fok
+
+- A mappa lejátszás gombjáról indított normál vetítésnél nincs címkártya és felúszás: **megerősített** a felvételre (két független út: a kockasor és a kártya-recept maximuma, valamint a `kepernyo__09.png`). Egy Wine-futás, egy indítási út.
+- A normál vetítés áttűnése 1,0 s-os lineáris dissolve, a kimenő kép átlátszatlan: **megerősített** (10 áttűnés; a kontroll a job-681 `K·g` görbéjét ugyanezzel a becslővel visszaadja).
+- A Space-szünet befejezi a futó áttűnést és megjeleníti a sávot; a Space-folytatás azonnal áttűnést indít a következő fotóra, és a következő váltás 3,07 s múlva jön: **megerősített** a felvételre (egyetlen szünet-folytatás pár, kockapontosan; az események időpontját a felvétel nem jelöli).
+- A normál vetítés dissolve-jának bináris útja és időalapja: **NINCS MEG**.
+- A dissolve hossza `Display Time` != 3 s mellett: **NINCS MEG**.
+
+#### Nyitott kérdések mérlege
+
+| Tétel | Állapot | Indoklás / megnevezett következő irány |
+|---|---|---|
+| (a) normál indításnál címkártya és felúszás | LEZÁRVA (cáfolt) | job-683; lásd fent |
+| (b) folytatás: azonnali áttűnés, a következő váltás T múlva | LEZÁRVA (igazolt) | job-683; lásd fent |
+| A normál vetítés áttűnésének hossza és alakja (T = 3 s) | LEZÁRVA mérésre | 1,0 s lineáris, RMSE 0,027 |
+| A normál vetítés dissolve-jának bináris útja (melyik kód adja az 1,0 s-ot és az egyenest) | NYÍLT, megnevezett következő irány | **1. irány** (statikus kutatás): a `0x00800a30` három `0x008001c0`-hívóhelye (`0x00800c1b`, `0x00800f04`, `0x00801079`) közül a normál módban futó azonosítása, a `0x008001c0` nem-egyszerű ága, vagy a `oneup/transtype` "Dissolve" lánc (`CTransitions::dissolve`); az 1,0 s forrása és az, hogy független-e a `[+0x760]` Display Time értéktől. Bináris-kutatható, a jegyet a hívó nyitja |
+| A dissolve hossza `Display Time` 1 s és 5 s mellett | NYÍLT, megnevezett következő irány | **2. irány** (Colab): lépéssor: kattintás (87,222), 2 s, felvétel 60 s, 2 s, kattintás (268,149), 3 s, `space` (megjelenik a sáv), kattintás a `-` gombra (kb. `x=944`, `y=1001`, a 451. kockáról) kétszer (Display Time 1 s), `space`, 12 s, `Escape`; a második futásban a `+` gomb (kb. `x=1014`, `y=1001`) kétszer (5 s). Kiértékelés: ugyanez az alfa-becslő |
+| A Ctrl+4 kijelölt mappával ugyanezt a kártya nélküli, dissolve-os vetítést adja-e (és a 38.2.290 kérdése, miért nem indult a Ctrl+4 kijelölés nélkül) | NYÍLT, megnevezett következő irány | **3. irány** (Colab): a 38.2.290 A változata a már bevált kijelöléssel: kattintás (87,222), 2 s, felvétel 60 s, 2 s, `ctrl+4`, 9 s, képernyőkép, `space`, 3 s, `space`, 9 s, `Escape`; a job-683 a B változat volt |
+
+Nyitott kérdések: 3 nyílt (mindháromnak megnevezett következő iránya van) · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva".
+
+**Módszertani tanulság.** A 38.2.280 statikus jóslata két rétegből állt, és a mérés szétválasztotta őket: a **szerkezetet** (a folytatás azonnali lépése) a bináris kódolvasás helyesen adta, de az **egyik módban mért paramétert** (a `K·g` görbe és a `T/1,5` idő az Időrendnél) és a kezdeti címkártyát tévesen vitte át a másik módra, pedig a közös kód nem volt bizonyítva. Ahol két bemutatómód közös belépőt használ, a mért paramétert nem szabad átvinni, amíg a mérés a másik módon is meg nem történt. A becslő kontrollját pedig mindkét irányban kell futtatni: ugyanaz a számítás a job-681-en a `K·g` görbét, a job-683-on az egyenest adja, és csak ez bizonyítja, hogy az eredmény a videóból jön, nem a módszerből.
