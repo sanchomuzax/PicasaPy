@@ -101,7 +101,7 @@ def _vetites_savval(window, qt_app, index):
     nem a mozgást, ezért a jelzőt közvetlenül állítjuk. A sáv 200 ms-os
     áttűnéssel jelenik meg, ezért megvárjuk, míg az opacitás eléri az 1-et.
     """
-    _invoke(qt_app, window, "startSlideshow", index)
+    _invoke(qt_app, window, "startSlideshow", index, False)
     show = _child(window, "slideshowView")
     show.setProperty("playing", False)
     qt_app.processEvents()

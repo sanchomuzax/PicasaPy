@@ -588,7 +588,9 @@ ApplicationWindow {
     function toggleTimeline() { mainWindowCommands.toggleTimeline() }
     function startTimelineSlideshow(collectionId) { mainWindowCommands.startTimelineSlideshow(collectionId) }
     function toggleViewerFullscreen() { mainWindowCommands.toggleViewerFullscreen() }
-    function startSlideshow(fromIndex) { mainWindowCommands.startSlideshow(fromIndex) }
+    function startSlideshow(fromIndex, paused) {
+        mainWindowCommands.startSlideshow(fromIndex, paused)
+    }
     function startScreensaverPreview() { mainWindowCommands.startScreensaverPreview() }
     function exitSlideshow() { mainWindowCommands.exitSlideshow() }
     function toggleHiddenSelection() { mainWindowCommands.toggleHiddenSelection() }

@@ -331,6 +331,7 @@ class TestCelpont:
         QMetaObject.invokeMethod(
             window, "startSlideshow", Qt.ConnectionType.DirectConnection,
             Q_ARG("QVariant", 1),
+            Q_ARG("QVariant", False),
         )
         qt_app.processEvents()
         assert vetites.property("visible") is True, "a diavetítés nem indult el"

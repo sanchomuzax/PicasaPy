@@ -128,6 +128,7 @@ def futo_diavetites(qml_app, qt_app, tmp_path):
         "startSlideshow",
         Qt.ConnectionType.DirectConnection,
         Q_ARG("QVariant", -1),
+        Q_ARG("QVariant", False),
     )
     qt_app.processEvents()
     show = _child(window, "slideshowView")
@@ -253,6 +254,7 @@ def _indit_es_meri(window, qt_app, mod: str) -> dict:
     QMetaObject.invokeMethod(
         window, "startSlideshow", Qt.ConnectionType.DirectConnection,
         Q_ARG("QVariant", 0),
+        Q_ARG("QVariant", False),
     )
     show = _child(window, "slideshowView")
     show.setProperty("playing", False)

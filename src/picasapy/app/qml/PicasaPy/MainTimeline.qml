@@ -76,11 +76,20 @@ TimelineView {
         hostToolbar.clearSearch()
         hostWindow.clearSelection()
         hostWindow.unnamedFacesOpen = false
-        if (collection.kind === "album")
-            hostController.showAlbum(collection.albumToken)
-        else
-            hostController.selectFolder(collection.folderPath)
         var row = hostController.photos.rowOfPath(collection.firstPhotoPath)
+        var firstPhoto = collection.photos && collection.photos.length > 0
+            ? collection.photos[0] : null
+        var albumPhotoInCurrentFolder = row >= 0 && firstPhoto
+            && firstPhoto.folderPath === hostController.currentFolder
+        if (collection.kind === "album") {
+            if (!albumPhotoInCurrentFolder) {
+                hostController.showAlbum(collection.albumToken)
+                row = hostController.photos.rowOfPath(collection.firstPhotoPath)
+            }
+        } else {
+            hostController.selectFolder(collection.folderPath)
+            row = hostController.photos.rowOfPath(collection.firstPhotoPath)
+        }
         hostWindow.selectedIndex = row
         hostWindow.selectedIndexes = row >= 0 ? [row] : []
         return row
@@ -88,8 +97,19 @@ TimelineView {
 
     function closeTimeline() {
         var collection = timeline.collectionAt(timeline.currentIndex)
-        // A virtuális friss album a Picasában nem váltja át a főnézetet.
-        if (collection && collection.albumToken !== "]updated")
+        // A virtuális friss album nem vált nézetet; ha az első kép a jelenlegi
+        // mappában van, ott jelöljük ki a fotót.
+        var firstPhoto = collection && collection.photos
+            && collection.photos.length > 0 ? collection.photos[0] : null
+        var albumPhotoInCurrentFolder = collection
+            && collection.kind === "album"
+            && hostController && hostController.photos
+            && firstPhoto
+            && firstPhoto.folderPath === hostController.currentFolder
+            && hostController.photos.rowOfPath(collection.firstPhotoPath) >= 0
+        if (collection
+                && (collection.albumToken !== "]updated"
+                    || albumPhotoInCurrentFolder))
             timeline.selectTimelineCollection(collection)
         hostWindow.timelineOpen = false
     }
@@ -120,7 +140,7 @@ TimelineView {
         hostWindow.timelineSlideshowActive = true
         hostWindow.visibilityBeforeSlideshow = hostWindow.visibility
         hostWindow.visibility = Window.FullScreen
-        hostWindow.startSlideshow(0)
+        hostWindow.startSlideshow(0, true)
         if (!hostWindow.slideshowRunning)
             hostWindow.exitSlideshow()
     }

@@ -1,6 +1,7 @@
 """Az Időrend virtuális friss albumának és kezelőinek felületi útjai (#6902)."""
 
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -282,3 +283,182 @@ def test_escape_recently_updated_fokusznal_megtartja_a_belépési_nezetet(
     assert controller.currentAlbumToken == entry_album
     assert window.property("selectedIndex") == entry_selected_index
     assert window.property("selectedIndexes").toVariant() == entry_selected_indexes
+
+
+@pytest.mark.parametrize("height_delta", (-5, 0, 5))
+def test_space_idorendrol_szukselet_vetitest_indit_es_teret_ad_a_lejatszasnak(
+    qml_app_6902, qt_app, height_delta
+):
+    window, _controller, _engine, timeline = _open_timeline(
+        qml_app_6902, qt_app, height_delta
+    )
+    QTest.keyClick(timeline, Qt.Key.Key_Space)
+    _wait(
+        qt_app,
+        lambda: window.property("slideshowRunning") is True,
+        "a Space nem nyitotta meg a vetítést",
+    )
+    slideshow = _child(window, "slideshowView")
+    _wait(qt_app, lambda: slideshow.property("visible"), "a vetítés nem látható")
+    controls = _child(slideshow, "slideshowControls")
+    try:
+        assert slideshow.property("playing") is False
+        assert slideshow.property("currentIndex") == 0
+        assert controls.property("shown") is True
+
+        elapsed_from = time.monotonic()
+        _wait(
+            qt_app,
+            lambda: time.monotonic() - elapsed_from >= 3.2,
+            "a 3 másodperces diaidő nem telt le",
+            seconds=5.0,
+        )
+        assert slideshow.property("currentIndex") == 0
+
+        QTest.keyClick(window, Qt.Key.Key_Space)
+        _wait(qt_app, lambda: slideshow.property("playing"), "a második Space nem indított")
+        QTest.keyClick(window, Qt.Key.Key_Space)
+        _wait(
+            qt_app,
+            lambda: slideshow.property("playing") is False,
+            "a harmadik Space nem szüneteltette a vetítést",
+        )
+        QTest.keyClick(window, Qt.Key.Key_Escape)
+        _wait(
+            qt_app,
+            lambda: not slideshow.property("visible"),
+            "az Escape nem zárta be a vetítést",
+        )
+    finally:
+        if slideshow.property("visible"):
+            QTest.keyClick(window, Qt.Key.Key_Escape)
+            _wait(
+                qt_app,
+                lambda: not slideshow.property("visible"),
+                "a teszt nem tudta bezárni a vetítést",
+            )
+
+
+@pytest.mark.parametrize("height_delta", (-5, 0, 5))
+def test_ctrl_space_nem_valtoztat_a_renderelt_idorenden_es_a_space_tovabbra_is_mukodik(
+    qml_app_6902, qt_app, height_delta
+):
+    window, _controller, _engine, timeline = _open_timeline(
+        qml_app_6902, qt_app, height_delta
+    )
+    _wait(
+        qt_app,
+        lambda: timeline.property("currentCardsLoaded") is True,
+        "az Időrend kártyái nem rajzolódtak ki",
+    )
+    before = timeline.grabWindow()
+    assert not before.isNull(), "az Időrend renderelt képe üres"
+
+    QTest.keyClick(
+        timeline, Qt.Key.Key_Space, Qt.KeyboardModifier.ControlModifier
+    )
+    try:
+        assert window.property("timelineOpen") is True
+        assert window.property("slideshowRunning") is False
+        after = timeline.grabWindow()
+        assert not after.isNull(), "az Időrend renderelt képe eltűnt"
+        assert before == after, "a Ctrl+Space megváltoztatta az Időrend képét"
+
+        QTest.keyClick(timeline, Qt.Key.Key_Space)
+        _wait(
+            qt_app,
+            lambda: window.property("slideshowRunning") is True,
+            "a sima Space nem nyitotta meg a vetítést a Ctrl+Space után",
+        )
+    finally:
+        if window.property("slideshowRunning"):
+            QTest.keyClick(window, Qt.Key.Key_Escape)
+            _wait(
+                qt_app,
+                lambda: window.property("slideshowRunning") is False,
+                "a teszt nem tudta bezárni a vetítést",
+            )
+
+
+@pytest.mark.parametrize("height_delta", (-5, 0, 5))
+def test_escape_albumkartyarol_megtartja_a_mappat_es_kijeloli_a_fotot(
+    qml_app_6902, qt_app, height_delta
+):
+    window, controller, engine, timeline = _open_timeline(
+        qml_app_6902, qt_app, height_delta
+    )
+    original_folder = controller.currentFolder
+    timeline_controller = engine.rootContext().contextProperty("timelineController")
+    try:
+        album = next(
+            collection
+            for collection in timeline_controller.collections
+            if collection["albumToken"] == RECENT_ALBUM_TOKEN
+        )
+        first_photo = album["firstPhotoPath"]
+        entry_folder = str(Path(first_photo).parent)
+
+        QTest.keyClick(timeline, Qt.Key.Key_Escape)
+        _wait(
+            qt_app,
+            lambda: window.property("timelineOpen") is False,
+            "az előkészítő Időrend nem zárult be",
+        )
+        controller.selectFolder(entry_folder)
+        _wait(
+            qt_app,
+            lambda: controller.currentFolder == entry_folder,
+            "a mappanézet nem váltott az album fotójának mappájára",
+        )
+        window, controller, engine, timeline = _open_timeline(
+            qml_app_6902, qt_app, height_delta
+        )
+        collections = timeline_controller.collections
+        recent_index = next(
+            index
+            for index, collection in enumerate(collections)
+            if collection["albumToken"] == RECENT_ALBUM_TOKEN
+        )
+        album = collections[recent_index]
+        first_photo = album["firstPhotoPath"]
+        assert controller.photos.rowOfPath(first_photo) >= 0
+
+        for index in range(recent_index):
+            QTest.keyClick(timeline, Qt.Key.Key_Right)
+            expected_index = index + 1
+            _wait(
+                qt_app,
+                lambda expected_index=expected_index: timeline.property("currentIndex")
+                == expected_index,
+                "az albumkártya nem érhető el a jobbra nyíllal",
+            )
+
+        entry_album = controller.currentAlbumToken
+        QTest.keyClick(timeline, Qt.Key.Key_Escape)
+        _wait(
+            qt_app,
+            lambda: window.property("timelineOpen") is False,
+            "az Escape nem zárta be az Időrendet",
+        )
+
+        row = controller.photos.rowOfPath(first_photo)
+        assert controller.currentFolder == entry_folder
+        assert controller.currentAlbumToken == entry_album
+        assert row >= 0
+        assert window.property("selectedIndex") == row
+        assert window.property("selectedIndexes").toVariant() == [row]
+    finally:
+        if window.property("timelineOpen"):
+            QTest.keyClick(timeline, Qt.Key.Key_Escape)
+            _wait(
+                qt_app,
+                lambda: window.property("timelineOpen") is False,
+                "az albumteszt utáni Időrend nem zárult be",
+            )
+        if controller.currentFolder != original_folder:
+            controller.selectFolder(original_folder)
+            _wait(
+                qt_app,
+                lambda: controller.currentFolder == original_folder,
+                "az albumteszt nem állította vissza a mappanézetet",
+            )
