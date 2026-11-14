@@ -9,8 +9,9 @@ Select photos, then start a new movie from the **Create** menu or use
 the **Movie** button in the photo tray.
 
 A movie-presentation command beside the collage control in a folder
-header opens Movie Maker with every photo from that folder, not only
-the selection. It is not shown in a People album, which has its own
+header opens Movie Maker with only the selected photos when at least
+two photos in that folder are selected; with one or none selected, it
+uses every photo from the folder. It is not shown in a People album, which has its own
 movie controls.
 
 Commands to create a movie from faces in the selection or from People

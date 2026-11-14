@@ -296,16 +296,22 @@ photo of the selected folder or album, and it cross-fades to the new one
 when you change cards. Cards are ordered by the oldest capture date in each folder
 or album; if two cards start on the same day, the one with the earlier
 capture time comes first. Items with no capture dates appear at the end without a date;
-empty albums and hidden photos do not appear. Timeline always opens at
-the first card.
+empty albums and hidden photos do not appear. The **Recently Updated**
+album also gets a card when it has visible pictures. Timeline always
+opens at the first card.
 
 Use the left and right arrows or the bar's arrow buttons to move between
-cards. You can also use the mouse wheel, or grab the row of cards and
+cards; the down arrow moves forward and the up arrow moves back in the
+same way. You can also use the mouse wheel, or grab the row of cards and
 drag it sideways. Drag the bottom slider to move farther through time; the first
-and last library dates appear at its ends. Press Space or the play
+and last library dates appear at its ends. While you drag, the label in
+the top-right corner already shows the folder or album you will land
+on; when you release, the row glides there over a few seconds. Press Space or the play
 button to start a slideshow of the current folder or album. Press Esc
 or use the close button to exit. On return, the library opens the last
-folder or album shown, with its first photo selected.
+folder or album shown, with its first photo selected. One exception: if
+you exit on the **Recently Updated** card, the library shows what it
+showed before you opened Timeline.
 
 ## Display mode
 

@@ -267,24 +267,35 @@ def wait_for_photo_op(controller, action, *, qt_app=None) -> None:
     ketyeges.setSingleShot(True)
     ketyeges.setInterval(10)
     ketyeges.timeout.connect(loop.quit)
-    action()
-    while True:
+    # #6904: a háttérszál is futtathatja a szemétgyűjtőt, és akkor egy korábbi
+    # teszt fő szálbeli Qt-objektumát a háttérszálon bontja le (gdb: worker ->
+    # gc -> QObject::~QObject, miközben a fő szál is gyűjt). Ezért a szemetet
+    # a munka ELŐTT a fő szálon gyűjtjük be, a munka alatt a gyűjtő szünetel,
+    # és a munka UTÁN ismét a fő szál gyűjt (a #988 mintája).
+    gc.collect()
+    gc.disable()
+    try:
+        action()
+        while True:
+            app.processEvents()
+            if controller.backgroundWorkersRunning():
+                idle_rounds = 0
+            else:
+                idle_rounds += 1
+                if idle_rounds >= 3:
+                    break
+            if time.monotonic() >= deadline:
+                raise AssertionError(
+                    "a kép-művelet háttérmunkája nem állt le "
+                    f"{timeout_ms / 1000:g} másodperc alatt"
+                )
+            ketyeges.start()
+            loop.exec()
+        ketyeges.stop()
         app.processEvents()
-        if controller.backgroundWorkersRunning():
-            idle_rounds = 0
-        else:
-            idle_rounds += 1
-            if idle_rounds >= 3:
-                break
-        if time.monotonic() >= deadline:
-            raise AssertionError(
-                "a kép-művelet háttérmunkája nem állt le "
-                f"{timeout_ms / 1000:g} másodperc alatt"
-            )
-        ketyeges.start()
-        loop.exec()
-    ketyeges.stop()
-    app.processEvents()
+    finally:
+        gc.enable()
+    gc.collect()
 
 
 def varj_kollazs_jelzesre(signal, action, timeout_ms: int = 20000):

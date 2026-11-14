@@ -13,8 +13,12 @@ Prints use the edited version of each picture, including its crop,
 rotation, and effects, and respect the orientation recorded by the
 camera. This is the same version used for export.
 
-The dialog opens at a height suited to its contents. The **Print** and
-**Close** buttons remain visible; on a small screen, scroll the options.
+Printing does not open in a separate window: it replaces the library
+view inside the main window, and if you were in the viewer, the program
+first switches to the library. The **Print** and **Close** buttons
+remain visible; on a small screen, scroll the options. **Close**, Esc,
+or a finished print job takes you back to the library, with your
+earlier selection kept.
 
 If no printer is installed, the dialog explains that one is needed for
 printing. You can still print to PDF. On Linux, printing requires the
