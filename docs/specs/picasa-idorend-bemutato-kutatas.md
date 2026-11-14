@@ -4425,4 +4425,4 @@ Csak a binárisból igazolt eltérések; kódot nem módosítottam. A helyek az 
 | A fotók közti átmenet | áttűnés, az 5-95% közötti szakasz 11-12 kocka (kb. 0,75-0,8 s), a teljes áttűnés kb. 14-15 kocka (kb. 1,0 s) | mérés: lineáris keverési arány illesztése a 540-550., 585-596., 631-642. kockán |
 | A harmadik Space megállít | a `kepernyo__17.png` és a `kepernyo__18.png` (2 s különbség) pixelre azonos | mérés |
 
-**Összevetés a PicasaPy-val:** a 3 s-os időköz egyezik (`SlideshowTiming`, alapérték 3). Az áttűnés hossza **eltér**: nálunk `slideshowTransitionMs`, alapérték 700 ms, legfeljebb 500 ms-ra szorítva (`controller_slideshow_mixin.py`), az eredetiben kb. 1,0 s. Az eredeti átmenetidő-állandójának bináris címe még **NINCS MEG**; ennek feltárása külön kutatási jegy, a megvalósítás csak utána.
+**Összevetés a PicasaPy-val:** a 3 s-os időköz egyezik (`SlideshowTiming`, alapérték 3). Az áttűnés hossza **eltér**: nálunk `slideshowTransitionMs`, alapérték 700 ms, legfeljebb 500 ms-ra szorítva (`controller_slideshow_mixin.py`), az eredetiben kb. 1,0 s. Az eredeti átmenetidő-állandójának bináris címe még **NINCS MEG**; feltárása: #6916, a megvalósítás csak utána.
