@@ -341,10 +341,8 @@ Rectangle {
             if (!source)
                 return
             if (source.payload === "folders") {
-                if (!source.folderPath || source.folderPath === path)
-                    return
-                drop.accept()
-                folderPane.folderDroppedOnFolder(source.folderPath, path)
+                // #6907: az eredeti Picasában a mappasor nem ad át
+                // fájllistát; másik mappasorra ejtve ezért nincs művelet.
                 return
             }
             if (source.payload !== "photos" || !source.photoRows

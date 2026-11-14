@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QPoint, QPointF, QObject, Qt
+from PySide6.QtCore import QMetaObject, QPoint, QPointF, QObject, QUrl, Qt
 from PySide6.QtTest import QTest
 
 from picasapy.index import open_index
@@ -171,9 +171,11 @@ def _wait(qt_app, predicate, description: str, timeout: float = 10.0) -> None:
 
 
 @pytest.mark.parametrize("magassag_elteres", _MAGASSAG_ELTERESEK)
-def test_mappa_huzas_lemezen_indexben_hasabban_es_racsban_is_atvezet(
-    mappahuzas_app, qt_app, magassag_elteres
+def test_mappa_huzas_nem_mozditja_a_lemezt_indexet_hasabot_vagy_racsot(
+    mappahuzas_app, qt_app, magassag_elteres, monkeypatch
 ):
+    import picasapy.app.fileops_controller as fileops_module
+
     window, controller, _engine = mappahuzas_app
     window.resize(window.width(), window.height() + magassag_elteres)
     window.show()
@@ -182,7 +184,6 @@ def test_mappa_huzas_lemezen_indexben_hasabban_es_racsban_is_atvezet(
     library = Path(controller.currentFolder)
     source = library / "atmozgatando"
     target = library / "cel"
-    moved = target / source.name
     original_ini = (source / ".picasa.ini").read_bytes()
     controller.selectFolder(str(library))
     vart_racs = {
@@ -197,6 +198,14 @@ def test_mappa_huzas_lemezen_indexben_hasabban_es_racsban_is_atvezet(
         "a gyökérmappa és almappái nem töltődtek be a rács modelljébe",
     )
     racs_elotte = set(_photo_paths(controller))
+    move_attempts = []
+    real_move_folder = fileops_module.move_folder
+
+    def spy_move_folder(*args, **kwargs):
+        move_attempts.append((args, kwargs))
+        return real_move_folder(*args, **kwargs)
+
+    monkeypatch.setattr(fileops_module, "move_folder", spy_move_folder)
     window.setProperty("selectedIndexes", [1])
     qt_app.processEvents()
 
@@ -211,21 +220,14 @@ def test_mappa_huzas_lemezen_indexben_hasabban_es_racsban_is_atvezet(
     )
     _valodi_mappahuzas(window, qt_app, source_mouse, drop_target)
 
-    _wait(
-        qt_app,
-        lambda: moved.is_dir() and not source.exists(),
-        "a mappa bal hasábról a célmappára húzása nem mozgatta a lemezen lévő könyvtárat",
-    )
-    _wait(
-        qt_app,
-        lambda: _mappa_sor(window, moved) is not None
-        and _mappa_sor(window, source) is None,
-        "a bal hasáb nem követte a mappa új helyét",
-    )
+    qt_app.processEvents()
 
-    assert (moved / ".picasa.ini").read_bytes() == original_ini
-    assert load_document(moved / ".picasa.ini").section("mappakep.jpg").get("caption") == _FELIRAT
-    assert (moved / "mappakep.jpg").is_file()
+    assert move_attempts == [], "a mappasor húzása fájlmozgatót indított"
+    assert source.is_dir(), "a mappasor húzása elmozdította a forrásmappát"
+    assert not (target / source.name).exists(), "a célmappában megjelent a forrásmappa"
+    assert (source / ".picasa.ini").read_bytes() == original_ini
+    assert load_document(source / ".picasa.ini").section("mappakep.jpg").get("caption") == _FELIRAT
+    assert (source / "mappakep.jpg").is_file()
 
     with open_index(controller._db_path) as connection:
         indexed = connection.execute(
@@ -237,19 +239,60 @@ def test_mappa_huzas_lemezen_indexben_hasabban_es_racsban_is_atvezet(
             "SELECT 1 FROM folders WHERE path = ?", (str(source),)
         ).fetchone()
     assert [(Path(row["path"]), row["name"]) for row in indexed] == [
-        (moved, "mappakep.jpg")
+        (source, "mappakep.jpg")
     ]
-    assert old_folder is None
+    assert old_folder is not None
 
     assert Path(controller.currentFolder) == library
-    assert set(_photo_paths(controller)) == {
-        library / "a.jpg",
-        library / "b.jpg",
-        moved / "mappakep.jpg",
-        target / "celkep.jpg",
-    }
+    assert set(_photo_paths(controller)) == racs_elotte
     assert len(racs_elotte) == len(_photo_paths(controller))
-    assert _selected_rows(window) == []
+    assert _mappa_sor(window, source) is not None
+    assert _mappa_sor(window, target) is not None
+    move_dialogs = window.findChildren(QObject, "moveFolderDialog")
+    assert move_dialogs and all(not dialog.property("visible") for dialog in move_dialogs), (
+        "a mappasor húzása mappaválasztó ablakot nyitott"
+    )
+
+
+def test_mappa_menu_athelyezes_tovabbra_is_atviszi_a_mappat_es_az_ini_t(
+    mappahuzas_app, qt_app
+):
+    window, controller, _engine = mappahuzas_app
+    window.show()
+    qt_app.processEvents()
+
+    library = Path(controller.currentFolder)
+    source = library / "atmozgatando"
+    target = library / "cel"
+    moved = target / source.name
+    original_ini = (source / ".picasa.ini").read_bytes()
+
+    jobbklikk_mappan(window, qt_app, source)
+    kattints(window, qt_app, gyerek(window, "folderMenuMoveFolder"))
+
+    pane = gyerek(window, "folderPane")
+    assert varj_feltetelre(
+        qt_app, lambda: Path(str(pane.property("_movingFolder"))) == source, 3.0
+    ), "a Mappa áthelyezése menü nem jelölte ki a forrásmappát"
+    dialog = pane.findChild(QObject, "moveFolderDialog")
+    assert dialog is not None, "a mappa saját mappaválasztója nem található"
+    assert varj_feltetelre(qt_app, lambda: bool(dialog.property("visible")), 3.0), (
+        "a Mappa áthelyezése menü nem nyitotta meg a mappaválasztót"
+    )
+
+    dialog.setProperty("selectedFolder", QUrl.fromLocalFile(str(target)))
+    QMetaObject.invokeMethod(dialog, "accepted", Qt.ConnectionType.DirectConnection)
+
+    _wait(
+        qt_app,
+        lambda: moved.is_dir() and not source.exists(),
+        "a Mappa áthelyezése menü nem mozgatta át a könyvtárat",
+    )
+    from picasapy.app.worker_thread import wait_for_all_background_workers
+
+    assert wait_for_all_background_workers(30.0)
+    assert (moved / ".picasa.ini").read_bytes() == original_ini
+    assert load_document(moved / ".picasa.ini").section("mappakep.jpg").get("caption") == _FELIRAT
 
 
 @pytest.mark.parametrize("belepesi_pont", ["helyi", "folder_menu"])
