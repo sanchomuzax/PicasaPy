@@ -83,6 +83,12 @@ SlideshowView {
             exitSlideshow()
     }
 
+    function slideshowDissolveAlpha(elapsedSeconds, slideSeconds) {
+        if (typeof controller === "undefined" || !controller)
+            return 0
+        return controller.slideshowDissolveAlpha(elapsedSeconds, slideSeconds)
+    }
+
     function exitSlideshow() {
         var wasScreensaver = slideshow.screensaverMode
         var wasTimelineSlideshow = hostWindow.timelineSlideshowActive
@@ -137,7 +143,14 @@ SlideshowView {
         : slideshow.screensaverMode ? controller.screensaverEffect
         : controller.slideshowTransition
     transitionMs: (typeof controller !== "undefined" && controller)
-        ? controller.slideshowTransitionMs : 700
+        ? controller.slideshowOtherTransitionMs : 500
+    dissolveTransitionMs: (typeof controller !== "undefined" && controller)
+        ? (slideshow.screensaverMode
+            ? Math.round(1000 * slideshow.seconds / 1.5)
+            : controller.slideshowTransitionMs)
+        : Math.round(1000 * slideshow.seconds / 1.5)
+    dissolveAlphaProvider: typeof controller === "undefined" || !controller
+        ? null : slideshow
     captionMode: typeof controller === "undefined" || !controller
         ? "caption"
         : slideshow.screensaverMode

@@ -114,9 +114,9 @@ class TestAMegorzottBeallitasok:
         assert controller.slideshowTransition == "dissolve"
 
     def test_az_atmenet_hossza_a_dia_ido_alatt_marad(self, controller):
-        """Ha az átmenet hosszabb a dia-időnél, sosem fejeződik be — a
-        vezérlő ezért felső korlátot tart."""
-        assert 0 < controller.slideshowTransitionMs <= 500
+        """#6920: a Dissolve T/1,5 hosszú; a többi átmenet régi ideje marad."""
+        assert controller.slideshowTransitionMs == 2000
+        assert controller.slideshowOtherTransitionMs == 500
 
     @pytest.mark.parametrize("mod", ["caption", "filename", "none"])
     def test_a_feliratmod_harom_allasa(self, controller, mod):

@@ -313,6 +313,11 @@ def _build_qml_app(
         display_photo_provider.PROVIDER_NAME,
         display_photo_provider.DisplayPhotoProvider(),
     )
+    from picasapy.app.slideshow_label_card_provider import SlideshowLabelCardProvider
+
+    _register_image_provider(
+        engine, "slideshowlabelcard", SlideshowLabelCardProvider()
+    )
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)

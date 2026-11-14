@@ -29,6 +29,13 @@ Rectangle {
     //: változásakor (sor-eltolódás, teljes reset) mást jelenthet, mint
     //: amit a felhasználó épp néz.
     property string _currentFilePath: ""
+    //: #6920: csak az Időrend szüneteltetett indításának első folytatása
+    //: vár címkártyát; a beállított fotóátmenet ettől nem változik.
+    property bool _cimkartyaFuggo: false
+    property bool _cimkartyaFeluszas: false
+    property string _timelineCollectionName: ""
+    readonly property string _atmenetTipus:
+        _cimkartyaFeluszas ? "dissolve" : transitionKind
     //: igazra állítva az `onCurrentIndexChanged` nem indít átmenetet — a
     //: `_modellKovetes` csendben igazítja az indexet ugyanarra a fájlra
     property bool _resyncing: false
@@ -89,8 +96,13 @@ Rectangle {
     //: átmenet és a feliratmód ugyanezt az utat járja (`transitionPicked`,
     //: `captionModePicked`).
     signal secondsChosen(int masodperc)
-    //: az átmenet hossza (`SlideshowEffectTime`) — a dia-időnél rövidebb
+    //: a nem-Dissolve átmenetek korábbi hossza; a Dissolve saját időt kap
     property int transitionMs: 700
+    //: #6920: a Dissolve külön, T/1,5 hosszú; a többi átmenet a transitionMs-t
+    //: használja, hogy az időzítése változatlan maradjon.
+    property int dissolveTransitionMs: 2000
+    property var dissolveAlphaProvider: null
+    property real dissolveProgress: 0.0
     //: #433: a felirat megjelenítési módja vetítés közben (`captionmode`):
     //: a felirat, a fájlnév, vagy semmi — ugyanaz a hármas, mint a
     //: nyomtatás-opciókban.
@@ -204,12 +216,15 @@ Rectangle {
         slideshowTiming.inputArmTimer.stop()
         var target = clampToPhoto(index)
         if (target < 0) return   // nincs vetíthető fotó
+        var startsPaused = paused === true
+        _cimkartyaFuggo = startsPaused && timelineSlideshow
+        _cimkartyaFeluszas = false
+        if (!timelineSlideshow) _timelineCollectionName = ""
         currentIndex = target
         //: #3881: azonos számra indítva az `onCurrentIndexChanged` nem fut
         //: le — ha a modell közben (rejtve) változott, a követett útvonal
         //: elavult volna, ezért itt mindig újraírjuk
         show._kovetettUtFrissit()
-        var startsPaused = paused === true
         playing = !startsPaused
         visible = true
         if (startsPaused) {
@@ -418,7 +433,13 @@ Rectangle {
                      show.forrasMeret(kovetkezo))
     }
 
-    function togglePause() { playing = !playing }
+    function togglePause() {
+        playing = !playing
+        if (playing && _cimkartyaFuggo) {
+            _cimkartyaFuggo = false
+            show._felusztat()
+        }
+    }
     function starCurrent() { show.starToggled(currentIndex) }
     function rotateCurrent(delta) { show.rotateRequested(currentIndex, delta) }
 
@@ -456,7 +477,7 @@ Rectangle {
     function _atmenetIrany() {
         var w = show.width
         var h = show.height
-        switch (show.transitionKind) {
+        switch (show._atmenetTipus) {
         case "wipeleft": return { x: w, y: 0 }
         case "wiperight": return { x: -w, y: 0 }
         case "wipeup": return { x: 0, y: h }
@@ -474,14 +495,28 @@ Rectangle {
     }
 
     function _kilepoKepMozog() {
-        return show.transitionKind.indexOf("wipe") === 0
-                || show.transitionKind.indexOf("diagwipe") === 0
-                || show.transitionKind.indexOf("push") === 0
+        return show._atmenetTipus.indexOf("wipe") === 0
+                || show._atmenetTipus.indexOf("diagwipe") === 0
+                || show._atmenetTipus.indexOf("push") === 0
     }
 
     function _beuszoKepMozog() {
-        return show.transitionKind.indexOf("push") === 0
+        return show._atmenetTipus.indexOf("push") === 0
     }
+
+    function _dissolveOpacitasFrissit() {
+        if (show._atmenetTipus !== "dissolve")
+            return
+        var alpha256 = show.dissolveAlphaProvider
+                ? show.dissolveAlphaProvider.slideshowDissolveAlpha(
+                    show.dissolveProgress * show.seconds / 1.5,
+                    show.seconds)
+                : Math.floor(256 * show.dissolveProgress)
+        var alpha = alpha256 / 256.0
+        imageLayer.currentImage.opacity = alpha
+    }
+
+    onDissolveProgressChanged: show._dissolveOpacitasFrissit()
 
     function _atmenetVege() {
         imageLayer.previousImage.opacity = 0
@@ -489,10 +524,33 @@ Rectangle {
         imageLayer.previousImage.transitionOffsetY = 0
         imageLayer.currentImage.transitionOffsetX = 0
         imageLayer.currentImage.transitionOffsetY = 0
-        if (show.transitionKind !== "kenburns"
-                && show.transitionKind !== "kenburnsaoi")
+        if (show._atmenetTipus !== "kenburns"
+                && show._atmenetTipus !== "kenburnsaoi")
             imageLayer.currentImage.scale = 1
         imageLayer.veil.opacity = 0
+        _cimkartyaFeluszas = false
+    }
+
+    function _cimkartyaUrl(index) {
+        if (!photosModel || index < 0
+                || typeof photosModel.filePathAt !== "function")
+            return ""
+        var path = photosModel.filePathAt(index)
+        if (!path) return ""
+        var rotation = typeof photosModel.rotateAt === "function"
+            ? photosModel.rotateAt(index) : 0
+        return "image://slideshowlabelcard/" + encodeURIComponent(path)
+            + "?name=" + encodeURIComponent(_timelineCollectionName)
+            + "&rotation=" + rotation
+            + "&viewWidth=" + Math.round(show.width)
+            + "&viewHeight=" + Math.round(show.height)
+    }
+
+    function _felusztat() {
+        var cimkartya = show._cimkartyaUrl(show.currentIndex)
+        if (!cimkartya) return
+        _cimkartyaFeluszas = true
+        show._atmenetIndit(cimkartya)
     }
 
     function _atmenetIndit(elozoUrl) {
@@ -505,9 +563,10 @@ Rectangle {
         //: a bejövő dia a saját mozgásának elejéről induljon: az előző dia
         //: geometriája a másolaton él tovább, a diát visszaállítjuk
         imageLayer.currentImage.scale = 1.0
-        if (show.transitionKind === "kenburnsaoi")
+        if (show._atmenetTipus === "kenburnsaoi")
             imageLayer.panZoomFaceAnimation.restart()
-        if (show.transitionKind === "cut" || !elozoUrl) {
+        if ((show.transitionKind === "cut" && !show._cimkartyaFeluszas)
+                || !elozoUrl) {
             imageLayer.previousImage.opacity = 0
             imageLayer.currentImage.opacity = 1
             imageLayer.veil.opacity = 0
@@ -523,24 +582,27 @@ Rectangle {
             imageLayer.currentImage.transitionOffsetX = -irany.x
             imageLayer.currentImage.transitionOffsetY = -irany.y
         }
-        if (show.transitionKind.indexOf("wipe") >= 0) {
+        if (show._atmenetTipus.indexOf("wipe") >= 0) {
             // A kimenő kép irányba kicsúszik; az új kép közben fokozatosan
             // fedi fel az alatta maradó képet, hogy a wipe látható legyen.
             imageLayer.currentImage.opacity = 0
-        } else if (show.transitionKind === "circleout") {
+        } else if (show._atmenetTipus === "circleout") {
             imageLayer.currentImage.scale = 0.18
             imageLayer.currentImage.opacity = 0
-        } else if (show.transitionKind === "rect") {
+        } else if (show._atmenetTipus === "rect") {
             imageLayer.currentImage.scale = 0.72
             imageLayer.currentImage.opacity = 0
-        } else if (show.transitionKind === "circlein") {
+        } else if (show._atmenetTipus === "circlein") {
             imageLayer.currentImage.scale = 1.2
             imageLayer.currentImage.opacity = 0
-        } else if (show.transitionKind === "timelapse") {
+        } else if (show._atmenetTipus === "timelapse") {
             imageLayer.currentImage.scale = 1.16
             imageLayer.currentImage.opacity = 0
+        } else if (show._atmenetTipus === "dissolve") {
+            show.dissolveProgress = 0.0
+            show._dissolveOpacitasFrissit()
         } else {
-            imageLayer.currentImage.opacity = show.transitionKind === "dissolve" ? 0 : 1
+            imageLayer.currentImage.opacity = 1
         }
         imageLayer.veil.color = show.transitionKind === "dissolvewhite"
             ? "#ffffff" : "#000000"
