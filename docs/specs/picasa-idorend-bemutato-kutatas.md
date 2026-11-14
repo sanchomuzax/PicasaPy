@@ -4086,3 +4086,169 @@ Döntési szabály a `02d`-`02f` eredményére: ha a `02e` és a `02f` is fotót
 **A 38.2.200 3. következő irányához** (a 38.2.160 szerinti nyitott A pontok számának frissítése): a viselkedési lap A listáján az indítási jelzés, a Ctrl+Space és a Space tétele LEZÁRVA, az általános kilépés RÉSZBEN LEZÁRVA; a 38.2.160 12-es számát nem számoltam újra, mert a számlálás alapjául szolgáló lista nincs egyben ebben a fájlban (számlálót nem találtam).
 
 **Módosított fájlok ebben a szakaszban.** Ez a 38.2.220 szakasz és a `picasa-idorend-viselkedes.md` érintett sorai (az állapot dátuma, az Escape-, Space-, diavetítés-időköz-, Ctrl+Space- és betöltésjelző-sor, az új átmenet-sor és az A lista négy tétele). Kódot, tesztet, eredeti binárist, felvételt vagy mérőadatot nem módosítottam; az ideiglenes mérőszkriptek és kimenetek a munkafa `.bt/` mappájából törölve.
+
+#### 38.2.230 Az A tömb osztásvédelme egyetlen hónapnál (#6532, 2026-11-14)
+
+**Hatókör és módszer.** A 38.2.210 §6 szerint az "A tömb" (`[this+0x90]`, a qshow `+0x388`) a hónap-elsőre kerekített, rendezett kártyadátumok kumulált `ln(1 + napi eltérés)` összege, és a `0x007ffc90` az `A[i] / A[n-1]` hányadost használja. Nyitott maradt, mi történik, ha az utolsó elem 0. Három kérdés: (1) van-e osztásvédelem a `0x007ffc90`-ben vagy a hívójában, és hová kerülnek ekkor a dátumsáv pontjai és a fogantyú; (2) mit csinál ugyanekkor a PicasaPy; (3) egyezik-e a kettő. **A út:** utasításszintű olvasat capstone-nal (`0x007ffc90`, `0x007fc4c0`, `0x007fdd00`, `0x007fde80`, `0x009ab690`, `0x009aaae0`, `0x00c29990`, a CRT SSE2-jelző inicializálója és a qshow konstruktorlánca), és függvényenkénti operandus-pásztázás a `functions.csv` határaival (a `0x007f0000`-`0x0080ffff` tartomány 370 függvénye, 39 015 utasítás; a vezérlőszó-utasításokra és a `__controlfp` hívóira a teljes `.text` 20 608 függvénye, 2 556 882 utasítás). **B út:** az eredeti kód `qemu-i386` alatt: a valódi `0x007ffc90` a valódi `0x009ab690` rajzolóval egy 320 x 64-es célbittérképre, és a valódi `0x007fdd00` (a mérőkörnyezet a §4-ben). **C út:** a PicasaPy `timeline_motion.py` és `timeline_controller.py` függvényei futtatva egyhónapos adatokon (§6). Ghidra-kör nem kellett.
+
+| # | Kérdés | Válasz | A út | B út | Fok |
+|---|---|---|---|---|---|
+| 1 | Mikor 0 az `A[n-1]`? | akkor és csak akkor, ha a rendezett kártyák hónap-elsőre kerekített dátuma mind azonos: egy hónap, egy kártya, vagy minden kártya dátum nélküli | a `0x007fc4c0` ciklusa (`fldz`, `max(1 + Δ, 1)`, `ln`) | a valódi `0x007fc4c0`: azonos hónap kártyái `[0; 0; 0; 0]` (38.2.210 §6) | **megerősített** |
+| 2 | Van-e osztásvédelem? | **nincs**: az `fdiv` (`0x007ffd94`) előtt nincs nullateszt, a hívó (`0x00800a30`) csak az időparamétert adja; az egyetlen kitérő az `n = 0` | utasításolvasat, operandus-pásztázás | a valódi függvény `A = [0, ...]`-ra végigfut | **megerősített** |
+| 3 | Hová kerülnek a pontok? | `0 / 0` = NaN, `x = 0x80000000`, a vágó kiszűri: **egyetlen pont sem rajzolódik** (SSE2-ágon, maszkolt kivétellel) | `0x007ffd94`-`0x007ffe18`, `0x00c29990`, `0x009aaae0` | 0 megváltozott képpont (§4) | **megerősített** a §3 feltételeivel |
+| 4 | Hová kerül a fogantyú? | az egérből (`[+0x728]`), `A`-tól függetlenül; a húzás nem ír kijelölést; a felengedés a 0. kártyára görget (`[+0x514]` kezdőértéke 0) | `0x007fdd00`, `0x007fe1b6`, `0x00803915` | a valódi `0x007fdd00` (§5) | **megerősített** (húzás), **erős** (felengedés) |
+| 5 | Mit csinál a PicasaPy? | van védelem (nulla nevezőnél 0,0 arány), de a pontok **láthatóan a sáv bal végére halmozódnak**; a `slider_index` 0-t ad | `timeline_motion.py:357-358,392-393` | a függvények futtatva (§6) | **megerősített** |
+| 6 | Egyezik-e? | **eltér a pontokban** (az eredetiben nincs pont); a húzásban és a felengedésben egyezik | | | |
+
+##### §1 Mikor nulla az `A[n-1]`
+
+- A `0x007fc4c0` a `0x007fc740`-`0x007fc7a7` ciklusban `A[0] = 0` (a futó összeg `fldz`-ből indul, `0x007fc4d7`; az első elem előző dátuma önmaga), majd `A[j] = A[j-1] + ln(max(1 + (d[j] - d[j-1]), 1))`. Az eltérés nemnegatív (rendezett dátumok, a `max` 1-re szorít), ezért az `A` nem csökkenő, az utolsó eleme a maximum. `A[n-1] = 0` pontosan akkor, ha minden lépés `ln(1) = 0`, vagyis minden kerekített dátum azonos.
+- Ide tartozik: egy hónap több kártyája; egyetlen kártya (`A = [0]`, a ciklus `n = 1`-re is lefut, `A[0] / A[0] = 0 / 0`); minden kártya dátum nélküli (mind `949998,0`, 38.2.210 §6). **Nem** ide tartozik az egyhónapos készlet egy dátum nélküli kártyával: az `ln(...) ≈ 13,7` lépés nem nulla (38.2.210 §6).
+- `n = 0` esetén a `0x007fc4c0` nem ír `A`-t (`0x007fc4ca`: `je 0x007fc7a9`), a `0x007ffc90` ciklusát a `test [esi+0x38c], 0xfffffffe` / `jbe` (`0x007ffd6d`, `0x007ffd7b`) kihagyja.
+
+##### §2 Nincs osztásvédelem a `0x007ffc90`-ben és a hívóban
+
+- A ciklus (`0x007ffd81`-`0x007ffe68`): `fld qword [A + i*8]`, `fdiv qword [A + (n-1)*8]` (`0x007ffd8d`, `0x007ffd94`), és rögtön a `fcom` (`0x007ffd98`). Közte nincs `ftst`, `fldz` vagy a nevező vizsgálata; a függvényben a `0x007ffd6d` `test`-je az egyetlen feltétel az `A`-ra.
+- A két hívóhely (`0x00800d46`, `0x00801003`, a `0x00800a30`-ban) csak a `trunc(256 * t)` időparamétert adja át (`fmul`, `fistp` `0xc00` vezérlőszóval, `push ecx`, `call`). A `0x007f0000`-`0x0080ffff` tartományban a `+0x388`/`+0x38c` operandusnak két olvasója van, a `0x007fdd00` és a `0x007ffc90`; a `0x00800a30` egyiket sem tartalmazza.
+- Az alobjektum (`this+0x2f8`) `+0x90`/`+0x94` mezőjét a `0x007f9000`-`0x007ff000` tartományban a `0x007fc4c0` (író), a `0x007faeb0` (törlés) és a `0x007fb9f0` (nullázó konstruktor) éri el; a `0x007fa590` és a `0x007fc010` találatai méret mezők (a `+0x94`, `+0x98` szélesség és magasság egy másik objektumon), nem az `A`. A `0x007ff000`-`0x00810000` tartomány tizenegy `+0x90`/`+0x94` találata hat más függvényben van (nullteszt vagy `0xf8`-as rekordtömb; a `0x00803d40` és a `0x008054e0` találatait nem követtem egyenként).
+
+##### §3 A NaN útja a pont koordinátájáig
+
+1. **Osztás.** `A[i] = 0` és `A[n-1] = 0` mellett az `fdiv` `0 / 0`: maszkolt érvénytelen-művelet kivételnél a QNaN "valós határozatlan" (`0xfff8000000000000`).
+2. **Futamszámláló.** A `fcom qword [esp+0x18]` (az előző arány, kezdetben `-1,0` a `0x00cf3f58`-ról) NaN-nal rendezetlen: `C3 = C2 = C0 = 1`, a `test ah, 0x44` / `jp 0x007ffdaa` (`0x007ffd9e`-`0x007ffda1`) ugrik, a számláló `0` (`0x007ffdaa`). Az `fst [esp+0x18]` (`0x007ffdb8`) a NaN-t teszi előző aránynak, így **minden** iterációban rendezetlen az összehasonlítás, a számláló végig 0, és a `0` ág `vertical_offset = 0`-val rajzol (`0x007ffdf2`).
+3. **Koordináta.** Az `fmul dword [esp+0x14]` (`0x007ffdc2`) és az `fiadd` (`0x007ffe14`) NaN-t ad; a `0x00c29990` (`_ftol2_sse`): ha `[0xda1428] != 0`, a `cvttsd2si` (`0x00c299a5`) NaN-ra a "egész határozatlan" `0x80000000`-t adja; különben a `0x00c299c6` x87 ága a `fistp qword` alsó dwordjét, ami NaN-ra `0` (QEMU: `x = 0`). A `[+0x700]` tehát `0x80000000` (SSE2) vagy `0`.
+4. **A `[0xda1428]` írója (a 38.2.23 §3 "NINCS MEG" tétele LEZÁRVA).** A CRT SSE2-jelző inicializálója: `0x00bf6035` `call 0x00bf5fd5`, `0x00bf603a` `mov [0xda1428], eax`. A `0x00bf5fd5` `cpuid`-ot futtat (`0x00bf6010`), a `test [ebp-4], 0x4000000` (`0x00bf6019`, az EDX 26. bitje: SSE2) után a `0x00bf5f85` SEH-védetten egy `movapd` utasítást próbál (`0x00bf5f95`; `0xc0000005` vagy `0xc000001d` kivételkód esetén 0). A jelző ezért minden SSE2-képes processzoron és operációs rendszeren 1; a PE-adatban álló 0 a kezdőérték.
+5. **A kivétel maszkolt (feltétel).** A qshow építése `_controlfp(_MCW_EM, _MCW_EM)`-t hív: `0x007fa7f0` → (`0x007fa850`) `0x007fb9f0` → (`0x007fbaa2`) `0x007fbd90` → (`0x007fbe74`) `0x007fbce0`, amelynek elején `push 0x8001f`, `push 0x8001f`, `call 0x00c0963e` áll (`0x007fbce4`-`0x007fbcee`): minden x87-kivétel maszkolt, a visszaállítás nincs a függvényben. A CRT négy konstanst töltő `fldcw`-je (`0x00c0b70b`, `0x00c28657`, `0x00c29aeb`, `0x00c29d87`) mind `0x027f`-et tölt a `0x00c43c08`-ról. Az alkalmazáskód 483 `fnstcw` helye (a `0x00bf0000` alatt) mind ugyanaz a minta: `fnstcw`, `or eax, 0xc00` (csonkolás), `fldcw`; maszkbitet egyik sem módosít. A `__controlfp` többi hívóhelye `(0, 0)` lekérdezés vagy tárolt pontosság-/végtelenvezérlési érték visszaállítása (a `0x00d3339c` és `0x00d333b8` táblák értékei `0x300`, `0x30000` jellegűek); a `[0xd333d4]` maszk futásidejű értéke NINCS MEG. Maszkot kibontó hívást nem találtam. A futó Picasa-folyamat tényleges vezérlőszava és szála **NINCS MEG**; a QEMU nem modellezi az x87-kivételek kézbesítését, ezért az `0x027e` vezérlőszavas próba (azonos kimenet) sem döntő.
+
+##### §4 A vágó, a rajzoló és a mérés
+
+- A `0x009ab690` a pont rajzolásakor a cél-téglalapot (`x`, `y`, `x + w`, `y + h` a `[ebx+0x18]`, `[ebx+0x1c]`, `[ebx+8]`, `[ebx+0xc]` mezőkből, `0x009ab69a`-`0x009ab6c0`) a `0x009aaae0` vágónak adja; ha az 3-at ad vissza, a függvény képpont nélkül tér vissza (`0x009ab6cb`: `je 0x009ab81f`). A vágó előjeles összehasonlításokkal metsz: `bal = max(0, 0x80000000) = 0`, `jobb = min(szélesség, 0x80000000 + 7) = 0x80000007` (negatív), és a `cmp ebx, ecx` / `jge` (`0x009aab4a`-`0x009aab4f`) a `bal >= jobb` miatt 3-at ad. Túlcsordulás nincs: a `0x80000000 + 7` 32 biten `0x80000007`.
+- **Mérőkörnyezet (B út).** `qemu-i386`, a harness az `picasapy-agent/eszkozok/qemu_harness/hb.py` másolata (a PE szakaszai az eredeti VA-kon, nincs CRT-indítás), `timeout 60`, 1200 MiB memóriaplafon `systemd-run` alatt, FPU control word `0x027f`. Hívás: `EAX = this`, `EDI` = a cél, a verem tetején `p = 256`. A `this` mezői: `+0x6c4 = 104` (a `+0x6c0` tengelykép lépésköze), `+0x6c8 = 104`, `+0x6cc = 40`, `+0x6d0` egy átlátszó (alfa 0) képpuffer, `+0x6d8 = 200`, `+0x6dc = 5`; a `+0x6e8` pont-overlay 7 x 8-as (`+0x6ec = 7` lépésköz, `+0x6f0 = 7`, `+0x6f4 = 8`, `+0x6f8` a fehér, alfa 255 képpontok); `+0x718 = 25`, `+0x72c = 30`; `+0x388`/`+0x38c`: az `A` double-tömb és `2n`; kártyarekordok (`+0x3a8`, `+0x3ac`, 0xf8 bájtos, a `+0` mező 100-103); `+0x510` és `+0x514` kezdőértéke `0x77777777` (őrszem). A többi overlay szélessége és magassága 0, ezért a `0x009ab690` a vágónál korán visszatér. A cél: `[+4] = [+8] = 320`, `[+0xc] = 64`, a képpontok kezdetben mind 0. Stubok (az eredeti `ret` takarítással): `0x007fe7c0` (`ret 4`), `0x007fee70` és `0x007fd180` (`ret 0xc`), `0x007fe540` (`EAX = 1`, `ret 0xc`). Az eredeti kód futott: `0x007ffc90`, `0x009ab690`, `0x009aaae0`, `0x009aab60`, `0x00c29990`, `0x007fdd00`. `[0xda1424] = 1`; `[0xda1428] = 1` (SSE2) vagy `0` (lassú ág); `[0xd695d0] = [0xd695d4] = 1` (MMX-ág) vagy `0` (skalár ág). Korlát: a `this`, a cél és az overlay-objektumok kézzel épülnek; nem valódi qshow-futás és nem képernyőkép.
+
+| `A` | x (`[+0x700]`) | y (`[+0x704]`) | megváltozott képpont | a pontok oszlopai (x) | forrás |
+|---|---:|---:|---:|---|---|
+| `[0; 3,433987; 6,899723; 10,33371]` (kontroll) | 297 | 21 | 224 | 197-203, 230-236, 263-269, 297-303 | mérés (`qemu-i386`, eredeti `0x007ffc90` és `0x009ab690`) |
+| `[0; 3,433987]` (kontroll) | 297 | 21 | 112 | 197-203, 297-303 | mérés (ugyanaz) |
+| `[0; 0; 0; 0]` | -2147483648 | 21 | **0** | nincs | mérés (ugyanaz) |
+| `[0; 0]` | -2147483648 | 21 | **0** | nincs | mérés (ugyanaz) |
+| `[0]` | -2147483648 | 21 | **0** | nincs | mérés (ugyanaz) |
+| `[0; 0; 0; 0]`, `[0xda1428] = 0` | 0 | 21 | 56 | 0-6 (mind a négy pont egy helyen) | mérés (ugyanaz) |
+| a kontroll, `[0xda1428] = 0` | 297 | 21 | 224 | mint a kontroll | mérés (ugyanaz) |
+| skalár pixelút (`[0xd695d0] = 0`): kontroll és `[0; 0; 0; 0]` | 297 és -2147483648 | 21 és 21 | 224 és 0 | mint fent | mérés (ugyanaz) |
+| `[+0x38c] = 0` (`n = 0`) | nem írt (0) | nem írt (0) | 0 | nincs | mérés (ugyanaz) |
+
+A kontroll `x` oszlopai az `x_i = trunc(100 * r_i) + 200 - (7 >> 1)` képlettel egyeznek (`r = [0; 0,332309; 0,667691; 1]`: 197, 230, 263, 297), az `y = 21` az `((40 + 2 * 5) >> 1) - (8 >> 1)` alap. Az `A[n-1] = 0` mezőállapotban az `x` mező `0x80000000`, az `y` az alap (nincs 7 vagy 14 pixeles eltolás).
+
+##### §5 A fogantyú és a kijelölés (`0x007fdd00`)
+
+- A `0x007fdd00` hívója a `0x007fde80` egérkezelő (két hívóhely). A `[+0x728]` (a `sliderthumb` `+0x710` objektumának x-e) egyetlen írója a `0x007f0000`-`0x0080ffff` tartományban a `0x007fdd00` (`0x007fde67`); a `+0x710` objektumot egyébként csak a konstruktor (`0x007fac75`), az erőforrás-betöltő (`0x007fb3ce`), a destruktor (`0x007fb6e6`) és a rajzoló (`0x007ffe87`) éri el.
+- A `0x007fdd00` az `x`-et `[L, L + W]`-re szorítja és `t = (x - L) / W`-t számol (38.2.23 §3); a gomb helye `[+0x728] = trunc(x_c - (floor(SW / 2) + 3))`, az `A`-tól függetlenül. A keresésben (`0x007fdd95`-`0x007fddce`) `d_i = |A[i] / A[n-1] - t|`; `A[n-1] = 0` mellett minden `d_i` NaN. Az `fcom st(2)` rendezetlen (`C0 = C2 = 1`), a `test ah, 5` / `jp` (`0x007fddbc`-`0x007fddbf`) ugrik, a minimum nem frissül, az `EDX` (a legjobb index) `-1` marad, és a `cmp edx, -1` / `je` (`0x007fddd0`, `0x007fddd5`) kihagyja a `[+0x514]` és a `[+0x510]` írását.
+- **Felengedés.** A `0x007fde80` `0x202` ága, ha `[+0x429]` (a sávban kezdődött húzás), a `[+0x514]`-et adja a `0x007fd770`-nek (`0x007fe1b6`-`0x007fe1c3`), amely az `i * [P+0x30] + [P+0x20]` kifejezésből (`0x007fd7b5`-`0x007fd7c9`) számolt paraméterre görget a `0x007fd0c0` animátorrekorddal (`0x007fd7e5`). A `[+0x514]`-et a `0x007fdd00` kivételével semmi nem írja a tartományban (a `0x007fe1b6` olvassa, a konstruktor nem írja), és az objektum a `0x007fa7f0` előtt `_memset(0, 0x890)`-nel nullázódik (`0x008038fb`-`0x00803915`, az `EBX` a `0x00803842`-n nulla), így `A[n-1] = 0` mellett a felengedés a **0. kártyára** görget.
+
+| egér x | `A` | `[+0x728]` | `[+0x514]` | `[+0x510]` | forrás |
+|---:|---|---:|---|---|---|
+| 250 | kontroll `[0; 3,433987; 6,899723; 10,33371]` | 235 | 1 | 101 | mérés (`qemu-i386`, eredeti `0x007fdd00`) |
+| 250 | `[0; 0; 0; 0]` | 235 | változatlan (őrszem) | változatlan | mérés (ugyanaz) |
+| 150 (a sávon kívül, balra) | `[0; 0; 0; 0]` | 185 | változatlan | változatlan | mérés (ugyanaz) |
+| 250 | `[0]` | 235 | változatlan | változatlan | mérés (ugyanaz) |
+| 250 | `n = 0` | 235 | változatlan | változatlan | mérés (ugyanaz) |
+
+A mezők: `L = 200`, `W = 104`, `SW = 25`; `250 - (12 + 3) = 235`, a 150 a sáv bal szélére (200) szorul, `200 - 15 = 185`. A kontrollnál `t = 0,4808`, a távolságok `[0,4808; 0,1485; 0,1869; 0,5192]`, tehát `i* = 1`, a rekord `+0` mezője 101.
+
+##### §6 A PicasaPy ugyanekkor
+
+- `timeline_controller.py:301-321`: a `slider_position` a nem rejtett fotók EXIF-napjai közti lineáris arány; `date_span <= 0` (egy nap, egy kártya) esetén `0.0`, dátum nélküli kártyánál `1.0`, ha van dátumos fotó, különben `0.0`. Nincs osztás nullával.
+- `timeline_motion.py:357-358` (`slider_index`) és `:392-393` (`timeline_dot_positions`): `ratios = [value / denominator if denominator else 0.0 for value in values]`, tehát nulla nevezőnél minden arány `0,0`. Ez védelem (nincs NaN, nincs kivétel), de más eredményt ad, mint az eredeti.
+- `TimelinePanel.qml:16-20` a `dotPositions(values, 0, szélesség - 4, 7, 28, 0, 10)`-et hívja, a delegált (`:603-619`) `visible: modelData.draw`; a fogantyú (`:620-631`) húzás közben az egérből, egyébként a fókuszkártya `sliderPosition`-jéből kapja a helyét; `TimelineView.qml:277-290`: a húzás csak a `pendingSliderIndex`-et írja, a felengedés `>= 0` esetén `animateTo(…, 4000)`-et indít.
+- **Mérés (C út).** `TimelineController._collections_to_qml` négy-négy mappával, a `timeline_motion` függvényei a QML-hívás paramétereivel (`x_start = 0`, `track_span_minus_four = 240`, `dot_width = 7`, `y_top = 28`, `track_spacing = 0`, `dot_height = 10`):
+
+| eset (a kártyák) | `sliderPosition` | pontok `(x, y, rajzol)` | `slider_index(·, 0,5)` |
+|---|---|---|---:|
+| egy hónap, négy mappa, különböző napok (2025-04-02, 10, 20, 30) | `[0; 0,2857; 0,6429; 1]` | `(-3, 9, igen)`, `(65, 9, igen)`, `(151, 9, igen)`, `(237, 9, igen)` | 2 |
+| egy hónap, négy mappa, ugyanaz a nap | `[0; 0; 0; 0]` | `(-3, 9, igen)`, `(-3, 2, igen)`, `(-3, 2, nem)`, `(-3, -5, igen)` | 0 (minden arányra) |
+| egy kártya | `[0]` | `(-3, 9, igen)` | 0 |
+| egyik fotón sincs dátum (3 mappa) | `[0; 0; 0]` | `(-3, 9, igen)`, `(-3, 2, igen)`, `(-3, 2, nem)` | 0 |
+| két hónap (kontroll) | `[0; 1]` | `(-3, 9, igen)`, `(237, 9, igen)` | 0 |
+
+A `timeline_dot_positions` közvetlenül az `A` bemenetre (`[0; 0; 0; 0]`, `[0; 0]`, `[0]`) ugyanezeket a pontokat adja, mint a második és a harmadik sor. A mai lineáris modell az egyhónapos, különböző napú esetben nem fajul el (a pontok szétszóródnak); a degenerált út akkor lesz a gyakori eset, ha a 38.2.210 §7 hónap-lépcsős modellje bekerül.
+
+##### §7 Összevetés és megvalósítási javaslat
+
+| Eredeti | PicasaPy | Eredmény és javaslat |
+|---|---|---|
+| `A[n-1] = 0`: nem rajzolódik pont (§3, §4). | Nulla nevezőnél a pontok a sáv bal végére halmozódnak, a harmadik rejtett, a negyedik 14 pixellel feljebb (`timeline_motion.py:392-393`, §6). | **eltér.** **Javaslat 1.** |
+| Húzás: nincs kijelölésfrissítés, a fogantyú az egeret követi (§5). | A `pendingSliderIndex` húzás közben sem hat a kártyára; a fogantyú az egeret követi (`TimelinePanel.qml:620-631`). | **egyezik.** |
+| Felengedés: a `[+0x514]` kezdőértékére, a 0. kártyára görget (§5). | A `slider_index` nulla nevezőnél 0, `animateTo(0, 4000)`. | **egyezik** (a fix 4000 ms eltérése a viselkedési lap 32. sora szerinti). **Javaslat 2:** őrző teszt, hogy a 0 ne változzon. |
+| A fogantyú nyugalmi helye felengedés után és fókuszváltáskor: a `[+0x728]` egyetlen írója a `0x007fdd00` (egér). | A fókuszkártya `sliderPosition`-je. | **NYÍLT** (Colab-mérés, lent). |
+| A hónap-lépcsős `A[i] / A[n-1]` (38.2.210 §7), `A[n-1] = 0`. | A mai lineáris modell: egy nap vagy egy kártya esetén `0.0`. | **Javaslat 3** a modell bevezetésekor. |
+
+**Következtetés.** Az eredetiben az `A[n-1] = 0` osztása védelem nélküli: a `0 / 0` NaN-ból a pont x-e `0x80000000` lesz, a vágó eldobja, ezért egyhónapos (vagy egykártyás, vagy csupa dátum nélküli) katalógusnál a dátumsávon **nincs pont**. A fogantyút az egér mozgatja, a húzás nem választ kártyát, a felengedés a 0. kártyára görget. A PicasaPy védelme (0,0 arány) a felengedésben ugyanazt adja, a pontokban viszont nem: ott a pontok a sáv bal végére halmozódnak. Az eltérés egyetlen függvény egyetlen ágának javításával megszűnik (Javaslat 1); a húzás és a felengedés változatlan maradhat. **A két független út egyezik:** az utasításszintű olvasat (A) a NaN-útvonalat, a vágó kimenetét és a kijelölés kimaradását adja, és az eredeti függvények QEMU-futtatása (B) ugyanezt méri a kézzel épített objektumon; a B út nem igazolja a futó Picasa vezérlőszavát és a képernyőn látható képet (Nyitott kérdések).
+
+**Javaslat a hívónak (kódot nem módosítottam).**
+
+1. **A pontok elrejtése nulla nevezőnél.** `src/picasapy/timeline_motion.py`, `timeline_dot_positions`, a 392-393. sor helyén:
+
+   ```python
+   denominator = values[-1]
+   if denominator == 0:
+       base_y = ((y_top + 2 * track_spacing) >> 1) - (dot_height >> 1)
+       return [{"x": -(2**31), "y": base_y, "draw": False} for _ in values]
+   ratios = [value / denominator for value in values]
+   ```
+
+   A QML a `modelData.draw`-ra köt (`TimelinePanel.qml:603-619`), ezért változtatás nem kell. A `slider_index` (`:357-358`) **ne** változzon: a nulla nevezőnél adott 0 egyezik az eredeti viselkedéssel (§5). A nem SSE2-ág (`x = 0`, a pont a rajzoló bal szélén) nem másolandó: a CRT-jelző minden SSE2-képes gépen 1 (§3), és a nem SSE2-ág eredménye nem szándékolt viselkedés.
+2. **Őrző tesztek** (`tests/app/test_timeline_motion_5377.py`, a `test_timeline_dot_positions_match_picasa_qemu_duplicate_branches` mintájára):
+   - `timeline_dot_positions([0.0], ...)`, `([0.0, 0.0], ...)`, `([0.0] * 4, ...)`: egyik elem sem `draw`, `x == -2147483648`, `y` az alap;
+   - a kontroll: `[0.0, 0.332309, 0.667691, 1.0]` az `x_start = 200`, `track_span_minus_four = 100`, `dot_width = 7`, `y_top = 40`, `track_spacing = 5`, `dot_height = 8` paraméterekkel: `x = [197, 230, 263, 297]`, `y = 21`, mind `draw` (ez a §4 mért kontrollsora);
+   - `slider_index([0.0] * n, ratio) == 0` az `n = 1, 2, 4` és `ratio = 0, 0,25, 0,5, 1` értékekre (a 0. kártyára görgetés mért viselkedésének őrzője).
+3. **A vezérlő a 38.2.210 §7 modelljében** (`timeline_controller.py:301-333`): ha az `A[n-1] = 0`, minden kártya `sliderPosition`-je `0.0` (nem NaN, nem kivétel). Teszt (`tests/app/test_timeline_controller.py`): `[2025-04-02, 2025-04-10, 2025-04-30]` és egyetlen kártya mind `0.0`; a dátum nélküli kártya külön tétel (38.2.210 §7 "Kész, ha").
+4. **QML-teszt** (`tests/app/qml_functional/`, a `test_idorend_bemutato_5377.py` mintájára): egyhónapos készlet (négy mappa); egyik `timelineDateDot` sem látható; a vezérlőre kattintással (a `timelineSliderMouseArea` press/move/release, nem metódushívással) a fogantyú x-e követi az egeret, és a felengedés után `currentIndex == 0`.
+
+**Kész, ha** (a hívó által kiadott fejlesztői jegyhez):
+
+- [ ] `timeline_dot_positions` nulla nevezőnél nem rajzol pontot; a kontrollsor a mért `[197, 230, 263, 297]`;
+- [ ] a `slider_index` nulla nevezőnél 0 marad, őrző teszttel;
+- [ ] az egyhónapos QML-teszt a vezérlőre kattintással fut, a pontok láthatatlanságát és a fogantyú egérkövetését méri;
+- [ ] vizuális egyezés: az eredeti felvétele egyhónapos katalógusról (alább), mért eltéréssel; a számolt geometria nem helyettesíti.
+
+**Mérési feladat (Colab, 1 feladat, a hívó adhatja fel).** Olyan mintakészlet, ahol minden kártya azonos hónapra esik (legalább négy mappa, különböző napokkal), és egy, ahol egyetlen kártya van. Lépések: `Ctrl+5`, várakozás, képernyőkép; húzás a sávon (`kattint` a sáv közepén, egérmozgatás, felengedés) képernyőképekkel a húzás közben és a felengedés után. Mérés: van-e látható pont a sávon (a gépi kód szerint nincs); követi-e a fogantyú az egeret; a felengedés után melyik kártya áll elől (a gépi kód szerint a 0.); hol áll a fogantyú felengedés után (nyitott kérdés). Ha pont látszik a sáv bal szélén, a §3 5. pontjának kivétel-maszk feltevése téves vagy más szál rajzol.
+
+##### Cáfoló kísérletek és amit kizártam
+
+- **"Az eredeti is 0,0 arányt használ, ezért a pontok a bal szélen állnak, mint a PicasaPy-ban."** Cáfolt SSE2-ágon: `x = 0x80000000`, 0 megváltozott képpont (§4). Csak a nem SSE2-ágon áll `x = 0`-nál, és ott a pont a cél bal szélén (0-6. oszlop) rajzolódik, négy pont egy helyen.
+- **"A futamszámláló NaN-nál is nő (az azonos NaN-ok egyenlőnek számítanak)."** Cáfolt: az `y` mind a négy iterációban az alap (21), nincs 7 vagy 14 pixeles eltolás; a `fcom` rendezetlen, a `jp` ugrik (§3 2. pont, §4).
+- **"A felengedés `A[n-1] = 0` mellett nem változtat a kijelölésen."** (Az én első olvasatom.) Cáfolt: a felengedés a `[+0x514]`-et olvassa, amelynek kezdőértéke 0 (`_memset`, egyetlen író a `0x007fdd00`), ezért a 0. kártyára görget (§5). Ez az eset egyezik a PicasaPy `animateTo(0)` viselkedésével.
+- **"A `0x007ffc90` hívója védi az osztást."** Cáfolt: a `0x00800a30` két hívóhelye csak az időparamétert adja, és a `+0x388`/`+0x38c` operandust a `0x00800a30` nem tartalmazza (§2).
+- **"A fogantyú helye az `A`-ból jön."** Cáfolt: a `[+0x728]` az egérből számolódik (`x_c - (floor(SW / 2) + 3)`), az `A` csak a kijelölt kártyát adja (§5).
+- **Nem állítom:** a futó Picasa vezérlőszavát és szálát, a `[0xda1428]` futásidejű értékét, a fogantyú nyugalmi helyét, és a képernyőn látott képet; ezek a Colab-mérésre várnak. A 38.2.140 7. pontjában álló "kirajzolva a fókuszgyűjtemény pozíciójában" mondatot (a fogantyú) ez a kutatás nem támasztja alá: a `[+0x728]` egyetlen írója a `0x007fdd00`.
+
+##### Nyitott kérdések mérlege
+
+Nyitott kérdések: 2 nyílt · 1 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva"
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| Az `A[i] / A[n-1]` osztás védelme, ha `A[n-1] = 0` | **LEZÁRVA** (§2-§5; a futásidejű kép nincs mérve) | |
+| A kivétel-maszk, a `[0xda1428]` és a rajzoló szál értéke a futó Picasában; a képernyőn látható eredmény (nincs pont) | **NYÍLT** | a fenti Colab-feladat (egyhónapos katalógus) |
+| A fogantyú nyugalmi helye felengedés után és fókuszváltáskor | **NYÍLT** | ugyanaz a Colab-feladat (húzás és felengedés képernyőképei) |
+
+##### Bizonyítottság
+
+**Megerősített:** az `A[n-1] = 0` feltétele (utasításolvasat és a valódi `0x007fc4c0` QEMU-mérése a 38.2.210 §6-ban); az osztásvédelem hiánya a `0x007ffc90`-ben és a `0x00800a30` hívóhelyein (utasításolvasat, operandus-pásztázás, a valódi függvény lefut); az `x = 0x80000000` és a pont nélküli kép a mért objektumon (a valódi `0x007ffc90` és `0x009ab690`, 0 megváltozott képpont); a fogantyú x-e az egérből és a kijelölés kimaradása (a valódi `0x007fdd00`); a PicasaPy-oldali kimenetek (futtatva). **Erős:** a felengedés a 0. kártyára görget (utasításolvasat, `_memset`, az egyetlen író; a `0x007fd770` nincs QEMU-ban futtatva); a vezérlőszó maszkolt állapota (`_controlfp(_MCW_EM, _MCW_EM)` a qshow-építés láncában, a CRT `0x027f` konstansa). **Feltételes:** az SSE2-ág a futó folyamatban (a CRT-inicializáló kódja alapján; az értéke nincs mérve); az a feltevés, hogy az építés és a rajzolás ugyanazon a szálon fut. **NINCS MEG:** a futó folyamat vezérlőszava, a fogantyú nyugalmi helye, a képernyőkép.
+
+**Módosított fájlok ebben a szakaszban.** Ez a 38.2.230 szakasz és a `picasa-idorend-viselkedes.md` érintett sorai (a dátumsáv-sor utáni új `A[n-1] = 0` sor és az A lista "A tömb" tétele). Kódot, tesztet, eredeti binárist, felvételt vagy mérőadatot nem módosítottam; az ideiglenes mérőszkriptek, ELF-fájlok és kimenetek a `$SCRATCH` mappából törölve.
+
+### 38.2.240 A Space és Escape utáni kijelölés, és az albumkártya Escape-je: a 02d-02g mérés (#6532)
+
+**Mérés:** Colab job-676 (`02d`), job-677 (`02e`), job-678 (`02f`), job-679 (`02g`), 2026-11-14; a lépéssor a 38.2.220 tervtáblája szerint. A `08a` (job-680) sémahiba miatt nem futott (`var` > 10 mp), újra feladva: job-681.
+
+| Feladat | Lépéssor | Utolsó kép | Kijelölés az Időrend után |
+|---|---|---|---|
+| `02d` | 2009_majus kártya, Space, Escape | job-676 `kepernyo__12.png` | csak a mappa (a tálcán „Folder Selected - 1 photo”, a fotó keret nélkül) |
+| `02e` | 2014_november kártya, Escape Space nélkül | job-677 `kepernyo__11.png` | a mappa és az első fotó (a fotón kijelölő keret, a tálcán „Selection”) |
+| `02f` | 2019_marcius kártya, Escape Space nélkül | job-678 `kepernyo__13.png` | a mappa és az első fotó |
+| `02g` | a fókusz a `Recently Updated` kártyán (job-679 `kepernyo__18.png`), Escape | job-679 `kepernyo__21.png` | a korábbi nézet (PicasaTeszt) marad, csak a mappa kijelölt („Folder Selected - 24 photos”) |
+
+**Következtetés a 38.2.220 döntési szabálya szerint:** a `02e` és a `02f` fotót is ad, tehát a **Space a tényező**. Közvetlen Escape után a kártya mappája és első fotója kijelölt; a Space-szel megnyitott OneUp-vetítésből kilépve csak a mappa (job-663, job-666, job-667 és most a job-676: négy egyező eset). Egy ellentmondó eset marad: a job-668 (PicasaTeszt, Space, Escape) a mappát és az első fotót is kijelölte. Ennek oka nem ismert; a megvalósítás a négy egyező mérést követi, és a PicasaTeszt-esetet külön jelzi.
+
+**Az albumkártya kérdése (38.2.220 J3) helyesbítve:** a mintakatalógusban az egyetlen album a virtuális `Recently Updated` (a bal hasábban „Albums (1)”). A job-665 31. képe is ezen a kártyán készült (`kepernyo__29.png`: „Recently Updated, November 2026”), tehát a J3 nem felhasználói albumot mért. A virtuális kártya Escape-viselkedését (a korábbi nézet marad) a #6902 már megvalósította. A fotókijelölés a két mérésben eltér: a job-665-ben egy fotó kijelölt, a job-679-ben csak a mappa. A J3 javaslat ezért visszavonva, a #6909-ből kivéve. Valódi felhasználói album Escape-viselkedése nincs mérve, mert a mintakatalógusban nincs ilyen album.
