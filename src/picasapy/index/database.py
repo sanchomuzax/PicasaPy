@@ -210,8 +210,15 @@ class _GuardedConnection(sqlite3.Connection):
         return max(0, int(timeout_ms)) / 1000.0
 
     def _acquire_write_lock(self) -> None:
-        if not self._write_lock.acquire(timeout=self._busy_timeout_seconds()):
-            raise sqlite3.OperationalError("database is locked")
+        # Ez a folyamaton belüli közös írási sor, nem a SQLite fájlzára.
+        # Háttérszál hosszú hálózati szinkron alatt is megvárja az előző
+        # írót (#6947); a fő szál viszont a busy_timeout után feladja, hogy
+        # a felület ne fagyhasson be egy lassú író mögött.
+        if threading.current_thread() is threading.main_thread():
+            if not self._write_lock.acquire(timeout=self._busy_timeout_seconds()):
+                raise sqlite3.OperationalError("database is locked")
+        else:
+            self._write_lock.acquire()
         self._write_lock_owner = threading.get_ident()
 
     def _release_acquired_lock(self) -> None:
