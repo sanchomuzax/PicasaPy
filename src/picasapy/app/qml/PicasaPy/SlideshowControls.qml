@@ -48,7 +48,7 @@ Item {
                 // (eltűnés közben a sáv már nem számít láthatónak).
                 if (kuszobFelett || controlsBar.shown) {
                     controlsBar.shown = true
-                    hideTimer.restart()
+                    if (!slideshow._spacePauseControls) hideTimer.restart()
                 }
             }
         }
@@ -101,7 +101,7 @@ Item {
         //: #2992: a mutató alatt NEM rejtünk el. A lejáró időzítő így nem
         //: kapja el a sávot épp akkor, amikor a felhasználó a gombot
         //: célozza — az újraindítás a `slideshowControlsHover` dolga.
-        onTriggered: if (!savLebeges.hovered) controlsBar.shown = false
+        onTriggered: if (!slideshow._spacePauseControls && !savLebeges.hovered) controlsBar.shown = false
     }
 
     Rectangle {
@@ -123,7 +123,8 @@ Item {
             objectName: "slideshowControlsHover"
             //: amikor a mutató elhagyja a sávot, az elrejtés újraindul —
             //: enélkül a sáv a vetítés végéig kint maradna
-            onHoveredChanged: if (!hovered) hideTimer.restart()
+            onHoveredChanged: if (!hovered && !slideshow._spacePauseControls)
+                                  hideTimer.restart()
         }
         // A rejtett végértéken a sáv ne fogja el az egérmozgást a teljes
         // vetítőt fedő MouseArea elől; áttűnés közben és láthatóan marad aktív.
@@ -144,11 +145,13 @@ Item {
             Transition {
                 from: "controlsHidden"
                 to: "controlsShown"
+                enabled: !slideshow._spacePauseControls
                 NumberAnimation { properties: "opacity"; duration: 250 }
             },
             Transition {
                 from: "controlsShown"
                 to: "controlsHidden"
+                enabled: !slideshow._spacePauseControls
                 NumberAnimation { properties: "opacity"; duration: 1200 }
             }
         ]
