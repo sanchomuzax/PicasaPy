@@ -38,6 +38,7 @@ ApplicationWindow {
     property alias utolsoFiokLap: mainWindowLibraryActions.utolsoFiokLap
     property alias configureButtonsContextMenu: mainWindowCommands.exportConfigureButtonsContextMenu
     property alias kilepesDialog: mainWindowCommands.exportKilepesDialog
+    property alias kilepesMegerositve: mainWindowCommands.kilepesMegerositve
     property alias mainKeyboardShortcuts: mainWindowCommands.exportMainKeyboardShortcuts
     property alias saveSearchDialog: mainWindowCommands.exportSaveSearchDialog
     property alias showTagAsAlbumDialog: mainWindowCommands.exportShowTagAsAlbumDialog
@@ -101,10 +102,12 @@ ApplicationWindow {
     //: egyébként a Qt zárja az ablakot, ahogy eddig.
     onClosing: function (close) {
         if (!window.aaKapu(window.kilepes)) {   // #3644
+            window.kilepesMegerositve = false
             close.accepted = false
             return
         }
-        if (controller && controller.backgroundWorkRunning()) {
+        if (!window.kilepesMegerositve
+                && controller && controller.backgroundWorkRunning()) {
             close.accepted = false
             kilepesDialog.askExit()
             return

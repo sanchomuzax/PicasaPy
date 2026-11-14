@@ -110,6 +110,7 @@ from .platform_storage import (
     bootstrap_storage as bootstrap_storage,
     default_storage_paths as default_storage_paths,
 )
+from .kilepesi_hatarido import figyeld_a_kilepest
 from .startup_status import StartupStatus as StartupStatus
 from .startup_maintenance import StartupMaintenance as StartupMaintenance, StartupMaintenanceStep
 from .startup_maintenance import thumb_cache_takaritas_sorba
@@ -510,6 +511,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     state = _startup_step_prepare_state(elso, argv, timeline, launch_arguments, library_argv)
 
     _startup_step_log_and_qt_setup(state)
+    # #6945: az `aboutToQuit` ELSŐ kezelője, a vezérlők regisztrálása előtt
+    figyeld_a_kilepest(state.app)
     # A hívást késleltetjük: a lépés előbb ellenőrzi a #3214 költözést,
     # aztán a #1076 tárhely-bootstrapot, mindkettőt a gyökerek feloldása előtt.
     storage_exit = _startup_step_prepare_storage(
