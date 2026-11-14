@@ -963,3 +963,17 @@ A diszasszemblálás és a mért kimenet **nem** azonosítja, hogy a három műv
 | Egyparancsos, azonos magú ismétlés | ✅ A 6611-es magú, 200 láncos futás ismételhetősége dokumentált. |
 
 **Következtetés:** a `lanc-0196` mintáján az egy- és kétszűrős részláncok mind megfelelnek; a legrövidebb igazolt eltérés a `radtint → PicnikGrain → triple` hármas. A #6585 két, nem minimális mért eltéréscsoportjának teljes elszámolása még hiányzik, ezért a jegy valamennyi elfogadási pontja egyetlen javasolt fejlesztői jegy megnyitásával sem teljesül.
+
+## #6585 helyesbítés: a `lanc-0196` a dokumentált dither-fázis esete (#6908, 2026-11-14)
+
+A fenti zárókör a `lanc-0196`-ot az „egyéb determinisztikus” csoport egyetlen valódi eltérésének sorolta be. **Ez a besorolás téves.** A `triple` kontrasztlépése a közös, ditherelt 16 bites LUT-alkalmazón megy át (`chain_native_handlers.apply_triple_op` → `native_tone.apply_native_contrast` → `apply_native_lut16`, eredetiben `0x0090c100` LUT-építő és `0x0090bc60` alkalmazó). Ennek a dither-generátora a #3092 óta dokumentáltan folyamat-globális MT19937 (`0x00d67f70`, index `0x00d67f74`): ugyanannak a képnek a zaja attól is függ, mit dolgozott fel előtte a Picasa. Ez ugyanaz a mechanizmus, amely a `triple2` két eltérését (`lanc-0006`, `lanc-0092`) „dokumentált dither” besorolásba tette.
+
+| Állítás | Forrás |
+|---|---|
+| A `triple` a ditherelt LUT-alkalmazót használja | kód (`chain_native_handlers.py` `apply_triple_op`, `native_tone.py` `apply_native_contrast`) + bináris (`0x0090c100`, `0x0090bc60`) |
+| A dither-állapot folyamat-globális, bitre egyezés nem cél | `native_tone.py` modul-leírása (#3092, #2868) |
+| A jelenlegi kóddal a hármas reprodukálhatóan `SSIM 0,97844`, `ΔE 0,759` | mérés (#6908 Codex-kör, job-659 eredetije) |
+| Dither nélkül a hármas átmegy (`SSIM 0,98118`, `ΔE 0,728`) | mérés (#6908 Codex-kör; a dither kikapcsolása nem natív viselkedés, ezért nem alkalmazva) |
+| LUT-kerekítési változat és egyszerű dither-eltolás nem éri el a küszöböt | mérés (#6908 Codex-kör) |
+
+**Helyesbített összesítés:** a 200 láncból 187 egyezik, 13 nyersen eltér; ebből 10 véletlenállapot-függő (`grain`, `grain2`, `triple3`), 3 a folyamat-globális dither-fázis esete (`triple2`: `lanc-0006`, `lanc-0092`; `triple`: `lanc-0196`). **Determinisztikus, javítható eltérés nem maradt.** A #6908 ezért javítás nélkül zárult: az eltérés a Picasa futásának előzményétől függ, és a hat egy- és kétszűrős részlánc egyezése mutatja, hogy maguk a szűrők helyesek.
