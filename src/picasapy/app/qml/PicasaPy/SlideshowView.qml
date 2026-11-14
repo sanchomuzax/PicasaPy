@@ -89,8 +89,13 @@ Rectangle {
     //: átmenet és a feliratmód ugyanezt az utat járja (`transitionPicked`,
     //: `captionModePicked`).
     signal secondsChosen(int masodperc)
-    //: az átmenet hossza (`SlideshowEffectTime`) — a dia-időnél rövidebb
+    //: a nem-Dissolve átmenetek korábbi hossza; a Dissolve saját időt kap
     property int transitionMs: 700
+    //: #6920: a Dissolve külön, T/1,5 hosszú; a többi átmenet a transitionMs-t
+    //: használja, hogy az időzítése változatlan maradjon.
+    property int dissolveTransitionMs: 2000
+    property var dissolveAlphaProvider: null
+    property real dissolveProgress: 0.0
     //: #433: a felirat megjelenítési módja vetítés közben (`captionmode`):
     //: a felirat, a fájlnév, vagy semmi — ugyanaz a hármas, mint a
     //: nyomtatás-opciókban.
@@ -483,6 +488,20 @@ Rectangle {
         return show.transitionKind.indexOf("push") === 0
     }
 
+    function _dissolveOpacitasFrissit() {
+        if (show.transitionKind !== "dissolve")
+            return
+        var alpha256 = show.dissolveAlphaProvider
+                ? show.dissolveAlphaProvider.slideshowDissolveAlpha(
+                    show.dissolveProgress * show.seconds / 1.5,
+                    show.seconds)
+                : Math.floor(256 * show.dissolveProgress)
+        var alpha = alpha256 / 256.0
+        imageLayer.currentImage.opacity = alpha
+    }
+
+    onDissolveProgressChanged: show._dissolveOpacitasFrissit()
+
     function _atmenetVege() {
         imageLayer.previousImage.opacity = 0
         imageLayer.previousImage.transitionOffsetX = 0
@@ -539,8 +558,11 @@ Rectangle {
         } else if (show.transitionKind === "timelapse") {
             imageLayer.currentImage.scale = 1.16
             imageLayer.currentImage.opacity = 0
+        } else if (show.transitionKind === "dissolve") {
+            show.dissolveProgress = 0.0
+            show._dissolveOpacitasFrissit()
         } else {
-            imageLayer.currentImage.opacity = show.transitionKind === "dissolve" ? 0 : 1
+            imageLayer.currentImage.opacity = 1
         }
         imageLayer.veil.color = show.transitionKind === "dissolvewhite"
             ? "#ffffff" : "#000000"

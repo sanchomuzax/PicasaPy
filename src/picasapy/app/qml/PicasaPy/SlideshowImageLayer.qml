@@ -17,10 +17,12 @@ QtObject {
         objectName: "slideshowTransition"
         //: a wipe a kimenő képet kicsúsztatja, a push mindkét képet mozgatja,
         //: a kör/négyszög nagyítással nyit, az időgyorsítás rövid zoommal
-        //: vált. A dissolve és a színfátyol a korábbi átmenetet tartja.
+        //: vált. A Dissolve a #6920 görbét, a színfátyol a korábbi átmenetet tartja.
         ParallelAnimation {
             NumberAnimation {
-                target: imageLayer.previousImage; property: "opacity"
+                target: slideshow.transitionKind === "dissolve"
+                        ? null : imageLayer.previousImage
+                property: "opacity"
                 to: slideshow._kilepoKepMozog() ? 1 : 0
                 duration: slideshow.transitionMs
             }
@@ -35,9 +37,20 @@ QtObject {
                 duration: slideshow.transitionMs
             }
             NumberAnimation {
-                target: imageLayer.currentImage; property: "opacity"; to: 1
+                target: slideshow.transitionKind === "dissolve"
+                        ? null : imageLayer.currentImage
+                property: "opacity"; to: 1
                 duration: slideshow.transitionKind === "timelapse"
                           ? slideshow.transitionMs * 0.35 : slideshow.transitionMs
+            }
+            NumberAnimation {
+                target: slideshow.transitionKind === "dissolve" ? slideshow : null
+                property: "dissolveProgress"
+                from: 0
+                to: 1
+                duration: slideshow.transitionKind === "dissolve"
+                          ? slideshow.dissolveTransitionMs : 0
+                easing.type: Easing.Linear
             }
             NumberAnimation {
                 target: imageLayer.currentImage; property: "transitionOffsetX"; to: 0

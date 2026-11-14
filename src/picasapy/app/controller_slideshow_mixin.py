@@ -8,6 +8,7 @@ from PySide6.QtGui import QGuiApplication
 from . import formatting
 from .controller_signals import AppControllerSignalsMixin as _Signals
 from .slideshow_pan_zoom import qml_pan_zoom_rectangles
+from .slideshow_transition import dissolve_alpha256, dissolve_duration_ms
 
 # #4856: az eredeti diavetítés hét átmenete; a filmkészítő listája külön él.
 _SLIDESHOW_TRANSITIONS = (
@@ -79,14 +80,24 @@ class SlideshowSettingsMixin:
 
     @Property(int, notify=_Signals.statusChanged)
     def slideshowTransitionMs(self):  # noqa: N802
-        """Az átmenet hossza milliszekundumban (`SlideshowEffectTime`)."""
+        """A Dissolve telítési ideje milliszekundumban (`T / 1,5`, #6920)."""
+        return dissolve_duration_ms(self.slideshowSeconds)
+
+    @Property(int, notify=_Signals.statusChanged)
+    def slideshowOtherTransitionMs(self):  # noqa: N802
+        """A nem-Dissolve átmenetek korábbi időzítése (#6920)."""
         try:
             value = int(self._get_settings().value("view/slideshowTransitionMs", 700))
         except (TypeError, ValueError):
             return 700
-        #: a dia-idő alatt kell maradnia, különben az átmenet sosem fejeződik
-        #: be; a felső korlát a legrövidebb dia-idő (1 s) fele
         return max(0, min(value, 500))
+
+    @Slot(float, float, result=int)
+    def slideshowDissolveAlpha(
+        self, elapsed_seconds: float, slide_seconds: float
+    ) -> int:  # noqa: N802
+        """A QML-rétegnek visszaadott Picasa-alfa-kód (#6920)."""
+        return dissolve_alpha256(elapsed_seconds, slide_seconds)
 
     #: #2992, #5544: a diaidő alsó/felső korlátja, mérve. Az eredeti `+`/`-`
     #: gombjai után az érték 1 és 20 közé szorul: az alsó határ
