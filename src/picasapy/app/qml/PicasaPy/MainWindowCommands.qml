@@ -14,6 +14,12 @@ Item {
     required property var hostController
     required property var hostRefs
 
+    //: A „Kilépés most” megerősítése. A `Qt.quit()` a Qt-tól bezárási kérést
+    //: küld a főablaknak, és annak `onClosing`-ja futó háttérmunka mellett
+    //: vissza is vonná (újra feltenné a kérdést). A jelző azt mondja meg neki,
+    //: hogy a kérdésre a felhasználó már válaszolt: a kilépés végigmehet.
+    property bool kilepesMegerositve: false
+
     property alias exportConfigureButtonsContextMenu: configureButtonsContextMenu
     property alias exportKilepesDialog: kilepesDialog
     property alias exportMainKeyboardShortcuts: mainKeyboardShortcuts
@@ -270,7 +276,8 @@ Item {
     function kilepes() {
         if (!hostWindow.aaKapu(hostWindow.kilepes)) return   // #3644
         //: #305: null-őr — a leépülő motor is újraértékelheti a kötést
-        if (hostController && hostController.backgroundWorkRunning()) {
+        if (!commandSurface.kilepesMegerositve
+                && hostController && hostController.backgroundWorkRunning()) {
             kilepesDialog.askExit()
             return
         }
@@ -303,7 +310,10 @@ Item {
                 //: viselkedés (accept/deny) változatlan, csak a felirat
                 yesText: qsTr("Exit Now")
                 noText: qsTr("Keep Going")
-                onConfirmed: Qt.quit()
+                onConfirmed: {
+                    commandSurface.kilepesMegerositve = true
+                    Qt.quit()
+                }
             }
         }
     }

@@ -99,7 +99,9 @@ class TestNincsKikerulesiUt:
         talalatok = [
             f"{ut.name}:{szam}"
             for ut in APP_DIR.rglob("*.py")
-            if ut.name != "worker_thread.py"
+            # #6945: a kilépési határidő-őr szándékosan NEM bevárt szál: épp akkor
+            # kell kiléptetnie, amikor a bevárás elakad
+            if ut.name not in ("worker_thread.py", "kilepesi_hatarido.py")
             for szam, sor in enumerate(
                 ut.read_text(encoding="utf-8").splitlines(), start=1
             )
