@@ -234,6 +234,7 @@ class TestVetitesForgatasBalra:
         QMetaObject.invokeMethod(
             window, "startSlideshow", Qt.ConnectionType.DirectConnection,
             Q_ARG("QVariant", 0),
+            Q_ARG("QVariant", False),
         )
         qt_app.processEvents()
         show = _gyerek(window, "slideshowView")

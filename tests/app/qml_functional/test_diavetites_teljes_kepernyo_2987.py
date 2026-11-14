@@ -58,6 +58,7 @@ def futo_vetites(qml_app, qt_app, tmp_path):
         "startSlideshow",
         Qt.ConnectionType.DirectConnection,
         Q_ARG("QVariant", -1),
+        Q_ARG("QVariant", False),
     )
     qt_app.processEvents()
     vetito = _child(window, "slideshowView")
@@ -106,6 +107,7 @@ class TestAVisszaallas:
         QMetaObject.invokeMethod(
             window, "startSlideshow", Qt.ConnectionType.DirectConnection,
             Q_ARG("QVariant", -1),
+            Q_ARG("QVariant", False),
         )
         qt_app.processEvents()
         #: A vetítő `stop()`-ja a valódi kilépés útja — az ablak

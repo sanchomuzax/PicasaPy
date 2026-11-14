@@ -36,7 +36,7 @@ def _invoke(qt_app, obj, name, *args):
 
 
 def _start(window, qt_app, index=-1):
-    _invoke(qt_app, window, "startSlideshow", index)
+    _invoke(qt_app, window, "startSlideshow", index, False)
     return _child(window, "slideshowView")
 
 

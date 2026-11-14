@@ -416,6 +416,9 @@ Window {
             } else if (event.key === Qt.Key_Up) {
                 show.step(-1)
                 event.accepted = true
+            } else if (event.key === Qt.Key_Space
+                    && (event.modifiers & Qt.ControlModifier)) {
+                event.accepted = true
             } else if (event.key === Qt.Key_Space) {
                 show.startCurrentSlideshow()
                 event.accepted = true

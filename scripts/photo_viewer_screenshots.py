@@ -711,7 +711,7 @@ def _foablak_allapotok(
         )
     )
 
-    ablak.startSlideshow(-1)
+    ablak.startSlideshow(-1, False)
     slideshow_image = _elem(ablak, "slideshowImage")
     _var_feltetelre(
         alkalmazas,
