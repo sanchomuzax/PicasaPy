@@ -1,6 +1,7 @@
 """Az Időrend virtuális friss albumának és kezelőinek felületi útjai (#6902)."""
 
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -247,6 +248,30 @@ def test_escape_mappafokusznal_a_mappat_es_elso_kepet_jeloli_ki(
     assert window.property("selectedIndexes").toVariant() == [first_row]
 
 
+def test_space_utan_escape_csak_a_mappat_hagyja_kijelolve(qml_app_6902, qt_app):
+    window, controller, engine, timeline = _open_timeline(qml_app_6902, qt_app)
+    collections = engine.rootContext().contextProperty("timelineController").collections
+    first_photo = collections[0]["firstPhotoPath"]
+    slideshow = _child(window, "slideshowView")
+
+    QTest.keyClick(timeline, Qt.Key.Key_Space)
+    _wait(
+        qt_app,
+        lambda: slideshow.property("visible") is True,
+        "a Space nem nyitotta meg a vetítést",
+    )
+    QTest.keyClick(window, Qt.Key.Key_Escape)
+    _wait(
+        qt_app,
+        lambda: slideshow.property("visible") is False,
+        "az Escape nem zárta be a vetítést",
+    )
+
+    assert controller.currentFolder == str(Path(first_photo).parent)
+    assert window.property("selectedIndex") == -1
+    assert window.property("selectedIndexes").toVariant() == []
+
+
 def test_escape_recently_updated_fokusznal_megtartja_a_belépési_nezetet(
     qml_app_6902, qt_app
 ):
@@ -282,3 +307,99 @@ def test_escape_recently_updated_fokusznal_megtartja_a_belépési_nezetet(
     assert controller.currentAlbumToken == entry_album
     assert window.property("selectedIndex") == entry_selected_index
     assert window.property("selectedIndexes").toVariant() == entry_selected_indexes
+
+
+@pytest.mark.parametrize("height_delta", (-5, 0, 5))
+def test_space_idorendrol_szukselet_vetitest_indit_es_teret_ad_a_lejatszasnak(
+    qml_app_6902, qt_app, height_delta
+):
+    window, _controller, _engine, timeline = _open_timeline(
+        qml_app_6902, qt_app, height_delta
+    )
+    QTest.keyClick(timeline, Qt.Key.Key_Space)
+    _wait(
+        qt_app,
+        lambda: window.property("slideshowRunning") is True,
+        "a Space nem nyitotta meg a vetítést",
+    )
+    slideshow = _child(window, "slideshowView")
+    _wait(qt_app, lambda: slideshow.property("visible"), "a vetítés nem látható")
+    controls = _child(slideshow, "slideshowControls")
+    try:
+        assert slideshow.property("playing") is False
+        assert slideshow.property("currentIndex") == 0
+        assert controls.property("shown") is True
+
+        elapsed_from = time.monotonic()
+        _wait(
+            qt_app,
+            lambda: time.monotonic() - elapsed_from >= 3.2,
+            "a 3 másodperces diaidő nem telt le",
+            seconds=10.0,
+        )
+        assert slideshow.property("currentIndex") == 0
+
+        QTest.keyClick(window, Qt.Key.Key_Space)
+        _wait(qt_app, lambda: slideshow.property("playing"), "a második Space nem indított")
+        QTest.keyClick(window, Qt.Key.Key_Space)
+        _wait(
+            qt_app,
+            lambda: slideshow.property("playing") is False,
+            "a harmadik Space nem szüneteltette a vetítést",
+        )
+        QTest.keyClick(window, Qt.Key.Key_Escape)
+        _wait(
+            qt_app,
+            lambda: not slideshow.property("visible"),
+            "az Escape nem zárta be a vetítést",
+        )
+    finally:
+        if slideshow.property("visible"):
+            QTest.keyClick(window, Qt.Key.Key_Escape)
+            _wait(
+                qt_app,
+                lambda: not slideshow.property("visible"),
+                "a teszt nem tudta bezárni a vetítést",
+            )
+
+
+@pytest.mark.parametrize("height_delta", (-5, 0, 5))
+def test_ctrl_space_nem_valtoztat_a_renderelt_idorenden_es_a_space_tovabbra_is_mukodik(
+    qml_app_6902, qt_app, height_delta
+):
+    window, _controller, _engine, timeline = _open_timeline(
+        qml_app_6902, qt_app, height_delta
+    )
+    _wait(
+        qt_app,
+        lambda: timeline.property("currentCardsLoaded") is True,
+        "az Időrend kártyái nem rajzolódtak ki",
+    )
+    before = timeline.grabWindow()
+    assert not before.isNull(), "az Időrend renderelt képe üres"
+
+    QTest.keyClick(
+        timeline, Qt.Key.Key_Space, Qt.KeyboardModifier.ControlModifier
+    )
+    try:
+        assert window.property("timelineOpen") is True
+        assert window.property("slideshowRunning") is False
+        after = timeline.grabWindow()
+        assert not after.isNull(), "az Időrend renderelt képe eltűnt"
+        assert before == after, "a Ctrl+Space megváltoztatta az Időrend képét"
+
+        QTest.keyClick(timeline, Qt.Key.Key_Space)
+        _wait(
+            qt_app,
+            lambda: window.property("slideshowRunning") is True,
+            "a sima Space nem nyitotta meg a vetítést a Ctrl+Space után",
+        )
+    finally:
+        if window.property("slideshowRunning"):
+            QTest.keyClick(window, Qt.Key.Key_Escape)
+            _wait(
+                qt_app,
+                lambda: window.property("slideshowRunning") is False,
+                "a teszt nem tudta bezárni a vetítést",
+            )
+

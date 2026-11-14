@@ -54,6 +54,7 @@ def test_space_elrejti_es_megjeleniti_a_kurzort(
         "startSlideshow",
         Qt.ConnectionType.DirectConnection,
         Q_ARG("QVariant", -1),
+        Q_ARG("QVariant", False),
     )
     show = _objektum(window, "slideshowView")
     try:

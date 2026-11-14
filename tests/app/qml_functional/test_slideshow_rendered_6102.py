@@ -189,7 +189,8 @@ def test_a_diavetites_negy_fobb_allapota_keppontra_megegyezik(
     ), "a vetítő nem követte az ablakmagasságát"
 
     QMetaObject.invokeMethod(
-        root, "start", Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 0)
+        root, "start", Qt.ConnectionType.DirectConnection,
+        Q_ARG("QVariant", 0), Q_ARG("QVariant", False)
     )
     image = root.findChild(QObject, "slideshowImage")
     controls = root.findChild(QQuickItem, "slideshowControls")

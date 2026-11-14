@@ -111,7 +111,8 @@ def vetito(qt_app):
     gyoker.setProperty("photosModel", modell)
     gyoker.setProperty("transitionKind", "dissolve")
     QMetaObject.invokeMethod(
-        gyoker, "start", Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 0)
+        gyoker, "start", Qt.ConnectionType.DirectConnection,
+        Q_ARG("QVariant", 0), Q_ARG("QVariant", False)
     )
     qt_app.processEvents()
     assert gyoker.property("visible") is True, "a vetítő nem indult el"

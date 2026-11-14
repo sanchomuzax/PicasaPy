@@ -198,7 +198,7 @@ Rectangle {
         return nextPhotoIndex(index >= 0 ? index : -1, 1)
     }
 
-    function start(index) {
+    function start(index, paused) {
         screensaverMode = false
         screensaverInputArmed = false
         slideshowTiming.inputArmTimer.stop()
@@ -209,8 +209,13 @@ Rectangle {
         //: le — ha a modell közben (rejtve) változott, a követett útvonal
         //: elavult volna, ezért itt mindig újraírjuk
         show._kovetettUtFrissit()
-        playing = true
+        var startsPaused = paused === true
+        playing = !startsPaused
         visible = true
+        if (startsPaused) {
+            slideshowControls.controls.shown = true
+            slideshowControls.autoHideTimer.restart()
+        }
         forceActiveFocus()
     }
 

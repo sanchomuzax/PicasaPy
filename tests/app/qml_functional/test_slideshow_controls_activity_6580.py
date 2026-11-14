@@ -30,6 +30,7 @@ def _vetites_indit(qml_app, qt_app, magassag_elteres: int = 0):
         "startSlideshow",
         Qt.ConnectionType.DirectConnection,
         Q_ARG("QVariant", -1),
+        Q_ARG("QVariant", False),
     )
     show = _objektum(window, "slideshowView")
     window.setVisibility(QWindow.Visibility.Windowed)

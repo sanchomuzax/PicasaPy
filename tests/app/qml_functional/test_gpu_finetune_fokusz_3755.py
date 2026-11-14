@@ -684,7 +684,8 @@ def _diavetites(window, qt_app, mod: str):
         _kattint(window, mod)
         _esemenyek(qt_app)
     QMetaObject.invokeMethod(window, "startSlideshow",
-                             Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 0))
+                             Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 0),
+                             Q_ARG("QVariant", False))
     _esemenyek(qt_app)
     show = window.findChild(QObject, "slideshowView")
     assert show.property("visible") is True, "a diavetítés nem indult el"

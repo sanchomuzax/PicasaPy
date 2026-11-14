@@ -57,7 +57,7 @@ SlideshowView {
         }
     }
 
-    function startSlideshow(fromIndex) {
+    function startSlideshow(fromIndex, paused) {
         var index = fromIndex
         if (index < 0)
             index = hostWindow.viewerOpen && hostPhotoViewer
@@ -65,7 +65,7 @@ SlideshowView {
                                           : Math.max(0, hostWindow.selectedIndex)
         hostWindow.visibilityBeforeSlideshow = hostWindow.visibility
         hostWindow.visibility = Window.FullScreen
-        slideshow.start(index)
+        slideshow.start(index, paused)
         if (!slideshow.visible)   // nincs vetíthető fotó — állítsuk vissza
             exitSlideshow()
     }
