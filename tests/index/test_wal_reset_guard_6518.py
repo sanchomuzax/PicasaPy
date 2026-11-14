@@ -245,6 +245,7 @@ def test_write_lock_wait_obeys_connection_busy_timeout(tmp_path, monkeypatch):
             writer_started.set()
             if not release_writer.wait(5):
                 raise TimeoutError("az író tranzakció nem kapott feloldást")
+            conn.commit()
 
     def competing_write():
         try:
@@ -252,6 +253,7 @@ def test_write_lock_wait_obeys_connection_busy_timeout(tmp_path, monkeypatch):
                 conn.execute("PRAGMA busy_timeout=100")
                 contender_started.set()
                 conn.execute("INSERT INTO canary(value) VALUES (2)")
+                conn.commit()
         except BaseException as error:
             errors.append(error)
         finally:
@@ -264,17 +266,62 @@ def test_write_lock_wait_obeys_connection_busy_timeout(tmp_path, monkeypatch):
     contender.start()
     try:
         assert contender_started.wait(5), "a második író nem indult el"
-        assert contender_finished.wait(2), "a második író túllépte a busy_timeout értékét"
+        assert not contender_finished.wait(0.2), (
+            "a második író a kapcsolat busy_timeout értékénél leállt"
+        )
     finally:
         release_writer.set()
+    assert contender_finished.wait(5), "a második író nem folytatta a zár feloldása után"
     writer.join(5)
     contender.join(5)
     assert not writer.is_alive(), "az író szál beragadt"
     assert not contender.is_alive(), "a második író szála beragadt"
-    assert len(errors) == 1
-    assert isinstance(errors[0], sqlite3.OperationalError)
-    assert str(errors[0]) == "database is locked"
+    assert errors == []
+    with open_index(db_path) as conn:
+        values = [
+            row[0]
+            for row in conn.execute("SELECT value FROM canary ORDER BY value")
+        ]
+        assert values == [1, 2]
 
+
+
+def test_main_thread_write_lock_wait_obeys_busy_timeout(tmp_path, monkeypatch):
+    """#6947: a fő szál továbbra is a busy_timeout után feladja (a felület ne fagyjon)."""
+    import time
+
+    import picasapy.index.database as database
+
+    db_path = tmp_path / "index.db"
+    lock = threading.RLock()
+    monkeypatch.setattr(database, "_write_lock_for", lambda _path: lock)
+    with open_index(db_path) as conn:
+        conn.execute("CREATE TABLE canary (value INTEGER PRIMARY KEY)")
+
+    writer_started = threading.Event()
+    release_writer = threading.Event()
+
+    def write_transaction():
+        with open_index(db_path) as conn:
+            conn.execute("INSERT INTO canary(value) VALUES (1)")
+            writer_started.set()
+            release_writer.wait(5)
+            conn.commit()
+
+    writer = threading.Thread(target=write_transaction, name="iro")
+    writer.start()
+    try:
+        assert writer_started.wait(5), "az író nem indult el"
+        kezdet = time.monotonic()
+        with pytest.raises(sqlite3.OperationalError, match="database is locked"):
+            with open_index(db_path) as conn:
+                conn.execute("PRAGMA busy_timeout=100")
+                conn.execute("INSERT INTO canary(value) VALUES (2)")
+        assert time.monotonic() - kezdet < 3.0, "a fő szál nem a busy_timeout szerint adta fel"
+    finally:
+        release_writer.set()
+        writer.join(5)
+    assert not writer.is_alive(), "az író szál beragadt"
 
 @pytest.mark.parametrize(
     "sql",
