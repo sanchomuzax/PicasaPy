@@ -2349,6 +2349,8 @@ Az alábbi sorok az eredeti Picasa számára **teszttervek, nem végrehajtott pr
 
 **Csak mérés, eltérés:** szünetben az eredetiben a vetítés alján látszik a vezérlősáv (17-18. kép), a második Space után eltűnik (19. kép); nálunk a sáv csak egérmozgásra jelenik meg. A szünet ágát a binárisban megnéztem: a `0x00801130` a `[+0x3bb]` lejátszásjelzőt fordítja, szünetnél a `0x00802230` frissítőt hívja és újrarajzol, folytatásnál a `0x00802c20`-at; a sáv megjelenítése egyik ágban sincs. Amíg a sáv szünetbeli megjelenésének bináris forrása nincs meg, a PicasaPy-on nem változtatunk; a következő irány a `oneup.tre` `auto` gombjának kezelője (`0x00803486`, `0x00803110`) körül a sáv láthatóságát író mező keresése.
 
+⛔ **HELYESBÍTVE a 38.2.310-ben (#6930):** a sáv szünetbeli megjelenítésének forrása megvan: a `0x00801130` a `0x00802c20` és a `0x009833a0` útján a gazdaablak aktív gyerekét a `OneUpUI`-ra cseréli, és a sáv ennek az objektumnak a része; a folytatás (`0x00803110` -> `0x00802be0`) visszacseréli. Külön láthatósági mezőt nem ír senki, ezért volt eredménytelen a keresése.
+
 **Körhatár:** a videós `/`, `,`, `.` sor nem futott: a végrehajtó ezeket a billentyűket videólejátszóban nem tudja megbízhatóan leütni. A PicasaPy meglévő billentyűtesztjeinek helyi eredménye a §12.4-ben szerepel.
 
 ### 12.4 PicasaPy - meglévő valódi billentyűpróbák (2026-11-05)
@@ -2403,6 +2405,8 @@ A §12 itt felsorolt billentyűsorainak PicasaPy-próbáját a fenti PicasaPy-pr
 
 **Következtetés.** A `picasa-colab-jobs #375` 17-19. képe szerint szünetben az eredeti Picasában megjelenik, folytatáskor eltűnik a vezérlősáv; ez **csak mérés**. A most ellenőrzött bináris utak nem mutatták meg a sáv láthatóságát író mezőt, ezért a `SlideshowView.qml`-hez nem nyúltam, és új QML-billentyűtesztet sem írtam. A mérés és a statikus lelet nem mond ellent egymásnak: a képernyőn látható változás igazolt, a bináris mezője még nyitott.
 
+⛔ **HELYESBÍTVE a 38.2.310-ben (#6930):** a sáv bináris forrása a szünet-kapcsoló hostcseréje (`0x00802c20` -> `0x009833a0`), a mező keresése zsákutca volt.
+
 #### A videó `/`, `,`, `.` billentyűi
 
 | billentyű | `SHORTCUTS.XML` megnevezése | vizsgált bináris cím és megállapítás |
@@ -2441,6 +2445,8 @@ A `0x00801270` a felismert `Esc`, nyíl, Space, számjegy, `F`, `B` és `O` bill
 
 **Nyitott.** A vezérlősáv láthatóságát író mező; a videó `/`, `,`, `.` billentyűinek útja (12.5).
 
+⛔ **HELYESBÍTVE a 38.2.310-ben (#6930):** a vezérlősáv szünetbeli megjelenése nem láthatósági mezőn múlik, hanem a `OneUpUI` aktív gyerekké válásán; a videó `/`, `,`, `.` billentyűinek útja viszont továbbra is nyitott (12.5, 12.10).
+
 ### 12.7 A vetítés gombjai és a sáv-elrejtő időzítő (2026-11-05)
 
 **Forrás.** Ghidra-dekompilátum: `referencia/ghidra/2026-11-05-2026-11-05-vetites-sav-6531.txt` (`0x008032e0`, `0x00803110`, `0x00802630`, `0x007fda00`, `0x00801270`), `referencia/ghidra/2026-11-05-2026-11-05-sav-elrejtes-6531.txt` (`0x005c53d0`, `0x005915e0`, `0x005c4a10`, `0x005c4ce0`), `referencia/ghidra/2026-11-05-vetites-kocka-6531.txt` (`0x008001c0`, `0x007fe540`, `0x00802c20`); utasításszintű olvasás: `0x00760070`, `0x00760240`.
@@ -2470,6 +2476,8 @@ A `[+0x3330]` bájtot a `0x00760070` fordítja át, és ugyanott meghívja a `0x
 
 **Következtetés.** (1) Bináris: a `Ctrl+4` vetítésben a gombok és a szünet-ág nem írják a sáv láthatóságát; a 12.3 mérésében látott szünetbeli sáv forrása a qshow kódjában nincs. (2) Bináris: a Picasa sáv-elrejtése az egérmozgás sebességén (`0,95`-ös lecsengés, `0,5`-ös küszöb) és a sáv fölötti tartózkodáson múlik; a szerkesztői vetítésben a mutató-kapcsolóval együtt váltó `[+0x3330]` jelző nullánál elrejti. (3) Nem igazolt: hogy a `Ctrl+4` vetítés sávja ugyanezt az időzítőt használja. A PicasaPy `SlideshowView.qml`-je változatlan marad.
 
+⛔ **HELYESBÍTVE a 38.2.310-ben (#6930):** az (1) pont második fele megdőlt: a 12.3 szünetbeli sávjának forrása a qshow kódjában a `0x00802c20` -> `0x009833a0` hostcsere (a OneUpUI aktív gyerek lesz). A (2) és (3) pont a szerkesztői vetítés időzítőjére (`SlideShowHideTimer`) vonatkozik, ez változatlan.
+
 **Nyitott, a következő felvehető irány.** A OneUp UI (`0x00802c60` konstruktor, `oneup/stripback`) rétegének láthatóságát író kód: a `0x00802c60` objektumának virtuális táblája és az `oneup/stripback` elem rejtése-mutatása (`0x009c2fc0` névkeresés után a láthatóság-hívás). A videó `/`, `,`, `.` billentyűje: a teljes `.text`-ben egyetlen függvény hasonlít mindhárom karakterkódra (`0x2c`, `0x2e`, `0x2f`: `0x009c3d50`, szövegbeviteli elemző, a `0x80` alatti karakterekre), a VK-kódokra (`0xbc`, `0xbe`, `0xbf`) egyik függvény sem hasonlít egynél többre; a fogadó tehát nem közvetlen összehasonlítással, hanem a keymap `srckey`/`dstkey` átképezésén (2.1) vagy táblán át kap parancsot.
 
 ### 12.8 A `Ctrl+4` vetítés sávjának elrejtése: a `SlideshowBaseHandler` (2026-11-05)
@@ -2496,6 +2504,8 @@ A `0x009e3a60` az áttűnés kezdetét a mostani időre, a végét `most + argum
 
 **Forrásellenőrzés.** A `SlideshowControls.qml` a fenti időzítést, küszöböt és áttűnéseket tartalmazza; a `savLebeges` a sáv fölötti tartózkodást kezeli. Ez forrás-összevetés, nem új futáspróba.
 
+⛔ **HELYESBÍTVE a 38.2.310-ben (#6930):** a „(2) a 12.3 szünetbeli sávja ezért nem a szünet hatása” következtetés megdőlt: a felvételen a mutató mozdulatlan és a sávon kívül áll, a sáv mégis a szünet kezdetétől a folytatásig látszik (124 kocka), mert a szünet a OneUpUI-t (és vele a sávot) teszi a vetítőablak aktív gyerekévé. Az egérmozgás-szabály (`0x005c4a10`) leírása ettől változatlan, de a szünetben miért nem rejt, az nyitott (38.2.310).
+
 **Kizárt irány: a gyorsbillentyű-tábla (accelerator).** A `CreateAcceleratorTableA` egyetlen hívója a `0x00923110` (Ghidra: `referencia/ghidra/2026-11-05-gyorsbill-accel-6531.txt`); ez egy beágyazott OLE-ablak keretadatát adja vissza, és üres, egyetlen nulla bejegyzésű táblát hoz létre. A `SHORTCUTS.XML` 42-44. sora `srckey="/"`, `","`, `"."` és üres `dstkey`, tehát a billentyűtérkép ezeknél nem képez át. A videó három billentyűjének útja ezen az ágon sem vezet a fogadóhoz.
 
 ### 12.9 A OneUp `stripback` és a videó írásjel-billentyűi (2026-11-06)
@@ -2520,6 +2530,8 @@ A `0x005c4a10` leletének bizalmi foka **közvetlen disassembly-vel megerősíte
 - Láthatóságváltáskor a `0x009e3a60` áttűnési út fut. A paraméterek `0,25` másodperc megjelenéshez (`0x00c7c608`) és `1,2` másodperc eltűnéshez (`0x00c7dd44`).
 
 A kezelő nem olvassa a vetítés `[this+0x3bb]` szünetjelzőjét, és nem hívja a `0x0097e510` `ShowCursor`-burkolót. A sáv állapotát az egér aktivitása és a sáv fölötti pozíció kapcsolja, nem a szünetjelző vagy a kurzor láthatósági állapota. A §12.3 felvételén a szünettel együtt megjelent sávot ezért nem lehet a szünet közvetlen hatásának tekinteni; a kurzor megjelenése mellett esetleges mozgást vagy sáv fölötti tartózkodást a felvétel nem rögzített.
+
+⛔ **HELYESBÍTVE a 38.2.310-ben (#6930):** a „nem lehet a szünet közvetlen hatásának tekinteni” megállapítás megdőlt, lásd a 12.8 helyesbítését. A kezelő valóban nem olvassa a szünetjelzőt, de a szünet nem a kezelőn át, hanem a hostcserével jeleníti meg a sávot.
 
 **PicasaPy összevetése.** A `SlideshowControls.qml` jelenlegi forrásában a `hideTimer.interval` `1500`, a mozgásküszöb `dx * dx + dy * dy > 2500`, a vonatkoztatási pont `500` ms után újraindul, az áttűnés `250`/`1200` ms, a rejtett végérték pedig `1/256`. Ezek a `0x005c4a10` bináris szabályával egyeznek. Ez statikus forrás-összevetés, nem új valódi billentyű- vagy futáspróba. A §12.8 korábbi PicasaPy-eltérés táblája elavult volt; a vezérlősávhoz ezen a ponton nem indokolt termékváltoztatást javasolni.
 
