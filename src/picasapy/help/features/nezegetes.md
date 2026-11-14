@@ -402,22 +402,28 @@ dátuma** szerint követik egymást; ha két kártya ugyanazon a napon
 kezdődik, a korábbi felvételi időpontú kerül előre. Ha egy mappában vagy albumban egyetlen
 képnek sincs felvételi dátuma, a kártyája dátum nélkül, a sor **végére**
 kerül. Az üres albumok nem kapnak kártyát, és a rejtett képek sem
-jelennek meg.
+jelennek meg. A **Legutóbb frissítve** album is kártyát kap, ha van
+benne látható kép.
 
 Az Időrend mindig az **első** kártyánál nyílik meg.
 
 - A **→** és **←** billentyűvel, vagy a sáv nyílgombjaival a következő,
-  illetve az előző kártyára lépsz. Az egér görgőjével is lapozhatsz, és a
+  illetve az előző kártyára lépsz. A **↓** ugyanúgy előre, a **↑**
+  ugyanúgy vissza léptet. Az egér görgőjével is lapozhatsz, és a
   kártyasort egérrel megfogva oldalra is húzhatod.
 - Az alsó **csúszkán** húzva nagyobbat ugorhatsz az időben; két oldalán
-  a könyvtár első és utolsó dátuma áll.
+  a könyvtár első és utolsó dátuma áll. Húzás közben a jobb felső
+  felirat már azt a mappát vagy albumot mutatja, ahová érkezni fogsz;
+  amikor elengeded, a kártyasor néhány másodperc alatt odaúszik.
 - A **Szóköz** vagy a lejátszás gomb az éppen látott mappa vagy album
   **diavetítését** indítja.
 - Az **Esc** vagy a sáv bezáró gombja kilép az Időrendből.
 
 Akár kilépsz, akár a diavetítésből térsz vissza, a könyvtárban az a
 mappa vagy album lesz megnyitva, amelynek a kártyáját utoljára láttad,
-és az első képe lesz kijelölve.
+és az első képe lesz kijelölve. Egy kivétel van: ha a **Legutóbb
+frissítve** kártyánál lépsz ki, a könyvtár azt mutatja, amit az Időrend
+megnyitása előtt.
 
 ## Megjelenítési mód
 

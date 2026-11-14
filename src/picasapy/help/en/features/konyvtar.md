@@ -140,7 +140,7 @@ An album does not move files; it is just a collection of pictures. The same pict
 
 **Starred photos** is a permanent album that shows every picture marked with a star.
 
-Above it is the special **Recently Updated** album, with the number of pictures in parentheses after its name. It collects pictures whose files changed in the last seven days, up to 250; the most recently added picture comes first. You do not build this album yourself and cannot delete it: in its context menu, **Delete Album** is disabled, as is **Upload to Google Photos...**. The context menu's **Select All Pictures**, **Clear Selection**, and **Invert Selection** commands change the selection in the grid, and **Export as HTML Page...** opens the web page export.
+Above it is the special **Recently Updated** album, with the number of pictures in parentheses after its name. It collects pictures whose date falls within the last seven days, up to 250; the most recently added picture comes first. The date is the one you set by hand; without it, the capture date recorded by the camera; and only if neither exists, the time the file was last modified. When the album is empty, its row is not shown in the pane; it appears as soon as it has pictures. You do not build this album yourself and cannot delete it: in its context menu, **Delete Album** is disabled, as is **Upload to Google Photos...**. The context menu's **Select All Pictures**, **Clear Selection**, and **Invert Selection** commands change the selection in the grid, and **Export as HTML Page...** opens the web page export.
 
 ### Changing an album's name and details
 
@@ -170,7 +170,8 @@ When viewing an album or People album, the program remembers the folder you view
 
 Collections group folders under one name. Click a collection header in the pane to expand or collapse it.
 
-- Choose **New Collection...** from a folder's context menu, in the **Move to Collection** submenu.
+- The **Move to Collection** submenu in a folder's context menu offers the six built-in collections (**Exported Pictures**, **Folders**, **Hidden Folders**, **Other Stuff**, **Projects**, **Web Albums**) and your own collections. The folder's current collection is checked and greyed out. Choosing **Hidden Folders** hides the folder (see below).
+- Choose **New Collection...** from the same submenu.
 - Right-click a collection header to rename or remove it. Removing a collection does not affect your folders.
 - The same menu has **Add/Change a password...** to lock the collection with a password (see below).
 

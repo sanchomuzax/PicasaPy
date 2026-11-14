@@ -4,6 +4,35 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-14
+
+**Időrend**
+
+- A **Legutóbb frissítve** album is kártyát kap. A **↑** és **↓**
+  billentyű is léptet, a csúszka húzása közben a felirat már a
+  célkártyát mutatja, és a **Legutóbb frissítve** kártyánál kilépve a
+  könyvtár a korábbi nézetnél marad. Lásd [Nézegetés](features/nezegetes.md).
+
+**Könyvtár**
+
+- A **Legutóbb frissítve** album a kép dátuma szerint válogat (kézi
+  dátum, felvételi dátum, ezek híján a fájl ideje), és üresen nem
+  látszik a hasábon.
+- A mappa **Áthelyezés gyűjteménybe** almenüje a hat beépített
+  gyűjteményt is felkínálja, a mostanit pipával jelölve. Lásd
+  [A könyvtár](features/konyvtar.md).
+
+**Nyomtatás, mozgófilm, Ajándék CD**
+
+- A nyomtatás a főablakon belül, a könyvtár helyén nyílik meg; a
+  **Bezárás**, az **Esc** vagy a nyomtatás vége visszavisz a
+  könyvtárba. Lásd [Nyomtatás](features/nyomtatas.md).
+- A mappafejléc filmgombja legalább két kijelölt képnél csak a
+  kijelöltekből indít filmet. Lásd [Mozgófilm](features/mozgofilm.md).
+- Az **Ajándék CD** **Diavetítéssel együtt** jelölője dönti el, hogy a
+  nem-JPEG képek JPEG-ként vagy eredeti formátumban kerülnek a lemezre,
+  és a program megjegyzi az állását. Lásd [Ajándék CD](features/ajandek-cd.md).
+
 ## 2026-11-13
 
 **Feltöltés a Google Fotókba**

@@ -42,8 +42,10 @@ panel, but the Photo Tray contents are kept.
   The field prevents longer names. When the panel opens, it contains the
   open folder's name; you can change it. If you leave it empty, the file
   name is also used as the disc name.
-- **Include Slideshow** appears selected. It does not yet affect what
-  goes on the disc.
+- **Include Slideshow** is selected by default, and the program
+  remembers its setting. When selected, non-JPEG pictures are also
+  written to the disc as JPEGs; when cleared, they keep their original
+  format.
 
 On the right, **Burn Disc** starts the operation. **Cancel** returns to the
 library, like Add More...; neither action clears the Photo Tray.
@@ -76,7 +78,8 @@ be created.
 - All photos are placed in one folder named `Pictures`.
 - Photos are saved as JPEGs with your edits applied. Cropping, rotation,
   and effects appear as they do in the grid. Other image formats are
-  converted to JPEG.
+  converted to JPEG or kept in their original format, depending on
+  **Include Slideshow**.
 - Movies are copied without modification.
 
 The disc does not contain:
