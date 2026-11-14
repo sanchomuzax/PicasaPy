@@ -14,14 +14,17 @@ from __future__ import annotations
 from datetime import date, datetime
 from pathlib import Path
 
-from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
+from PySide6.QtCore import Property, QCoreApplication, QLocale, QObject, Signal, Slot
 
 from picasapy.index import (
     PhotoRecord,
+    AlbumRecord,
+    album_photos,
     albums_in_index,
     all_photos,
     open_index,
 )
+from picasapy.ini import RECENT_ALBUM_TOKEN
 
 from .models import PhotoGridModel, _has_edits, _thumb_url
 from ..timeline_motion import (
@@ -231,12 +234,30 @@ class TimelineController(QObject):
                 "ORDER BY pa.token, (pa.place IS NULL), pa.place, f.path, p.name"
             ):
                 photo = visible_by_id.get(row["photo_id"])
-                album_photos = photos_by_album.get(row["token"])
-                if photo is not None and album_photos is not None:
-                    album_photos.append(photo)
+                album_photo_list = photos_by_album.get(row["token"])
+                if photo is not None and album_photo_list is not None:
+                    album_photo_list.append(photo)
             album_records = tuple(
                 (album, tuple(photos_by_album[album.token])) for album in albums
             )
+            # a rejtett képek itt sem látszanak, mint a többi kártyán
+            recent_photos = tuple(
+                p for p in album_photos(conn, RECENT_ALBUM_TOKEN) if p.id in visible_by_id
+            )
+            if recent_photos:
+                recent_album = AlbumRecord(
+                    token=RECENT_ALBUM_TOKEN,
+                    name=QCoreApplication.translate(
+                        "AlbumsSection", "Recently Updated"
+                    ),
+                    date=None,
+                    photo_count=len(recent_photos),
+                )
+                album_records = tuple(
+                    (album, photos)
+                    for album, photos in album_records
+                    if album.token != RECENT_ALBUM_TOKEN
+                ) + ((recent_album, recent_photos),)
         # a bélyegkép-provider regisztere a TELJES könyvtárral bővül -
         # ez szuperhalmaza bármely szűkebb (mappa/keresés) nézetnek, tehát
         # a főrács regisztrációját sosem szűkíti (nem veszít kulcsot)

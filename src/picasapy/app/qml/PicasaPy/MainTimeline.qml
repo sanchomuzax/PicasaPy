@@ -88,7 +88,8 @@ TimelineView {
 
     function closeTimeline() {
         var collection = timeline.collectionAt(timeline.currentIndex)
-        if (collection)
+        // A virtuális friss album a Picasában nem váltja át a főnézetet.
+        if (collection && collection.albumToken !== "]updated")
             timeline.selectTimelineCollection(collection)
         hostWindow.timelineOpen = false
     }

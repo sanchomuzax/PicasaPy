@@ -4,6 +4,7 @@
 import pytest
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
 from PySide6.QtTest import QTest
+from picasapy.ini import RECENT_ALBUM_TOKEN
 from tests.support.varakozas import var_feltetelre
 
 
@@ -85,10 +86,18 @@ class TestTimelineCollections:
             "timelineController"
         )
         collections = timeline_controller.collections
-        assert len(collections) == 1
-        assert collections[0]["count"] == 2
-        assert len(collections[0]["photos"]) == 2
-        for photo in collections[0]["photos"]:
+        assert len(collections) == 2
+        folder_card = next(card for card in collections if card["kind"] == "folder")
+        recent_card = next(
+            card
+            for card in collections
+            if card["albumToken"] == RECENT_ALBUM_TOKEN
+        )
+        assert folder_card["count"] == 2
+        assert len(folder_card["photos"]) == 2
+        assert recent_card["name"] == "Recently Updated"
+        assert recent_card["count"] == 2
+        for photo in folder_card["photos"]:
             assert photo["thumbUrl"].startswith("image://thumbs/")
             assert photo["folderPath"]
             assert isinstance(photo["id"], int)
@@ -116,8 +125,13 @@ class TestTimelineCollections:
             "timelineController"
         )
         collections = timeline_controller.collections
-        assert len(collections) == 1
-        assert collections[0]["count"] == 2
-        assert len(collections[0]["photos"]) == 2
-        assert collections[0]["folderPath"]
-        assert collections[0]["sliderPosition"] == 0.0
+        folder_cards = [card for card in collections if card["kind"] == "folder"]
+        assert len(collections) == 2
+        assert len(folder_cards) == 1
+        assert folder_cards[0]["count"] == 2
+        assert len(folder_cards[0]["photos"]) == 2
+        assert folder_cards[0]["folderPath"]
+        assert folder_cards[0]["sliderPosition"] == 0.0
+        assert any(
+            card["albumToken"] == RECENT_ALBUM_TOKEN for card in collections
+        )
