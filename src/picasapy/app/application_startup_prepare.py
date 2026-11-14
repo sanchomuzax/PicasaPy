@@ -36,6 +36,7 @@ from .application_platform import (
     _window_icon_path,
 )
 from .application_services import _install_translator
+from .kilepesi_hatarido import figyeld_a_kilepest
 from .error_log import error_log_path, install_error_log, rotate_if_large
 from .platform_check import hianyzo_wayland_bovitmeny
 from .platform_storage import StorageAlreadyRunning, StorageMigrationError
@@ -110,6 +111,8 @@ def _startup_step_log_and_qt_setup(state):
 
     state.early_error_log = early_error_log
     state.app = app
+    # #6945: az `aboutToQuit` ELSŐ kezelője, a vezérlők regisztrálása előtt
+    figyeld_a_kilepest(app)
 
 def _startup_step_prepare_storage(state, bootstrap_storage):
     progress_log = state.progress_log

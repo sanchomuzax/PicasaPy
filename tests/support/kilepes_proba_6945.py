@@ -86,8 +86,7 @@ def _kornyezet(profil: Path) -> dict[str, str]:
                 "XDG_RUNTIME_DIR": str(profil / "run"),
             }
         )
-        (profil / "run").mkdir(parents=True, exist_ok=True)
-        (profil / "run").chmod(0o700)
+        (profil / "run").mkdir(mode=0o700, parents=True, exist_ok=True)
     return env
 
 

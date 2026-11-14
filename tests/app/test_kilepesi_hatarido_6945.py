@@ -205,12 +205,18 @@ class TestABekotes:
         qml_forras = Path(kilepesi_hatarido.__file__).with_name(
             "application_startup_qml.py"
         ).read_text(encoding="utf-8")
+        elokeszites = Path(kilepesi_hatarido.__file__).with_name(
+            "application_startup_prepare.py"
+        ).read_text(encoding="utf-8")
         beallitas = forras.index("_startup_step_log_and_qt_setup(state)")
-        orszem = forras.index("figyeld_a_kilepest(state.app)")
         regisztracio = forras.index("_startup_step_register_qml_context(state)")
         exec_hivas = forras.index("exit_code = app.exec()")
+        # az őrt a Qt-beállító lépés köti be, rögtön az alkalmazás létrejötte után
+        app_kesz = elokeszites.index("state.app = app")
+        orszem = elokeszites.index("figyeld_a_kilepest(app)")
 
-        assert beallitas < orszem < regisztracio < exec_hivas
+        assert beallitas < regisztracio < exec_hivas
+        assert app_kesz < orszem
         assert "aboutToQuit.connect" in qml_forras
 
 
