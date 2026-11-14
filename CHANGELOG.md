@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.112] - 2026-11-14
+
+- Az Időrend az EXIF nélküli képekhez a rögzített fájlidőt használja, a Recently Updated dátumát megnyitáskor, az albumét pedig első tagságkor rögzíti (#6914).
+
 ## [1.0.111] - 2026-11-14
 
 - Az Időrenden a Space szüneteltetett vetítést nyit, egy mappa vetítéséből Escape-pel kilépve csak a mappa marad kijelölve, a Ctrl+Space pedig hatástalan (#6909).
