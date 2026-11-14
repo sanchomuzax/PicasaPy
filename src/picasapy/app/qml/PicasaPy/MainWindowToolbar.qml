@@ -13,9 +13,11 @@ MainToolbar {
     property bool activityWorking: false
     property bool activityCancellable: false
     signal activityCancelRequested()
-    versionHidden: activityBadge.visible
-    // #6474: a keresőmező a jelző teljes szélessége előtt ér véget (+ 5 px szél és 3 px rés)
-    activityReserve: activityBadge.visible ? Math.max(47, activityBadge.width + 8) : 47
+    // #6946: a verziócímke háttérmunka közben is látszik az activityBadge mellett.
+    versionHidden: false
+    activityBadgeReserve: activityBadge.visible ? (activityBadge.width + 5) : 0
+    // #6474 / #6946: a keresőmező a jelző és a verziócímke előtt ér véget
+    activityReserve: activityBadge.visible ? (activityBadge.width + 5 + 47) : 47
 
     // #6405: a háttérmunka-jelző a keresőmezőtől jobbra, vele egy sorban, az
     // eszközsáv jobb szélén (az eredeti képernyőkép szerint, ld. ActivityBadge.qml).
