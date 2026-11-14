@@ -20,7 +20,7 @@ QtObject {
         //: vált. A Dissolve a #6920 görbét, a színfátyol a korábbi átmenetet tartja.
         ParallelAnimation {
             NumberAnimation {
-                target: slideshow.transitionKind === "dissolve"
+                target: slideshow._atmenetTipus === "dissolve"
                         ? null : imageLayer.previousImage
                 property: "opacity"
                 to: slideshow._kilepoKepMozog() ? 1 : 0
@@ -37,18 +37,18 @@ QtObject {
                 duration: slideshow.transitionMs
             }
             NumberAnimation {
-                target: slideshow.transitionKind === "dissolve"
+                target: slideshow._atmenetTipus === "dissolve"
                         ? null : imageLayer.currentImage
                 property: "opacity"; to: 1
                 duration: slideshow.transitionKind === "timelapse"
                           ? slideshow.transitionMs * 0.35 : slideshow.transitionMs
             }
             NumberAnimation {
-                target: slideshow.transitionKind === "dissolve" ? slideshow : null
+                target: slideshow._atmenetTipus === "dissolve" ? slideshow : null
                 property: "dissolveProgress"
                 from: 0
                 to: 1
-                duration: slideshow.transitionKind === "dissolve"
+                duration: slideshow._atmenetTipus === "dissolve"
                           ? slideshow.dissolveTransitionMs : 0
                 easing.type: Easing.Linear
             }
@@ -61,30 +61,30 @@ QtObject {
                 duration: slideshow.transitionMs
             }
             NumberAnimation {
-                target: slideshow.transitionKind === "kenburns"
-                        || slideshow.transitionKind === "kenburnsaoi" ? null : imageLayer.currentImage
+                target: slideshow._atmenetTipus === "kenburns"
+                        || slideshow._atmenetTipus === "kenburnsaoi" ? null : imageLayer.currentImage
                 property: "scale"; to: 1
                 duration: slideshow.transitionKind === "timelapse"
                           ? slideshow.transitionMs * 0.35
-                          : (slideshow.transitionKind === "kenburns"
-                             || slideshow.transitionKind === "kenburnsaoi" ? 1
+                          : (slideshow._atmenetTipus === "kenburns"
+                             || slideshow._atmenetTipus === "kenburnsaoi" ? 1
                                                                         : slideshow.transitionMs)
-                easing.type: slideshow.transitionKind === "timelapse"
+                easing.type: slideshow._atmenetTipus === "timelapse"
                              ? Easing.OutExpo : Easing.OutCubic
             }
             NumberAnimation {
                 target: imageLayer.veil; property: "opacity"
-                to: slideshow.transitionKind === "dissolveblack"
-                        || slideshow.transitionKind === "dissolvewhite" ? 1 : 0
-                duration: slideshow.transitionKind === "dissolveblack"
-                          || slideshow.transitionKind === "dissolvewhite"
+                to: slideshow._atmenetTipus === "dissolveblack"
+                        || slideshow._atmenetTipus === "dissolvewhite" ? 1 : 0
+                duration: slideshow._atmenetTipus === "dissolveblack"
+                          || slideshow._atmenetTipus === "dissolvewhite"
                           ? slideshow.transitionMs / 2 : 1
             }
         }
         NumberAnimation {
             target: imageLayer.veil; property: "opacity"; to: 0
-            duration: slideshow.transitionKind === "dissolveblack"
-                      || slideshow.transitionKind === "dissolvewhite"
+            duration: slideshow._atmenetTipus === "dissolveblack"
+                      || slideshow._atmenetTipus === "dissolvewhite"
                       ? slideshow.transitionMs / 2 : 1
         }
         ScriptAction { script: slideshow._atmenetVege() }

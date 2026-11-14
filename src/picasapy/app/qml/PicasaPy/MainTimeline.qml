@@ -121,6 +121,7 @@ TimelineView {
         hostWindow.timelineOpen = false
         hostWindow.timelineSlideshowModel = collectionModel
         hostWindow.timelineSlideshowActive = true
+        hostWindow.ensureSlideshow()._timelineCollectionName = collection.name
         hostWindow.visibilityBeforeSlideshow = hostWindow.visibility
         hostWindow.visibility = Window.FullScreen
         hostWindow.startSlideshow(0, true)

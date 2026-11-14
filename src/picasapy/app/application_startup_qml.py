@@ -13,6 +13,7 @@ from .color_palette import ColorPaletteProvider
 from .external_links import EXTERNAL_LINKS
 from .option_settings import initialize_option_settings
 from .notifier_screen_geometry import NotifierScreenGeometry
+from .slideshow_label_card_provider import SlideshowLabelCardProvider
 from .timeline_background import TimelineBackgroundProvider
 
 
@@ -118,6 +119,9 @@ def _startup_step_create_qml_engine(state):
         engine,
         display_photo_provider.PROVIDER_NAME,
         display_photo_provider.DisplayPhotoProvider(),
+    )
+    _register_image_provider(
+        engine, "slideshowlabelcard", SlideshowLabelCardProvider()
     )
     _register_image_provider(engine, "effectthumb", effect_thumb_provider)
     # #920: élő kollázs-előnézet. A szolgáltatót a vezérlő birtokolja
