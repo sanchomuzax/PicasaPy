@@ -4421,8 +4421,79 @@ Csak a binárisból igazolt eltérések; kódot nem módosítottam. A helyek az 
 | Állítás | Érték | Forrás |
 |---|---|---|
 | A második Space után a fotóváltások időköze | 45-46 kocka = 3,0-3,07 s (a váltások kezdete: kb. 493, 539, 585, 630. kocka) | mérés: képkockánkénti eltérés a felirat-területen, két független kiértékelés |
-| A szünetelő nézetből a lejátszásba lépés | 24 kockás (1,6 s) felúszás a 447-470. kockán | mérés (két kiértékelés egyezik) |
-| A fotók közti átmenet | áttűnés, az 5-95% közötti szakasz 11-12 kocka (kb. 0,75-0,8 s), a teljes áttűnés kb. 14-15 kocka (kb. 1,0 s) | mérés: lineáris keverési arány illesztése a 540-550., 585-596., 631-642. kockán |
+| A szünetelő nézetből a lejátszásba lépés | 24 képkockaminta a 447-470. kockán; a két végpont között 23 intervallum = 1,5333 s. A teljes animáció kezdete NINCS MEG, mert a 447. kocka már részben felfedett. | mérés; részletek és a képprojekció korlátja: §38.2.270 |
+| A fotók közti átmenet | áttűnés; az 5-95% közötti szakasz 11-12 kocka (kb. 0,75-0,8 s). A korábbi 14-15 kockás „teljes” ablak valójában a görbe csaknem kész szakasza: a #6916 újraillesztésekor 1,0 s-nál még 0,964-0,969 alfa mérhető, a teljes alfa-telítés 1,93-2,00 s-nál áll be. Részletesen: §38.2.270. | mérés: a korábbi 540-550., 585-596., 631-642. kockák és a #6916 négy teljes, 15 fps-es alfa-idősora |
 | A harmadik Space megállít | a `kepernyo__17.png` és a `kepernyo__18.png` (2 s különbség) pixelre azonos | mérés |
 
-**Összevetés a PicasaPy-val:** a 3 s-os időköz egyezik (`SlideshowTiming`, alapérték 3). Az áttűnés hossza **eltér**: nálunk `slideshowTransitionMs`, alapérték 700 ms, legfeljebb 500 ms-ra szorítva (`controller_slideshow_mixin.py`), az eredetiben kb. 1,0 s. Az eredeti átmenetidő-állandójának bináris címe még **NINCS MEG**; feltárása: #6916, a megvalósítás csak utána.
+**Összevetés a PicasaPy-val:** a 3 s-os időköz egyezik (`SlideshowTiming`, alapérték 3). A §38.2.270 bináris és videós mérése alapján az eredeti `SimpleSlideshow=1` ágában a teljes áttűnés T/1,5 ideig tart: T=3 s-nál 2 s, miközben 1 s-nál már 0,969 a fedési alfa. Nálunk a `slideshowTransitionMs` 700 ms-os alapértéke legfeljebb 500 ms-ra szorítva (`controller_slideshow_mixin.py`), ezért az eredeti görbe és telítési idő eltér.
+
+### 38.2.270 A qshow fotóáttűnésének időalapja és a lejátszásindítási felúszás (#6916, 2026-11-14)
+
+**Eredmény.** A fotók közti áttűnés nem 1,0 s-nál telítődik: az eredeti `SimpleSlideshow=1` ág alfa-kódja T=3 s beállításnál 2,0 s-nál éri el a teljes `256/256` értéket. Egy másodpercnél már `248/256 = 0,96875`, ezért a korábbi képkockás mérés teljesnek látta a halvány, 3,1%-os maradékot. A bináris képletet és a videó négy váltását két független úton ellenőriztem. A lejátszásindítási felúszásnál az első látható kocka már részben felfedett, így a teljes animáció ideje és bináris útja nyitva marad.
+
+#### Bináris út A - fotók közti áttűnés
+
+A qshow konstruktor `0x007fa7f0` a `Preferences\SlideshowEffectTime` beállítást a `+0x760` mezőbe olvassa; alapértéke 3 (`0x007facd3`, `0x007facdb`-`0x007facf2`). A független beállítás-regisztráló `0x005643e0` ugyanezt a kulcsot és 3-as alapértéket adja meg (`0x00564a24`-`0x00564a49`). A `SimpleSlideshow` alapértéke 1 (`0x00800297`-`0x008002be`).
+
+A `0x008001c0` `+0x520` QPC-bélyegtől számolt eltelt időt osztja T-vel (`0x00800266`-`0x00800295`), majd az egyszerű ágban 1,5-tel skálázza és 0-1 közé szorítja (`0x008002f5`-`0x00800340`; `0x00d34128 = 1,5`). A görbe bemenete `y=8x` (`0x00c7ea10 = 8`):
+
+```text
+x = clamp(1,5 · elapsed / T, 0, 1)
+y = 8 · x
+a = exp(-1)
+g(y) = y - 1 + exp(-y)                          , y < 1
+       a + (1 - a) · (1 - exp(-(y - 1)))         , y ≥ 1
+K = 1 / g(8)
+alpha256 = min(256, trunc(256 · K · g(y)))
+alpha = alpha256 / 256
+```
+
+A görbe és a 256-os alfa-kód a `0x00800340`-`0x00800460` utasítássorban látszik; a csonkolást az x87 vezérlőszó `0x00800414`-`0x0080042c` állítja be, a 256-os telítés `0x00800434`-`0x00800460`. A normalizálást a `0x009e5ac0` állítja elő `exp(-1)` és `exp(-7)` alapján: a kiolvasott float-értékekből `g(8)=0,9994235635`, `K=1,000576768990`. Az exponenciális út a `0x0040eac0` wrapperen át fut; az argumentum és eredmény binary32 tárolási pontjait figyelembe vettem.
+
+T=3 s esetén a kért 1/15 s-os szimuláció (n=0…30, t=n/15 s) alfa-kódjai. Az alfa minden sorban a kód osztva 256-tal; n≥30 esetén 256-on marad:
+
+| n | alpha256, n=0…10 | n | alpha256, n=11…20 | n | alpha256, n=21…30 |
+|---:|---|---:|---|---:|---|
+| 0-10 | 0, 8, 30, 63, 104, 140, 167, 188, 204, 216, 225 | 11-20 | 232, 238, 242, 245, 248, 249, 251, 252, 253, 254 | 21-30 | 254, 254, 255, 255, 255, 255, 255, 255, 255, 256 |
+
+A számítás a `0x008001c0` utasítási sorrendjét követő Python-modell: a dwordba mentett köztes értékek binary32-re kerekülnek, a végeredmény pedig `trunc(256p)` és 256-nál telít. Az `exp` helyén a Python `math.exp` állt, binary32 kerekítéssel. Kontrollként a rendszer `libc expf` hívásával mind a 31 alfa-kód azonos lett; az exponenciális kimenetek ±2 ULP változtatása sem módosított egyetlen alfa-kódot sem. A modell így a 15 fps-es képernyőmérés pontosságánál jóval finomabb kvantálást ad.
+
+Az `elapsed/T` kifejezés miatt az időtartam beállításfüggő. `SimpleSlideshow=1` esetén a kód teljes α=1 pontja `T/1,5`; T=3 s-nál 2 s. A `SimpleSlideshow=0` ágban a nyers `elapsed/T` progresszió 1-nél telítődik (`0x008002e0`-`0x00800300`), tehát T=3 s esetén 3 s.
+
+#### Független út B - a videó alfa-idősora
+
+A mérés bemenete `.meres/video__04.mp4` (job-681): 1280×1024, 15 kép/mp, 675 kocka. A négy váltásnál a stabil előző és következő képek három-három ROI-mintájából számoltam referenciát (`x=360..789`, `y=460..544`); minden köztes képkockán a `F=A+alpha·(B-A)` modell legkisebb négyzetes alfa-együtthatóját mértem. A referencia alfaszintje minden esetben 0, a következő stabil szintje 1.
+
+| Első változó kocka | Mért alfa 1,0 s-nál (n=15) | Bináris alfa 1,0 s-nál | Első mért teljes alfa | Első változó kockától |
+|---:|---:|---:|---:|---:|
+| 493 | 0,96500 | 0,96875 | 523 | 2,000 s |
+| 539 | 0,96562 | 0,96875 | 568 | 1,933 s |
+| 585 | 0,96891 | 0,96875 | 614 | 1,933 s |
+| 630 | 0,96378 | 0,96875 | 659 | 1,933 s |
+
+A négy váltásból háromnál a teljes alfa a bináris 2,0 s-os pontjával azonos videókockán áll be; a negyedik egy képkockával később. Ez a 15 fps-es felvétel egy képkockás időfelbontásán belüli egyezés. Az 1,0 s-os alfasor szintén egyezik: a mért 0,964-0,969 értéktartomány a bináris `248/256 = 0,96875` értékét fogja közre.
+
+Cáfoló kontrollként a korábbi, 1 s alatt lineárisan 0-ról 1-re futó átmenetértelmezést használtam ellenmodellként; ez nem azonos a `SimpleSlideshow=0` bináris ágával, amely T=3 s-nál 3 s alatt telítődik. Ugyanazokra a pixelekre illesztve a bináris görbe RMSE-je a négy váltáson 0,00295-0,02487, az 1 s-os lineáris ellenmodellé 0,10783-0,13642; mind a négy esetben az ellenmodell hibája nagyobb. A két stabil referencia alfája és a négy külön váltás megismételhetősége a cáfoló eredményt is ugyanazzal a mércével ellenőrzi. A korábbi §38.2.260 14-15 képkockás „teljes” ablaka tehát a görbe majdnem kész, 96-97%-os része, nem alfa-telítés.
+
+#### Lejátszásindítási felúszás - mérve, de forrása nyitott
+
+A felúszást külön mértem a kártya fix területén (`x=340..939`, `y=287..736`), a stabil 471-473. kockák átlagképére vetített, fekete-alapú fényerő-projekcióval. Az első megjelenő kocka (447) projekciója 0,51507, a 451. kockáé 0,72841, a 456.-é 0,93426, a 462.-é 0,98965, a 470.-é 1,00000; a kezdő kocka projekciós maradékhibája 26,61 szürkeérték, a végkockáé 0,04. A frame 447 és 470 időbélyege között 23 képkocka-intervallum, azaz 1,5333 s van; 24 képkockaminta adódik, nem 24 eltelt intervallum. A videó az első látható képkockát már részben felfedett állapotban rögzíti, ezért a teljes animáció kezdő alfaértéke és tényleges időtartama NINCS MEG.
+
+Ha a 447. kockát t=0-nak vennénk, a fotóáttűnési képlet első, 1/15 s-os alfa-kódja 8/256 = 0,03125 lenne, nem a mért 0,51507 projekció. A frame 470-hez tartozó képletérték már 255/256 = 0,99609, közel a mért végértékhez; ez önmagában nem bizonyítja, hogy ugyanaz a görbe fut, mert a kezdő órajel és az animált tulajdonság nem látható. A `0x00803110` QPC-bélyeget ír a `+0x520` mezőbe, állapotot vált (`0x00801130`), majd a gyerek jelenlétében meghívja a `0x00802be0`-t. A 57 bájtos `0x00802be0` a `+0x64` gyerek vtable `+0x28` slotját két alkalommal indirekten hívja, majd a `0x00983430` elrendező rutint hívja; időtartam-literál nem látszik benne. A korábbi Ghidra-kimenet a hívási pontot mutatja, a gyerek osztályát és a vtable-célokat nem fejti fel.
+
+**Nyitott:** `Ghidra-kör kell: 0x00802be0 - a meglévő 2026-11-05-ös kimenet csak a hívót és az időbélyeg útját mutatja; azonosítsa a +0x64 gyerek konstruktorát/RTTI-osztályát és vtable +0x28 céljait, majd döntse el, melyik propertyt és milyen órajellel animálják a lejátszásindítási felúszás alatt [blokkoló]`
+
+#### PicasaPy-eltérés és fejlesztési javaslat
+
+| Eredeti Picasa | PicasaPy jelenleg | Teendő |
+|---|---|---|
+| `SlideshowEffectTime=T`; alapérték 3 s. A `SimpleSlideshow=1` alapágban az alfa `T/1,5` idő alatt a fenti `K·g(y)` görbével telítődik (T=3 s → 2 s). | `controller_slideshow_mixin.py:81-89` a `slideshowTransitionMs` propertyhez 700 ms-ot ad alapértéknek és 500 ms-os felső korlátot alkalmaz. A `SlideshowImageLayer.qml:21-77` közvetlen átlátszóság-animációt futtat ezen az időn. A meglévő `slideshowSeconds` T-értéket olvas (`controller_slideshow_mixin.py:99-122`), de az áttűnés hossza nem abból ered. | A `slideshowTransitionMs` számolja a tényleges áttűnés hosszát a már létező `slideshowSeconds`-ből: alapágban `1000·T/1,5` ms. A `SlideshowImageLayer.qml` a két kép áttetszőségét egy lineáris idő-progresszióra kötött, bináris `K·g(8x)` függvénnyel állítsa; ne a mostani lineáris opacity-animációval. A lejátszásindítási felúszást kezelje külön, amíg a fenti Ghidra-kérdés nyitott. |
+
+**Fejlesztői jegyhez javasolt „Kész, ha”:**
+
+- T=3 s és `SimpleSlideshow=1` mellett az alfa `248/256` legyen 1,0 s-nál és `256/256` 2,0 s-nál; a teljes 1/15 s-os alfa-kódsor egyezzen a fenti táblával.
+- A `SlideshowEffectTime` változtatása a telítési időt is változtassa T/1,5 arányban; ne legyen 500 ms-os abszolút korlát.
+- A `SlideshowImageLayer.qml` az eredeti nemlineáris görbét alkalmazza a fotóáttűnésre; a szünetből lejátszásba váltó 1,533 s-os mért szakasz ne kapjon ebből automatikusan forrás-hozzárendelést.
+- A külön lejátszásindítási út csak saját, teljes időbélyeges képkockaméréssel és az animált property bináris útjának azonosításával legyen késznek jelölve.
+
+**Bizonyítottsági fok.** A fotók közti alfa-görbe és T=3 s alatti 2 s telítési pontja **megerősített**: A út a `0x008001c0` utasításai és a `0x009e5ac0` normalizálója; B út a videó négy, független pixelmérése. A lejátszásindítási felúszás kódja, teljes kezdőpontja és pontos időtartama **nyitott**; a 447-470 közötti fényerő-projekció csak a felvételen látható szakaszt írja le.
