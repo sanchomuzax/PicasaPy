@@ -5039,3 +5039,64 @@ Amikor a felhasználó megnyomja a Space billentyűt, a `FUN_00801270` eseményk
 | job-683 videómérés kontrollja | mérés (job-683) | 15 kockás (1,0 s) lineáris sor, RMSE 0,027; Space azonnali zárás |
 
 **Bizonyítottsági fok:** az 1-2. pont (1,0 s-os egyenes, a diaidőtől független) **megerősített**: a `0x00800a30` utasításai (`0x009a51b0` QPC-alapú eltelt másodperc, `min(t, 1)`, szorzás 256-tal) és a job-683 mérése (15 kockás egyenes, RMSE 0,027) két független úton egyezik; a két konstanst és a `0x009a51b0` működését a hívó külön is ellenőrizte. A 3. pont **feltételes**.
+
+### 38.2.330 A normál diavetítés egérkezelése lejátszás közben: a bal kattintás és az egérmozgás szünete (#6942, 2026-11-14)
+
+**Eredmény: statikusan feltárt, futásmérés nélkül.** A lejátszás alatti bal gombnyomás és a mozgásküszöb átlépése a binárisban ugyanazt a 0x00801130 szünet-kapcsolót hívja. A mozgásküszöb bináris értéke 60,0 a qshow belső koordinátaterében; a fizikai képpontnak megfelelő érték **NINCS MEG**. A Colab-mérés és így a futás közbeni viselkedés, a folytatás kattintással, valamint a vezérlősáv és a szünet látható időzítése nyitott.
+
+A helyi mérőadat-archívumban és a helyi fájlok között a job-685 felvételét vagy eredményét nem találtam. Colab-mérés nem áll rendelkezésre; ezért egyetlen futásviselkedési állítást sem tekintek méréssel igazoltnak.
+
+#### Bizonyíték
+
+| Állítás | Bináris cím / adat | Forrás |
+|---|---|---|
+| A ytWindow WndProc-ja a gazdaobjektum eseménykezelőjéhez irányít; az a [host+0x64] aktív gyerek +0x2c vtable-slotját hívja | WndProc 0x00983940; host handler 0x00984970; hívás 0x009851a1-0x009851b1 | bináris |
+| Normál vetítésben ([qshow+0x3b8] == 0) a WM_LBUTTONDOWN (0x201) ága meghívja a 0x00801130-at; az ág nem koordináta-függő feltétel alapján dönt | 0x007fe1d9-0x007fe1f6 → 0x00801130 | bináris |
+| Normál módban, engedélyezett egérmozgásnál a WM_MOUSEMOVE útvonal összeadja az egymást követő pontok távolságát; szigorúan 60,0 fölött a 0x00801130-at hívja | hívás 0x007fe068-0x007fe077; konstans 0x00cf4020 bájtjai 00 00 00 00 00 00 4e 40 = double 60.0 | bináris |
+| Az összeadás időkapuja legfeljebb 0,5 másodperc; hosszabb résnél az összeg nullázódik, az aktuális pont nem adódik hozzá | összehasonlítás 0x007fdfd8; konstans 0x00c7dafc bájtjai 00 00 00 3f = float 0.5 | bináris |
+| A koordináták az ablak klienskoordinátáiból a qshow téglalapjára skálázódnak; a pontos futásidejű skála és a 60,0 belső egység képpontértéke ismeretlen | 0x007fdeb3-0x007fdf4d | bináris; fizikai képpont-skála: NINCS MEG |
+| Szünetkor a host aktív gyereke OneUpUI-ra vált; a szünetbeli kattintás ezért nem a qshow 0x007fde80 kezelőjén fut. Az üres képfelület OneUpUI-találata és a kattintás folytató hatása nem dőlt el | gyerek beállítása 0x009833ba; OneUpUI handler 0x00a527b0; qshow handler 0x007fde80 | bináris; üres felület eredménye: NINCS MEG |
+
+A mozgás száma útvonalhossz: az egymást követő, kezelőig eljutó pontok lépéshosszainak összege, nem egyetlen kezdőponttól mért távolság. A szigorú > 60,0 feltétel és a 0,5 másodperces időkapu statikus bináris tény; ezekből fizikai pixelküszöb vagy felhasználói mérési eredmény nem következik.
+
+#### Két statikus leolvasási út
+
+- **A út:** az eredeti EXE célzott Capstone-diszasszemblálása a WndProc-tól a gazdaablak eseményútján, a QDrawable vtable-slotján és a 0x007fde80 kezelőn át a két 0x00801130 hívásig; a konstansokat közvetlenül a PE-adatból olvastam.
+- **B út:** a meglévő Ghidra-kimenet (2026-10-21-idorend-24.txt) a mozgás időkapuját, 60,0 fölötti összeadását és a közös kapcsolóhívásokat mutatja; az SQLite xref a 0x007fde80 → 0x00801130 kapcsolatot két hívásként tartja nyilván.
+
+A két statikus olvasat egyezik. Ezek nem helyettesítik a kért Colab-futásmérést, ezért az egész kérdés bizonyítottsági foka **feltételes**.
+
+#### Cáfoló kísérlet
+
+Ellenőriztem azt az alternatívát, hogy a lejátszás alatti kattintás csak egy kijelölt képernyőterületen vált szünetet. A 0x007fe1d9-0x007fe1f6 ágat és az eseményrekord útját nyers utasításszinten követve a 0x201 ág a normál módjelzőn kívül nem vizsgál koordinátát, és a kapcsolót közvetlenül hívja. A koordináta korábbi átszámítása önmagában nem cáfolja ezt; a döntési ág hiánya cáfolja a koordináta-függő statikus kaput. Ugyanezen diszasszemblálási mércével ellenőriztem, hogy a mozgáság hívása is a 0x00801130 címre mutat. Futásbeli cáfoló próbára nem volt Colab-mérőadat.
+
+#### PicasaPy összevetés (csak olvasott állapot)
+
+A PicasaPy SlideshowControls.qml normál módban nem fogad egérgombot (acceptedButtons: Qt.NoButton, 20. sor); az egérmozgás a vezérlősávot mutatja (32-53. sor), de nem vált szünetet. A felső slideshowAuto2Area kattintása külön váltó (59-68. sor). Ez a forráskód-összevetés önmagában nem igazolja az eredeti futásbeli viselkedését, ezért a #6942 alapján fejlesztői eltérést még nem állapítok meg.
+
+#### A jegy „Kész, ha” pontjai
+
+⚠️ A lenti pontok és a „Nyitott” lista a job-685 mérés előtt készültek; a mérést és az ítéletet lásd a szakasz végén.
+
+1. **⛔** A lejátszás alatti kattintás és a szünet alatti, üres képfelületre kattintás Colab-mérése hiányzik. A lejátszás alatti statikus címút: 0x007fe1d9 → 0x00801130; a folytatás eredménye nyitott.
+2. **⛔** A kattintás nélküli mozgás Colab-mérése hiányzik, ezért az eredeti szünetváltás és a sáv megjelenésének viszonya nem ismert. Statikusan a belső küszöb 0x00cf4020 = 60,0, és a küszöb fölötti ág a 0x00801130-at hívja; a pixel-skála **NINCS MEG**.
+3. **⛔** A statikus rész megvan: a kattintási ág (0x007fe1f1) és a mozgási ág (0x007fe077) ugyanazt a 0x00801130 kapcsolót hívja. A jegy szerinti Colab-méréssel együtt adott válasz azonban hiányzik.
+
+#### Nyitott
+
+- Colab-mérés: lejátszás alatt a vetítőfelület bal kattintása szüneteltet-e; szünetben az üres képfelület kattintása folytat-e.
+- Colab-mérés: kattintás nélküli mozgás tényleges küszöbe, a szünetváltás és a vezérlősáv megjelenésének képkocka szerinti viszonya.
+- A 60,0 qshow-koordinátaegységhez tartozó fizikai képpont-skála: **NINCS MEG**; futásidejű ablakméret és qshow-téglalap mellett kell mérni.
+
+#### Mérés: picasa-colab-jobs job-685 (a statikus olvasatot nem igazolja)
+
+`video__06.mp4`, 15 kép/mp, 1800 kocka. Lépések: kattintás a mappa lejátszás gombjára (268,149), 8 s, bal kattintás 4 px-re (272,152), 9 s, ugyanott újra, 9 s, kattintás messze (900,500), 9 s, `Escape`. A lépések kockáját a képernyőképek és a videokockák összevetése adja (átlagos eltérés 0,6-2,7 szürkeszint): az első kattintás a kb. 248. kockán (a 250. kockán a mutató 4 px-es elmozdulása látszik), a második a kb. 519.-en, a messzi kattintás a kb. 1002.-n, az `Escape` a 1256-1271. kockán.
+
+- A vetítés mindkét közeli kattintás után zavartalanul vált tovább 45-46 kockánként (269, 316, 360, ... és 546, 586, 631, ...); vezérlősáv egyik képernyőképen sem látszik. A közeli kattintás tehát ebben a futásban **nem szüneteltetett**.
+- A messzi kattintás (kb. 700 px-es mutatómozgás) után még három váltás jön (1038, 1084, 1128), utána a kép a kilépésig áll (a 1173. és 1218. kockára eső váltás elmarad). Ez nem a kattintás pillanata, ezért szünetnek nem tulajdonítható; sáv itt sem látszik.
+
+**Ítélet.** A statikus olvasat (bal kattintás és 60,0 feletti mozgás -> `0x00801130`) két független statikus úton egyezik, de az egyetlen futásmérés (Wine) nem mutat szünetet. Lehetséges ok, hogy a Wine alatti szintetikus kattintás nem `WM_LBUTTONDOWN`-ként jut a qshow ablakhoz; ezt a felvétel nem dönti el. **Következtetés:** a PicasaPy lejátszás közbeni egérkezelése nem változik; a kattintás-szünet futásbeli léte **feltételes**, és termékjegy csak futásban igazolt viselkedésre nyílik.
+
+#### Megjegyzés a 38.2.320 kódforrásához
+
+A `0x007ffc90` keverőnek két hívóhelye van (`0x00800d46`, `0x00801003`), mindkettő `[qshow+0x3b8] != 0` kapu mögött. A `[+0x3b8]`-at a `0x007fda00` írja 1-re (`[+0x2d8] != 0` és `[+0x538] != 0` esetén), amelyet a normál indító `0x008037e0` is hív (`0x008039e7`), a folytatás (`0x00803110`) pedig 0-ra állítja. A két feltételmező normál módbeli értéke nincs feltárva, ezért a 38.2.320 kódforrás-állítása (`0x00800a30` -> `0x007ffc90` a normál vetítésben) **feltételes**; a mért 1,0 s-os egyenes (job-683, job-684) és a PicasaPy #6935 megvalósítása ettől érvényes.
