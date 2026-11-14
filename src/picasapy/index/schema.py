@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 27
+SCHEMA_VERSION = 28
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -204,6 +204,31 @@ CREATE TABLE IF NOT EXISTS photo_albums (
 );
 
 CREATE INDEX IF NOT EXISTS idx_photo_albums_token ON photo_albums(token);
+"""
+
+# #6914: az albumkártya Időrend-dátuma az első nem üres tagságkor rögzül.
+# Külön táblában él, mert az `albums.date` a .picasa.ini date= mezője, és
+# definíciónkénti; a kártyadátum viszont tokenenkénti, származtatott indexadat.
+_ALBUM_TIMELINE_DATES_DDL = """
+CREATE TABLE IF NOT EXISTS album_timeline_dates (
+    token TEXT PRIMARY KEY,
+    date TEXT NOT NULL
+);
+"""
+
+_ALBUM_TIMELINE_DATES_MIGRATION = f"""
+{_ALBUM_TIMELINE_DATES_DDL}
+INSERT OR IGNORE INTO album_timeline_dates(token, date)
+SELECT pa.token,
+       MIN(COALESCE(
+           NULLIF(substr(COALESCE(p.taken_at_override, p.taken_at), 1, 19), ''),
+           strftime('%Y-%m-%dT%H:%M:%S',
+                    COALESCE(p.first_seen_mtime_ns, p.mtime_ns) / 1000000000,
+                    'unixepoch', 'localtime')
+       ))
+FROM photo_albums pa
+JOIN photos p ON p.id = pa.photo_id
+GROUP BY pa.token;
 """
 
 # #6278: a tag nélküli, PicasaPy-ban létrehozott albumot a profil-index
@@ -503,6 +528,8 @@ CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
 
 {_ALBUMS_DDL}
 
+{_ALBUM_TIMELINE_DATES_DDL}
+
 {_LOCAL_EMPTY_ALBUMS_DDL}
 
 {_FACE_DDL}
@@ -693,4 +720,8 @@ DELETE FROM folder_scan_state WHERE path IN (
     # #6278: a PicasaPy-ban létrehozott, még tag nélküli albumok tartós
     # tárhelye. A mappaszinkron nem törli, az első tagság írása vezeti ki.
     26: _LOCAL_EMPTY_ALBUMS_DDL,
+    # #6914: az albumkártyák első tagságkor megállapított dátuma. A meglévő,
+    # már taggal rendelkező albumok pillanatnyi dátumát egyszer rögzítjük;
+    # a dátum a további tagságváltozásoktól független marad.
+    27: _ALBUM_TIMELINE_DATES_MIGRATION,
 }

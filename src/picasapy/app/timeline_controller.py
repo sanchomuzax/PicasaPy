@@ -1,8 +1,8 @@
 """Teljes képernyős Időrend bemutató (#5770), Qt/QML-híd.
 
 A mappa- és albumkártyák az indexelt, látható fotókból épülnek. A kártya
-hónap/év felirata és időrendi helye az indexelt felvételi dátumot használja;
-hiányzó dátumnál nem helyettesíti fájlidővel. A qshow `A` tömbjének valódi
+hónap/év felirata és időrendi helye az indexelt felvételi dátumot, ennek
+hiányában a rögzített fájlidőt használja. A qshow `A` tömbjének valódi
 jelentése nyitott (#5401), ezért a QML `sliderPosition` értéke normalizált
 dátumtartomány, nem az eredeti tömb rekonstruálása. A teljes képkockánkénti
 mozgás és rétegrajzolás szintén nyitott; a mért görbe- és transzformációs
@@ -24,6 +24,7 @@ from picasapy.index import (
     all_photos,
     open_index,
 )
+from picasapy.index.photo_date import photo_date
 from picasapy.ini import RECENT_ALBUM_TOKEN
 
 from .models import PhotoGridModel, _has_edits, _thumb_url
@@ -67,6 +68,7 @@ class TimelineController(QObject):
         self._provider = provider
         self._sync_controller = sync_controller
         self._timeline_open = False
+        self._timeline_opened_at: datetime | None = None
         self._dirty = True
         self._collections: list[dict] = []
         self._collection_records_by_id: dict[str, tuple[PhotoRecord, ...]] = {}
@@ -84,8 +86,16 @@ class TimelineController(QObject):
         if self._timeline_open == is_open:
             return
         self._timeline_open = is_open
-        if is_open and self._dirty:
-            self._do_reload()
+        if is_open:
+            # #6914: a virtuális kártya a megnyitás idejét kapja. A felirat
+            # hónapot mutat, ezért változatlan adatnál csak hónapváltáskor kell
+            # újraépíteni; minden megnyitáskori teljes újratöltés fölösleges.
+            now = datetime.now()
+            elozo = self._timeline_opened_at
+            honap_valtott = elozo is None or (elozo.year, elozo.month) != (now.year, now.month)
+            if self._dirty or honap_valtott:
+                self._timeline_opened_at = now
+                self._do_reload()
 
     @Slot(float, result="QVariantMap")
     def bezierAt(self, t: float) -> dict:
@@ -276,16 +286,12 @@ class TimelineController(QObject):
             grouped.setdefault(record.folder_path, []).append(record)
         self._collection_records_by_id = {}
 
-        prepared = []
-        all_dates = [
+        photo_dates = [
             photo_date
             for record in records
             if (photo_date := self._exif_date(record)) is not None
         ]
-        first_date = min(all_dates) if all_dates else None
-        last_date = max(all_dates) if all_dates else None
-        first_label = self._date_label(first_date, locale)
-        last_label = self._date_label(last_date, locale)
+        prepared = []
 
         for folder_path, photos in grouped.items():
             self._append_collection(
@@ -301,6 +307,7 @@ class TimelineController(QObject):
         for album, photos in albums:
             if not photos:
                 continue
+            collection_date = self._album_card_date(album)
             self._append_collection(
                 prepared,
                 collection_id=f"album:{album.token}",
@@ -309,6 +316,7 @@ class TimelineController(QObject):
                 folder_path="",
                 album_token=album.token,
                 photos=photos,
+                collection_date=collection_date,
             )
 
         prepared.sort(
@@ -319,6 +327,16 @@ class TimelineController(QObject):
                 item["collectionId"].casefold(),
             )
         )
+        # A dátumsáv minden fotó dátumát lefedi (mappán belüli későbbi
+        # felvételeket is), és kiterjed az album/virtuális kártyák saját,
+        # külön rögzített dátumaira is.
+        range_dates = photo_dates + [
+            item["date"] for item in prepared if item["date"] is not None
+        ]
+        first_date = min(range_dates) if range_dates else None
+        last_date = max(range_dates) if range_dates else None
+        first_label = self._date_label(first_date, locale)
+        last_label = self._date_label(last_date, locale)
         first_ordinal = first_date.toordinal() if first_date else None
         date_span = (
             last_date.toordinal() - first_ordinal
@@ -374,6 +392,7 @@ class TimelineController(QObject):
         folder_path: str,
         album_token: str,
         photos: tuple[PhotoRecord, ...],
+        collection_date: datetime | None = None,
     ) -> None:
         dates = [
             photo_date
@@ -387,20 +406,33 @@ class TimelineController(QObject):
                 "name": name,
                 "folderPath": folder_path,
                 "albumToken": album_token,
-                "date": min(dates) if dates else None,
+                "date": collection_date
+                if collection_date is not None
+                else min(dates) if dates else None,
                 "records": photos,
             }
         )
 
-    @staticmethod
-    def _exif_date(record: PhotoRecord) -> datetime | None:
-        """Csak az indexelt felvételi dátumot használja; fájlidőre nem esik vissza."""
-        if not record.taken_at:
+    def _album_card_date(self, album: AlbumRecord) -> datetime | None:
+        """Az album Időrend-dátuma, az ini `date` mezőjétől külön (#6914)."""
+        if album.token == RECENT_ALBUM_TOKEN:
+            return self._timeline_opened_at or datetime.now()
+        if album.timeline_date is None:
             return None
         try:
-            # #6807: időzónás érték (pl. videó `...Z`) se keveredjen a naiv EXIF-időkkel
-            return datetime.fromisoformat(record.taken_at).replace(tzinfo=None)
+            return datetime.fromisoformat(album.timeline_date).replace(tzinfo=None)
         except ValueError:
+            return None
+
+    @staticmethod
+    def _exif_date(record: PhotoRecord) -> datetime | None:
+        """A közös indexdátumot adja, EXIF nélkül a befagyasztott fájlidővel."""
+        try:
+            # `photo_date` tartja közösen az EXIF- és befagyasztott mtime-ágat.
+            # #6807: az időzónás időt helyi falióraként hasonlítjuk a naiv
+            # EXIF-hez, ezért az aware jelölőt levesszük, az értéket nem toljuk.
+            return datetime.fromisoformat(photo_date(record)).replace(tzinfo=None)
+        except (OSError, ValueError, OverflowError):
             return None
 
     @staticmethod
