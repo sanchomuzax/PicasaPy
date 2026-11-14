@@ -907,7 +907,7 @@ A `lanc-0196` teljes láncának korábbi mérése SSIM 0.97844 és ΔE 0.759 vol
 
 ## #6585 zárókör: a `lanc-0196` mind a hat egy- és kétszűrős részhalmaza (2026-11-14)
 
-Ez a szakasz frissíti a fenti, exporthiányt rögzítő záróköröket. A Picasa-exportok megérkeztek: a feladatok sorrendje `r01`–`r06` = `job-670`–`job-675`, mindegyikben `export__k06.jpg`. A PicasaPy-oldal a `.bt/6585-r6611/reszhalmaz-0196/sajat/` korábban elkészült PNG-je.
+Ez a szakasz frissíti a fenti, exporthiányt rögzítő záróköröket. A Picasa-exportok megérkeztek: a feladatok sorrendje `r01`-`r06` = `job-670`-`job-675`, mindegyikben `export__k06.jpg`. A PicasaPy-oldal a `.bt/6585-r6611/reszhalmaz-0196/sajat/` korábban elkészült PNG-je.
 
 Az összevetést a `scripts/differencialis_lanc_osszevet.py:compare_all` és a meglévő `tools/golden/compare_render.py` mércéje adta. A PicasaPy PNG-t a saját eredeti JPEG mintavételezésével és kvantálótábláival kódolta újra. Változatlan küszöbök: `pixel_tol=1`, `frac_tol=0.002`, `ssim_min=0.98`, `de_mean_max=2.0`.
 
@@ -924,7 +924,7 @@ Mind a hat singleton/pár egyezik a meglévő küszöbök szerint. A `minimal-la
 
 ### Callbackek és a PicasaPy-lánc
 
-| Szűrő | Eredeti Picasa — bináris | PicasaPy — forrás és viselkedés |
+| Szűrő | Eredeti Picasa - bináris | PicasaPy - forrás és viselkedés |
 |---|---|---|
 | `radtint` | A callback `0x008f8730` (index: RVA/fájloffset `0x004f8730`, 214 bájt) a `0x0090b370` (731 bájt) pixelmunkást hívja; az a `0x0090aeb0` radiális súlytábláját használja. | `src/picasapy/render/chain_ops.py:313-323` → `src/picasapy/render/tinting.py:309-342`: radiális szorzó, majd `(be·factor)>>8`. Az `r04` és `r01` mérése pixelhű. |
 | `PicnikGrain` | A `0x00bce8c0` worker (RVA/fájloffset `0x007ce8c0`, 696 bájt) lokális MT-állapotot inicializál a `0x00aa28f0` magkiterjesztővel és léptet a `0x00aa2930` twisttel; a `filterdesc.xml:925` `randomSeed="1"`-et ad. | `src/picasapy/render/chain_glimmer_handlers.py:207-213` → `src/picasapy/render/glimmer_artistic.py:108-151` → `src/picasapy/render/glimmer_noise_ops.py:46-60` → `src/picasapy/render/nativ_noise.py:40-85`: rögzített magú zajréteg, `Lighten=1` esetén Screen keverés. Az `r05` pixelhű, az `r01` pár is pixelhű; a folyamat-globális véletlenállapot nem magyarázza a hármas eltérését. |
@@ -934,9 +934,9 @@ A diszasszemblálás és a mért kimenet **nem** azonosítja, hogy a három műv
 
 ### Független utak és cáfoló kísérlet
 
-**A út — közvetlen mérés:** a hat eredeti JPEG-t a megfelelő PicasaPy PNG-vel vetettem össze a meglévő JPEG-egyeztetéssel és golden küszöbökkel. Mind a hat részhalmaz egyezik; a megfelelő eredeti exporttal korábban mért háromtagú jelölt nem egyezik (SSIM 0.97844 / ΔE 0.759).
+**A út - közvetlen mérés:** a hat eredeti JPEG-t a megfelelő PicasaPy PNG-vel vetettem össze a meglévő JPEG-egyeztetéssel és golden küszöbökkel. Mind a hat részhalmaz egyezik; a megfelelő eredeti exporttal korábban mért háromtagú jelölt nem egyezik (SSIM 0.97844 / ΔE 0.759).
 
-**B út — bináris és helyi végrehajtás:** az indexelt callbackhatárok célzott diszasszemblálása a három külön műveleti utat mutatja: radiális pixelmunkás, fix magú lokális MT-zaj, majd fill/kontraszt. A PicasaPy megfelelő útjai ezekben a sorrendben állnak; a `PicnikGrain` magját és zajmezőjét a korábbi, független referenciafuttatás a PicasaPy-val bájtra egyezőnek mérte. A két út abban egyezik, hogy a hiba nem egy singleton vagy a PicnikGrain folyamat-RNG-je, hanem a három művelet együttese; a belső hibás aritmetikai lépést egyik sem jelöli ki.
+**B út - bináris és helyi végrehajtás:** az indexelt callbackhatárok célzott diszasszemblálása a három külön műveleti utat mutatja: radiális pixelmunkás, fix magú lokális MT-zaj, majd fill/kontraszt. A PicasaPy megfelelő útjai ezekben a sorrendben állnak; a `PicnikGrain` magját és zajmezőjét a korábbi, független referenciafuttatás a PicasaPy-val bájtra egyezőnek mérte. A két út abban egyezik, hogy a hiba nem egy singleton vagy a PicnikGrain folyamat-RNG-je, hanem a három művelet együttese; a belső hibás aritmetikai lépést egyik sem jelöli ki.
 
 **Bizonyítottsági fok: feltételes.** A háromtagú minimumot az eredeti Picasa-exportok és a PicasaPy-kimenetek közvetlen összevetése méri; a bináris út önállóan rögzíti a callbackek sorrendjét és a lokális zajállapotot. A belső hibás pixelművelet nincs azonosítva, ezért ennél erősebb állítás nem igazolt.
 
