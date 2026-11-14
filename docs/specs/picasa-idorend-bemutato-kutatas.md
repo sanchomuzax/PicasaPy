@@ -3781,4 +3781,171 @@ Azt a feltevést vizsgáltam, hogy a köteg lapjait nem a bélyegkép-kompozitá
 **Nyitott kérdések a témában.**
 Nincs nyitott pont a kártyaképen látható köteg elrendezésére és hívási láncára vonatkozóan. Minden vizsgált kérdés pontos bináris címmel és konstans értékkel igazolt.
 
+#### 38.2.210 A #6532 hat Ghidra-kérdésének lezárása: szupercsoport-jelző, nézetmód, üres album, azonos dátum, sordátum, rendezés utáni átalakítás (#6532, 2026-11-14)
 
+**Hatókör és módszer.** A 38.2.190 végén felsorolt hat kérdés. **A út:** a friss Ghidra-kimenet (`picasapy-agent/referencia/ghidra/2026-11-13-6845-6532-colab-decomp-2.txt`: `0x004a4710`, `0x005d9cc0`, `0x007fc7c0`, `0x00a6aa00`, `0x004a7890`, `0x0049ecd0`, `0x0055d730`, `0x00452a30`, `0x0098b550`), az előző kimenet (`...-6532-colab-decomp.txt`: `0x004b8ee0`, `0x004b29d0`) és utasításszintű olvasat (`picasa_dis.py`, capstone). **B út:** hívók és adat (az index xref-táblája; a db3 `repository.dat`, `catdata`, `albumdata` a PicasaPy `pmpimport` olvasóival), négy teljes `.text` pásztázás a `paszta.py` memóriakapujával (2 884 879 utasítás, mért csúcs-RSS 41,7 MiB: a `+0x2b28`, `+0xd8`, `+0xe0/+0xe4` operandusok; az `0xa09d` és a `0xd67678` cím; a `[x+0x48]` objektum 3. virtuális rése), és hét mérés az eredeti gépi kódon `qemu-i386` alatt (a privát repó `qemu_harness/hb.py` helyi másolata, `timeout 60`, a CRT-allokátor és az inicializáló helyettesítve). Becsült értéket nem használtam. A mérőszkriptek a munkafa `.bt/` mappájában készültek, a szakasz végén törölve.
+
+| # | Kérdés | Válasz | A út | B út | Fok |
+|---|---|---|---|---|---|
+| 1 | `0x004a4710`: a `+0x1d` jelző forrása | a **szupercsoport kibontottsága**: a `Név~Alnév` alakú kategórianév `~` előtti részéhez tartozó `super:<név>` kulcs szerepel-e a `repository.dat` térképben; szupercsoport nélküli kategóriánál mindig 1 | dekompiláció + `0x004b2e10` hívási környezet | `repository.dat` három katalógusból; az író- és kapcsolófüggvények | **erős** |
+| 2 | `0x005d9cc0`: a `+0xd8` nézetmód | 0 dátum, 1 legutóbbi változtatás, 2 név, 3 (nincs menüparancsa) kategóriarejtés nélküli lista, 4 (csak a rendszerleíró adatbázisból), 5 méret; `0xa0cf` megfordít | a hat hívóhely argumentumai | menü- és olvasóoldal, `.text`-pásztázás | **megerősített** |
+| 3 | `0x007fc7c0` / `0x00a6aa00`: az üres felhasználói album | nem kap kártyát; a kártyaépítés a hibánál **megszakad**, a hívó eldobja a hibakódot | dekompiláció + utasításszint | QEMU (`0x00a6aa00`) + hibakód-lánc | **erős** (futásidejű felvétel nincs) |
+| 4 | `0x004a7890` / `0x0049ecd0`: azonos dátumú kártyák | az összefésülés **stabil**; azonos dátumnál a `0x004a7890` sorrendje marad: kategória, típus, majd név | dekompiláció + oszlopazonosítás | QEMU: 265 rendezés + 44 névpár | **megerősített** (stabilitás), **erős** (kulcssorrend) |
+| 5 | `0x0055d730` / `0x00452a30`: sordátum forrása | **egyik sem dátumforrás** (sztring-értékadó, illetve kategória-keresés/létrehozás); a forrás nyitott | dekompiláció + hívási kép | `albumdata` dátumai | a negatív **megerősített**; a forrás **NYÍLT** |
+| 6 | `0x0098b550`: rendezés utáni átalakítás | hónap első napjára kerekítés (`COleDateTime(év, hónap, 1, 0, 0, 0)`), és a `[this+0x90]` (az "A tömb") előállítása | utasításszint | QEMU: a valódi `0x007fc4c0` 6 forgatókönyvön, a `0x0098b550` 33 bemeneten | **megerősített** |
+
+##### §1 A `+0x1d` jelző (`0x004a4710`)
+
+1. **A függvény.** `0x004a4710` (324 bájt, `ret 4`): `EAX` a `CAlbumState`, a verem első eleme a kulcs (`char*`, 0 = üres). A táblát így választja: `[+0xe4]`, ha nem nulla; különben `[+0xe0]`; különben `[[+0xc4]+0x2b28]` (`0x004a4716`-`0x004a472a`, `0x004a47a2`-`0x004a47a8`). Zárat tart (a tábla vtáblájának `+0x18`/`+0x1c` rése, vagy `EnterCriticalSection`), majd a `0x004143c0`-t hívja.
+2. **A keresés** (`0x004143c0`, 153 bájt): `EDX` a kulcs, a verem a tábla. A kulcsból `CString` lesz (`0x00985ff0`), a kivonatot a `0x00409df0` adja a tábla `+0x60` méretére, a lánc a `[tábla+0x68]` vödrökben van, az összehasonlítás a `0x006f9890` a csomópont `+4` mezőjén. Találatnál az érték (`[csomópont+8]`) nem üres sztring kell legyen: `[érték] & 0xffffff00 != 0` és `[érték+4] != 0` (`0x00414442`-`0x00414455`). Az eredmény igaz, ha van ilyen bejegyzés.
+3. **Polaritás.** A perzisztens táblánál a jelző a találat (`0x004a47fc`-`0x004a4800`: `bl = al`); a felülbíráló táblánál a **hiány** (`0x004a4771`-`0x004a4773`: `test al, al; sete bl`).
+4. **A felülbíráló táblák** (`+0xe0`, `+0xe4`) a `0x004a4c80`-nal jönnek létre (0x70 bájtos üres tábla, konstruktor `0x00414100`) és szűnnek meg; hívója a `0x00662b20` (a keresés kezelője: `Search results for "%s"`, ez írja a `+0x162` jelzőt, 38.2.190 §2) és a `0x0067be30`. A konstruktor nullázza őket (`0x004a17ac`, `0x004a17b2`). Keresésen és ezen a másik módon kívül tehát a perzisztens tábla dönt.
+5. **A perzisztens tábla a `CThumbDB+0x2b28`**: a db3 `repository.dat` tartalma. Más kulcsait is ide írják: `DBID` (`0x004199d0`), `IDPersist`, `KeywordVersion` (`0x0041c340`), `rawversion`, `colorspaceversion`, `gpsversion` (`0x0041ee10`), `frversion`, `contactsversion` (`0x00488880`).
+6. **A hívó** a `0x004b2e10` (kategóriaváltáskor futó fejlécépítő; hívási hely `0x004b2f7d`): a kategórianevet a `0x004b0880` a `~`-nél bontja (`_strchr(név, 0x7e)`, `0x004b08ba`-`0x004b08bd`): az előtag a szupercsoport, az utótag az alnév. Ha az új szupercsoport neve azonos az előzővel, a jelző marad (`0x004b2ef8`-`0x004b2f11` → `0x004b3211`). Ha nincs szupercsoport: `+0x1c = 0`, `+0x1d = 1` (`0x004b31fd`-`0x004b3201`). Egyébként a kulcs `"super:" + szupercsoport-név` (`0x004b2f2a`-`0x004b2f4c`, sztring `0x00c832d0`); keresési módban (`CAlbumState+0x162` nem nulla) `+0x1d = 1` (`0x004b2f59`-`0x004b2f62`), különben `+0x1d = 0x004a4710(kulcs)` (`0x004b2f6d`-`0x004b2f82`).
+7. **A hatás** (`0x004b3440`-`0x004b3469`): a környezetrekord `+0x00` mezője -1 (látható), ha a kategória "látszik" (a `catdata` `state` nem nulla, vagy keresés van, 38.2.190 §2) **és** `+0x1d` nem nulla; különben a kategória azonosítója. A `0x004b29d0` a sort kihagyja, ha a kategóriája egyenlő ezzel a mezővel (`*piVar3 == iVar2` → `return 0`). A `+0xd8 == 3` módban a `0x004b2e10` nem is fut (`0x004b2a2c`), tehát a rejtés nem érvényesül (§2).
+8. **Az írók** (kibontás és összecsukás): `0x004a4860` (557 bájt) a kulcsot `"1"` (`0x00c81288`) vagy üres értékre állítja a `0x004141d0`-nel (`0x004a48f3`); `0x004a4a90` váltja; a `"super:"` kulcsot a `0x004abba0` állítja össze (`0x004abbcc`), a fejlécrekord sorszáma szerinti kibontást a `0x004ab9a0` végzi (5-ös, 6-os, 7-es típusú fejlécrekord; 1 kibont, -1 vált). A hívók a parancskezelők: `0x005cb990` (`0x005cc252`, `0x005cc25f`), `0x005d3290`, `0x005f9ce0`.
+
+**B út: a három katalógus `repository.dat` fájlja.** A fájl kulcs-érték párokból áll (a kulcs után a `1` vagy a verziószöveg).
+
+| katalógus | `super:` kulcsok | a `catdata` nevei, amelyekben van `~` | következtetés |
+|---|---|---|---|
+| tulajdonos (`Picasa2`, 140 bájt) | nincs | `Downloaded Albums~sipos.aniko13`, `Downloaded Albums~krisztuka76`, `Downloaded Albums~103651636470512534794` | a `Downloaded Albums` szupercsoport lecsukott, e három kategória sorai nem kártyák |
+| `Picasa2-arcok` (1386 bájt) | `super:golden-kit3` | `golden-kit3~export`, `golden-kit-fix~export`, `golden-kit~export`, `PicasaPy-merokit~export` | csak a `golden-kit3` kibontott; a másik három szupercsoport lecsukott |
+| `1557-masolat-mentese` (1386 bájt) | `super:golden-kit3` | ugyanaz a négy | ugyanaz |
+
+A kulcs (`super:golden-kit3`) pontosan a kulcsképzés szerinti alak a `golden-kit3~export` kategóriára. A térkép ugyanitt tárolja a fanézet kibontott csomópontjait (fordított perjelre végződő útvonalak, érték `1`), valamint a `flat`, `all`, `Folders`, `Mappák` kulcsokat; ezek jelentését nem vizsgáltam. **Amit az adat nem bizonyít:** a polaritást (találat = kibontott) csak a kód mondja ki, élő felvétel nincs; a kibontás parancsok (`1` = kibont) és a lekérdezés együtt adják az irányt.
+
+##### §2 A `+0xd8` nézetmód (`0x005d9cc0`, `0x004b07c0`)
+
+**A beállító** a `0x004b07c0` (75 bájt, `ret 4`): a verem a `CAlbumState`, `EDX` a mód, `CL` a megfordítás. Azonos mód és megfordítás esetén `0x000f4242`-t ad; különben beírja a `+0xd8`, `+0x165` mezőt (`0x004b07dc`-`0x004b07e2`), és a `0x006dc4c0(…, 1)` hívással újraépíti a listát (`0x004b0803`). A `0x005d9cc0` két hívása a szöveges parancsoké (`thumbui/namesort` → `EDX = 2`, `0x005db20c`; `thumbui/datesort` → `EDX = 0`, `0x005db26f`); a menüparancsok a `0x005cb990` kapcsolójából a `0x005d30f0`-n át érik el (hat hívás: `0x005cbbfa`, `0x005cbc17`, `0x005cbc34`, `0x005cc70a`, `0x005cd5f9`, `0x005cd61e`; a `0x005d30f0` hívása `0x004b07c0`-ra: `0x005d3127`). A parancsazonosítókat a `0x005cb990` három ugrótáblájából (`0x005cd9fc`, `0x005cdc30`, `0x005cdefc`) olvastam ki.
+
+| `+0xd8` | beállító | az összehasonlító (`0x004a7890`) |
+|---|---|---|
+| 0 | `thumbui/datesort`; `0x9c8b` `ID_VIEWBYDATE` (`0x005cbbea`) | a `date` oszlop double értéke, csökkenő (az újabb előbb) |
+| 1 | `0x9cbd` `ID_VIEWBYRECENT` (`0x005cbc21`) | a `0x004ae0d0` double értéke, csökkenő |
+| 2 | `thumbui/namesort`; `0x9c8c` `ID_VIEWBYNAME` (`0x005cbc04`) | nincs külön ág: a név ága |
+| 3 | `0xa09d` (`0x005cd5e6`) | nincs külön ág (név); a `0x004b29d0` nem hívja a `0x004b2e10`-et, tehát nincs kategória- és szupercsoport-rejtés |
+| 4 | nincs parancs; csak a `Preferences\datesort` rendszerleíró értékből (`0x004a195f`-`0x004a1991`, mentés `0x004a3790`) | a `0x004502e0` double értéke, csökkenő |
+| 5 | `0x9dc8` `ID_VIEWBYSIZE` (`0x005cc6f7`) | 64 bites bájtösszeg (`0x004507e0`), csökkenő |
+| (fordítás) | `0xa0cf` `ID_VIEWREVERSE` (`0x005cd603`: ugyanaz a mód, `+0x165` ellentettje) | az eredmény előjelét váltja |
+
+Az irány: a rendező hívás `(a = második elem, b = első elem)`, negatív eredmény = a előbb; az összefésülő `>= 0` esetén az első marad elöl (`0x004bab56`, `0x004bb071`). Ezért `a < b` esetén a pozitív `+1` csökkenő sorrendet ad.
+
+**B út.** A menüoldal (a spec `picasa-menu-parancsok-viselkedes.md` 36.3-36.5 és `picasa-konyvtar-eszkoztar-viselkedes.md` 4/b pontja, a pipázó `0x00574b70`) ugyanazt a 0, 1, 2, 5 négyest és a `0xa0cf` megfordítást adja; a 3 és a 4 az olvasók oldaláról jön (`0x004a7890`, `0x004b29d0`). A `0xa09d` azonosító közvetlen operandusként a teljes `.text`-ben **sehol** nincs (0 találat), a menüépítő `0x00559150` nem tartalmazza, és a `.rsrc`-ben nincs menü, ezért a parancs neve és forrása nincs meg. Ez nem blokkoló: a 3-as mód a felhasználónak ismert menüből nem érhető el.
+
+**Az Időrend szempontjából:** a kártyalista a nézetmódtól függetlenül dátum szerint újrarendeződik (§4, §6), tehát a mód csak az azonos dátumú kártyák sorrendjére és a 3-as mód rejtésmentességére hat.
+
+##### §3 Az üres felhasználói album kártyája (`0x007fc7c0`, `0x00a6aa00`)
+
+1. **A ciklus** (`0x007fc7c0`, kártyánként, rendezett sorrendben): `0x004ae430(sor, &rekord)` (a rekordot előtte nullázza: `rekord+8` szélesség, `rekord+0xc` magasság `0`), `0x007fa5b0` a kártya konstruktora, majd `0x00a6aa00(…, -1, -1, -1, -1)` másolja a rekord képét a kártyába (`0x007fcca7`). A `0x004ae430` visszatérési értékét a ciklus **eldobja**.
+2. **A `0x00a6aa00`**: a forrás (`EAX` = a rekord) szélessége és magassága is nagyobb kell legyen nullánál, különben `4`-gyel tér vissza. **Nem nulla eredménynél a `0x007fc7c0` megszakad** (`0x007fccae`-`0x007fccb0` → `0x007fcf7a`): a hibakóddal visszatér, a már felvett kártyák a `+0xb0` listában maradnak, a hátralévőket nem építi, és a fókuszeltolás számítása (`[this+0x20] = [this+8] - sorszám * [this+0x30]`) **kimarad**.
+3. **A hívó** (`0x008037e0`, `0x008039c5`) a `0x007fc7c0` visszatérési értékét **nem vizsgálja**: a következő utasítás `mov eax, esi` és a `0x007fb210` hívása. Tehát a qshow hibajelzés nélkül, csonka kártyalistával és be nem állított fókuszeltolással indul.
+4. **Mi kap képet** (`0x00423300`, `CThumbDB` `+0x20`): a gyorsítótár találata (`0x00448fb0`) kész képet ad; a `0x00448a10` a sor tokenjét a `CThumbDB+0x2e98` sztringjével hasonlítja, és ha igaz értéket ad, a `0x00423300` `0`-val tér vissza kép nélkül (a feltétel jelentését nem bontottam tovább); nem üres tagság esetén a kártyakép készül (`0x00423500`); **nulla tag esetén `3` a visszatérési érték és a rekord üres marad** (`uVar1 >> 1 == 0` → `return 3`). Mindkét kép nélküli út a `0x00a6aa00`-nál `4`-et ad.
+5. **Következmény.** Az üres felhasználói album sora (2-es állapotú, 38.2.190 §2) nem lesz kártya. A kártyák **növekvő dátum szerint** épülnek (§6), tehát a megszakadás a hibás sor dátumától kezdve minden **későbbi** kártyát elveszít; egy dátum nélküli (949998,0) sor a sor végén van, ezért ott semmi nem vész el, csak a fókuszeltolás marad ki.
+
+**B út (QEMU).** A valódi `0x00a6aa00` négy bemenetre (szélesség, magasság: `0,0`; `0,5`; `5,0`; `-1,5`) mind a négyszer `4`-et adott. A hibakód-láncot (`0x00423300` → `3`, `0x004ae430` továbbadja, `0x007fc7c0` eldobja, `0x00a6aa00` → `4`, megszakadás, `0x008037e0` eldobja) utasításszinten olvastam végig. **Adat:** a tulajdonos katalógusában 17 felhasználói album van (üres `filename`, `]album:` token, `Labels` kategória), valós dátummal (40 180,73 és 40 950,79 között); a tagságuk a db3-ban nem olvasható, ezért nem eldönthető, van-e köztük üres. Futásidejű felvétel üres albummal nincs.
+
+##### §4 Azonos dátumú kártyák sorrendje (`0x004a7890`, `0x0049ecd0`)
+
+1. **Az összefésülés stabil** (A út). A `0x0049ecd0` `fld` + `fcomp` + `test ah, 0x41`: a jobb elem csak akkor megy előre, ha a bal **szigorúan nagyobb** (`0x0049ecf2`-`0x0049ecff`); egyenlőségnél a bal marad. A `0x0049cd60` első menetei ugyanígy cserélnek csak szigorú nagyobbnál (`0x0049ce0b`-`0x0049ce19`, `0x0049ce5c`-`0x0049ce6d`). A rendezés **növekvő** a `double` kulcson.
+2. **Mérés (B út, QEMU).** Az eredeti `0x0049cd60`-t 265 forgatókönyvön futtattam (n = 2-től 32-ig, sok ismétlődő kulccsal; a CRT-allokátor helyettesítve): **mind rendezett, permutáció és stabil** (egyezés a Python stabil rendezésével). Köztük a kártyadátumhoz hasonló vegyes kulcsok (`46296,0`, `45748,0`, `949998,0` többszörösen) is.
+3. **Mi adja a bemeneti sorrendet.** A `0x007fc7c0` a `+0x158` rekordlistából veszi a sorokat; ezt a `0x004b8ee0` állítja elő a `+0x148` sorszámlistából, amelyet a `0x004baaa0` (ugyanaz az alulról felépülő összefésülés; a hívó a `>= 0` esetben az elsőt tartja elöl: `0x004bab56`, `0x004bb071`) rendez a `0x004a7890` összehasonlítóval. Az összehasonlító oszlopai a `0x004a6dc0` betöltőből: `D+4` `CThumbDB+0x8c8`, `D+8` `+0x928`, `D+0xc` `+0xb50` (`albumdata name`), `D+0x10` `+0xbb0` (`filename`), `D+0x14` `+0xaf0` (`token`), `D+0x18` `+0xc10` (`date`), `D+0x1c` `+0xc78` (`category`); `D` a `0x00d67678` globális, amelyet a `0x004b8ee0` a rendezés idejére állít be (`0x004b9150`-`0x004b9176`); ha a három oszlop-gyorsítótár nem fedi az összes sort, `D` nulla marad, és az összehasonlító a `0x00453da0` név-útjára esik (ezt nem vizsgáltam).
+4. **A kulcssorrend** (a = második, b = első elem; a negatív eredmény a-t előre teszi):
+   1. a `D+8` oszlop bájtértéke a kategória sorszámán át, **csökkenő** (a `catdata` `catpri` oszlopa, 0 és 100 közötti értékekkel; az oszlop nevét a betöltő nem mondja ki: feltételes);
+   2. a kategória neve (`D+4`, `0x004a71e0`), kisbetűsített ASCII-összehasonlítással, növekvő;
+   3. ha **mindkét** sor `filename` oszlopa üres (album vagy virtuális sor): a `]album` előtagú token a nem ilyen után áll (`0x004a7ad4`-`0x004a7b09`); azonos besorolásnál a `]facealbum` előtagú áll a nem ilyen után (`0x004a7b0b`-`0x004a7b48`); két arcalbumnál a személyrendezés (`+0xdc`) dönt;
+   4. a mód szerinti kulcs (§2), a `+0x165` szerint megfordítva;
+   5. a név (`D+0xc`), kisbetűsített ASCII-összehasonlítással, majd a `0x004a76a0` döntése; a megfordítás itt is előjelet vált (`0x004a8039`-`0x004a8046`);
+   6. egyenlőségnél (0, illetve `+1`, lásd lent) az összefésülés a korábbi sorindexűt tartja elöl.
+5. **A név ága a valódi kódon (B út, QEMU: `0x004a76a0`, 44 névpár).** Az eredmény az egyszerű, kisbetűsített összehasonlítás, **kivéve** ha mindkét név **1800 és 2100 közötti évszámmal kezdődik**, és a számcsoportjaik mind egyeznek: ekkor az eredmény mindkét sorrendben `+1`, azonos nevekre is (`2014 A` ~ `2014 B`, `2014-01-25 Anna` ~ `2014-01-25 Csilla`, `2014_marcius` ~ `2014_aprilis`, `2019_marcius` ~ `2019_marcius`). Ha a számok valamelyike eltér (`2014-01-25` ~ `2014-01-26`), a rendezés szokásos (`-1`/`+1`). Az összehasonlító az egyező számú esetben nem antiszimmetrikus; mivel a `>= 0` a korábbit tartja elöl, az ilyen párok az `albumdata`-sorok eredeti sorrendjében maradnak. A nem a név elején álló év (`x 2014-01-25 A`) és a kis számok (`Album 2` ~ `Album 10`: a szöveg szerinti `album 10` van előbb) nem kapnak külön kezelést. Az összehasonlítás előjeles bájtokon fut (`jl`/`jg`), így a 0x80 feletti bájtok az ASCII elé kerülnének; a tárolt kódolást nem vizsgáltam.
+6. **A végeredmény.** A kártyák **dátum szerint növekvő** sorrendben állnak (az újabb hátul); azonos dátumnál a `+0x148` sorrend marad: kategória-prioritás csökkenő, kategórianév, besorolás (virtuális, felhasználói album, arcalbum), név növekvő (kisbetűsített ASCII), azonos számcsoportú, évszámmal kezdődő nevek esetén a táblasorrend. A tulajdonos katalógusában négy virtuális sor azonos dátumú (`]screensaver`, `]updated`, `]history:email`, `]history:upload`: `45772,771782407406`): ezek a nevük (`Képernyővédő`, `Legutóbb frissítve`, `Elküldve e-mailben`, `Feltöltve`) szerinti sorrendbe kerülnének, ha kártyát kapnának.
+
+##### §5 Az album- és a virtuális sor dátuma (`0x0055d730`, `0x00452a30`)
+
+**A két cím nem dátumforrás (A út és hívási kép).** A `0x0055d730` egy sztring-értékadó és -ürítő (`CString` felépítése a `char*`-ból `0x00985ff0`-val, a `param_3+0x14` régi értékének felszabadítása); hívói a sorlétrehozók (`0x004ad010`, `0x004ad220`, `0x004ad570`, `0x004ad680`, `0x00561840`...). A `0x00452a30` a kategória **keresése vagy létrehozása**: a `0x00453970` megkeresi a nevet (`-1` esetén a `0x00452ad0` létrehozza a `catdata` sort, a `state` oszloppal), és ha a név `People`, a sorszámot a `CThumbDB+0x2ea0`-ban gyorsítótárazza. A 38.2.190 §5 utolsó pontja (a két cím "az új sor dátuma") ezzel **cáfolt**.
+
+**Mi igazolható az adatból (B út).** A három katalógus fájlnév nélküli sorai:
+
+| sor | dátum | megfigyelés |
+|---|---|---|
+| virtuális (`]star`, `]screensaver`, `]updated`, `]history:email`, `]history:upload`, `]unknownface`, `]search`) | időbélyeg: pl. `]updated` `2026-07-18 14:45:36`, `]screensaver` `2026-08-17 23:33:36`, `]search` `2026-08-22 20:36:25` | egyszerre létrejött sorok **azonos** bélyeget kapnak (a tulajdonosnál négy sor `2025-04-25 18:31:22`); a `]search` a legfrissebb: létrehozási vagy utolsó érintési időpont, **nem tartalmi dátum** |
+| felhasználói album (`]album:`, üres `filename`) | pl. `2012-02-11 19:00:11`, `2010-12-31 12:16:32`, `2010-11-14 11:42:52` | a név dátumával többnyire egyezik, de nem névből jön: a `2010-10-03 Régi fotók szkennelve BéHának` album dátuma `2010-09-22 21:55:47`, a `2010-10-xx Panoráma fotók...` albumé `2010-09-30 17:56:18`; tartalmi vagy ini-eredetű érték |
+| üres token és név | `949998,0` (4501-01-01) | törölt sorok: nincs név, a `0x004aab27` szerint állapot 0, sosem kártya |
+
+Az ini-szinkron (`0x00441ed0`, 7449 bájt) a `[Picasa]` fejlécből `date=`-et olvas (`_atof`, alapérték `949998,0`: `0x0044246a`-`0x0044248d`), a mappákra ez a 38.2.190 §5 szabálya. A 3. virtuális rés (a dátumíró) hívóinak mintaalapú pásztázása (`[x+0x48]` objektum, `mov r, [r2+0xc]`, `call r`) négy helyet adott: `0x00514180` (importálás: `%d-%02d-%02d`), `0x00613b50` (filmkészítő), `0x006e3990` (indítás), `0x006f2fc0` (online album); **az album-létrehozó kódban (`0x004abe70`, `0x004ad220`, `0x004ada80`, `0x0055d120`) nincs dátumírás**.
+
+**Ami nyitott:** a virtuális és a frissen létrehozott albumsor **kezdeti dátumának írója**. Ghidra-kör kell: 0x004ada80 és 0x00441ed0 (az album-szakaszok ága) - a `date` oszlop kezdeti értékének írója az album- és virtuális soroknál; a `0x00441ed0` ini-szinkron album-szakasz feldolgozása (`_sscanf` `0x00441fcc`, `__strnicmp` `0x0044203e`).
+
+##### §6 A rendezés utáni átalakítás (`0x0098b550`, `0x007fc4c0`)
+
+**A függvények.** `0x0098b550` (249 bájt, `ret 0x14`) egy `COleDateTime(év, hónap, nap, óra, perc, másodperc)` jellegű kódoló: `ECX` az év, `ESI` a hónap, a verem a nap, az óra, a perc, a másodperc és a kimeneti `double*`. Érvénytelen bemenetnél (év >= 10 000, hónap 0 vagy 13-tól) a kimenet `949998,0` (`0x00c7ccf8`). `0x0098ba30` a hónapot (`1..12`), `0x0098b9e0` az évet adja egy `0x0098b320`-cal dekódolt `tm`-szerkezet `+0x10`, illetve `+0x14` mezőjéből (érvénytelen dátumnál 0).
+
+**A `0x007fc4c0`** (754 bájt, `EDI` = a `this`, a qshow `+0x2f8`):
+
+1. a `[+0x88]` `double`-tömböt (a kártyadátumok, a qshow `+0x380`) rendezi a `0x0049cd60`-nal növekvően, stabilan; a permutáció a `[+0x98]` tömbbe kerül (`0x007fc4f2`);
+2. **minden elemet a hónap első napjára kerekít**, a tömb eredeti sorrendjében, helyben: `0x0098ba30` → hónap, `0x0098b9e0` → év, majd `0x0098b550(év, hónap, 1, 0, 0, 0)` (a verem tetején `1`, alatta három `0`, `0x007fc510`-`0x007fc54d`);
+3. a `[+0x90]` tömböt (qshow `+0x388`, a 38.2.25-38.2.34 **"A tömb"**) a rendezett sorrendben tölti: `A[0] = 0`, `A[j] = A[j-1] + ln(max(1 + (d[j] - d[j-1]), 1))`, ahol `d` a kerekített napszám (`0x007fc740`-`0x007fc7a7`: `fld1`, `fsub`, `fadd`, `fcom`, `0x00c0b6a0` = természetes logaritmus).
+
+**B út (QEMU).** (a) A `0x0098b550` 16 bemenettel: `(1899,12,30)` → `0,0`; `(1900,1,1)` → `2,0`; `(1900,3,1)` → `61,0`; `(2000,1,1)` → `36 526,0`; `(2025,4,27,18,30,0)` → `45 774,770833`; `(2024,2,29,12,0,0)` → `45 351,5`; `(2025,13,1)`, `(2025,0,1)`, `(10000,1,1)` → `949 998,0`; `(9999,12,31,23,59,59)` → `2 958 465,999988`. (b) A dekódoló-kódoló ciklus (a `0x007fc510`-`0x007fc54d` pontos hívássorrendje) 17 bemeneten: mind a hónap első napját adta (pl. `45 772,771782` → `2025`, `4` → `45 748,0`; `46 309,3217`, `46 309,3385`, `46 309,443` → `2026`, `10` → `46 296,0`; `949 998,0` változatlan). (c) A **valódi `0x007fc4c0`** hat forgatókönyvön (`bemenet` → `+0x88`, `+0x90`, `+0x98`): mind a három tömb **egyezik** a fenti képlettel (a `+0x90` eltérése < 1e-9). Egy minta: bemenet `[45748,1; 45778,1; 45809,1; 45839,1]` → `+0x88 = [45748; 45778; 45809; 45839]`, `+0x90 = [0; 3,433987; 6,899723; 10,33371]`; azonos hónap kártyái `+0x90`-ben egyenlők (`[46309,3217; 46309,3385; 46309,443; 46296,2]` → `[0; 0; 0; 0]`); a dátum nélküli (`949998,0`) elem a végén `+13,7`-et ad (`[46296,5; 45748,2; 46296,9; 45748,7; 46309,3; 949998,0]` → `[0; 0; 6,308098; 6,308098; 6,308098; 20,022354]`).
+
+**Következmények.**
+- **Az "A tömb" lezárva** (a viselkedési lap K9 pontja és a 38.2.25-38.2.34, 38.2.77-78 nyitott kérdése): az **író a `0x007fc4c0`**, a `this+0x90` címen át, ezért nem találtak közvetlen `+0x388` író utasítást a korábbi pásztázások; a tartalom **dátumsor** (hónap-lépcsős, logaritmikusan nyújtott kumulált eltérés), nem sorszám. A `0x007ffc90` az `A[i] / A[n-1]` hányadosokat használja (38.2.34); az **egyenlő hányadosok futama az azonos hónapba eső kártyák csoportja**.
+- A kártyadátum a rendezés **után** hónap-pontosságú; a `0x007fee70` `%s %d` (hónapnév és év) felirata ehhez illik. A rendezés kulcsa (§4) a kerekítés előtti, teljes időpontú dátum.
+- A dátum nélküli kártya (`949998,0`) a hozzáadott `ln(...) ≈ 13,7` miatt **nyújtja az egész skálát**: a többi kártya hányadosa összesűrűsödik a skála alsó részében.
+
+##### §7 Összevetés a PicasaPy-val és megvalósítási javaslat
+
+| Eredeti | PicasaPy | Eredmény és javaslat |
+|---|---|---|
+| A szupercsoport (`Név~Alnév` kategória `~` előtti része) lecsukva (a `repository.dat`-ban nincs `super:<név>`) → a kategória sorai nem kártyák (§1). | Az Időrend kategóriát nem ismer (`timeline_controller.py:218-300`); a bal hasáb a `.picasa.ini` `P2category` értékét olvassa (`index/side_pane.py`), a `repository.dat`-ot nem. | **eltér.** **Javaslat: ne valósítsa meg**, amíg a bal hasáb nem kap szupercsoport-állapotot; futásidejű felvétel a polaritásra nincs. |
+| A `+0xd8` mód csak az azonos dátumú kártyák sorrendjére és a 3-as módban a rejtésre hat; a végső rend dátum szerint növekvő (§2, §4). | A kártyarend dátum, név, azonosító (`timeline_controller.py:293-300`), a bal hasáb rendezési módjától független. | **egyezik** a végső sorrendben. Teendő nincs. |
+| Az üres felhasználói album nem kap kártyát; a kártyaépítés ott megszakad, a hívó eldobja a hibát (§3). | `if not photos: continue` (`timeline_controller.py:281-282`), az üres album kimarad. | **egyezik a kártya hiányában.** **Az eredeti hibaútját (a későbbi kártyák elvesztése, kimaradó fókuszeltolás) ne másolja.** Colab-mérés (üres album + későbbi dátumú mappák) megerősítené. |
+| Azonos dátumnál: kategória-prioritás, kategórianév, besorolás, név (kisbetűsített ASCII), azonos számcsoportú, évszámmal kezdődő nevek esetén a táblasorrend (§4). | `(date is None, date, name.casefold(), collectionId.casefold())` (`timeline_controller.py:293-300`). | **egyezik** a dátum és a név szerinti sorrendben; **eltér** a kategória és besorolás szerinti döntésben, az évszám-előtagos nevekben (a PicasaPy névrendezést ad) és a nem ASCII betűk kezelésében (`casefold`). A gyakorlati hatás kicsi (azonos dátum ritka). Javaslat: a döntetlenre `(album ? 0 : 1)` rang beépítése csak akkor, ha a kategória elérhető. |
+| A kártyadátum a tárolt `albumdata_date`; mappánál a legkorábbi képidő első beíráskor; albumsornál ini- vagy tartalmi eredetű; virtuális sornál időbélyeg (§5, 38.2.190 §5). | A legkorábbi élő `taken_at`; a `folders.date` és `albums.date` megvan az indexben, az Időrend nem használja. | **eltér** (változatlan a 38.2.190 §6 szerint). A virtuális sor kártyáját továbbra se adja hozzá: a dátum forrása nyitott. |
+| A kártyadátum a rendezés után hónap első napja; az `A[i] = A[i-1] + ln(max(1 + Δnap, 1))` és a pozíció `A[i] / A[n-1]` (§6). | `sliderPosition = (dátum_sorszám - első) / (utolsó - első)` lineáris, napokban (`timeline_controller.py:301-333`, `slider_position` a `313-321` sorban); a `dateValue` napsorszám. | **eltér: az eredeti hónap-lépcsős és logaritmikus.** **Javaslat:** a rendezett kártyákra `d = date(év, hónap, 1)`, `A[0] = 0`, `A[i] = A[i-1] + ln(max(1 + (d[i] - d[i-1]).days, 1))`, `sliderPosition = A[i] / A[n-1]`; azonos hónap kártyái azonos helyre kerülnek. A `A[n-1] = 0` esetet (egy hónap, egy kártya) az eredeti védelme nincs megnézve, ezért a PicasaPy-ban `0,0` legyen, és ezt a jegy mondja ki eltérésként. |
+
+**Javaslat a hívónak (kódot nem módosítottam).** Csak a bizonyított pontok:
+
+1. A `sliderPosition` számítása a §6 képlet szerint (a legnagyobb nyereség: ez a sáv pontjainak látható helyét változtatja).
+2. A többi pontban (§1, §3, §4) **ne** változtasson: a PicasaPy viselkedése a látható eredményben egyezik, vagy az eltérés megvalósítása becslésre épülne.
+3. A virtuális albumok kártyáját ne adja hozzá (§5).
+
+**Kész, ha** (a hívó által kiadott fejlesztői jegyhez):
+
+- [ ] a `sliderPosition` az `A[i] / A[n-1]` képlet szerinti; teszt a mért vektorral: bemeneti dátumok `[45748,1; 45778,1; 45809,1; 45839,1]` → `A = [0; 3,433987; 6,899723; 10,33371]`, tehát a pozíciók `[0; 0,332309; 0,667691; 1]` (hat tizedesre);
+- [ ] azonos hónap kártyái azonos pozíciót kapnak (teszt: `[46309,3217; 46309,3385; 46296,2]`);
+- [ ] a dátum nélküli kártya viselkedése kimondva (az eredeti nyújtása vagy a PicasaPy 1,0 pozíciója), teszttel;
+- [ ] vizuális egyezés: az eredeti `job-239` felvétel dátumsávjának pontjai a PicasaPy hat kártyás készletén (mért eltéréssel; a számolt geometria nem helyettesíti).
+
+**Mérési feladat (Colab, 1 feladat, a hívó adhatja fel):** Ctrl+5 egy katalógusban, ahol egy felhasználói album **üres** és más mappák dátuma későbbi (§3), valamint egy másikban, ahol van lecsukott és kibontott `Név~Alnév` szupercsoport (§1). Mérés: a kártyák neve és sorrendje, a dátumsáv pontjainak helye (az `A[i] / A[n-1]` képlet ellenőrzéséhez).
+
+##### Nyitott kérdések mérlege
+
+Nyitott kérdések: 4 nyílt · 5 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva"
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| A `+0x1d` jelző forrása (`0x004a4710`) | **LEZÁRVA** (§1) | |
+| A `+0xd8` nézetmód értékei (`0x005d9cc0`) | **LEZÁRVA** (§2) | |
+| Az üres felhasználói album kártyája | **LEZÁRVA** (§3: kódolvasat és QEMU; futásidejű felvétel nincs) | |
+| Azonos dátumú kártyák sorrendje | **LEZÁRVA** (§4) | |
+| A rendezés utáni átalakítás és az "A tömb" írója | **LEZÁRVA** (§6) | |
+| Az album- és a virtuális sor dátumának kezdeti írója | **NYÍLT** | Ghidra-kör kell: 0x004ada80 és 0x00441ed0 - a date oszlop kezdeti értékének írója az album- és virtuális soroknál (a 0x0055d730 és a 0x00452a30 nem az).` |
+| A lecsukott kategória (`catdata` `state`) és a fa nézet futásidejű hatása | **NYÍLT** | a fenti Colab-mérés (a szupercsoport-szabály kódból és adatból lezárt) |
+| Az `A[i] / A[n-1]` hányados védelme, ha `A[n-1] = 0` (egy hónap vagy egy kártya) | **NYÍLT** | `Ghidra-kör kell: 0x007ffc90 - az A[i] / A[n-1] osztás nullával szembeni védelme; az utolsó elem 0 esetén a futam- és pontképzés.` |
+| A `0xa09d` parancs forrása (a 3-as mód) | **NYÍLT**, nem blokkoló | a gyorsbillentyűk vagy az eszköztár táblázatának keresése; a teljes `.text`-ben nincs közvetlen operandusa |
+
+##### Amit kizártam
+
+- **"A `0x0055d730` és a `0x00452a30` az új sor dátumának forrása"** (38.2.190 §5 utolsó pont): cáfolt (§5): sztring-értékadó, illetve kategória-keresés/létrehozás.
+- **"A `+0x1d` a kategória saját kibontottsága"**: cáfolt (§1): a szupercsoport kibontottsága; a `~` nélküli kategóriánál mindig 1.
+- **"A kártyasorrend a `+0xd8` móddal változik"**: cáfolt (§4, §6): a kártyák mindig dátum szerint növekvők, a mód csak a döntetlent hangolja.
+- **"Az "A tömb" sorszámsor"** (38.2.25): cáfolt (§6): kumulált logaritmikus dátumsor.
+- **"A rendezés utáni átalakítás nem érinti a pozíciókat"** (38.2.190 §4 utolsó bekezdés): cáfolt; a `0x007fc4c0` ugyanabban a függvényben állítja elő az "A tömb"-öt a kerekített dátumokból.
+- **"A virtuális sorok dátuma tartalmi dátum"**: cáfolt (§5): közös időbélyeg.
+
+##### Bizonyítottság
+
+**Megerősített:** a hat `+0xd8` beállító és értékei (két út: hívóhely-argumentumok és az olvasók; a `0xa09d` neve kivételével); a `0x0049cd60`/`0x0049ecd0` stabilitása és iránya (utasításolvasat és 265 QEMU-rendezés); a `0x0098b550` kódolása és a `0x007fc4c0` kerekítése és `+0x90` képlete (utasításolvasat, a valódi függvény hat forgatókönyvön, a kódoló 33 bemeneten); a `0x00a6aa00` `4`-es visszatérése üres képre (QEMU); a `0x0055d730` és a `0x00452a30` szerepe. **Erős:** a `+0x1d` szupercsoport-jelentése és hatása (a hívási környezet utasításszinten, a kulcs az adatban megtalálható; a polaritás élő felvétellel nem igazolt); a kártyaépítés megszakadása üres albumnál (a hibakód-lánc utasításszinten és részben QEMU-val; felvétel nincs); a döntetlen kulcssorrendje (dekompiláció és oszlopazonosítás; a `D+4`, `D+8` oszlopnevei feltételesek, a név ága QEMU-val mért). **Feltételes:** a `catpri` oszlopnév a `D+8`-hoz; az album- és virtuális sorok dátumának forrása (nyitott).
+
+**Módosított fájlok ebben a szakaszban.** Ez a 38.2.210 szakasz és a `picasa-idorend-viselkedes.md` érintett sorai. Kódot, tesztet, eredeti binárist, felvételt vagy mérőadatot nem módosítottam; az ideiglenes mérőszkriptek és kimenetek a munkafa `.bt/` mappájából törölve.
