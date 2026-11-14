@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.118] - 2026-11-14
+
+- A bal hasábban mappasorra húzott mappa nem mozdul el; áthelyezéshez a „Mappa > Mappa áthelyezése…” menüpont használható. (#6907).
+
 ## [1.0.117] - 2026-11-14
 
 - A lejátszás közbeni kattintás-szünet: statikus út és mérés (#6942).
