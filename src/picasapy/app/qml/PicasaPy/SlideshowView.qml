@@ -36,6 +36,10 @@ Rectangle {
     property string _timelineCollectionName: ""
     readonly property string _atmenetTipus:
         _cimkartyaFeluszas ? "dissolve" : transitionKind
+    //: #6926: a 0x008001c0 görbéje csak az Időrend-bemutatóé és a címkártya
+    //: felúszásáé; a normál vetítés a korábbi lineáris áttűnést tartja (38.2.300).
+    readonly property bool _gorbesDissolve: _atmenetTipus === "dissolve"
+        && (timelineSlideshow || _cimkartyaFeluszas)
     //: igazra állítva az `onCurrentIndexChanged` nem indít átmenetet — a
     //: `_modellKovetes` csendben igazítja az indexet ugyanarra a fájlra
     property bool _resyncing: false
@@ -505,7 +509,7 @@ Rectangle {
     }
 
     function _dissolveOpacitasFrissit() {
-        if (show._atmenetTipus !== "dissolve")
+        if (!show._gorbesDissolve)
             return
         var alpha256 = show.dissolveAlphaProvider
                 ? show.dissolveAlphaProvider.slideshowDissolveAlpha(
@@ -598,11 +602,11 @@ Rectangle {
         } else if (show._atmenetTipus === "timelapse") {
             imageLayer.currentImage.scale = 1.16
             imageLayer.currentImage.opacity = 0
-        } else if (show._atmenetTipus === "dissolve") {
+        } else if (show._gorbesDissolve) {
             show.dissolveProgress = 0.0
             show._dissolveOpacitasFrissit()
         } else {
-            imageLayer.currentImage.opacity = 1
+            imageLayer.currentImage.opacity = show._atmenetTipus === "dissolve" ? 0 : 1
         }
         imageLayer.veil.color = show.transitionKind === "dissolvewhite"
             ? "#ffffff" : "#000000"
