@@ -10,9 +10,10 @@ Jelöld ki a képeket, majd:
 - **Létrehozás ▸ Mozgófilm ▸ Új mozgófilm…**, vagy
 - a képtálca **Mozgófilm** gombja, vagy
 - a képrács mappafejlécében a kollázs-gomb mellett álló filmgomb
-  (*Mozgófilmes prezentáció létrehozása*). Ez nem a kijelölt képekkel
-  dolgozik, hanem **az adott fejléc mappájának összes képével** nyitja meg
-  a Mozgófilmkészítés lapot. A személyalbum fejlécében nincs ilyen gomb, ott a
+  (*Mozgófilmes prezentáció létrehozása*). Ha a fejléc mappájában
+  legalább két kép ki van jelölve, csak a kijelöltekkel nyitja meg a
+  Mozgófilmkészítés lapot; ha egy vagy egy sem, **a mappa összes
+  képével**. A személyalbum fejlécében nincs ilyen gomb, ott a
   saját filmgombok állnak.
 
 A **Létrehozás ▸ Mozgófilm ▸ A kijelölésben lévő arcokból…**, az

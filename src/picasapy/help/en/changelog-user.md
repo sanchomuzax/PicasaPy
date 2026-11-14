@@ -2,6 +2,35 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-14
+
+### Timeline
+
+- The **Recently Updated** album now gets a card. The up and down arrows
+  also move between cards, the label shows the target card while you
+  drag the slider, and exiting on the **Recently Updated** card leaves
+  the library on its earlier view. See [Viewing](features/nezegetes.md).
+
+### Library
+
+- The **Recently Updated** album now selects pictures by their date
+  (a date set by hand, the capture date, or else the file time), and
+  it is hidden in the pane while empty.
+- A folder's **Move to Collection** submenu also offers the six built-in
+  collections, with the current one checked. See
+  [The library](features/konyvtar.md).
+
+### Printing, movies, Gift CD
+
+- Printing opens inside the main window, in place of the library;
+  **Close**, Esc, or a finished print job takes you back. See
+  [Printing](features/nyomtatas.md).
+- The movie button in a folder header uses only the selected photos when
+  at least two are selected. See [Movies](features/mozgofilm.md).
+- **Include Slideshow** decides whether non-JPEG
+  pictures go on the gift CD as JPEGs or in their original format, and the
+  program remembers its setting. See [Gift CD](features/ajandek-cd.md).
+
 ## 2026-11-13
 
 ### Upload to Google Photos

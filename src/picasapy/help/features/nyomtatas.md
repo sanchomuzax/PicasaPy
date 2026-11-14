@@ -14,8 +14,12 @@ A nyomatra a kép **szerkesztett** változata kerül — vágással,
 forgatással, effektekkel —, és a fényképezőgép által megjelölt tájolás
 szerint helyesen állva. Ugyanazt kapod, mint exportáláskor.
 
-A párbeszéd a tartalmához illő magassággal nyílik, és a **Nyomtatás** meg
-a **Bezárás** gomb mindig látszik. Kis képernyőn a beállítások görgethetők.
+A nyomtatás nem külön ablakban nyílik meg, hanem a főablakban, a
+könyvtárnézet helyén; ha a nézőben voltál, a program előbb a
+könyvtárra vált. A **Nyomtatás** meg a **Bezárás** gomb mindig látszik,
+kis képernyőn a beállítások görgethetők. A **Bezárás**, az **Esc**, vagy
+a nyomtatás befejezése után visszakerülsz a könyvtárba, és a korábbi
+kijelölésed megmarad.
 
 Ha a gépen **egyetlen nyomtató sincs telepítve**, a párbeszéd tetején ez
 áll: „A nyomtatáshoz telepítsen nyomtatót." Ez csak tájékoztatás: PDF-be

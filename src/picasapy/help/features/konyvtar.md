@@ -326,8 +326,11 @@ képet mutatja.
 
 Fölötte áll a **Legutóbb frissítve** különleges album, a neve mellett
 zárójelben a képek számával. Azokat a képeket gyűjti össze, amelyeknek
-a fájlja az elmúlt hét napban változott, legfeljebb 250 darabot; a
-legutóbb felvett kép áll legelöl. Ezt az albumot nem te állítod össze,
+a dátuma az elmúlt hét napba esik, legfeljebb 250 darabot; a legutóbb
+felvett kép áll legelöl. A dátum a kézzel beállított dátum, ennek
+hiányában a fényképezőgép által rögzített felvételi dátum, és csak ha
+egyik sincs, a fájl utolsó módosításának ideje. Ha az album üres, a sora
+nem látszik a hasábon; amint kerül bele kép, megjelenik. Ezt az albumot nem te állítod össze,
 és nem is törölheted: a helyi menüjében az **Album törlése** szürke,
 ahogy a **Feltöltés a Google Fotókba...** is. A helyi menü **Az összes
 kép kijelölése**, **Kijelölés törlése** és **Kiválasztás megfordítása**
@@ -390,8 +393,13 @@ kezelni, előbb kattints a mappára a bal hasábon.
 A gyűjtemény a mappák rendezésére való: több mappát fogsz össze egy név
 alá. A hasábon a gyűjtemény fejlécére kattintva nyitod és csukod.
 
-- **Új gyűjtemény…** a mappa helyi menüjéből, az **Áthelyezés
-  gyűjteménybe** almenün át.
+- A mappa helyi menüjének **Áthelyezés gyűjteménybe** almenüje
+  felkínálja a hat beépített gyűjteményt (**Exportált képek**,
+  **Mappák**, **Rejtett mappák**, **Egyebek**, **Projektek**,
+  **Webalbumok**) és a saját gyűjteményeidet. A mappa mostani
+  gyűjteménye pipával jelölt és szürke. A **Rejtett mappák** választása
+  a mappát elrejti (lásd lentebb).
+- **Új gyűjtemény…** ugyanebből az almenüből.
 - A gyűjtemény fejlécére jobbgombbal kattintva **átnevezheted** vagy
   **eltávolíthatod**. A gyűjtemény eltávolítása a mappáidat nem bántja.
 - Ugyanitt a **Jelszó megadása/módosítása...** tétellel jelszóval
