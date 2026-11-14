@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.115] - 2026-11-14
+
+- A szüneteltetett diavetítés folytatáskor azonnal a következő fotóra lép, mint az eredetiben (#6929).
+- A normál diavetítés Dissolve áttűnése fix 1 másodperces és egyenletes, a kimenő kép nem halványul, mint az eredetiben (#6935).
+
 ## [1.0.114] - 2026-11-14
 
 - A normál diavetítés áttűnése fix 1,0 s-os egyenes: forrás a binárisban (#6927).
