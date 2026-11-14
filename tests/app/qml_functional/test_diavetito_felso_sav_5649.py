@@ -98,7 +98,10 @@ def _annotalt_kiadas_kep(window, sav: QQuickItem, mappa: Path) -> Path:
 def test_felso_sav_es_lejatszas_azonos_allapotot_valt_es_a_tobbi_kattintas_marad(
     qml_app, qt_app, magassag_eltolas
 ):
-    window, _controller, _engine = qml_app
+    window, controller, _engine = qml_app
+    # A kétképes próbában a két folytatás ugyanazon, ismétlődő körben történjen;
+    # a lista végi leállást külön a #6929 teszteli.
+    controller.setSlideshowLoop(True)
     window.show()
     window.setVisibility(QWindow.Visibility.Windowed)
     alapmagassag = window.height()

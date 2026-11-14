@@ -442,6 +442,10 @@ Rectangle {
         if (playing && _cimkartyaFuggo) {
             _cimkartyaFuggo = false
             show._felusztat()
+        } else if (playing && !timelineSlideshow) {
+            // #6929: normál vetítés folytatásakor azonnal lépünk; az
+            // újrainduló slideshowTimer ezután intervalMs múlva vált ismét.
+            show.advance()
         }
     }
     function starCurrent() { show.starToggled(currentIndex) }
