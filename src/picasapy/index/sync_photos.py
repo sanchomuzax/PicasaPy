@@ -482,6 +482,22 @@ def _prune_albums(conn) -> None:
     újra, itt csak az árván maradt hivatkozásokat takarítjuk.
     """
     conn.execute("DELETE FROM photo_albums WHERE token NOT IN (SELECT token FROM albums)")
+    conn.execute(
+        "DELETE FROM album_timeline_dates WHERE token NOT IN (SELECT token FROM albums)"
+    )
+    # #6914: teljes fa- vagy célzott mappaszinkron végén már együtt látszik
+    # az összes eddig indexelt tagság. A dátumot csak egyszer írjuk be; a
+    # későbbi kép-hozzáadás és -törlés nem mozgatja el a kártyát.
+    conn.execute(
+        "INSERT OR IGNORE INTO album_timeline_dates(token, date) "
+        "SELECT pa.token, MIN(COALESCE("
+        " NULLIF(substr(COALESCE(p.taken_at_override, p.taken_at), 1, 19), ''),"
+        " strftime('%Y-%m-%dT%H:%M:%S',"
+        "          COALESCE(p.first_seen_mtime_ns, p.mtime_ns) / 1000000000,"
+        "          'unixepoch', 'localtime'))) "
+        "FROM photo_albums pa JOIN photos p ON p.id = pa.photo_id "
+        "GROUP BY pa.token"
+    )
 
 
 def _prune_photos(conn: sqlite3.Connection, folder_id: int, names: list[str]) -> None:

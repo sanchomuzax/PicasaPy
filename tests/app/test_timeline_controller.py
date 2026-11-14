@@ -94,6 +94,74 @@ class TestTimelineCollectionCards:
         ]
         assert [item["sliderPosition"] for item in collections] == [0.0, 0.0]
 
+    def test_exif_nelkul_a_befagyasztott_fajlido_adja_a_kartyat_es_a_savot(
+        self, qt_app
+    ):
+        controller = TimelineController(Path("unused-index.db"), provider=None)
+        before = replace(
+            _record(),
+            id=1,
+            folder_path="/library/before",
+            taken_at="2014-05-01T10:00:00",
+        )
+        without_exif = replace(
+            _record(),
+            id=2,
+            folder_path="/library/without-exif",
+            first_seen_mtime_ns=int(datetime(2015, 5, 10, 12).timestamp() * 1e9),
+        )
+        after = replace(
+            _record(),
+            id=3,
+            folder_path="/library/after",
+            taken_at="2016-07-11T10:00:00",
+        )
+
+        collections = controller._collections_to_qml(
+            (before, without_exif, after), QLocale("en_US")
+        )
+
+        assert [item["name"] for item in collections] == [
+            "before",
+            "without-exif",
+            "after",
+        ]
+        assert collections[1]["dateLabel"] == "May 2015"
+        assert collections[1]["sliderPosition"] not in (0.0, 1.0)
+        assert {item["firstDateLabel"] for item in collections} == {"May 2014"}
+        assert {item["lastDateLabel"] for item in collections} == {"July 2016"}
+
+    def test_recently_updated_kartya_a_megnyitaskori_honapban_a_lista_vegere_kerul(
+        self, qt_app
+    ):
+        from picasapy.index.albums import AlbumRecord
+        from picasapy.ini import RECENT_ALBUM_TOKEN
+
+        controller = TimelineController(Path("unused-index.db"), provider=None)
+        controller._timeline_opened_at = datetime(2026, 11, 14, 9, 30)
+        old_photo = replace(
+            _record(), id=1, taken_at="2005-04-03T10:00:00"
+        )
+        recent_album = AlbumRecord(
+            token=RECENT_ALBUM_TOKEN,
+            name="Recently Updated",
+            date=None,
+            photo_count=1,
+        )
+
+        collections = controller._collections_to_qml(
+            (old_photo,),
+            QLocale("en_US"),
+            ((recent_album, (old_photo,)),),
+        )
+
+        card = collections[-1]
+        assert card["albumToken"] == RECENT_ALBUM_TOKEN
+        assert card["dateLabel"] == "November 2026"
+        assert card["dateValue"] == datetime(2026, 11, 14).toordinal()
+        assert card["sliderPosition"] == 1.0
+        assert card["lastDateLabel"] == "November 2026"
+
     def test_timezone_aware_taken_at_sorts_with_naive_ones(self, qt_app):
         controller = TimelineController(Path("unused-index.db"), provider=None)
         aware = replace(

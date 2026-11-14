@@ -31,6 +31,9 @@ class AlbumRecord:
     name: str | None
     date: str | None
     photo_count: int
+    # #6914: külön az ini-ből olvasott `date`-től; ez az Időrend-kártya
+    # első tagságkor rögzített dátuma.
+    timeline_date: str | None = None
 
 
 @dataclass(frozen=True)
@@ -153,6 +156,7 @@ def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
         SELECT a.token AS token,
                max(a.name) AS name,
                max(a.date) AS date,
+               max(d.date) AS timeline_date,
                (SELECT count(*) FROM photo_albums pa
                   JOIN photos p ON p.id = pa.photo_id
                   JOIN folders f ON f.id = p.folder_id
@@ -164,6 +168,7 @@ def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
             UNION ALL
             SELECT token, name, date FROM local_empty_albums
         ) AS a
+        LEFT JOIN album_timeline_dates d ON d.token = a.token
         GROUP BY a.token
         ORDER BY (max(a.name) IS NULL), lower(max(a.name)), a.token
         """
@@ -174,6 +179,7 @@ def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
             name=row["name"],
             date=row["date"],
             photo_count=row["n"],
+            timeline_date=row["timeline_date"],
         )
         for row in rows
     )
