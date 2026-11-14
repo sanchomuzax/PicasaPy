@@ -114,7 +114,7 @@ class TestAMegorzottBeallitasok:
         assert controller.slideshowTransition == "dissolve"
 
     def test_az_atmenet_hossza_a_dia_ido_alatt_marad(self, controller):
-        """#6920: a Dissolve T/1,5 hosszú; a többi átmenet régi ideje marad."""
+        """#6920/#6935: az Időrend-görbe T/1,5; más átmenetek ideje változatlan."""
         assert controller.slideshowTransitionMs == 2000
         assert controller.slideshowOtherTransitionMs == 500
 

@@ -144,11 +144,11 @@ SlideshowView {
         : controller.slideshowTransition
     transitionMs: (typeof controller !== "undefined" && controller)
         ? controller.slideshowOtherTransitionMs : 500
-    dissolveTransitionMs: (typeof controller !== "undefined" && controller)
-        ? (slideshow.screensaverMode
-            ? Math.round(1000 * slideshow.seconds / 1.5)
-            : controller.slideshowTransitionMs)
-        : Math.round(1000 * slideshow.seconds / 1.5)
+    dissolveTransitionMs: slideshow._gorbesDissolve
+        ? ((typeof controller !== "undefined" && controller)
+            ? controller.slideshowTransitionMs
+            : Math.round(1000 * slideshow.seconds / 1.5))
+        : 1000
     dissolveAlphaProvider: typeof controller === "undefined" || !controller
         ? null : slideshow
     captionMode: typeof controller === "undefined" || !controller
