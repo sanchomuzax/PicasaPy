@@ -904,3 +904,62 @@ A `lanc-0196` teljes láncának korábbi mérése SSIM 0.97844 és ΔE 0.759 vol
 - ✅ **Legalább 200 lánc mindkét programmal, táblázatban:** a korábbi 200-as köteg és eredménytáblája e lapban szerepel.
 - ⛔ **Minden eltérés minimalizált alakja és saját jegye:** a `lanc-0196` hat eredeti exportja hiányzik; ezért a legkisebb eltérő alak és annak saját jegye nem állapítható meg. A korábbi köteg fennmaradó sorainak teljes, jegyenkénti elszámolását sem bizonyítja ez a hat új feladat.
 - ✅ **Egyparancsos, azonos magú újrafuttatás:** a 200-as, 6611-es magú futtatást a fenti köteg rögzíti; a hat új PicasaPy-render második futása is bájtra azonos lett.
+
+## #6585 zárókör: a `lanc-0196` mind a hat egy- és kétszűrős részhalmaza (2026-11-14)
+
+Ez a szakasz frissíti a fenti, exporthiányt rögzítő záróköröket. A Picasa-exportok megérkeztek: a feladatok sorrendje `r01`–`r06` = `job-670`–`job-675`, mindegyikben `export__k06.jpg`. A PicasaPy-oldal a `.bt/6585-r6611/reszhalmaz-0196/sajat/` korábban elkészült PNG-je.
+
+Az összevetést a `scripts/differencialis_lanc_osszevet.py:compare_all` és a meglévő `tools/golden/compare_render.py` mércéje adta. A PicasaPy PNG-t a saját eredeti JPEG mintavételezésével és kvantálótábláival kódolta újra. Változatlan küszöbök: `pixel_tol=1`, `frac_tol=0.002`, `ssim_min=0.98`, `de_mean_max=2.0`.
+
+| Jelölt | Picasa-export / SHA-256 | `filters=` | SSIM | ΔE átlag | Golden-ítélet |
+|---|---|---|---:|---:|---|
+| `r01` | `job-670` / `a7df849d69e8fd3d5bdf79934a6654f4624739a499f9649a3efc02df6f9f0472` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf;PicnikGrain=1,5.192805,1;` | 1.00000 | 0.000 | pixelhű |
+| `r02` | `job-671` / `e8d61c2f3259144efa23de81bb396854ba69f6ebb73219ca7417044c012cd2b6` | `PicnikGrain=1,5.192805,1;triple=1,0.766429,-0.177472,0.655993;` | 0.99458 | 0.401 | közelítés |
+| `r03` | `job-672` / `94cd408fcde9c61c65b43412b8bb8007ff1778bf5a5811ca4cd784f5a5e40ae5` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf;triple=1,0.766429,-0.177472,0.655993;` | 0.99592 | 0.410 | közelítés |
+| `r04` | `job-673` / `84baf0c14366315f179a305be776ebccceb4fdadbe3c0a67f1718fd692c41dad` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf;` | 1.00000 | 0.000 | pixelhű |
+| `r05` | `job-674` / `2bdf84a63c53e77c576cfe808c0a7172061332c3dba38903980616058b671aa8` | `PicnikGrain=1,5.192805,1;` | 1.00000 | 0.000 | pixelhű |
+| `r06` | `job-675` / `7b9dc051ed93d8d050e163b7635a2173408c018deb45be3813c9333fdef73b1d` | `triple=1,0.766429,-0.177472,0.655993;` | 0.99549 | 0.380 | közelítés |
+
+Mind a hat singleton/pár egyezik a meglévő küszöbök szerint. A `minimal-lanc-0196-002` megfelelő saját exportjának korábbi mérése viszont SSIM 0.97844 és ΔE 0.759: ez a `radtint → PicnikGrain → triple` hármas eltér, mert az SSIM a 0.98-as határ alatt van. A három singleton és mindhárom sorrendtartó pár exportja most már mért és egyezik. Ezért a `k06.jpg` ezen paraméterein a **legrövidebb eltérő lánc a háromtagú lánc**; a mérés a hármas kölcsönhatást támasztja alá, nem valamelyik effekt önálló hibáját. Ez az állítás erre a képre és erre a paraméterhármasra érvényes.
+
+### Callbackek és a PicasaPy-lánc
+
+| Szűrő | Eredeti Picasa — bináris | PicasaPy — forrás és viselkedés |
+|---|---|---|
+| `radtint` | A callback `0x008f8730` (index: RVA/fájloffset `0x004f8730`, 214 bájt) a `0x0090b370` (731 bájt) pixelmunkást hívja; az a `0x0090aeb0` radiális súlytábláját használja. | `src/picasapy/render/chain_ops.py:313-323` → `src/picasapy/render/tinting.py:309-342`: radiális szorzó, majd `(be·factor)>>8`. Az `r04` és `r01` mérése pixelhű. |
+| `PicnikGrain` | A `0x00bce8c0` worker (RVA/fájloffset `0x007ce8c0`, 696 bájt) lokális MT-állapotot inicializál a `0x00aa28f0` magkiterjesztővel és léptet a `0x00aa2930` twisttel; a `filterdesc.xml:925` `randomSeed="1"`-et ad. | `src/picasapy/render/chain_glimmer_handlers.py:207-213` → `src/picasapy/render/glimmer_artistic.py:108-151` → `src/picasapy/render/glimmer_noise_ops.py:46-60` → `src/picasapy/render/nativ_noise.py:40-85`: rögzített magú zajréteg, `Lighten=1` esetén Screen keverés. Az `r05` pixelhű, az `r01` pár is pixelhű; a folyamat-globális véletlenállapot nem magyarázza a hármas eltérését. |
+| `triple` | A callback `0x008f8a60` (RVA/fájloffset `0x004f8a60`, 292 bájt) feltételesen a fill `0x0090ac20`, majd a kontraszt `0x0090c2c0`/`0x0090c340` útjára adja a csúszkaértékeket. | `src/picasapy/render/chain_native_handlers.py:172-191`: `apply_fill`, majd `apply_native_contrast` a fényerő/kontraszt értékekkel. Az `r06`-ban ez a pontos, nem nulla paraméterezés küszöbön belül egyezik. |
+
+A diszasszemblálás és a mért kimenet **nem** azonosítja, hogy a három művelet közötti melyik pixelérték, kvantálás vagy kerekítés okozza az SSIM-esést. A radiális színezés, a zaj Screen-keverése és a fill/kontraszt egymás kimenetére fut; ebből a köztes értékek eltérésének felerősödése ésszerű magyarázat, de ez **következtetés**, nem kiolvasott vagy külön mért algoritmus. Pontos hibás részlépés: **NINCS MEG**.
+
+### Független utak és cáfoló kísérlet
+
+**A út — közvetlen mérés:** a hat eredeti JPEG-t a megfelelő PicasaPy PNG-vel vetettem össze a meglévő JPEG-egyeztetéssel és golden küszöbökkel. Mind a hat részhalmaz egyezik; a megfelelő eredeti exporttal korábban mért háromtagú jelölt nem egyezik (SSIM 0.97844 / ΔE 0.759).
+
+**B út — bináris és helyi végrehajtás:** az indexelt callbackhatárok célzott diszasszemblálása a három külön műveleti utat mutatja: radiális pixelmunkás, fix magú lokális MT-zaj, majd fill/kontraszt. A PicasaPy megfelelő útjai ezekben a sorrendben állnak; a `PicnikGrain` magját és zajmezőjét a korábbi, független referenciafuttatás a PicasaPy-val bájtra egyezőnek mérte. A két út abban egyezik, hogy a hiba nem egy singleton vagy a PicnikGrain folyamat-RNG-je, hanem a három művelet együttese; a belső hibás aritmetikai lépést egyik sem jelöli ki.
+
+**Bizonyítottsági fok: feltételes.** A háromtagú minimumot az eredeti Picasa-exportok és a PicasaPy-kimenetek közvetlen összevetése méri; a bináris út önállóan rögzíti a callbackek sorrendjét és a lokális zajállapotot. A belső hibás pixelművelet nincs azonosítva, ezért ennél erősebb állítás nem igazolt.
+
+**Cáfoló kísérlet:** azt próbáltam cáfolni, hogy a `PicnikGrain` eltérő véletlenmintája, vagy valamelyik egyedi effekt okozza a küszöbön kívüli eredményt. Az `r05` (`PicnikGrain`) és `r04` (`radtint`) pixelhű, az `r06` (`triple`) és mindhárom kéteffekt-pár a meglévő mérce szerint egyezik; a `PicnikGrain` worker maga is lokális, rögzített seedű állapotot használ. A cáfoló eseteket ugyanazzal a JPEG-egyeztetéssel és küszöbökkel ellenőriztem. Az egyedi-effekt és RNG-hipotézis nem áll meg; a háromutas kölcsönhatás megmarad.
+
+### Fejlesztői jegyjavaslat és a #6585 „Kész, ha” pontjai
+
+**Javasolt cím:** `Javítsuk a radtint → PicnikGrain → triple lánc mérési eltérését`
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `0x008f8730` → `0x0090b370` radiális szorzás, `0x00bce8c0` lokális seedű zaj, majd `0x008f8a60` fill/kontraszt; a `k06.jpg` megfelelő Picasa-exportja `minimal-lanc-0196-002` | `chain_ops.py`/`tinting.py` → `chain_glimmer_handlers.py`/`glimmer_artistic.py` → `chain_native_handlers.py`; az egyes tagok és párok megfelelnek, a hármas SSIM 0.97844 / ΔE 0.759 | A hármas összetételben lokalizálni a PicasaPy eltérését, és a megváltoztatott eredményt ugyanazzal a golden összevetővel mérni. A már megfelelő egyedi és páros viselkedés ne romoljon. |
+
+**Javasolt „Kész, ha”:**
+
+- [ ] A `k06.jpg`-hez tartozó `radtint → PicnikGrain → triple` minimális eset bekerül a golden-készletbe az eredeti exporttal.
+- [ ] A javított PicasaPy-render átmegy a meglévő mércén: SSIM ≥ 0.98 és átlagos ΔE ≤ 2.0 (vagy a golden „pixelhű” ága).
+- [ ] A fenti hat singleton/pár ugyanazzal a mércével továbbra is egyezik.
+
+| #6585 elfogadási pont | Állapot |
+|---|---|
+| Legalább 200 lánc mindkét oldalon, táblázattal | ✅ A 200-as köteg és táblázata a fenti 2026-11-13-i szakaszban szerepel. |
+| Minden eltérés minimalizált alakja és saját jegye | ⛔ A `lanc-0196` legrövidebb eltérő alakja bizonyított, és a fenti fejlesztői jegy megnyitása javasolt; a korábbi köteg 10 véletlenállapot-függő és 2 `triple2` dither-eltérésének lánconkénti minimális alakját és saját jegyét a jelenlegi dokumentáció nem igazolja. Egyetlen új jegy megnyitása ezért a #6585 teljes pontját nem teljesíti. |
+| Egyparancsos, azonos magú ismétlés | ✅ A 6611-es magú, 200 láncos futás ismételhetősége dokumentált. |
+
+**Következtetés:** a `lanc-0196` mintáján az egy- és kétszűrős részláncok mind megfelelnek; a legrövidebb igazolt eltérés a `radtint → PicnikGrain → triple` hármas. A #6585 két, nem minimális mért eltéréscsoportjának teljes elszámolása még hiányzik, ezért a jegy valamennyi elfogadási pontja egyetlen javasolt fejlesztői jegy megnyitásával sem teljesül.
