@@ -422,6 +422,8 @@ A `0x00801130` ezen az ágon az `ESI`-t a qshow `+0x58` címére állítja, majd
 
 **Bizonyítottsági fok.** **Megerősített** a feltételes host-objektumcserére és a két `+0x28` callback céljára: a híváslánc, az eredeti PE vtable-adat és a célfüggvények utasításai egyeznek. **Feltételes** a qshow-listaelem `OneUpUI+0x258` mezőbe kötése: egyetlen statikus adatút támasztja alá. A látható „diavetítés” megnevezés és a ténylegesen megjelenő kép **NINCS MEG**; ehhez futó qshow-mérés kell.
 
+⚠️ **KIEGÉSZÍTÉS a 38.2.310-ben (#6930):** a „látható hatás” megvan: a `OneUpUI` a vezérlősáv hordozója (`oneup/stripback`, `oneup/prev`, `oneup/auto` és a többi elem a konstruktorából és a kezelőiből), tehát a szünet a hostcserével jeleníti meg a sávot, a folytatás pedig visszacseréli a `QDrawable`-re. A listaelem-leíró képe továbbra is **NINCS MEG**.
+
 **A #5401 „Kész, ha” állapota.** (1) ⛔ A forráshalmaz, sorrend, gyűjteményenkénti darabszám és képlista változatlanul nyitott. (2) ⛔ A teljes képkockánkénti pálya, rétegsorrend és háttérrajz nyitott. (3) ⛔ A Space egyik állapotágának objektumcseréje ismert; a vezérlők, dátumtömb és automatikus lépés teljes működése nyitott. (4) ⛔ A Space sikeres első ága statikusan a `QDrawable` → `OneUpUI` gazdaablak-cseréhez vezet; az élő diavetítés, Escape utáni nézet és folytatási kép/index nincs mérve.
 
 **Nyitott.**
@@ -4839,6 +4841,8 @@ A mért sor a `K·g` görbétől legfeljebb 0,286-tal tér el (a 7. kockán), az
 
 **Állapot (#6926, #6927).** A #6926 a `K·g` görbét az Időrend-ágra (`timelineSlideshow`) és a címkártya felúszására szűkítette (`SlideshowView._gorbesDissolve`); a normál vetítés a #6920 előtti, 500 ms-os lineáris animációt kapta vissza, a kimenő kép ott ismét halványul. Az alábbi lista első két pontja (az 1,0 s-os egyenes és az átlátszatlan kimenő kép a normál ágon) a #6927-re vár: a normál áttűnés forrása a binárisban még nincs meg, egyetlen felvételből pedig nem vezetünk be működést.
 
+⚠️ **A „Kész, ha” szünet-pontjának forrása (#6930):** a vezérlősáv szünetbeli megjelenésének és a folytatásnál való eltűnésének bináris forrása és a mérésen alapuló megvalósítási tábla a 38.2.310-ben van.
+
 **Fejlesztői jegyhez javasolt „Kész, ha”:**
 
 - [ ] Normál (nem Időrend) vetítésben T = 3 s mellett a fotóváltás alfája `n/15` (`n = 1..15`), 1,0 s alatt éri el az 1-et; a kimenő kép átlátszatlan; a 15 fps-es renderelt alfa-sor RMSE-je az `n/15` sorhoz <= 0,03 (az eredeti mért: 0,027), és ugyanez a mérés a `K·g(T=3)` ellenmodellen (0,181) bukjon el.
@@ -4873,6 +4877,109 @@ A mért sor a `K·g` görbétől legfeljebb 0,286-tal tér el (a 7. kockán), az
 Nyitott kérdések: 1 nyílt (megnevezett következő iránnyal) · 5 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva".
 
 **Módszertani tanulság.** A 38.2.280 statikus jóslata két rétegből állt, és a mérés szétválasztotta őket: a **szerkezetet** (a folytatás azonnali lépése) a bináris kódolvasás helyesen adta, de az **egyik módban mért paramétert** (a `K·g` görbe és a `T/1,5` idő az Időrendnél) és a kezdeti címkártyát tévesen vitte át a másik módra, pedig a közös kód nem volt bizonyítva. Ahol két bemutatómód közös belépőt használ, a mért paramétert nem szabad átvinni, amíg a mérés a másik módon is meg nem történt. A becslő kontrollját pedig mindkét irányban kell futtatni: ugyanaz a számítás a job-681-en a `K·g` görbét, a job-683-on az egyenest adja, és csak ez bizonyítja, hogy az eredmény a videóból jön, nem a módszerből.
+
+### 38.2.310 A vezérlősáv szünetben: a OneUpUI lesz a vetítőablak aktív gyereke (#6930, 2026-11-14)
+
+**Eredmény.** A vezérlősáv a `OneUpUI` objektumhoz tartozik (`OneUpUI::vftable` `0x00cbd5c4`, konstruktor `0x00802c60`): ez tölti be a `oneup` elrendezést, benne a `oneup/stripback`, `oneup/prev`, `oneup/next`, `oneup/auto`, `oneup/exit` és `oneup/tps` elemeket. Lejátszás közben a vetítőablak (`ytWindow`) aktív gyereke a qshow `QDrawable` objektuma, ezért a sáv nem látszik. A szünet-kapcsoló (`0x00801130`) a `0x00802c20` és a `0x009833a0` útján a gazdaablak `[+0x64]` gyerekét a `[qshow+0x2dc]` OneUpUI-ra cseréli, a host `0x00983430` pedig kirajzoltatja: a sáv a szünettel egy pillanatban jelenik meg, a láthatóságát író külön mező nélkül. A folytatás (`0x00803110`) előbb kikapcsolja a szünetjelzőt (`0x00801130`), majd a `0x00802be0`-val a gyereket visszacseréli a QDrawable-re, ezért a sáv ugyanabban a pillanatban eltűnik. Az 1. kérdésre a kódút megvan; a „szünet végéig látszik” mért tény (8,27 s, mozdulatlan mutatóval), szerkezeti oka az, hogy a OneUpUI az aktív gyerek marad a folytatásig. A 2. kérdésre a válasz igen: ugyanez a hostcsere rejti el azonnal a sávot. **Nyitva marad**, hogy az egérmozgásra működő 1,5 s-os elrejtő (`0x005c4a10`, szabálya a 12.9-ben) a szünetben miért nem rejti el a sávot, pedig nem olvassa a szünetjelzőt és a OneUpUI-t az alkalmazás főciklusa akkor is tickeli (lásd a nyitott kérdéseket).
+
+#### Bizonyíték-táblázat
+
+Image base `0x00400000`, RVA = VA - `0x00400000` (pl. `0x00801130` -> RVA `0x00401130`). A hívó-állításokhoz a bináris-index direkt hívó-adata és a teljes PE 4 bájtos mutatókeresése tartozik: a négy váltó függvényre (`0x00801130`, `0x00802c20`, `0x00802be0`, `0x00803110`) és a `0x009833a0`-ra nincs vtable-slot vagy más adatmutató, tehát csak direkt hívhatók.
+
+| Állítás | VA (RVA) | Forrás |
+|---|---|---|
+| A szünet-kapcsoló a `[this+0x3bb]` jelzőt átbillenti (`új = régi == 0`), és az új értéket a ShowCursor-burkolónak adja | `0x00801134`-`0x00801146` (`0x00401134`); a burkoló a `0x00c40700` ShowCursor-importot hívja (12.6) | bináris |
+| Szünetnél (`[+0x3bb] != 0`) a `0x00802c20` fut; folytatásnál a `0x00802230(this,0)` és a `0x009aabf0` | `0x0080114e`-`0x00801159`; `0x00801175`-`0x008011a3` | bináris |
+| A `0x00802c20` a `0x00802830`-cal frissíti a OneUpUI-t; ha az nullát ad és a `[this+0x50]` host nem nulla, a host `[+0x64]` gyerekét a `[this+0x2dc]`-re cseréli (`0x009833a0`, `ESI` = host, `EDI` = OneUpUI) | `0x00802c38`-`0x00802c50` | bináris; 38.2.67 §1 |
+| `0x009833a0`: a régi gyerek vtable `+0x28`-át 0-val, az újét a hosttal hívja, a host `[+0x64]`-et az újra állítja, majd a `0x00983430` fut | `0x009833a0`-`0x009833cb` | bináris; 38.2.67 §1 |
+| A `[qshow+0x2dc]` a OneUpUI: a qshow konstruktor `0x00802c60`-at hív (`0x268` bájtos objektum), az eredményt a `[ebp+0x2dc]`-be írja | `0x007fae1f`-`0x007fae55` | bináris |
+| A OneUpUI konstruktora a `oneup` elrendezést és az `i18n\oneuptext.xml`-t tölti, megkeresi a `oneup/stripback`-et, és a `0x00d67ad0` kezelőt (`0x005c4a10`) köti rá | `0x00802ca3`-`0x00802d42` | bináris; 12.9 |
+| A sáv elemei a OneUpUI kódjában szerepelnek: `oneup/prev`, `oneup/next`, `oneup/rotateleft`, `oneup/rotateright` (`0x00802830`); `oneup/tps` (`0x00802ff0`); `oneup/star`, `oneup/caption`, `oneup/captionbutton` (`0x00802ec0`); `oneup/auto`, `oneup/auto2`, `oneup/plusone`, `oneup/minusone`, `oneup/timeline`, `oneup/exit` (`0x008032e0`); `oneup/transtype` (`0x008037e0`) | `0x00802882`-`0x0080293a`; `0x008030ab`; `0x00802f1b`; `0x008037e0` | bináris-index `string_xrefs` |
+| A szünetben a OneUpUI frissítése: az első/utolsó képnél a `prev`/`next`, a `rotateleft`/`rotateright` letiltás-bájtja (`[+0x20e]`) és újrarajzolási bitje, majd a `0x00802ec0` a `oneup/oneup` képelemet és a csillag/felirat állapotot állítja | `0x00802890`-`0x008028d7`; `0x00802ec0`-`0x00802fd5` | bináris |
+| A host a gyereket a `0x00983430`-ból a vtable `+0x20` slotján rajzoltatja; a OneUpUI-nál ez `0x00a6cd10`, ami a `+0x38` slotot hívja (`0x00a56800`) | `0x009834b4`-`0x009834bb`; vtable `0x00cbd5c4+0x20`, `+0x38` | bináris; 38.2.67 §2 |
+| Szünetben a Space a OneUpUI-t adja a `0x00803110`-nek (`EAX = [qshow+0x2dc]`), lejátszás közben a `0x00801130`-at hívja | `0x00801310`-`0x00801334` | bináris |
+| A folytatás: a `0x00803110` a `0x00801130`-cal kikapcsolja a szünetet (a mutató újra rejtve), majd ha a OneUpUI aktív (`[OneUpUI+0x50]` nem nulla), a `0x00802be0`-val a host `[+0x64]` gyerekét a qshow QDrawable-re cseréli; az új `[+0x518] = 1` miatt az első tick azonnal lép (38.2.280) | `0x0080315c`-`0x0080316e`; `0x00802be0`-`0x00802c0c` | bináris |
+| A `oneup/auto` és `oneup/auto2` gomb is a `0x00803110`-et hívja | `0x008032e0` | 12.7 |
+| A host `[+0x64]` gyerekét a qshow-láncban három hely írja: a létrehozás (`0x008037e0`), a szünet (`0x009833a0`, egyetlen hívója a `0x00802c20`) és a folytatás (`0x00802be0`; hívói `0x00803110` és a `oneup/timeline` ág `0x008032e0`) | `0x00803974`; `0x009833ba`; `0x00802bfb` | bináris-index + utasítások |
+| A szünetjelzőre (`[reg+0x3bb]`) a teljes `.text` pásztázása 11 találatot ad, mind a qshow függvényeiben: `0x007fa7f0`, `0x007fda00` (kezdőérték), `0x00801130`, `0x007fb820` (Esc), `0x008011b0` és `0x00801210` (nyilak), `0x00801270` (Space, számjegyek), `0x00802060` (léptető óra); a sáv láthatóságát egyik sem írja | `0x007fad1b`, `0x007fb82e`, `0x007fda5b`, `0x00801134`, `0x0080113f`, `0x0080114e`, `0x008011e9`, `0x0080124b`, `0x00801310`, `0x00801382`, `0x00802066` | bináris (teljes pásztázás, nem index) |
+| Szünetben a számjegybillentyű a OneUpUI `oneup/tps` feliratát frissíti (`0x00802ff0`), nem a sáv láthatóságát | `0x00801382`-`0x00801398` | bináris |
+| A `0x005c4a10` kezelő a szünetjelzőt nem olvassa; szabálya: egérmozgásnál 0,5 s (`0x00c72150`) és 50 képpont (`0x00cf3bd8`), tick-nél 1,5 s (`0x00d34128`); megjelenés 0,25 s (`0x00c7c608`), eltűnés 1,2 s (`0x00c7dd44`) | `0x005c4a10`-`0x005c4bd4` | bináris; 12.9; az öt érték a PE-ből kiolvasva |
+| A kezelő globális objektumának (`0x00d67ad0`-`0x00d67b1f`) mezőit a teljes `.text` szerint csak az inicializáló `0x005c2230` írja, és a `0x00802c60` köti a sávra: más kód nem nyúl hozzá | `0x005c2232`-`0x005c2271`; `0x00802d3d` | bináris (teljes abszolút-operandus pásztázás, a `0x00d67b08`-as másik objektum a szerkesztői vetítésé) |
+| A OneUpUI tickjét az alkalmazás főciklusa adja, akkor is, ha a OneUpUI nem aktív gyerek: az alapkonstruktor `ytCallback<ytDrawUI>` feladatot regisztrál (`0x0097d150`), a callback (`0x0040e8b0`) a UI vtable `+0x74` slotját hívja (`0x00a54050`), ami `0x0a`-val tér vissza; a főciklus a nem negatív visszatérést a feladat `[+0x20]` periódusába írja (ezredmásodperc: `0x00cf3e10` = 1000,0) | `0x00a51b86`-`0x00a51ba2`; `0x0040e8b0`; `0x00a54b55`; `0x0097ff79`-`0x0097fffc` | bináris; RTTI `ytCallback<ytDrawUI>::vftable` `0x00c80908` |
+| Lejátszás közben a qshow egérkezelője (`0x007fde80`, QDrawable vtable `+0x2c`) `WM_MOUSEMOVE`-nál (`[+0x3b8] == 0`, `[+0x3c1] == 0`) a mozgás hosszát a `[+0x440]`-ben gyűjti: ha az előző egérüzenet óta legfeljebb 0,5 s (`0x00c7dafc`) telt el, hozzáadja az új hosszt, különben nullázza (a kezdeti (0,0) helyzetnél a `0x005c5d70` egyenlőség-vizsgálata miatt az első üzenet csak rögzíti a pontot); 60,0 (`0x00cf4020`) fölött a `0x00801130`-at hívja, vagyis szünetet vált | `0x007fdefe`-`0x007fdf5f`; `0x007fdfb7`-`0x007fe077` | bináris (statikus, nem mért) |
+| Bal gomb lenyomásra (`0x201`) ugyanez a kezelő `[+0x3b8] == 0` esetén a `0x00801130`-at hívja | `0x007fe1d9`-`0x007fe1f1` | bináris (statikus, nem mért) |
+
+#### Mérés: a sáv megjelenése, tartama és eltűnése (saját újraszámolás a job-683 felvételen)
+
+A bemenet a 38.2.300 felvétele (`.meres/job-683/job-683/video__06.mp4`, 1280x1024, 15 kép/mp, 900 kocka; a kockák 0-tól számozva). A sáv területének (`x=240..1039`, `y=964..1021`, szürkeárnyalat) átlagos abszolút eltérése a 400. kockától:
+
+| kocka | 320 | 326 | 327 | 328 | 329 | 330 | 332 | 334 | 335 | 336-451 | 452 | 453 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| eltérés | 58,31 | 57,40 | 57,25 | 2,85 | 2,76 | 1,95 | 1,08 | 0,49 | 0,22 | 0,00 (mind a 116 kockán) | 55,53 | 55,37 |
+
+A sáv tehát a 328. kockán (a szünet kezdetén) jelenik meg, szinte teljes erővel (a sáv nélküli állapot eltérése 57; a 328-335. kocka csökkenő maradéka a kodek utólagos igazítása; egy 0,25 s-os felúszás az első kockákon a sáv nagy részét hiányolná, a mért maradék viszont már a 328. kockán csak 2,85), a 336. kockától a 451.-ig mind a 116 kockán pixelre azonos (legnagyobb eltérés 0), a 452. kockán (a folytatás) eltűnik. A szünet kezdete utáni 1,5 s a 350., az 1,5 s + 1,2 s a 368. kocka: a `0x005c4a10` szabálya szerint itt indulna és fejeződne be az elrejtés; a sáv ezen a tartományon nem változik. A 400. és a 451. kocka egészében pixelazonos (legnagyobb eltérés 0), ezért a mutató sem mozdult. A 400. kockán a fehér egérnyíl a kattintás helyén, a (268,149) pontnál látszik: a mutató a szünetben megjelenik (`ShowCursor`, 12.6), és messze a sávon kívül áll (a sáv `y >= 964`). A `kepernyo__11.png` a sáv tartalmát mutatja: `Exit`, csúszka, forgatók, nyilak, ▶, `Dissolve`, `Display Time 3 seconds`.
+
+**A mérő kontrollja.** A sávmentes 320-327. kockán az eltérés 57-58, a 336-451. kockán 0,00, a 452-453.-on ismét 55: a mérő megkülönbözteti a sávos és sáv nélküli állapotot. Az eltérés a 400. kockához mért, ezért önmagában nem mondja meg, hogy ott van sáv; ezt a 451. kocka és a `kepernyo__11.png` szemrevétele adja. A mérés a sáv alakját és a gombok pontos helyét nem méri.
+
+#### PicasaPy-eltérés és megvalósítási javaslat
+
+| Eredeti (mért) | PicasaPy jelenleg | Teendő, kódhely |
+|---|---|---|
+| Szünetben (Space) a sáv ugyanazon a kockán jelenik meg, teljes erővel (328. kocka: eltérés 2,85 a végállapottól; nincs 0,25 s-os felúszás), és a szünet végéig látszik, egérmozgás nélkül is (124 kocka = 8,27 s a 328-451. kockán; a 336-451. kocka pixelazonos) | `SlideshowView.qml:440-446` (`togglePause()`) csak a `playing`-et váltja; a sáv `shown`-ja csak egérmozgásra (`SlideshowControls.qml:32-53`) vagy szünetben indításkor (`SlideshowView.qml:233-236`) áll igazra, majd a `hideTimer` 1500 ms után elrejti (`SlideshowControls.qml:97-105`); a megjelenés 250 ms-os átmenet (`SlideshowControls.qml:140-146`) | `togglePause()`: a `playing` igazról hamisra váltásakor `slideshowControls.controls.shown = true`, `slideshowControls.autoHideTimer.stop()`, és a sáv átlátszatlansága azonnal 1 (az átmenet nélkül); a `hideTimer.onTriggered` és az `onPositionChanged` ágak ne rejtsenek szünetben (`!slideshow.playing` őr) |
+| A folytatásnál (Space) a sáv ugyanazon a kockán eltűnik (452. kocka: eltérés 55,5), 1,2 s-os elhalványulás nélkül | a `controlsShown -> controlsHidden` átmenet 1200 ms (`SlideshowControls.qml:147-151`) | `togglePause()`: a `playing` hamisról igazra váltásakor `shown = false` és az átlátszatlanság azonnal `1/256` (külön, 0 ms-os visszaállítás, nem a 1200 ms-os átmenet); a folytatás áttűnése a 38.2.300 szerint ugyanazon a kockán indul |
+| A sáv a kurzorral együtt jelenik meg a szünetben | a mutató szünetben látható (#6571, `SlideshowControls.qml:27-29`) | nincs teendő |
+| Lejátszás közben a bal kattintás és a legalább 60 képpontnyi, 0,5 s-nál sűrűbb egérmozgás szünetet vált (statikus olvasat, nem mért) | az egérmozgás csak a sávot jeleníti meg, a lejátszás megy tovább (`SlideshowControls.qml:32-53`); kattintásra a `MouseArea` nem reagál (csak a képernyővédőn) | **Nem módosítandó a mérés előtt** (lásd a nyitott kérdéseket): önálló jegy a Colab-mérés után |
+
+**A kód nem módosult** (a brief tiltotta a kódírást); a PicasaPy-sorszámok az `origin/main` `c82f90067` állapotára vonatkoznak.
+
+**Fejlesztői jegyhez javasolt „Kész, ha”:**
+
+- [ ] A Space szünet (nem Időrend, `playing` igaz -> hamis) ugyanazon a megjelenített kockán teljes erejű sávot jelenít meg: a sáv területén a 0,1 s-os és a 3 s-os renderelt kocka pixelazonos, és a 3 s-os kockán a sáv látszik (`shown` igaz, átlátszatlanság 1); a `hideTimer` szünetben nem fut.
+- [ ] A folytatás (Space) ugyanazon a kockán elrejti a sávot (átlátszatlanság `1/256`, 1200 ms-os átmenet nélkül), és a 38.2.300 szerint elindítja az áttűnést.
+- [ ] A szünetben az egérmozgás és a sáv fölötti lebegés nem rejti el a sávot (a mérés csak a mozdulatlan mutatót fedi; a mozgás utáni viselkedés nincs mérve, ezért nem szabad „mozgásra eltűnik” vagy „mindig kint marad” szabályt bevezetni a kódba, csak a mért „nem rejt” ágat).
+- [ ] A szomszéd: lejátszás közben a sáv egérmozgásra jelenik meg és 1,5 s után tűnik el (nem változik); a zene, a léptetés ütemezése és az Időrend-ág címkártyás folytatása nem változik.
+- [ ] Kimondva marad: a teszt a sáv jelenlétét és az átlátszatlansági értékeket méri; a sáv alakját és a gombok helyét nem.
+
+#### Bizonyítottsági fok
+
+- A szünet-/folytatás-kapcsoló a gazdaablak aktív gyerekét a QDrawable és a OneUpUI között cseréli (`0x00801130` -> `0x00802c20` -> `0x009833a0`; `0x00803110` -> `0x00802be0`): **megerősített** (A út: utasításlánc és a nyers PE vtable-adat, 38.2.67; B út: a sáv a szünet és a folytatás kockáján jelenik meg és tűnik el).
+- A sáv elemei (`oneup/*`) a OneUpUI-hoz tartoznak: **megerősített** (konstruktor, `string_xrefs`, a felvétel tartalma egyezik a nevekkel: `Exit`, nyilak, ▶, `Dissolve`, `Display Time`).
+- A sáv a szünet kezdetén teljes erővel, a OneUpUI kirajzolásával jelenik meg, nem a `0x005c4a10` felúszásán át: **erős** (a mért 328. kocka teljes erejű; a `0x00a56800` kirajzoló teljes törzsét nem olvastam végig).
+- A szünetben a sáv mozdulatlan mutatónál a szünet végéig látszik: **megerősített mérés** (job-683, 124 kocka, saját újraszámolás, mutató a sávon kívül); a bináris **oka feltételes**: a OneUpUI aktív marad, de a `0x005c4a10` statikus szabálya ezt nem magyarázza.
+- Lejátszás közben a kattintás és a 60 képpontnyi mozgás szünetet vált: **erős** (utasításszintű olvasat, nem mért).
+- A OneUpUI tickje (a `ytCallback<ytDrawUI>` feladat, `0x0040e8b0` -> `0x00a54050`, 10 ms) lejátszás alatt is fut: **erős** (a regisztrálás és a főciklus utasításai olvasva; futásban nem mért).
+
+#### Cáfoló kísérletek
+
+| Ellenhipotézis | Eredmény | Mérce |
+|---|---|---|
+| A szünet a sáv láthatósági mezőjét írja (a 12.5-12.9 keresett mezője) | **Megdőlt.** A `0x00801130`, `0x00802830`, `0x00802ec0`, `0x00802ff0` nem ír sávmezőt; a kezelő globális mezőit (`0x00d67ad0`-`0x00d67b1f`) más kód nem írja; a sáv megjelenését a host-gyerekcsere adja | utasításolvasás; teljes `.text` pásztázás |
+| A sávot az egérmozgás-szabály (`0x005c4a10`) mutatja szünetben | **Megdőlt.** A mutató nem mozdult (400. és 451. kocka pixelazonos), a sávon kívül áll, mégis ott a sáv a 328. kockától | kockamérés |
+| A sávot a mutató a sáv fölött tartja (`inside` ág) | **Megdőlt.** A mutató (268,149) az `y >= 964` sávtól messze áll | a 400. kocka |
+| A szünet csak az órát állítja le (nincs objektumcsere) | **Megdőlt.** A `0x00802c20` a `0x009833a0`-val a host `[+0x64]`-et a OneUpUI-ra állítja; a 328. kockán a sáv és a futó áttűnés befejezése egyszerre jelenik meg (38.2.300) | utasításolvasás; mérés |
+| A 12.9 olvasata: a szünetbeli sáv nem a szünet hatása | **Megdőlt.** A szünet közvetlenül jeleníti meg (hostcsere); a 12.9 a láthatósági mezőt kereste és a 38.2.67 objektumcseréjét nem kötötte a sávhoz | A út és B út fent |
+
+#### Nyitott kérdések mérlege
+
+| Tétel | Állapot | Indoklás / megnevezett következő irány |
+|---|---|---|
+| 1. kérdés: a szünetben a sávot megjelenítő kódút | LEZÁRVA | hostcsere a OneUpUI-ra (`0x00801130` -> `0x00802c20` -> `0x009833a0`) |
+| 1. kérdés: mi tartja a szünet végéig a sávot | LEZÁRVA szerkezetileg, a handler-kérdés NYÍLT | a OneUpUI aktív gyerek marad a `0x00802be0`-ig; lásd a következő sort |
+| 2. kérdés: a folytatás azonnal elrejti-e ugyanez a kód | LEZÁRVA | igen: `0x00803110` -> `0x00802be0`, a mérésen a 452. kockán |
+| Miért nem rejti el a `0x005c4a10` a sávot szünetben 1,5 s után (mérve 8,27 s-ig), pedig a UI tickelődik és a kezelő nem olvassa a szünetet | NYÍLT, megnevezett következő irány | **1. irány** (statikus, bináris-kutatható): az elem tick-diszpécsere `0x009e4630` kapui (`0x009e464a`-`0x009e46a3`: `[+0x20c]`, `[+0x20e]`, `[+0x22c]`, a `[+0x213]`/`[+0x244]` lánc) és az elem alfa-kiértékelője `0x009e3c70` (`0x009e3d27`-`0x009e3e10`: `[+0x21a]`, `[+0x220]`, `[+0x228]`, `[+0x248]`); kérdés: kap-e a `oneup/stripback` 0x13 eseményt, mi a `0x00d67ad8` (kezelő `[+8]`) értéke szünet kezdetén, és csatolódik-e az elem alfája a kirajzolás pillanatához. Két hipotézis: H1, a kezelő állapota és az elem alfája szétválik (a kezelő lejátszás alatt már „rejtett” állapotba kerül, `[+8] = 0`, az alfa-animáció kiértékelése viszont a nem aktív UI-n nem hat), ezért a szünet kezdetén nincs állapotváltás és elrejtés, amíg egérmozgás nem történik; H2, a tick nem jut el a kezelőig, ezért soha nem rejt |
+| Mi történik a sávval szünetben egérmozgás után (H1 szerint 1,5 s + 1,2 s után elrejtés, H2 szerint marad) | NYÍLT, megnevezett következő irány | **2. irány** (Colab): lépéssor: kattintás (87,222), 2 s, felvétel 60 s, 2 s, kattintás (268,149), 9 s, `space`, 3 s, `kattint` a vetítő üres képterületére (pl. 100,500; a harness egérmozgással is jár), 6 s, `Escape`; kiértékelés: a 328. kockához hasonló sávterület-eltérés-sor a mozgás után |
+| Lejátszás közben szünetet vált-e a kattintás és a 60 képpontnyi egérmozgás (statikusan igen) | NYÍLT, megnevezett következő irány | **3. irány** (Colab): kattintás (87,222), 2 s, felvétel 60 s, 2 s, kattintás (268,149), 9 s, `kattint` a vetítőn (lejátszás közben), 9 s, `Escape`; kiértékelés: megáll-e a léptetés és megjelenik-e a sáv |
+
+Nyitott kérdések: 3 nyílt (mindháromnak megnevezett iránya van) · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”.
+
+#### Amit kizártam
+
+- A sáv láthatósági mezőjének keresése a szünetágon (a 12.5-12.9 iránya): a sáv a host-gyerekcserével jelenik meg, külön mező nincs.
+- Az, hogy a szünetbeli sáv az egérmozgás-szabály következménye: a felvételen a mutató mozdulatlan és a sávon kívül áll.
+- A `0x00802830`, `0x00802ec0`, `0x00802ff0` mint sáv-kapcsoló: ezek a gombok letiltását, a `oneup/tps`, `oneup/star`, `oneup/caption` állapotát és a képelemet frissítik.
+- A felvétel és a bináris ellentmondása: nincs ellentmondás, csak a 12.9 hiányos olvasata.
+
+**Módszertani tanulság.** Ha egy felületi elem egy esemény pillanatában jelenik meg, de az elem saját kezelője nem olvassa az eseményt, a szülő objektum (itt a gazdaablak aktív gyereke) cseréjét kell keresni, nem a láthatósági mezőt. A 12.5-12.9 körök a mezőt keresték, a 38.2.67 pedig a QDrawable -> OneUpUI cserét a látható hatás nélkül hagyta („NINCS MEG”); a két lelet együtt adta a választ. Egy mért állítást (szünetben látszik a sáv) akkor is meg kell tartani, ha a statikus kezelőolvasat mást jósol: a felvétel a mutató helyét is tartalmazza, és az dönt a „mozgás tartotta fenn” ellenhipotézisről.
 
 ### 38.2.320 A normál diavetítés 1,0 s-os lineáris dissolve áttűnésének és a Space-szünetnek a bináris forrása (#6927)
 
