@@ -94,13 +94,14 @@ def _felenged(gomb, qt_app):
     qt_app.processEvents()
 
 
-def _vetites_savval(window, qt_app, index):
+def _vetites_savval(window, qt_app, index, window_height_delta=0):
     """Diavetítés szünetben, a vezérlősáv látható állapotban.
 
     A sávot a mozgás-kezelő kapcsolja be (`shown`). A próba a gombot méri,
     nem a mozgást, ezért a jelzőt közvetlenül állítjuk. A sáv 200 ms-os
     áttűnéssel jelenik meg, ezért megvárjuk, míg az opacitás eléri az 1-et.
     """
+    window.resize(window.width(), window.height() + window_height_delta)
     _invoke(qt_app, window, "startSlideshow", index, False)
     show = _child(window, "slideshowView")
     show.setProperty("playing", False)
@@ -151,9 +152,14 @@ class TestLeptetoGombok:
         )
         _invoke(qt_app, show, "stop")
 
-    def test_lejatszas_gomb_felengedesre_marad(self, negykepes_app, qt_app):
+    @pytest.mark.parametrize("window_height_delta", [-5, 0, 5])
+    def test_lejatszas_gomb_felengedesre_marad(
+        self, negykepes_app, qt_app, window_height_delta
+    ):
         window, _controller, _engine = negykepes_app
-        show = _vetites_savval(window, qt_app, 1)
+        show = _vetites_savval(
+            window, qt_app, 1, window_height_delta=window_height_delta
+        )
         gomb = _gomb(window, "slideshowPlayButton")
 
         _lenyom(gomb, qt_app)
@@ -164,5 +170,7 @@ class TestLeptetoGombok:
         assert show.property("playing") is True, (
             "a lejátszás felengedésre sem váltott"
         )
-        assert show.property("currentIndex") == 1
+        assert show.property("currentIndex") == 2, (
+            "a lejátszás felengedése nem lépett azonnal a következő fotóra"
+        )
         _invoke(qt_app, show, "stop")
