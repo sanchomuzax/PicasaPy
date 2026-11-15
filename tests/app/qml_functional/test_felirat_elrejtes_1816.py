@@ -32,7 +32,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtCore import QObject
 from tests.support.qml_blokk import blokk_horgonyra
 
 _QML_DIR = (
@@ -177,25 +177,43 @@ class TestAKetBelepesiPont:
 
 
 class TestATorles:
-    def test_a_torles_a_vezerlot_hivja(self, qml_app, qt_app):
-        window, controller, _engine = qml_app
-        gomb = _gyerek(window, "captionTrashButton")
-        hivasok = []
-        eredeti = controller.setCaption
-        controller.setCaption = lambda sor, szoveg: hivasok.append(
-            (sor, szoveg)
-        )
-        try:
-            gomb.setProperty("enabled", True)
-            QMetaObject.invokeMethod(
-                gomb, "clicked", Qt.ConnectionType.DirectConnection
-            )
-            qt_app.processEvents()
-        finally:
-            controller.setCaption = eredeti
+    def test_a_torles_megerosites_utan_a_vezerlot_hivja_uresen(
+        self, qml_app, qt_app
+    ):
+        """#7027: a kuka megerősítő kérdést nyit, és csak igenre töröl; az
+        ÜRES szöveg az ini-kulcs eltávolításának feltétele (`with_removed`),
+        a JPEG-nél pedig az IPTC-felirat kiürítéséé."""
+        from pathlib import Path
 
-        assert hivasok, "a törlő gomb nem hívta a vezérlőt"
-        assert hivasok[0][1] == "", (
-            "a törlés nem ÜRES szöveget küld — az ini-kulcs eltávolítása "
-            "ehhez kötött (`with_removed`)"
+        from picasapy.metadata import read_file_metadata
+        from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
+            kattints,
+            varj,
         )
+        from tests.support.qt_wait import wait_for_photo_op
+
+        window, controller, _engine = qml_app
+        wait_for_photo_op(
+            controller, lambda: controller.setCaption(0, "Törlendő"), qt_app=qt_app
+        )
+        window.show()
+        window.requestActivate()
+        _nyisd_a_nezot(window, qt_app)
+        _gyerek(window, "photoViewer").setProperty("currentIndex", 0)
+        qt_app.processEvents()
+        gomb = _gyerek(window, "captionTrashButton")
+        assert varj(qt_app, lambda: gomb.property("enabled") is True)
+
+        kattints(window, qt_app, gomb)
+        parbeszed = _gyerek(window, "captionTrashDialog")
+        assert varj(qt_app, lambda: parbeszed.property("opened") is True)
+        assert controller.photos.captionAt(0) == "Törlendő", (
+            "a kérdés előtt a felirat már törlődött"
+        )
+        kattints(window, qt_app, _gyerek(parbeszed, "captionTrashYesButton"))
+
+        assert varj(qt_app, lambda: controller.photos.captionAt(0) == ""), (
+            "a törlő gomb igenre nem ÜRES szöveget küldött a vezérlőnek"
+        )
+        kep = Path(str(controller.watchedFolders[0])) / "a.jpg"
+        assert not read_file_metadata(kep).caption

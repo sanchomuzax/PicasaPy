@@ -28,6 +28,28 @@ Item {
     property alias previousPreloadImage: elotoltoElozo
     property alias hostViewerPanArea: viewerPanArea
 
+    //: #7027: a mezőn kívüli kattintás (`0x0067ed05-0x0067ed5b`) elengedi a
+    //: mező fókuszát, ami elindítja a mentést. Csak akkor, ha a kattintás
+    //: tényleg kívül esett, és a mező még nála a fókusz: más szövegmező
+    //: fókuszát nem veszi el.
+    function releaseCaptionFocus(scenePosition) {
+        if (!captionField.activeFocus)
+            return
+        var pont = captionField.mapFromItem(null, scenePosition.x, scenePosition.y)
+        if (captionField.contains(pont))
+            return
+        viewer.forceActiveFocus()
+    }
+
+    //: #7027: képváltáskor a mentés a RÉGI képre menjen, akkor is, ha a
+    //: mező fókusza a lapozás közben nem változik (görgő, automatikus léptetés).
+    Connections {
+        target: viewerOverlayControls.viewer
+        function onCurrentIndexChanged() { captionField.commit() }
+        function onMasodikIndexChanged() { captionField.commit() }
+        function onAktivOldalChanged() { captionField.commit() }
+    }
+
         //: #3663: a „Kijelölve” jelvény - a KÉPEN KÍVÜL, a szürke
         //: margóban, a fókuszban lévő fél mellett, az osztó felőli
         //: oldalon (mérve: `docs/specs/ui-audit-editor.md` 3/b.3,
@@ -513,15 +535,70 @@ Item {
                     })
                 }
 
+                //: #7027: a begépelt, még el nem mentett szöveg. Az eredeti
+                //: a mezőn kívüli kattintásra és a fókusz elvesztésére is
+                //: ment (`0x0067ed05-0x0067edaa` -> `0x005f89a0`), a
+                //: szerkesztési kapuk első művelete szintén ez
+                //: (`0x005f8d99`). A sort és a szöveget a gépelés
+                //: pillanatában rögzítjük: a képváltás a kötést már
+                //: az ÚJ kép feliratára cseréli, de a mentés a RÉGI képre
+                //: kell, hogy menjen.
+                property bool dirty: false
+                property int editRow: -1
+                property string pendingText: ""
+
+                onTextEdited: {
+                    if (!dirty)
+                        editRow = viewer._kijeloltSort()
+                    dirty = true
+                    pendingText = text
+                }
+
+                function commit() {
+                    if (!dirty)
+                        return
+                    dirty = false
+                    controller.setCaption(editRow, pendingText)
+                    rebind()
+                }
+
+                onActiveFocusChanged: if (!activeFocus) commit()
+
                 onAccepted: {
+                    dirty = false
                     controller.setCaption(viewer._kijeloltSort(), text)
                     rebind()
                     viewer.forceActiveFocus()
                 }
                 Keys.onEscapePressed: (event) => {
+                    dirty = false
                     rebind()
                     viewer.forceActiveFocus()
                     event.accepted = true
+                }
+            }
+
+            //: #7027: a kuka gomb megerősítő kérdése (`0x005f8c00`,
+            //: `0x009bac20`). A fókusz a Nem gombon indul: a törlés
+            //: nem vonható vissza, és az eredeti kezdőfókusza nincs mérve.
+            ConfirmDialog {
+                id: captionTrashConfirm
+                namePrefix: "captionTrash"
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: stringres:ytApp::ConfirmTitle
+                title: qsTr("Confirm")
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: stringres:IDS_CONFIRM_CAPTION_TRASH
+                message: qsTr("Are you sure you want to delete the caption for this image?")
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: stringres:IDS_CONFIRM_CAPTION_YES_BUTTON
+                yesText: qsTr("Delete Caption")
+                cancelVisible: false
+                rememberVisible: false
+                focusNoOnOpen: true
+                onConfirmed: {
+                    controller.setCaption(viewer._kijeloltSort(), "")
+                    captionField.rebind()
                 }
             }
 
@@ -532,6 +609,8 @@ Item {
             Text {
                 objectName: "captionPlaceholder"
                 anchors.centerIn: parent
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: stringres:CTextCaptionNode::defname
                 text: qsTr("Make a caption!")
                 color: Theme.captionBarText
                 opacity: 0.7
@@ -551,6 +630,8 @@ Item {
                 implicitHeight: 13
                 text: "✕"
                 //: `captiontrash` - az eredeti buboréksúgója
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: tooltips:Tooltip(editpanel/captiontrash)
                 ToolTip.text: qsTr("Delete this caption")
                 ToolTip.visible: hovered
                 ToolTip.delay: Theme.tooltipDelay
@@ -569,17 +650,12 @@ Item {
                     color: captionTrashButton.down
                            ? Qt.darker(Theme.chromeBg, 1.24) : "transparent"
                 }
-                // #1816 DÖNTÉS: NINCS megerősítés. Az eredetiben ez
-                // szemetes-ikon közvetlen hatással, és a művelet nem
-                // lemezromboló: a felirat egyetlen mező,
-                // újragépelhető. A projekt #459-es elve a
-                // megerősítést a lemezt érintő, visszafordíthatatlan
-                // műveletekre tartja fenn. (Az eredetiről ez NINCS
-                // mérve - saját döntés.)
-                onClicked: {
-                    controller.setCaption(viewer._kijeloltSort(), "")
-                    captionField.rebind()
-                }
+                // #7027: az eredetiben a kuka megerősítő kérdést nyit
+                // (`0x005f8c00`, `0x005f8c08-0x005f8c5c`), és csak igenre
+                // töröl (`0x005f8c62-0x005f8c82`). A #1816 korábbi
+                // "nincs megerősítés" döntése azon állt, hogy az eredetiről
+                // nincs mérés; a mérés megvan, a döntés megdőlt.
+                onClicked: captionTrashConfirm.open()
             }
         }
 
@@ -632,6 +708,8 @@ Item {
                 }
             }
 
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: tooltips:Tooltip(editpanel/captionbutton)
             ToolTip.text: qsTr("Show/Hide Caption")
             ToolTip.visible: egerTerulet.containsMouse
             ToolTip.delay: Theme.tooltipDelay

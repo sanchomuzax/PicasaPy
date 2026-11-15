@@ -40,8 +40,12 @@ _EREDETI_NYILVANOS_NEVEK = {
     "write_iptc_caption",
 }
 
-# A 6266 előtti photo_ops_write_mixin.py 32 metódusának LF-normalizált,
+# A 6266 előtti photo_ops_write_mixin.py metódusainak LF-normalizált,
 # UTF-8 forrásszöveg-lenyomata a dekorátortól a metódus záró soráig.
+# #7027: a felirat-vágólap és a beillesztő út megszűnt, a `setCaption` és a
+# `_felirat_iras` a hivatalos írási szabályokat kapta (változatlan szövegnél
+# nincs írás, írásvédett fájlnál az ini a tartalék), a `_fuggo_feliratok` új;
+# ezek lenyomata a #7027 szerinti. A többié a bontás előtti.
 _EREDETI_FORRAS_SHA256 = {
     "hoverPreviewFileUrlAt": "d7c0de8636133f4907cea69506cfdf3ebe872ab72eefaf579b7254fdeef64522",
     "_ensure_broken_photo_wired": "09144552bde330597f10079da85ba2da1bd3fbab91261a38d8f11ca2babe34d3",
@@ -57,23 +61,16 @@ _EREDETI_FORRAS_SHA256 = {
     "_refresh_if_star_filtered": "dfeb8f6caa803a13df0a8143c05014c51d7fbc8b735b02f910e01c2e6485a218",
     "_refresh_if_dropped_from_search": "ad1944a77a9db8677d34b47aaafb4712f749a0af1ed18f745382aba4425dcd27",
     "toggleStar": "4b3e698bf19d889dff8da1f79f833d9b3398aeb5a1e48cc82b11cf09c42c4ebe",
-    "_ensure_caption_clipboard": "466fb7f0d772d64c96ec1ce0c3392195cca96cbd8411c5688612e064bb08a5ed",
-    "setCaptionClipboardText": "740759dadd2a208bde414f43a755f0f66f1a653046e65b3e16ff266fc376e9a2",
-    "captionClipboardText": "f392c4239a38836794e8afbff912f4d3bc5cbd5c2e5de5583f6f900408566611",
-    "copyCaptionText": "124a22594e8bbfc2389de5e78d4a1455af27032b50a8efdebc0bb7d5570c7e5d",
-    "pasteCaptionText": "15b492f0b356509d8d8fa19733320c35f01227fc121cb373abd0911edcab224d",
-    "_write_caption_text": "955a1ce28854f4f31a7d8159e09682ea756e274d7e3dc281b31587a707d4e5ab",
     "_ensure_text_layer_clipboard": "6919ff5b531eaf9a7364df911c9080f87c4266e9eafb797f37d4718e10c197da",
     "_text_layer_value": "0abc20b5221931b3a192da9f95cd857356fda6d8bb57baee93ade5c645d6b779",
     "hasTextLayerInSelection": "8f98039c96fdbe2955d9fe1fff7793ddfa3fa882763e8502bd0fba6523eaad56",
     "hasTextLayerClipboard": "6e5ebd70ccacfba6d240550e091f4a2e8cff51f45645a75ef453cf111f1bf7b4",
     "copyTextLayer": "2bef7ea47fcd15e5f74d0169b566c242c8e1a687a9c04d188362bd5a6a817320",
     "pasteTextLayer": "a4db5b62d4af83939deaaccc3ee456e59f3f068484c13f34fd0fb49cd564a6a9",
-    "confirmCaptionPaste": "a93ac0f9bb9f55ab8993e50e1572d34e1cc8eded49c28bb5c6000726fc2ae858",
-    "cancelCaptionPaste": "f34c1e292d0fdfc6aaf3b1bf37c879eae4b7df711383dcbf0ac22cb821b5f1ba",
-    "setCaption": "2e812d2b2050a8e291261d7a7948de920d18df7876c5c1e1f8f6de83db9f85aa",
-    "_felirat_iras": "1e0dc54288eb28c25c825b4ccb6bdc80f6771512a914ed8d882302461fa8099d",
+    "setCaption": "5a539047e5dca9f6bd983421fb08d2d9672de0a5ef107eee34c3514934f61e5e",
+    "_felirat_iras": "071a81ccab225a5889095cb3079f14cea76c507a964d377a2ad36cc7187b918c",
     "_rows_to_photos": "6a75f2ea77f949673fdcede4a1709c0cb9d47e89e9d764e81b8b044bf3ef06d6",
+    "_fuggo_feliratok": "55e0f7df28e22d49e1479482660e6acf0cb8dd9b5e258f98f78ee1d313350923",
     "_apply_batch": "8d1de968774f1e04ec43314db9d607f50f7a18d8095517d9628d9afcdb6b2f6c",
 }
 
@@ -82,7 +79,6 @@ _QT_METHODS = (
     ("signal", "_photoWriteAborted", 1),
     ("signal", "photoOpFailed", 1),
     ("signal", "textLayerClipboardChanged", 0),
-    ("signal", "captionPasteConfirmationRequested", 0),
     ("signal", "brokenPhotosDetected", 1),
     ("slot", "hoverPreviewFileUrlAt", 1),
     ("slot", "_on_broken_image_detected", 1),
@@ -94,8 +90,6 @@ _QT_METHODS = (
     ("slot", "hasTextLayerInSelection", 1),
     ("slot", "copyTextLayer", 1),
     ("slot", "pasteTextLayer", 1),
-    ("slot", "confirmCaptionPaste", 0),
-    ("slot", "cancelCaptionPaste", 0),
     ("slot", "setCaption", 2),
 )
 _QT_PROPERTIES = (("hasTextLayerClipboard", "textLayerClipboardChanged", False),)

@@ -30,7 +30,6 @@ class PhotoOpsWriteMixin(_PhotoOpsWriteCoreMixin, _PhotoOpsWriteTextMixin):
     _photoWriteAborted = Signal(object)
     photoOpFailed = Signal(str)
     textLayerClipboardChanged = Signal()
-    captionPasteConfirmationRequested = Signal()
     @Slot(int, result=str)
     def hoverPreviewFileUrlAt(self, row: int) -> str:  # noqa: N802 — QML-hívás
         """A rács egy sorának eredeti képe, URL-kódolva az előnézeti ablaknak."""
@@ -228,27 +227,6 @@ class PhotoOpsWriteMixin(_PhotoOpsWriteCoreMixin, _PhotoOpsWriteTextMixin):
 
         self._apply_batch(photos, mutate)
 
-    @Slot(result=int)
-    def confirmCaptionPaste(self) -> int:  # noqa: N802
-        """A felhasználó jóváhagyta a függő felirat-beillesztést."""
-        pending = getattr(self, "_caption_paste_pending", None)
-        self._caption_paste_pending = None
-        if pending is None:
-            return 0
-        photo_ids, szoveg = pending
-        photos_by_id = {photo.id: photo for photo in self._photos.photos}
-        kijeloles = [
-            photos_by_id[photo_id]
-            for photo_id in photo_ids
-            if photo_id in photos_by_id
-        ]
-        return self._write_caption_text(kijeloles, szoveg)
-
-    @Slot()
-    def cancelCaptionPaste(self) -> None:  # noqa: N802
-        """A felhasználó elutasította a függő felirat-beillesztést."""
-        self._caption_paste_pending = None
-
     @Slot(int, str)
     def setCaption(self, row: int, text: str) -> None:
         """Felirat mentése — Picasa írási szabály (spec #3): JPEG-nél az
@@ -258,14 +236,34 @@ class PhotoOpsWriteMixin(_PhotoOpsWriteCoreMixin, _PhotoOpsWriteTextMixin):
 
         #1515: a felirat FTS-mező, tehát keresési nézetben a művelet a lista
         TARTALMÁT is változtathatja — az utómunka ezért megnézi, találat
-        maradt-e a kép, és csak kiesésnél kérdezi újra a nézetet."""
+        maradt-e a kép, és csak kiesésnél kérdezi újra a nézetet.
+
+        #7027: ha a levágott új szöveg egyezik a kép mai feliratával, nincs
+        írás (sem a fájlba, sem az ini-be)."""
         photos = self._photos.photos
         if not 0 <= row < len(photos):
             return
         photo = photos[row]
-        photo_id, perform = self._felirat_iras(photo, text)
+        uj_szoveg = (text or "").strip()
+        # #7027: az eredeti setter az egyező szöveget eldobja
+        # (`0x00437df5-0x00437e69`), ezért a fókuszvesztés és az Enter
+        # ugyanarra a szövegre sem ír kétszer. A "mai felirat" az épp
+        # írás alatt álló szöveg, ha van: a modell csak az írás után frissül.
+        fuggo = self._fuggo_feliratok()
+        mai = fuggo.get(photo.id, (photo.caption or "").strip())
+        if uj_szoveg == mai:
+            return
+        fuggo[photo.id] = uj_szoveg
+
+        def lezar() -> None:
+            if fuggo.get(photo.id) == uj_szoveg:
+                del fuggo[photo.id]
+
+        def utomunka() -> None:
+            lezar()
+            self._refresh_if_dropped_from_search(photo.id)
+
+        photo_id, perform = self._felirat_iras(photo, uj_szoveg)
         self._run_photo_write(
-            photo_id,
-            perform,
-            after=lambda: self._refresh_if_dropped_from_search(photo_id),
+            photo_id, perform, after=utomunka, on_error=lezar
         )

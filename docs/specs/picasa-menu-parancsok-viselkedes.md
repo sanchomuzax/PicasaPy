@@ -39,8 +39,11 @@ vagyis a **húzás-ejtésé**.
 Picasa-példány között nem működik; más program nem látja.
 
 A **szöveg**-beillesztés viszont a rendszer-vágólapról jön, **lecseréli** a
-feliratot, megerősítést kér (`CTextEditNode::confirm`, gomb: `Replace`), és
-kimondja: **„(Ez a művelet nem vonható vissza)"** (`IDS_REPLACE_CAPTION`).
+feliratot, és megerősítést kér (`CTextEditNode::confirm`: „Biztosan lecseréli a
+jelenlegi képfeliratot a vágólap tartalmával?", gomb: `Replace`). ⚠️ **A
+szövegben NINCS „nem vonható vissza" tagmondat**, és az `IDS_REPLACE_CAPTION`
+azonosító az exe-ben nincs (#7027, `0x0067ee73-0x0067eee4`): a megerősítés a
+szövegmezőbe épül, nem a menübe.
 
 ## 3. „Dátum és idő beállítása” — KÉT mód; feltételes EXIF-írás
 
