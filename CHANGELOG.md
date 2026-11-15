@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.121] - 2026-11-15
+
+- Windowson a kilépési határidő a folyamat leállításához saját, külön cserélhető hívást használ; a működés nem változik (#6960).
+- Kötegelt átnevezéskor a hibás fájlok kimaradnak, a többi kép átneveződik és kijelölve marad (#6966).
+
 ## [1.0.120] - 2026-11-15
 
 - A mappabeolvasó belső feldolgozása és a nyitott felületi út (#6955).
