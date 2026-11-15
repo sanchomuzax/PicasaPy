@@ -3878,14 +3878,90 @@ kutatási tár).
   ág nem értelmezhető; amíg a `+0xac` jelentése nem igazolt, jegyet nem
   javaslok rá.
 
+### Ghidra-kiegészítés 2 (2026-11-15, várólista 413-418)
+
+Forrás: `referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp-2.txt` (privát
+kutatási tár). Ide a 413 és a 414 tartozik.
+
+- **`0x00a582f0`, a mappafa Delete útja (413).** Részválasz, de az irány
+  eldőlt. A függvény általános billentyű-továbbító: az eseményt előbb a
+  fókuszban lévő gyermekcsomópont `0x74` virtuális metódusának adja
+  (`param_1[0x57]`), majd a testvércsomópontoknak (`param_1[0x59]` tömb, a
+  fókuszban lévőt és a letiltottakat kihagyva). A `1000000` eredménynél
+  lezár, a `0xf4246` eredménynél megszakítja a bejárást. A törzs a DELETE-re
+  billentyűkódot nem hasonlít (a testvérbejárásban csak az `0xd` és az `0x1b`
+  kód szerepel), és a `0x9d44` parancs sem fordul elő benne. A mappalista saját
+  kezelője a `KeyHandler::AlbumList` vtábla (`0x00c807e0`) `0x005c40e0`
+  metódusa. **Bizonyítottsági fok: helyi disassembly, nem Ghidra-dekompilálás.**
+  A `0x005c40e0` törzse nincs a kimenetben; a fejléc szerint ugrótáblája a
+  `0x23-0x28` billentyűkre szól (End, Home, lapozás, nyilak), a `Ctrl+Enter` a
+  `0x005d0e90`-re, a karakterbevitel a `0x005c3fe0`-ra megy, a DELETE (`0x2e`)
+  nincs kezelve, és a `0xf4241` ("nem kezelt") jelzéssel tér vissza. Ebből az
+  következik, hogy a mappalistának nincs saját Delete -> `0x9d44` útja; a
+  billentyű a globális kezelőhöz megy tovább. A vtábla többi nyers bejegyzése
+  nem érdemi: a `0x00563270` az `IytUnknown` destruktora, a `0x009d79f0` és a
+  `0x009d7a00` az `AddRef` és a `Release` (a `+4` mezőn
+  `InterlockedIncrement`, illetve `InterlockedDecrement`).
+  **PicasaPy:** a mappafa csak Fel/Le kurzorbillentyűt köt
+  (`FolderPaneContent.qml:304-307`), saját Delete-je nincs; ez az eredeti
+  mappalista-kezelővel **összhangban** van. A nem kezelt Delete további sorsa
+  nincs eldöntve. PicasaPy-ban az ablakszintű `Delete` gyorsbillentyű
+  (`PicasaMenuBar.qml:678-688`) feltétele nem vizsgálja, hogy a mappafa
+  fókuszban van-e (csak `photoActionsEnabled`, nem szerkesztő, nem
+  szövegbevitel), tehát a kijelölt fotók törlését indítja, mappatörlést soha.
+  Hogy az eredeti globális kezelő fókuszban lévő mappalistával mit tesz a
+  Delete-tel (fotótörlés a `0x9c9a` paranccsal vagy semmi), **nincs meg**;
+  egyezést ne állítsunk.
+- **`0x00432d20`, a `+0xac` metódus (414).** Részben megválaszolva. A
+  `0x00c82050` címen a katalógus-alobjektum vtáblájának `+0xac` bejegyzése
+  (a vtábla `0x00c81fa4`). A dekompilált törzs meghívja a saját `+0x88`
+  virtuális metódusát (`0x00431230`); ha a kapott szöveg nem üres, hozzáfűzi a
+  `0x00c81520` sztringet (`"list"`, `FUN_00985af0`), és a `this+0xed8`
+  táblában (`FUN_006a46c0`) az elemhez ezzel a kulccsal keres. A kulcs tehát
+  `<szöveg>list` alakú. A szöveget a második paraméterként kapott
+  környezet-objektum adja (a `0x005edef0` a `FUN_00926c20()` objektumot adja
+  át; ez a fejléc olvasata, a `0x00926c20` és az objektum `0x68` metódusa nincs
+  a kimenetben). A dekompilálás a visszatérési értéket elveszti (`uVar1 &
+  0xffffff00`, az `AL` regiszter nem látszik), ezért az "igaz, ha a keresés
+  sikeres és a bejegyzés nem üres" a fejléc olvasata; a hívó (`0x005edef0`,
+  `cVar1 ? 2 : 0`) igazságértéket vár, ez nem mond neki ellent. Másik hívója a
+  `0x0049f580` (a `0x0049f583` hívás), ugyanabból az átirányító családból,
+  mint a setterek hívói (`0x0049f220`, `0x0049f310`, `0x0049f390`,
+  `0x0049f4a0`). **Jelentés:** erős jelölt az online feltöltési lista, de a
+  kulcs pontos alakja és a tábla írója nincs igazolva. **PicasaPy:** a
+  mappatörlés (`fileops_controller_delete_mixin.py:18-41`) nem vizsgál
+  feltöltési állapotot; a Google Fotók feltöltés
+  (`tray_google_photos_controller.py:331`) futásidejű fázist követ, tartós
+  képenkénti nyilvántartást a keresés nem talált. A 2-es ág értelme nélkül
+  jegyet továbbra sem javaslok.
+
+**A jegy lezárhatósága: NEM zárható.** A "Kész, ha" pontokhoz mérve:
+
+| Pont | Állapot a 413-414 után | Miért |
+|---|---|---|
+| Belépési pontok, fa Delete | ⛔ (közelebb) | A mappalista kezelője a helyi disassembly szerint nem kezeli a Delete-et, de ez nem dekompilált bizonyíték, és a nem kezelt billentyű sorsa nyitott. |
+| Üres mappa, almappák, írásvédelem, hálózati meghajtó | ⛔ | Nem Ghidra-kérdés: Windows-mérés kell, a 413-414 nem érinti. |
+| Megerősítés szövege és megjegyzése | ✅ / ⛔ | A 2-es ág feltétele a `<szöveg>list` kulcsú táblakeresésig követhető; a kulcs jelentése és írója nyitott. |
+| Lomtár, index, fa, rács, kijelölés, albumok, arcok | ⛔ | Nem érintett: Windows-mérés kell. |
+| Részleges törlés és írási hiba | ✅ / ⛔ | Nem érintett. |
+| PicasaPy összevetése | ✅ | A kész jegytörzs egyetlen igazolt eltérésre szól; a 413-414 nem hozott új eltérést, a fa Delete-nél nincs igazolt eltérés. |
+
 ### Nyitott
 
-- Ghidra-kör kell: 0x00A582F0 - a Ghidra 404 szerint a DELETE billentyűt
-  ez a vezérlő tartja meg; a teljes törzse és a mappafa hívója kiadja-e a
-  0x9d44 parancsot? [blokkoló]
-- Részben megválaszolva (Ghidra 405): a 2-es típus a katalógus `+0xac`
-  metódusától függ, ha a mappa legalább egy elemére igaz. Ghidra-kör kell: a
-  `+0xac` metódus jelentése (online vagy feltöltött állapot-e).
+- Részben megválaszolva (Ghidra 413): a mappalista saját kezelője
+  (`0x005c40e0`) a helyi disassembly szerint nem kezeli a DELETE-et, a
+  `0x00a582f0` pedig általános továbbító `0x9d44` nélkül. Ghidra-kör kell:
+  0x005c40e0 - dekompilálás, hogy a DELETE kezeletlensége kimeneten is
+  igazolt legyen; a `0x005c3fb0` (a `KeyHandler::AlbumList` vtábla szomszédos
+  bejegyzése) szerepe; utána a hívó, amely a `0xf4241` eredményt kapja: a nem
+  kezelt Delete a globális kezelőhöz kerül-e, és fotótörlést (`0x9c9a`)
+  indít-e fókuszban lévő mappalistával. [blokkoló]
+- Részben megválaszolva (Ghidra 405, 414): a 2-es típus a katalógus `+0xac`
+  metódusától függ, amely a `this+0xed8` táblában a `<szöveg>list` kulcsot
+  keresi (nem üres bejegyzés = igaz). Ghidra-kör kell: 0x006a46c0 - a tábla
+  keresője, és a hívói közül a `this+0xed8` táblába író függvény (a kulcs
+  pontos alakja, ki és mikor írja); 0x00926c20 és a visszaadott objektum
+  `0x68` virtuális metódusa - milyen szöveget ad (fiók, album vagy más).
 - A törlés utáni eredeti index-, album- és arcállapot, valamint a fa, rács
   és kijelölés végállapota NINCS MEG. Megszerzés: célzott Ghidra-olvasás a
   0x0065B840 körüli frissítési úton, majd Windows Picasa 3.9.141 mérés egy
@@ -4130,12 +4206,163 @@ kutatási tár).
   névvel küldött parancs egyike sem mappatulajdonság. Ebben a kezelőben tehát
   nincs gyorsbillentyű; az erőforrásbeli gyorsbillentyű-tábla nincs átnézve.
 
+### Ghidra-kiegészítés 2 (2026-11-15, várólista 413-418)
+
+Forrás: `referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp-2.txt` (privát
+kutatási tár). Ide a 415, a 416 és a 417 tartozik. Ahol más, korábbi kimenetből
+olvastam, a fájl nevét kiírtam.
+
+- **`0x00717810`, a rácsfejléc leírásmezője (415).** Részben megválaszolva. A
+  függvény csak a csomópontot építi és köti be a címzettet. Ha a `this+700`
+  mező üres, `CTextEditNode`-ot hoz létre (`0x00856060`, `0x350` bájt),
+  stílust és méretet állít, és ha a szöveg (`param_3`) nem üres, a
+  `FUN_008564f0`-val beírja; ha már van csomópont, RTTI-vel
+  `CTextEditNode`-ra alakítja, és csak a szöveget cseréli. A `param_2`
+  objektumot, ha nem null, a csomópont `+0x28c` mezőjébe teszi (a régi
+  címzettre a `0x0c` virtuális metódust hívja), és a csomópont `+0xc`
+  jelzőmezőjében a `7` bitjeit beállítja; ez valószínűleg az elfogadás
+  címzettje. Elfogadási visszahívás és mappakulcs a törzsben nincs. A `param_4`
+  nem nulla értéke a `+0x339` bájtot 1-re állítja, csak létrehozáskor. **A négy
+  hívó** (az első három törzse korábbi kimenetekben már megvan):
+  - `0x0074ad40`: `PeopleAlbum::ConfirmText` szöveg, `param_2 = 0`,
+    `param_4 = 1` (`2026-10-20-ghidra-16.txt`).
+  - `0x0074c200`: erőforrásnévből vett szöveg, `param_2 = 0`, `param_4 = 1`
+    (`2026-10-20-ghidra-13.txt`).
+  - `0x00749ba0`: üres szöveg, `param_2` egy frissen foglalt `0x1c` bájtos
+    objektum (`FUN_00746640`, a szülő `+0x50` mezőjéből építve)
+    (`2026-10-19-ghidra-11.txt`). Ugyanez a függvény a
+    `CThumbUI::ShareButtonLabel` feliratot is építi, és vtábla-adat
+    hivatkozza (`0x00cb16ec`), tehát valószínűleg az album- és mappafejlécet
+    frissítő virtuális metódus.
+  - `0x00789c00`: a törzse nincs dekompilálva.
+
+  A két ismert hívónál a csomópontnak nincs külső elfogadási címzettje; a
+  szerkeszthető leírás címzettje csak a `0x00749ba0` útján áll be. **PicasaPy:**
+  a fejléc Enter után ment, a `[Picasa]/description` kulcsba
+  (`LightboxHeaderDescription.qml:18-50`, `LightboxFeedGroup.qml:40-51`,
+  `controller_folder_description_mixin.py:26-63`). Hogy az eredeti fejléc
+  elfogadása a 417 felirat-setterét hívja-e, nem igazolt.
+- **`0x009946f0` és `0x00994400`, névtisztítás és áthelyezés (416).** A
+  `0x009946f0` nem útvonalépítő, hanem **névtisztító**. 25 hívója van, köztük a
+  `0x00849dc0` (a Folder Properties OK-ága, `0x00849f75`) és a `0x0055d320` (a
+  mentő, `0x0055d5ae`), tehát a tisztítás az OK-ágon és a mentőben is lefut
+  (hogy mindkétszer ugyanarra a névre, a kimenetből nem dönthető el). Lépései a
+  dekompilált törzs szerint:
+  1. üres (null) bemenetre hiba (`0xffffffff`);
+  2. a vezető szóközöket átugorja (`_iswspace`);
+  3. karakterenként: a szóközjellegű karakter (`_iswspace` vagy `U+3000`)
+     szóközzé válik; a `0x20` alatti vezérlőkarakter és a `\ / : * ? " < > |`
+     kimarad; minden más marad. A szóközjellegű ellenőrzés megelőzi a
+     vezérlőkarakter-szűrőt, ezért a tabulátor és a soremelés is szóköz lesz,
+     nem esik ki (a `_iswspace` pontos készletét a kimenet nem mutatja).
+     **A szóközöket nem vonja össze:** minden szóközjellegű karakter pontosan
+     egy szóközt ad;
+  4. a vezető és a záró pontot és szóközt levágja; üres eredményre hiba
+     (`0xffffffff`), mentés nem indul;
+  5. ha a teljes eredmény kis- és nagybetűtől függetlenül (ASCII) `aux`, `con`,
+     `nul` vagy `prn`, a végére `_` (`0x5f`) kerül. Csak teljes egyezésre, a
+     `con.txt` nem érintett.
+
+  **A #7038 javításával összevetve** (nyitott PR #7047, ág `integ/7030-7038`,
+  commit `e88e4ee3f`; a main-ben még nincs): a `sanitize_folder_rename_name`
+  (`src/picasapy/fileops/rename_folder.py:60-72` abban a commitban) a kilenc
+  tiltott karaktert, a vezérlőkarakterek kihagyását, a szélső pont és szóköz
+  levágását, az üres eredmény elutasítását és az `aux`/`con`/`nul`/`prn` + `_`
+  szabályt az eredetivel egyezően valósítja meg. **Egy igazolt eltérés van:** a
+  `re.sub(r" +", " ", ...)` (`:69`) a sorozatos szóközöket egyre vonja össze, az
+  eredeti nem. Példa: a beírt `A  B` (két szóköz) az eredetiben `A  B` marad, a
+  javításban `A B` lesz. A hatás kicsi (a párbeszéd csak akkor hív átnevezést,
+  ha a beírt szöveg eltér a mappa nevétől, `FolderPropertiesDialog.qml:237` a
+  #7047 commitban), de a "követi az eredeti névtisztítást" állítással nem fér
+  össze. **Bizonyítottsági fok:** egy út (a dekompilált törzs); a független
+  második út az eredeti Picasa felvétele lenne (lásd a Nyitott listát).
+  Nyitott, nem igazolt: a Python `str.isspace()` és a CRT `_iswspace`
+  készlete a ritka vezérlőkaraktereknél (`U+001C-U+001F`) eltérhet. A main-ben
+  (`3ce7dec69`) még a régi `validate_folder_name` fut (`rename_folder.py:37-40`,
+  `new_folder.py:54-62`).
+
+  A `0x00994400` a `MoveFileExW`-burkoló (a `0x00d694d8` mutatót az importtábla
+  `KERNEL32!MoveFileExW`-ként azonosítja, lásd fent). Jelzői: `8`
+  (`MOVEFILE_WRITE_THROUGH`), felülírásnál `|1` (`MOVEFILE_REPLACE_EXISTING`), a
+  `param_3`-nál `|2` (`MOVEFILE_COPY_ALLOWED`). Felülíráskor a cél csak
+  olvasható attribútumát előbb leveszi (a `0x00d694bc` és a `0x00d69514`
+  függvénymutatókon át; az azonosításukat a kimenet nem adja, a viselkedés
+  látszik: a `0xffffffff` hibajelzés és az `1`-es bit levétele). Hiba esetén,
+  ha `GetLastError() == 5` (hozzáférés megtagadva) és a `FUN_00992ed0` igazat
+  ad, **500 ms-onként újrapróbál** (`WaitForSingleObject(DAT_00d689cc, 500)`),
+  amíg az időkorlát le nem jár; ha közben az eseményobjektum jelez, `0xf4242` a
+  visszatérés. Ha a `FUN_00992ed0` hamis, a függvény `0`-t ad vissza
+  átnevezés nélkül; ennek jelentése nincs bontva. A régi Windows-ágon
+  `MoveFile`, hibánál másolás és törlés fut. Az időkorlát forrása és az
+  újrapróbált hívás forrásargumentuma a dekompilálásban sérült (`uStack_8`
+  inicializálatlan), ezeket nem állítom. Hívói közt a `0x004fd1c0`
+  (`0x004fd293`) és a `0x009eb290` (`0x009eb70b`). A forrás- és célút
+  összeállítása (`0x0052e0f0`, `0x004fd1c0`) ebben a kötegben nincs.
+  **PicasaPy:** az átnevezés egyetlen `os.rename` hívás (`rename_folder.py:14`,
+  `_rename`), `WRITE_THROUGH` és újrapróbálás nélkül; az eredeti az átmeneti
+  hozzáférési hibát (például más folyamat zárolását) kivárja, a PicasaPy
+  azonnal hibát ad. **Eltérés-jelölt, részben igazolt:** jegy előtt a
+  `FUN_00992ed0` jelentése és az időkorlát forrása kell.
+- **A mezőírók (417).** `0x00445460` (név, vtábla `+4`), `0x00443c90` (felirat,
+  `+8`), `0x004460a0` (dátum, `+0xc`), `0x0044fa80` (hely, `+0x10`) és
+  `0x004448d0` (zene). A név, a felirat és a hely `(this, sor, érték, tartós)`
+  alakú; előbb a memóriabeli albumoszlopba ír (zárolt tömb, `this+0xb60`,
+  `FUN_006a2a60` jelzés), majd `FUN_004481e0`; ha a negyedik paraméter (tartós
+  írás) nem nulla, a `FUN_004545c0(sor, kulcs, érték)` ír a kulccsal: `"name"`
+  (`0x00c7fa20`), `"description"` (a felirat kulcsa, nem `caption`) és
+  `"location"`. A kimenet fejlécének összegzése "mappa" első argumentumot ír;
+  a törzs szerint ez a sor azonosítója (`param_2`, ugyanaz, mint a tömbindex).
+  Memóriahibánál a visszatérés `4`. A
+  dátum a `this+0x940` táblába kerül `"date"` kulccsal (`0x00c80d7c`,
+  `FUN_006a5c60`); tartós írásnál, ha a `FUN_004543e0` (sor -> szöveg)
+  hibátlanul tér vissza és a szöveg nem üres, `sprintf("%f")` szöveget készít,
+  és a `FUN_0045c0a0("date", szöveg)` hívással írja. A `0x004448d0` a
+  `"music"` kulcsot írja (`FUN_006a63f0`, a `this+0x988` táblába, tartós jelző
+  nélkül). **A tartós jelző értéke** a mentőből jön (a korábbi kimenet
+  `0x0055d320` törzse, `2026-11-15-7031-7032-7033-colab-decomp.txt`): a
+  `FUN_004461a0(mappa)` eredményét negálva adja át, tehát **nem különleges
+  mappánál tartós, különlegesnél nem**; a zene mindig megy. A `FUN_004545c0` és
+  a `FUN_0045c0a0` belseje (az író, amely a fájlt és a szakaszt dönti el) nincs
+  dekompilálva. **PicasaPy:** a kulcsnevek egyeznek: `description`
+  (`controller_folder_description_mixin.py:37-40`), `date` hat tizedessel, `%f`
+  alakban (`ini/folder_date.py:117-134`, `_VARIANT_TIZEDES = 6`; ez független
+  megerősítés, mert a `0x004460a0` is `"%f"`-et formáz), `music`
+  (`ini/folder_music.py:44`) és `location` (a #7047-ben
+  `ini/folder_location.py`, `[Picasa]/location`; ez a kulcsnévre zárja a
+  korábbi "nincs meg a tárolási út" kérdést). **Két nyitott különbség:** (1) az
+  eredeti setter a `"name"` kulcsot is tartósan írja; a PicasaPy meglévő
+  mappánál csak átnevez, `[Picasa]/name` íróval nem hív
+  (`FolderPaneMenus.qml:457-470`); hogy a `FUN_004545c0` a mappa
+  `.picasa.ini`-jébe ír-e, és a `name` bekerül-e, nincs meg. (2) Az "Automatic
+  date" jelölőnél a mentő `0.0` dátumot ad át, és a setter ilyenkor is
+  `"0.000000"` szöveggel hívja a `FUN_0045c0a0`-t. Hogy ez kulcstörlés vagy
+  `date=0.000000` sor, a `FUN_0045c0a0` belsején múlik; a PicasaPy az üres
+  dátumnál törli a kulcsot (`ini/folder_date.py`, `with_folder_date_override`),
+  és az ottani komment szerint az eredeti író a `0.0` értékű sort kihagyja
+  (`0x0071031e`), ami összhangban lehet.
+
+**A jegy lezárhatósága: NEM zárható.** A "Kész, ha" pontokhoz mérve:
+
+| Pont | Állapot a 413-418 után | Miért |
+|---|---|---|
+| Minden belépési pont és feltétel | ⛔ | A rácsfejléc elfogadási címzettje a `0x00749ba0` útján áll be, de a címzett konstruktora (`0x00746640`) és a negyedik hívó (`0x00789c00`) nincs bontva; az erőforrásbeli gyorsbillentyű-tábla és a mappalista dupla kattintásának célsora (mappa vagy album) nyitott. |
+| Ablak, mezők, alapértékek, átnevezés | ✅ részben | A névtisztító és a `MoveFileExW`-burkoló teljes; a forrás- és célút összeállítása (`0x0052e0f0`, `0x004fd1c0`) nincs meg. |
+| Fájlrendszer, `.picasa.ini`, index, mappafa, rács, kijelölés | ⛔ | A kulcsnevek megvannak, de az író (`0x004545c0`, `0x0045c0a0`) nincs bontva, az index és a kijelölés végállapota sincs meg. |
+| Ütköző név, írásvédett hely, írási hiba | ✅ részben | Az átnevezési hiba és az újrapróbálás (500 ms) bizonyított; az ini-írási hiba eredménye mérés nélkül NINCS MEG. |
+
+**Fejlesztői teendő a 416 alapján:** a #7047 névtisztítása ne vonja össze a
+sorozatos szóközöket (kis javítás a PR-ben vagy utána). Javasolt kiegészítő
+"Kész, ha": a beírt `A  B` név két szóközzel marad. A hozzáférési hiba
+újrapróbálására jegyet addig nem javaslok, amíg a `FUN_00992ed0` jelentése nincs
+meg.
+
 ### Nyitott
 
 - Megválaszolva (Ghidra 406): a kapu nem a képszámot nézi, csak egy nem üres sztringet; a kijelölés nem számít.
-- Részben megválaszolva (Ghidra 407): mezőolvasók, setterek és a hibakezelés megvan. Ghidra-kör kell: a katalógus `+4/+8/+0x10/+0xc` setterei mögötti `.picasa.ini`-író.
-- Részben megválaszolva (Ghidra 408): sorrend és visszagörgetés megvan. Ghidra-kör kell: `0x009946f0` - a MoveFileExW forrás- és célútjának összeállítása.
-- Ghidra-kör kell: 0x00717810 - a rácsfejléc leírásmezőjének (`0x00856060` hívója) elfogadási eseménye és tartós mappakulcsa. [blokkoló]
+- Részben megválaszolva (Ghidra 407, 417): mezőolvasók, setterek, hibakezelés, a kulcsnevek (`name`, `description`, `location`, `date`, `music`) és a tartós jelző (nem különleges mappánál igaz) megvan. Ghidra-kör kell: 0x004545c0 - a `(sor, kulcs, érték)` író: melyik fájlba és szakaszba ír, a `name` kulcs bekerül-e; 0x0045c0a0 - a `date` ág `0.000000` értéke kulcstörlés vagy sor; 0x004543e0 - a sor -> szöveg feloldás.
+- Megválaszolva (Ghidra 408, 416): a sorrend és a visszagörgetés hiánya megvan; a `0x009946f0` névtisztító, a `0x00994400` a `MoveFileExW`-burkoló (500 ms-os újrapróbálás hozzáférési hibánál). Ghidra-kör kell: 0x0052e0f0 és 0x004fd1c0 - a forrás- és célút összeállítása; 0x00992ed0 - az újrapróbálás feltétele (hamis esetén a burkoló `0`-t ad) és az időkorlát forrása.
+- Részben megválaszolva (Ghidra 415): a `0x00717810` csak a csomópontot építi; a címzett a csomópont `+0x28c` mezője, amelyet a hívók közül csak a `0x00749ba0` állít be (a `0x0074ad40` és a `0x0074c200` null címzettet ad). Ghidra-kör kell: 0x00746640 - a `0x00749ba0` által épített `0x1c` bájtos címzett-objektum konstruktora és vtáblája (melyik metódus fut elfogadáskor, melyik kulcsot írja); 0x00789c00 - a negyedik hívó. [blokkoló]
+- Mérés (Colab, eredeti Picasa, a névtisztítás második útja): a Folder Properties névmezőjébe írt `A  B` (két szóköz) és `con` név mentés után mi lesz a lemezen (`A  B` vagy `A B`, illetve `con_`); a #7047 szóköz-összevonásának eldöntéséhez.
 - Megválaszolva (Ghidra 410-411): a küldő a bal oldali CAlbumList dupla kattintása, a hatókör az aktuális mappa.
 - Ellenőrizendő: a CAlbumList dupla kattintása mappasoron és albumsoron is a mappatulajdonságot nyitja-e (a `0x006db580` csak a meglévő mappa útja).
 - Részben megválaszolva (Ghidra 412): a Ctrl-kezelőben nincs gyorsbillentyű. Nyitott: az erőforrásbeli gyorsbillentyű-tábla.
@@ -4372,10 +4599,64 @@ kutatási tár).
   tehát szintén az első kijelölt elemet. Az egyezés a lista sorrendjéig
   **igazolt**; a sorrend (kijelölési vagy rácssorrend) nyitott.
 
+### Ghidra-kiegészítés 2 (2026-11-15, várólista 413-418)
+
+Forrás: `referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp-2.txt` (privát
+kutatási tár). Ide a 418 tartozik. A `0x005c76b0` törzsét a már meglévő
+`2026-11-15-7012-7022-colab-decomp.txt` kimenetből olvastam, nem a 413-418
+kötegből.
+
+- **`0x00506500`, rendezi-e a listát (418).** Megválaszolva: **nem rendez.** A
+  `param_1` a katalógus (rekordtömb `param_1[0xfc]`, darabszám
+  `param_1[0xfd] >> 1`), a `param_2` a bemeneti lista (mutató és darabszám).
+  Zárolja a katalógust (`EnterCriticalSection`), majd a lista elemein a
+  bemeneti sorrendben halad: a tartományon kívüli azonosítót elhagyja; a rekord
+  `+0x18` mezőjét nézi, és ha az `0x3e9`, az azonosítót a rekord `+0x20`
+  mezőjével (`piVar2[8]`) cseréli; a már felvett azonosítót nem veszi fel újra
+  (az első előfordulás marad). Az eredmény a bemeneti sorrendet követi, és
+  helyben felülírja a bemeneti listát. Null listára `4`, egyébként `0` a
+  visszatérés. A `0x3e9` jelentése ("hivatkozó" rekord) a fejléc olvasata; a
+  kimenet csak a mezőértéket mutatja. Hívói: `0x0057d879` (a `0x0057d7f0`, a
+  dátumállító) és `0x007dc704` (`0x007dc4f0`). Következmény: a dátumablak a
+  bemeneti lista első, feloldott, tartományban lévő elemének idejét mutatja.
+- **A bemeneti lista sorrendje (`0x005c76b0`).** A `0x0057d7f0` a
+  `FUN_005c76b0(0,1,1,1)`-et hívja (`0x0057d813`). Mivel `param_1 == 0`: ha a
+  `this+0xeac` objektum (valószínűleg az albumlista, ugyanaz a mező, amelyet a
+  `0x006db580` az albumlista aktuális mappájaként olvas) `+0x3c9` bájtja nem
+  nulla, az eredményt annak `0xdc` virtuális metódusa adja; különben a
+  `this+0xea8` objektumra hívott `FUN_007166c0(objektum, jelző)` tölti a
+  listát (a jelző 1); ha ez üresen hagyja, és a `this+0xe64` nem `-1`,
+  egyetlen elem kerül be (`this+0xe68`). A sorrendet tehát a `FUN_007166c0`
+  dönti el; ez nincs dekompilálva. **PicasaPy:** a `photoActionRows()` a
+  `selectedRows()` útján a `selectedIndexes` tömböt adja
+  (`MainLibrarySelectionState.qml:70-78`, `selection.js:32-36`), úgy, ahogy a
+  kattintások építették: a Ctrl+katt a végére fűz (`selection.js:7-12`), a
+  Shift+katt növekvő tartományt ad (`selection.js:15-21`). Az
+  `AdjustTimestampDialog.qml:66` a `photoRows[0]` elemet használja, tehát a
+  **kattintási sorrend** első elemét, nem a rács szerinti elsőt (a "Locate on
+  Disk" ezzel szemben szándékosan rácssorrendet használ, `selection.js:38-46`).
+  Hogy az eredeti a kattintási vagy a rács szerinti sorrendet adja, **nincs
+  meg**; egyezést ne állítsunk. Ha az eredeti rácssorrendet használ, a
+  Ctrl+kattal fordított sorrendben kijelölt képeknél az ablak más kép dátumát
+  mutatja.
+
+**A jegy lezárhatósága: NEM zárható.** A 7033 négy kérdése ("Kész, ha"):
+
+| Pont | Állapot a 413-418 után | Miért |
+|---|---|---|
+| 1. Belépési pontok és feltételek | ⛔ | A 418 nem érinti: a néző- és tálcakapu, az írásvédettségi kapu nyitott. |
+| 2. Ablak, alapértékek és megjegyzés | ⛔ (közelebb) | A lista első eleme és a "nem rendez" megvan; a lista sorrendje (`FUN_007166c0`) és a rádió sorrendje (`offsettime.fen`) nyitott. |
+| 3. Hatás és visszavonás | ⛔ | A 418 nem érinti: index, rács, mappafa, időrend, Undo nyitott. |
+| 4. Írásvédelem és részleges hiba | ⛔ | A 418 nem érinti: Windows-mérés kell. |
+
+Új fejlesztői jegyet a 418 nem indokol; a meglévő jegytörzs (a Tulajdonságok
+panel dátumsorának helyi menüje) változatlan. Ha a `FUN_007166c0` rácssorrendet
+ad, a `photoRows[0]` használata új eltérés-jelölt lesz.
+
 ### 10. Nyitott
 
 - Megválaszolva (Ghidra 402): a párbeszéd nem jegyez meg beállítást, a kezdő mód a 0. rádió. Nyitott: az `offsettime.fen` rádiósorrendje, azaz hogy a 0. rádió az eltolás-e.
-- Részben megválaszolva (Ghidra 403): a lista első elemének ideje, fókusz nélkül. Ghidra-kör kell: `0x00506500` - rendezi-e a kijelölési listát, mielőtt az első elemet veszi?
+- Részben megválaszolva (Ghidra 403, 418): a dátumablak a lista első elemének idejét kéri, fókusz nélkül, és a `0x00506500` nem rendez (a hivatkozó rekordot feloldja, az ismétlődést kiszűri). Ghidra-kör kell: 0x007166c0 - a `0x005c76b0` által hívott listatöltő: a kijelölés kattintási vagy rács szerinti sorrendben jön-e (PicasaPy: kattintási sorrend); ugyanitt: mikor áll a `this+0xeac` objektum `+0x3c9` jelzője (ilyenkor a lista forrása az albumlista `0xdc` metódusa).
 - **NINCS MEG:** a `readonly` fájl attribútum, csak olvasható mappa vagy
   fájlrendszerhiba pontos eredeti kezelése és felhasználói jelzése. Út:
   kontrollált Picasa 3.9 mérés írható, fájlattribútummal védett és
