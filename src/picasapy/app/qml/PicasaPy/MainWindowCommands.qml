@@ -377,11 +377,14 @@ Item {
     }
 
     // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat.
-    // Diavetítés közben (#8) a vetített kép a célpont, nem a rács-kijelölés.
-    function rotateTargetRow() {
+    // #7003: a célpont a TELJES kijelölés (az eredeti közös forgatási útja,
+    // `0x005e60d0` -> `0x005ee6e0`, sorban végigmegy rajta); nézőben csak a
+    // megjelenített kép, diavetítés közben (#8) a vetített kép. Üres célnál
+    // a vezérlő `rotationNeedsSelection` jelzése szól (`IDS_MUST_SELECT_TO_ROT`).
+    function rotateTargetRows() {
         if (hostWindow.slideshowRunning && hostRefs.slideshow)
-            return hostRefs.slideshow.currentIndex
-        return hostRefs.trayBar.starTargetRow
+            return [hostRefs.slideshow.currentIndex]
+        return hostWindow.photoActionRows()
     }
     // #103: csak-videó célpontnál a forgatás tiltott — a tálca ↺/↻
     // gombjainak őre (a controller-slotok defenzíven szintén kihagyják
@@ -406,7 +409,7 @@ Item {
     //: érhető el (`docs/specs/picasa-gyorsbillentyuk.md` 10.3–10.4).
     //:
     //: A cél a KIJELÖLÉS (az eredeti ága is a panelre hat); nézőben a
-    //: megnyitott kép, a forgatás `rotateTargetRow` mintája szerint.
+    //: megnyitott kép, a forgatás `rotateTargetRows` mintája szerint.
     function tukrozesiSorok() {
         if (hostWindow.viewerOpen)
             return [hostWindow.ensurePhotoViewer()._kijeloltSort()]

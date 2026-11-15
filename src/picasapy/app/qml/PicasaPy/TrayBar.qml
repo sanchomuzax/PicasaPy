@@ -108,7 +108,7 @@ Column {
         trayRightPane.openGooglePhotosUploadDialog()
     }
 
-    // a forgatás/csillag célsora — a Main rotateTargetRow()-ja is ezt kéri
+    // a csillag célsora (a forgatás gyorsbillentyűi a teljes kijelölést kérik)
     readonly property int starTargetRow: trayRightPane.starTargetRow
 
     function photosUploadMessage() {
