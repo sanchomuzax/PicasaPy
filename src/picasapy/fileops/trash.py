@@ -30,9 +30,38 @@ class TrashUnavailableError(OSError):
     csendes, visszavonhatatlan törléshez."""
 
 
+class ImmediateDeletionNeededError(OSError):
+    """A Shell a Lomtárba helyezésre PONTOSAN `0x0f`-et felelt (#6969).
+
+    Az eredetiben (`0x005c9b00`) ez az egyetlen hibakód, amelynél külön
+    `Delete` / `Cancel` kérdés nyílik (`0x005fdb80`, „This file cannot be
+    moved to the Trash and will be deleted immediately…"), és jóváhagyásra
+    végleges törlés megy (`0x009929b0`). Minden más hibakód sima `OSError`
+    marad: az nem indíthat végleges törlést.
+
+    A sima `OSError`-ből származik, hogy a kivételosztály szerint szűrő
+    hívók ne csússzanak el mellette némán - de a kérdést csak az kapja
+    el, aki ezt a típust nevesíti."""
+
+
+#: A `SHFileOperationW` egyetlen eredménye, amely a végleges törlés külön
+#: kérdését indítja (`0x005c9b00`, #6969).
+SHELL_EREDMENY_NINCS_LOMTAR = 0x0F
+
+
 def _platform() -> str:
     """A futó platform — külön függvény, hogy a teszt helyettesíthesse."""
     return sys.platform
+
+
+def _shfileoperation(muvelet) -> int:
+    """A `SHFileOperationW` MODULSZINTŰ fogantyúja (#6969, #1217/#1375).
+
+    A teszt EZT cserélje, ne a globális `ctypes.windll`-t: az utóbbi minden
+    más modulra is hat, és Linuxon nem is létezik."""
+    import ctypes
+
+    return int(ctypes.windll.shell32.SHFileOperationW(ctypes.byref(muvelet)))
 
 
 #: A `shutil.move` és az `os.access` MODULSZINTŰ fogantyúja (#1375).
@@ -97,7 +126,14 @@ def _windows_lomtarba(path: Path) -> None:
         hNameMappings=None,
         lpszProgressTitle=None,
     )
-    eredmeny = ctypes.windll.shell32.SHFileOperationW(ctypes.byref(muvelet))
+    eredmeny = _shfileoperation(muvelet)
+    if eredmeny == SHELL_EREDMENY_NINCS_LOMTAR:
+        # #6969: az eredeti csak ennél az egy kódnál kérdez külön, és csak
+        # jóváhagyásra töröl véglegesen. A fájlhoz itt NEM nyúlunk.
+        raise ImmediateDeletionNeededError(
+            f"A fájl nem helyezhető a Lomtárba (SHFileOperationW="
+            f"{eredmeny:#x}): {path}"
+        )
     if eredmeny != 0 or muvelet.fAnyOperationsAborted:
         raise OSError(
             f"A Lomtárba helyezés nem sikerült (SHFileOperationW={eredmeny}): {path}"

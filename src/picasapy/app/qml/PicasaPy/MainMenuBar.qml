@@ -308,6 +308,10 @@ PicasaMenuBar {
     onDeleteRequested: hostFileOpsDialogs.ensure().openDelete(
         hostWindow.viewerOpen ? hostWindow.photoActionPaths()
                           : hostWindow.selectedPaths())
+    // #6969: Shift+Delete - végleges törlés megerősítése
+    onPermanentDeleteRequested: hostFileOpsDialogs.ensure().openDelete(
+        hostWindow.viewerOpen ? hostWindow.photoActionPaths()
+                          : hostWindow.selectedPaths(), true)
     // #1608: a `Delete` NÉZETFÜGGŐ — albumban/Emberek-albumban nem
     // lemezről töröl, csak kiveszi onnan (a helyi menü már meglévő
     // útjaira vezet, ld. lentebb a PhotoContextMenu ugyanezen kezelőit)

@@ -21262,4 +21262,31 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
             <translation>&amp;Adicionar etiquetas de nome</translation>
         </message>
     </context>
+    <context>
+        <name>ImmediateDeleteDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImmediateDeleteDialog.qml" line="25" />
+            <source>Delete Items</source>
+            <extracomment>DeleteMessage::DeleteItemsTitle
+picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::DeleteItemsTitle</extracomment>
+            <translation>Eliminar itens</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImmediateDeleteDialog.qml" line="27" />
+            <source>Delete</source>
+            <extracomment>CThumbUI::ConfirmImmediateDeletion::Delete
+picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ConfirmImmediateDeletion::Delete</extracomment>
+            <translation>Eliminar</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImmediateDeleteDialog.qml" line="51" />
+            <source>This file cannot be moved to the Trash and will be deleted immediately. Are you sure you want to continue?</source>
+            <extracomment>CThumbUI::ConfirmImmediateDeletion::Message
+picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ConfirmImmediateDeletion::Message</extracomment>
+            <translation>Este ficheiro não pode ser movido para o lixo e será eliminado imediatamente. Tem a certeza de que pretende continuar?</translation>
+        </message>
+    </context>
 </TS>
