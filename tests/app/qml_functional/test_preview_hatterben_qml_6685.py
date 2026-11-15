@@ -104,17 +104,22 @@ def test_valodi_kattintas_kozben_el_a_felulet_es_frissul_a_kep(
     timer.setInterval(50)
     timer.setTimerType(Qt.TimerType.PreciseTimer)
     timer.timeout.connect(lambda: timer_ticks.append(time.monotonic()))
+    # #7007: az alapmérés a GÉPET méri, nem a terméket. Ha a gép már
+    # üresjáratban sem kézbesíti a jelzések 80%-át, a render közbeni mérés
+    # sem mondana semmit, ezért a próba ilyenkor kimarad, nem bukik.
     timer.start()
     baseline_start = time.monotonic()
     assert var_feltetelre(
-        qt_app, lambda: time.monotonic() - baseline_start >= 0.5, 1.5
+        qt_app, lambda: time.monotonic() - baseline_start >= 1.0, 3.0
     ), "az időzítő alapmérése nem futott le"
     baseline_ticks = len(timer_ticks)
     timer.stop()
     timer_ticks.clear()
-    assert baseline_ticks >= 8, (
-        f"az időzítő alapmérése csak {baseline_ticks}/10 jelzést kapott"
-    )
+    if baseline_ticks < 16:
+        pytest.skip(
+            f"a gép üresjáratban is csak {baseline_ticks}/20 időzítőjelzést "
+            "kézbesített, a render közbeni mérés így nem értelmezhető"
+        )
 
     panel.setProperty("activeTab", 2)
     qt_app.processEvents()
