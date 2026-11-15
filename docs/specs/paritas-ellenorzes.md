@@ -3105,11 +3105,11 @@ viselkedésének PicasaPy-megfelelője nem ismert.
 
 | Hatás | Eredeti Picasa 3.9 | PicasaPy most |
 |---|---|---|
-| Lemez és lomtár | A 0x005edef0 a megerősítés után a 0x00992810 útján a 0x009929b0 Shell-hívást végzi. A 0x009929b0 wFunc értéke 3, azaz FO_DELETE, és paraméter 1-nél FOF_ALLOWUNDO is beáll. A normál út tehát lomtárba teszi a mappát és tartalmát, nem végleges törlés. | src/picasapy/app/fileops_controller_delete_mixin.py:18-41 a teljes mappautat adja a delete_to_trash függvénynek. Windows alatt src/picasapy/fileops/trash.py:79-140 a SHFileOperationW lomtárútját használja. |
-| .picasa.ini | Sikeres egész mappatörlésnél a Shell a mappa útját és tartalmát kezeli, így a .picasa.ini nem külön törlődik. Részleges hibánál a fájl végállapota a konkrét könyvtártartalomtól függhet; ezt külön futásmérés nem igazolta. | A kód nem írja külön a .picasa.ini-t; az a mappával együtt kerül a lomtárba. Ezt a szándékot a src/picasapy/app/fileops_controller_delete_mixin.py:25-27 kommentje is kimondja. |
-| Index | A belső Picasa index törlés utáni módosítása ebből a handler láncból nem állapítható meg. NINCS MEG. | Siker után folderDeleted indul (src/picasapy/app/fileops_controller_delete_mixin.py:41, application_services.py:121-124); a resync eltávolítja az eltűnt mappa indexsorait (library_controller_resync.py:195-211, index/sync_folders.py:296-325). |
+| Lemez és lomtár | A 0x005edef0 a megerősítés után a 0x00992810 útján a 0x009929b0 Shell-hívást végzi. A 0x009929b0 wFunc értéke 3, azaz FO_DELETE, és paraméter 1-nél FOF_ALLOWUNDO is beáll. A normál út tehát lomtárba teszi a mappát és tartalmát, nem végleges törlés. | `src/picasapy/app/fileops_controller_delete_mixin.py:18-41` a teljes mappautat adja a delete_to_trash függvénynek. Windows alatt `src/picasapy/fileops/trash.py:79-140` a SHFileOperationW lomtárútját használja. |
+| .picasa.ini | Sikeres egész mappatörlésnél a Shell a mappa útját és tartalmát kezeli, így a .picasa.ini nem külön törlődik. Részleges hibánál a fájl végállapota a konkrét könyvtártartalomtól függhet; ezt külön futásmérés nem igazolta. | A kód nem írja külön a .picasa.ini-t; az a mappával együtt kerül a lomtárba. Ezt a szándékot a `src/picasapy/app/fileops_controller_delete_mixin.py:25-27` kommentje is kimondja. |
+| Index | A belső Picasa index törlés utáni módosítása ebből a handler láncból nem állapítható meg. NINCS MEG. | Siker után folderDeleted indul (`src/picasapy/app/fileops_controller_delete_mixin.py:41,` `application_services.py:121-124`); a resync eltávolítja az eltűnt mappa indexsorait (`library_controller_resync.py:195-211,` `index/sync_folders.py:296-325`). |
 | Mappafa, rács és kijelölés | A parancs aktuális mappaobjektumot kap, de a siker utáni kiválasztott mappa, fa, rács és fotókijelölés végállapota nem igazolt. NINCS MEG. | A részfa újraszinkronizálódik; a törölt mappára mutató kiválasztás és a rács végállapota nincs a törlő handlerben külön beállítva. A tényleges megjelenő végállapot NINCS MEG, futásmérés kell. |
-| Albumtagságok és arcok | A mappatartalommal együtt kezelt .picasa.ini önmagában nem bizonyítja az alkalmazás adatbázisában lévő album- és arcállapotot. NINCS MEG. | A kód kommentje szerint a .picasa.ini visszaállítása a feliratokat, címkéket és arc-hozzárendeléseket is visszahozza (fileops_controller_delete_mixin.py:25-27). Az albumtagság és az arcok törlés utáni, illetve visszaállítás utáni állapota külön mérés nélkül NINCS MEG. |
+| Albumtagságok és arcok | A mappatartalommal együtt kezelt .picasa.ini önmagában nem bizonyítja az alkalmazás adatbázisában lévő album- és arcállapotot. NINCS MEG. | A kód kommentje szerint a .picasa.ini visszaállítása a feliratokat, címkéket és arc-hozzárendeléseket is visszahozza (`fileops_controller_delete_mixin.py:25-27`). Az albumtagság és az arcok törlés utáni, illetve visszaállítás utáni állapota külön mérés nélkül NINCS MEG. |
 | Több fotó kijelölése | A 0x9d44 handler egy mappát kap, nem fotólistát; az egy vagy több kijelölt fotó nem a mappatörlő parancs argumentuma. A néző aktív fotójának törlése külön 0x9c9a fotóparancs. | A főmenü hostController.currentFolder értékét adja át; a fa helyi menüje folderPath értékét adja át. Fotók kijelölése nem bővíti a törölt mappák számát. |
 
 ### Részleges törlés és hibák
@@ -3122,15 +3122,15 @@ Az üres, rejtett, írásvédett vagy hálózati bejegyzésekkel kapcsolatos
 konkrét részleges végállapot NINCS MEG.
 
 PicasaPy-ban Windows Shell nemnulla eredmény vagy megszakított művelet esetén
-a src/picasapy/fileops/trash.py:137-140 általános OSError keletkezik, és a
-src/picasapy/app/fileops_controller_delete_mixin.py:38-40 ezt szövegváltoztatás
+a `src/picasapy/fileops/trash.py:137-140` általános OSError keletkezik, és a
+`src/picasapy/app/fileops_controller_delete_mixin.py:38-40` ezt szövegváltoztatás
 nélkül az operationFailed jelzésre küldi. Ez nem őrzi meg az eredeti
 részlegesállapot-figyelmeztetést. Ez az egyetlen most igazolt, fejlesztést
 indokló eltérés.
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| Nemnulla Shell-eredmény: 0x005edef0 megjeleníti a 0x00e05b6a IDS_CANT_DELETE_FOLDER szöveget, amely elmondja, hogy a képek már törölve lehetnek, a mappa viszont megmaradhat. | src/picasapy/fileops/trash.py:137-140 általános hibát dob; src/picasapy/app/fileops_controller_delete_mixin.py:38-40 a generikus üzenetet továbbítja. | A Windows mappatörlés Shell-hibájánál részleges eredményt pontosan megnevező figyelmeztetést adjon. Ne állítsa, hogy a teljes mappa érintetlen maradt. |
+| Nemnulla Shell-eredmény: 0x005edef0 megjeleníti a 0x00e05b6a IDS_CANT_DELETE_FOLDER szöveget, amely elmondja, hogy a képek már törölve lehetnek, a mappa viszont megmaradhat. | `src/picasapy/fileops/trash.py:137-140` általános hibát dob; `src/picasapy/app/fileops_controller_delete_mixin.py:38-40` a generikus üzenetet továbbítja. | A Windows mappatörlés Shell-hibájánál részleges eredményt pontosan megnevező figyelmeztetést adjon. Ne állítsa, hogy a teljes mappa érintetlen maradt. |
 
 ### Bizonyíték és bizonyítottsági fok
 
@@ -3143,7 +3143,7 @@ indokló eltérés.
 | Normál kérdés és DeleteFolder erőforrások | bináris (0x005fdc30, 0x00c990e8, 0x00c992c0, 0x00c99314, 0x00c99338) |
 | Mappát lomtárba adó Shell-művelet | bináris (0x005edef0, 0x00992810, 0x009929b0) |
 | Részleges eredmény figyelmeztetése | bináris (0x005edef0, 0x00e05b6a) |
-| PicasaPy belépési pontok, megerősítés és hibaút | Mai forrás: src/picasapy/app/qml/PicasaPy/MainMenuBar.qml:168-170; FolderPane.qml:236-244; FolderPaneMenus.qml:317-325,398-414; src/picasapy/app/fileops_controller_delete_mixin.py:18-41; src/picasapy/fileops/trash.py:129-140 |
+| PicasaPy belépési pontok, megerősítés és hibaút | Mai forrás: src/picasapy/app/qml/PicasaPy/MainMenuBar.qml:168-170; FolderPane.qml:236-244; FolderPaneMenus.qml:317-325,398-414; `src/picasapy/app/fileops_controller_delete_mixin.py:18-41`; `src/picasapy/fileops/trash.py:129-140` |
 | Eredeti üres/almappás/írásvédett/hálózati viselkedés, belső index/album/arc és UI végállapot | NINCS MEG; külön Windows Picasa 3.9.141 futásmérés szükséges |
 
 **Bizonyítottsági fok: feltételes.** A fő- és helyi menü parancsazonossága,
@@ -3198,8 +3198,8 @@ eredményénél a 0x00e05b6a IDS_CANT_DELETE_FOLDER figyelmeztetést mutatja.
 A szöveg szerint a képek már törölve lehetnek, de a mappa további fájlok
 vagy mappák miatt megmaradhat.
 
-Nálunk: src/picasapy/fileops/trash.py:137-140 általános OSError keletkezik;
-src/picasapy/app/fileops_controller_delete_mixin.py:38-40 ezt általános
+Nálunk: `src/picasapy/fileops/trash.py:137-140` általános OSError keletkezik;
+`src/picasapy/app/fileops_controller_delete_mixin.py:38-40` ezt általános
 hibaüzenetként továbbítja.
 
 Teendő: Windows mappatörlés Shell-hibájánál külön részleges eredmény
