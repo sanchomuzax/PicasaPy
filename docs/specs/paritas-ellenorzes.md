@@ -1465,6 +1465,62 @@ A mérés célja annak rögzítése, hogy az Indexképek frissítése parancs mi
      - A Picasa profilkönyvtárában található `thumbs.db` fájl nem törlődik a lemezről (mérete a parancs futásakor nem esik nullára).
      - A könyvtárnézeti rácsban a bélyegképek a memóriából való ürülés után a háttérben egymás után újra elkészülnek és frissülnek.
 
+## #6964: A Rename parancs folyamatszintű összevetése az eredeti Picasával
+
+A vizsgálat célja a `Rename` (`ID_FILE_RENAME`, `0x9d4f`) teljes folyamatának összevetése az eredeti Picasa 3.9 binárisával (belépési pontok, engedélyezési feltételek, ablakmezők, sorszámozás, hatás a fájlrendszerre, `.picasa.ini`-re, indexre, kijelölésre és sorrendre, valamint hibakezelés).
+
+### 1. Folyamatszintű összehasonlító táblázat
+
+| Funkció / Szempont | Eredeti Picasa 3.9 (bináris cím) | PicasaPy (fájl:sor) | Teendő / Státusz |
+|---|---|---|---|
+| Fájl menü belépési pont | `eMenuFile::ID_FILE_RENAME` (`0x005593da`), parancs ID `0x9d4f` (40271), felirat: `&Rename...\tF2` (`0x00c8c630`, `0x00c8c610`). Engedélyezve: kijelölés >= 1 (`0x0056e46e`), nem írásvédett/rejtett mappa (`0x0057d430 == 0`), és a néző/szerkesztő nincs nyitva (`0x0056e458`). | `PicasaFileMenu.qml:92-95`, `PicasaMenuBar.qml:394`: `objectName: "menuFileRename"`, `&Rename...\tF2`. | Egyezik a felirat és a parancskötés. |
+| Kép menü belépési pont | `eMenuPicture::BatchEdit` almenüben `&Rename...` (`0x0055b2ae`), parancs ID `0x9d4f`. Engedélyezési feltétele azonos a Fájl menüvel. | `PicasaPictureMenu.qml:25-28`: `objectName: "menuBatchRename"`, `&Rename...\tF2`. | Egyezik. |
+| Gyorsbillentyű (F2) könyvtárban | `FUN_005e6710` (0x005e68fd): `VK_F2` (`0x71`). Feltételek: nincs szövegbeviteli fókusz (`0x332f == 0`), nem speciális nézet, kijelölés >= 1, és a néző/szerkesztő nincs nyitva (`0x005e68ee`). Hívja: `0x005e6939: call 0x00532ec0`. | `MainKeyboardShortcuts.qml:417-425`: `sequence: "F2"`, könyvtárnézetben megnyitja a `renameManyDialog`-ot. | Egyezik a könyvtárnézeti működés. |
+| Gyorsbillentyű (F2) és menü a Nézőben | A néző/szerkesztő nyitott állapota (`+0x34a4 != 0`) esetén mind az F2 gyorsbillentyű (`0x005e68ee`), mind a menüpont (`0x0056e458`) letiltott; a dialógus nem nyitható meg. | `MainKeyboardShortcuts.qml:415-425`: az F2 a nézőben is aktív (`photoActionRows()`), és megnyitja az átnevezőt a nézett képre. | Eltérés: az eredetiben a nézőben az F2 és a Rename menüpont inaktív. Döntendő: maradjon-e kényelmi funkcióként vagy szigorú paritás kell. |
+| Kép helyi menüje (jobb klikk) | Az eredeti kép helyi menüben (sem rácsban, sem nézőben) nincs Rename tétel (`ui-audit-context-menus.md` 135-136. sor, `0x005e7c20`). | `PhotoContextMenu.qml`, `ViewerContextMenu.qml`: nincs Rename menüpont. | Egyezik. |
+| Párbeszédablak szerkezete | `runtime/rename.fen`: modális ablak (`title="Rename Files"`), kijelölési címke (`"1 file(s) selected for rename."` / `"%s file(s) selected for rename."`), prompt (`"Please enter a new name for these files:"`), szövegmező (`newname`, `25em`), jelölőcsoport (`"Include in filename:"`), Date és Image resolution jelölőnégyzetek, minta (`"Example: <alapnév>[ <dátum>][ <méret>].jpg"`), Rename (accept) és Cancel gombok. | `FileOpsDialogs.qml:240-368` (`renameManyDialog`): cím, feliratok, beviteli mező, Date és Image resolution jelölőnégyzetek, példa és gombok. | Egyezik a felületi struktúra és a kulcsok. |
+| Alapértelmezett név a mezőben | A kijelölt fájlok közül a legelső fájl kiterjesztés nélküli alapkiterjesztése (`0x00532738`, `strrchr` pont vágás). | `FileOpsDialogs.qml:250-258`: `openedName` az első kijelölt elem kiterjesztés nélküli neve. | Egyezik. |
+| Rename gomb engedélyezése | `0x00532c70`: Ha a `RenameUseDate` VAGY a `RenameUseSize` be van jelölve, a Rename gomb akkor is aktív, ha a beírt név nem változott (`0x00532cdd`, `0x00532cf0`). Csak akkor tiltott, ha egyik sincs bejelölve ÉS a név üres vagy azonos az eredetivel (`0x00532d94`). | `FileOpsDialogs.qml:269-272` (`canRename()`): `return base.length > 0 && base !== openedName.trim()`. Ha a név nem változik, de a Date vagy Size be van pipálva, a gomb tiltva marad! | Eltérés: a `canRename()`-nek engedélyeznie kell az átnevezést, ha a Date vagy Size jelölőnégyzet be van pipálva. |
+| Sorszámozás több képnél | `FUN_00993650` (0x00993b07): formátum `"%s-%03lu"` (`nev-001`, `nev-002`, ...). Ha a név már kötőjeles számmal végződik, a számlálás onnan folytatódik (`0x0099397c`). Legfeljebb 4096 (`0x1000`) elemig vizsgálja (`0x00993993`). 1 képnél nincs sorszám. | `src/picasapy/fileops/rename.py:261-264`, `282-300`: `preview_name` és `_available_name` a `f"{stem}-{sequence:03d}"` alakot és 4096-os limitet használ. | Egyezik. |
+| Dátum utótag formátuma | `0x00532710` és `0x005332e0`: rövid dátum + idő másodperccel, a `:` és `/` karakterek `-`-ra cserélve (minta: `" 08-01-2004 2-30-45 PM"`). | `rename.py:199-216` (`format_taken_at`): rendszer dátum/idő formátum, tiltott karakterek `-`-ra cserélve. | Egyezik. |
+| Felbontás utótag formátuma | `0x00532867` és `0x00533358`: `" %dx%d"` (minta: `" 640x480"`). | `rename.py:238-239`: `f"{item.width}x{item.height}"`. | Egyezik. |
+| `.picasa.ini` szekció kezelése | A fájl átnevezésekor a `.picasa.ini` szekciófejléce `[regi.ext]`-ről `[uj.ext]`-re módosul. A szekció alatti arcadatok (`faces=`), csillagozás (`star=yes`), elforgatás (`rotate=`), felirat (`caption=`), szűrők és albumtagság (`albums=`) változatlanul megmaradnak az új szekcióban. | `rename.py:87`: `update_document(..., lambda doc: doc.with_renamed_section(path.name, new_name))`. | Egyezik: teljes round-trip megőrzés. |
+| Index és rács sorrendje | Az adatbázisban a fájl útvonala frissül. A rácsban a képek a mappa aktuális rendezési módja (Sort by: Name, Date, Size) szerint azonnal átrendeződnek az új helyükre (`0x0065b840`). | `fileops_controller.py`, `photos_model.py`: az indexben frissül az útvonal, a rácsmodell újrarendeződik. | Egyezik. |
+| Kijelölés átnevezés után | `0x0053386c: call 0x00412400`: az átnevezési ciklus lefutása után az ÖSSZES sikeresen átnevezett kép kijelölve marad az új pozíciójában. | `FileOpsDialogs.qml:283-287` és `MainWindowCommands.qml:93-110`: csak egyetlen kép (`rows.length === 1`) esetén állítja be a `_pendingRenamePhotoId`-t; több kép átnevezése után a kijelölés nem követi a fájlokat. | Eltérés: több kép átnevezésekor az összes érintett kép kijelölését meg kell tartani. |
+| Hibakezelés (ütközés, írásvédettség) | `0x0053351c` és `0x00533822`: Ha egy fájl átnevezése meghiúsul (zárolt fájl, mappa-írásvédettség, névütközés 4096 után), a ciklus átugorja a hibás fájlt és folytatja a többi kijelölt fájl feldolgozását. | `rename.py:349-370`: `rename_photos_many` `PartialRenameError`-t dob bármely fájl hibájánál, és a kötegelt végrehajtás megszakad. | Eltérés: a Picasa nem szakítja meg a köteget, hanem átugorja a sikertelen elemeket és a sikereseket jelöli ki a végén. |
+
+### 2. Két független út és cáfoló vizsgálat
+
+- **A út (bináris utasításszintű olvasás):**
+  - Belépési pontok: `0x005593da` (Fájl menü `0x9d4f`), `0x0055b2ae` (Picture menü `0x9d4f`), `0x005cb990` (`0x5cc4e9: call 0x00532ec0`), `0x005e6710` (`0x5e68fd` VK_F2 -> `0x5e6939: call 0x00532ec0`).
+  - Néző tiltása: `0x0056e458` (menüfrissítésnél `[edi + 0x34a4] != 0` esetén letiltja a `0x9d4f` menüt), `0x005e68ee` (F2 leütéskor `FUN_0057c430(4)` hívással ellenőrzi a nézőt és átugorja a megnyitást).
+  - Dialógus és engedélyezés: `0x00532070` konstruktor, `0x00532c70` állapotgép: ha `RenameUseDate` (`+0xd8`) vagy `RenameUseSize` (`+0xf4`) be van pipálva, a Rename gomb aktív; egyébként a név különbözősége szükséges.
+  - Sorszámozás: `0x00993650` (0x00993b07: `"%s-%03lu"`), 4096-os limit (`0x00993993`, `0x00993a1a`).
+  - Végrehajtás és kijelölés: `0x0053351c` hibánál ugrás `0x533822`-re (átugrás), a végén `0x0053386c: call 0x00412400` a sikeres elemek kijelölésére és `0x005338a0: call 0x0065b840` a nézet frissítésére.
+- **B út (erőforrás és specifikációs kontroll):**
+  - `runtime/rename.fen`: a deklaratív felületleíró betűre megerősíti az ablak címét (`"Rename Files"`), a vezérlőneveket (`files`, `newname`, `date`, `size`, `sample`, `rename`) és a feliratokat.
+  - `picasa-gyorsbillentyuk.md` korábbi futásidejű képernyőképes mérései (kb-5, 2756. sor) igazolták az `F2` leütés viselkedését és párbeszédablakának megjelenését.
+  - `ui-audit-context-menus.md` tételes menüleltára igazolja, hogy a helyi menükben nincs Rename tétel.
+- **Cáfoló vizsgálat:**
+  - Megvizsgáltuk azt a feltételezést, hogy a nézőben engedélyezett-e az F2 gyorsbillentyű (a PicasaPy #6530 jegyében feltételezett viselkedés). A binárisban a `0x005e68ee` utasítás (`push 4; call 0x57c430; test al, al; jne 0x5e6947`) cáfolja ezt: ha a néző nyitva van, az elágazás a hívás elé ugrik és elnyeli az eseményt. Ugyanígy a menüfrissítő `0x0056e458` utasítás is letiltja a menüpontot a nézőben.
+
+### 3. Azonosított fejlesztési eltérések és jegyjavaslatok
+
+1. **Rename gomb tiltva marad, ha a név nem változott, de a Date vagy Image resolution be van jelölve:**
+   - **Eredeti:** `0x00532c70`: a `RenameUseDate` vagy `RenameUseSize` bejelölése esetén a Rename gomb aktív, akkor is, ha a szövegmező tartalma nem módosult.
+   - **Nálunk:** `FileOpsDialogs.qml:271`: `canRename()` csak akkor ad igazat, ha `base !== openedName.trim()`.
+   - **Teendő:** `canRename()` bővítése: `return base.length > 0 && (base !== openedName.trim() || includeDateCheck.checked || includeSizeCheck.checked)`.
+2. **Több kép átnevezése után a kijelölés elveszik a rácsban:**
+   - **Eredeti:** `0x0053386c`: az összes átnevezett kép kijelölve marad az új pozíciójában.
+   - **Nálunk:** `FileOpsDialogs.qml:283` és `MainWindowCommands.qml:93-110`: csak 1 képnél kezeli a `_pendingRenamePhotoId`-t.
+   - **Teendő:** A kijelölés-követést kiterjeszteni több kép átnevezésére (pl. `_pendingRenamePhotoIds` lista kezelése).
+3. **Hibakezelés kötegelt átnevezésnél:**
+   - **Eredeti:** `0x0053351c` és `0x00533822`: egyedi fájlhibánál átugorja a hibás elemet és folytatja a többi kijelölt fájllal.
+   - **Nálunk:** `rename.py:350-370`: `PartialRenameError` azonnal megszakítja a folyamatot.
+   - **Teendő:** Eldöntendő fejlesztői kérdés: megtartjuk-e a szigorúbb hiba-leállást, vagy átugrásos folytatás kell.
+
+**Átvételi megjegyzés (a nézőbeli F2):** a fenti „néző tiltása” állítás feltételes. A `0x0057c430(4)` állapotkód és a `+0x34a4` mező jelentését („a néző nyitva”) ez a kör nem igazolta külön, az eredeti programot használó tulajdonos pedig a #6530-ban azt jelezte, hogy megnyitott képnél az F2 átnevez. A PicasaPy nézőbeli F2-je ezért marad; a kérdést csak egy Colab-os viselkedésmérés dönti el (néző megnyitása, F2, megnyílik-e a Rename ablak).
+
 ## #6967: A Revert parancs teljes folyamata az eredeti Picasában és összevetése a PicasaPy-jal
 
 ### 1. Belépési pontok, engedélyezési feltételek és a két revert-parancs szétválasztása
