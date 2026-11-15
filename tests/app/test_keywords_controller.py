@@ -168,20 +168,21 @@ class TestQuickTagButtonsReserveRecent:
         assert buttons[1] == "első"
 
     @pytest.mark.parametrize(
-        ("recent", "keyword"),
+        ("recent", "keyword", "expected"),
         [
-            (["második", "első"], "ELSŐ"),
-            (["első", "második"], "MÁSODIK"),
+            (["második", "első"], "első", ["második", "első"]),
+            (["első", "második"], "második", ["első", "második"]),
+            (["első", "második"], "ELSŐ", ["ELSŐ", "első"]),
         ],
     )
     def test_reusing_either_recent_tag_keeps_its_order(
-        self, controller, recent, keyword
+        self, controller, recent, keyword, expected
     ):
         controller._get_settings().setValue("quickTags/recentKeywords", recent)
 
         controller.addKeywordToRows([0], keyword)
 
-        assert controller._quick_tag_recent() == recent
+        assert controller._quick_tag_recent() == expected
 
     def test_new_tag_keeps_only_two_recents_and_does_not_move_manual_slots(
         self, controller

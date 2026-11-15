@@ -323,14 +323,9 @@ Item {
         enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
         onActivated: {
             if (hostWindow.viewerOpen) return
-            // #1773: a billentyű BILLENT (a menütétel nem). Megnyitáskor a
-            // címkemező fókuszát csak a billentyű kéri; a menü útja változatlan.
-            if (hostWindow.tagsPanelOpen) {
-                hostWindow.ureseidAFiokot()
-                return
-            }
+            // #7025: ugyanaz a lapváltó út, mint a Ctrl+K és a Nézet menü.
             hostWindow.valtsFiokLapot("tags")
-            tagsPanelInputFocusTimer.restart()
+            if (hostWindow.tagsPanelOpen) tagsPanelInputFocusTimer.restart()
         }
     }
 

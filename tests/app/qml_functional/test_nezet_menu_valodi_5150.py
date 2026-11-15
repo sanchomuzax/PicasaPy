@@ -182,6 +182,29 @@ class TestDiavetitesEsIdorend:
 
 
 class TestOldalsavPanelek:
+    def test_a_tags_menu_tetel_valt_es_aktiv_tagsnel_bezar(self, nezet_app, qt_app):
+        window, controller, _engine = nezet_app
+        elokeszit(window, qt_app, controller)
+        assert window.property("activeDrawerTab") == "", (
+            "a fiók kiinduláskor nyitott: a teszt nem bizonyít"
+        )
+
+        tetel_kattintasa(window, qt_app, "menuViewTags")
+        assert varj(qt_app, lambda: window.property("activeDrawerTab") == "tags"), (
+            "a Nézet ▸ Tags kattintás nem nyitotta meg a Címkék lapot"
+        )
+
+        tetel_kattintasa(window, qt_app, "menuViewTags")
+        assert varj(qt_app, lambda: window.property("activeDrawerTab") == ""), (
+            "az aktív Címkék lapon a Nézet ▸ Tags kattintás nem zárta be a fiókot"
+        )
+
+        window.setProperty("activeDrawerTab", "people")
+        tetel_kattintasa(window, qt_app, "menuViewTags")
+        assert varj(qt_app, lambda: window.property("activeDrawerTab") == "tags"), (
+            "másik aktív lapról a Nézet ▸ Tags kattintás nem váltott Címkékre"
+        )
+
     @pytest.mark.parametrize(("nev", "fulnev"), _OLDALSO_PANELEK)
     def test_a_panel_valodi_kattintassal_megnyitja_a_fület(self, nezet_app, qt_app, nev, fulnev):
         window, controller, _engine = nezet_app
