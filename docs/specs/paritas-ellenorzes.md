@@ -2161,10 +2161,10 @@ rekordok és a PicasaPy QML/Python forráskódjának közvetlen összevetéséve
 1. **Videófájlok kezelése:**
    - Az eredeti Picasában a videók (`.avi`, `.wmv`, `.mov`, `.mp4` stb.) azonos úton haladnak át (`0x005c85e0` -> `0x00981280`). A fájlrendszer-útvonal átadásra kerül a ShellExecuteExA-nak `/select,"<fájl>"` paraméterrel. Nincs videó-specifikus korlátozás.
    - A PicasaPy-ban a `revealPhoto` nem szűri a fájl típusát, a videó fájlokra ugyanúgy meghívja a `reveal_in_file_manager` függvényt. Egyezik.
-2. **Több kép kijelölése és a mappánkénti deduplikáció:**
+2. **Több kép kijelölése és a mappánkénti ismétlésszűrés:**
    - **Eredeti Picasa:** A `0x005c85e0` diszpécser egy előzetes ciklust futtat a kijelölt elemeken (`0x005c8754`-`0x005c87b5`). Minden elemnél lekéri a szülőkönyvtárat (`0x009a37b0`), és összehasonlítja a már regisztrált mappákkal (`0x005c8763`-`0x005c877d`). Ha a mappa megegyezik egy korábbival, átugorja a felvételt (`0x005c87b5 jne 0x5c8ba3`). Emiatt könyvtáranként szigorúan csak a legelső kijelölt fájl kerül be a megnyitandó listába. A `0x005c8dc4`-`0x005c8dee` ciklusban ezután ahány KÜLÖNBÖZŐ mappa volt a kijelölésben, annyi független Explorer ablakot nyit meg (`call 0x00981280`). Ha a kijelölt képek mind azonos mappában vannak, pontosan egyetlen Explorer ablak nyílik az első képre fókuszálva. Ha a kijelölés több mappát fed le (pl. keresési eredmények, album vagy tálca), minden érintett mappához külön ablak nyílik.
    - **PicasaPy jelenlegi állapota:** A menükezelők (`MainMenuBar.qml:319`, `MainPhotoContextMenu.qml:65`, `MainTrayBar.qml:53`) kivétel nélkül csak egyetlen sort adnak át (`photoActionIndex()`, `fileOpTargetRow` vagy `selectedRows()[0]`). Több kép kijelölése esetén a PicasaPy csak a fókuszban lévő vagy legelső képet jeleníti meg a fájlkezelőben, még akkor is, ha a kijelölt elemek több különböző mappában találhatók.
-   - **Teendő:** Fejlesztői jegy szükséges a többes kijelölés mappánkénti deduplikációjára és megnyitására (`revealPhotos(paths)`).
+   - **Teendő:** Fejlesztői jegy szükséges a többes kijelölés mappánkénti ismétlésszűrésére és megnyitására (`revealPhotos(paths)`).
 3. **Üres kijelölés:**
    - Főmenü: mindkét programban tiltott (szürke).
    - Gyorsbillentyű (`Ctrl+Enter`): mindkét programban a jelenlegi mappa megnyitására esik vissza.
@@ -2225,7 +2225,7 @@ rekordok és a PicasaPy QML/Python forráskódjának közvetlen összevetéséve
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| `0x005c85e0`, `0x005c8754`, `0x005c8dc4`: a kijelölt képeket szülőmappánként deduplikálja, és minden érintett mappára meghívja az Intézőt a mappa első kijelölt elemével. | `MainMenuBar.qml:318-321`, `MainPhotoContextMenu.qml:64-67`, `MainTrayBar.qml:50-55`, `fileops_controller_open_mixin.py:33-44`: csak egyetlen képet (`photoActionIndex()`, `fileOpTargetRow`, `selectedRows()[0]`) ad át a `revealPhoto`-nak. | Bővíteni a vezérlőt `revealPhotos(paths)` metódussal, amely mappánként csoportosítja az útvonalakat, és minden egyedi mappára meghívja a fájlkezelőt az első képre fókuszálva. A menü- és tálcakezelőkben a teljes kijelölést átadni. |
+| `0x005c85e0`, `0x005c8754`, `0x005c8dc4`: a kijelölt képeket szülőmappánként szűri (mappánként egyszer), és minden érintett mappára meghívja az Intézőt a mappa első kijelölt elemével. | `MainMenuBar.qml:318-321`, `MainPhotoContextMenu.qml:64-67`, `MainTrayBar.qml:50-55`, `fileops_controller_open_mixin.py:33-44`: csak egyetlen képet (`photoActionIndex()`, `fileOpTargetRow`, `selectedRows()[0]`) ad át a `revealPhoto`-nak. | Bővíteni a vezérlőt `revealPhotos(paths)` metódussal, amely mappánként csoportosítja az útvonalakat, és minden egyedi mappára meghívja a fájlkezelőt az első képre fókuszálva. A menü- és tálcakezelőkben a teljes kijelölést átadni. |
 
 **Kész, ha:**
 - Ha a felhasználó több képet jelöl ki egy mappában, a `Locate on Disk` parancsra (menüből, helyi menüből, tálcáról vagy Ctrl+Enterrel) pontosan 1 fájlkezelő ablak nyílik meg az első képre fókuszálva.
