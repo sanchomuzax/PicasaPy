@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.124] - 2026-11-15
+
+- A háttér-előnézet időzítő-alapmérése terhelt gépen kihagy, nem buktat (#7007).
 ## [1.0.123] - 2026-11-15
 
 - A visszaállítás (Revert) az eredeti Picasa szerint működik: több képnél a kérdés a hivatalos szöveg és nincs Undo Save gomb, a mentés óta kívülről módosított fájlnál "Revert Anyway" figyelmeztetés jön, és a visszaállított kép forgatása, tükrözése és szövege is törlődik az ini-ből (#6972).
