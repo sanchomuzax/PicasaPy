@@ -1542,8 +1542,7 @@ parancs, nem fizikai törlés.
 
 ### Nyitott
 
-- Ghidra-kör kell: 0x005c9b00 - a törlési út virtuális hívásai közül melyik módosítja a fő mappa `.picasa.ini` kép-szekcióját és az albumtagságot, és milyen feltétellel? A meglévő dekompilátum a virtuális célokat nem nevezi meg. [blokkoló]
-- Ghidra-kör kell: 0x005c9b00 - melyik hívás veszi ki a sikeresen törölt képet a belső indexből és mappafából, és hogyan választja ki a törlés utáni következő rácssort? A meglévő dekompilátum a virtuális célokat nem nevezi meg. [blokkoló]
+- **Megválaszolva (két Ghidra-kör, `referencia/ghidra/2026-11-15-6963-colab-decomp.txt` és `2026-11-15-6963-colab-decomp-2.txt`, privát):** a törlés két `ytPicasaINIFile`-t épít (a mappa és a `.picasaoriginals` `.picasa.ini`-je), és tételenként a `0x005aafd0` ini-zár alatt a `0x005aadf0`-nak adja. Ez 3-as típusú módosítást tesz a késleltetett ini-írási sorba (`0x005a8d60`): az azonos nevű kép-szekció tartalmát lecseréli, a további azonos nevűeket nullázza, és jelez az író szálnak; erős valószínűséggel ez a kép-szekció törlése. Album- vagy arcbejegyzésre ezen az úton nincs külön ág. A ciklus után a `0x004f9450(…,1,1)` nem töröl az indexből, hanem a változásszámlálót növeli és a `+0x484` figyelőlista `+8` slotját hívja; a mappafa darabszámát és a következő kijelölt rácssort ezek a vtábla-figyelők döntik el, ezt a statikus út nem követi tovább. A PicasaPy törlés utáni kijelölése ezért marad.
 - `NINCS MEG`: írásvédett fájl és hálózati megosztás esetén a Windows `SHFileOperationW` tényleges visszatérési kódja és felületi eredménye. Megszerzés: külön Windows-próba egy írásvédett képpel és egy hálózati megosztáson lévő képpel; rögzíteni kell a promptokat, a Shell eredményét, a fájl jelenlétét és a kijelölést.
 - `NINCS MEG`: többes kijelölésnél az Enter ténylegesen Cancelként zárja-e a promptot. Megszerzés: legalább két kijelölt képpel Enter-próba Windows alatt.
 - `NINCS MEG`: a Shift+Delete végleges törlési prompt és a `0x0f` utáni Delete/Cancel prompt Enter-alapgombja. Megszerzés: külön Windowsos Enter-próba mindkét párbeszédre, az ágak és az egy/több kijelölés rögzítésével.
@@ -1958,9 +1957,7 @@ eredeti fájlnévvel.
 
 ### Nyitott
 
-- Ghidra-kör kell: 0x00559150 - az `ID_FILE_EXPORTTOFOLDER` Fájl menüpont OneUp nézetben milyen állapotfrissítési feltétellel aktív? [blokkoló]
-- Ghidra-kör kell: 0x005312b0 - a képtálca `folderbutton` útján a kijelölésgyűjtő a tartott, több mappából származó képeket veszi-e át, és hogyan választ névalap-forrásobjektumot? [blokkoló]
-- Ghidra-kör kell: 0x0073f320 - mi állítja be a `0x00741477` előtti megnyitójelzőt, és van-e külön UNC/hálózati útvonal- vagy hibakódág? [blokkoló]
+- **Megválaszolva (Ghidra-kör, `referencia/ghidra/2026-11-15-6970-colab-decomp.txt`, privát):** a menüt a `0x00559150` csak építi; az Export (`0x9c81`) a `0x0056e1c0`-ban a Save As, Save a Copy, Print, Email és Delete csoporttal együtt kap engedélyt (az állapotszó 2-es vagy 4-es bitje és `param_1[0xd29]==0`; a `0x8000` bit mindet tiltja). Hogy a `param_1[0xd13]` nézet a néző-e, a kód nem mondja ki, ezért a mai engedélyezés marad. A képtálca mappagombjánál (`0x005312b0`) a névalap a jelenlegi nézet objektumáé, ennek hiányában `IDS_DEFAULT_EXPORT`; a kijelölésgyűjtő (`0x005c7990`, `0x005c7ab0`) nincs dekompilálva. A `0x0073f320` 8-as esete a végén `ShellExecuteA("open", <célmappa>)`-val megnyitja a célmappát, ha készült kimenet és a jelző nulla; nem létrehozható célnál `IDS_DESTDIRCANNOCREATE` jön és megszakít; külön UNC- vagy hálózati ág nincs. A PicasaPy mindkettőt így teszi.
 - `NINCS MEG`: az eredeti `FileExportQualityType` hiányzó kulcshoz tartozó tiszta profilbeli választása; Windows mérés kell üres Preferences profillal.
 - `NINCS MEG`: az eredeti teljeslemez-előellenőrzés léte, valamint írásvédett cél és betelt lemez pontos felületi ága mindkét programban; Windows méréssel rögzítendő a cél, hibaüzenet, fájlok és indexállapot.
 - `NINCS MEG`: hálózati/UNC export sikeres vagy sikertelen kimenete, cél `.picasa.ini`-je és indexbe vétele; UNC útvonalas Windows-mérés kell.
