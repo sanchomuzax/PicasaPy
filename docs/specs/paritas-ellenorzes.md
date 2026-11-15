@@ -1534,14 +1534,14 @@ Az eredeti Picasa 3.9 binárisában két külön visszaállítási parancs léte
      - Albumnézet (AlbumPhoto context menu): `0x00731050` (`0x0073148a`, `0x9d9a`).
      - Egyképes szerkesztő / néző nézet (OneUp context menu): `0x007327a0` (`0x00732b9c`, `0x9d9a`).
    - **Engedélyezési feltétel (`EnableMenuItem`, `0x0056e1c0` és `0x0056c5a0`):**
-     A `0x5cb1a0` által visszaadott állapotbájtban a 7. bit (`0x80`, revertable) kötelező. Ez azt jelenti, hogy kizárólag olyan képnél engedélyezett, amely már korábban lemezre lett mentve, és létezik hozzá `.picasaoriginals` (vagy régebbi verzióknál `Originals`) biztonsági mentés. Ha a kép szerkesztetlen, vagy csak memóriában szerkesztett (még nincs lemezre mentve), a menüpont inaktív / szürke (`MF_GRAYED`). Tiltja továbbá a `0x8000` felső tiltó jelző (pl. írásvédett / speciális gyűjtemény) és a nem engedélyezett nézetállapot (`0x34a4 != 0`).
+     A `0x5cb1a0` által visszaadott állapotjelző bájt 7. bit (`0x80`, revertable) kötelező. Ez azt jelenti, hogy kizárólag olyan képnél engedélyezett, amely már korábban lemezre lett mentve, és létezik hozzá `.picasaoriginals` (vagy régebbi verzióknál `Originals`) biztonsági mentés. Ha a kép szerkesztetlen, vagy csak memóriában szerkesztett (még nincs lemezre mentve), a menüpont inaktív / szürke (`MF_GRAYED`). Tiltja továbbá a `0x8000` felső tiltó jelző (pl. írásvédett / speciális gyűjtemény) és a nem engedélyezett nézetállapot (`0x34a4 != 0`).
    - **Szerkesztő gombja:** A szerkesztő bal paneljén (`editpanel`, `0x00567680`) NINCS Revert gomb. A szerkesztő bal hasábján kizárólag `filter_undo` (Visszavonás) és `filter_redo` (Újra) gombok találhatók. A Revert a szerkesztőben is kizárólag a Fájl menüből vagy a kép helyi menüjéből (`0x007327a0`) érhető el.
    - **Gyorsbillentyű:** NINCS gyorsbillentyű rendelve az `ID_FILE_REVERT`-hez sem a menükben, sem a gyorsítótáblában (az erőforrások között az `RT_ACCELERATOR` és a `SHORTCUTS.XML` nem tartalmaz hozzá bejegyzést).
 
 2. **`ID_PICTURE_REVERT` (`0x9d2d`):**
    - **Főmenü:** Kép ▸ Undo All Edits / Összes szerkesztés visszavonása (menüépítő: `0x00559150`, rekord: `0x00d6e4d4`, parancskód: `0x9d2d`, felirat: `Undo &All Edits` / `Összes szerkesztés vissz&avonása`, mnemonik: `a`).
    - **Helyi menük (kép jobb-klikk):**
-     - Mappanévzet: `0x00730790` (`0x0073093b`, `0x9d2d`).
+     - Mappanézet: `0x00730790` (`0x0073093b`, `0x9d2d`).
      - Albumnézet: `0x00731050` (`0x007311fb`, `0x9d2d`).
      - Szerkesztő nézet: `0x007327a0` (`0x0073298a`, `0x9d2d`).
    - **Engedélyezési feltétel (`0x0056e1c0` / `0x0056f3d0` és `0x0056c5a0` / `0x0056d9b0`):**
