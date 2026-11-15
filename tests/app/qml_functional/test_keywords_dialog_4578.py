@@ -127,12 +127,8 @@ def test_cimkek_parbeszed_kattintassal_megjelenit_es_ini_be_ir(
     # teszteljük.
     dialog.openFor([row], row, controller.photos.itemAt(row))
     assert _wait_for(qt_app, lambda: bool(dialog.property("visible"))), (
-        "a Keywords párbeszéd nem nyílt meg a kattintásra; "
+        "a Keywords párbeszéd nem nyílt meg; "
         f"ablak={window.width()}x{window.height()}, "
-        f"gomb: látható={edit_button.isVisible()} "
-        f"engedélyezett={edit_button.isEnabled()} "
-        f"méret={edit_button.width()}x{edit_button.height()} "
-        f"középpont={edit_button.mapToScene(edit_button.boundingRect().center())}, "
         f"párbeszéd: visible={dialog.property('visible')} "
         f"opened={dialog.property('opened')}, "
         f"selectedIndex={window.property('selectedIndex')}, "
