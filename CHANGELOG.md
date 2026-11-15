@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.129] - 2026-11-15
+
+- Több kijelölt képnél a csillagozás képenként fordítja a csillagállapotot az eredeti Picasa szerint (#7005).
+
 ## [1.0.128] - 2026-11-15
 
 - A dokumentáció négy funkció (elrejtés, Hozzáadás albumhoz, címkézés, képaláírás) teljes folyamatát veti össze az eredeti Picasával (#7006, #7012, #7022, #7024).
