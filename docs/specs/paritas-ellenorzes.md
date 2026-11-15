@@ -2852,8 +2852,9 @@ E körben nincs bizonyított Add-to végállapotbeli eltérés, amelyhez biztons
 
 ### Nyitott
 
-- Ghidra-kör kell: 0x00664130 - a dinamikus Labels/Add to Album lista elemének kiválasztási callbackje mely kezelőre jut, és az albumtoken milyen `.picasa.ini`/adatbázis/index-írást indít; milyen a többképes, videós, ismételt-tagsági és írásihiba-ág? [blokkoló]
-- Ghidra-kör kell: 0x005e39a0 - a fotók meglévő album sorára ejtése az albumtagságot módosítja-e vagy más műveletet végez, és milyen forrás-, cél- és fájltípus-feltételekkel? [blokkoló]
+- Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7006-7008-7009-7012-colab-decomp.txt`): a `0x00664130` csak a `Labels` listát építi (`"%s (%s)"`, `il_NewAlbumName`), a `0x005fe130` a tálca Add to gombja, csak nem üres tálcánál; a kiválasztáskor futó író egyikben sincs. Erős jelölt a `0x0045ef50` (lásd lent).
+- Ghidra-kör kell: 0x0045ef50 - a tagságíró: milyen `.picasa.ini` `albums=`/adatbázis-írást végez, ismételt tagságnál és videónál mi történik, és ez fut-e a Labels lista elemének kiválasztásakor [blokkoló]
+- Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7006-7008-7009-7012-colab-decomp.txt`): albumcsomópontra (`CAlbumSelectionNode`) ejtésnél a célalbum azonosítója `+0x3c0`; ha azonos a forrás albummal, nem történik semmi, különben a `0x0045ef50(db, lista, album)` írja a tagságot (ugyanez fut új album létrehozásakor a `0x0055d120`-ban). Emberek-albumnál külön ág (`]expeople:%d`, `0x0044bdf0`); a 4-es húzástípus a `0x005ea770` mappatulajdonságok útra megy. Fájltípus-feltétel nem látszik.
 - NINCS MEG: eredeti Add-to/New Album párbeszéd alapértékei és megjegyzett állapota. Megszerzés: célzott Picasa 3.9 mérés a meglévő-album almenü New Album útján, képernyőkép és minden mező rögzítésével, majd külön ismétlés újranyitással.
 - NINCS MEG: az eredeti Add-to siker/hiba utáni fa, rács, kijelölés, kép- és adatbázis-végállapot, valamint visszavonás. Megszerzés: a blokkoló Ghidra-kör után előtte/utána mérés kis, egy- és többmappás tesztkészleten; fájlok, `.picasa.ini`, album/contacts adatbázis és UI-állapot összevetése. A meglévő mérőadat-archívum taglistájában ehhez releváns Add-to/album-dialog felvételt nem találtam.
 
