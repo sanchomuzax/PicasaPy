@@ -80,6 +80,14 @@ MUNKANEVEK: dict[str, str] = {
     "picasapy-google-photos-oauth": QT_TRANSLATE_NOOP(KONTEXTUS, "Connecting to Google Photos"),
     "picasapy-google-photos-revoke": QT_TRANSLATE_NOOP(KONTEXTUS, "Disconnecting from Google Photos"),
     "picasapy-google-photos-upload": QT_TRANSLATE_NOOP(KONTEXTUS, "Uploading to Google Photos"),
+    # #6948: hálózati mappán a fő szálról levett fájlműveletek (a meglévő,
+    # már lefordított nevekkel)
+    "picasapy-folder-description": QT_TRANSLATE_NOOP(KONTEXTUS, "Loading folders"),
+    "picasapy-properties-exif": QT_TRANSLATE_NOOP(KONTEXTUS, "Loading folders"),
+    "picasapy-network-crop-suggestions": QT_TRANSLATE_NOOP(KONTEXTUS, "Rendering edit preview"),
+    "picasapy-edit-file-read": QT_TRANSLATE_NOOP(KONTEXTUS, "Rendering edit preview"),
+    "picasapy-watched-root-check": QT_TRANSLATE_NOOP(KONTEXTUS, "Checking folders for changes"),
+    "picasapy-backup-check": QT_TRANSLATE_NOOP(KONTEXTUS, "Checking folders for changes"),
 }
 
 
