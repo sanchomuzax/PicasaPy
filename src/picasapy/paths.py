@@ -35,13 +35,28 @@ gyökér-normalizálása (`index/sync.py`). Két függvény, két célra:
   FolderListModel.rowOfPath`) ezt hívja, mert mindkét oldala már
   Python-Path-ból épült, azonos futáson belüli sztring — nincs mit
   feloldani, csak összevetni.
+
+## Hálózati (UNC) útvonal: feloldás NÉLKÜL (#7044, #7045)
+
+Windowson a `\\\\szerver\\megosztás\\...` alakú útvonal `Path.resolve()`-ja
+minden komponensre hálózati körülfordulás (elérhetetlen NAS-nál 20-40 s), és
+az indulás ezt a fő szálon, mappánként ismételte. A feloldás eredménye ráadásul
+más kis-nagybetűs alakot adhat (a szervernevet kisbetűsítheti), mint amit a
+felhasználó felvett: ugyanaz a mappa két, szövegesen eltérő útvonallal két
+indexsor lett. A hálózati útvonal ezért csak LEXIKÁLISAN normalizálódik
+(`..`/`.`, elválasztók), a megadott kis-nagybetű megmarad, és hálózati hívás
+nincs. Szimbolikus link feloldás hálózati megosztáson nincs: ott nem ez a
+szokásos felállás, és a feloldás ára a teljes indulás volt.
 """
 
 from __future__ import annotations
 
+import ntpath
 import os
 import sys
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
+
+from picasapy.halozati_ut import halozati_gyoker
 
 
 def normalize_path(path: str | Path) -> str:
@@ -57,20 +72,58 @@ def normalize_path(path: str | Path) -> str:
     text = str(path).strip()
     if not text:
         return ""
-    return str(Path(text).resolve())
+    if windowsos_halozati_ut(text):
+        # #7044/#7045: hálózati hívás nélkül, a megadott kis-nagybetűvel
+        return str(PureWindowsPath(ntpath.normpath(text)))
+    return _feloldas(text)
 
 
 def path_key(path: str | Path) -> str:
     """Összehasonlító kulcs — SOHA nem tárolt/megjelenített alakként,
     kizárólag „ugyanaz-e a két útvonal" döntéshez (pl. `_roots`
     tagság-ellenőrzés, duplikátum-mappák csoportosítása)."""
-    return os.path.normcase(normalize_path(path))
+    return _normcase(normalize_path(path))
+
+
+def _feloldas(text: str) -> str:
+    """A fájlrendszeri feloldás (`Path.resolve()`), modulszintű, cserélhető
+    fogantyú (#1375): a teszt ezen át méri, hogy egy út hálózatra vár-e,
+    anélkül hogy a globális `os`/`pathlib` függvényeket kellene átírnia."""
+    return str(Path(text).resolve())
+
+
+def is_same_or_under(path: str | Path, root: str | Path) -> bool:
+    """Igaz, ha a `path` a `root` vagy egy mappája alatta (#7044).
+
+    Komponens-pontos, a `path_key` kulcsán (platformhelyes kis-nagybetű), így
+    hálózati útvonalon sincs fájlrendszer-hívás, és Windows-alakú útvonal
+    Linuxon is mérhető. A `Path.resolve()`-os összevetés helyett használjuk,
+    ahol a hívó fő szálon fut."""
+    kulcs = path_key(path).rstrip("/\\")
+    gyoker = path_key(root).rstrip("/\\")
+    return kulcs == gyoker or kulcs.startswith((gyoker + "\\", gyoker + "/"))
 
 
 def _platform() -> str:
     """A futó platform — cserélhető fogantyú (#1217), hogy a `flat_key`
     Windows-alakú bemeneten (`C:\\...`) Linuxon is mérhető legyen."""
     return sys.platform
+
+
+def windowsos_halozati_ut(text: str) -> bool:
+    """Windowson UNC-alakú (`\\\\szerver\\megosztás\\...`) útvonal-e.
+
+    Csak Windowson igaz: POSIX-on a `//mnt/nas` a `/mnt/nas`, nem hálózati
+    útvonal, és a feloldásához nem szabad hozzányúlni."""
+    return _platform().startswith("win") and halozati_gyoker(text) is not None
+
+
+def _normcase(text: str) -> str:
+    """Platformhelyes kis-nagybetű-döntés a cserélhető fogantyún át: Windowson
+    kisbetű és `\\`, POSIX-on identitás (`os.path.normcase`)."""
+    if _platform().startswith("win"):
+        return ntpath.normcase(text)
+    return os.path.normcase(text)
 
 
 def flat_key(path: str) -> str:
