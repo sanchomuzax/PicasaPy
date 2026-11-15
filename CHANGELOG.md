@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.120] - 2026-11-15
+
+- A mappabeolvasó belső feldolgozása és a nyitott felületi út (#6955).
+- Hálózati mappán a képek megnyitása, tulajdonságai és mentési ellenőrzése nem fagyasztja le a felületet (#6948).
+
 ## [1.0.119] - 2026-11-15
 
 - A kilépési kérdés „Kilépés most” gombja háttérmunka közben is kiléptet, és nem teszi fel újra a kérdést. Ha a rendezett leállás elakad, a program a beállításai mentése után legfeljebb 8 másodperccel akkor is kilép (#6945).
