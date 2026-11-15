@@ -3226,15 +3226,57 @@ a `con` névből con_ lesz, és üresre tisztuló névnél mentés nem indul.
 folyamathoz tartoznak, és a következő lépés a célzott Ghidra-kör, nem külön
 kérdésleválasztás.
 
+### Ghidra-kiegészítés (2026-11-15, várólista 406-412)
+
+Forrás: `referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp.txt` (privát
+kutatási tár).
+
+- **`0x006b1e80`, kijelölési kapu.** A függvény képszámot nem néz: csak azt
+  vizsgálja, hogy a `this[0x1c]` objektum vfunc `0x24` eredménye nem üres
+  sztring-e. Üres, egy- és többképes kijelölés megkülönböztetése ebben nincs.
+  A tulajdonságablak engedélyezése tehát nem a képkijelöléstől függ; a mai
+  mappa-alapú PicasaPy-viselkedés ezzel **összhangban** van.
+- **`0x0055d070` és `0x0055d320`, mezők és írás.** A mezők a katalógus
+  olvasóiból jönnek (`0x18` név, `0x1c` felirat, `0x20` dátum, `0x24` hely), az
+  írás a `+4/+8/+0x10/+0xc` setterekre megy; a párosítást a `0x00849dc0`
+  `name`, `caption`, `location` és `date` kulcsai igazolják. A mentés sorrendje:
+  név, felirat, hely, `FUN_004448d0`, dátum, végül az átnevezés. Átnevezés csak
+  nem különleges mappánál és eltérő névnél fut (`FUN_009946f0`, `FUN_0052e0f0`),
+  hibánál IDS_NORENAME üzenetet ad. **Hibakezelés:** az első hibás setternél
+  kilép, a már beírt mezőket nem görgeti vissza, és setterhibára üzenetet sem
+  ad; átnevezési hibánál sem görgeti vissza a mezőket. **PicasaPy:** az
+  átnevezés indexhibája esetén lemezes visszagörgetést végez
+  (`rename_folder.py`). Ez szigorúbb az eredetinél, felhasználói kárt nem okoz,
+  ezért nem javaslok rá eltérés-jegyet. A katalógus mögötti `.picasa.ini`-író
+  nincs ebben a kötegben.
+- **`0x00856060`, rácsfejléc leírásmezője.** Nincs válasz: ez csak a
+  `CTextEditNode` konstruktora, eseménykötés és mappakulcs nincs benne. A
+  következő cím a hívója, a `0x00717810`.
+- **`0x005de8e0` és `0x00765d30`, ki küldi az eseményt.** Az `lb_predouble`
+  küldője a bal oldali **CAlbumList** (mappa- és albumlista), ezt az
+  `alist_indent` és a `CAlbumList::newalbumprompt` sztring igazolja. Az
+  `albumdouble` eseményt a főablak kapja, és a mappatulajdonság-ablakot nyitja
+  az albumlista aktuális mappájára (`this+0xeac+0x3c0`), a kijelölt képek
+  számától függetlenül. A korábbi „Néző” sor tehát valójában a **mappalista
+  dupla kattintása**, nem a néző. **PicasaPy:** a mappalista dupla kattintása a
+  fát nyitja és csukja (`FolderHierarchyView.qml:386`), tulajdonságablakot nem
+  nyit. **Erős eltérés-jelölt**; a dupla kattintás pontos célsora (mappa vagy
+  album) a következő lépésben ellenőrizendő, mielőtt fejlesztői jegy lesz
+  belőle.
+- **`0x005e60d0`, gyorsbillentyű.** A főablak beégetett Ctrl-billentyű
+  kezelőjében nincs mappatulajdonság-ág: a `0x9c69` nem szerepel, és a nyolc
+  névvel küldött parancs egyike sem mappatulajdonság. Ebben a kezelőben tehát
+  nincs gyorsbillentyű; az erőforrásbeli gyorsbillentyű-tábla nincs átnézve.
+
 ### Nyitott
 
-- Ghidra-kör kell: 0x006b1e80 - a 0x0056e1c0 Folder-menü 0x9c69 engedélyezéséhez használt feltételvizsgáló pontosan milyen üres, egyképes és többképes állapotot tilt vagy enged? [blokkoló]
-- Ghidra-kör kell: 0x0055d070 - a name/caption/location/date betöltő és a 0x0055d320 virtuális kezelői mely tartós .picasa.ini vagy katalógusíró végpontokra jutnak, és hogyan kezelik az írási hibát? [blokkoló]
-- Ghidra-kör kell: 0x0055d320 - a MoveFileExW forrás/cél útvonalának pontos összeállítása, a setter-hívások sorrendje, a hiba utáni visszagörgetés és a frissítő hívások hatása mi? [blokkoló]
-- Ghidra-kör kell: 0x00856060 - a headerpanel/album_description szerkesztés elfogadási eseménye mely callbackhez és tartós mappakulcshoz jut? [blokkoló]
-- Ghidra-kör kell: 0x005de8e0 - a meglévő kimenet az albumdouble ágat 0x006db580-hoz köti, de nem azonosítja a küldő felületi elemet; melyik ablakból jön és hogyan függ a kijelölt képek számától? [blokkoló]
-- Ghidra-kör kell: 0x00765d30 - az `lb_predouble` küldő felületi eleme néző, képtálca vagy más nézet-e, és milyen kijelölési hatókört ad a tulajdonságablaknak? [blokkoló]
-- Ghidra-kör kell: 0x005e60d0 - a meglévő kimenet a thumb-keydown ágakat sorolja, de nem követi a 0x9c69 accelerator-/menü-diszpécser útját; van-e a mappatulajdonság-szerkesztésnek gyorsbillentyűje? [blokkoló]
+- Megválaszolva (Ghidra 406): a kapu nem a képszámot nézi, csak egy nem üres sztringet; a kijelölés nem számít.
+- Részben megválaszolva (Ghidra 407): mezőolvasók, setterek és a hibakezelés megvan. Ghidra-kör kell: a katalógus `+4/+8/+0x10/+0xc` setterei mögötti `.picasa.ini`-író.
+- Részben megválaszolva (Ghidra 408): sorrend és visszagörgetés megvan. Ghidra-kör kell: `0x009946f0` - a MoveFileExW forrás- és célútjának összeállítása.
+- Ghidra-kör kell: 0x00717810 - a rácsfejléc leírásmezőjének (`0x00856060` hívója) elfogadási eseménye és tartós mappakulcsa. [blokkoló]
+- Megválaszolva (Ghidra 410-411): a küldő a bal oldali CAlbumList dupla kattintása, a hatókör az aktuális mappa.
+- Ellenőrizendő: a CAlbumList dupla kattintása mappasoron és albumsoron is a mappatulajdonságot nyitja-e (a `0x006db580` csak a meglévő mappa útja).
+- Részben megválaszolva (Ghidra 412): a Ctrl-kezelőben nincs gyorsbillentyű. Nyitott: az erőforrásbeli gyorsbillentyű-tábla.
 - NINCS MEG (mérés): eredeti .picasa.ini írási hiba után mi marad lemezen és a felületen. Megszerzés: Windowsos Picasa 3.9 mérés külön másolaton, külön írásvédett mappával és ini-írási hibával; NAS-bejárás nélkül.
 
 ### Módosított fájlok
