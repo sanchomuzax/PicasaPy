@@ -2468,7 +2468,7 @@ a `IDS_ROT_TYPEFAILED` üzenetet adja. A belső típusértékek videóhoz rendel
 ### Megerősítés, ablak és megjegyzett beállítás
 
 - A vizsgált eredeti forgatási parancsútban nem találtam megerősítő dialógus vagy választást mentő hívást. A `Preferences/UITransitions` állapot olvasása animációs beállítás; forgatási beállítás mentését nem azonosítottam. Ez a megállapítás az átvizsgált útvonalra korlátozott.
-- A nem támogatott típus üzenete `IDS_ROT_TYPEFAILED`, a kiválasztás hiányáé `IDS_MUST_SELECT_TO_ROT`; a `0x009807f0` közös UI-üzenetútra kerülnek. A megjelenítés pontos ablaktípusa (modal dialógus vagy más UI-értesítés) **NINCS MEG**.
+- A nem támogatott típus üzenete `IDS_ROT_TYPEFAILED`, a kiválasztás hiányáé `IDS_MUST_SELECT_TO_ROT`; a `0x009807f0` közös UI-üzenetútra kerülnek. A megjelenítés pontos ablaktípusa (modális párbeszédablak vagy más felületi értesítés) **NINCS MEG**.
 - A `.picasa.ini` író (`0x00454770`) siker/hiba eredményt ad vissza, de a `0x0042c980` forgatási hívó a visszatérést nem vizsgálja. A tényleges írásmegtagadási felhasználói visszajelzés **NINCS MEG**; a hibaüzenet hiányát nem állítom.
 
 ### Hatás a fájlokra és felületre
@@ -2502,7 +2502,7 @@ egy lépést ad hozzá, balra egyet levon modulo 4 szerint (a 0 balra forgatásb
 
 ### A jegy „Kész, ha” pontjai
 
-1. ⛔ **Minden belépő és feltétel:** a főmenü, könyvtári és album-fotó helyi menü, gyorsbillentyű, tálca gomb és helyi menü, néző menü és gyorsgomb, valamint szerkesztő belépők fel vannak sorolva. Az eredeti video/írásvédett engedélyezés belső feltételei és a pontos dialogusállapot nyitottak.
+1. ⛔ **Minden belépő és feltétel:** a főmenü, könyvtári és album-fotó helyi menü, gyorsbillentyű, tálca gomb és helyi menü, néző menü és gyorsgomb, valamint szerkesztő belépők fel vannak sorolva. Az eredeti video/írásvédett engedélyezés belső feltételei és a párbeszédablak pontos állapota nyitottak.
 2. ✅ **Megerősítés és megjegyzett beállítás:** az átvizsgált forgatási útban nem találtam megerősítést vagy forgatási állapot mentést; az `UITransitions` olvasás nem forgatási preferencia. Az írási hiba felhasználói UI-ja ettől külön nyitott.
 3. ⛔ **Fájlrendszer, ini, index, bélyegkép, rács, kijelölés és undo:** a `.picasa.ini` hatása bizonyított, a PicasaPy SQLite/rács-útja forrásból dokumentált. Az eredeti tartós index, thumbnail cache, mappafa és kijelölés pontos végállapota, valamint a Picasa Undo All Edits hatása nincs eldöntve.
 4. ⛔ **Hibák:** az üres kijelölés és támogatott típusok kihagyásának eredeti jelzése ismert; a `.picasa.ini` írásmegtagadásának eredeti felhasználói viselkedése nem bizonyított.
