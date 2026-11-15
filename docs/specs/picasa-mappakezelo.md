@@ -2772,8 +2772,8 @@ után egyik ini-változat mellett sem marad elavult a mappa.
 
 **Ami a binárisból igazolható.** A `ytDirScanner` bejárási útja (`0x004e62d0`)
 fájlonként olvassa a mappát (`0x004e6cb4`); a ciklus a `0x004e772d` címen
-visszaugrik, és kilépéskor lezárja a keresőhandle-t (`0x004e7751`). Az
-eseményrekordeket feldolgozó ág a `0x004e7941` címen meghívja a
+visszaugrik, és kilépéskor lezárja a keresési leírót (handle) (`0x004e7751`). Az
+eseményrekordokat feldolgozó ág a `0x004e7941` címen meghívja a
 `0x004e87c0` dispatchert. Ezen a közvetlen bejárási úton tehát az esemény
 átadása **a mappán belüli felsorolási ciklus és a handle lezárása után**
 történik; a dispatcher eseménytípustól függően továbbít, és ez önmagában nem
@@ -2814,7 +2814,7 @@ főablaki kifestést. Az utak egyeznek a feldolgozási rétegek megkülönbözte
 
 Cáfoló próbaként ellenőriztem azt a feltevést, hogy a `0x004ea360` hívása
 maga jelenti a 16 képenkénti felületi frissítést. A hívó valóban 16-onként
-lép be, de a célfüggvény belső scanner-rekordeket dolgoz fel, és a
+lép be, de a célfüggvény belső beolvasási rekordokat dolgoz fel, és a
 `0x004e87c0` további esemény- és kimeneti feltételtől függ. Ez cáfolja a
 „16 = UI-köteg” azonosítást; más UI-értesítési útvonalat és a tényleges
 kifestési időt nem zárja ki.
