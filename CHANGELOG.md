@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.127] - 2026-11-15
+
+- A címkézés az eredeti Picasa szerint működik: a Tags panel ismételt megnyitása bezárja a panelt, vesszővel több címke vehető fel egyszerre, a címke helyi menüjének sorrendje az eredeti, és a legutóbbi címkék kis- és nagybetűt megkülönböztetnek (#7025).
+
 ## [1.0.126] - 2026-11-15
 
 - Az Összes szerkesztés visszavonása az eredeti Picasa szerint a tükrözést, a szöveget és a szerkesztési előzményeket is törli (az elforgatás marad), és csak akkor választható, ha a kijelölés első szerkesztett képe nem csak elforgatott (#7017).
