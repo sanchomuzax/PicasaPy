@@ -4080,7 +4080,7 @@ Picasa-kompatibilis névtisztítást; az új mappa létrehozásának jelenlegi
 ellenőrzését csak külön paritási döntéssel változtasd meg.
 
 **Kész, ha:** például az A/B beírásból AB, a szélső pontokból tiszta név,
-a `con` névből con_ lesz, és üresre tisztuló névnél mentés nem indul.
+a `con` névből `con_` lesz, és üresre tisztuló névnél mentés nem indul.
 
 ### Új kutatási jegyjavaslatok
 
