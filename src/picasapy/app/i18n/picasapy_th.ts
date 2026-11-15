@@ -7310,9 +7310,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
             <translation>เปลี่ยนไฟล์กลับเป็นเวอร์ชันเดิมหรือไม่</translation>
         </message>
         <message>
-            <source>Revert to original version of these file(s)?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>เปลี่ยนไฟล์เหล่านี้กลับเป็นเวอร์ชันต้นฉบับหรือไม่?</translation>
+            <source>Revert to original version of these files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::messageX</extracomment>
+            <translation>เปลี่ยนไฟล์เหล่านี้กลับเป็นเวอร์ชันเดิมหรือไม่</translation>
         </message>
         <message>
             <source>This cannot be undone and all changes will be lost.</source>
@@ -7329,6 +7330,30 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
             <source>To undo the last save and keep edits click 'Undo Save'.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>หากต้องการเลิกทำการบันทึกล่าสุดและเก็บการแก้ไขไว้ ให้คลิก "เลิกทำการบันทึก"</translation>
+        </message>
+        <message>
+            <source>Revert Anyway</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
+            <translation>เปลี่ยนกลับ</translation>
+        </message>
+        <message>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
+            <translation>ไฟล์นี้มีการเปลี่ยนแปลงภายนอก PicasaPy การย้อนกลับจะทำให้สูญเสียการเปลี่ยนแปลงเหล่านั้น</translation>
+        </message>
+        <message>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
+            <translation>ไฟล์เหล่านี้มีการเปลี่ยนแปลงภายนอก PicasaPy การย้อนกลับจะทำให้สูญเสียการเปลี่ยนแปลงเหล่านั้น</translation>
+        </message>
+        <message>
+            <source>Do you want to revert?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::continue</extracomment>
+            <translation>คุณต้องการเปลี่ยนกลับหรือไม่</translation>
         </message>
         <message>
             <source>File operation failed</source>

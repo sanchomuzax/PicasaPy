@@ -11,7 +11,7 @@ import QtQuick.Dialogs
 //
 //   Mentés:          „Save changes to disk?" + „A backup of these files
 //                     will be made."
-//   Visszaállítás:   „Revert to original version of these file(s)?" +
+//   Visszaállítás:   „Revert to original version of these files?" +
 //                     „This cannot be undone and all changes will be lost."
 //   Utolsó mentés:   „To undo the last save and keep edits click
 //                     'Undo Save'." — a szerkesztések MEGMARADNAK
@@ -83,6 +83,20 @@ Item {
         if (!rows || rows.length === 0) return
         dialogs.pendingRows = rows
         revertConfirmDialog.open()
+    }
+
+    // #6972: a „Revert" gomb UTÁN, még a lemezművelet előtt megnézzük, hogy
+    // a mentés óta kívülről módosult-e valamelyik fájl (az eredeti
+    // `0x0053b87e`). Ha igen, külön figyelmeztetés jön „Revert Anyway"
+    // gombbal; ha nem, a visszaállítás azonnal indul.
+    function confirmRevert() {
+        var changed = controller.externallyChangedCount(dialogs.pendingRows)
+        if (changed > 0) {
+            revertChangedDialog.changedCount = changed
+            revertChangedDialog.open()
+        } else {
+            controller.revertRowsToOriginal(dialogs.pendingRows)
+        }
     }
 
     // #1527: a mentés megerősítése. HÁROM hivatalos erőforrásból áll —
@@ -258,18 +272,57 @@ Item {
         property bool focusCancelOnOpen: true
         readonly property int fileCount: dialogs.pendingRows
                                          ? dialogs.pendingRows.length : 0
+
+        // #6972: az eredetiben (`0x0053b615`) több képnél a `message1undo` és
+        // az `undosave` ága kimarad. A gomb ezért csak egy képnél van a
+        // gombsorban: a `visible: false` elem helyét a gombsor `ListView`-ja
+        // üresen megtartaná (a gombok közt rés maradna), a méret nullázása
+        // pedig a címkét is összeomlasztja. Kivesszük a gombsorból
+        // (`takeItem`), és egy képnél visszatesszük (`insertItem`).
+        function syncUndoSaveButton() {
+            var index = -1
+            for (var i = 0; i < revertButtonBox.count; ++i) {
+                if (revertButtonBox.itemAt(i) === revertUndoSaveButton)
+                    index = i
+            }
+            if (revertConfirmDialog.fileCount === 1) {
+                if (index < 0) {
+                    // a Mégse kivétele és visszarakása után a sorrend biztosan
+                    // Revert, Undo Save, Cancel (az insertItem nem mindig tartja)
+                    for (var j = 0; j < revertButtonBox.count; ++j) {
+                        if (revertButtonBox.itemAt(j) === revertCancelButton) {
+                            revertButtonBox.takeItem(j)
+                            break
+                        }
+                    }
+                    revertUndoSaveButton.visible = true
+                    revertButtonBox.addItem(revertUndoSaveButton)
+                    revertButtonBox.addItem(revertCancelButton)
+                }
+            } else if (index >= 0) {
+                revertButtonBox.takeItem(index)
+                revertUndoSaveButton.visible = false
+            }
+            // a gombsor azonnal rendeződjön újra, ne maradjon rés a kivett gomb helyén
+            var sor = revertButtonBox.contentItem
+            if (sor && typeof sor.forceLayout === "function")
+                sor.forceLayout()
+        }
         onOpened: {
             if (revertConfirmDialog.focusCancelOnOpen)
                 revertCancelButton.forceActiveFocus()
         }
-        onAccepted: controller.revertRowsToOriginal(dialogs.pendingRows)
+        onAccepted: dialogs.confirmRevert()
+        onAboutToShow: syncUndoSaveButton()
         footer: DialogButtonBox {
+            id: revertButtonBox
             Button {
                 objectName: "revertOkButton"
                 text: qsTr("Revert")
                 DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
             }
             Button {
+                id: revertUndoSaveButton
                 objectName: "revertUndoSaveButton"
                 //: `CThumbUI::FileRevert::undosave` — a magyar fordítás a
                 //: #3573 nyomán igazodik a hint-sor (`message1undo`)
@@ -316,7 +369,7 @@ Item {
                       //: CThumbUI::FileRevert::message1
                       ? qsTr("Revert to original version of file?")
                       //: CThumbUI::FileRevert::messageX
-                      : qsTr("Revert to original version of these file(s)?")
+                      : qsTr("Revert to original version of these files?")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
@@ -330,11 +383,77 @@ Item {
             }
             Text {
                 objectName: "revertUndoSaveHint"
+                visible: revertConfirmDialog.fileCount === 1
                 width: 380
                 wrapMode: Text.WordWrap
                 //: `CThumbUI::FileRevert::message1undo` (#3573) — a gomb
                 //: önmagában nem árulja el, hogy a szerkesztések MEGMARADNAK
                 text: qsTr("To undo the last save and keep edits click 'Undo Save'.")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+        }
+    }
+
+    // #6972: a fájl a mentés óta a PicasaPyn kívül módosult
+    // (`CThumbUI::FileRevert::changed1` / `changedX`, `::continue`, a gombok
+    // `CThumUI::FileRevert::yesbutton` és `::nobutton`). A visszaállítás
+    // elveszi ezeket a változtatásokat, ezért a biztonságos ág (Mégse) kapja
+    // a kezdeti fókuszt, ahogy a megerősítő ablakban is (#5861).
+    Dialog {
+        id: revertChangedDialog
+        objectName: "revertChangedDialog"
+        title: qsTr("Revert")
+        modal: true
+        focus: true
+        anchors.centerIn: parent
+        property int changedCount: 0
+        onOpened: revertChangedCancelButton.forceActiveFocus()
+        onAccepted: controller.revertRowsToOriginal(dialogs.pendingRows)
+        footer: DialogButtonBox {
+            Button {
+                objectName: "revertAnywayButton"
+                //: `CThumUI::FileRevert::yesbutton`
+                text: qsTr("Revert Anyway")
+                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+            }
+            Button {
+                id: revertChangedCancelButton
+                objectName: "revertChangedCancelButton"
+                text: qsTr("Cancel")
+                DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+                focus: true
+                Keys.priority: Keys.BeforeItem
+                Keys.onReturnPressed: function(event) {
+                    revertChangedDialog.close()
+                    event.accepted = true
+                }
+                Keys.onEnterPressed: function(event) {
+                    revertChangedDialog.close()
+                    event.accepted = true
+                }
+            }
+        }
+        Column {
+            spacing: 6
+            Text {
+                objectName: "revertChangedMessage"
+                width: 380
+                wrapMode: Text.WordWrap
+                text: revertChangedDialog.changedCount === 1
+                      //: CThumbUI::FileRevert::changed1
+                      ? qsTr("This file has been changed outside of PicasaPy. Reverting will lose those changes.")
+                      //: CThumbUI::FileRevert::changedX
+                      : qsTr("These files have changed outside of PicasaPy. Reverting will lose those changes.")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            Text {
+                objectName: "revertChangedContinue"
+                width: 380
+                wrapMode: Text.WordWrap
+                //: CThumbUI::FileRevert::continue
+                text: qsTr("Do you want to revert?")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }

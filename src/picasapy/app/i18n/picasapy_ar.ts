@@ -7355,9 +7355,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
             <translation>هل تريد العودة إلى النسخة الأصلية للملف؟</translation>
         </message>
         <message>
-            <source>Revert to original version of these file(s)?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>هل تريد إرجاع هذه الملفات إلى نسخها الأصلية؟</translation>
+            <source>Revert to original version of these files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::messageX</extracomment>
+            <translation>هل تريد العودة إلى النسخة الأصلية من هذه الملفات؟</translation>
         </message>
         <message>
             <source>This cannot be undone and all changes will be lost.</source>
@@ -7374,6 +7375,30 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
             <source>To undo the last save and keep edits click 'Undo Save'.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>للتراجع عن آخر عملية حفظ والاحتفاظ بالتعديلات، انقر على «تراجع عن الحفظ».</translation>
+        </message>
+        <message>
+            <source>Revert Anyway</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
+            <translation>التراجع بأي حال</translation>
+        </message>
+        <message>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
+            <translation>تم تغيير هذا الملف خارج بيكاسا. ستؤدي العودة إلى فقدان هذه التغييرات.</translation>
+        </message>
+        <message>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
+            <translation>تم تغيير هذه الملفات خارج بيكاسا. ستؤدي العودة إلى فقدان هذه التغييرات.</translation>
+        </message>
+        <message>
+            <source>Do you want to revert?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::continue</extracomment>
+            <translation>‏هل تريد العودة؟</translation>
         </message>
         <message>
             <source>File operation failed</source>
