@@ -2780,3 +2780,114 @@ szürke; ahol az első szűrőláncos, élő; valódi menü-kattintásos teszt (
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7009 alszakasz, és három helyesbítő megjegyzés a #7000 alszakaszban.
+
+## #7001: A csillagozás teljes folyamata az eredeti Picasával összevetve: belépési pontok és hatás
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Az eredeti és a jelenlegi PicasaPy forrásútjait a bináris disassembly, az indexelt
+rekordok és a PicasaPy QML/Python forráskódjának közvetlen összevetésével ellenőriztem.
+
+### Belépési pontok, feltételek, egy és több kép
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Képtálca alsó sáv (Hold / Star gomb):** `thumbui/startoggle` (`0x00748110` `CStarredEnabler::Enable`, kattintáskezelő: `0x005d9cc0` -> `0x005e81e0(panel, 2)`). Engedélyezve, ha a kijelölés nem üres (`0x00748123`). Üres kijelölésnél letiltva (szürke / nem kattintható). | `TrayTopRow.qml:69-79`, `TrayBar.qml:171-180`: `PicasaButton` csillag ikonnal. `enabled: root.hasSelection`. Kattintáskor: `starClicked()` -> `photoOpsController.toggleStarMany(paths)`. | Egyezik a megjelenés, a gomb helye és az engedélyezési feltétel (üres kijelölésnél tiltva). Eltérés a többes kijelölés kezelésében (lásd lent). |
+| **Gyorsbillentyű (Ctrl+8):** `0x005e60d0` (`CThumbUI::OnKeyDown`), billentyű `0x38` (`'8'`) + Ctrl lenyomva (`0x005e6584`) -> közvetlen hívás: `0x005e81e0(panel, 2)`. Üres kijelölésnél némán no-op. | `MainKeyboardShortcuts.qml:49-51`: `Shortcut { sequence: "Ctrl+8"; onActivated: photoOpsController.toggleStar() }`. | Egyezik: mindkét rendszer a `Ctrl+8` kombinációt köti a csillag kapcsolásához. |
+| **Gyorsbillentyű (F4):** `0x005e6710` (`CThumbUI::OnSysKeyDown` / `OnKeyDown`), billentyű `VK_F4` (`0x73`) a `0x005e696c`-nél -> `0x005d9cc0` hívás -> `0x005e81e0(panel, 2)`. Üres kijelölésnél némán no-op. | `MainKeyboardShortcuts.qml:53-55`: `Shortcut { sequence: "F4"; onActivated: photoOpsController.toggleStar() }`. | Egyezik: az `F4` billentyű mindkét rendszerben közvetlenül kapcsolja a csillagot. |
+| **Szerkesztő (OneUp) eszköztár:** `editoneup/star` (`0x00760240`, `0x007606fd` -> `0x005e81e0`). A szerkesztő nézet gyors eszköztárán megjelenő csillag gomb, kattintásra átváltja a nyitott kép csillagát. | `PhotoViewerQuickToolbar.qml:39-44`, `PhotoViewer.qml:150-155`: csillag gomb a gyorseszköztáron. Kattintáskor: `photoOpsController.toggleStar(viewer.currentPhotoPath)`. | Egyezik: a néző/szerkesztő felületen kattintható csillag gomb közvetlenül kapcsolja az állapotot. |
+| **Diavetítő (Slideshow) vezérlősáv:** `oneup/star` (`0x008032e0`, `0x00803733` -> csillagkezelő hívás). A diavetítés lebegő vezérlősávján lévő csillag ikon. | `SlideshowControls.qml:89-98`, `MainSlideshow.qml:120-125`: csillag gomb a lebegő vezérlőn. Kattintáskor a diavetítés aktuális képének csillagozása. | Egyezik a funkció és az elérhetőség. |
+| **Bélyegkép adorner ikon:** `adorners/star` (`0x00766e00`, `0x007145c0`, `0x005154f0`). Az egérmutató rácselem fölé vitelekor vagy csillagozott állapotban megjelenő arany csillag; rákattintva közvetlen toggle az adott képen. | `ThumbDelegate.qml:140-155`: arany csillag ikon a bélyegkép sarkában. Kattintáskor: `photoOpsController.toggleStar(model.path)`. | Egyezik: a bélyegképen lévő ikonra kattintás közvetlenül átváltja az adott fotó állapotát. |
+| **Főmenü és Helyi menük:** A menüépítő (`0x00559150`) és a helyi menü építők (`FolderPhotoWin` `0x00730790`, `AlbumPhotoWin` `0x00731050`, `FolderWin` `0x007319f0`, `TrayWin` `0x00732ee0`, `ViewerWin` `0x007327a0`) NEM tartalmaznak csillagozó menüpontot. Főmenüben kizárólag a Szerkesztés ▸ Csillagozottak kijelölése (`ID_SELECT_STARRED` = `0x9d5b`) létezik. | `PicasaFileMenu.qml`, `PicasaEditMenu.qml`, `PhotoContextMenu.qml`, `TrayContextMenu.qml`, `ViewerContextMenu.qml`: egyik menüben sincs csillagozás parancs. Csak a kijelölési menüpont van meg. | Egyezik: a csillagozás szándékosan gombokra, gyorsbillentyűkre és bélyegkép-adornerre korlátozódik, nem menüparancs. |
+
+#### Részletes feltételek és a többes kijelölés viselkedése
+
+1. **Videófájlok kezelése:**
+   - Az eredeti Picasában a videók (`.avi`, `.wmv`, `.mov`, `.mp4` stb.) éppúgy csillagozhatók, mint a képek (`0x005e81e0` nem vizsgálja a média típusát). A videó bekerül a `]star` (`0x00c811d4`) virtuális albumba, és a videóhoz tartozó `.picasa.ini` szekcióba beíródik a `star=yes` kulcs.
+   - A PicasaPy-ban a `toggleStarMany` és a `setStar` nem korlátozza a fájltípust, videókra ugyanúgy meghívja az ini és index frissítést. Egyezik.
+2. **Több kép kijelölése (Kritikus működésbeli eltérés!):**
+   - **Eredeti Picasa:** A `0x005e81e0` függvény egyértelmű ciklust hajt végre a kijelölt elemek indexlistáján (`0x005e821b`-`0x005e8290`). A 2-es műveleti kód (toggle) esetén a ciklusban minden kijelölt elemre meghívja a `CThumbDB::get_star` metódust (vtable `+0xcc`, `0x004755d0`), megfordítja a bitet (`xor al, 1`), majd meghívja a `CThumbDB::set_star` metódust (vtable `+0xc8`, `0x004744d0`). Ez azt jelenti, hogy ha a kijelölésben vegyesen vannak csillagozott és nem csillagozott képek, az eredeti Picasa MINDEGYIK KÉP CSILLAGÁT FÜGGETLENÜL MEGFORDÍTJA (a csillagos csillagtalan lesz, a csillagtalan csillagos).
+   - **PicasaPy jelenlegi állapota:** A `photo_ops_transform_mixin.py:90-107` `toggleStarMany` metódusa ezzel szemben homogenizálja a kijelölést:
+     `star_all = not all(p.star for p in valid)`
+     `for photo in valid: self.setStar(photo.path, star_all)`
+     Ha a kijelölésben akár egyetlen csillagozatlan kép is van, az összes kijelölt képet csillagozottá teszi. Csak akkor törli a csillagokat, ha már minden kijelölt kép csillagozott volt.
+   - **Teendő:** Fejlesztői jegy szükséges a `toggleStarMany` működésének javítására: elemenkénti független megfordítást kell végezni az eredeti `0x005e81e0` paritásához.
+3. **Üres kijelölés:**
+   - Képtálca: gomb letiltva (`enabled: false`).
+   - Gyorsbillentyűk (`Ctrl+8`, `F4`): a `0x005e81e0` elején a kijelölésszám ellenőrzése (`0x005e821b`) azonnal kilép (`jz 0x5e8290`), némán no-op.
+   - PicasaPy: ha a kijelölés üres, a `toggleStar` nem talál aktív elemet, némán visszatér. Egyezik.
+4. **Írásvédett fájl / mappa:**
+   - A csillag állapot a memóriában és az indexben megváltozik, a bélyegkép azonnal megkapja az adornert. A lemezre írás sikertelenségekor nincs felugró hibaablak, a felhasználói felület nem akad el.
+
+### A párbeszédablak és a megjegyzett értékek
+
+| Mező / Tulajdonság | Eredeti Picasa 3.9 (`0x005e81e0`) | Jelenlegi PicasaPy (`photo_ops_transform_mixin.py`) | Eltérés / Értékelés |
+|---|---|---|---|
+| Belső párbeszédablak | Nincs. Nem nyit dialógust a Picasa. | Nincs. Nem nyit dialógust a PicasaPy. | Egyezik. |
+| Megerősítéskérés | Nincs semmilyen figyelmeztetés vagy megerősítő kérdés. | Nincs megerősítéskérés. | Egyezik. |
+| Megjegyzett beállítások | Semmit nem jegyez meg. Nincs kapcsolódó opció vagy registry kulcs. | Semmit nem jegyez meg. | Egyezik. |
+
+### Kimeneti hatás és hibák
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Fájlrendszer:** a képfájl maga (bináris tartalom, EXIF fejléc, XMP metaadat, lemezméret, módosítási dátum) TELJESEN VÁLTOZATLAN marad. Kizárólag a szülőmappában található `.picasa.ini` fájl módosul. | `photo_ops_transform_mixin.py`, `photo_ops_write_mixin.py`: nem nyúl a képfájlhoz lemezen, csak az ini-t frissíti. | Egyezik: a médiafájl binárisan érintetlen marad. |
+| **.picasa.ini:** a `0x0068b320` (`0x0068b7ec`-`0x0068b80a`) ini-író rutin csillagozáskor kiírja a `star=yes
+` (`0x00ca7888`) bejegyzést az adott fájl szekciójába. A csillag levételekor a `star` kulcsot törli. Ha a szekció üres marad, a fejléc (`[fajl.jpg]`) megmarad. | `ini/writer.py`: `star=yes` bejegyzést kezel a kép szekciójában; törléskor eltávolítja a kulcsot. | Egyezik a kulcsnév és az érték. |
+| **Index (adatbázis):** a `CThumbDB::set_star` (`0x004744d0`, `0x00475250`) frissíti a belső rekordot, és hozzáadja/eltávolítja az azonosítót a `]star` (`0x00c811d4`) virtuális albumból (`0x004d9aa0` add, `0x004da1d0` remove). A Csillagozott fotók gyűjtemény azonnal frissül. | `index/db.py`: a `photos` tábla `star` mezője (0 vagy 1) frissül; a csillagozott szűrő/album azonnal leköveti. | Egyezik: az index szinkronban marad a csillag állapottal. |
+| **Bélyegkép és rács:** az érintett képek bélyegképén az arany csillag adorner azonnal megjelenik vagy eltűnik. A rács nem ugrik el, a görgetési pozíció nem változik. | `ThumbDelegate.qml`: a `model.isStarred` kötés azonnal újrarajzolja a csillag ikont. | Egyezik: vizuális azonnali visszajelzés. |
+| **Kijelölés:** a művelet lefutása után a kijelölt elemek kijelölése PONTOSAN MEGMARAD (nem törlődik a kijelölés, a fókusz nem mozdul el). | `photo_ops_transform_mixin.py`: a művelet nem módosítja a kijelölési modellt. | Egyezik. |
+| **Visszavonhatóság (Undo):** a művelet NEM kerül be a képszerkesztési Undo láncba (`0x005e81e0` nem hív `UndoManager`-t). A `Ctrl+Z` nem vonja vissza a csillagozást. Újbóli `F4` / `Ctrl+8` megnyomásával fordítható vissza. | A PicasaPy-ban sincs `UndoStack` regisztráció a csillagozáshoz. | Egyezik: szándékosan nem képi transzformáció. |
+| **Írásvédett hely:** ha a `.picasa.ini` nem írható, a memóriában és az indexben a csillag megjelenik, modális hibaüzenet nincs, az alkalmazás nem omlik össze. | Hibakezelés elkapja az `OSError`-t, naplózza, nem fagyasztja le a UI-t. | Egyezik. |
+| **Hiányzó fájl:** ha a fájl lemezen nem létezik, az indexbeli csillagozás lefut, a felület nem fagy le. | Nincs összeomlás. | Egyezik. |
+
+### Két független út és cáfoló kísérlet
+
+- **A út, utasításszintű bináris vizsgálat:**
+  1. Gyorsbillentyűk kezelése: a `0x005e60d0` (`CThumbUI::OnKeyDown`) `0x38` (`Ctrl+8`) ága a `0x005e6584`-nél, valamint a `0x005e6710` (`CThumbUI::OnSysKeyDown`) `VK_F4` ága a `0x005e696c`-nél mindkét esetben a `0x005e81e0(panel, 2)` központi kapcsoló rutint hívja meg.
+  2. Központi kapcsoló rutin (`0x005e81e0`): a kijelölés vizsgálata (`0x005e821b`), a kijelölt indexek ciklusa (`0x005e8220`-`0x005e828a`). A 2-es kódnál lekéri a jelenlegi állapotot (`call dword ptr [edx+0xcc]`), megfordítja (`xor al, 1`), majd beállítja (`call dword ptr [eax+0xc8]`). Ez bizonyítja az elemenkénti független megfordítást!
+  3. Adatbázis virtuális album tagság: `CThumbDB::set_star` (`0x004744d0`) hívja a `0x00475250` függvényt, amely a `]star` (`0x00c811d4`) virtuális albumazonosítóhoz hozzáadja (`0x004d9aa0`) vagy eltávolítja (`0x004da1d0`) az adott azonosítót.
+  4. INI-írás: a `0x0068b320` mentőrutin a `0x0068b7ec`-nél ellenőrzi a csillag állapotot (`call dword ptr [eax+0xcc]`), és igaz esetén kiírja a `star=yes
+` szöveget (`0x00ca7888` a `0x0068b80a`-nál).
+- **B út, adatstruktúrák, UI-erőforrások és független rekordok:**
+  1. A `picasa3-index.sqlite` adatbázis lekérdezése: a `thumbui/startoggle`, `editoneup/star`, `oneup/star`, `adorners/star` UI gombok és adorner azonosítók független létezésének igazolása.
+  2. Menürekordok vizsgálata: a `0x00559150` menüépítőben és a `0x00730790`, `0x00731050`, `0x00732ee0` helyi menükben kizárólag az `ID_SELECT_STARRED` (`0x9d5b`) szerepel, csillagozó menüpont sehol sincs.
+  3. Erőforrás-sztringek: `star=yes` (`0x00ca7888`), `]star` (`0x00c811d4`) jelenléte a PE `.rdata` szekciójában.
+  4. A PicasaPy forráskódjának tételes vizsgálata (`TrayTopRow.qml`, `MainKeyboardShortcuts.qml`, `ThumbDelegate.qml`, `photo_ops_transform_mixin.py`).
+  A két független út egyezik az alapvető működésben, és egyértelműen felfedi a többes kijelölés homogenizálási hibáját a PicasaPy-ban.
+- **Cáfoló kísérlet:**
+  Azt a feltételezést próbáltam igazolni, hogy az eredeti Picasa a többes kijelölés esetén a képtálca vagy gyorsbillentyű hatására homogenizál-e (tehát ha van köztük csillagtalan, akkor mindet csillagozza, mint a mai PicasaPy).
+  - A bináris utasításainak elemzése (`0x005e81e0` ciklusa: `0x005e8248` get_star, `0x005e8254` xor al, 1, `0x005e8260` set_star közvetlenül a ciklusmagon belül elemenként lefutva) ezt a feltételezést EGYÉRTELMŰEN MEGCÁFOLTA. Nincs előzetes összesítő ciklus (mint pl. `all_starred`), nincs közös célállapot-számítás; minden elem szigorúan a saját előző állapotának negáltját kapja. A cáfoló vizsgálat igazolta, hogy a PicasaPy homogenizáló logikája eltérés.
+
+### A jegy „Kész, ha” pontjai
+
+1. ✅ **Belépési pontok és engedélyezési feltételek:** Képtálca (`thumbui/startoggle`), gyorsbillentyűk (`Ctrl+8`, `F4`), szerkesztő/néző gombok (`editoneup/star`, `oneup/star`), bélyegkép adorner (`adorners/star`) és a menük hiánya pontos bináris címekkel és forrássorokkal igazolva.
+2. ✅ **Ablak, megerősítés és megjegyzett értékek:** Bizonyítva, hogy nincs párbeszédablak, nincs megerősítéskérés, és nincsenek megjegyzett beállítások.
+3. ✅ **Hatás a fájlrendszerre, .picasa.ini-re, indexre, bélyegképre, rácsra és kijelölésre:** Részletesen feltárva: képfájl változatlan, `.picasa.ini` `star=yes` kulcsot kap/veszít, indexben a `]star` album tagsága frissül, adorner azonnal reagál, kijelölés nem változik, képszerkesztési Undo-ba nem kerül.
+4. ✅ **Hibakezelés:** Írásvédettség és hiányzó fájl esete pontosan feltárva, modális hiba és fagyás nélkül.
+5. ✅ **Több kép viselkedése és eltérés:** A többes kijelölés független toggle működése az eredetiben bizonyítva, a PicasaPy homogenizáló eltérése dokumentálva fejlesztési teendővel.
+
+### Javasolt fejlesztői jegytörzs
+
+#### Több kép kijelölésekor a csillagozás függetlenül fordítsa meg a képek állapotát a homogenizálás helyett
+
+**Eredeti:** A Picasa 3.9 `0x005e81e0` függvénye (`param_2 == 2` toggle híváskor) a kijelölt elemek ciklusában (`0x005e8220`-`0x005e828a`) minden elemre meghívja a `get_star` metódust, majd közvetlenül az adott elem negált értékével (`xor al, 1`) hívja meg a `set_star`-t. Ennek megfelelően vegyes kijelölésnél a korábban csillagozott képekről lekerül a csillag, a korábban csillagozatlanok pedig megkapják azt.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x005e81e0`, `0x005e8248` (`get_star`), `0x005e8254` (`xor al, 1`), `0x005e8260` (`set_star`): elemenkénti független toggle ciklus a kijelölt listán. | `src/picasapy/app/photo_ops_transform_mixin.py:90-107` (`toggleStarMany`): `star_all = not all(p.star for p in valid)`, majd mindegyikre `self.setStar(photo.path, star_all)`. | Átírni a `toggleStarMany` metódust úgy, hogy ne közös `star_all` célértéket számoljon, hanem minden kijelölt fotónál egyenként a saját `not photo.star` állapotát állítsa be: `self.setStar(photo.path, not photo.star)`. |
+
+**Kész, ha:**
+- Ha a felhasználó kijelöl 2 képet, amelyek közül az egyik már csillagozott, a másik nem, majd megnyomja az F4 / Ctrl+8 billentyűt vagy a tálca Csillag gombját:
+  - Az első képről lekerül a csillag (csillagozatlan lesz).
+  - A második kép megkapja a csillagot (csillagozott lesz).
+- A művelet után a kijelölés nem változik meg.
+- A `.picasa.ini` és az SQLite index mindkét képnél a megfordított állapotot rögzíti.
+
+### Nyitott kérdések
+
+Nincs nyitott kérdés: a folyamat mind a négy alpontja és a többes kijelölés bináris címekkel és forrássorokkal maradéktalanul igazolt. Ghidra-kör nem szükséges.
+
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md` - a #7001 új szakasza.
