@@ -598,9 +598,9 @@ Item {
         onAccepted: exportDialog.targetFolder = selectedFolder.toString()
     }
 
-    // #1166: a célmappa-ütközés kérdése — az eredeti szövegeivel
+    // #1166: a célmappa-ütközés kérdése az eredeti szövegekkel
     // (`CExportPrefsPage::destexists` / `::overwritetitle`). Igen esetén az
-    // ELŐZŐ album tartalma törlődik, nem mellé exportálunk.
+    // előző album tartalma törlődik. Nem esetén a Mégse út zárja be az ablakot.
     Dialog {
         id: exportOverwriteDialog
         objectName: "exportOverwriteDialog"
@@ -611,7 +611,7 @@ Item {
         implicitWidth: 380 + leftPadding + rightPadding
         standardButtons: Dialog.Yes | Dialog.No
         onAccepted: exportDialog.startExport(true)
-        onRejected: exportDialog.startExport(false)
+        onRejected: exportDialog.reject()
         Text {
             objectName: "exportOverwriteText"
             width: 380

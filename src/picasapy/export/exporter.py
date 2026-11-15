@@ -122,10 +122,10 @@ def export_photos(
     failed: list[Path] = []
     reasons: list[str] = []
     source_ini_cache: dict[Path, IniDocument] = {}
-    # #369: a sorszám-szélesség a teljes kötegméretből számol, hogy a
-    # fájlrendszer ábécésorrendje 1000+ elemnél se törje meg a sorrendet
-    # ("0999-..." < "1000-..." csak azonos szélesség mellett igaz).
-    number_width = max(3, len(str(len(items))))
+    # #369: a sorszám-szélesség a teljes köteg elemszámának jegyszáma.
+    # Az azonos kötegen belüli egységes szélesség az ábécésorrendben is
+    # megőrzi a képek sorrendjét 1000 vagy több elemnél.
+    number_width = len(str(len(items)))
     with _grain_rand_stream():
         for index, item in enumerate(items, start=1):
             source = Path(item.source)
