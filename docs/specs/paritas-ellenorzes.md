@@ -3244,10 +3244,32 @@ visszavonás és látható index-végállapot nincs kellően igazolva.
 Nincs külön kutatási jegyjavaslat; a lent felsorolt nyitott pontok a 7033
 folyamatához tartoznak.
 
+### Ghidra-kiegészítés (2026-11-15, várólista 402-403)
+
+Forrás: `referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp.txt` (privát
+kutatási tár).
+
+- **`0x0077c670`, kezdő mód.** A dátumeltolás ablakának konstruktora és két
+  kezelője (`0x0077cee0`, `0x0077cd50`) nem olvas és nem ír megjegyzett
+  beállítást. A konstruktor a belső módjelzőt 1-re állítja; a `0x0077cee0`
+  ebből `jelző = (érték == 0)` alakban számol vissza, tehát a kezdő állapot az
+  `adjust_type` 0. rádiója. A rádió látható kezdőértékét a kód nem állítja, az
+  az `offsettime.fen` leíróból jön. **PicasaPy:** az `AdjustTimestampDialog.qml`
+  minden nyitáskor az eltolás rádióját jelöli be (`checked: true`), és nem
+  jegyez meg semmit. A megjegyzés hiánya paritásban van; hogy az eredeti 0.
+  rádió az eltolás-e, a leíró sorrendjén múlik, ezért ez **feltételes**.
+- **`0x0057d7f0`, melyik kép ideje.** Az ablak a kijelölési lista **első**
+  elemének dátumát kéri le (katalógus vfunc `0xc4`, `*lista`); a fókuszt nem
+  kérdezi. Előtte a `FUN_00506500` feldolgozza a listát, hogy ez rendez-e, nem
+  derült ki. Több képnél eltolást ment, egy képnél abszolút időt. **PicasaPy:**
+  az előnézet a `photoRows[0]` sort használja (`AdjustTimestampDialog.qml:66`),
+  tehát szintén az első kijelölt elemet. Az egyezés a lista sorrendjéig
+  **igazolt**; a sorrend (kijelölési vagy rácssorrend) nyitott.
+
 ### 10. Nyitott
 
-- Ghidra-kör kell: 0x0077c670 - Az `offsettime.fen` új példányán melyik `adjust_type` rádió az alapérték, milyen érték kerül a `+0x37` módjelzőbe, és olvas-e vagy ír-e a párbeszéd megjegyzett beállítást? A jelenlegi `0x0077cee0` és `0x0077cd50` kimenet csak a választás lekérdezését és mentését mutatja, a kezdő állapotot nem. [blokkoló]
-- Ghidra-kör kell: 0x0057d7f0 - A dátumablak `+0x32/+0x33` FILETIME-ja több kijelölt képnél a fókuszban levő, az első vagy másik kép ideje-e; a `0x005c76b0` választási lista mely néző/tálca állapotot ad át? A `0x005cb990` meglévő dekompilálása csak a `0x9e0e` diszpécserágat köti ehhez a kezelőhöz. [blokkoló]
+- Megválaszolva (Ghidra 402): a párbeszéd nem jegyez meg beállítást, a kezdő mód a 0. rádió. Nyitott: az `offsettime.fen` rádiósorrendje, azaz hogy a 0. rádió az eltolás-e.
+- Részben megválaszolva (Ghidra 403): a lista első elemének ideje, fókusz nélkül. Ghidra-kör kell: `0x00506500` - rendezi-e a kijelölési listát, mielőtt az első elemet veszi?
 - **NINCS MEG:** a `readonly` fájl attribútum, csak olvasható mappa vagy
   fájlrendszerhiba pontos eredeti kezelése és felhasználói jelzése. Út:
   kontrollált Picasa 3.9 mérés írható, fájlattribútummal védett és
