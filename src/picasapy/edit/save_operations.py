@@ -300,6 +300,13 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
         restored_filters=restored_filters,
     )
 
+def _without_edit_keys(document: IniDocument, section: str) -> IniDocument:
+    """A Visszaállítás által törölt szerkesztés-kulcsok eltávolítása (#6972)."""
+    for key in api._EDIT_BOOKKEEPING_KEYS:
+        document = document.with_removed(section, key)
+    return document
+
+
 def revert(image_path: str | api.Path) -> api.RevertResult:
     """A "Visszaállítás": a megőrzött eredeti visszamásolása.
 
@@ -307,8 +314,9 @@ def revert(image_path: str | api.Path) -> api.RevertResult:
     a 2009 előtti `Originals` — ld. a modul „Két mappanév" szakaszát), és a
     `RevertResult.restored_from` megmondja, melyikből dolgozott (#1425).
 
-    A korábbi szerkesztés-könyvelést (`filters=`, `redo=`) az
-    ini-ből törli — a fájl a szerkesztés ELŐTTI állapotba kerül vissza,
+    A korábbi szerkesztés-könyvelést (`filters=`, `redo=`, és az eredeti
+    `0x0046d7d0` szerint a `rotate=`, `flipped=`, `textactive=` is, #6972)
+    az ini-ből törli - a fájl a szerkesztés ELŐTTI állapotba kerül vissza,
     a nem-technikai felhasználó elvárása szerint: "vissza az eredetihez".
     Minden más ini-kulcs (csillag, felirat, arcok, albumok, `backuphash`,
     `originhash` — #2675: az a letöltés provenienciája, nem a szerkesztés
@@ -362,11 +370,7 @@ def revert(image_path: str | api.Path) -> api.RevertResult:
     try:
         current_before.written_document = api._update_ini_document(
             image_path,
-            lambda document: (
-                document.with_removed(section, api._FILTERS_KEY).with_removed(
-                    section, api._REDO_KEY
-                )
-            ),
+            lambda document: _without_edit_keys(document, section),
             rollback_snapshot=current_before,
             section_name=section,
         )

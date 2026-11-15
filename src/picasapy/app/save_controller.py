@@ -58,6 +58,7 @@ from .save_error_kind import save_error_code, save_error_kind
 from .worker_thread import BackgroundWorkerMixin
 from .save_as_copy import SaveCopyMixin
 from .save_errors import _FAILED_DETAILS_LIMIT, _SAVE_ERRORS, SaveErrorMixin
+from .save_external_change import SaveExternalChangeMixin
 from .save_feedback import SaveFeedbackMixin
 from .save_progress import SaveProgressMixin
 from .save_render import _CROP_READER, _render_for_save
@@ -93,6 +94,7 @@ class SaveMixin(
     SaveRowsMixin,
     SaveCopyMixin,
     SaveRestoreMixin,
+    SaveExternalChangeMixin,
     BackgroundWorkerMixin,
 ):
     """A Fájl menü mentés-műveletei a kijelölt képekre.

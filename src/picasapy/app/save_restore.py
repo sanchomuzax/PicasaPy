@@ -100,6 +100,8 @@ class SaveRestoreMixin:
                 if show_restore_progress:
                     self._saveProgressTick.emit(index + 1, len(paths), 1)
             self._record_saved_state(naplo)
+            # #6972: a visszaállított / visszavont kép ujjlenyomata elavult
+            self._forget_saved_fingerprints(successful_paths)
             self._resync_disk_operation_folders(successful_paths)
             self.diskOperationSucceededPaths.emit(
                 [str(path) for path in successful_paths]

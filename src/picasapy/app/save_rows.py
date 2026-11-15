@@ -115,6 +115,8 @@ class SaveRowsMixin:
                     naplo.append((str(path), ""))
                 self._saveProgressTick.emit(index + 1, len(records), 1)
             self._record_saved_state(naplo)
+            # #6972: a Revert külső módosítás-vizsgálatának alapja
+            self._record_saved_fingerprints(successful_paths)
             self._resync_disk_operation_folders(successful_paths)
             self.diskOperationSucceededPaths.emit(
                 [str(path) for path in successful_paths]
