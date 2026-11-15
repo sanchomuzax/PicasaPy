@@ -1321,15 +1321,27 @@ class TestLiveWatch:
 
 class TestBatchOperations:
     def test_toggle_star_many_stars_all(self, controller, library):
-        # Picasa: a tálca-csillag a teljes kijelölésre hat — ha van még
-        # csillagozatlan, mindet csillagozza.
+        # #7005: a csillagozás képenként fordít (eredeti: `0x005e81e0`).
+        # Ha a 0-s csillagos, az 1-es nem, utána az első csillagtalan,
+        # a második csillagos.
         controller.selectFolder(str(library / "nyaralas"))
+        assert [p.star for p in controller.photos.photos] == [True, False]
         controller.toggleStarMany([0, 1])  # a 0-s már csillagos
+        assert [p.star for p in controller.photos.photos] == [False, True]
+        # ha mindkettő csillagtalan, mindkettő csillagot kap
+        controller.toggleStarMany([1])  # az 1-esről leveszi: [False, False]
+        controller.toggleStarMany([0, 1])
         assert all(p.star for p in controller.photos.photos)
 
     def test_toggle_star_many_unstars_when_all_starred(self, controller, library):
+        # két egymás utáni fordítás után visszaáll a kiinduló állapot
         controller.selectFolder(str(library / "nyaralas"))
         controller.toggleStarMany([0, 1])
+        controller.toggleStarMany([0, 1])
+        assert [p.star for p in controller.photos.photos] == [True, False]
+        # ha mindkettő csillagos, mindkettőről leveszi
+        controller.toggleStarMany([1])  # az 1-esre is ráteszi: [True, True]
+        assert all(p.star for p in controller.photos.photos)
         controller.toggleStarMany([0, 1])
         assert not any(p.star for p in controller.photos.photos)
 

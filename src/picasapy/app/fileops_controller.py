@@ -166,6 +166,9 @@ class FileOpsController(
     folderMoved = Signal(str, str)
     #: #1638: a lomtárba tett MAPPA útja — az index innen tudja, mit vegyen ki
     folderDeleted = Signal(str)
+    #: #7039: a hibával visszatért mappatörlés utáni lemezállapot újraolvasása.
+    #: A Windows Shell részlegesen törölhetett képeket, miközben a mappa marad.
+    folderDeleteFailed = Signal(str)
 
     _vagolap_adat = None
 

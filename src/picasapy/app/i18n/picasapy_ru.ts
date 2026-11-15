@@ -7742,6 +7742,14 @@ picasapy-origin-key: stringres:RestoreDialog::cantlaunch</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Сначала выберите хотя бы одну фотографию.</translation>
         </message>
+        <message>
+            <source>The images in the folder have been deleted, but the folder itself will not
+be deleted due to the presence of additional files and/or folders.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CANT_DELETE_FOLDER</extracomment>
+            <translation>Изображения в папке удалены, однако сама папка не будет
+удалена из-за наличия в ней дополнительных файлов и папок.</translation>
+        </message>
     </context>
     <context>
         <name>FolderPane</name>
