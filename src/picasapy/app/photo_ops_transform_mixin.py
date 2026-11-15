@@ -88,19 +88,18 @@ class PhotoOpsTransformMixin:
 
     @Slot(list)
     def toggleStarMany(self, rows) -> None:
-        """Csillag a teljes kijelölésre (Picasa-viselkedés): ha van még
-        csillagozatlan a kijelöltek közt, mindet csillagozza; ha mind az,
-        mindről leveszi. Mappánként EGY ini-írás + sync."""
+        """Csillag a teljes kijelölésre, képenként megfordítva (#7005): az
+        eredeti (`0x005e81e0`) minden kép csillagát a negáltjára állítja.
+        Mappánként EGY ini-írás + sync."""
         photos = self._photos.photos
         valid = [
             photos[int(r)] for r in rows if 0 <= int(r) < len(photos)
         ]
         if not valid:
             return
-        star_all = not all(p.star for p in valid)
 
         def mutate(document, photo):
-            if star_all:
+            if not photo.star:
                 return document.with_value(photo.name, "star", "yes")
             return document.with_removed(photo.name, "star")
 
