@@ -479,19 +479,16 @@ Item {
     // #1798: a kijelölés elküldése levélben. A tárgyat és a szöveget
     // SZÁNDÉKOSAN nem kérjük be: az eredeti Picasa sem kérdez, a levelet a
     // levelezőprogram szerkeszti meg — mi csak a csatolmányokkal nyitjuk meg.
+    // #6987: a 20 fölötti kérdést, az előkészítést és a küldést a vezérlő
+    // végzi (`sendSelection`); a kérdés a `sendConfirmRequested` jelzéssel
+    // érkezik vissza (lentebb), belső szerkesztőpanel nincs.
     function sendSelectionByEmail() {
         if (typeof emailController === "undefined" || !emailController)
             return
         var sorok = hostWindow.photoActionRows()
         if (sorok.length === 0)
             return
-        var csatolmanyok = emailController.prepareAttachments(
-            sorok, sorok.length > 1)
-        if (csatolmanyok.length === 0)
-            return
-        // A `sendRows` a beállítás szerint vagy küld, vagy a
-        // `mailChoiceRequested`-del kérdést kér — a válasz lentebb.
-        emailController.sendRows(csatolmanyok, "", "")
+        emailController.sendSelection(sorok, false)
     }
 
     // #4330: a Fájl menü és a Ctrl+Shift+O ugyanazt a kijelölés-pillanatképet
@@ -528,6 +525,9 @@ Item {
     Connections {
         target: (typeof emailController !== "undefined")
                 ? emailController : null
+        function onSendConfirmRequested(sorok, darab) {
+            mainDialogs.emailCountConfirmLoader.ensure().askFor(sorok, darab)
+        }
         function onMailChoiceRequested(utvonalak, targy, szoveg) {
             var parbeszed = emailChoiceDialog.ensure()
             parbeszed.attachmentPaths = utvonalak

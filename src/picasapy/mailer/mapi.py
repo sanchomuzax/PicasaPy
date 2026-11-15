@@ -42,6 +42,14 @@ MAPI_OK = 0
 #: A felhasználó bezárta a levélszerkesztőt — nem hiba, nem jelzendő.
 MAPI_USER_ABORT = 1
 
+#: A `winmapi.h` további hibakódjai, amelyekre az eredeti külön üzenetet ad
+#: (#6987): túl sok melléklet, a melléklet nem található, nem nyitható meg,
+#: ismeretlen címzett.
+MAPI_E_TOO_MANY_FILES = 9
+MAPI_E_ATTACHMENT_NOT_FOUND = 11
+MAPI_E_ATTACHMENT_OPEN_FAILURE = 12
+MAPI_E_UNKNOWN_RECIPIENT = 14
+
 
 class MapiRecipDesc(ctypes.Structure):
     """`MapiRecipDescW`: egy címzett."""
