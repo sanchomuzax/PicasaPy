@@ -3037,3 +3037,95 @@ A hívó ellenőrző mintavétele (2026-11-15): a 2. javaslat igazolt (a `0x004a
 ### 11. Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7008 alszakasz.
+
+## #7006: Az elrejtés és felfedés teljes folyamata az eredeti Picasával összevetve
+
+### 1. Belépési pontok, engedélyezési feltételek és parancskódok
+
+Az eredeti Picasa 3.9 elrejtési és megjelenítési folyamata képszinten és mappaszinten két külön parancspáron fut:
+
+| Belépési pont | Eredeti azonosító és cím | Engedélyezési feltétel / láthatóság | Viselkedés |
+|---|---|---|---|
+| Főmenü: Kép ▸ Elrejtés | `eMenuPicture::ID_PICTURE_HIDE` (`0x9ca5`), `0x00559150`, diszpécser `0x005cb990` (`0x5cbd5f`) -> `0x005e7d90(1)` | Él, ha a kijelölésben van legalább egy még nem rejtett kép (`FUN_0056c5a0`). | A teljes kijelölést egységesen elrejti. |
+| Főmenü: Kép ▸ Megjelenítés | `eMenuPicture::ID_PICTURE_UNHIDE` (`0x9ca4`), `0x00559150`, diszpécser `0x005cb990` (`0x5cbd52`) -> `0x005e7d90(0)` | Él, ha a kijelölésben van legalább egy rejtett kép (`FUN_0056c5a0`). | A teljes kijelölést egységesen megjeleníti. |
+| Rács helyi menü | `AlbumPhoto::ID_PICTURE_HIDE` / `ID_PICTURE_UNHIDE` (`0x00730790`, `0x00731050`) | Kizárólag az egyik tétel jelenik meg a menüben (`0x0056cd8d`-`0x0056cf99`): a nem releváns tételt a `RemoveMenu` eltávolítja. | Ha a célkép nem rejtett: `&Hide` (`0x9ca5`); ha rejtett: `&Unhide` (`0x9ca4`). |
+| Egyképes néző helyi menü | `OneUp::ID_PICTURE_HIDE` / `ID_PICTURE_UNHIDE` (`0x007327a0`) | Kizárólag az egyik tétel jelenik meg (ugyanaz a `RemoveMenu` szűrés). | Az aktuális kép állapota szerint vagy `&Hide` vagy `&Unhide`. |
+| Gyorsbillentyű | NINCS (`0x00d6e504 = 0`, `0x00d6e518 = 0`). | Nincs gyorsbillentyű hozzárendelve a menütáblában. | - |
+| Képtálca | NINCS gomb. | A tálca gombsorában nem szerepel elrejtés vagy megjelenítés gomb. | - |
+| Mappaszint: Főmenü és helyi menü | `Folder::ID_HIDEENTIREALBUM` (`0x9c72`, `&Hide Folder`) / `Folder::ID_UNHIDEENTIREALBUM` (`0x9cd0`, `&Unhide Folder`), `0x007319f0` -> `0x005ee2a0` | A mappa rejtett állapota (`[eax + 0xdd6]`) szerint kizárólag az egyik jelenik meg (`0x0056de40`-`0x0056de6f`). | Mappa elrejtése / felfedése, jelszó-ellenőrzéssel. |
+
+### 2. Megerősítés, párbeszédablak és megjegyzett beállítás
+
+- **Képszintű elrejtés (`0x005e7d90`):** SEMMILYEN megerősítést vagy figyelmeztető párbeszédablakot nem ad. Egy vagy több kijelölt kép esetén kérdés nélkül azonnal végrehajtódik.
+- **Mappaszintű elrejtés (`0x005ee2a0`):** Ha a "Hidden Folders" gyűjtemény még nem rendelkezik jelszóval, párbeszédablakot nyit:
+  - Cím: `IDS_PROMPT_HIDDEN_PWD_TITLE` (`0xc97e58`, erőforrás `0x10f`)
+  - Szöveg: `IDS_PROMPT_HIDDEN_PWD_MESSAGE` (`0xc97e38`, erőforrás `0x110`): *"The \"Hidden Folders\" collection is not currently password protected.\nWould you like to add a password now?"*
+  - Gombok: `Add Password` (`0xc97e04`), `Don't Add Password` (`0xc97dcc`).
+  - Megjegyzett beállítás: `DoNotConfirmHiddenPwd` (`0xc97db4`, checkbox / beállításkulcs), amely letiltja a rákérdezést.
+
+### 3. Végrehajtás és futásidejű hatás
+
+1. **A kijelölés lekérése:**
+   A `0x005e7d90` elején a `0x005c76b0` lekéri a kijelölt elemek listáját (`&local_list`). Ha a lista üres vagy a lekérés hibát ad, a függvény azonnal kilép (`0x005e7dbc`).
+
+2. **Vegyes kijelölés kezelése (egységesítés):**
+   - **Elrejtés (`param_1 == 1`, `0x9ca5`):** A `0x005e7de0` a `CThumbUI` virtuális táblájának 35. metódusát (`0x0065b710`) hívja a `]hidden` kulccsal (`0xc811f4`) és a listával. A `0x0065b710` meghívja a `0x004da1d0` belső attribútum-írót `value = 1` paraméterrel. Ez a ciklus a kijelölési lista **minden egyes elemére** beállítja a `hidden=1` értéket a `.picasa.ini`-ben és az adatmodellben. Vegyes kijelölésnél a látható képek is rejtetté válnak, a már rejtettek rejtve maradnak (az egész kijelölés egységesen rejtett lesz).
+   - **Megjelenítés (`param_1 == 0`, `0x9ca4`):** A `0x005e7df8` a `+0x284` al-objektum virtuális táblájának 4. metódusát (`0x0065b590`) hívja a `]hidden` kulccsal. A `0x0065b590` meghívja a `0x004d9aa0` attribútum-törlőt. Ez a ciklus a lista **minden egyes eleméről** eltávolítja a `hidden` kulcsot. Vegyes kijelölésnél a rejtett képek felfedődnek, a láthatóak láthatóak maradnak (az egész kijelölés egységesen látható lesz).
+   - **Következtetés:** Nincs elemenkénti állapotfordítás (toggle); a művelet mindig a választott parancs irányába egységesíti a kijelölést.
+
+3. **Frissítés és rács-hatás:**
+   Mindkét ág után lefut a közös `0x0065b840(edi, 0, 0, 1)` frissítés.
+   - Ha a Nézet ▸ Rejtett képek (`ID_VIEW_SHOWHIDDEN`, `0x00c8cfb8`) beállítás be van kapcsolva, a képek a rácson maradnak, de rejtett állapotjelzőt kapnak.
+   - Ha a beállítás ki van kapcsolva, az elrejtett képek azonnal eltűnnek a rácsból, a kijelölés ürül, és a mappa darabszáma azonnal csökken.
+
+4. **Előnézet / szerkesztő utólagos lépése (`0x005683a0`):**
+   A `0x005e7e2a`-`0x005e7e57` szakaszban, ha az `editpanel/preview` (`0xc88a2c`) objektum létezik és nem mutatja a rejtett képeket (`byte ptr [eax + 0x20c] == 0`), és Elrejtés parancs futott (`param_1 == 1`), meghívja a `0x005683a0(edi)` központi nézetváltót:
+   - A pontos hatás nem igazolt (lásd Nyitott kérdések 2.); a valószínű viselkedés: a néző a következő látható képre lép, vagy visszavált a rácsnézetbe.
+
+5. **Írási hiba:**
+   A `0x004da1d0` nem dob felugró hibaablakot; írásvédett lemez vagy ini-hiba esetén a háttérművelet csendesen hibakóddal tér vissza, a felhasználói felületen nincs hibaablak.
+
+### 4. Paritási összevetés és eltérések táblázata
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| Főmenü Elrejtés engedélyezése: `0x0056c5a0` (`0x0056cd8d`): csak akkor él, ha van nem rejtett kép a kijelölésben. | `PicasaPictureMenu.qml:130`: `enabled: bar.photoActionsEnabled`. | A Kép ▸ Elrejtés tétel csak akkor legyen aktív, ha a kijelölésben van legalább egy látható (még nem rejtett) fotó (`bar.hasVisiblePhotoSelection`), hasonlóan a Megjelenítés meglévő `bar.hasHiddenPhotoSelection` feltételéhez. |
+| Helyi menü parancs-végrehajtása vegyes kijelölésnél: a kattintott menüpont (Hide vagy Unhide) fixen a saját irányába egységesíti a kijelölést (`0x005e7d90(1)` vagy `0x005e7d90(0)`). | `MainPhotoContextMenu.qml:62`: `onHideToggleRequested: hostWindow.toggleHiddenSelection()`; `MainWindowCommands.qml:475`: `hostController.toggleHiddenRows(rows)`. | A helyi menüben a felirat (`PhotoContextMenu.qml:320`) a jobbklikkelt kép alapján vált (`hideChecked`), de a `toggleHiddenRows` vegyes kijelölésnél mindig elrejt (`hide_all = not all(p.hidden)`). Ha a jobbklikkelt kép rejtett, a menü „Megjelenítés”-t mutat, de a kattintás mindent elrejt. Javítás: a menüpont explicit `hideSelection()`-t vagy `unhideHiddenSelection()`-t hívjon a feliratának megfelelően. |
+| Képnéző utólagos lépése rejtéskor: `0x005e7e57` -> `0x005683a0`: ha a nézett kép elrejtődik és `!showHidden`, a nézet a következő látható képre lép, vagy visszavált a könyvtárba, ha elfogytak a képek. | `PhotoViewerContextActions.qml:135`: `controller.toggleHiddenRows([viewer.currentIndex])`. | A nézőben történő elrejtés után, ha `!controller.showHidden`, a néző léptessen a következő megjeleníthető képre, vagy ha nincs több kép a mappában, zárja be a nézőt (`hostWindow.closePhotoViewer()`). |
+| Megerősítés képszinten: nincs megerősítés (`0x005e7d90`). | `MainWindowLibraryActions.qml:84-110`: nincs megerősítés. | Egyezik, teendő nincs. |
+| Gyorsbillentyű: nincs (`0x00d6e504 = 0`, `0x00d6e518 = 0`). | Nálunk nincs gyorsbillentyű kötve. | Egyezik, teendő nincs. |
+| Képtálca: nincs elrejtés gomb. | Nálunk nincs elrejtés gomb a tálcán. | Egyezik, teendő nincs. |
+| .picasa.ini hatás: `hidden=yes` írása / törlése (`0x004da1d0`, `0x004d9aa0`). | `photo_ops_transform_mixin.py:83-84`: `document.with_value(photo.name, "hidden", "yes")` / `with_removed`. | Egyezik, teendő nincs. |
+
+### 5. Javasolt fejlesztői jegyek
+
+#### 1. A helyi menü Elrejtés/Megjelenítés parancsa kövesse a kiválasztott feliratot vegyes kijelölésnél
+
+**Eredeti:** Az `AlbumPhoto` helyi menüben a `0x0056cd8d`-`0x0056cf99` szerint a nem alkalmazható tétel el van távolítva; kiválasztásakor a `0x005e7d90(1)` (Elrejtés) egységesen elrejti a kijelölt elemeket (`0x0065b710` -> `0x004da1d0`), a `0x005e7d90(0)` (Megjelenítés) pedig egységesen megjeleníti őket (`0x0065b590` -> `0x004d9aa0`).
+**Nálunk:** `MainPhotoContextMenu.qml:44-46,62` a jobbklikkelt kép alapján írja ki a „Hide” vagy „Unhide” feliratot, de kattintásra a `hostWindow.toggleHiddenSelection()` -> `toggleHiddenRows()` fut le, ami vegyes kijelölésnél `hide_all = not all(p.hidden)` miatt mindig elrejtést végez. Ha a jobbklikkelt kép rejtett, a menü „Megjelenítés”-t ír, de kattintásra a látható képek is elrejtődnek.
+**Teendő:** A `PhotoContextMenu` `hideToggleRequested` jelzését váltsa fel vagy paraméterezze a kiválasztott művelet: ha a tétel felirata „Megjelenítés” volt, az `unhideHiddenSelection()` fusson; ha „Elrejtés”, a `hideSelection()` fusson.
+**Kész, ha:** Vegyes kijelölésnél (1 rejtett, 1 látható kép) a rejtett képre jobbklikkleve megjelenő „Megjelenítés” menüpontra kattintva mindkét kép láthatóvá válik; a látható képre jobbklikkleve megjelenő „Elrejtés” menüpontra kattintva mindkét kép rejtetté válik; unit/QML teszt ellenőrzi mindkét esetet.
+
+#### 2. (feltételes, a Nyitott kérdések 1. pontja dönti el) Kép menü Elrejtés tételének szürkítése, ha nincs elrejthető kép
+
+**Eredeti:** A `FUN_0056c5a0` a Kép ▸ Elrejtés (`0x9ca5`) menüpontot letiltja (`EnableMenuItem(..., 0)`), ha a kijelölésben minden kép már rejtett.
+**Nálunk:** `PicasaPictureMenu.qml:130` a Hide tételt mindig engedélyezi, ha van képkijelölés.
+**Teendő:** A `PicasaPictureMenu.qml` `menuPictureHide` tétele kapjon `bar.hasVisiblePhotoSelection` feltételt (a `hasHiddenPhotoSelection` mintájára).
+**Kész, ha:** Csupa rejtett kép kijelölése esetén a Kép ▸ Elrejtés szürke, a Kép ▸ Megjelenítés aktív; csupa látható képnél az Elrejtés aktív, a Megjelenítés szürke; vegyes kijelölésnél mindkettő aktív; menü-állapot teszt igazolja.
+
+#### 3. (feltételes, a Nyitott kérdések 2. pontja dönti el) A fotónéző léptetése vagy bezárása az aktuális fotó elrejtésekor
+
+**Eredeti:** A `0x005e7e57` -> `0x005683a0` utólagos lépés az előnézetben/szerkesztőben nyitott kép elrejtésekor (ha a rejtett képek nem láthatóak) átléptet a következő látható képre, vagy ha elfogytak a képek, visszavált a könyvtári rácsra.
+**Nálunk:** `PhotoViewerContextActions.qml:135` csak elrejti a képet, de a néző nem navigál el róla.
+**Teendő:** Ha a nézőben megjelenített fotó elrejtésre kerül, és a `controller.showHidden` hamis, a néző váltson a következő látható képre; ha a mappában nincs több megjeleníthető kép, zárja be a nézőt (`hostWindow.closePhotoViewer()`).
+**Kész, ha:** `showHidden == false` mellett a nézőben megnyitott képet helyi menüből elrejtve a néző a következő képre lép; egyetlen képet tartalmazó mappában elrejtve a néző bezáródik és visszatér a könyvtárba; teszt igazolja.
+
+### Nyitott kérdések
+
+A hívó ellenőrző mintavétele (2026-11-15): az elrejtő ág igazolt (a `0x0065b710` a `0x004da1d0`-t `1` értékkel hívja), és a helyi menü egyetlen tétele (`RemoveMenu` a `0x9ca5`/`0x9ca4` kódra a `0x0056c5a0`-ban) a meglévő Ghidra-kimenetben is látszik, tehát az 1. jegyjavaslat igazolt. Nem igazolt:
+
+1. A Kép menü Elrejtés tételének szürkítése csupa rejtett kijelölésnél: a `0x0056c5a0` főmenü-ága ezt nem mutatja közvetlenül.
+   - Ghidra-kör kell: 0x0056c5a0 - A főmenü `0x9ca5` (Elrejtés) tételét szürkíti-e az `EnableMenuItem`, ha a kijelölés csupa rejtett kép [nem blokkoló]
+2. A `0x005683a0` utólagos lépés pontos hatása: a `0x0056884e` környezetében nincs `thumbui/albumview` nézetváltás, tehát a „következő látható kép vagy vissza a rácsra” leírás következtetés, nem bizonyíték.
+   - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7006-7008-7009-7012-colab-decomp.txt`): a `0x005683a0` a szerkesztő vagy néző újraépítése (`IDS_EDIT_IMAGE`, `0x00571850`); ha nem marad érvényes aktuális kép (`[0x399] == -1`, a `0x005675d0` után sem), visszavált a `thumbui/albumview` rácsra. Helyesbítés: az Elrejtés utáni hívás feltétele az, hogy a szerkesztőpanel aktív (`editpanel/preview +0x20c == 0`), nem a rejtett képek láthatósága. Melyik kép lesz a következő, nyitott.
+
