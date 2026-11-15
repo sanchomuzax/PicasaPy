@@ -59,7 +59,15 @@ PhotoContextMenu {
     onUndoAllEditsRequested: hostMainDialogs.undoAllEditsDialog.ensure().openForLibrary(
         hostWindow.selectedRows())
     onResetFacesRequested: hostWindow.resetFacesForPaths(hostWindow.selectedPaths())
-    onHideToggleRequested: hostWindow.toggleHiddenSelection()
+    // #7019: a felirat szerinti irányba hat a teljes kijelölésre (a Megjelenítés
+    // mindet megjeleníti, az Elrejtés mindet elrejti, vegyes kijelölésnél is).
+    onHideToggleRequested: {
+        if (root.hideChecked) {
+            hostWindow.unhideHiddenSelection()
+        } else {
+            hostWindow.hideSelection()
+        }
+    }
     onMoveRequested: hostFileOpsDialogs.ensure().openMoveToNewFolder(hostWindow.selectedPaths())
     onDeleteRequested: hostFileOpsDialogs.ensure().openDelete(hostWindow.selectedPaths())
     // #6995: a kijelölt képek mappánként egy fájlkezelő-ablakot nyitnak; a
