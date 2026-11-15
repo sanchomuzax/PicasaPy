@@ -50,15 +50,20 @@ def _platform() -> str:
     return sys.platform
 
 
+def _kernel32():
+    """A Windows kernel32 fogantyúja (a tesztek ezt cserélik, nem a `ctypes.windll`-t)."""
+    import ctypes
+
+    return ctypes.windll.kernel32
+
+
 def _azonnali_kilepes(kod: int) -> None:
     """Kilépés a bontás és (Windowson) a DLL-leválasztás nélkül.
 
     A Windowson az `ExitProcess` minden betöltött DLL-t leválaszt, és ez
     lefagyhat; a `TerminateProcess` ezt kihagyja."""
     if _platform() == "win32":
-        import ctypes
-
-        kernel32 = ctypes.windll.kernel32
+        kernel32 = _kernel32()
         kernel32.TerminateProcess(kernel32.GetCurrentProcess(), kod)
     _os_exit(kod)
 
