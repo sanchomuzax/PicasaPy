@@ -66,6 +66,13 @@ Item {
     // alapján képezzük újra a kijelölést — az eltűnt fotók kiesnek.
     property var _pendingSelectedIds: []
     property string _pendingAnchorId: ""
+    property var _pendingRenameTargets: []
+    Connections {
+        target: hostController
+        function onRenameBatchTargets(targets) {
+            commandSurface._pendingRenameTargets = targets || []
+        }
+    }
     Connections {
         // #305: engine-leépítéskor a `controller` context property null
         // lehet, miközben ez a kötés újra kiértékelődik — null-őr kell.
@@ -108,6 +115,27 @@ Item {
                 }
                 hostWindow._pendingRenamePhotoId = ""
                 hostWindow._pendingRenameTargetPath = ""
+            }
+            var renameTargets = commandSurface._pendingRenameTargets || []
+            if (renameTargets.length > 0) {
+                var kijelolt = hostWindow.selectedIndexes.slice()
+                var horgony = hostWindow.selectedIndex
+                for (var t = 0; t < renameTargets.length; ++t) {
+                    var entry = renameTargets[t]
+                    var regiId = Number(entry.photoId)
+                    if (hostController.photos.rowOfId(regiId) >= 0
+                            || hostWindow._pendingSelectedIds.indexOf(regiId) < 0)
+                        continue
+                    var ujSor = hostController.photos.rowOfPath(entry.targetPath)
+                    if (ujSor < 0) continue
+                    if (kijelolt.indexOf(ujSor) < 0) kijelolt.push(ujSor)
+                    if (hostWindow._pendingAnchorId === String(regiId))
+                        horgony = ujSor
+                }
+                kijelolt.sort(function (a, b) { return a - b })
+                hostWindow.selectedIndexes = kijelolt
+                hostWindow.selectedIndex = horgony
+                commandSurface._pendingRenameTargets = []
             }
         }
     }
