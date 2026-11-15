@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
@@ -37,9 +39,16 @@ def _wait_for(qt_app, predicate, timeout_ms: int = 10000) -> bool:
 def test_right_click_edit_tags_opens_tags_panel_at_variable_window_heights(
     qml_app, qt_app
 ):
-    window, _controller, _engine = qml_app
+    window, controller, _engine = qml_app
     window.show()
     window.requestActivate()
+
+    library = Path(controller._roots[0])
+    controller.selectFolder(str(library))
+    assert _wait_for(qt_app, lambda: controller.photos.rowCount() >= 1)
+    window.setProperty("selectedIndexes", [0])
+    window.setProperty("selectedIndex", 0)
+
     window.setProperty("activeDrawerTab", "properties")
     panel = _item(window, "propertiesPanel")
     drawer = _item(window, "rightDrawer")
@@ -67,10 +76,14 @@ def test_right_click_edit_tags_opens_tags_panel_at_variable_window_heights(
     menu = panel.findChild(QObject, "propertiesPanelContextMenu")
     assert menu is not None, "a Tulajdonságok panel helyi menüje hiányzik"
 
+    kw_row = _item(panel, "keywordsPropertyRow")
+    assert kw_row is not None and kw_row.isVisible()
+
     for offset in (-5, 0, 5):
         window.setHeight(original_height + offset)
         assert _wait_for(qt_app, drawer_fully_open)
-        _click(window, context_area, Qt.MouseButton.RightButton, qt_app)
+        # #7037: a helyi menü sortípus szerinti; a kulcsszó-sorra kattintva nyílik az Edit Tags
+        _click(window, kw_row, Qt.MouseButton.RightButton, qt_app)
 
         assert _wait_for(
             qt_app, lambda: bool(menu.property("opened"))
