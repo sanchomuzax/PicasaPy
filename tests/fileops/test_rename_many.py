@@ -204,19 +204,20 @@ class TestRenamePhotosMany:
         assert document.section("nyaralas-001.jpg").get("caption") == "nyar"
 
     def test_runtime_failure_reports_partial_progress(self, tmp_path, monkeypatch):
-        a, b, c = (tmp_path / f"{name}.jpg" for name in "abc")
-        for photo in (a, b, c):
+        a, b, c, d = (tmp_path / f"{name}.jpg" for name in "abcd")
+        for photo in (a, b, c, d):
             photo.write_bytes(photo.stem.encode())
         originals = tmp_path / ".picasaoriginals"
         originals.mkdir()
-        for photo in (a, b, c):
+        for photo in (a, b, c, d):
             (originals / photo.name).write_bytes(f"{photo.stem}-original".encode())
             (originals / f"{photo.stem}.1.jpg").write_bytes(
                 f"{photo.stem}-snapshot".encode()
             )
         ini = tmp_path / ".picasa.ini"
         ini.write_text(
-            "[a.jpg]\ncaption=A\n[b.jpg]\ncaption=B\n[c.jpg]\ncaption=C\n",
+            "[a.jpg]\ncaption=A\n[b.jpg]\ncaption=B\n"
+            "[c.jpg]\ncaption=C\n[d.jpg]\ncaption=D\n",
             encoding="utf-8",
         )
 
@@ -232,25 +233,35 @@ class TestRenamePhotosMany:
 
         monkeypatch.setattr(rename_module, "_rename", fail_on_third)
         with pytest.raises(RuntimeError) as caught:
-            rename_photos_many([RenameItem(path=p) for p in (a, b, c)], "trip")
+            rename_photos_many([RenameItem(path=p) for p in (a, b, c, d)], "trip")
 
         error = caught.value
         assert type(error).__name__ == "PartialRenameError"
         assert error.completed_paths == (
-            tmp_path / "trip.jpg", tmp_path / "trip-001.jpg"
+            tmp_path / "trip.jpg", tmp_path / "trip-001.jpg",
+            tmp_path / "trip-002.jpg",
         )
         assert error.renamed_paths == error.completed_paths
         assert error.failed_source == c
         assert error.failed_target == tmp_path / "trip-002.jpg"
+        assert error.failed_sources == (c,)
+        assert error.completed_pairs == (
+            (a, tmp_path / "trip.jpg"),
+            (b, tmp_path / "trip-001.jpg"),
+            (d, tmp_path / "trip-002.jpg"),
+        )
         assert isinstance(error.cause, PermissionError)
         assert all(path.exists() for path in error.completed_paths)
         assert a.exists() is False
         assert b.exists() is False
         assert c.exists()
+        assert d.exists() is False
         assert (originals / "trip.jpg").read_bytes() == b"a-original"
         assert (originals / "trip-001.jpg").read_bytes() == b"b-original"
+        assert (originals / "trip-002.jpg").read_bytes() == b"d-original"
         assert (originals / "trip.1.jpg").read_bytes() == b"a-snapshot"
         assert (originals / "trip-001.1.jpg").read_bytes() == b"b-snapshot"
+        assert (originals / "trip-002.1.jpg").read_bytes() == b"d-snapshot"
         assert (originals / "c.jpg").read_bytes() == b"c-original"
         assert (originals / "c.1.jpg").read_bytes() == b"c-snapshot"
 
@@ -258,9 +269,8 @@ class TestRenamePhotosMany:
         assert document.section("trip.jpg").get("caption") == "A"
         assert document.section("trip-001.jpg").get("caption") == "B"
         assert document.section("c.jpg").get("caption") == "C"
-        assert "trip.jpg" in str(error)
-        assert "trip-001.jpg" in str(error)
-        assert "c.jpg" in str(error)
+        assert document.section("trip-002.jpg").get("caption") == "D"
+        assert str(c) in str(error)
 
     def test_no_op_when_new_name_equals_current_name(self, tmp_path):
         # egyetlen fájlnál, ha az utótagok nélküli alapnév megegyezik a

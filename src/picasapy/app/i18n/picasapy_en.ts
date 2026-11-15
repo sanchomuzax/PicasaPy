@@ -20426,6 +20426,13 @@ Are you sure you want to undo?</translation>
     <context>
         <name>MainErrorBanner</name>
         <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="84" />
+            <source>Skipped</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RestoreProc::skipped</extracomment>
+            <translation>Skipped</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="146" />
             <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>

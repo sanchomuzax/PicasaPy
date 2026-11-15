@@ -162,8 +162,6 @@ class TestAzAzonnaliKilepes:
         assert kodok == [3]
 
     def test_windowson_elobb_a_folyamat_vegleges_leallitasa_fut(self, monkeypatch):
-        import ctypes
-
         esemenyek: list[tuple] = []
 
         class _Kernel32:
@@ -173,9 +171,7 @@ class TestAzAzonnaliKilepes:
             def TerminateProcess(self, azonosito: int, kod: int) -> None:
                 esemenyek.append(("TerminateProcess", azonosito, kod))
 
-        monkeypatch.setattr(
-            ctypes, "windll", SimpleNamespace(kernel32=_Kernel32()), raising=False
-        )
+        monkeypatch.setattr(kilepesi_hatarido, "_kernel32", _Kernel32)
         monkeypatch.setattr(kilepesi_hatarido, "_platform", lambda: "win32")
         monkeypatch.setattr(
             kilepesi_hatarido, "_os_exit", lambda kod: esemenyek.append(("os_exit", kod))

@@ -10,7 +10,7 @@ import QtQuick.Layouts
 // `faceWriteFailed` jelzések korábban SEHOVA nem voltak bekötve a
 // QML-oldalon — a felhasználó néma bukást látott, a hiba csak a
 // naplóba (`_log.exception`/hallgatólagos emit) került. Ez az
-// egyetlen, közös felület mind a négy csatornának.
+// egyetlen, közös felület a jelzéseknek, köztük az átnevezés kihagyásainak.
 Rectangle {
     id: errorBanner
     required property var hostController
@@ -81,6 +81,10 @@ Rectangle {
         function onSyncFailed(message) {
             errorBanner.notice = false
             errorBannerText.text = message
+        }
+        function onRenameBatchSkipped(fileNames) {
+            errorBanner.notice = false
+            errorBannerText.text = qsTr("Skipped") + ": " + fileNames.join(", ")
         }
         function onAlbumWriteFailed(message) {
             errorBanner.notice = false
