@@ -3191,7 +3191,7 @@ Csak igazolt eltérés lehet az alapjuk. A J7 feltételes (G2 dönti el), a töb
 
 ### 8. Két független út és cáfoló vizsgálat
 
-- **A út (diszassemblálás):** a mentési lánc (`0x0076ace0` → `0x0067f7e0` → `0x005de8e0` → `0x005f89a0` → `0x00437cf0`), a törlés (`0x005d59f0` → `0x005f8c00`), a gépelés (`0x005c24c0` → `0x00565cf0`) és a setter ágai utasításról utasításra olvasva.
+- **A út (gépi kód):** a mentési lánc (`0x0076ace0` → `0x0067f7e0` → `0x005de8e0` → `0x005f89a0` → `0x00437cf0`), a törlés (`0x005d59f0` → `0x005f8c00`), a gépelés (`0x005c24c0` → `0x00565cf0`) és a setter ágai utasításról utasításra olvasva.
 - **B út (bájtkeresés és erőforrások):** a típusleíró és a `call`-célok teljes `.text` kereséssel (`CTextCaptionNode`: három használó; `0x005f89a0`: négy hívó; `0x005f8c00`: egy; `0x00565cf0`: két; `0x005f8d80`: 14), a `stringres`/`.tre` szövegek, és a korpusz mérése. Ugyanide jut a `CThumbDB` slotok sorszámozása (`+0x4c`, `+0x50`).
 - **Cáfoló vizsgálatok:** (1) a `CTextEditNode` és a `CCaptionNode` nem képfelirat-szerkesztő: az előbbi a Személyek felület névmezője (`picasa-arcfelismeres-kutatasi-naplo.md`, 15. kör: `0x00717810` → `0x00856060`, nem újra ellenőrizve), az utóbbi a vászonra tett szöveg (`Click here to type`, `0x005b59f0`, szövegalapú, feltételes). (2) A Szerkesztés menü Szöveg parancsai nem felirat-belépők: Colab-mérés (#1526, #5877). (3) A `LastCaptionButton` nem a felirat szövegét tárolja, csak a kapcsolót (`0x00576bc0`). (4) Az `IDS_REPLACE_CAPTION` sztring az exe-ben nem szerepel (bájtkeresés), a beillesztés `CTextEditNode::confirm`-et használ.
 
