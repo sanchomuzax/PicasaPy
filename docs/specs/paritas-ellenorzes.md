@@ -3037,3 +3037,237 @@ A hívó ellenőrző mintavétele (2026-11-15): a 2. javaslat igazolt (a `0x004a
 ### 11. Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7008 alszakasz.
+
+
+## #7033: A dátum és idő beállításának teljes folyamata
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Az eredeti oldalt a binárisból és az erőforrásokból, a PicasaPy oldalt a
+jelenlegi forrásból olvastam. Ez a rész a 7033 kérdéseit fedi le; nem
+tekinti bizonyítéknak a korábbi, részleges dátummódosító-leírást.
+
+### Következtetés
+
+Az eredeti Eszközök (Tools) menü és a Tulajdonságok panel dátumsorának helyi menüje
+ugyanahhoz a `0x9e0e` parancshoz vezet. A végrehajtó JPEG-nél a
+`DateTimeOriginal` EXIF mezőt írja, a nem JPEG ágon fájlidőt és a
+`thumbindex.db` dátummezőjét kezeli; a PicasaPy megvalósítás EXIF-et, illetve
+SQLite-felülírást használ. A teljes paritás nem dönthető el: az eredeti
+rádióalapérték, néző/tálca helyzet, az Undo, az írásvédett lemez eredménye és
+néhány látható utóhatás nyitott.
+
+### Bizonyítottsági fok
+
+**Feltételes.** A menükód és az íróág két egymástól különálló bináris útból
+ellenőrizhető, a videó-adatmezőt a külön katalógusrekord-vizsgálat is
+megerősíti. A teljes folyamatra mégsem adható megerősített fok, mert a rádió
+kezdőértéke, az eredeti néző/tálca kapu, a visszavonás és a tényleges
+írásvédett Windows-fájl kimenete nem dőlt el.
+
+### 1. Belépési pontok, kijelölés és gyorsbillentyű
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Eszközök menü.** A `0x00559150` menürekord-építő a `0x00c8e048` azonosítót és `0x00c8e070` feliratot társítja a `0x00d6e904` rekordhoz; ennek parancsmezője `0x9e0e` (`0x0055c7cd`). A parancs-diszpécser `0x005cb990` `case 0x9e0e` ága `0x0057d7f0`-re lép. | A menütétel `PicasaToolsMenu.qml:78-83`; a könyvtári célhalmaz átadása `MainMenuBar.qml:361-362`. A menüpont `MainMenuBar.qml:121-122` szerint legalább egy kijelölést és nem megnyitott nézőt követel. | A menüsor bejárata megvan. Az eredeti menü engedélyező feltétele nem szerepel a parancs-diszpécserben, ezért az üres kijelölés és a néző állapotának menüszintű paritását még kell mérni. |
+| **Tulajdonság helyi menüje.** A `0x00638990` a kiválasztott `PropertiesListItem` `+8` típusát vizsgálja; `0x37` esetén hozzáadja a `0x9e0e` parancsot és a `0x00c8e048` feliratot. A hívó `0x00637fa0`. A `0x37` az EXIF `0x9003` `DateTimeOriginal` mező (`picasa-metaadat-tulajdonsagok.md:53`). | A `PropertiesPanel.qml:71-103` adatlistát mutat. A panel jobb kattintás menüje `PropertiesPanel.qml:136-155`, és csak a „Edit Tags” tételt tartalmazza. | **Igazolt eltérés.** A dátumsor célzott helyi menüjének művelete hiányzik. Fejlesztői jegyjavaslat lent. |
+| **Rács helyi menüje.** A teljes `.text` pásztázás a `0x9e0e` közvetlen kódtalálatait csak a menürekord-építőben (`0x0055c7cd`) és a tulajdonságmenüben (`0x00638a0a`) találta. Külön rács-helyi dátumparancsot nem azonosítottam. | A `PhotoContextMenu.qml:163-520` nem tartalmaz dátummódosítót. | Az eredeti közvetlen kódbeli dátumbejárat hiánya ellenőrzött. A Tools menü ettől még meghívható lehet rácskijelölésre. |
+| **Néző.** A `0x0057d7f0` az aktív objektumot és a kiválasztási gyűjtőt használja, de a binárisból nem dönthető el, hogy a menü vagy helyi menü látható-e a nézőben. | A `MainMenuBar.qml:121-122` a Tools dátumműveletet letiltja nyitott nézőnél; a `ViewerContextMenu.qml:122-294` nem tartalmaz dátumműveletet. | Az eredeti nézőbeli menükapu és a feldolgozott objektum azonosítása nyitott. A 7033-as paritás nem állítható. |
+| **Képtálca.** A közvetlen `0x9e0e` kódtalálatok között nincs azonosított tálca-menüépítő. A `0x0057d7f0` átvesz egy kiválasztási gyűjtőt, de nem bizonyítja, hogy az eredeti a tálca tartalmát dolgozza fel. | A `TrayContextMenu.qml:40-95` nem tartalmaz dátummódosítót. A Tools menü `MainMenuBar.qml:121-122` a főrács `selectedIndexes` értékéhez kötődik, nem a tálca tartalmához. | Az eredeti tálcából elérhető dátumművelet nincs igazolva. A PicasaPy tálca-helyi dátumbejárata hiányzik; eredeti eltérésként nem jegyezhető, amíg a bináris vagy mérés nem erősíti meg. |
+| **Gyorsbillentyű.** A `Picasa3i18n.dll` `SHORTCUTS.XML` erőforrása 48 rekeszt tartalmaz dátum-idő műveletre mutató rekord nélkül; a `0x00559150` menüsor 32 gyorsbillentyűs rekordja közt sincs `0x9e0e`. A `0x00c8e070` felirat `Adjust &Date and Time...`; ez menübillentyűt jelez, külön Ctrl/Alt+billentyű-kötést nem. | A QML felirata szintén `Adjust &Date and Time...` (`PicasaToolsMenu.qml:80`); a teljes `MainKeyboardShortcuts.qml:1-551` fájlban nincs dátumművelet. | Külön gyorsbillentyű-parancsot egyik oldalon sem találtam. A menü feliratának `D` menübillentyűje nem külön műveletbillentyű. |
+
+Az eredeti action a `0x0057d7f0` útján hívja a `0x005c76b0` kiválasztási
+segédet, és a kijelölési elemszámot adja a párbeszédnek. Egy elemnél a cím
+`Adjust Photo Date`; egynél több elemnél a `0x0077c7c0` a
+`OffsetPhotoDate:Title` erőforrásból darabszámos címet épít. A cím viselkedése
+megerősített a függvény utasításai és az `offsettime.fen` ablakleírója
+alapján. A többes kijelölés kezdeti dátumát adó objektum a `0x0057d7f0`
+`+0x6c` FILETIME mezője; hogy ez mindig az első kijelölt vagy a fókuszban
+levő kép-e, nincs meg.
+
+### 2. Ablak, mezők és alapértékek
+
+Az eredeti `runtime/offsettime.fen` leíró (`0x00cb40a0` azonosító,
+`0x00cb4090` előnézeti elem) `Current photo date` dátum/idő mezőt,
+`New photo date` dátum/idő mezőt, `relative` és `absolute` rádiót, valamint
+OK/Cancel gombot sorol fel. A `0x0077c7c0` a `currentdate` vezérlőt tölti,
+majd a kapott FILETIME alapján állítja elő az új dátum és idő kezdeti
+értékét. A többes elemszám csak akkor kerül a címbe, ha a darabszám nagyobb
+egynél (`0x0077c7c0`). Az eredeti `.fen` szélesség-megjelölése `fit`.
+
+Az `adjust_type` rádiólekérdezését a `0x0077cee0` végzi; az elfogadáskor a
+`0x0077cd50` dolgozza fel a `newdate`, `newtime` és `adjust_type` mezőket.
+Az `offsettime.fen` nem nevez meg előre kiválasztott rádiót, és a jelenlegi
+utasításszintű olvasásból nem dőlt el a kezdő rádió vagy az, hogy a program
+megjegyzi-e. **NINCS MEG.**
+
+Az eredeti módok végrehajtási jelentése: az `0x0057d7f0` több kijelölt
+elem és relatív jelző esetén az új és régi idő különbségét számolja
+(`0x0077cf70`), majd a `+0x80/+0x84` workermezőket adja át;
+abszolút módban cél-FILETIME-t állít a `+0x78/+0x7c` mezőkbe. A
+`0x0077cfd0` az előbbi alakot a `0x00490580`, a cél-FILETIME alakot a
+`0x00490c10` workerhez köti. Egyetlen kijelölt elemnél a `0x0057d7f0`
+mindig közvetlen cél-FILETIME-t ad át (`0x0057d9d4-0x0057da08`), tehát az
+egy-képes eredmény abszolút.
+
+PicasaPy oldalon az `AdjustTimestampDialog.qml:62-80` az első kapott sorból
+tölti a jelenlegi és új időt, minden nyitáskor relatív módot választ, és a
+címet csak több sornál bővíti (`:22-24`). Az egyképes cím egyezik. A
+PicasaPy egyképes relatív képlete ugyanarra a célidőre jut, ha az új idő a
+párbeszédben megadott cél; a többes kezdő módot csak az eredeti rádió
+alapértékének feloldása után lehet összevetni.
+
+A PicasaPy ablak modális és 540 széles (`AdjustTimestampDialog.qml:25-29`);
+az eredeti leíró `width="fit"` értéket ad, modális jelzőt nem tartalmaz.
+Ez a leírók közti eltérés önmagában nem bizonyítja a tényleges natív
+ablakszélesség vagy modalitás különbségét.
+
+### 3. Fájlrendszer, `.picasa.ini`, index és nézet
+
+| Hatás | Eredeti Picasa 3.9 | Jelenlegi PicasaPy |
+|---|---|---|
+| **JPEG EXIF** | A rekord `0x37` tulajdonságát (`0x004906f7`, `0x00490d3c`) állítja, ami EXIF `0x9003` `DateTimeOriginal`. A `0x009ed330` íróút a `0x009eb290` tempfájlos ága; a csere `0x00994400`. | A `timestamp_controller.py:74-123` a forrás JPEG EXIF `0x9003` mezőjét tempfájllal cseréli. A `timestamp_controller.py:248-305` siker esetén újraszkenneli a mappát. |
+| **Fájlidők** | A sikeres EXIF-író a `0x009eb290` útján elmenti a fájlidőket; ha az EXIF `DateTime` (`0x0132`) olvasható, a `0x00ab35e0` a hozzáférési és módosítási FILETIME-t arra teszi, a létrehozási időt érintetlenül hagyja; a `0x00ab34d0` `SetFileTime` hívással kiírja ezt a módosított szerkezetet. Hibás EXIF-írás után a `0x00992780` a létrehozási időt állítja. | Sikeres JPEG-írás után a `timestamp_controller.py:197-208` az atime/mtime értéket visszaállítja, Windowson a létrehozási időt is. Sikertelen írásnál `:179-194` Windowson a létrehozási időt próbálja állítani; más platformon nincs létrehozásiidő-írás. |
+| **Videó és nem JPEG** | A worker a `0x0049070a` és `0x00490d4f` címen a `thumbindex` típusmezőjét vizsgálja. Csak a 2-es típus megy EXIF-ágra; a videók mért típusai 8, 10 és 11, ezért a nem-EXIF ágra mennek. A `0x00992780` a fájl létrehozási idejét, a `0x004ef3c0` vagy `0x004ef5a0` a `thumbindex.db` rekord első FILETIME-ját írja és piszkosnak jelöli (`pmp-database.md:4167-4218`). | A videó/nem JPEG EXIF-írása hibára fut, majd a `timestamp_controller.py:290-305` az effektív dátumot a SQLite `photos.taken_at_override` mezőjébe írja. A fájlrendszer létrehozási idejét csak Windowson próbálja állítani (`:131-176`). |
+| **`.picasa.ini`** | A vizsgált `0x0057d7f0` → `0x0077cfd0` → worker/író lánc a forrásfájl EXIF-ét vagy a `thumbindex` rekordot kezeli; a pásztázás nem talált `.picasa.ini` író hívást ebben a láncban. Ez csak erre a műveletre szól. | A `timestamp_controller.py:248-308` EXIF-et, indexfelülírást és mappaszinkront használ; nem hív ini-író API-t. |
+| **Index, mappadátum, rács** | A nem-EXIF ág `thumbindex` dátummezője igazolt. A sikeres JPEG után az eredeti adatbázis- és rácsfrissítés pontos végállapota, a mappafa és a kijelölés nem dőlt el. **NINCS MEG.** | A `sync_photos.py:202-242` a `taken_at_override` értéket felhasználva újraszámolja az indexelt mappadátumot. A `timestamp_controller.py:308-320` a végén `_refresh_view()`-t hív. A kiválasztott rácssor megőrzése nem következik ebből. |
+| **Időrend** | A dátummódosító utáni időrendi végállapotot az átvizsgált bináris út nem dönti el. **NINCS MEG.** | A dátumművelet nem hív `syncFinished` jelet (`timestamp_controller.py:308-320`). Az időrend-vezérlő erre a jelre van kötve (`application_startup_controllers.py:270-274`), és saját `reload()`-ja újraolvassa az indexet (`timeline_controller.py:213-229`). Dátummódosítás közben nyitott időrend frissítése nincs igazolva. |
+| **Visszavonás** | A `0x0057d7f0` és a két worker közvetlen dátumíró útja nem mutat visszavonási hívást; ez nem bizonyítja, hogy a Picasa globális Undo parancsa nem érinti. **NINCS MEG.** | A `timestamp_controller.py:248-320` nem hív dátumművelethez tartozó undo-vermet vagy visszaállítót. A PicasaPy dátummódosítás nem visszavonható a kódban vizsgált úton. |
+
+Az eredeti `.picasa.ini`-re vonatkozó negatív állítás a dátumművelet
+hívásláncára korlátozott, nem a Picasa egészére. A PicasaPy EXIF-siker
+esetén az index újraolvasása veszi át az új `DateTimeOriginal` értéket;
+írási hiba, videó vagy nem JPEG esetén a külön indexfelülírás marad
+érvényben (`timestamp_controller.py:283-305`).
+
+### 4. Írási hibák, írásvédelem és részleges végrehajtás
+
+Az eredeti `0x00490580` és `0x00490c10` háttérfeldolgozója képenként járja be a kijelölést.
+Ha az EXIF-író (`0x009ed330`) nem ad sikeres eredményt, a worker a
+`0x00992780` fájlidő-ágra lép; a nem-EXIF tartalék az adott támogatott
+típusnál a `0x004ef3c0` vagy `0x004ef5a0` rekordmódosítót is meghívja.
+A következő kijelölt elem feldolgozása folytatódik. Visszagörgető hívást
+nem találtam, ezért a bináris útban részleges siker lehetséges. A
+`SetFileTime` vagy a katalógusírás hibájának pontos felhasználói jelzése
+**NINCS MEG**.
+
+Az eredeti kódágban külön írásvédettség-előellenőrzést nem azonosítottam.
+Az, hogy egy Windows `readonly` attribútum vagy mappaszintű engedély mellett
+az EXIF-csere, a `SetFileTime`-tartalék és a katalógusírás közül melyik
+sikerül, csak a tényleges Picasa 3.9 futás és előtte/utána fájl- és
+adatbázisvizsgálat útján dönthető el. **NINCS MEG.**
+
+A PicasaPy-ban az EXIF-kivétel kezelt tartalékág: `taken_at_override`-t ír
+(`timestamp_controller.py:179-194, 283-305`). A háttérköteg soros; egy
+nem kezelt fájl- vagy adatbázishiba megállítja a hátralévő munkákat, a
+korábbi fájlírásokat nem vonja vissza, hibát jelez, majd a folyamatablakot
+lezárja (`photo_ops_write_core_mixin.py:99-140`,
+`timestamp_controller.py:308-320`). Így részleges végrehajtás itt is
+lehetséges. Read-only fájlnál az ideiglenes fájl vagy csere hibájának
+tényleges oka a fájl- és mappaengedélytől függ; a kód nem vizsgál külön
+attribútumot előre.
+
+### 5. A két független út
+
+- **A út, parancs és végrehajtás:** a `0x00559150` rekordbázis és
+  `0x005cb990` diszpécser után `0x0057d7f0` nyitja meg a műveletet;
+  `0x0077cfd0` választja a két workert, a worker pedig a `0x37` mezőt,
+  `0x009ed330`-at és a tartalék `0x00992780`/`0x004ef3c0`/`0x004ef5a0`
+  utat használja.
+- **B út, külön menü és adatút:** a `0x00638990` önálló Properties-lista
+  menüépítője ugyanazt a `0x9e0e` kódot adja a `0x37` tulajdonsághoz;
+  a `pmp-database.md` 15.1-15.2 szakaszának rekordmásolási és adatbázis-
+  ellenőrzése a videós ág `thumbindex` első FILETIME-ját azonosítja.
+- **Egyezés:** A és B egyezik a parancsazonosítóban, a `0x37` EXIF
+  tulajdonságban, és a nem-EXIF ág katalógusmezőjében. A teljes UI-végállapot
+  nem egyezik össze két bizonyítéki úttal, mert a néző/tálca kapu és az
+  időrend/mappafa frissítése nyitott.
+
+### 6. Cáfoló kísérlet
+
+Megpróbáltam cáfolni azt, hogy külön dátum gyorsbillentyű vagy további
+közvetlen helyi menüparancs tartozik a `0x9e0e` kódhoz. A `paszta.py`
+lineáris `.text` pásztázása `memoria_kapu()` után 2 884 879 utasítást
+vizsgált: a közvetlen `0x9e0e`/felirat operandusai csak a `0x00559150`
+menürekord-építőben és a `0x00638990` tulajdonságmenüben jelentek meg.
+Az ellenpróbát külön erőforrás- és rekordlistával ellenőriztem: a
+`SHORTCUTS.XML` 48 elemében nincs dátum/adjust/timestamp rekord, a
+`0x00559150` 32 menü gyorsbillentyű-rekordjában pedig nincs `0x9e0e`.
+Ezek a kontrollok a közvetlen kötést cáfoló alternatív keresést azonos
+mércével, a bináris közvetlen címekre és az erőforrás teljes rekeszszámára
+ellenőrizték. A `&Date` felirat menü-mnemonikája ettől külön marad.
+
+### 7. A kérdés „Kész, ha” pontjai
+
+A megadott jegyszöveg négy kérdést sorol fel, külön „Kész, ha” felsorolást
+nem ad. Ezek alapján:
+
+1. ⛔ **Belépési pontok és feltételek:** Tools menü és Properties-lista
+   helyi menü címmel bizonyított (`0x00559150`, `0x005cb990`,
+   `0x00638990`). Külön dátum gyorsbillentyű nincs az erőforrásban; a
+   néző/tálca elérhetőség és az eredeti írásvédettségi kapu nyitott.
+2. ⛔ **Ablak, alapértékek és megjegyzés:** mezők, módok, OK/Cancel és
+   elemszámos cím ismert (`0x0077c7c0`, `0x0077cbe0`, `0x0077cd50`,
+   `0x0077cee0`). A többes kijelölés aktuális képének kiválasztása, a
+   rádió kezdőértéke és annak megjegyzése nyitott.
+3. ⛔ **Hatás és visszavonás:** JPEG EXIF és videó/nem JPEG `thumbindex`
+   ág igazolt (`0x009ed330`, `0x004ef3c0`, `0x004ef5a0`, `0x00992780`).
+   Az eredeti JPEG index/rács/mappafa/időrend végállapota és Undo hatása
+   nyitott; a PicasaPy az indexet és főnézetet frissíti, időrend-jelet nem
+   küld.
+4. ⛔ **Írásvédelem és részleges hiba:** az EXIF-író hibája tartalékágra
+   kerül és a worker a következő elemmel folytat (`0x00490580`,
+   `0x00490c10`), ezért visszagörgetés nem látszik. A read-only attribútum
+   konkrét Windows-viselkedése és a felhasználói hibajelzés nyitott.
+
+### 8. Javasolt fejlesztői jegytörzs
+
+#### A Tulajdonságok panel dátumsorának helyi menüje nyissa meg a dátumállítót
+
+**Eredeti:** a `0x00638990` a `PropertiesListItem` `0x37` típusú
+`DateTimeOriginal` sorához (`0x9003`) hozzáadja a `0x9e0e` Dátum és idő
+beállítása parancsot. A `0x00637fa0` hívja ezt a helyi menüépítőt.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x00638990`: `0x37` tulajdonságsorhoz a `0x9e0e` műveletet adja. | `PropertiesPanel.qml:71-103, 136-155`: a panel a tulajdonságokat csak megjeleníti; jobb kattintásra az „Edit Tags” menü nyílik. | A dátumot megjelenítő tulajdonságsor helyi menüjébe kerüljön a dátumállító, és az adott kép adataival nyíljon meg. |
+
+**Kész, ha:** a `DateTimeOriginal` sor jobb kattintására megnyílik a
+dátumállító az adott kép aktuális dátumával; más tulajdonságsor nem kap
+dátummódosító műveletet.
+
+Más fejlesztői jegyet nem javaslok: a rádióalapérték, néző/tálca kapu,
+visszavonás és látható index-végállapot nincs kellően igazolva.
+
+### 9. Új kutatási jegyjavaslatok
+
+Nincs külön kutatási jegyjavaslat; a lent felsorolt nyitott pontok a 7033
+folyamatához tartoznak.
+
+### 10. Nyitott
+
+- Ghidra-kör kell: 0x0077c670 - Az `offsettime.fen` új példányán melyik `adjust_type` rádió az alapérték, milyen érték kerül a `+0x37` módjelzőbe, és olvas-e vagy ír-e a párbeszéd megjegyzett beállítást? A jelenlegi `0x0077cee0` és `0x0077cd50` kimenet csak a választás lekérdezését és mentését mutatja, a kezdő állapotot nem. [blokkoló]
+- Ghidra-kör kell: 0x0057d7f0 - A dátumablak `+0x32/+0x33` FILETIME-ja több kijelölt képnél a fókuszban levő, az első vagy másik kép ideje-e; a `0x005c76b0` választási lista mely néző/tálca állapotot ad át? A `0x005cb990` meglévő dekompilálása csak a `0x9e0e` diszpécserágat köti ehhez a kezelőhöz. [blokkoló]
+- **NINCS MEG:** a `readonly` fájl attribútum, csak olvasható mappa vagy
+  fájlrendszerhiba pontos eredeti kezelése és felhasználói jelzése. Út:
+  kontrollált Picasa 3.9 mérés írható, fájlattribútummal védett és
+  mappaszinten nem írható mintával; rögzíteni kell az EXIF-et, fájlidőket,
+  `thumbindex.db`-t és a képernyőn megjelenő hibát.
+- **NINCS MEG:** az eredeti parancs elérhetősége a nézőben és a tálcában,
+  továbbá a siker utáni kijelölés, JPEG-index, mappafa és időrend. Út:
+  célzott Ghidra-követés a `0x0057d7f0` hívói objektumára, majd Picasa 3.9
+  előtte/utána mérés egy képpel, több képpel, nézőben és csak tálcára
+  helyezett képpel.
+- **NINCS MEG:** az eredeti Szerkesztés > Visszavonás vagy más visszavonó út módosítja-e
+  a már kiírt EXIF-et, a fájlidőt vagy a katalógusrekordot. Út: a
+  `0x9e0e` művelet után az Undo parancs végrehajtása, majd a forrásfájl és
+  a `thumbindex.db` előtte/utána összevetése.
+- **NINCS MEG:** mérőadatból nincs dátummódosítási munkamenet; az archívum
+  név szerinti keresése nem talált `adjust`, `timestamp` vagy `offsettime`
+  mintát, ezért archívumtageket nem bontottam ki.
+
+### 11. Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md` - új #7033 alszakasz a belépési
+  pontokról, az ablakról, hatásokról, hibákról, bizonyítékokról és nyitott
+  kérdésekről.
