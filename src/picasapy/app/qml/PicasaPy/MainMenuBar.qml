@@ -97,6 +97,20 @@ PicasaMenuBar {
         }
         return false
     }
+    // #6977: a Save As és Save a Copy csak akkor aktív, ha a kijelölés
+    // tartalmaz legalább egy fotót (nem csak videókból áll; 0x005cb1a0 -> 0x0056e416).
+    hasPhotoSelection: {
+        if (!hostController || !hostController.photos) return false
+        var photos = hostController.photos
+        var revision = photos.revision
+        if (revision < 0) return false
+        var rows = hostWindow.photoActionRows()
+        if (rows.length === 0) return false
+        for (var i = 0; i < rows.length; ++i) {
+            if (!photos.isVideoAt(Number(rows[i]))) return true
+        }
+        return false
+    }
     libraryPhotoActionsEnabled: !hostWindow.viewerOpen
                                 && hostWindow.selectedIndexes.length > 0
     //: #1768: a Mappakezelő két belépési pontja szürke, amíg a

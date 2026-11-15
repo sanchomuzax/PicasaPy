@@ -14,6 +14,7 @@ import pytest
 
 from picasapy.app.save_error_kind import (
     KIND_COLLISION,
+    KIND_COPY_DISK,
     KIND_DISK,
     KIND_FORMAT,
     KIND_SAME,
@@ -55,6 +56,19 @@ class TestAgak:
     )
     def test_lemezhiba(self, hiba):
         assert save_error_kind(hiba) == KIND_DISK
+
+    @pytest.mark.parametrize(
+        "hiba",
+        [
+            OSError(errno.ENOSPC, "No space left on device"),
+            PermissionError(errno.EACCES, "Permission denied"),
+            IniSaveError("az ini nem irhato"),
+            IniConflictError("parhuzamos Picasa irta"),
+        ],
+    )
+    def test_masolat_mentes_lemezhiba_copy_disk_agat_ad(self, hiba):
+        assert save_error_kind(hiba, is_copy=True) == KIND_COPY_DISK
+        assert save_error_kind(hiba, is_copy=False) == KIND_DISK
 
     def test_az_utkozes_ELOBB_dol_el_mint_a_formatum(self):
         """A `FileNameCollisionError` a `SaveError` LESZÁRMAZOTTJA — ha a

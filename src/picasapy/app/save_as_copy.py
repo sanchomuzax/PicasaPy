@@ -130,10 +130,10 @@ class SaveCopyMixin:
                     )
                 except (*_SAVE_ERRORS, FileNameCollisionError) as error:
                     failed += 1
-                    ag = save_error_kind(error)
+                    ag = save_error_kind(error, is_copy=True)
                     if ag not in jelentett_agak:
                         jelentett_agak.add(ag)
-                        self._report_save_error(error, target or path)
+                        self._report_save_error(error, target or path, is_copy=True)
                 else:
                     done += 1
                     utolso_cel = str(eredmeny.target_path)
