@@ -74,7 +74,8 @@ PhotoContextMenu {
             hostWindow.hideSelection()
         }
     }
-    onMoveRequested: hostFileOpsDialogs.ensure().openMoveToNewFolder(hostWindow.selectedPaths())
+    onMoveRequested: hostFileOpsDialogs.ensure().openMoveToNewFolder(
+        hostWindow.selectedPaths(), hostWindow.photoActionTakenAt())
     onDeleteRequested: hostFileOpsDialogs.ensure().openDelete(hostWindow.selectedPaths())
     // #6995: a kijelölt képek mappánként egy fájlkezelő-ablakot nyitnak; a
     // jobbklikkelt kép a kijelölésben van (`openPhotoContextMenu`), üres

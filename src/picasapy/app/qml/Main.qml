@@ -424,6 +424,7 @@ ApplicationWindow {
     function prepareRenameSelection(row, newName) { mainLibrarySelectionState.prepareRenameSelection(row, newName) }
     function photoActionIndex() { return mainLibrarySelectionState.photoActionIndex() }
     function photoActionPaths() { return mainLibrarySelectionState.photoActionPaths() }
+    function photoActionTakenAt() { return mainLibrarySelectionState.photoActionTakenAt() }
     function newAlbumFolderPath() { return mainLibrarySelectionState.newAlbumFolderPath() }
     function addPhotosToScreensaver(paths) { mainLibrarySelectionState.addPhotosToScreensaver(paths) }
     function requestAddToScreensaver() { mainLibrarySelectionState.requestAddToScreensaver() }
