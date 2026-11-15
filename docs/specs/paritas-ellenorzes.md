@@ -2408,3 +2408,141 @@ Most nem javaslok külön kutatási jegyet: a nyitott tételek ennek a Print-fol
 - `NINCS MEG`: az eredeti 3.9.141 viselkedése írásvédett nyomtató/spool cél, hiányzó képfájl és megszakítás esetén. Megszerzés: Windowsos mérés külön üres profilban, külön PDF/printer célokkal; rögzítendő a hibaüzenet, létrejött fájl/spool, visszaálló UI és kijelölés.
 - `NINCS MEG`: eredeti Photo Tray tartalma és mappafa/rács állapota nyomtatás után. Megszerzés: Windowsos 3.9.141 mérés egy, majd több kijelölt képpel és eltérő Photo Tray tartalommal; előtte/utána képernyő és `.picasa.ini` és index fájlkivonatának összevetése.
 
+
+
+## #7000: A forgatás parancsainak teljes folyamata az eredeti Picasával összevetve
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Az eredeti bináris címek és a jelenlegi PicasaPy forrássorok külön szerepelnek.
+Az ismeretlen menüállapotot, indexhatást és írásvédett fájlra vonatkozó
+viselkedést nem következtetem ki a felület feliratából.
+
+### Következtetés
+
+A `0x9ca2` jobbra, a `0x9ca3` balra forgat; mindkettő ugyanahhoz a közös
+végrehajtóhoz kerül. Az eredeti végrehajtási út a `rotate(n)` metaadatot írja a
+`.picasa.ini`-be, a PicasaPy pedig szintén az ini-metaadatot és az indexet
+frissíti. A teljes paritás nyitott: az eredeti menütiltások szemantikus
+feltételei, a perzisztens index és felületi végállapot, az írási hiba, valamint
+az Undo All Edits forgatást érintő hatása nem bizonyított; a jelenlegi
+szerkesztőben nincs az eredeti képrotációs gomboknak megfelelő művelet.
+
+### Bizonyítottsági fok
+
+**Feltételes.** A parancskódok, a közös forgatási út és az ini-metaadat útja
+bináris utasításokkal, független diszpécser-dekompilációval, illetve korábban
+rögzített mérési adattal alátámasztott. A kérdés több kötelező részére nincs
+független, döntő adat, ezért a teljes folyamatot nem minősítem megerősítettnek.
+
+### Belépési pontok és engedélyezés
+
+Az eredeti közös végrehajtó a `0x005eef30`, amely a kiválasztott elemek listáját
+a `0x005ee6e0` feldolgozónak adja. A feldolgozó elemenként jár végig a listán.
+Az üres lista a `IDS_MUST_SELECT_TO_ROT` üzenetet indítja; támogatott és nem
+támogatott típus vegyes kijelölésekor a támogatható elemeket feldolgozza, majd
+a `IDS_ROT_TYPEFAILED` üzenetet adja. A belső típusértékek videóhoz rendelése
+és a menütiltás pontos szemantikája nincs bizonyítva.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Főmenü, forgatás jobbra/balra:** a menürekord-építő `0x00559150`; a `R&otate Clockwise` szövegű rekord bázisa `0xd6e340`, parancsmezője `+0x0a = 0x9ca2`; a `Rotate &Counterclockwise` rekord bázisa `0xd6e354`, parancsmezője `+0x0a = 0x9ca3`. A `0x005cb990` diszpécser mindkét parancsot a `0x005eef30`-hoz küldi. | `PicasaPictureMenu.qml:31-42`; `MainMenuBar.qml:83,400-424`. A menüpontok engedélyezése `photoActionsEnabled`; nézőben az aktuális sort, könyvtárnézetben a kijelölt sorokat forgatja. | A parancs és irány egyezik. A PicasaPy nem-üres kijelölést ellenőriz; az eredeti video/írásvédett menütiltás pontos feltétele nyitott. |
+| **Fotó helyi menü, könyvtár/folder-photo:** a menüépítő `0x00730790`, `FolderPhotoWin` parancsai a `0x005eef30`-hoz jutnak. | `PhotoContextMenu.qml:287-296`; `MainPhotoContextMenu.qml:93-94`. A kijelölt sorokat kötegben adja át; a két menüpontnak nincs saját `enabled` feltétele. | A közös parancs és többes kijelölés útja megvan. A feltétel egyezéséhez az eredeti engedélyező bitek szemantikai megfejtése kell. |
+| **Fotó helyi menü, album-photo:** a külön menüépítő `0x00731050`; a forgatási parancsok a közös végrehajtóhoz vezetnek. | `PhotoContextMenu.qml:287-296`; `MainPhotoContextMenu.qml:93-94`. | Egyező könyvtári kötegút; az eredeti állapotbit-feltétel nyitott. |
+| **Gyorsbillentyű:** `CThumbUI::OnKeyDown`, `0x005e60d0`, a `Ctrl+R` és a `Ctrl+Shift+R` billentyűkombinációt a megfelelő forgatási irányra oldja fel. A közös végrehajtó a kijelölési listát dolgozza fel; üres lista esetén üzenetet ad. | `MainKeyboardShortcuts.qml:281-299`; célpont `MainWindowCommands.qml:381-385`. A PicasaPy egyetlen `selectedIndex`/nézőindex sort ad át, és `row < 0` esetén némán visszatér. | Eltérés: a többes kijelölés helyett egy sort céloz; üres célpontnál hiányzik az eredeti „Must have selected images to rotate.” értesítés. Lásd a fejlesztői jegytörzset. |
+| **Képtálca forgatógombjai:** `thumbui/rotateleft` és `thumbui/rotateright`, kezelő `0x005d9cc0`; a gomb az egyedi vagy kijelölt elemek útját hívja. | `TrayTopRow.qml:105-174`; az egyes gombok akkor engedélyezettek, ha van néző vagy kijelölt sor, és a célcsoport nem csak videó. Több kijelölt sornál `rotateLeftMany`/`rotateRightMany`, különben egy sor. | Az egy és több elemű művelet rendelkezésre áll. Az eredeti video-engedélyezés és a PicasaPy saját menü-/vezérlőfeltételeinek pontos egyezése nyitott. |
+| **Képtálca helyi menü:** album-photo forgatási parancsok a `0x00732ee0` menüépítőben. | `TrayContextMenu.qml:71-82`; `MainTrayBar.qml:46-49`. A kijelölt sorok kötege fut. | A többes kijelölés útja megvan; eredeti parancsengedélyezés nyitott. |
+| **Néző helyi menü:** OneUp menüépítő `0x007327a0`; a `oneup/rotateleft` és `oneup/rotateright` vezérlők (`0x00752ae0`, `0x00753180`; erőforrás-felépítők `0x00802830`, `0x008032e0`) ugyanahhoz a forgatási útvonalhoz jutnak. | `ViewerContextMenu.qml:151-160`; `PhotoViewerContextActions.qml:122-130`. A néző aktuális indexét adja át. | Az egyképes cél egyezik. Az eredeti pontos engedélyező bit és video-viselkedés nyitott. |
+| **Néző gyorsgombjai:** OneUp `rotateleft/right` vezérlők a `0x00752ae0`/`0x00753180` hívási útban. | `PhotoViewerQuickToolbar.qml:159-192`; `PhotoViewerTopBar.qml:330-356`. Mindkettő az aktuális oldalt célozza, és `quickViewerMode`-ban látható. | Az egyképes cél egyezik; tiltási feltétel nyitott. |
+| **Szerkesztő normál nézet:** `editpanel/rotateleft/right`, kezelő `0x005d59f0`, a közös forgatóhoz jut. | A szerkesztő „Rotate” gombja `EditorCropPanel.qml:338-342`, kezelő `PhotoViewerEditorPanel.qml:135-144`; ez a kivágás-kijelölés tájolását cseréli. | Eltérés: nincs az eredeti képrotációt végző szerkesztőgomb. Fejlesztői jegy javasolt. |
+| **Szerkesztő OneUp nézet:** `editoneup/rotateleft/right`, kezelő `0x00760240`, a UI felépítője `0x0075eac0`. | `PhotoViewerTopBar.qml:330-356` forgatógombjai `visible: viewer.quickViewerMode`; az editor mód gombja a crop-keretet forgatja, nem a fotót. | Eltérés: az eredeti képrotációs gombhoz nincs jelenlegi megfelelő. Fejlesztői jegy javasolt. |
+
+#### Több kép, üres kijelölés, video és írásvédett fájl
+
+- **Több kép:** az eredeti `0x005ee6e0` kiválasztási listán futó ciklusa több elemet is feldolgoz. A PicasaPy főmenüje és fotó helyi menüje könyvtárnézetben a teljes kijelölést adja át. A globális gyorsbillentyű ettől eltérően egy sort választ (`selectedIndex`), míg a tálca gomb a többes kijelölést is átadja.
+- **Üres kijelölés:** az eredeti közös kezelő `IDS_MUST_SELECT_TO_ROT` üzenetútja megvan. A PicasaPy kötegelt útja a `rotationNeedsSelection` jelet kibocsátja (`photo_ops_transform_mixin.py:124-130`) és megjeleníti (`PicasaNotifier.qml:438-442`); a globális gyorsbillentyű viszont előbb `row >= 0` feltételt vizsgál, ezért ott néma no-op (`MainKeyboardShortcuts.qml:285-298`). A főmenü forgatása üres kijelölésnél letiltott (`MainMenuBar.qml:83`).
+- **Video:** az eredeti feldolgozó bizonyos belső fájltípus-értékeket kizár és a kihagyott elemekről `IDS_ROT_TYPEFAILED` üzenetet ad. A belső érték és a video címke megfeleltetése nincs meg, ezért nem állítom, hogy minden videónál ugyanez a menüállapot vagy üzenet jelenik meg. A PicasaPy kötegelt út kihagyja a videókat és jelez (`photo_ops_transform_mixin.py:117-135`); az egyképes út csendben visszatér (`:221-226`); a tálca gomb csak-videó célcsoportnál le van tiltva (`MainWindowCommands.qml:386-400`, `TrayTopRow.qml:117-126,165-170`).
+- **Írásvédett fájl:** a forgatási adatot az eredeti út `.picasa.ini`-be írja, nem az eredeti képfájl bitjeit adja át író függvénynek. Az, hogy az eredeti Picasa a fájl attribútuma vagy a szülőkönyvtár írhatósága alapján letiltja-e az egyes belépőket, nincs bizonyítva. A PicasaPy forrás útja az ini-t menti; az image-fájl read-only volta önmagában nem bizonyítja az ini-írás jogát.
+- **PicasaPy felületi kapuk:** a főmenü `photoActionsEnabled` csak azt vizsgálja, van-e cél sor (`MainMenuBar.qml:83`); a fotó helyi menü forgatógombjainak nincs saját `enabled` feltételük (`PhotoContextMenu.qml:287-296`); a gyorsbillentyű csak szövegmező-fókusznál tiltott (`MainKeyboardShortcuts.qml:281-299`). Így video/írásvédett célra a felület nem ad minden belépőn egységes tiltást. Az ini írási hibáját a háttéríró `photoOpFailed`/`syncFailed` csatornára küldi, nem előzetes engedélyezési teszttel kezeli (`photo_ops_write_core_mixin.py:80-95`; `photo_ops_write_mixin.py:97-105`).
+
+### Megerősítés, ablak és megjegyzett beállítás
+
+- A vizsgált eredeti forgatási parancsútban nem találtam megerősítő dialógus vagy választást mentő hívást. A `Preferences/UITransitions` állapot olvasása animációs beállítás; forgatási beállítás mentését nem azonosítottam. Ez a megállapítás az átvizsgált útvonalra korlátozott.
+- A nem támogatott típus üzenete `IDS_ROT_TYPEFAILED`, a kiválasztás hiányáé `IDS_MUST_SELECT_TO_ROT`; a `0x009807f0` közös UI-üzenetútra kerülnek. A megjelenítés pontos ablaktípusa (modális párbeszédablak vagy más felületi értesítés) **NINCS MEG**.
+- A `.picasa.ini` író (`0x00454770`) siker/hiba eredményt ad vissza, de a `0x0042c980` forgatási hívó a visszatérést nem vizsgálja. A tényleges írásmegtagadási felhasználói visszajelzés **NINCS MEG**; a hibaüzenet hiányát nem állítom.
+
+### Hatás a fájlokra és felületre
+
+Az eredeti `0x0042c830` a `rotate(%d)` értéket olvassa; a `0x0042c980` jobbra
+egy lépést ad hozzá, balra egyet levon modulo 4 szerint (a 0 balra forgatásból
+3 lesz). A PicasaPy ugyanígy modulo 4 lépésszámot képez (`photo_ops_transform_mixin.py:137-140,228-229`).
+
+| Hatás | Eredeti Picasa 3.9 | Jelenlegi PicasaPy |
+|---|---|---|
+| Kép fájltartalma | A vizsgált hívólánc a forgatás értékét metaadatként adja át, és nem találtam bitmap író hívást. A képfájl hash változatlansága **NINCS MEG**. | A forgatás `.picasa.ini`-ben tárolt metaadat (`photo_ops_transform_mixin.py:201-248`); nincs képfájlba írás ebben az útban. |
+| `.picasa.ini` | `0x0042c980` `rotate(%d)` értéket készít; `0x00454770` a `.picasa.ini`-t nyitja meg, `rotate` kulcsot ír, siker után `backuphash`-t frissít. Független mérési rögzítés: #5396 régi eredményében jobbra `rotate(1)`, balra `rotate(3)` és `backuphash` szerepelt. | Egy képnél és kötegben is `rotate=` és `backuphash` változik; az írás backupolt ini-módosítással történik (`photo_ops_transform_mixin.py:137-143,239-248`; `photo_ops_write_text_mixin.py:206-227`). |
+| SQLite / index | A végrehajtás a `0x005796c0` frissítési útját hívja. Hogy ez mely perzisztens adatbázis-mezőket írja, **NINCS MEG**. | Egy képnél `update_photo_fields` frissíti az `rotate_steps` mezőt (`photo_ops_write_core_mixin.py:80-95`); batch írás mappánként szinkronizálja az indexfát (`photo_ops_write_text_mixin.py:213-227`). |
+| Bélyegkép és rács | `0x005796c0`-n keresztüli frissítés látszik, de a thumbnail-cache és a rácssor pontos végállapota **NINCS MEG**. | A provider a modellértesítés előtt újraregisztrálja a rekordot, majd célzottan frissíti a sort (`photo_ops_write_mixin.py:76-95`). A rácsmodell nem reseteli a listát, megtartja a delegate-eket és görgetést, `dataChanged` jelet küld (`photo_grid_state.py:268-281`). |
+| Mappafa | A forgatás utáni mappafa-hatás **NINCS MEG**. | A kötegelt út mappánként szinkronizálja az indexfát; mappafa-sor vagy kijelölés közvetlen állítását nem találtam. A pontos látható végállapot **NINCS MEG**. |
+| Kijelölés | A közös végrehajtó utáni kijelölés megtartása vagy megváltozása **NINCS MEG**. | A forgató út nem hív kijelölést módosító műveletet; a célzott rácssor frissül. A futásidejű kijelölés végállapota nincs külön mérve. |
+| Visszavonás | A forgatási útban undo-verem írást nem találtam; az ellenkező irányú parancs 90 fokkal visszaforgat. Az `ID_PICTURE_REVERT` (`0x9ca4`) és a `0x005e7d90(0)` külön parancs, annak `rotate=`-ra gyakorolt hatása **NINCS MEG**. | A forgatás nincs a kötegelt undo-veremben (`MainMenuBar.qml:406-408`); az ellenkező irányú művelet visszaállíthatja a korábbi lépést, ha közben nem történt más forgatás. |
+
+### Hibák és részleges végrehajtás
+
+- Eredeti: a `0x005ee6e0` a támogatott elemeket sorban feldolgozza, a nem támogatottakat kihagyja, majd hibaüzenetet ad. A részleges végrehajtás visszagörgetésére utasítást nem találtam, tehát vegyes kijelölésnél részleges siker lehetséges. Az ini-írási hiba felhasználói következménye **NINCS MEG**.
+- PicasaPy: kötegelt útban a kihagyott videók száma `rotationTypeFailed` jelzésként jelenik meg; üres kötegnél `rotationNeedsSelection` megy a notifierhez. Egyképes video esetén néma no-op. Írási hibánál a háttérmunkás nem frissíti a modellt, `photoOpFailed`/`syncFailed` jelzést küld (`photo_ops_write_core_mixin.py:80-95`, `photo_ops_write_mixin.py:97-105`).
+- Megerősítést vagy megszakítási párbeszédet az eredeti közös forgatási útban nem találtam. A művelet visszavonhatósága és a fájlírási hiba nem azonos azzal, hogy az ellenkező forgatási parancs később kiadható.
+
+### Két független út és cáfoló kísérlet
+
+- **A út, utasításszintű olvasás:** `0x00559150` rekordbázis és `+0x0a` parancsmezők; `0x005cb990` dispatch; `0x005eef30` és `0x005ee6e0` kiválasztási lista/ciklus; `0x0042c980` rotate értékképzés; `0x00454770` ini-írás.
+- **B út, független diszpécser és mérés:** a meglévő Ghidra-diszpécser `2026-10-21-idorend-30.txt:1405-1409` a `0x9ca2` ágat `FUN_005eef30(...,0x5a)`, a `0x9ca3` ágat `FUN_005eef30(...,0x10e)` iránykóddal párosítja; az önálló #5396 mérési rögzítés az ini `rotate(1)`/`rotate(3)` végértékét mutatja.
+- **Egyezés:** az A és B út egyezik abban, hogy a `0x9ca2` az óramutató járásával egyező, a `0x9ca3` az ellenkező irányú parancs, és a megfigyelt tárolási forma `rotate(n)` metaadat. Ezek nem oldják fel az engedélyező állapotbiteket vagy a UI-végállapotot.
+- **Cáfoló kísérlet:** megpróbáltam a két irány feliratát közeli `push` utasítások miatt felcserélni. A menürekord-bázisok cáfolják ezt: a `R&otate Clockwise` szöveghez tartozó `0xd6e340` rekord parancsmezője `0x9ca2`; a balra feliratú következő `0xd6e354` rekordé `0x9ca3`. A másik irányú hozzárendelést a független Ghidra-diszpécser is cáfolja. Az ellenpróbát ugyanezen cím- és rekordmező-ellenőrzéssel értékeltem, nem csak az index találataira támaszkodtam.
+
+### A jegy „Kész, ha” pontjai
+
+1. ⛔ **Minden belépő és feltétel:** a főmenü, könyvtári és album-fotó helyi menü, gyorsbillentyű, tálca gomb és helyi menü, néző menü és gyorsgomb, valamint szerkesztő belépők fel vannak sorolva. Az eredeti video/írásvédett engedélyezés belső feltételei és a párbeszédablak pontos állapota nyitottak.
+2. ✅ **Megerősítés és megjegyzett beállítás:** az átvizsgált forgatási útban nem találtam megerősítést vagy forgatási állapot mentést; az `UITransitions` olvasás nem forgatási preferencia. Az írási hiba felhasználói UI-ja ettől külön nyitott.
+3. ⛔ **Fájlrendszer, ini, index, bélyegkép, rács, kijelölés és undo:** a `.picasa.ini` hatása bizonyított, a PicasaPy SQLite/rács-útja forrásból dokumentált. Az eredeti tartós index, thumbnail cache, mappafa és kijelölés pontos végállapota, valamint a Picasa Undo All Edits hatása nincs eldöntve.
+4. ⛔ **Hibák:** az üres kijelölés és támogatott típusok kihagyásának eredeti jelzése ismert; a `.picasa.ini` írásmegtagadásának eredeti felhasználói viselkedése nem bizonyított.
+
+### Javasolt jegytörzs-bővítés
+
+#### Ctrl+R és Ctrl+Shift+R kezelje a kijelölést és jelezze az üres célpontot
+
+**Eredeti:** A Picasa 3.9 `0x005e60d0` gyorsbillentyű-kezelője a forgatás közös kiválasztási útját hívja; a `0x005ee6e0` több kijelölt elemet is sorban feldolgoz, üres lista esetén `IDS_MUST_SELECT_TO_ROT` üzenetet ad.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x005e60d0`, `0x005eef30`, `0x005ee6e0`: gyorsbillentyűvel a kijelölési lista forog, üres kijelölésnél üzenet jelenik meg. | `MainKeyboardShortcuts.qml:281-299`, `MainWindowCommands.qml:381-385`: a globális shortcut egy `selectedIndex`/nézőindex sort ad át; negatív sornál nem jelez. | A könyvtárnézeti shortcut a kijelölt sorlistát adja át a batch forgatásnak; néző/diavetítés esetén maradjon az aktuális kép célpont; üres lista esetén az eredeti erőforrásnak megfelelő notifier-jelzés jelenjen meg. |
+
+**Kész, ha:** több kijelölt képnél Ctrl+R és Ctrl+Shift+R mindegyiket elforgatja; nézőben egyedül az aktuális képet forgatja; üres kijelölésnél a megfelelő figyelmeztetés látszik.
+
+#### Képrotációs gomb a szerkesztőben
+
+**Eredeti:** a Picasa 3.9 `0x005d59f0` `editpanel/rotateleft/right` és `0x00760240` `editoneup/rotateleft/right` vezérlői a fotó közös forgatási útját hívják.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x005d59f0`, `0x00760240`: balra/jobbra forgatja a szerkesztett fotót. | `EditorCropPanel.qml:338-342`, `PhotoViewerEditorPanel.qml:135-144`: a „Rotate” gomb csak a vágókeret tájolását cseréli; a fotót nem forgatja. | A szerkesztőben külön képrotációs vezérlőket tenni elérhetővé; a kivágás forgatása maradjon külön művelet. |
+
+**Kész, ha:** normál és OneUp szerkesztőben külön balra/jobbra képrotáció elérhető; a vágókeret „Rotate” művelete továbbra is csak a kivágási kijelölést érinti.
+
+### Új kutatási jegyjavaslatok
+
+- **A Picasa forgatás Undo All Edits és adatbázis-végállapota:** a kérdés az, hogy a `0x9ca4`/`0x005e7d90` eltávolítja-e a `rotate=` értéket, illetve a forgatás után pontosan mely index- és rácsadatok frissülnek. Keresd a `0x005e7d90`, `0x005796c0` és `0x00454770` hívásláncát; zárd le célzott Ghidra-kimenettel vagy kontrollált Picasa-méréssel.
+
+### Nyitott kérdések
+
+- Ghidra-kör kell: 0x0056e1c0 - Nevezze meg a 0x9ca2/0x9ca3 engedélyező állapotbitjeinek szemantikáját, különösen üres kijelölés, video és írásvédett fájl esetén [blokkoló]
+  - A meglévő `2026-11-15-6970-colab-decomp.txt` kimenetben a mezők címkézetlenek; az új kérdés az állapotbitek jelentése.
+- Ghidra-kör kell: 0x004edf60 - Azonosítsa a `0x005ee6e0` forgatási ciklusban vizsgált fájltípus-értékeket, és hogy ezek közül melyik jelenti a videót [blokkoló]
+  - A már meglévő Ghidra-részlet ismeretlen enumértékeket hagy; az új kérdés az értékek videó/fotó címkézése.
+- Ghidra-kör kell: 0x005e7d90 - Kövesse az `ID_PICTURE_REVERT` (`0x9ca4`) útját, és döntse el, hogy az Undo All Edits törli-e vagy visszaállítja-e a `rotate=` kulcsot; a meglévő diszpécser csak a hívást mutatja [blokkoló].
+- NINCS MEG: eredeti `.picasa.ini` írásmegtagadás felhasználói visszajelzése. Konkrét út: kontrollált Picasa 3.9 mérés ugyanazon mappában, előbb írható, majd mappaszinten írásvédett `.picasa.ini`-vel; rögzítsd a képernyőn megjelenő üzenetet, az ini-t és a visszatérő rácsállapotot. A mérőadat-archívum releváns névszűrése nem adott találatot, ezért nem állítok méréseredményt.
+- NINCS MEG: az eredeti index, bélyegkép, mappafa és kijelölés pontos művelet utáni állapota. Konkrét út: célzott, előtte/utána kontrollált Picasa 3.9 mérés és a releváns fájlok/DB-k tételes összevetése.
+
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md` - ez a #7000 alszakasz.
