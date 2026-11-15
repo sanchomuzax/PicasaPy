@@ -4252,10 +4252,10 @@ olvastam, a fájl nevét kiírtam.
   2. a vezető szóközöket átugorja (`_iswspace`);
   3. karakterenként: a szóköznek számító karakter (`_iswspace` vagy `U+3000`)
      szóközzé válik; a `0x20` alatti vezérlőkarakter és a `\ / : * ? " < > |`
-     kimarad; minden más marad. A szóközjellegű ellenőrzés megelőzi a
+     kimarad; minden más marad. A szóköz-ellenőrzés megelőzi a
      vezérlőkarakter-szűrőt, ezért a tabulátor és a soremelés is szóköz lesz,
      nem esik ki (a `_iswspace` pontos készletét a kimenet nem mutatja).
-     **A szóközöket nem vonja össze:** minden szóközjellegű karakter pontosan
+     **A szóközöket nem vonja össze:** minden szóköznek számító karakter pontosan
      egy szóközt ad;
   4. a vezető és a záró pontot és szóközt levágja; üres eredményre hiba
      (`0xffffffff`), mentés nem indul;
@@ -4631,7 +4631,7 @@ kötegből.
   `selectedRows()` útján a `selectedIndexes` tömböt adja
   (`MainLibrarySelectionState.qml:70-78`, `selection.js:32-36`), úgy, ahogy a
   kattintások építették: a Ctrl+kattintás a végére fűz (`selection.js:7-12`), a
-  Shift+katt növekvő tartományt ad (`selection.js:15-21`). Az
+  Shift+kattintás növekvő tartományt ad (`selection.js:15-21`). Az
   `AdjustTimestampDialog.qml:66` a `photoRows[0]` elemet használja, tehát a
   **kattintási sorrend** első elemét, nem a rács szerinti elsőt (a "Locate on
   Disk" ezzel szemben szándékosan rácssorrendet használ, `selection.js:38-46`).
