@@ -2819,11 +2819,79 @@ lép be, de a célfüggvény belső beolvasási rekordokat dolgoz fel, és a
 „16 = UI-köteg” azonosítást; más UI-értesítési útvonalat és a tényleges
 kifestési időt nem zárja ki.
 
-**Nyitott, blokkoló következő lépés.** `Ghidra-kör kell: 0x004e87c0: a
-scanner +0x484 callback-listájának mely regisztrált objektuma frissíti a
-főablak képrácsát vagy mappafáját, és milyen eseményre; a meglévő
-2026-11-11-6532-colab-decomp-13.txt a listabejárást és a DBLoader-ágat
-mutatja, de a főablaki fogadót és annak hatását nem [blokkoló]`.
+**Zárókör-állapot.** A fenti Ghidra-kérésre 2026-11-15-én elkészült a
+`~/picasapy-agent/referencia/ghidra/2026-11-15-6955-colab-decomp.txt`; a
+regisztrációs lánc és a DBLoader visszahívás megvan. A felület látható
+képrács-frissítésének és mappafa-sorának pontos pillanata továbbra is nyitott;
+az alábbi 16.7/b pont írja le, hol szakad meg a statikus bizonyítás.
+
+### 16.7/b #6955 zárókör: figyelő, progressz-időzítés és mappafa (2026-11-15)
+
+**Figyelő objektum.** A `0x00403efb` a DBLoader `+0xc` mezőjébe a
+`[app+0x102c]+0x294` címet teszi. A `CThumbUI` konstruktor (`0x005643e0`)
+ugyanezen `+0x294` részt előbb `ILoaderUI::vftable` (`0x00c90418`), majd
+`CThumbUI::vftable` (`0x00c90710`) címmel írja felül (`0x0056448d`,
+`0x005645b2`); az RTTI a végső vtable-hez rendeli az alábbi slotokat.
+
+| `CThumbUI` slot | Cél | Disassemblyből igazolható hatás |
+|---|---:|---|
+| `+0x04` | `0x0077b260` | A DBLoader `0x0055ece0` ciklusának minden rekordja előtt a rekord sorszámát és az összes rekord számát adja át. A cél a `0x0051ef60` függvénybe hív, amely az „Acquiring %d of %d files” szöveget és az arányt a `CThumbUI+0x7dc` interfész `+0x0c`/`+0x08` slotján át továbbítja. Ez progressz-értesítés, nem bizonyított képrács-frissítés. |
+| `+0x08` | `0x0077b290` | Belső jelzőt állít a `CThumbUI+0xb29` mezőben, az azonosító-egyezés esetén a `+0xb2b` mezőben is; közvetlen ablaküzenet nincs benne. |
+| `+0x0c` | `0x0077b2b0` | A `+0xb8c` jelzőt állítja, és két átadott értéket a `+0xb94`/`+0xb98` mezőbe gyűjt. |
+| `+0x10` | `0x0077b2d0` | `CThumbUI::UpdateThumbs`; a `CThumbUI+0x30f0` (a slot `this+0x2e5c`) célobjektumot ellenőrzi, és csak nem-null értéknél hívja annak `+0x68` virtuális slotját. A konstruktor ezt a célmezőt nullázza (`0x00564dce`); későbbi bekötése és a célmetódus képernyőhatása nincs azonosítva. |
+
+Így a DBLoader bizonyos feldolgozási ágakban **rekordonként, szinkron módon
+eléri** az `UpdateThumbs` metódust, de ebből nem következik, hogy minden kép
+láthatóvá válik, vagy hogy a célobjektum a bejárás alatt ténylegesen be van
+kötve. A slot `+0x0c` közben összesítő belső állapotot tárol; a slot `+0x04`
+a fájlszámláló progresszét továbbítja.
+
+**QPC és időzítés.** A `0x0051ef60` előbb hívja a folyamatjelző felirat és az arány
+virtuális slotjait (`0x0051f004` és `0x0051f021` között), utána adja át a vezérlést a
+`0x00980400` üzenetkezelő segédnek (`0x0051f055` és `0x0051f05b` között). A segéd
+`0x009a51b0`-vel QPC-alapú eltelt időt számol, majd üzenetvárakozási és
+üzenetpumpa-ágra lép. A hívó a `0x00c7dafc` címen tárolt `0.5f` értéket mindkét
+időparaméterhez átadja; a segéd a második értéket a `0x00cf3e10` címen tárolt
+`1000.0` szorzóval alakítja milliszekundummá. Ez a fél másodperces QPC-kapu
+**a folyamatjelző frissítése utáni üzenetkezelést** szabályozza. Nem képek kötegelési
+vagy képrács-értesítési időköze: az értesítés a segéd hívása előtt történik.
+
+**Mappafa-sor.** A scanner közvetlen mappabejárása (`0x004e62d0`) előbb
+végigmegy a könyvtár bejegyzésein és lezárja a keresési handle-t, csak utána
+lép az esemény-dispatcherbe (`0x004e7941` → `0x004e87c0`). A DBLoader
+`0x0055ece0` ezután dolgozza fel a rekordlistát a `0x0055edf0` ciklusban.
+Az új/első mappás állapotjelző mellett a ciklusból kilépve, a `0x0055fea6`
+címen meghívja a `0x00441e00` útvonalat. Ez az „Other Stuff” és „Folders on
+Disk” csomópontokat keresi; hiány esetén a `0x00445b80` beszúró útvonalat
+hívja, majd a `0x00453f10`, `0x00454250` és `0x00441ac0` fa-frissítő utakat.
+
+Ez azonban nem bizonyítja, hogy a **látható** mappasor csak a fájllista végén
+jelenik meg: az első rekord útjában, még a cikluson belül lefut a
+`0x0055f1ea` → `0x0044ead0` hívás, amely állapotot módosít és a
+`0x006a2a60` feltételes megfigyelő-értesítési ponthoz jut. Ennek megfigyelője
+nincs a főablaki mappafához kötve. A fa-beszúrási út a ciklus után igazolt,
+a korábbi állapotút képernyőhatása nem; ezért az „első kép előtt/után” és a
+„mappa végén” közötti választás statikusan **NYITOTT**.
+
+**Bizonyítottság és eldöntő mérés.** A helyi utasításszintű disassembly, a
+Ghidra callback-dekompiláció, az RTTI-vtable adatok és a konstruktor adatírásai
+megerősítik a figyelő és a függvényhívások láncát. Két független út azonban nem
+igazolja a tényleges képernyőn megjelenő képek vagy a mappafa-sor sorrendjét;
+ehhez az eredeti Picasa 3.9.141.259 Windowsos viselkedésmérése szükséges.
+
+Colab-mérési terv: tiszta Picasa-profillal, korábban nem indexelt, egyedi
+hálózati mappában indítsd a beolvasást 32 egyedi, érvényes JPEG-kel; a
+SMB-tesztmegosztás tartsa vissza a képadatok olvasását, majd kezelői kapun át
+engedje tovább a fájlokat egyenként. Rögzítsd egyszerre a képernyőt és a
+WinDbg töréspont-időket a `0x004e7941`, `0x0055ece0`, `0x0077b2d0`,
+`0x00441e00`, `0x00445b80` és a DBLoader visszatérési címén,
+`0x0055ff37`-en; a `0x0077b2d0` útban naplózd a `this+0x2e5c` célcímet és a
+`+0x68` hívás célját. Minden képnél
+rögzítsd az első látható bélyegkép képkockáját, a fastruktúra-sor első látható
+képkockáját, a fájlolvasás felszabadítását és a DBLoader visszatérését. A
+képkockák és töréspontok sorrendje dönti el, hogy van-e bejárás közbeni
+megjelenítés, milyen callback-egységben történik, illetve a sor az első kép
+előtt/után vagy a mappa feldolgozása végén jelenik meg.
 
 ## 17. Az OK MENTÉSI ÚTJA — a 12.1 pont lezárása (2026-08-24)
 
