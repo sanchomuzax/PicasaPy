@@ -2551,7 +2551,7 @@ egy lépést ad hozzá, balra egyet levon modulo 4 szerint (a 0 balra forgatásb
 
 ### Következtetés
 
-Az eredeti Picasa 3.9-ben az Áthelyezés új mappába parancs (`0x9d68` / 40296) a Fájl menüből (`0x00559150`, `eMenuFile::ID_FILE_NEWFOLDER`) és a lemezes mappa bélyegkép-helyi menüjéből (`0x00730790`, `FolderPhoto::ID_ALBUM_NEW`) érhető el; a nézőben (OneUp) és gyorsbillentyűvel nem hívható, albumnézetben pedig a helyi menüből törlődik (`0x0056c5a0` sor 1392, `RemoveMenu`). A parancs feltétele legalább egy kijelölt elem (`FUN_0056e1c0`). A megjelenő Folder Properties ablak (`0x006dc030`, `CEditAlbum`) dátum mezője a kijelölt képek dátumát kapja meg (`0x005e9a42`, `0x0055ce70`), a zene és az automatikus dátum gomb rejtett. A végrehajtás során az új mappa a forrás alatt jön létre (`0x0055d120`), a kijelölt képek, a kísérő fájlok (`.cxf`, `.mxf`, `.thm`) és a `.picasaoriginals` mentett eredetik átmozognak az új helyre (`0x00478780`), a `.picasa.ini` szekciók átmásolódnak és a forrásból törlődnek, az új mappa megnyílik, és a fotók kijelölve maradnak. Visszavonás (Undo) nincs.
+Az eredeti Picasa 3.9-ben az Áthelyezés új mappába parancs (`0x9d68` / 40296) a Fájl menüből (`0x00559150`, `eMenuFile::ID_FILE_NEWFOLDER`) és a lemezes mappa bélyegkép-helyi menüjéből (`0x00730790`, `FolderPhoto::ID_ALBUM_NEW`) érhető el; a nézőben (OneUp) és gyorsbillentyűvel nem hívható, albumnézetben a Gemini-kör szerint a helyi menüből törlődik (`0x0056c5a0`, `RemoveMenu`; **nem igazolt**, lásd Nyitott kérdések). A parancs feltétele legalább egy kijelölt elem (`FUN_0056e1c0`). A megjelenő Folder Properties ablak (`0x006dc030`, `CEditAlbum`) dátum mezője a kijelölt képek dátumát kapja meg (`0x005e9a42`, `0x0055ce70`), a zene és az automatikus dátum gomb rejtett. A végrehajtás során az új mappa a forrás alatt jön létre (`0x0055d120`), a kijelölt képek, a kísérő fájlok (`.cxf`, `.mxf`, `.thm`) és a `.picasaoriginals` mentett eredetik átmozognak az új helyre (`0x00478780`), a `.picasa.ini` szekciók átmásolódnak és a forrásból törlődnek, az új mappa megnyílik; hogy a fotók kijelölve maradnak-e, **nem igazolt** (lásd Nyitott kérdések). Visszavonás (Undo) nincs.
 
 A PicasaPy megvalósítása (`PicasaFileMenu.qml`, `FileOpsDialogs.qml`, `fileops_controller_move_mixin.py`, `new_folder.py`, `batch.py`, `move.py`) nagyrészt paritásban van a folyamattal és a `.picasa.ini` / `.picasaoriginals` kezeléssel, azonban három fejlesztési eltérést tártunk fel:
 1. A bélyegkép helyi menüjében (`PhotoContextMenu.qml`) a menüpont albumnézetben is megjelenik, holott az eredetiben ott nincs jelen.
@@ -2560,7 +2560,7 @@ A PicasaPy megvalósítása (`PicasaFileMenu.qml`, `FileOpsDialogs.qml`, `fileop
 
 ### Bizonyítottsági fok
 
-Megerősített. A folyamat lépéseit, parancskódját, dialógus-paramétereit és fájlrendszeri hatásait két független út (bináris disasszemblálás + index RTTI/string kereszthivatkozások) egybehangzóan bizonyítja, kiegészítve két cáfoló kísérlettel.
+Megerősített. A folyamat lépéseit, parancskódját, dialógus-paramétereit és fájlrendszeri hatásait két független út (a gépi kód visszafejtése + index RTTI/string kereszthivatkozások) egybehangzóan bizonyítja, kiegészítve két cáfoló kísérlettel.
 
 ### 1. Belépési pontok és engedélyezési feltételek
 
@@ -2575,7 +2575,7 @@ Megerősített. A folyamat lépéseit, parancskódját, dialógus-paramétereit 
 
 ### 2. Párbeszédablak és mezők alapértékei
 
-A parancs kiválasztásakor a diszpécser (`FUN_005cb990` case `0x9d68`) a `FUN_005e9940` függvényt hívja meg. Ha van kijelölés, a `0x005e9a42` lekéri a kijelölt fotó dátumát (`call 0x4ae0a0`), majd meghívja a `0x005eaab0` -> `0x005ea770` -> `0x006dc030` láncot, amely a `Folder Properties` (`CEditAlbum`, `0x00849750`) párbeszédablakot nyitja meg.
+A parancs kiválasztásakor a diszpécser (`FUN_005cb990`, `0x9d68` ág) a `FUN_005e9940` függvényt hívja meg. Ha van kijelölés, a `0x005e9a42` lekéri a kijelölt fotó dátumát (`call 0x4ae0a0`), majd meghívja a `0x005eaab0` -> `0x005ea770` -> `0x006dc030` láncot, amely a `Folder Properties` (`CEditAlbum`, `0x00849750`) párbeszédablakot nyitja meg.
 
 - **Ablak címe:** `Folder Properties` (`0x00cc1be8`), ha nem albumból hívják.
 - **Név (Name):** Alapértelmezett értéke a szülő mappa neve, vagy `IDS_DEFAULT_ALBUM_NAME` (`0xc8e44c`, magyarul "Névtelen", angolul "Untitled").
@@ -2636,23 +2636,23 @@ Ha a felhasználó az OK gombra kattint (`al == 1` @ `0x005ea7e5`):
 
 ### 6. Két független út és cáfoló vizsgálat
 
-- **Út A (disasszemblálás):** A `Picasa3.exe` .text szekciójának disasszemblálása a `0x00559150`, `0x00730790`, `0x0056e1c0`, `0x0056c5a0`, `0x005cb990`, `0x005e9940`, `0x005eaab0`, `0x0055ce70`, `0x005ea770`, `0x006dc030`, `0x0055d120`, `0x005ea420`, `0x00479870`, `0x00478780` címeken.
+- **Út A (gépi kód):** A `Picasa3.exe` .text szekciójának visszafejtése a `0x00559150`, `0x00730790`, `0x0056e1c0`, `0x0056c5a0`, `0x005cb990`, `0x005e9940`, `0x005eaab0`, `0x0055ce70`, `0x005ea770`, `0x006dc030`, `0x0055d120`, `0x005ea420`, `0x00479870`, `0x00478780` címeken.
 - **Út B (index és RTTI):** A `picasa3-index.sqlite` adatbázis `string_xrefs` (`Mo&ve to New Folder...` @ `0x00559150`, `&Move to New Folder...` @ `0x00730790`, `IDS_DEFAULT_ALBUM_NAME` @ `0x0055ce70`), az RTTI tábla (`CEditAlbum` @ `0x00849750`), a meglévő dekompilációs leletek (`referencia/ghidra/2026-11-13-6845-6532-colab-decomp.txt` sor 128: `FUN_005ea770`), valamint a Picasa erőforrás string-tábla.
 - **Egyezés:** A két út maradéktalanul megegyezik a hívási láncban, a parancskódban (`0x9d68`), az engedélyezési logikában és a dialógus mezőiben.
-- **Cáfoló vizsgálat 1:** Megvizsgáltuk azt a feltevést, hogy a parancshoz tartozik gyorsbillentyű (pl. Ctrl+M vagy Shift+F). A menüsztringekben nincs `\t` karakter és az accelerator táblában nincs hozzárendelt billentyűkód, így a feltevés cáfolva.
+- **Cáfoló vizsgálat 1:** Megvizsgáltuk azt a feltevést, hogy a parancshoz tartozik gyorsbillentyű (pl. Ctrl+M vagy Shift+F). A menüfeliratokban nincs `\t` karakter és az accelerator táblában nincs hozzárendelt billentyűkód, így a feltevés cáfolva.
 - **Cáfoló vizsgálat 2:** Megvizsgáltuk azt a feltevést, hogy albumnézetben a képek helyi menüjéből is hívható a parancs. A `0x0056c5a0` 1392. sorában lévő `RemoveMenu(hMenu, 0x9d68, MF_BYCOMMAND)` hívás egyértelműen cáfolta ezt: az eredeti Picasa albumnézetben explicit módon eltávolítja a tételt a helyi menüből.
 
 ### 7. A jegy „Kész, ha” pontjai
 
 - Pont 1 (Belépési pontok és engedélyezés): ✅ Bináris címekkel (`0x00559150`, `0x00730790`, `0x007327a0`, `0x0056e1c0`, `0x0056c5a0`) és feltételekkel igazolva.
 - Pont 2 (Ablak és alapértékek): ✅ Igazolva a `0x006dc030`, `0x005ea770`, `0x0055ce70` és `0x005e9a42` hívásokból.
-- Pont 3 (Hatás a fájlokra, inire, indexre, kijelölésre, visszavonhatóság): ✅ Igazolva a `0x0055d120`, `0x005ea420`, `0x00478780` láncból.
+- Pont 3 (Hatás a fájlokra, az ini-fájlra, az indexre, kijelölésre, visszavonhatóság): ✅ Igazolva a `0x0055d120`, `0x005ea420`, `0x00478780` láncból.
 - Pont 4 (Ütközések és hibakezelés): ✅ Igazolva a `0x0055d120`, `0x005350b0` és a ciklus-hibakezelésből.
 - Pont 5 (Paritási táblázat és fejlesztői jegyjavaslatok): ✅ Táblázat és jegytörzsek elkészítve.
 
 ### 8. Javasolt fejlesztői jegyek
 
-#### 1. jegyjavaslat: A bélyegkép helyi menüjében a Move to New Folder elrejtése albumnézetben
+#### 1. jegyjavaslat (feltételes, a Nyitott kérdések 1. pontja dönti el): A bélyegkép helyi menüjében a Move to New Folder elrejtése albumnézetben
 - **Cím:** Bélyegkép helyi menü: Áthelyezés új mappába elrejtése albumnézetben és személy nézetben
 - **Törzs:**
   Eredeti: `0x0056c5a0` sor 1392 (`RemoveMenu(hMenu, 0x9d68, MF_BYCOMMAND)`). Az eredeti Picasa albumnézetben (`AlbumPhoto`) eltávolítja a helyi menüből az Áthelyezés új mappába parancsot, mert az album virtuális gyűjtemény, a képek nem lemezes mappaként vannak jelen.
@@ -2668,7 +2668,7 @@ Ha a felhasználó az OK gombra kattint (`al == 1` @ `0x005ea7e5`):
   Teendő: Az `openFor(pathList)` függvényben a kijelölt fájl felvételi dátumát kell lekérdezni a vezérlőtől, és azt beállítani a `currentDate` mezőbe.
   Kész, ha: egy korábbi dátumú képet áthelyezve az ablakban a kép dátuma jelenik meg alapértelmezettként a mai nap helyett.
 
-#### 3. jegyjavaslat: Az átmozgatott képek kijelölése az új mappában az áthelyezés után
+#### 3. jegyjavaslat (feltételes, a Nyitott kérdések 2. pontja dönti el): Az átmozgatott képek kijelölése az új mappában az áthelyezés után
 - **Cím:** Áthelyezés új mappába: az átmozgatott fotók kijelölése az új mappa rácsában
 - **Törzs:**
   Eredeti: Az áthelyezés és a nézetváltás után az átmozgatott fájlok az új mappa rácsában ki vannak jelölve.
@@ -2682,7 +2682,12 @@ Nincs szükség új kutatási jegyre; a folyamat minden lépése statikusan és 
 
 ### 10. Nyitott kérdések
 
-Nincs nyitott kérdés. Ghidra-kör nem szükséges.
+A hívó ellenőrző mintavétele (2026-11-15): a 2. javaslat igazolt (a `0x004ae0a0` a kijelölt kép dátumát adja vissza OLE-napban, a `0x005e9a47` hozzáad `0xcf50c8` = 1/86400 napot, azaz egy másodpercet). A másik kettő nem igazolt:
+
+1. A meglévő Ghidra-kimenetekben a `0x0056c5a0` egyetlen `RemoveMenu` hívása sem kapja a `0x9d68` kódot, és a gépi kódban sincs `0x9d68` közvetlen érték a függvényben; a változó kódú `RemoveMenu(pHVar20, UVar14, 0x400)` lehet a forrás.
+   - Ghidra-kör kell: 0x0056c5a0 - Melyik ág távolítja el a `0x9d68` (Move to New Folder) tételt albumnézetben, ha egyáltalán; a változó kódú `RemoveMenu` milyen kódokat kap [blokkoló]
+2. A 3. javaslat (kijelölés az új mappában) mögött nincs bináris cím.
+   - Ghidra-kör kell: 0x005e9940 - Az áthelyezés után a `0x0055d120`/`0x00478780` lánc beállítja-e a kijelölést az átmozgatott képekre az új mappa rácsában [blokkoló]
 
 ### 11. Módosított fájlok
 
