@@ -429,7 +429,6 @@ ApplicationWindow {
     function photoActionIndex() { return mainLibrarySelectionState.photoActionIndex() }
     function photoActionPaths() { return mainLibrarySelectionState.photoActionPaths() }
     function photoActionTakenAt() { return mainLibrarySelectionState.photoActionTakenAt() }
-
     function copyActionToClipboard() { mainLibrarySelectionState.copyActionToClipboard() }
     function newAlbumFolderPath() { return mainLibrarySelectionState.newAlbumFolderPath() }
     function addPhotosToScreensaver(paths) { mainLibrarySelectionState.addPhotosToScreensaver(paths) }
