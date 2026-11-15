@@ -22,6 +22,7 @@ from PySide6.QtGui import QDesktopServices, QGuiApplication
 from picasapy.edit.save import find_original_backup
 from picasapy.fileops import (
     CompanionLeftBehindError,
+    ImmediateDeletionNeededError,
     RENAME,
     InvalidFolderNameError,
     conflicting_names,
@@ -129,6 +130,11 @@ class FileOpsController(
     # érintetlen marad, tehát a forrásmappa újraolvasása fölösleges munka.
     photoCopied = Signal(str, str)
     photoDeleted = Signal(str)  # (törölt_út)
+    #: #6969: a Lomtárba helyezés `0x0f`-et kapott a Shelltől - a felületnek
+    #: külön Delete / Cancel kérdést kell nyitnia (`0x005fdb80`); csak
+    #: jóváhagyásra jön a `deletePhotoPermanently`. Más hibakódnál ez NEM
+    #: szólal meg, azok az `operationFailed`-en át mennek.
+    immediateDeletionRequired = Signal(str)  # (kérdéses_út)
     #: #1526: a vágólap fájl-tartalma változott — ettől él/szürkül a
     #: Beillesztés menütétel. A Qt vágólapjának `dataChanged`-jére kötjük.
     clipboardFilesChanged = Signal()

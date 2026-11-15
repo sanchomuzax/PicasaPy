@@ -68,6 +68,13 @@ Item {
             if (keyboard.hostViewer._aktivUt().length > 0)
                 keyboard.hostViewer.deleteRequested()
             event.accepted = true
+        } else if (event.key === Qt.Key_Delete
+                   && event.modifiers === Qt.ShiftModifier) {
+            // #6969: Shift+Delete - végleges törlés (a menüsáv közös,
+            // nézetfüggő belépőjén át)
+            if (keyboard.hostViewer._aktivUt().length > 0)
+                keyboard.hostViewer.permanentDeleteRequested()
+            event.accepted = true
         }
     }
 }

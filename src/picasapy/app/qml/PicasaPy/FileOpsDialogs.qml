@@ -38,8 +38,12 @@ Item {
     function openMoveToNewFolder(paths) {
         moveToNewFolderDialog.openFor(paths)
     }
-    function openDelete(paths) {
+    // #6969: `permanent` = a `Shift+Delete` (`0x005cb990` -> `0x005c9b00`):
+    // a Lomtár helyett a végleges törlés ágát választja, saját egyes és
+    // többes szöveggel (`NoUndoSingle` / `NoUndoMultiple`).
+    function openDelete(paths, permanent) {
         var pathsSnapshot = paths ? paths.slice(0) : []
+        var vegleges = permanent === true
         // A Kép helyi menüből indított törlésnél a menü a `triggered`
         // esemény végén még fókuszt állít vissza. A megerősítőt csak a
         // menü bezárása után nyitjuk, hogy a Cancel gomb kezdeti fókusza
@@ -47,8 +51,16 @@ Item {
         Qt.callLater(function() {
             if (dialogs.appWindow)
                 dialogs.appWindow.requestActivate()
-            deleteConfirmDialog.openFor(pathsSnapshot)
+            if (vegleges)
+                deleteConfirmDialog.openPermanentlyFor(pathsSnapshot)
+            else
+                deleteConfirmDialog.openFor(pathsSnapshot)
         })
+    }
+    // #6969: a Lomtárba helyezés PONTOSAN `0x0f` Shell-eredményt kapott
+    // (`0x005c9b00` -> `0x005fdb80`): külön Delete / Cancel kérdés, képenként.
+    function askImmediateDeletion(path) {
+        immediateDeleteDialog.enqueue(path)
     }
     // #457/2: a köteg indítása — előbb MEGNÉZZÜK, van-e névütközés, és csak
     // akkor kérdezünk (az eredeti sem kérdezett fölöslegesen); ütközés nélkül
@@ -546,9 +558,20 @@ Item {
         property var paths: []
         property bool trashAvailable: true
         function openFor(pathList) {
+            openWith(pathList, false)
+        }
+        // #6969: `Shift+Delete` - a végleges törlés ága akkor is, ha lenne
+        // Lomtár. A `NoUndo*` szöveg és a `deletePermanently` kulcs ugyanaz,
+        // mint a Lomtár nélküli (NAS) esetben. Az `openFor` egyargumentumos
+        // marad: a tesztek `invokeMethod`-dal hívják.
+        function openPermanentlyFor(pathList) {
+            openWith(pathList, true)
+        }
+        function openWith(pathList, permanent) {
             if (pathList.length === 0) return
             paths = pathList
-            trashAvailable = fileOpsController.trashAvailableFor(pathList)
+            trashAvailable = !permanent
+                && fileOpsController.trashAvailableFor(pathList)
             if (trashAvailable) {
                 if (pathList.length <= 1) {
                     //: DeleteMessage::DeleteSingleYesButton
@@ -586,29 +609,51 @@ Item {
             }
         }
         onConfirmed: {
-            var firstRow = Number(dialogs.appWindow.selectedIndex)
-            if (dialogs.appWindow.selectedRows) {
-                var selectedRows = dialogs.appWindow.selectedRows()
-                for (var r = 0; r < selectedRows.length; ++r) {
-                    var row = Number(selectedRows[r])
-                    if (firstRow < 0 || row < firstRow) firstRow = row
-                }
-            }
+            var firstRow = dialogs.firstSelectedRow()
             for (var i = 0; i < paths.length; ++i) {
                 if (trashAvailable)
                     fileOpsController.deletePhoto(paths[i])
                 else
                     fileOpsController.deletePhotoPermanently(paths[i])
             }
-            var photoCount = typeof controller !== "undefined"
-                && controller && controller.photos ? controller.photos.rowCount() : 0
-            if (photoCount > 0) {
-                var nextRow = Math.min(Math.max(firstRow, 0), photoCount - 1)
-                dialogs.appWindow.selectedIndexes = [nextRow]
-                dialogs.appWindow.selectedIndex = nextRow
-            } else {
-                dialogs.appWindow.clearSelection()
+            dialogs.reselectNear(firstRow)
+        }
+    }
+
+    // A törlés utáni kijelölés közös segédei: a Lomtár-ág és a `0x0f`
+    // kérdés jóváhagyott végleges törlése ugyanúgy a törölt hely mellé tesz.
+    function firstSelectedRow() {
+        var firstRow = Number(dialogs.appWindow.selectedIndex)
+        if (dialogs.appWindow.selectedRows) {
+            var selectedRows = dialogs.appWindow.selectedRows()
+            for (var r = 0; r < selectedRows.length; ++r) {
+                var row = Number(selectedRows[r])
+                if (firstRow < 0 || row < firstRow) firstRow = row
             }
+        }
+        return firstRow
+    }
+    function reselectNear(firstRow) {
+        var photoCount = typeof controller !== "undefined"
+            && controller && controller.photos ? controller.photos.rowCount() : 0
+        if (photoCount > 0) {
+            var nextRow = Math.min(Math.max(firstRow, 0), photoCount - 1)
+            dialogs.appWindow.selectedIndexes = [nextRow]
+            dialogs.appWindow.selectedIndex = nextRow
+        } else {
+            dialogs.appWindow.clearSelection()
+        }
+    }
+
+    // #6969: a Lomtárba helyezés `0x0f` eredményének külön Delete / Cancel
+    // kérdése (`0x005fdb80`); a jóváhagyott végleges törlés (`0x009929b0`)
+    // ugyanúgy a törölt hely mellé teszi a kijelölést, mint a Lomtár-ág.
+    ImmediateDeleteDialog {
+        id: immediateDeleteDialog
+        onDeletionConfirmed: function(path) {
+            var firstRow = dialogs.firstSelectedRow()
+            fileOpsController.deletePhotoPermanently(path)
+            dialogs.reselectNear(firstRow)
         }
     }
 

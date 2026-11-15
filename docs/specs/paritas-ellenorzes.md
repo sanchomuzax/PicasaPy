@@ -1724,3 +1724,251 @@ A megerősítő párbeszédablakot a `0x0053b2e0` kezeli (`CThumbUI::FileRevert`
    - **Teendő:** A `save_operations.py` `revert` függvényében a törlendő kulcsok körét ki kell terjeszteni a `rotate`, `flipped` és `textactive` kulcsokra.
    - **Kész, ha:** Egy kép forgatása, mentése, majd Revert parancs végrehajtása után a `.picasa.ini`-ben nem marad sem `filters`, sem `rotate`, sem `flipped`, sem `textactive` bejegyzés.
 
+## #6975: A Save a Copy és a Save As teljes folyamata az eredeti Picasában és összevetése a PicasaPy-jal
+
+### 1. Belépési pontok, engedélyezési feltételek és a két mentési parancs szétválasztása
+
+Az eredeti Picasa 3.9 binárisában a mentés-család két külön parancsa a Mentés másként (Save As) és a Másolat mentése (Save a Copy), amelyek mindketten a renderelt képet új fájlba írják, de eltérő paraméterrel, felülettel és engedélyezési feltétellel futnak:
+
+1. **`ID_FILE_SAVEAS` (`0x9d9b`):**
+   - **Főmenü:** Fájl ▸ Save &As... / Mentés másként... (menüépítő: `0x00559150`, rekord: `0x00d6da68`, szövegcímke: `0x00d6da8c`, parancskód: `0x9d9b`, kulcs: `eMenuFile::ID_FILE_SAVEAS` [`0xc8c5a4`], alapértelmezett angol felirat: `Save &As...` [`0xc8c5c0`], mnemonik: `A`, ellipszissel a végén, mert párbeszédablakot nyit).
+   - **Helyi menük (kép jobb-klikk):**
+     - Mappanézet (FolderPhoto, `0x00730790`): NEM szerepel a helyi menüben (csak a sima Mentés [`0xe103`] és Revert [`0x9d9a`] van benne).
+     - Albumnézet (AlbumPhoto, `0x00731050`): NEM szerepel a helyi menüben.
+     - Egyképes néző / OneUp (`0x007327a0`): NEM szerepel a helyi menüben.
+   - **Szerkesztő bal panelje (`0x00567680`):** NEM tartalmaz Save As gombot (a szerkesztőben kizárólag a Visszavonás és Újra gombok találhatók).
+   - **Gyorsbillentyű:** NINCS gyorsbillentyű rendelve a Save As-hoz sem a menükben, sem a gyorsítótáblában (az `RT_ACCELERATOR` erőforrás nem tartalmaz hozzá bejegyzést; a `Ctrl+S` kizárólag a Mentéshez [`0xe103`] tartozik).
+
+2. **`ID_FILE_SAVEACOPY` (`0x9dca`):**
+   - **Főmenü:** Fájl ▸ „Save a Copy” / Másolat mentése (menüépítő: `0x00559150`, rekord: `0x00d6da90`, szövegcímke: `0x00d6daa0`, parancskód: `0x9dca`, kulcs: `eMenuFile::ID_FILE_SAVEACOPY` [`0xc8c574`], alapértelmezett angol felirat: `Save a Copy` [`0xc8c594`], mnemonik: `y`, ellipszis nélkül, mert azonnali közvetlen mentést végez).
+   - **Helyi menük:** NEM szerepel sem a FolderPhoto (`0x00730790`), sem az AlbumPhoto (`0x00731050`), sem a OneUp (`0x007327a0`) menükben.
+   - **Szerkesztő bal panelje (`0x00567680`):** NEM tartalmaz Save a Copy gombot.
+   - **Gyorsbillentyű:** NINCS gyorsbillentyűje.
+
+3. **Engedélyezési feltételek (`EnableMenuItem`, `0x0056e1c0` és `0x0056c5a0`):**
+   - A `0x005cb1a0` által számított állapotmaszk alapján a `0x0056e1c0` vezérli az `EnableMenuItem` (`USER32.dll`, `0x00c40818`) hívásokat:
+     - **Kijelölés megléte:** Legalább egy képnek ki kell lennie jelölve (a `0x2` fotó bit kötelező; 0 kijelölt elemnél a `byte ptr [esp + 0x12] == 0`, így `dl = 1` -> `MF_GRAYED`, a menüpont szürke).
+     - **Szerkesztetlen kép:** Engedélyezett (nem feltétele a `0x40` nem mentett szerkesztési bit, sem a `0x80` revertable bit; szerkesztetlen kép másolata is menthető).
+     - **Több kijelölt kép:** A menüben engedélyezett (a `0x100` többszörös kijelölés bitnél a `0x0056e3d5` ág `MF_ENABLED`-et ad), DE a végrehajtáskor a közös kezelő (`FUN_005e6a20`) nem tartalmaz iterációs ciklust, és kizárólag az egyetlen aktív, fókuszban lévő képre (`*(param_1 + 0xe64)`) hajtja végre a mentést.
+     - **Videó kijelölése:** Ha kizárólag videó van kijelölve, a `0x005cb1a0` a `0x00562250` (`isVideo`) hívás alapján a `0x20` videó bitet állítja be a `0x2` fotó bit helyett, emiatt a `0x0056e416` teszt elbukik és mindkét menüpont tiltottá válik (`MF_GRAYED`).
+     - **Tiltó nézetállapotok:** Zárolt nézetállapot (`[edi + 0x34a4] != 0`) vagy írásvédett / speciális forrás esetén (`maszk & 0x8000 != 0`, `0x0056e591`) a `0x0056e5a0` és `0x0056e5aa` explicit `MF_GRAYED` hívással letiltja a `0x9d9b` és `0x9dca` parancsokat.
+
+### 2. Megjelenő ablak és folyamat
+
+A két parancsot a parancs-diszpécser (`0x005cb990`) a switch ugrótábláján (`0x005cdc30`, indexek: 38 és 65) át ugyanarra a közös eljárásra irányítja:
+- `case 0x9d9b` (40347): `0x005cc5a0`: `push 0; mov ecx, ebx; call 0x005e6a20` (Save As, `param_2 == 0`).
+- `case 0x9dca` (40394): `0x005cc5ad`: `push 1; mov ecx, ebx; call 0x005e6a20` (Save a Copy, `param_2 != 0`).
+
+A közös `FUN_005e6a20` eljárás futásidejű viselkedése:
+
+1. **`Save As` (Mentés másként...):**
+   - **Ablak:** Rendszer-fájlválasztó ablakot nyit (`0x0097f1d0`, `"SaveFile"`), a Windows szabványos fájlmentési felületével.
+   - **Alapértelmezett mappa és név:** A forrásfájl könyvtára és a forráskép eredeti fájlneve.
+   - **Szűrők:** `CThumbUI::SaveAsFilterJPG` (`"*.jpg"`), illetve ha a forráskép WebP típusú (`local_14a4[6] == 0x1f`), a szűrő kiegészül a `CThumbUI::SaveAsFilterWebP` (`"*.webp"`) bejegyzéssel.
+   - **Forrással azonos név:** Ha a felhasználó a fájlválasztóban a forráskép nevét hagyja jóvá vagy azt választja ki, a `0x005e6e81` ágon felugró figyelmeztetés jelenik meg: `IDS_CANT_SAVE_TO_SAME` (`0x009ae710`, 0xf9): "Cannot replace image. Please try again with a different filename." / "A képet nem lehet kicserélni. Próbálja újra másik fájlnévvel.", és a mentés leáll, fájlírás nélkül.
+   - **Megszakítás (Cancel):** Ha a felhasználó a fájlválasztóban a Mégse gombra kattint (`iVar11 != 0`), az eljárás csendben kilép, lemez- és adatbázis-hatás nélkül.
+
+2. **`Save a Copy` (Másolat mentése):**
+   - **Ablak:** SEMMILYEN ablakot nem nyit. Nem jelenik meg megerősítő kérdés, sem fájlválasztó, sem beállítási dialógus. A mentés azonnal és közvetlenül végbemegy.
+   - **Célfájl neve és helye:** Mindig a forráskép saját könyvtárában készül a másolat. A fájlnév generálását a `0x00993650` végzi a `0x00cd8d64` címen található formátumsztring alapján: `"%s-%03lu"`.
+   - **Névképzés és névütközés:** A sorszámozás `001`-ről indul (`alapnev-001.ext`). Ha a fájl már létezik a lemezen (`0x00992ed0` létezés-ellenőrzés), a számláló növekszik (`add esi, 1`), így automatikusan `alapnev-002.ext`, `alapnev-003.ext` stb. jön létre (a ciklus felső korlátja `0x1000` = 4096). Ezáltal a Másolat mentése művelet sosem ír felül meglévő fájlt, és sosem ütközik néven.
+
+### 3. Végrehajtás és futásidejű hatás
+
+1. **Szerkesztések beégetése:**
+   - Mindkét művelet esetén a mentett új fájlba a forrásképen lévő összes szerkesztés (vágás, forgatás, színkorrekciók, retusálás, szöveg) beégetésre kerül (`*(iVar5 + 0x94)` képkódoló hívás).
+2. **Az eredeti kép és `.picasa.ini` állapota:**
+   - Az eredeti kép lemezfájlja és `.picasa.ini` bejegyzése ÉRINTETLEN marad. Nem jön létre `.picasaoriginals` biztonsági mentés (az kizárólag a sima `Save` parancsnál készül), a szerkesztési kulcsok megmaradnak.
+3. **Az új fájl `.picasa.ini` bejegyzése:**
+   - Az eredeti Picasa 3.9 az új fájlhoz SEMMIT nem ír a célkönyvtár `.picasa.ini` fájljába (`0x005aafd0` / `0x005aadf0`). Az új kép önálló, tiszta, szerkesztetlen fotóként jelenik meg.
+4. **Indexelés és bélyegkép:**
+   - A lemezre írás után az eljárás meghívja a `0x00411a90` indexelő értesítőt, amely azonnal beolvassa az új fájlt, elkészíti hozzá a bélyegképet az SQLite adatbázisba, és megjeleníti a könyvtárnézet rácsában.
+5. **Rács kijelölése:**
+   - A mentés befejezése után a kijelölés a könyvtárrácsban az eredeti képen marad; az új másolatfájl nem kap automatikus kijelölést vagy fókuszt.
+
+### 4. Hibaesetek (írásvédett mappa, névütközés)
+
+1. **Névütközés meglévő fájllal:**
+   - Save As esetén, ha nem a forrásfájllal, hanem egy másik meglévő fájllal ütközik a név, a rendszer-fájlválasztó standard felülírási megerősítést kér.
+   - Save a Copy esetén a számozó automatikusan átlépi a létező fájlokat (`-001` -> `-002`), így ütközés nem fordulhat elő.
+2. **Írásvédett mappa vagy lemezhiba (`0x005e7022`):**
+   - Ha a célkönyvtár írásvédett, nincs írási jogosultság, vagy a lemez megtelt, a `0x005e7022` címen felugró hibaüzenet jelenik meg:
+     - Forráskulcs: `CThumbUI::FileSaveCopy:err` (`0x00c97750`).
+     - Alapértelmezett angol szöveg: `0x00c97700`: "Unable to save files due to a disk error. The disk may be full or read-only."
+     - Magyar fordítás: "Lemezhiba miatt nem lehetséges a fájlok mentése. Lehet, hogy a lemez megtelt vagy írásvédett."
+     - Megjelenítés: egyszerű `0x00980700` üzenetablak OK gombbal; nem tartalmazza az érintett fájlnevet vagy numerikus hibakódot.
+
+### 5. Paritási összevetés és eltérések táblázata
+
+| Funkció / Elem | Eredeti Picasa (bináris cím) | PicasaPy (fájl:sor) | Eltérés / Teendő |
+|---|---|---|---|
+| Save As főmenü belépő | Fájl ▸ Save &As... (`0x00559150`, rekord: `0x00d6da68`, `0x9d9b`) | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:128` | Egyezik. Paritásban van. |
+| Save a Copy főmenü belépő | Fájl ▸ „Save a Copy” (`0x00559150`, rekord: `0x00d6da90`, `0x9dca`) | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:134` | Egyezik. Paritásban van. |
+| Helyi menük | Nem szerepel a helyi menükben (`0x00730790`, `0x00731050`, `0x007327a0`) | `PhotoContextMenu.qml`, `ViewerContextMenu.qml` nem tartalmazza | Egyezik. |
+| Szerkesztő panel gombjai | Bal panelen nincs Save As / Save a Copy gomb (`0x00567680`) | `EditorPanel.qml` nem tartalmazza | Egyezik. |
+| Gyorsbillentyűk | Nincs gyorsbillentyű rendelve | Nincs gyorsbillentyű | Egyezik. |
+| Engedélyezés (szerkesztetlen kép) | Engedélyezett (`0x2` fotó bit, `0x0056e426`) | `bar.photoActionsEnabled` aktív | Egyezik. |
+| Engedélyezés (több kijelölt kép) | Menüben engedélyezett (`0x100` bit), de csak 1 képre hajtódik végre (`*(param_1 + 0xe64)`) | `MainMenuBar.qml:340-344` `photoActionIndex()` alapján 1 képre hívja | Egyezik. |
+| Engedélyezés (videó kijelölése) | Tiltott / szürke (`MF_GRAYED`, hiányzó `0x2` fotó bit, `0x0056e416`) | `photoActionsEnabled` videóra is aktív marad | **Eltérés.** Videó kijelölésekor nálunk a menüpontok aktívak maradnak. Fejlesztési jegy javasolt. |
+| Save As fájlválasztó | Rendszer-fájlválasztót nyit (`0x0097f1d0`), JPG és WebP szűrőkkel | `SaveDialogs.qml:153-162` `FileDialog` JPG és WebP szűrőkkel | Egyezik. |
+| Save As forrással azonos név | `IDS_CANT_SAVE_TO_SAME` figyelmeztetés (`0x005e6e81`) | `SaveDialogs.qml:186` `IDS_CANT_SAVE_TO_SAME` üzenet | Egyezik. Bitre azonos szöveg. |
+| Save a Copy közvetlen mentés | Nincs ablak, azonnali végrehajtás (`0x005e6a20`) | `SaveDialogs.qml:65` közvetlenül hívja a vezérlőt | Egyezik. |
+| Save a Copy fájlnév minta | `"%s-%03lu"` (`0x00cd8d64`, `0x00993650`) -> `kep-001.jpg` | `src/picasapy/edit/save_copy.py:77` `"{stem}-{number:03d}{suffix}"` | Egyezik. Pontosan megegyező formátum. |
+| Szerkesztések beégetése | Beégnek az új fájlba (`*(iVar5 + 0x94)`) | `_render_for_save` beégeti a szerkesztéseket | Egyezik. |
+| Eredeti kép és .picasa.ini | Érintetlen marad, nincs `.picasaoriginals` | `save_copy.py:170-208` érintetlenül hagyja | Egyezik. |
+| Új fájl .picasa.ini | Semmit nem ír az ini-be (`0x005aafd0`) | `save_copy.py:197-208` nem ír az ini-be | Egyezik. |
+| Indexelés és kijelölés | Új kép indexelődik, eredeti kijelölve marad | `noteOutputWritten`, eredeti kijelölve marad | Egyezik. |
+| Lemezhiba / írásvédettség szövege | "Unable to save files due to a disk error. The disk may be full or read-only." (`0x00c97700`) | `SaveDialogs.qml:191` fájlnevet és numerikus hibakódot fűz hozzá | **Eltérés.** A hibaablak szövege nálunk a `filesaveerr-win` formátumát követi. |
+
+### 6. Javasolt fejlesztői jegyek
+
+1. **Jegy: A Save As és Save a Copy menüpontok letiltása videó kijelölése esetén**
+   - **Eredeti:** Az eredeti Picasa 3.9 binárisában (`0x0056e1c0`, `0x0056e2f4`, `0x0056e416`, `0x005cb2cf`) a Fájl ▸ Save &As... (`0x9d9b`) és Save a Copy (`0x9dca`) menüpontok kizárólag fotók kijelölésekor engedélyezettek (`0x2` állapotbit); ha a kijelölt elem videó (a `0x00562250` `isVideo` hívás `0x20` bitet állít be a fotóbit helyett), mindkét menüpont tiltottá válik (`MF_GRAYED`).
+   - **Nálunk:** A `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:130,136` sorában a menüpontok az általános `bar.photoActionsEnabled` tulajdonságra támaszkodnak, amely kizárólag a kijelölt sorok számát vizsgálja (`photoActionRows().length > 0`), így videó kijelölése esetén is aktívak maradnak.
+   - **Teendő:** A `PicasaFileMenu.qml` Save As és Save a Copy tételeinek `enabled` feltételét ki kell egészíteni egy `!bar.isVideoSelected` (vagy a kijelölés típusát ellenőrző) feltétellel.
+   - **Kész, ha:** Kijelölt videó esetén a Fájl menüben a "Save As..." és a "Save a Copy" menüpontok inaktívak (szürkék), és csak fotó kijelölésekor válnak kattinthatóvá.
+
+2. **Jegy: A Save As és Save a Copy lemezhiba ablakának pontos szövegezése**
+   - **Eredeti:** Az eredeti Picasa 3.9-ben (`0x005e7022`) írásvédett mappa vagy lemezhiba esetén a `CThumbUI::FileSaveCopy:err` (`0x00c97750`) erőforrás jelenik meg: "Unable to save files due to a disk error. The disk may be full or read-only." (`0x00c97700`), fájlnév és numerikus hibakód nélkül.
+   - **Nálunk:** A `src/picasapy/app/qml/PicasaPy/SaveDialogs.qml:191` sorában a hibaablak a normál mentés `CFileSaveThread::filesaveerr-win` sablonját használja: `Unable to save all files due to a disk error. The disk may be full or read-only.\n\n%1\nerror(%2)`.
+   - **Teendő:** A `SaveDialogs.qml`-ben a `kind === "saveCopyError"` vagy megfelelő ágon a `FileSaveCopy:err` szöveget kell visszaadni: `qsTr("Unable to save files due to a disk error. The disk may be full or read-only.")`.
+   - **Kész, ha:** Írásvédett célmappába irányuló Save As vagy Save a Copy művelet meghiúsulásakor a felugró párbeszédablak pontosan a "Unable to save files due to a disk error. The disk may be full or read-only." szöveget mutatja.
+
+
+## #6970: Export Picture to Folder teljes folyamata
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Az eredeti és a jelenlegi PicasaPy forrásútjait külön ellenőriztem; a korábbi
+export-specet csak bináris leletként használtam, a PicasaPy-állításokat a mostani
+forrásból olvastam.
+
+### Belépési pontok, feltételek, egy és több kép
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Fájl menü:** `ID_FILE_EXPORTTOFOLDER`, `cmd 0x9c81`; `0x005cb990` a `0x005312b0` nyitóhoz küldi. A nyitó üres kijelölési csomópontnál visszatér, egyébként összegyűjti a kijelölt sorokat. | `PicasaFileMenu.qml:141-145`; `MainMenuBar.qml:83,283-284`. A menü akkor aktív, ha a `photoActionRows()` nem üres. Könyvtárban a sorok kijelölésből jönnek; a nézőben az aktuális kép sora. | Könyvtárnézetben egy és több kijelölt képnél ugyanaz a nyitó és párbeszéd; üres kijelölésnél nincs művelet. Az eredeti fájlmenü nézőbeli engedélyezettségét a parancsrekord és a nyitó önmagában nem dönti el. |
+| **Képtálca Export gomb:** `0x005d9cc0` az `outputlayout/folderbutton` eseményt a `0x005312b0` nyitóhoz küldi. Ehhez az úthoz numerikus menüazonosító nincs igazolva. | `TrayActionArea.qml:407-420`, `MainTrayBar.qml:43`, `ExportDialogs.qml:99-105,121-131`. A gomb könyvtárnézetben és nem üres rácskijelölésnél aktív; megnyitáskor a párbeszéd a tartott tálcát választja, ha nem üres, különben a kijelölést. | Az eredeti és a PicasaPy gombút megvan. Az eredeti nyitóhoz átadott sorok és a tartott, más mappákból származó képek viszonya nem dőlt el, ezért a rácskijelölés nélküli, de nem üres tálcára vonatkozó paritás nyitott. |
+| **Rács/album kép helyi menüje:** a `0x00730790` és `0x00731050` teljes rekordlistájában nincs `ID_FILE_EXPORTTOFOLDER`. | `PhotoContextMenu.qml:35-518`; nincs Export jel vagy menüpont. | Egyezik: a helyi menüből nincs export. |
+| **Képtálca helyi menüje:** `0x00732ee0`, teljes menüleltár; nincs Export. | `TrayContextMenu.qml:32-95`; a menüben nincs Export jel vagy menüpont. | Egyezik: a tálca jobbklikk-menüjéből nincs export. |
+| **Néző helyi menüje:** `0x007327a0` OneUp menü; nincs Export. | `ViewerContextMenu.qml:35-293`; nincs Export jel vagy menüpont. | Egyezik: a néző jobbklikk-menüjéből nincs export. |
+| **Ctrl+Shift+S:** a `0x005e60d0` CThumbUI billentyűkezelő `S` ága Ctrl+Shift esetén hívja a `0x005312b0`-t; a meglévő gyorsbillentyű-spec a billentyűutat könyvtárnézethez köti. | `MainKeyboardShortcuts.qml:427-432`; a shortcut könyvtári nézetben engedélyezett és nézőben nem fut. | Egyezik a könyvtári egyes/többes kijelölés útja; nézői gyorsbillentyű nincs. |
+| **Fájl menü a nézőből:** a főmenü rekord és a közös nyitó ismert, a nézőbeli menüállapot külön feltétele nincs az itt ellenőrzött kimenetekben. | `PicasaFileMenu.qml:141-145`, `MainMenuBar.qml:83,283-284`: a néző egyetlen aktuális képsorával aktív. | Esetleges eltérés nem állítható, amíg az eredeti OneUp melletti Fájl menü engedélyezése nincs eldöntve. Lásd a nyitott kérdést. |
+
+A `0x005312b0` közös nyitó nem választ külön ablakot egy és több képre.
+A kijelölési gyűjtő eredménye határozza meg az exportált köteget; a videóvizsgálók
+azt döntik el, hogy a filmválasztók elérhetők-e. A többes kijelölésnél az
+export-számozás a köteg teljes darabszámától függ, nem külön párbeszédtől.
+
+### A párbeszéd alapállapota és a megjegyzett értékek
+
+| Mező | Eredeti Picasa 3.9 | Jelenlegi PicasaPy |
+|---|---|---|
+| Célhely | A korábbi `DefaultExportPath`; kulcs nélkül lokalizált `Picasa\Exports\`. | A korábbi `export/defaultpath`; kulcs nélkül `<Pictures>/Picasa/Exports` (`export_controller.py:142-161`), a névvel összefűzve `ExportDialogs.qml:162-167`. Az alapút reprezentációja eltér; a Windows alatti abszolút út azonossága itt nincs kimérve. |
+| Mappanév | A forrás album/mappa neve; üres névnél lokalizált `export`. `0x0073b500` a bemeneti objektum `+8` mezőjét olvassa. | A `currentFolder` utolsó útvonaleleme; üresnél `export` (`export_controller.py:125-140`). Normál, egy mappán belüli kijelölésnél azonos forrást céloz; vegyes mappájú tálcánál az eredeti névforrás nincs eldöntve. |
+| Névmező induló állapota | A `export.fen` `focus="name"` mezőt jelöl meg; a névmező fókuszban, a szöveg kijelölve. | Megnyitáskor a mappanév-mező fókuszt kap és teljes tartalmát kijelöli (`ExportDialogs.qml:184-191`). | Egyezik. |
+| Méret | A hiányzó `FileExportSize` alapértéke `3` (`0x00738c43-0x00738c60`); a korábbi tiszta profilú job-645 felvétel 800 px átméretezést mutat. A `.fen` méretlistája 320, 480, 640, 800, 1024, 1200, 1600. A rádióállás statikus kulcsmegfeleltetése a régi specben ellentmondásos. | `size=3`, 800 px; tiszta beállításnál `resize=True`; a 7 méretlista egyezik (`export_prefs.py:30-36,91-110`, `ExportDialogs.qml:193-199`). |
+| Minőség | `FileExportQuality` hiányzó értéke 85 (`0x0073962d`, `0x0073b14a`). A `FileExportQualityType` kulcs beolvasása ismert, de hiányzó kulcsra adott párbeszéd-alapértéke nincs bizonyítva. | `quality=85`, `qualityType=0` (Automatikus) (`export_prefs.py:38-39,111-128`). |
+| Vízjel | `ExportWatermark` alapból 0, a `ExportWatermarkText` üres. | `watermark=False`, `watermarkText=""` (`export_prefs.py:140-143`). |
+| Film | `FileExportMovie` alapból 0, vagyis Első képkocka. Videó nélküli kijelölésnél a csoportcímke és a két rádió is tiltott (`0x007394b3`; eredeti képernyőkép mérési eredménye: `export-parbeszed.md` 13.10). | Alapból Első képkocka; a címke és a rádiók is tiltottak videó nélküli soroknál (`ExportDialogs.qml:210-221,506-536`). Egyezik. |
+| Sorszámozás | `ExportAddNumbers` alapból 0, kikapcsolva (`0x0073fba1`). | `addNumbers=False` (`export_prefs.py:138-142`). |
+| Következő megnyitás | A `0x00738c00` beolvassa, a `0x00739960` elfogadáskor menti: út, méret, egyéni méret, minőségfokozat, minőség, film, vízjel és szöveg, számozás. Mégse esetén nincs mentés (`0x008d2720`). | A QML megnyitáskor betölti és elfogadáskor egy menetben menti a mezőket (`ExportDialogs.qml:179-226,267-288`; `export_prefs.py:152-171`). A helyet a művelet indításakor megjegyzi (`export_controller.py:156-161`). A mappanév újranyitáskor újra a forrásból képződik. |
+
+Egy és több kép esetén a mentett mezők közös párbeszédállapotból jönnek; nincs
+külön egyképes és többképes alapérték-ág. A tiszta profilos eredeti minőségfokozat,
+a régi méret-rádió megfeleltetése és a vegyes mappájú köteg névforrása nyitott.
+
+### Kimeneti hatás és hibák
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| A célmappa a korábbi út és a mappanév összefűzése; létező cél esetén kérdez. Igen törli az előző albumot és új exportot indít. Nem a `0x007f6650`-ben `AL=0`-val tér vissza; a `0x007f6400` caller csak sikeres/igen visszatérésnél hívja az elfogadó `0x008d2720` ágat. | A kérdés `ExportDialogs.qml:610-620`; Igen `startExport(true)`, Nem `startExport(false)` (`613-614`). A `exporter.py:104-118` a Nem útján nem ürít, a `:187-212,245-248` pedig egyedi fájlneveket keres. | **Eltérés:** Nem válasznál az eredeti megszakítja az exportot, nálunk folytatódik és az ütköző fájlok új néven íródnak. A felülírási döntés paritásához javítani kell. |
+| Sorszámozás: `0x0073ee70` a `%0*d-%s` formátumot használja, szélessége az összes kép darabszámának számjegyszáma. Példa az eredeti specből: 7 kép `1-...`, 12 kép `01-...`, 178 kép `001-...`. | `exporter.py:125-132`: `max(3, len(str(len(items))))`, ezért 1-99 elemnél mindig legalább háromjegyű prefixet ír. | **Eltérés:** az eredeti kötegszámhoz igazított minimum szélességet használ, PicasaPy minimuma 3. Sorszámozott fájlnevekhez külön fejlesztői jegy javasolt. |
+| Módosított kép a Picasa képszerkesztéseit exportfájlba rendereli; módosítatlan JPEG esetén a `0x007401b4` `CopyFileW` másolóág létezik. A méretbeállítás és a módosítatlan JPEG-másolóág teljes kapcsolata nincs lezárva. | `exporter.py:191-249`, `export_controller.py:322-347`: módosításokat, forgatást, vágást, átméretezést és vízjelet renderel, no-op esetén másol. | Általános szerkesztéségetés egyezik. Az eredeti méretbeállítás és szerkesztetlen másolási ág kölcsönhatása nyitott; erre ne készüljön becslés. |
+| A cél `.picasa.ini`-jébe a `caption` és a vesszővel elválasztott `keywords` kerül (`0x00740295`, `0x007403bc`, `0x00740485`, `0x0074050d`). A kimeneti képfájl a renderelt szerkesztést tartalmazza; az export utáni `0x007414dd` `]history:export` tokent ad a cél albumhoz. | `export_metadata.py:13-51` csak a caption/keywords adatot írja `update_document`-en át; a képet az `exporter.py:191-249` állítja elő. | A `.picasa.ini` fő tartalma egyezik. A PicasaPy az üres caption/keywords mezőhöz nem hoz létre ini-tételt. |
+| A célmappa `Exported Pictures` könyvtár-kategóriát kap (`0x0073f884`, a kategóriatáblát `0x004a1560` is felsorolja). Az export záróágában nincs közvetlen újraindexelés; a kategória/token a könyvtár-adatúthoz kerül. A `ShellExecuteA("open", célmappa)` a `0x007414a8-0x007414b6` ágon feltételes. | `export_controller.py:424-463`, `library_controller_resync.py:493-585`: a cél exportcélként bekerül az indexbe és siker után újraszinkronizálódik. `ExportDialogs.qml:734-745` csak eredményablakot nyit, automatikus célmappa-megnyitás vagy sor-kijelölés nélkül. | Mindkét oldalon van célmappa-könyvtári kezelés, de a könyvtárfa/index végállapotának azonosságát a statikus lelet nem dönti el. A cél Intézőben megnyitásának feltétele még nincs értelmezve; nem állítható, hogy minden eredeti export után megtörténik. Rács-sorkijelölést az eredeti záróág nem bizonyított. Ezekre eltérés vagy fejlesztői jegy egyelőre nem állapítható meg. |
+| Célkönyvtár-létrehozási hiba külön üzenet. Írási hibánál az eredeti általános szövege a megtelt vagy írásvédett lemezt nevezi meg (`CImageOutput::filewriteerr`). Az eredeti teljeslemez-előellenőrzés léte vagy hiánya ebből a hibaágból nem dőlt el. | `export_controller.py:395-406` előre ellenőrzi a szabad helyet és „not enough free disk space” hibát ad; a `exporter.py:103-118,155-159` a létrehozási és elemenkénti írási hibákat gyűjti. | A korai teljeslemez-elutasítás paritása nyitott: az eredeti előellenőrzését és mindkét program felületi ágát méréssel kell összevetni. Az írásvédett cél vagy utólagos íráshiba pontos PicasaPy felületi útja forrásból ellenőrizendő; egyelőre nincs fejlesztői jegy. |
+| Hálózati/UNC-célra vonatkozó külön ág vagy konkrét siker/hiba ebben a statikus körben nincs bizonyítva. A fájlrendszer végső visszatérése futtatási környezettől is függ. | `export_controller.py:388-406`, `exporter.py:101-118,214-249`; célút-átalakítás és `Path`-írás van, de nincs ehhez a jegyhez élő UNC-mérés. | Nyitva marad; UNC-s futáspróba kell a fájlok, az ini, az index és a látható hiba rögzítésével. |
+
+### Két független út és cáfoló kísérlet
+
+- **A út, utasításszint:** a `0x005312b0` közös nyitó, a menü-diszpécser
+  `0x005cb990`, a tálcaesemény `0x005d9cc0`, a CThumbUI billentyűkezelő
+  `0x005e60d0`, a célütközés kezelője `0x007f6650` és hívója `0x007f6400`,
+  valamint a kimeneti ág `0x0073f320` célzott diszasszemblálása.
+- **B út, független rekordok és másik réteg:** a File menü `0x00559150`
+  rekordja és `0x9c81` dispatch-adata; a teljes kontextusmenü-építők és
+  menüsorok (`0x00730790`, `0x00731050`, `0x00732ee0`, `0x007327a0`);
+  `export.fen` és a `0x00738c00`/`0x00739960` beállításút; a tiszta profil
+  job-645 mérés; a jelenlegi PicasaPy QML/Python hívási lánc. Az utak
+  egyeznek a belépések, megőrzött beállítások, a névütközési kérdés és a metaadatok
+  kimenet létezésében. A viewer menüállapotot, vegyes tálca névforrását,
+  UNC-hibát és a célmappa-megnyitó jelző jelentését nem döntik el.
+- **Cáfoló kör:** azt a feltevést próbáltam cáfolni, hogy a felülírási
+  párbeszéd Nem válasza megszakítja az exportot. A `0x007f6650` hamis
+  válaszága a `0x007f69d3` takarítás után `AL=0`-val tér vissza; a
+  `0x007f6400` hívó csak `AL!=0` esetén jut a `0x008d2720` elfogadó ágra.
+  A QML viszont `onRejected` alatt `startExport(false)`-t hív. A két teljes
+  hívási út más mércével is ellenőrizve ugyanazt az eltérést adta.
+
+### A jegy „Kész, ha” pontjai
+
+1. ✅ **Belépési pontok:** Fájl menü, tálca Export gomb, kép/tálca/néző helyi
+   menük és Ctrl+Shift+S külön sorban szerepelnek; kijelölési feltételeik
+   dokumentálva. Eredeti OneUp melletti Fájl menüállapot és tálcagyűjtés nyitott.
+2. ⛔ **Egy és több kép ablakállapota:** közös párbeszéd és mentett mezők
+   megvannak; az eredeti minőségfokozat alapértéke, méret-rádió megfeleltetése,
+   vegyes tálca mappanév-alapja nincs eldöntve.
+3. ⛔ **Fájlnév, szerkesztés, ini, index, megnyitás és kijelölés:** a folyamat
+   dokumentált. A sorszámszélesség és az ütközés Nem ága eltér; az eredeti
+   megnyitó jelzője és automatikus rácskijelölése nyitott.
+4. ⛔ **Írásvédett, megtelt lemez, hálózati cél:** az eredeti hibaüzenet és a
+   PicasaPy előellenőrzés ismert. Az aktuális írásvédett út, tényleges UNC
+   eredmény és UNC indexelés nincs mérve.
+
+### Javasolt fejlesztői jegytörzsek
+
+#### 1. Nem válasz az export célmappa-felülírására szakítsa meg a műveletet
+
+**Eredeti:** A Picasa 3.9 `0x007f6650` célütközési kezelőjében a Nem ág
+`AL=0`-val tér vissza; a `0x007f6400` hívó emiatt nem hívja az elfogadó
+`0x008d2720` folytatást. Az Igen az előző album törlését és új exportot indítja.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Nem megszakítja az exportot, Igen üríti a korábbi albumot. | `ExportDialogs.qml:613-614` a Nem ágra `startExport(false)`-t hív; `exporter.py:104-118,187-212` megtartja a korábbi fájlokat és ütközéskor egyedi nevet választ. | A Nem ág zárja be a kérdést exportindítás nélkül; az Igen ág maradjon előző cél-tartalmat törlő export. |
+
+**Kész, ha:** létező cél esetén a Nem választás után sem új fájl, sem sorszámos
+ütközés-fájl nem keletkezik; az Igen választás előző tartalmat töröl és újra
+exportál.
+
+#### 2. Export sorszámozása a köteg méretéhez igazodjon
+
+**Eredeti:** A `0x0073ee70` `%0*d-%s` formátumának szélessége az exportált
+képszám számjegyszáma: 7 kép esetén `1-`, 12 esetén `01-`, 178 esetén `001-`
+prefix az eredeti fájlnév előtt.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A prefix szélessége a teljes képszám számjegyszáma. | `src/picasapy/export/exporter.py:125-132` minimum 3 jegyre tölti fel a sorszámot. | A minimum 3-as korlátot cserélni az eredeti kötegméret-alapú szélességre. |
+
+**Kész, ha:** számozás bekapcsolásakor 7 kép prefixe `1`-től `7`-ig, 12
+képé `01`-től `12`-ig, 178 képé `001`-től `178`-ig tart, kötőjellel és az
+eredeti fájlnévvel.
+
+### Nyitott
+
+- Ghidra-kör kell: 0x00559150 - az `ID_FILE_EXPORTTOFOLDER` Fájl menüpont OneUp nézetben milyen állapotfrissítési feltétellel aktív? [blokkoló]
+- Ghidra-kör kell: 0x005312b0 - a képtálca `folderbutton` útján a kijelölésgyűjtő a tartott, több mappából származó képeket veszi-e át, és hogyan választ névalap-forrásobjektumot? [blokkoló]
+- Ghidra-kör kell: 0x0073f320 - mi állítja be a `0x00741477` előtti megnyitójelzőt, és van-e külön UNC/hálózati útvonal- vagy hibakódág? [blokkoló]
+- `NINCS MEG`: az eredeti `FileExportQualityType` hiányzó kulcshoz tartozó tiszta profilbeli választása; Windows mérés kell üres Preferences profillal.
+- `NINCS MEG`: az eredeti teljeslemez-előellenőrzés léte, valamint írásvédett cél és betelt lemez pontos felületi ága mindkét programban; Windows méréssel rögzítendő a cél, hibaüzenet, fájlok és indexállapot.
+- `NINCS MEG`: hálózati/UNC export sikeres vagy sikertelen kimenete, cél `.picasa.ini`-je és indexbe vétele; UNC útvonalas Windows-mérés kell.
+- `NINCS MEG`: a módosítatlan JPEG `CopyFileW` útja hogyan érvényesíti a méretbeállítást; az eredeti hívó és átadott állapot célzott feltárása kell.
+- `NINCS MEG`: a működés után az eredeti UI kiválaszt-e rácssort; a `0x007414a8` záróágban ilyen művelet nem látszik, de a teljes UI-folyamatra nincs külön mérés.
+
+**Új kutatási jegyjavaslatok:** most nem nyitok külön jegyjavaslatot; a nyitott
+kérdések az Export Picture to Folder folyamat közvetlen folytatásai.
+
+**Módosított fájl:** `docs/specs/paritas-ellenorzes.md` - a #6970 új alszakasza.
+
