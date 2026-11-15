@@ -66,7 +66,7 @@ def sanitize_folder_rename_name(name: str) -> str:
         if ord(character) < 32 and not character.isspace():
             continue
         characters.append(" " if character.isspace() else character)
-    cleaned = re.sub(r" +", " ", "".join(characters)).strip(" .")
+    cleaned = "".join(characters).strip(" .")
     if cleaned.casefold() in _PICASA_RESERVED_NAMES:
         cleaned += "_"
     return cleaned

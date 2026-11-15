@@ -68,7 +68,7 @@ def test_ervenytelen_mappanevnel_nincs_atnevezes(tmp_path, name):
         ("A/B", "AB"),
         ("..Balaton..", "Balaton"),
         ("con", "con_"),
-        ("A\t  B", "A B"),
+        ("A\t  B", "A   B"),
         ("nul", "nul_"),
         ("aux", "aux_"),
         ("prn", "prn_"),
@@ -117,3 +117,13 @@ def test_lemezes_hiba_eseten_a_regi_mappa_marad(tmp_path, monkeypatch):
     assert source.is_dir()
     assert (source / "a.jpg").exists()
     assert not (tmp_path / "uj-nev").exists()
+
+
+def test_a_nevtisztito_nem_vonja_ossze_a_szokozoket_7038():
+    """Az eredeti `0x009946f0` minden szóköznek számító karaktert külön
+    szóközre cserél, egymás után állókat sem von össze (Ghidra 416)."""
+    from picasapy.fileops.rename_folder import sanitize_folder_rename_name
+
+    assert sanitize_folder_rename_name("Nyár  2026") == "Nyár  2026"
+    assert sanitize_folder_rename_name("a\tb　c") == "a b c"
+    assert sanitize_folder_rename_name("  . A/B .  ") == "AB"
