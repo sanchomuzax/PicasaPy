@@ -268,15 +268,15 @@ class TestFolderPropertiesDialog:
         ):
             assert dialog.findChild(QObject, name) is not None, f"{name} hiányzik"
 
-    def test_a_mappanev_szerkesztheto_a_helyszin_mappamodban_inaktiv(self, qml_engine):
-        """A név átnevező úton menthető; a helyszínnek nincs mappaszintű írása."""
+    def test_a_mappanev_es_helyszin_szerkesztheto_mappamodban(self, qml_engine):
+        """A meglévő mappa neve és helye szerkeszthető."""
         dialog = self._make_dialog(qml_engine)
         assert dialog.findChild(
             QObject, "folderPropertiesNameField"
         ).property("enabled") is True
         assert dialog.findChild(
             QObject, "folderPropertiesLocation"
-        ).property("enabled") is False
+        ).property("enabled") is True
 
     def test_music_path_follows_the_music_checkbox(self, qml_engine, qt_app):
         """Az eredeti `<bind attr="enabled" source="usemusic">`."""
