@@ -7,6 +7,7 @@ Item {
     id: rootDialogs
     property alias clearGeotagDialog: _clearGeotagDialog
     property alias bulkTagConfirmLoader: _bulkTagConfirmLoader
+    property alias emailCountConfirmLoader: _emailCountConfirmLoader
     property alias setGeotagDialog: _setGeotagDialog
     property alias dropGeotagDialog: _dropGeotagDialog
     property alias panelClearGeotagDialog: _panelClearGeotagDialog
@@ -108,6 +109,35 @@ Item {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // #6987: az E-mail parancs 20 kép FÖLÖTT kérdez (`CThumbUI::
+    // OutputBottleneck`, `0x00531550`). Mégse esetén semmi nem készül elő;
+    // az OK a megnyitáskori kijelölés pillanatfelvételével folytatja. A
+    // kérdést a vezérlő kéri a `sendConfirmRequested` jelzéssel
+    // (`MainWindowCommands.qml`), a darabszám a TÉNYLEGES kimeneté.
+    DeferredDialog {
+        id: _emailCountConfirmLoader
+        objectName: "emailCountConfirmDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "emailCountConfirmDialog"
+                namePrefix: "emailCountConfirm"
+                //: CThumbUI::OutputBottleneck::title
+                title: qsTr("Confirm")
+                yesText: qsTr("OK")
+                noVisible: false
+                rememberVisible: false
+                property var rows: []
+                function askFor(rowList, count) {
+                    rows = rowList.slice()
+                    //: CThumbUI::OutputToEmail
+                    ask("", qsTr("Email %d files?").replace("%d", String(count)))
+                }
+                onConfirmed: emailController.sendSelection(rows, true)
             }
         }
     }

@@ -1097,6 +1097,68 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Δεν βρέθηκε πρόγραμμα ηλεκτρονικού ταχυδρομείου που να υποστηρίζει συνημμένα· θα ανοίξει ένα κενό μήνυμα χωρίς τις φωτογραφίες.</translation>
         </message>
+        <message>
+            <source>a picture for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_SINGLE</extracomment>
+            <translation>μια φωτογραφία για εσάς</translation>
+        </message>
+        <message>
+            <source>%d pictures for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_MULTI</extracomment>
+            <translation>%d φωτογραφίες για εσάς</translation>
+        </message>
+        <message>
+            <source>You have been sent 1 picture.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_SINGLE</extracomment>
+            <translation>Σας έχουν στείλει 1 φωτογραφία.
+
+</translation>
+        </message>
+        <message>
+            <source>You have been sent %d pictures.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_MULTI</extracomment>
+            <translation>Σας έχουν στείλει %d φωτογραφίες.
+
+</translation>
+        </message>
+        <message>
+            <source>Too many file attachments to send.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_TOO_MANY_ATTACHMENTS</extracomment>
+            <translation>Πολύ μεγάλο πλήθος συνημμένων αρχείων προς αποστολή.</translation>
+        </message>
+        <message>
+            <source>Attachment was not found</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_NO_ATTACHMENT</extracomment>
+            <translation>Δεν βρέθηκε επισύναψη</translation>
+        </message>
+        <message>
+            <source>Could not open an attachment.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_CANT_OPEN_ATTACHMENT</extracomment>
+            <translation>Δεν είναι δυνατό το άνοιγμα μιας επισύναψης.</translation>
+        </message>
+        <message>
+            <source>Unknown recipient.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_UNKNOWN_RECIPIENT</extracomment>
+            <translation>Άγνωστος παραλήπτης.</translation>
+        </message>
+        <message>
+            <source>The email could not be sent.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_FAILURE</extracomment>
+            <translation>Δεν ήταν δυνατή η αποστολή του ηλεκτρονικού ταχυδρομείου.</translation>
+        </message>
     </context>
     <context>
         <name>RightDrawer</name>
@@ -9895,6 +9957,13 @@ It will change the next time PicasaPy is opened.</source>
             <translation>Να αλλάξει η γλώσσα που χρησιμοποιεί το PicasaPy;
 
 Η αλλαγή θα ισχύσει την επόμενη φορά που θα ανοίξετε το PicasaPy.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="138" />
+            <source>Email %d files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::OutputToEmail</extracomment>
+            <translation>Αποστολή %d αρχείων μέσω ηλεκτρονικού ταχυδρομείου;</translation>
         </message>
     </context>
     <context>

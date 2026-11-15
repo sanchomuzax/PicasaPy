@@ -96,8 +96,12 @@ class TestAKerdezzModNemKuldMagatol:
         assert szoveg == "Szöveg"
 
 
-class TestAzAlapertelmezettModSzerkeszt:
-    def test_a_megjegyzett_mod_is_megnyitja_a_szerkesztot(self, qt_app, tmp_path):
+class TestAzAlapertelmezettModKozvetlenul:
+    def test_a_megjegyzett_mod_belso_szerkeszto_nelkul_inditja_a_levelezot(
+        self, qt_app, tmp_path
+    ):
+        """#6987: a saját levelezős ág (`EmailPrepType = 3`) az eredetiben
+        nem nyit szerkesztőt: az előkészítés után a levelező indul."""
         vezerlo = _vezerlo(tmp_path, kerdezzen=False)
         fogo = _Jelzesfogo([])
         vezerlo.mailChoiceRequested.connect(fogo)
@@ -106,11 +110,12 @@ class TestAzAlapertelmezettModSzerkeszt:
             "picasapy.app.email_controller._which",
             return_value="/usr/bin/xdg-email",
         ), patch("picasapy.app.email_controller._popen") as popen:
+            popen.return_value.wait.return_value = 0
             eredmeny = vezerlo.sendRows(["/tmp/a.jpg"], "Tárgy", "Szöveg")
 
-        assert eredmeny is False
-        popen.assert_not_called()
-        assert len(fogo.hivasok) == 1, "a levélszerkesztő nem nyílt meg"
+        assert eredmeny is True
+        popen.assert_called_once()
+        assert fogo.hivasok == [], "a megjegyzett mód belső panelt nyitott"
 
 
 class TestAValasztasErvenyesitese:

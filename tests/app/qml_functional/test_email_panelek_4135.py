@@ -1,4 +1,5 @@
-"""#4135 — a valódi főablakban választás, levélírás és mellékletküldés.
+"""#4135: a valódi főablakban választás és mellékletküldés (#6987: a saját
+levelező választása belső levélíró panel nélkül indítja a levelezőt).
 
 A vezérlőkhöz az ablak tényleges geometriájából kattintunk. A kitöltő
 hátterének egy szövegmentes pontját a renderelt képen ellenőrizzük, majd az
@@ -17,7 +18,6 @@ from PySide6.QtCore import (
     QPointF,
     QSettings,
     QTranslator,
-    QUrl,
     Qt,
 )
 from PySide6.QtGui import QColor
@@ -89,6 +89,13 @@ _EMAIL_MAGYAR = {
     "Send": "Küldés",
 }
 
+class _Folyamat:
+    """A levelező-indítás hamis folyamata: azonnal, 0-s kóddal kilép."""
+
+    def wait(self, timeout=None):
+        return 0
+
+
 def _elem(root, nev):
     elem = root.findChild(QQuickItem, nev)
     assert elem is not None, f"hiányzó, kirajzolt vezérlő: {nev}"
@@ -114,17 +121,6 @@ def _var(root, nev, qt_app, *, lathato=True, ido=5.0):
     return elem
 
 
-def _gyermek_item(root_item, nev):
-    """A ListView delegate-jeit a QQuickItem-vizualis fában keresi."""
-    vizsgalando = [root_item]
-    while vizsgalando:
-        item = vizsgalando.pop()
-        if item.objectName() == nev:
-            return item
-        vizsgalando.extend(item.childItems())
-    return None
-
-
 def _kattint(window, elem, qt_app):
     assert elem.isEnabled(), f"a vezérlő le van tiltva: {elem.objectName()}"
     pont = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2))
@@ -136,13 +132,6 @@ def _kattint(window, elem, qt_app):
         QPoint(round(pont.x()), round(pont.y())),
     )
     qt_app.processEvents()
-
-
-def _gepel(window, szoveg):
-    """Karakterenként küld valódi QWindow billentyűeseményeket."""
-    for karakter in szoveg:
-        assert ord(karakter) < 128, "a QTest QWindow billentyűútja ASCII-t kezel"
-        QTest.keyEvent(QTest.KeyAction.Click, window, ord(karakter))
 
 
 def _kitoltes_latszik(window, felulet, dialog):
@@ -243,7 +232,9 @@ def test_fooldali_kattintas_osszeallitja_es_atadja_a_levelet(
     inditott_parancsok = []
     monkeypatch.setattr(email_module, "_which", lambda _nev: "/usr/bin/xdg-email")
     monkeypatch.setattr(
-        email_module, "_popen", lambda argv: inditott_parancsok.append(list(argv))
+        email_module,
+        "_popen",
+        lambda argv: inditott_parancsok.append(list(argv)) or _Folyamat(),
     )
 
     window.setProperty("selectedIndexes", [0])
@@ -317,51 +308,18 @@ def test_fooldali_kattintas_osszeallitja_es_atadja_a_levelet(
         _kattint(window, _elem(dialog, "emailChoiceHelpButton"), qt_app)
         _kattint(window, _elem(dialog, "emailChoiceRemember"), qt_app)
         _kattint(window, _elem(dialog, "emailChoiceDefaultButton"), qt_app)
-        szerkeszto = _elem(dialog, "emailComposePanel")
-        assert szerkeszto.isVisible()
-        assert _elem(dialog, "emailComposeChangeUser").property("text") == (
-            "Felhasználóváltás"
+
+        # #6987: a saját levelező választása NEM nyit belső szerkesztőt: a
+        # párbeszéd azonnal bezárul, és a levelező a csatolmányokkal indul.
+        assert not bool(dialog.property("visible")), (
+            "a Native Mail Client választása után a párbeszéd nyitva maradt"
         )
-        assert _elem(dialog, "emailComposeToLabel").property("text") == "Címzett:"
-        assert _elem(dialog, "emailComposeSubjectLabel").property("text") == "Tárgy:"
-        assert _elem(dialog, "emailComposeDiscard").property("text") == "Elvetés"
-        assert _elem(dialog, "emailComposeSend").property("text") == "Küldés"
-        lista = _elem(dialog, "emailComposePreview")
-        kep_elonezet = _gyermek_item(lista.property("contentItem"), "emailComposePreviewImage")
-        assert kep_elonezet is not None, (
-            "a képelőnézet nem épült fel; "
-            f"mellékletek={dialog.property('attachmentPaths')!r}; "
-            f"lista={lista.property('count')}"
-        )
-        vart_kep = str(dialog.property("attachmentPaths")[0])
-        # Windowson a toLocalFile perjeles; útvonalként hasonlítunk, nem szövegként
-        assert Path(QUrl(kep_elonezet.property("source")).toLocalFile()) == Path(vart_kep)
-
-        for magassag_elteres in (-5, 0, 5):
-            window.setHeight(eredeti_magassag + magassag_elteres)
-            qt_app.processEvents()
-            assert window.height() == eredeti_magassag + magassag_elteres
-            _kitoltes_latszik(
-                window, _elem(dialog, "emailDialogSurface"), dialog
-            )
-
-        cimzett = _elem(dialog, "emailComposeRecipientField")
-        _kattint(window, cimzett, qt_app)
-        _gepel(window, "anna@example.test")
-        targy = _elem(dialog, "emailComposeSubjectField")
-        _kattint(window, targy, qt_app)
-        _gepel(window, "Summer photos")
-        torzs = _elem(dialog, "emailComposeBodyField")
-        _kattint(window, torzs, qt_app)
-        _gepel(window, "Hello! Photos attached.")
-
-        _kattint(window, _elem(dialog, "emailComposeSendButton"), qt_app)
-
-        assert len(inditott_parancsok) == 1, "a Küldés nem indította el a levelet"
+        assert dialog.property("stage") == "choose"
+        assert len(inditott_parancsok) == 1, "a választás nem indította a levelezőt"
         argv = inditott_parancsok[0]
-        assert argv[argv.index("--to") + 1] == "anna@example.test"
-        assert argv[argv.index("--subject") + 1] == "Summer photos"
-        assert argv[argv.index("--body") + 1] == "Hello! Photos attached."
+        assert "--to" not in argv, "belső szerkesztőből érkezett címzett"
+        assert argv[argv.index("--subject") + 1] == "Küldök egy képet"
+        assert argv[argv.index("--body") + 1] == "Ön 1 képet kapott.\n\n"
         csatolasok = [
             argv[i + 1] for i, elem in enumerate(argv) if elem == "--attach"
         ]
