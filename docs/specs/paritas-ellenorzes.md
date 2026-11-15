@@ -1464,3 +1464,263 @@ A mérés célja annak rögzítése, hogy az Indexképek frissítése parancs mi
      - A mappa könyvtárában található `.picasa.ini` fájl módosítási időbélyege (`mtime`) és mérete változatlan marad.
      - A Picasa profilkönyvtárában található `thumbs.db` fájl nem törlődik a lemezről (mérete a parancs futásakor nem esik nullára).
      - A könyvtárnézeti rácsban a bélyegképek a memóriából való ürülés után a háttérben egymás után újra elkészülnek és frissülnek.
+
+## #6963: Delete from Disk teljes folyamata
+
+Az eredeti `ID_FILE_DELETEFROMDISK` azonosítója `0x9c9a`, de nem minden
+nézetben jelent lemezműveletet: mappanézetben képfájlt töröl, album- és
+Emberek-album nézetben az albumtagság eltávolítására is használja. A
+megerősítő út és a Shell-művelet közvetlenül visszafejtett; az eredeti
+metaadat- és nézetfrissítési hatás részletei nyitva maradtak.
+
+### Eredeti / PicasaPy / teendő
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Fájl menü és `Delete`:** `eMenuFile::ID_FILE_DELETEFROMDISK`, `0x00559150`, parancs `0x9c9a`; a menüállapot-kezelő `0x0056c5a0`. A `0x9c9a` diszpécserága `0x005cb990`-ben a `0x005c9b00` kezelőre jut. A menüállapot-kód a `0x70`/`0x8a` menükontextusban csak akkor engedélyezi a parancsot, ha van aktív objektum (`[param_1+0xeac]`) és a `0x004ac8f0` segéd igazat ad. A File menü szövegtára `&Delete from Disk...`; a parancs kezelője a nézetet is vizsgálja. | `PicasaFileMenu.qml:155-159`, `PicasaMenuBar.qml:492-511,658-667`, `MainMenuBar.qml:308-325`. A Fájl tétel a `photoActionsEnabled` állapotot követi; ablak-`Delete` csak aktív kép-műveleti sorral, nem szerkesztés és nem szövegmező-fókusz esetén él. A közös művelet mappanézetben töröl, albumokban eltávolít. | **Részben egyezik.** A `0x9c9a` nézetfüggő hatása nálunk is közös belépőn megy át. Az eredeti menükontextusok `0x70`/`0x8a` értékeinek felhasználói jelentése és a `0x004ac8f0` kiválasztási feltétel pontosítása nyitott; az eredeti File menü album-nézeti látható felirata külön futásidejű felvételt igényel. |
+| **Kép helyi menüje, mappanézet:** `FolderPhoto::ID_FILE_DELETEFROMDISK`, `0x00730790`; a menüépítő `0x0056c5a0` a feliratot `Delete from Disk`-ként állítja, a parancs `0x9c9a`. A helyi menü gyorsbillentyű-felirata `Ctrl+Delete`. | `PhotoContextMenu.qml:460-471`; a tétel csak akkor látszik, ha nincs album- vagy személyalbum-nézetben. A jel a `MainPhotoContextMenu.qml:63` útján a kijelölt képek útvonalait adja a törlő dialógusnak. | **Egyezik** a mappanézeti belépő és a kijelölési feltétel. |
+| **Album- és Emberek-album helyi menüje:** `AlbumPhoto::ID_FILE_DELETEFROMDISK`, `0x00731050`, illetve `PplAlbumPhoto::ID_FILE_DELETEFROMDISK`, `0x007355c0`. Mindkettőn ugyanaz a `0x9c9a` parancs eltávolító feliratot kap; a fájl nem lemezről törlődik. | `PhotoContextMenu.qml:194-220`, `PicasaMenuBar.qml:492-511`, `MainMenuBar.qml:318-325`. A helyi menü albumtagságot vagy személyalbum-hozzárendelést távolít el. | **Egyezik** a helyi menü parancsának nézetfüggő jelentése. |
+| **Kép helyi menüje és néző:** `0x007327a0` a néző parancsmenüje; a `0x9c9a` ugyanarra a kezelőre fut. A nézőben az aktuális kép az érintett cél; albumból nyitott képnél a parancs albumtagságot távolít el. A menü `Ctrl+Delete` feliratot ad. | `ViewerContextMenu.qml:242-249`, `MainKeyboardShortcuts.qml:450-466`, `PhotoViewerKeyboard.qml:66-70`, `MainMenuBar.qml:308-320`. A néző billentyűje csak megnyitott nézőnél, érvényes aktuális képnél és szövegmező-fókusz nélkül él; a Fájl menü útja a nézett kép útvonalát adja át. | **Egyezik** a célkép és a `Ctrl+Delete` nézőbeli útja. A Shift-módosítós nézőút külön vizsgálandó. |
+| **`Delete` / `Ctrl+Delete` / `Shift+Delete`:** a `Delete` a Fájl menü parancsszövegének gyorsbillentyűje, a kép helyi menüje `Ctrl+Delete`-et hirdet; mindkettő a `0x9c9a` parancs. A `0x005cb990` a `GetAsyncKeyState(0x10)` állapotát adja át a `0x005c9b00`-nak. Shift nélkül a megerősítő a Lomtárba helyezést választja; Shift mellett a közvetlen végleges törlést. | `PicasaMenuBar.qml:658-667`, `MainKeyboardShortcuts.qml:437-466`, `PhotoViewerKeyboard.qml:66-70`. A sima `Delete` és a `Ctrl+Delete` létezik; `Shift+Delete`-hez nem találtam külön kötést. | **Eltér:** a PicasaPy forrásában nincs a binárisban látható Shift+Delete közvetlen végleges-törlési út. Fejlesztői jegy javasolt, lásd lent. |
+| **Képtálca:** a `0x00732ee0` teljes menüépítője View and Edit, Hold Selection, Remove Selection, két forgatás, Locate on Disk, elválasztó és Properties tételeket készít; `0x9c9a`/`ID_FILE_DELETEFROMDISK` nincs benne. | `TrayContextMenu.qml:33-95` ugyanilyen szerepű menüt ad, `Remove Selection` tétellel; nincs lemezről törlés. | **Egyezik:** a képtálca helyi menüjéből nincs külön Delete from Disk parancs. Ez nem bizonyítja, hogy egy másik, aktív rács-kijelölésre vonatkozó ablakbillentyűt a fókusz hogyan kezel. |
+| **Egy kijelölt fájl, Lomtáras törlés:** `0x005fdc30` `Delete Items` címet, `DeleteSingle` üzenetet és `Delete Image` gombot választ. Üzenet: `Are you sure you want to send the selected file to the Recycle Bin? (It will also be removed from any albums in which it appears)`. A közös `confirm.fen` út a `No` gomb szövege nélkül épül, így a látható gombok `Delete Image` és `Cancel`. A `0x005fd670` a közös gombsor 1-es elemét választja; a job-252 egyképes felvételleírása Cancel-fókuszt és Enterre elmaradó törlést rögzít. | `FileOpsDialogs.qml:535-557`, `ConfirmDialog.qml:50-76,164-190`. Nálunk a két gomb `Delete Image` és `Cancel`, a Cancel kap fókuszt. | **Egyezik** a szöveg és a gombok. Az eredeti egyképes Enter-hatás csak a korábbi job-252 felvételleírásból ismert; annak nyers képe a helyi mérőadat-archívumban nem található. |
+| **Több kijelölt fájl, Lomtáras törlés:** `0x005fdc30` a `DeleteMultiple` üzenetet és `Delete Items` gombot választja. Üzenet: `Are you sure you want to send the %d selected items to the Recycle Bin?\n(They will also be removed from any albums in which they appear)`. A közös builder ugyanazt a gombsor-indexet állítja be, nincs darabszámfüggő gombág; a bináris önmagában nem nevezi meg a billentyű-alapgombot. | `FileOpsDialogs.qml:558-566`; `pathList.length > 1` esetén ugyanaz a szöveg, gomb `Delete Items`; a közös `ConfirmDialog` Cancel-fókuszt állít. | **Feltételesen egyezik:** a közös index egyképes Windows-felvétellel Cancelként azonosítható, de több kijelölésnél Enter-próba nincs, ezért a tényleges alapgomb-hatás **NINCS MEG**. |
+| **Shift+Delete, egy és több fájl:** `0x005fdc30` a `NoUndoSingle`/`NoUndoMultiple` üzenetet és `Delete File`/`Delete Files` gombot választja. Üzenetek: `Are you sure you want to permanently delete the selected file? (This cannot be undone.)` illetve `Are you sure you want to delete %d selected files? (This cannot be undone.)`. A `Preferences\\DoNotConfirmDeleteFromDisk` beállítás igaz értéke kihagyhatja a szokásos megerősítőt (`0x005fd670`). A prompt gombválasztó-indexe közös a Lomtáras ággal; külön Shift+Delete Enter-mérés nincs. | `FileOpsDialogs.qml:568-583` a végleges ágat csak akkor nyitja meg, ha a `trashAvailableFor()` hamis; a Shift billentyű nem választ külön ágat. A Cancel-fókusz beállítása közös (`ConfirmDialog.qml:50-76`). | **Eltér:** az eredeti Shift+Delete út és a mai, lomtár hiányakor megjelenő figyelmeztetés külön döntési eset. A billentyűút fejlesztése javasolt. |
+| **Lomtáras fájlművelet és 0x0f hiba:** `0x005c9b00` fájlonként hívja a `0x009929b0` segédet. A segéd `wFunc=3` Shell műveleti rekordot épít, `0x00d695a0` wrapperhez jut; `0x009b1d50` a `0x00c40628` IAT-címen `SHELL32!SHFileOperationW`-t hív. A normál ágon az `0x40` bitet is a `0x414` flaghez adja. Ha a visszatérési érték pontosan `0x0f`, a `0x005fdb80` kérdése jelenik meg: `This file cannot be moved to the Trash and will be deleted immediately. Are you sure you want to continue?`, gombok `Delete` / `Cancel`; Delete után a `0x009929b0(0)` végleges próbálkozás fut. E párbeszéd Enter-alapgombját sem a bináris, sem a helyi mérés nem azonosította. | `trash.py:50-104,118-177`, `fileops_controller_delete_mixin.py:44-63`, `FileOpsDialogs.qml:594-599`. Windowson a PicasaPy szintén `SHFileOperationW`-t használ, de bármely nem nulla eredményt `operationFailed` hibává alakítja; nincs `0x0f`-re külön megerősítő és végleges újrapróbálás. | **Eltér:** hiányzik az eredeti `0x0f` utáni megerősítés és újrapróbálás. Fejlesztői jegy javasolt. Más Shell-hibakódot nem szabad automatikusan ennek az ágnak tekinteni. |
+| **Törlés utáni `.picasa.ini`, album, index, mappafa és kijelölés:** a `0x005c9b00` tartalmaz `.picasa.ini` és `.picasaoriginals` objektumokat, album-eltávolító szöveget, valamint sikeres fájltörlési listát. A függvény meglévő Ghidra-kimenete nem oldja fel a releváns virtuális hívások célját; ebből a körből **NINCS MEG**, hogy a fő mappa-ini kép-szekciója törlődik-e, hogyan változik az index/fa darabszám, és milyen sort jelöl ki utána a rács. | `fileops_controller_delete_mixin.py:44-107` törli vagy lomtárba teszi a képet és kísérőit; `photo_delete.py:252-259` a kísérő eredeti képek ini-szekcióit takarítja. A fő mappa `.picasa.ini` írása nem része a törlő útvonalnak. `application_services.py:100-110` azonnal kiveszi a rácssort és a mappa újraszinkronizálását kéri; `library_controller_sync.py:83-106` frissíti a csoport- és státusz-számokat. `FileOpsDialogs.qml:585-608` a legkisebb korábbi kijelölt sor indexén folytatja a kijelölést, üres rácsnál törli. | **NINCS MEG a paritás.** Ghidra-feltárás kell az eredeti ini/index/fa/kijelölés hatásához; a javasolt Ghidra-kérdéseket lent adom meg. |
+| **Írásvédett fájl vagy hálózati megosztás:** statikusan csak a lomtáras út `0x0f` visszatérési értékének külön ágát bizonyítottam; azt, hogy az egyes Windowsos állapotok mely kódot eredményezik, a bináris nem mondja meg. | `trash.py:257-268` Windowson minden útvonalra elérhetőnek tekinti a rendszer-Lomtárat; `trash.py:100-104` nem nulla Shell-eredménynél `OSError`-t ad; `fileops_controller_delete_mixin.py:60-62` ezt hibaként jelzi, nem indít végleges törlést. | **NINCS MEG az eredeti OS-kimenet.** Windowsos írásvédett mintával és hálózati megosztással kell rögzíteni a Shell visszatérési értékét és a felületet. |
+
+### Bizonyítottsági fok és független utak
+
+- **Bizonyítottsági fok: feltételes.** A parancsazonosító, belépési út, a megerősítő szövegágak és a Shell-műveleti hívás statikusan visszakövethető. A teljes utóhatás, az OS-hibakódok okai és a többes Enter-próba nincs lezárva.
+- **A út:** `0x005cb990` `case 0x9c9a` -> `0x005c9b00` -> `0x009929b0` -> a `0x00d695a0` Shell-kompatibilitási wrapper -> `0x009b1d50` -> a PE IAT `0x00c40628` (`SHELL32!SHFileOperationW`). A `0x005fdc30`, `0x005fd670` és `0x005fdb80` a döntő promptokat és a fallbacket választja.
+- **B út:** az importkereszttábla a `0x00d695a0` címet `SHELL32!SHFileOperationA` wrapperként és a `0x009b1d50` függvényként tartja nyilván; a közvetlen PE-importfeloldás a wrapper belső `0x00c40628` hívását `SHFileOperationW`-ként nevezi meg. Ettől külön a menüszövegekre mutató hivatkozások a főmenü- és kép-helyimenü-rekeszeket a `0x9c9a` parancshoz kötik. A két út a fizikai törlő API és a parancsrekesz azonosságában egyezik.
+
+### Cáfoló kísérlet
+
+Megpróbáltam cáfolni azt a tágabb feltevést, hogy a `0x9c9a` minden előfordulása
+fizikailag törli a képet, illetve hogy bármilyen lomtárhiba végleges törléshez
+vezet. A `0x00731050` és `0x007355c0` helyi menüiben ugyanaz a parancs eltávolító
+feliratot kap, a fájltörlő ág helyett a nézethez kötött művelet fut; a teljes
+`0x00732ee0` képtálca-menüben nincs `0x9c9a`. Az utasításszintű cáfoló körben a
+`0x005caca3` utáni kód `cmp eax, 0xf` feltételt vizsgál, és csak egyezésnél hívja
+a `0x005fdb80` ablakot; az eltérő visszatérés a külön fallback-ágat átugorja.
+A `0x009929b0` shell-wrapper hívása, a `0x005fdb80` üzenete és a PE importcíme
+ugyanezt az értelmezést támasztja alá. Így az a korábbi feltételezés, hogy
+írásvédett fájl minden hibája automatikusan végleges-törlési kérdést ad, nem
+igazolt.
+
+### A jegy „Kész, ha” pontjai
+
+1. ✅ **Belépési pontok:** a Fájl menü, mappa-kép helyi menü, `Delete`, `Ctrl+Delete`, néző és képtálca külön sorban dokumentálva. A pontos `0x004ac8f0` feltétel szemantikája és a fókuszált tálca melletti globális billentyűállapot nyitott.
+2. ⛔ **Egy és több kép megerősítése:** az egyes és többes szöveg, valamint a gombok dokumentálva; az egyképes Lomtáras Enter-viselkedésre csak korábbi felvételleírás van, a többes és Shift+Delete út alapgomb-hatása és a `0x0f` fallback Enter-hatása **NINCS MEG**.
+3. ⛔ **Fájlrendszer, ini, index, album, mappafa és rácskijelölés:** a Shell-művelet ismert, de az eredeti ini/index/fa/kijelölési utóhatás nincs feloldva.
+4. ⛔ **Írásvédelem és hálózati megosztás:** a `0x0f` fallback-ág ismert, de a konkrét Windowsos állapotok visszatérési kódja és képernyőhatása nincs mérve.
+
+### Javasolt fejlesztői jegytörzs
+
+**Eredeti:** Picasa 3.9-ben a `0x9c9a` parancs mappanézetben sima `Delete`-re
+Lomtáras megerősítést ad, `Shift+Delete`-re pedig végleges törlési
+megerősítést. A Lomtáras Shell-művelet pontos `0x0f` eredménye külön
+`This file cannot be moved to the Trash and will be deleted immediately...`
+megerősítést nyit; a Delete gomb újrapróbálja véglegesen törölni, a Cancel
+meghagyja a fájlt. A `0x9c9a` album- és Emberek-album nézetben eltávolító
+parancs, nem fizikai törlés.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `Shift+Delete` a `0x005cb990` -> `0x005c9b00` úton `NoUndoSingle`/`NoUndoMultiple` ágat és végleges műveletet választ. | `PicasaMenuBar.qml:658-667`, `MainKeyboardShortcuts.qml:437-466` és `PhotoViewerKeyboard.qml:66-70` nem köt Shift+Delete utat; a végleges prompt csak lomtár-hiány esetén választódik. | Hozzáadni az eredeti módosítós billentyűutat mappanézethez és nézőhöz; album/Emberek-album kontextusban megőrizni az eltávolító viselkedést. |
+| A lomtáras művelet csak `0x0f` hibánál nyitja a külön véglegesítési kérdést, majd `0` undo-flaggel újrapróbál. | `trash.py:100-104` minden nem nulla eredményt `OSError`-ré alakít; `fileops_controller_delete_mixin.py:60-62` hibát jelez, nincs `0x0f` fallback. | A Shell visszatérési kódot megőrizni, a pontos `0x0f`-hez adni az eredeti kérdést és retryt; más kód ne kerüljön ebbe az ágba. |
+
+**Kész, ha:**
+
+1. Mappanézeti egyes és többes kijelölésnél a `Delete` Lomtáras, a `Shift+Delete` a `NoUndoSingle`/`NoUndoMultiple` megfelelő szövegét és gombját használja.
+2. Lomtáras eredmény `0x0f` esetén a külön `Delete`/`Cancel` kérdés jelenik meg; Delete végleges újrapróbát indít, Cancel után a kép és a rácssor megmarad.
+3. Más Shell-hibakód nem indít automatikus végleges törlést.
+4. Album- és Emberek-album nézetben a `0x9c9a` továbbra is csak tagságot távolít el.
+5. A Cancel kezdeti fókusza és a single/multi üzenet a fenti eredeti ágakkal egyezik.
+
+### Nyitott
+
+- Ghidra-kör kell: 0x005c9b00 - a törlési út virtuális hívásai közül melyik módosítja a fő mappa `.picasa.ini` kép-szekcióját és az albumtagságot, és milyen feltétellel? A meglévő dekompilátum a virtuális célokat nem nevezi meg. [blokkoló]
+- Ghidra-kör kell: 0x005c9b00 - melyik hívás veszi ki a sikeresen törölt képet a belső indexből és mappafából, és hogyan választja ki a törlés utáni következő rácssort? A meglévő dekompilátum a virtuális célokat nem nevezi meg. [blokkoló]
+- `NINCS MEG`: írásvédett fájl és hálózati megosztás esetén a Windows `SHFileOperationW` tényleges visszatérési kódja és felületi eredménye. Megszerzés: külön Windows-próba egy írásvédett képpel és egy hálózati megosztáson lévő képpel; rögzíteni kell a promptokat, a Shell eredményét, a fájl jelenlétét és a kijelölést.
+- `NINCS MEG`: többes kijelölésnél az Enter ténylegesen Cancelként zárja-e a promptot. Megszerzés: legalább két kijelölt képpel Enter-próba Windows alatt.
+- `NINCS MEG`: a Shift+Delete végleges törlési prompt és a `0x0f` utáni Delete/Cancel prompt Enter-alapgombja. Megszerzés: külön Windowsos Enter-próba mindkét párbeszédre, az ágak és az egy/több kijelölés rögzítésével.
+
+**Új kutatási jegyjavaslatok:** nincs; a nyitott pontok ehhez a folyamathoz tartoznak.
+
+**Módosított fájl:** `docs/specs/paritas-ellenorzes.md` - a jelen #6963 alszakasz.
+
+## #6964: A Rename parancs folyamatszintű összevetése az eredeti Picasával
+
+A vizsgálat célja a `Rename` (`ID_FILE_RENAME`, `0x9d4f`) teljes folyamatának összevetése az eredeti Picasa 3.9 binárisával (belépési pontok, engedélyezési feltételek, ablakmezők, sorszámozás, hatás a fájlrendszerre, `.picasa.ini`-re, indexre, kijelölésre és sorrendre, valamint hibakezelés).
+
+### 1. Folyamatszintű összehasonlító táblázat
+
+| Funkció / Szempont | Eredeti Picasa 3.9 (bináris cím) | PicasaPy (fájl:sor) | Teendő / Státusz |
+|---|---|---|---|
+| Fájl menü belépési pont | `eMenuFile::ID_FILE_RENAME` (`0x005593da`), parancs ID `0x9d4f` (40271), felirat: `&Rename...\tF2` (`0x00c8c630`, `0x00c8c610`). Engedélyezve: kijelölés >= 1 (`0x0056e46e`), nem írásvédett/rejtett mappa (`0x0057d430 == 0`), és a néző/szerkesztő nincs nyitva (`0x0056e458`). | `PicasaFileMenu.qml:92-95`, `PicasaMenuBar.qml:394`: `objectName: "menuFileRename"`, `&Rename...\tF2`. | Egyezik a felirat és a parancskötés. |
+| Kép menü belépési pont | `eMenuPicture::BatchEdit` almenüben `&Rename...` (`0x0055b2ae`), parancs ID `0x9d4f`. Engedélyezési feltétele azonos a Fájl menüvel. | `PicasaPictureMenu.qml:25-28`: `objectName: "menuBatchRename"`, `&Rename...\tF2`. | Egyezik. |
+| Gyorsbillentyű (F2) könyvtárban | `FUN_005e6710` (0x005e68fd): `VK_F2` (`0x71`). Feltételek: nincs szövegbeviteli fókusz (`0x332f == 0`), nem speciális nézet, kijelölés >= 1, és a néző/szerkesztő nincs nyitva (`0x005e68ee`). Hívja: `0x005e6939: call 0x00532ec0`. | `MainKeyboardShortcuts.qml:417-425`: `sequence: "F2"`, könyvtárnézetben megnyitja a `renameManyDialog`-ot. | Egyezik a könyvtárnézeti működés. |
+| Gyorsbillentyű (F2) és menü a Nézőben | A néző/szerkesztő nyitott állapota (`+0x34a4 != 0`) esetén mind az F2 gyorsbillentyű (`0x005e68ee`), mind a menüpont (`0x0056e458`) letiltott; a dialógus nem nyitható meg. | `MainKeyboardShortcuts.qml:415-425`: az F2 a nézőben is aktív (`photoActionRows()`), és megnyitja az átnevezőt a nézett képre. | Eltérés: az eredetiben a nézőben az F2 és a Rename menüpont inaktív. Döntendő: maradjon-e kényelmi funkcióként vagy szigorú paritás kell. |
+| Kép helyi menüje (jobb klikk) | Az eredeti kép helyi menüben (sem rácsban, sem nézőben) nincs Rename tétel (`ui-audit-context-menus.md` 135-136. sor, `0x005e7c20`). | `PhotoContextMenu.qml`, `ViewerContextMenu.qml`: nincs Rename menüpont. | Egyezik. |
+| Párbeszédablak szerkezete | `runtime/rename.fen`: modális ablak (`title="Rename Files"`), kijelölési címke (`"1 file(s) selected for rename."` / `"%s file(s) selected for rename."`), prompt (`"Please enter a new name for these files:"`), szövegmező (`newname`, `25em`), jelölőcsoport (`"Include in filename:"`), Date és Image resolution jelölőnégyzetek, minta (`"Example: <alapnév>[ <dátum>][ <méret>].jpg"`), Rename (accept) és Cancel gombok. | `FileOpsDialogs.qml:240-368` (`renameManyDialog`): cím, feliratok, beviteli mező, Date és Image resolution jelölőnégyzetek, példa és gombok. | Egyezik a felületi struktúra és a kulcsok. |
+| Alapértelmezett név a mezőben | A kijelölt fájlok közül a legelső fájl kiterjesztés nélküli alapkiterjesztése (`0x00532738`, `strrchr` pont vágás). | `FileOpsDialogs.qml:250-258`: `openedName` az első kijelölt elem kiterjesztés nélküli neve. | Egyezik. |
+| Rename gomb engedélyezése | `0x00532c70`: Ha a `RenameUseDate` VAGY a `RenameUseSize` be van jelölve, a Rename gomb akkor is aktív, ha a beírt név nem változott (`0x00532cdd`, `0x00532cf0`). Csak akkor tiltott, ha egyik sincs bejelölve ÉS a név üres vagy azonos az eredetivel (`0x00532d94`). | `FileOpsDialogs.qml:269-272` (`canRename()`): `return base.length > 0 && base !== openedName.trim()`. Ha a név nem változik, de a Date vagy Size be van pipálva, a gomb tiltva marad! | Eltérés: a `canRename()`-nek engedélyeznie kell az átnevezést, ha a Date vagy Size jelölőnégyzet be van pipálva. |
+| Sorszámozás több képnél | `FUN_00993650` (0x00993b07): formátum `"%s-%03lu"` (`nev-001`, `nev-002`, ...). Ha a név már kötőjeles számmal végződik, a számlálás onnan folytatódik (`0x0099397c`). Legfeljebb 4096 (`0x1000`) elemig vizsgálja (`0x00993993`). 1 képnél nincs sorszám. | `src/picasapy/fileops/rename.py:261-264`, `282-300`: `preview_name` és `_available_name` a `f"{stem}-{sequence:03d}"` alakot és 4096-os limitet használ. | Egyezik. |
+| Dátum utótag formátuma | `0x00532710` és `0x005332e0`: rövid dátum + idő másodperccel, a `:` és `/` karakterek `-`-ra cserélve (minta: `" 08-01-2004 2-30-45 PM"`). | `rename.py:199-216` (`format_taken_at`): rendszer dátum/idő formátum, tiltott karakterek `-`-ra cserélve. | Egyezik. |
+| Felbontás utótag formátuma | `0x00532867` és `0x00533358`: `" %dx%d"` (minta: `" 640x480"`). | `rename.py:238-239`: `f"{item.width}x{item.height}"`. | Egyezik. |
+| `.picasa.ini` szekció kezelése | A fájl átnevezésekor a `.picasa.ini` szekciófejléce `[regi.ext]`-ről `[uj.ext]`-re módosul. A szekció alatti arcadatok (`faces=`), csillagozás (`star=yes`), elforgatás (`rotate=`), felirat (`caption=`), szűrők és albumtagság (`albums=`) változatlanul megmaradnak az új szekcióban. | `rename.py:87`: `update_document(..., lambda doc: doc.with_renamed_section(path.name, new_name))`. | Egyezik: teljes round-trip megőrzés. |
+| Index és rács sorrendje | Az adatbázisban a fájl útvonala frissül. A rácsban a képek a mappa aktuális rendezési módja (Sort by: Name, Date, Size) szerint azonnal átrendeződnek az új helyükre (`0x0065b840`). | `fileops_controller.py`, `photos_model.py`: az indexben frissül az útvonal, a rácsmodell újrarendeződik. | Egyezik. |
+| Kijelölés átnevezés után | `0x0053386c: call 0x00412400`: az átnevezési ciklus lefutása után az ÖSSZES sikeresen átnevezett kép kijelölve marad az új pozíciójában. | `FileOpsDialogs.qml:283-287` és `MainWindowCommands.qml:93-110`: csak egyetlen kép (`rows.length === 1`) esetén állítja be a `_pendingRenamePhotoId`-t; több kép átnevezése után a kijelölés nem követi a fájlokat. | Eltérés: több kép átnevezésekor az összes érintett kép kijelölését meg kell tartani. |
+| Hibakezelés (ütközés, írásvédettség) | `0x0053351c` és `0x00533822`: Ha egy fájl átnevezése meghiúsul (zárolt fájl, mappa-írásvédettség, névütközés 4096 után), a ciklus átugorja a hibás fájlt és folytatja a többi kijelölt fájl feldolgozását. | `rename.py:349-370`: `rename_photos_many` `PartialRenameError`-t dob bármely fájl hibájánál, és a kötegelt végrehajtás megszakad. | Eltérés: a Picasa nem szakítja meg a köteget, hanem átugorja a sikertelen elemeket és a sikereseket jelöli ki a végén. |
+
+### 2. Két független út és cáfoló vizsgálat
+
+- **A út (bináris utasításszintű olvasás):**
+  - Belépési pontok: `0x005593da` (Fájl menü `0x9d4f`), `0x0055b2ae` (Picture menü `0x9d4f`), `0x005cb990` (`0x5cc4e9: call 0x00532ec0`), `0x005e6710` (`0x5e68fd` VK_F2 -> `0x5e6939: call 0x00532ec0`).
+  - Néző tiltása: `0x0056e458` (menüfrissítésnél `[edi + 0x34a4] != 0` esetén letiltja a `0x9d4f` menüt), `0x005e68ee` (F2 leütéskor `FUN_0057c430(4)` hívással ellenőrzi a nézőt és átugorja a megnyitást).
+  - Dialógus és engedélyezés: `0x00532070` konstruktor, `0x00532c70` állapotgép: ha `RenameUseDate` (`+0xd8`) vagy `RenameUseSize` (`+0xf4`) be van pipálva, a Rename gomb aktív; egyébként a név különbözősége szükséges.
+  - Sorszámozás: `0x00993650` (0x00993b07: `"%s-%03lu"`), 4096-os limit (`0x00993993`, `0x00993a1a`).
+  - Végrehajtás és kijelölés: `0x0053351c` hibánál ugrás `0x533822`-re (átugrás), a végén `0x0053386c: call 0x00412400` a sikeres elemek kijelölésére és `0x005338a0: call 0x0065b840` a nézet frissítésére.
+- **B út (erőforrás és specifikációs kontroll):**
+  - `runtime/rename.fen`: a deklaratív felületleíró betűre megerősíti az ablak címét (`"Rename Files"`), a vezérlőneveket (`files`, `newname`, `date`, `size`, `sample`, `rename`) és a feliratokat.
+  - `picasa-gyorsbillentyuk.md` korábbi futásidejű képernyőképes mérései (kb-5, 2756. sor) igazolták az `F2` leütés viselkedését és párbeszédablakának megjelenését.
+  - `ui-audit-context-menus.md` tételes menüleltára igazolja, hogy a helyi menükben nincs Rename tétel.
+- **Cáfoló vizsgálat:**
+  - Megvizsgáltuk azt a feltételezést, hogy a nézőben engedélyezett-e az F2 gyorsbillentyű (a PicasaPy #6530 jegyében feltételezett viselkedés). A binárisban a `0x005e68ee` utasítás (`push 4; call 0x57c430; test al, al; jne 0x5e6947`) cáfolja ezt: ha a néző nyitva van, az elágazás a hívás elé ugrik és elnyeli az eseményt. Ugyanígy a menüfrissítő `0x0056e458` utasítás is letiltja a menüpontot a nézőben.
+
+### 3. Azonosított fejlesztési eltérések és jegyjavaslatok
+
+1. **Rename gomb tiltva marad, ha a név nem változott, de a Date vagy Image resolution be van jelölve:**
+   - **Eredeti:** `0x00532c70`: a `RenameUseDate` vagy `RenameUseSize` bejelölése esetén a Rename gomb aktív, akkor is, ha a szövegmező tartalma nem módosult.
+   - **Nálunk:** `FileOpsDialogs.qml:271`: `canRename()` csak akkor ad igazat, ha `base !== openedName.trim()`.
+   - **Teendő:** `canRename()` bővítése: `return base.length > 0 && (base !== openedName.trim() || includeDateCheck.checked || includeSizeCheck.checked)`.
+2. **Több kép átnevezése után a kijelölés elveszik a rácsban:**
+   - **Eredeti:** `0x0053386c`: az összes átnevezett kép kijelölve marad az új pozíciójában.
+   - **Nálunk:** `FileOpsDialogs.qml:283` és `MainWindowCommands.qml:93-110`: csak 1 képnél kezeli a `_pendingRenamePhotoId`-t.
+   - **Teendő:** A kijelölés-követést kiterjeszteni több kép átnevezésére (pl. `_pendingRenamePhotoIds` lista kezelése).
+3. **Hibakezelés kötegelt átnevezésnél:**
+   - **Eredeti:** `0x0053351c` és `0x00533822`: egyedi fájlhibánál átugorja a hibás elemet és folytatja a többi kijelölt fájllal.
+   - **Nálunk:** `rename.py:350-370`: `PartialRenameError` azonnal megszakítja a folyamatot.
+   - **Teendő:** Eldöntendő fejlesztői kérdés: megtartjuk-e a szigorúbb hiba-leállást, vagy átugrásos folytatás kell.
+
+**Átvételi megjegyzés (a nézőbeli F2):** a fenti „néző tiltása” állítás feltételes. A `0x0057c430(4)` állapotkód és a `+0x34a4` mező jelentését („a néző nyitva”) ez a kör nem igazolta külön, az eredeti programot használó tulajdonos pedig a #6530-ban azt jelezte, hogy megnyitott képnél az F2 átnevez. A PicasaPy nézőbeli F2-je ezért marad; a kérdést csak egy Colab-os viselkedésmérés dönti el (néző megnyitása, F2, megnyílik-e a Rename ablak).
+
+## #6967: A Revert parancs teljes folyamata az eredeti Picasában és összevetése a PicasaPy-jal
+
+### 1. Belépési pontok, engedélyezési feltételek és a két revert-parancs szétválasztása
+
+Az eredeti Picasa 3.9 binárisában két külön visszaállítási parancs létezik, amelyek eltérő célt szolgálnak és eltérő feltételekkel engedélyezettek:
+
+1. **`ID_FILE_REVERT` (`0x9d9a`):**
+   - **Főmenü:** Fájl ▸ Revert / Visszaállítás (menüépítő: `0x00559150`, rekord: `0x00d6da64`, parancskód: `0x9d9a`, felirat: `Rever&t` / `Vissz&aállítás`, mnemonik: `t`).
+   - **Helyi menük (kép jobb-klikk):**
+     - Mappanézet (FolderPhoto helyi menü): `0x00730790` (`0x00730c91`, `0x9d9a`).
+     - Albumnézet (AlbumPhoto context menu): `0x00731050` (`0x0073148a`, `0x9d9a`).
+     - Egyképes szerkesztő / néző nézet (OneUp context menu): `0x007327a0` (`0x00732b9c`, `0x9d9a`).
+   - **Engedélyezési feltétel (`EnableMenuItem`, `0x0056e1c0` és `0x0056c5a0`):**
+     A `0x5cb1a0` által visszaadott állapotjelző bájt 7. bitje (`0x80`, revertable) kötelező. Ez azt jelenti, hogy kizárólag olyan képnél engedélyezett, amely már korábban lemezre lett mentve, és létezik hozzá `.picasaoriginals` (vagy régebbi verzióknál `Originals`) biztonsági mentés. Ha a kép szerkesztetlen, vagy csak memóriában szerkesztett (még nincs lemezre mentve), a menüpont inaktív / szürke (`MF_GRAYED`). Tiltja továbbá a `0x8000` felső tiltó jelző (pl. írásvédett / speciális gyűjtemény) és a nem engedélyezett nézetállapot (`0x34a4 != 0`).
+   - **Szerkesztő gombja:** A szerkesztő bal paneljén (`editpanel`, `0x00567680`) NINCS Revert gomb. A szerkesztő bal hasábján kizárólag `filter_undo` (Visszavonás) és `filter_redo` (Újra) gombok találhatók. A Revert a szerkesztőben is kizárólag a Fájl menüből vagy a kép helyi menüjéből (`0x007327a0`) érhető el.
+   - **Gyorsbillentyű:** NINCS gyorsbillentyű rendelve az `ID_FILE_REVERT`-hez sem a menükben, sem a gyorsítótáblában (az erőforrások között az `RT_ACCELERATOR` és a `SHORTCUTS.XML` nem tartalmaz hozzá bejegyzést).
+
+2. **`ID_PICTURE_REVERT` (`0x9d2d`):**
+   - **Főmenü:** Kép ▸ Undo All Edits / Összes szerkesztés visszavonása (menüépítő: `0x00559150`, rekord: `0x00d6e4d4`, parancskód: `0x9d2d`, felirat: `Undo &All Edits` / `Összes szerkesztés vissz&avonása`, mnemonik: `a`).
+   - **Helyi menük (kép jobb-klikk):**
+     - Mappanézet: `0x00730790` (`0x0073093b`, `0x9d2d`).
+     - Albumnézet: `0x00731050` (`0x007311fb`, `0x9d2d`).
+     - Szerkesztő nézet: `0x007327a0` (`0x0073298a`, `0x9d2d`).
+   - **Engedélyezési feltétel (`0x0056e1c0` / `0x0056f3d0` és `0x0056c5a0` / `0x0056d9b0`):**
+     Akkor engedélyezett, ha van nem mentett memóriabeli szerkesztés (`0x40` jelző), és nincs `0x8000` tiltás. Ha a kép szerkesztetlen, inaktív.
+   - **Gyorsbillentyű:** NINCS gyorsbillentyűje.
+
+### 2. Megerősítő párbeszédablak folyamata és szövegei (`ID_FILE_REVERT`, `0x0053b2e0`)
+
+A megerősítő párbeszédablakot a `0x0053b2e0` kezeli (`CThumbUI::FileRevert`):
+
+1. **Ablak címe:**
+   - `CThumbUI::FileRevert::title` = "Revert" / "Visszaállítás" (`0x00c8a8b8`).
+
+2. **Egy kijelölt kép esetén (`0x0053b666`):**
+   - Fő kérdés: `CThumbUI::FileRevert::message1` = "Revert to original version of file?" / "Visszatér a fájl eredeti változatához?" (`0x00c8a768`).
+   - Figyelmeztető szöveg: `CThumbUI::FileRevert::message2` = "\n\nThis cannot be undone and all changes will be lost." / "\n\nEz a művelet nem vonható vissza, és az összes módosítás elvész." (`0x00c8a7ae`).
+   - Kiegészítő magyarázat mentett előzménynél (`0x0053b6e7`): `CThumbUI::FileRevert::message1undo` = "\n\nTo undo the last save and keep edits click 'Undo Save'." / "\n\nAz utolsó mentés visszavonásához és a szerkesztések megtartásához kattintson a \"Mentés visszavonása\" gombra." (`0x00c8a806`).
+   - Gombok:
+     - `CThumbUI::FileRevert::revert` = "Revert" / "Visszaállítás" (`0x00c8a890`).
+     - `CThumbUI::FileRevert::undosave` = "Undo Save" / "Mentés visszavonása" (`0x00c8a864`) - csak akkor jelenik meg, ha a kép mentve volt lemezre és van mit visszavonni.
+     - "Cancel" / "Mégse" (`0x00c884a0`).
+
+3. **Több kijelölt kép esetén (`0x0053b61a`):**
+   - Fő kérdés: `CThumbUI::FileRevert::messageX` = "Revert to original version of these files?" / "Visszatér a fájlok eredeti változatához?" (`0x00c8a71c`).
+   - Figyelmeztető szöveg: `CThumbUI::FileRevert::message2` = "\n\nThis cannot be undone and all changes will be lost." (`0x00c8a7ae`).
+   - Gombok: kizárólag "Revert" és "Cancel". Több kijelölt képnél az eredeti binárisban NEM jelenik meg az "Undo Save" gomb és a `message1undo` magyarázat (`0x0053b6e3` elágazás kihagyja).
+
+4. **Külsőleg módosított fájlok figyelmeztetése (`0x0053b87e`-`0x0053bb87`):**
+   - Ha a lemezen található fájl utolsó módosítási ideje eltér a Picasa által mentett `moddate` értéktől (külső képszerkesztőben módosult):
+     - Egy képnél: `CThumbUI::FileRevert::changed1` = "This file has been changed outside of Picasa. Reverting will lose those changes." / "Ez a fájl a Picasán kívül módosult. Ha a visszaállítást választja, a módosítások elvesznek." (`0x00c8a970`).
+     - Több képnél: `CThumbUI::FileRevert::changedX` = "These files have changed outside of Picasa. Reverting will lose those changes." / "Ezek a fájlok a Picasán kívül módosultak. Ha a visszaállítást választja, a módosítások elvesznek." (`0x00c8a9e8`).
+     - Folytatás kérdése: `CThumbUI::FileRevert::continue` = "\n\nDo you want to revert?" / "\n\nVissza szeretne térni?" (`0x00c8aa5a`).
+     - Gombok: `CThumUI::FileRevert::yesbutton` = "Revert Anyway" / "Visszaállítás ennek ellenére" (`0x00c8aab4`), és "Cancel" / "Mégse" (`0x00c8aa94`).
+
+### 3. Végrehajtás és futásidejű hatás
+
+1. **Lemezművelet és `.picasaoriginals` (`0x0046d7d0`, `0x00462ba0`):**
+   - A `0x00462ba0` megkeresi a kép könyvtárában a `.picasaoriginals` (illetve korábbi telepítéseknél az `Originals`) mappát (`0x00462ccd`, `0x00462d2e`).
+   - A biztonsági másolatként megőrzött eredeti fájlt visszamásolja a fotó helyére, felülírva a szerkesztett lemezfájlt.
+2. **`.picasa.ini` könyvelés törlése (`0x0046d7d0`):**
+   - A `0x0046d7d0` eljárás megnyitja a mappa `.picasa.ini` fájlját (`0x0046d967`), és a visszaállított fotó szakaszából törli a szerkesztési kulcsokat: `filters` (`0x0046ed76`), `rotate` (`0x0046e721`, `0x0046f537`), `flipped` (`0x0046e796`, `0x0046f9ef`), és `textactive` (`0x0046fee8`, `0x00470184`).
+   - A fotóhoz tartozó egyéb metaadatok (`star`, `caption`, `faces`, albumtagságok, `backuphash`, `originhash`) változatlanul megmaradnak.
+3. **Folyamatjelző ablak (`0x0053b2e0`):**
+   - A lemezművelet közben folyamatjelző párbeszéd látható: `CThumbUI::FileRevert::progress` = "Reverting Files." / "Fájlok visszaállítása" (`0x00c8a8d4`).
+4. **Bélyegkép és index (`0x0053bc54`-`0x0053bee7`):**
+   - A memóriabeli gyorsítótár ürül (`0x0053bc54`, `call 0x45ff60`), az indexelő szál újraolvassa a lemezfájlt, és a háttérben újra elkészíti a bélyegképet az eredeti kép alapján (`0x0053bee7`, `call 0xa54b70`).
+   - Ha a szerkesztőben éppen nyitva van a visszaállított fotó (`0x0053bc8a`), a szerkesztő azonnal újratölti az eredeti képet a memóriába és a megjelenítőbe (`0x0053bce9`, `0x0053bd30`).
+5. **Rács kijelölése:**
+   - A művelet lefutása után a kijelölés nem törlődik, a visszaállított képek kijelölve maradnak a könyvtárnézeti rácsban.
+
+### 4. Hibaesetek (írásvédettség, hiányzó eredeti)
+
+1. **Hiányzó eredeti biztonsági mentés:**
+   - Az eredeti Picasában normál esetben a menüpont meg sem jelenik aktívként, ha a képhez nem tartozik `.picasaoriginals` mappa.
+   - Ha a mappa vagy a benne lévő fájl lemezről való törlése miatt a futás közben hiányzik, a `0x00462ba0` hibakóddal tér vissza, a művelet leáll, és a felhasználó lemezhiba üzenetet kap.
+2. **Írásvédett fájl vagy lemezhiba (`0x0053bbb0`):**
+   - Ha a célfájl írásvédett, vagy a lemez megtelt, a `0x0053bbb0` címen felugró ablak jelenik meg:
+     - Cím: "Revert" / "Visszaállítás" (`CThumbUI::FileRevert::title`, `0x00c8a8b8`).
+     - Szöveg: `FileRevert::fileerr` = "Unable to revert all files due to a disk error. The disk may be full or read-only." / "Lemezhiba miatt nem lehetséges az összes fájl visszaállítása. Lehet, hogy a lemez megtelt vagy írásvédett." (`0x00c8a908`).
+
+### 5. Paritási összevetés és eltérések táblázata
+
+| Funkció / Elem | Eredeti Picasa (bináris cím) | PicasaPy (fájl:sor) | Eltérés / Teendő |
+|---|---|---|---|
+| Főmenü belépési pont | Fájl ▸ Revert (`0x00559150`, rekord: `0x00d6da64`, `0x9d9a`) | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:113` | Egyezik. Paritásban van. |
+| Kép menü belépési pont | Kép ▸ Undo All Edits (`0x00559150`, rekord: `0x00d6e4d4`, `0x9d2d`) | `src/picasapy/app/qml/PicasaPy/PicasaPictureMenu.qml:124` | Egyezik. Külön parancsként létezik. |
+| Helyi menü belépési pontok | Mappa (`0x00730790`), Album (`0x00731050`), OneUp (`0x007327a0`) mindkettőt tartalmazza | `src/picasapy/app/qml/PicasaPy/PhotoContextMenu.qml:403`, `ViewerContextMenu.qml:208` | Egyezik. Mindkét menüpont megvan a helyi menükben. |
+| Szerkesztő gombsor | Bal panelen nincs Revert gomb (csak `filter_undo`, `0x00567680`) | `src/picasapy/app/qml/PicasaPy/EditorPanel.qml` | Egyezik. Nálunk sincs Revert gomb a bal hasábon. |
+| Gyorsbillentyű | Nincs gyorsbillentyű sem `0x9d9a`-hoz, sem `0x9d2d`-hez | Nincs gyorsbillentyű | Egyezik. |
+| Engedélyezési feltétel (Revert) | Csak lemezre mentett, `.picasaoriginals` másolattal bíró képnél aktív (`0x80`, `0x0056e561`) | `PicasaFileMenu.qml:117`, `PhotoContextMenu.qml:405` (`hasSavedBackup` / `hasBackup`) | Egyezik. Nem mentett szerkesztésnél szürke. |
+| Egy kép megerősítő kérdése | `message1` + `message2` + `message1undo` (`0x0053b666`) | `SaveDialogs.qml:313-337` | Egyezik. A szövegek és gombok megegyeznek. |
+| Több kép megerősítő kérdése | `CThumbUI::FileRevert::messageX` = "Revert to original version of these files?" (`0x00c8a71c`, `0x0053b61a`) | `SaveDialogs.qml:316` `qsTr("Revert to original version of these file(s)?")` | **Eltérés.** Nálunk a szöveg `these file(s)?`, míg az eredetiben `these files?`. Javítandó. |
+| Több kép gombjai (Undo Save) | Több képnél NINCS "Undo Save" gomb és nincs magyarázó sor (`0x0053b6e3`) | `SaveDialogs.qml:269-280`, `329-337` | **Eltérés.** Nálunk több képnél is látható az Undo Save gomb és a hint. Több képnél elrejtendő. |
+| Külsőleg módosított fájlok | Időbélyeg-eltérésnél `changed1`/`changedX` + "Revert Anyway" (`0x0053b87e`) | Nem kezeli | **Eltérés.** Külső szerkesztésnél figyelmeztető ablak hiányzik. Fejlesztési jegy javasolt. |
+| `.picasa.ini` törölt kulcsok | Törli: `filters`, `rotate`, `flipped`, `textactive` (`0x0046d7d0`) | `src/picasapy/edit/save_operations.py:366` csak `filters` és `redo`-t töröl | **Eltérés.** A Revert a fizikai eredetit állítja vissza, így az INI-ben a forgatást és szöveget is törölni kell. |
+| Folyamatjelző szövege | "Reverting Files." (`0x00c8a8d4`, `CThumbUI::FileRevert::progress`) | `SaveProgressPanel.qml:46` `qsTr("Reverting Files.")` | Egyezik. |
+| Lemezhiba / írásvédettség | "Unable to revert all files due to a disk error. The disk may be full or read-only." (`0x00c8a908`) | `SaveDialogs.qml:180` | Egyezik. Bitre azonos fordítás. |
+| Bélyegkép, index, kijelölés | Bélyegkép és megnyitott kép újratöltődik, kijelölés megmarad (`0x0053bc54`) | `save_restore.py`, `save_feedback.py` | Egyezik. |
+
+### 6. Javasolt fejlesztői jegyek
+
+1. **Jegy: Revert megerősítő ablak szövegének és gombjainak paritása több kép kijelölésekor**
+   - **Eredeti:** Az eredeti Picasa 3.9 binárisában (`0x0053b2e0`, `0x0053b61a`, `0x0053b6e3`) több kép kijelölésekor a megerősítő kérdés szövege: `Revert to original version of these files?` (`CThumbUI::FileRevert::messageX`, `0x00c8a71c`), és az "Undo Save" gomb (`0x00c8a864`), valamint a hozzátartozó magyarázó sor (`CThumbUI::FileRevert::message1undo`, `0x00c8a806`) kizárólag egyetlen kép kijelölése esetén jelenik meg; több képnél az "Undo Save" nem érhető el.
+   - **Nálunk:** A `src/picasapy/app/qml/PicasaPy/SaveDialogs.qml:316` sorában a többes számú szöveg `these file(s)?` formátumú, és a `revertUndoSaveButton` valamint `revertUndoSaveHint` több kép esetén is látható.
+   - **Teendő:**
+     1. A `SaveDialogs.qml:316` szövegének javítása: `qsTr("Revert to original version of these files?")`.
+     2. A `revertUndoSaveButton` és `revertUndoSaveHint` láthatóságának feltételhez kötése: `visible: revertConfirmDialog.fileCount === 1`.
+   - **Kész, ha:** 1 kép kijelölésekor a Revert ablak tartalmazza az "Undo Save" gombot és a magyarázatot; 2 vagy több kép kijelölésekor a kérdés pontosan a "Revert to original version of these files?" szöveget mutatja, az "Undo Save" gomb és magyarázat pedig rejtve marad.
+
+2. **Jegy: A Revert művelet során a forgatási és felirat-kulcsok törlése a `.picasa.ini`-ből**
+   - **Eredeti:** A `Picasa3.exe` `0x0046d7d0` eljárása a mentett eredeti visszamásolásakor a `.picasa.ini`-ből a `filters` kulcson kívül törli a `rotate`, `flipped` és `textactive` sorokat is, mivel a visszamásolt fájl a szerkesztés előtti fizikai képet adja vissza.
+   - **Nálunk:** A `src/picasapy/edit/save_operations.py:366` eljárás csak a `filters` és `redo` kulcsokat törli, így a korábbi forgatás és felirat bejegyzése bent marad az ini-ben.
+   - **Teendő:** A `save_operations.py` `revert` függvényében a törlendő kulcsok körét ki kell terjeszteni a `rotate`, `flipped` és `textactive` kulcsokra.
+   - **Kész, ha:** Egy kép forgatása, mentése, majd Revert parancs végrehajtása után a `.picasa.ini`-ben nem marad sem `filters`, sem `rotate`, sem `flipped`, sem `textactive` bejegyzés.
+
