@@ -3232,7 +3232,7 @@ Forrás: `referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp.txt` (privát
 kutatási tár).
 
 - **`0x006b1e80`, kijelölési kapu.** A függvény képszámot nem néz: csak azt
-  vizsgálja, hogy a `this[0x1c]` objektum vfunc `0x24` eredménye nem üres
+  vizsgálja, hogy a `this[0x1c]` objektum `0x24` virtuális metódusának eredménye nem üres
   sztring-e. Üres, egy- és többképes kijelölés megkülönböztetése ebben nincs.
   A tulajdonságablak engedélyezése tehát nem a képkijelöléstől függ; a mai
   mappa-alapú PicasaPy-viselkedés ezzel **összhangban** van.
