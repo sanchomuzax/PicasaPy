@@ -2485,7 +2485,7 @@ egy lépést ad hozzá, balra egyet levon modulo 4 szerint (a 0 balra forgatásb
 | Bélyegkép és rács | `0x005796c0`-n keresztüli frissítés látszik, de a thumbnail-cache és a rácssor pontos végállapota **NINCS MEG**. | A provider a modellértesítés előtt újraregisztrálja a rekordot, majd célzottan frissíti a sort (`photo_ops_write_mixin.py:76-95`). A rácsmodell nem reseteli a listát, megtartja a delegate-eket és görgetést, `dataChanged` jelet küld (`photo_grid_state.py:268-281`). |
 | Mappafa | A forgatás utáni mappafa-hatás **NINCS MEG**. | A kötegelt út mappánként szinkronizálja az indexfát; mappafa-sor vagy kijelölés közvetlen állítását nem találtam. A pontos látható végállapot **NINCS MEG**. |
 | Kijelölés | A közös végrehajtó utáni kijelölés megtartása vagy megváltozása **NINCS MEG**. | A forgató út nem hív kijelölést módosító műveletet; a célzott rácssor frissül. A futásidejű kijelölés végállapota nincs külön mérve. |
-| Visszavonás | A forgatási útban undo-verem írást nem találtam; az ellenkező irányú parancs 90 fokkal visszaforgat. Az `ID_PICTURE_REVERT` (`0x9ca4`) és a `0x005e7d90(0)` külön parancs, annak `rotate=`-ra gyakorolt hatása **NINCS MEG**. | A forgatás nincs a kötegelt undo-veremben (`MainMenuBar.qml:406-408`); az ellenkező irányú művelet visszaállíthatja a korábbi lépést, ha közben nem történt más forgatás. |
+| Visszavonás | A forgatási útban undo-verem írást nem találtam; az ellenkező irányú parancs 90 fokkal visszaforgat. Az `ID_PICTURE_REVERT` (`0x9ca4`) és a `0x005e7d90(0)` külön parancs, annak `rotate=`-ra gyakorolt hatása **NINCS MEG**. ⛔ **Helyesbítve (#7009):** a `0x9ca4` és a `0x005e7d90` a Hide/Unhide; az Undo All Edits `0x9d2d`, kezelője `0x005ef3e0`, és a `rotate=` kulcsot nem törli (lásd a #7009 alszakaszt). | A forgatás nincs a kötegelt undo-veremben (`MainMenuBar.qml:406-408`); az ellenkező irányú művelet visszaállíthatja a korábbi lépést, ha közben nem történt más forgatás. |
 
 ### Hibák és részleges végrehajtás
 
@@ -2531,7 +2531,7 @@ egy lépést ad hozzá, balra egyet levon modulo 4 szerint (a 0 balra forgatásb
 
 ### Új kutatási jegyjavaslatok
 
-- **A Picasa forgatás Undo All Edits és adatbázis-végállapota:** a kérdés az, hogy a `0x9ca4`/`0x005e7d90` eltávolítja-e a `rotate=` értéket, illetve a forgatás után pontosan mely index- és rácsadatok frissülnek. Keresd a `0x005e7d90`, `0x005796c0` és `0x00454770` hívásláncát; zárd le célzott Ghidra-kimenettel vagy kontrollált Picasa-méréssel.
+- **A Picasa forgatás Undo All Edits és adatbázis-végállapota:** a kérdés az, hogy a `0x9ca4`/`0x005e7d90` eltávolítja-e a `rotate=` értéket (helyesbítve a #7009-ben: ez a Hide/Unhide, az Undo All Edits `0x9d2d`/`0x005ef3e0` és nem törli a `rotate=`-t), illetve a forgatás után pontosan mely index- és rácsadatok frissülnek. Keresd a `0x005e7d90`, `0x005796c0` és `0x00454770` hívásláncát; zárd le célzott Ghidra-kimenettel vagy kontrollált Picasa-méréssel.
 
 ### Nyitott kérdések
 
@@ -2539,10 +2539,244 @@ egy lépést ad hozzá, balra egyet levon modulo 4 szerint (a 0 balra forgatásb
   - A meglévő `2026-11-15-6970-colab-decomp.txt` kimenetben a mezők címkézetlenek; az új kérdés az állapotbitek jelentése.
 - Ghidra-kör kell: 0x004edf60 - Azonosítsa a `0x005ee6e0` forgatási ciklusban vizsgált fájltípus-értékeket, és hogy ezek közül melyik jelenti a videót [blokkoló]
   - A már meglévő Ghidra-részlet ismeretlen enumértékeket hagy; az új kérdés az értékek videó/fotó címkézése.
-- Ghidra-kör kell: 0x005e7d90 - Kövesse az `ID_PICTURE_REVERT` (`0x9ca4`) útját, és döntse el, hogy az Undo All Edits törli-e vagy visszaállítja-e a `rotate=` kulcsot; a meglévő diszpécser csak a hívást mutatja [blokkoló].
+- ~~Ghidra-kör kell: 0x005e7d90 - Kövesse az `ID_PICTURE_REVERT` (`0x9ca4`) útját, és döntse el, hogy az Undo All Edits törli-e vagy visszaállítja-e a `rotate=` kulcsot; a meglévő diszpécser csak a hívást mutatja [blokkoló].~~ **LEZÁRVA (#7009):** a `0x005e7d90` a Hide/Unhide kezelője; az Undo All Edits a `0x005ef3e0` és nem törli a `rotate=` kulcsot (a beégetett tokenes kép kivételével, lásd a #7009 nyitott kérdéseit).
 - NINCS MEG: eredeti `.picasa.ini` írásmegtagadás felhasználói visszajelzése. Konkrét út: kontrollált Picasa 3.9 mérés ugyanazon mappában, előbb írható, majd mappaszinten írásvédett `.picasa.ini`-vel; rögzítsd a képernyőn megjelenő üzenetet, az ini-t és a visszatérő rácsállapotot. A mérőadat-archívum releváns névszűrése nem adott találatot, ezért nem állítok méréseredményt.
 - NINCS MEG: az eredeti index, bélyegkép, mappafa és kijelölés pontos művelet utáni állapota. Konkrét út: célzott, előtte/utána kontrollált Picasa 3.9 mérés és a releváns fájlok/DB-k tételes összevetése.
 
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7000 alszakasz.
+
+
+## #7009: Az Összes szerkesztés visszavonása (Undo All Edits, `0x9d2d`) teljes folyamata az eredeti Picasával összevetve
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Az eredeti oldal bináris címei és a PicasaPy forrássorok külön szerepelnek; a
+PicasaPy oldalt a mostani forrásból olvastam, nem a korábbi specekből.
+
+### Következtetés
+
+1. **A parancs és a kezelő.** Az Undo All Edits parancskódja `0x9d2d`
+   (`ID_PICTURE_REVERT`), a diszpécser (`0x005cb990`) `0x005cbd78` ága közvetlenül a
+   `0x005ef3e0` kezelőt hívja. ⛔ **Helyesbítés a #7000-hez:** a #7000 kiinduló
+   címei közül a `0x005e7d90` a Hide/Unhide kezelője (`0x9ca5` ír, `0x9ca4` töröl
+   `hidden` kulcsot; diszpécser `0x005cbd52`/`0x005cbd5f`), a `0x9ca4` tehát
+   `ID_PICTURE_UNHIDE`, nem `ID_PICTURE_REVERT`. A #7000 három nyitott kérdése
+   ebből a téves azonosításból indult.
+2. **A `rotate=` kulcsot az Undo All Edits NEM törli.** A kezelő egy képre
+   négy ini-törlést végez (crop, flipped, filters és redo, text és textactive),
+   a `rotate` visszaállítása (`0x00462790` -> `0x0042c980`) csak a Save és Revert jellegű
+   függvényekben fut (`0x0046d7d0`, `0x00467ca0`, `0x004613c0`: ezek ugyanazt a négy
+   törlőt hívják, és utána a forgatást is alaphelyzetbe teszik), az Undo All Edits
+   közvetlen láncából (`0x005ef3e0`, `0x005ef520`, `0x005ef6b0`, a négy törlő) nem. A
+   forgatás tehát tartósan megmarad, és a csak elforgatott kép nem teszi aktívvá a
+   parancsot (az állapotbájt `2`, a menü szürke). Egyetlen kivétel lehet: a vörösszem,
+   retusálás vagy Picnik tokenes kép, ahol a kezelő előbb a `0x0046d7d0`-t hívja
+   Undo-Save módban (lásd lent, nyitott).
+3. **A törölt kulcsok** a `.picasa.ini` kép-szakaszából: `crop` (`crop=rect64(...)`),
+   `flipped`, `filters`, `redo`, `text`, `textactive`; az írások `backuphash`-t
+   frissítenek (a job-254 mérés is ezt mutatja). A `crop64` a `filters=` láncon belül lakik, ezért a lánccal együtt
+   törlődik. A `.picasaoriginals` visszamásolása csak a három "beégetett" token
+   (`redeye`, `retouch`, `picnik`) esetén jön szóba.
+4. **Nem visszavonható:** a `redo` kulcs és a szerkesztési lánc is törlődik, az
+   útban nincs undo-verem írás. A PicasaPy ennél többet ad (`Undo Batch Edit`), ez
+   PicasaPy-saját kiegészítés.
+5. **Eltérések a PicasaPy-hoz képest:** (a) a PicasaPy csak a `filters` és a `crop`
+   kulcsot törli, a `flipped`, `text`, `textactive`, `redo` kulcsot nem; (b) a
+   szürkítés a PicasaPy-ban más szabály szerint megy (a Kép menü bármilyen
+   kijelölésnél él, a helyi menü csak a jobbklikkelt sor `filters` láncát nézi, a
+   `flipped` kép nem számít szerkesztettnek). Mindkettőre jegytörzs lent.
+
+### Bizonyítottsági fok
+
+**Erős** (statikus, két független út) a hívási láncra, a törölt kulcskészletre, az
+engedélyezési képletre és arra, hogy a `rotate` nem tartozik a közvetlen
+készletbe. **Feltételes** a beégetett tokenek útja, a nézőből (OneUp) indított
+parancs ága és a `0x8000` állapotbit jelentése. **Futásidejű mérés** csak a korábbi
+job-254 (#5836) van: könyvtári Kép menü, egy kijelölt kép, a többes szöveg, az
+ablakcím `Confirm`, a gombok `Remove Edits` és `No`, az ini-ben a `filters=`
+eltűnik és `backuphash=` jelenik meg.
+
+### Hívási lánc és állapotgép
+
+| Lépés | Eredeti (bináris cím) |
+|---|---|
+| Parancs | `0x9d2d`; menürekord a `0x00559150` építőben: `mov word [0x00d6e4de], 0x9d2d` a `0x0055b86d` címen (rekordbázis `0x00d6e4d4`, felirat `Undo &All Edits`); OneUp helyi menü: `mov word [0x00d6ec12], 0x9d2d` a `0x0073298a` címen. |
+| Diszpécser | `0x005cbd78`: `mov eax, ebx; call 0x005ef3e0` (engedélyezést a diszpécser ág nem vizsgál, azt a menüállapot adja). |
+| Kezelő | `0x005ef3e0`. Szerkesztői ág, ha `editpanel/preview` létezik és a `+0x20c` bájtja nulla (ugyanez a feltétel adja az engedélyező kód `[esp+0x13]` jelzőjét, `0x0056e240-0x0056e265`); minden más esetben a könyvtári ág (`0x005ef4fe` -> `0x005ef520`). |
+| Szerkesztői ág | Megerősítés: ha a `[ctrl+0x3094]` számláló nem nulla (feltételesen: film van a szerkesztőben), `Remove all movie edits?` (`CThumbUI::UndomovieEdits`), különben `IDS_CONFIRMREVERT` (erőforrás-azonosító `0x95`, egy kép szövege), gomb `Remove Edits`. Igen esetén: `0x005f8d80(ctrl,0,0,0)` (a szerkesztési mód lezárása), `0x005ef6b0` az aktuális képre (`[ctrl+0xe64]`), `0x00579910(ctrl,kép,2)` (előnézet és szűrőlánc-felület újraépítése), `0x005683a0` (feltételesen: újra belépés a szerkesztőbe), `0x005f8160` (`editpanel/tab1`). |
+| Könyvtári ág | `0x005ef520`: a kijelölés-forrás a `[ctrl+0xea4]` nézet, ha van kijelölése, különben `[ctrl+0xeac]` (a két mutató azonosítása nincs bizonyítva); üres kijelölésnél csendben `3`-mal visszatér, nincs üzenet. Megerősítés mindig a többes szöveggel: `IDS_CONFIRMREVERT_MULTIPLE` (azonosító `0xdc`), gomb `Remove Edits`, a szöveg egy kijelölt képnél is a többes ("ALL of the selected pictures"). Nem: `0x9bac20` -> kilépés `-1`-gyel. Igen esetén képenként: ha `0x00562250(kép) != 0` (az állapotbájt nem nulla) vagy a `CThumbDB` `+0xe4` metódusa (`0x00429530`) igaz, a `0x005ef6b0` fut, különben a kép kimarad. A ciklus végén `0x00476a60` (a `]edited` állapotjelző bájtok újraszámítása), ha volt feldolgozott kép: `0x0065b840` és `0x005796c0(ctrl, azonosítók, 2, 0)` (a bélyegképek frissítése, `Updating thumbnails...` folyamatjelző, a `peoplepanel/update`). |
+| Képenkénti törlés | `0x005ef6b0`: (1) ha a kép `filters` listájában van `redeye`, `retouch` vagy `picnik` nevű szűrő (`0x0045f320`, nevek: `0x005ef6e1`, `0x005ef717`, `0x005ef74d`), a `0x005f3e10` a `0x0046d7d0(db,{kép},1,0)`-t hívja (`Undo-Save` mód, feltételes elnevezés; folyamatjelző nélkül), majd `0x00477210`, és újraellenőriz; (2) `0x0042bb50` (`crop` kulcs törlése: `0x00454770(db,kép,"crop",0,1)`); `0x0042d7e0(db,kép,0)` (`flipped` üres értékkel); `0x00460e20` (`filters` és `redo`: `0x0069f710` -> `0x00454770`); `0x004615b0` (üres szöveggel: `text` és `textactive` törlése). A törlők a `0x00454770` írót a `backuphash`-t frissítő utolsó paraméterrel hívják (`1`). |
+| Menüállapot gyorsítótára | A kezelők a `[ctrl+0x34a8]`-t `-1`-re állítják (`0x005ef4fe`, `0x0057998a`), ez érvényteleníti a menüállapot gyorsítótárát; a következő menünyitáskor `0x005cb1a0` újraszámol. |
+
+### Belépési pontok és engedélyezés
+
+Az engedélyezést a `0x0056e1c0` menüfrissítő végzi (`0x0056f393-0x0056f402`), a bemenet a
+`0x005cb1a0` állapotszó (`[ctrl+0x34a8]`). A szerkesztettségi állapotjelző bájtot a
+`0x004296a0` (`CThumbDB` `+0xe0`) számolja: `1`, ha a `filters` nem üres (`0x00461430`)
+vagy a `+0xe4` metódus igaz (`0x00429530`: `0x0042af00`, `0x00429dc0` és a film-szerkesztés
+objektum); `2`, ha a `rotate(n)` értéke `n mod 4 != 0` (`0x0042c830`) és az előzők közül
+egyik sem igaz; `1`, ha a `flipped(n)` értéke pozitív (`0x0042d6c0`); különben `0`. A
+`0x005cb1a0` a kijelölés SORRENDJÉBEN az ELSŐ nem nulla állapotú képnél megáll: `0x20`
+bit mindig, `0x40` bit, ha az az első szerkesztett kép állapota `2`. Az Undo All Edits
+akkor él, ha nincs `0x4000` állapotbit, `[ctrl+0x34a4] == 0`, nincs `0x8000` bit, és
+(szerkesztői ág: az aktuális kép állapota pontosan `1`) vagy (`0x20` bit van és `0x40`
+nincs). A szürke tétel a menüben is látszik, nem tűnik el (a #3448 képernyőképen a
+mappanézeti helyi menüben `Undo all Edits` szürke).
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Kép menü, `Undo &All Edits`** (`0x00559150`, rekord `0x00d6e4d4`, `0x0055b86d`). Szürke, ha a kijelölésben nincs szerkesztett kép, vagy az első szerkesztett kép csak elforgatott (`0x40`). | `PicasaPictureMenu.qml:120-125`: `enabled: bar.photoActionsEnabled`, ami `MainMenuBar.qml:84` szerint pusztán `photoActionRows().length > 0`; a kötés `MainMenuBar.qml:437-438` (`openForLibrary`). | Eltérés: a tétel minden kijelölésnél él, szerkesztetlen vagy csak elforgatott képnél is. 2. jegytörzs. |
+| **Bélyegkép helyi menü, mappanézet** (`0x00730790`, felirat `U&ndo all Edits`, `FolderPhoto::ID_PICTURE_REVERT`). | `PhotoContextMenu.qml:304-311`: `enabled: menu.hasEdits`; a `hasEdits` a jobbklikkelt sorból jön (`MainPhotoContextMenu.qml:49-53`), definíciója `model_helpers.py:40-45` (`filters` nem üres); kötés `MainPhotoContextMenu.qml:58-60`. | Eltérés: az eredeti az egész kijelölést nézi (első szerkesztett kép dönt), a PicasaPy csak a jobbklikkelt sort; a `flipped` kép nálunk nem szerkesztett. 2. jegytörzs. |
+| **Album-nézet helyi menü** (`0x00731050`, felirat `Undo all &Edits`, `AlbumPhoto::ID_PICTURE_REVERT`). | Ugyanaz a `PhotoContextMenu.qml`; a felirat kisbetűs `all` alakja a #5195 szerint. | Mint fent. |
+| **Néző és szerkesztő helyi menü** (OneUp, `0x007327a0`, felirat `U&ndo all Edits`, rekord `0x00d6ec12`). | `ViewerContextMenu.qml:164-171`: `enabled: menu.hasEdits`; `PhotoViewerContextActions.qml:94-96,105`; kötés `MainWindowWorkspace.qml:91-93` (`openFor([row])`, egyes szám szöveg). | Az engedélyezés az aktuális kép `filters` láncát nézi, az eredeti az aktuális kép állapotjelző bájtját (`1` kell): a `flipped`-only kép eltér. A megerősítő szöveg (egyes vagy többes) a nézőből indítva nincs eldöntve (lásd nyitott). |
+| **Képtálca helyi menü** (`0x00732ee0`): a menüépítő sztringjei között nincs Undo All Edits. | `TrayContextMenu.qml`: nincs ilyen tétel. | Egyezik. |
+| **Gyorsbillentyű:** nincs (a #6967 az `RT_ACCELERATOR` és a `SHORTCUTS.XML` átnézéséből). | `MainKeyboardShortcuts.qml`: nincs. | Egyezik. |
+| **Szerkesztő bal panel:** nincs Undo All Edits gomb (a szűrőlánc `undolabel` gombja más parancs). A **film-szerkesztő** `movieeditpanel/reset_trim` gombja a `0x005ef3e0`-t hívja (`0x00595744`, a hívó `0x005952d0`, annak hívója `0x005de8e0`), `Remove all movie edits?` szöveggel. | Szerkesztő bal panel: nincs ilyen gomb. A film-szerkesztő gombját ez a kör nem mérte. | Panel: egyezik. Film-gomb: nem mérve (nem ez a kör tárgya, kutatási jegyjavaslat lent). |
+
+**Videó, szerkesztetlen és vegyes kijelölés** (a fenti képletből): szerkesztetlen kép
+(állapot `0`) szürke; csak elforgatott kép (`2`) szürke; videóra külön típusszűrő a
+képletben nincs, a film-szerkesztések az `+0xe4` metóduson át számítanak szerkesztettnek
+(a metódus pontos tartalma nyitott). Vegyes kijelölésnél az első nem nulla állapotú kép
+dönt: ha az elforgatott-only (`2`), a tétel szürke akkor is, ha egy későbbi kép
+valódi szűrőláncot hordoz; ha az első szerkesztett kép `1`, a tétel él, és a végrehajtás
+minden olyan képre lefut, amelynek állapotjelző bájtja nem nulla (az elforgatott-only kép is
+belefér a ciklusba, de neki nincs törölhető kulcsa).
+
+### Megerősítés, ablak és megjegyzett beállítás
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| Könyvtári ág (Kép menü, helyi menük): ablakcím `Confirm`, szöveg `IDS_CONFIRMREVERT_MULTIPLE` egy kijelölt képnél is, gombok `Remove Edits` (fókusz) és `No`, nincs "ne kérdezd újra" jelölő (`0x005ef520`, `0x005ef5b2-0x005ef5f6`; mérés: job-254). | `MainDialogs.qml:290-352`; `openForLibrary` (`:318`) a többes szöveget adja (`:326`). Kötés: Kép menü `MainMenuBar.qml:437`, helyi menü `MainPhotoContextMenu.qml:59`. | Egyezik. |
+| Szerkesztői ág: egy kép szövege `IDS_CONFIRMREVERT` (`0x005ef43b-0x005ef445`), film esetén `Remove all movie edits?`. | A Kép menü a nézőből is `openForLibrary`-t hív (`MainMenuBar.qml:437`, `photoActionRows()` a néző sorát adja, `MainLibrarySelectionState.qml:70-77`), tehát a többes szöveg jön; a néző saját helyi menüje `openFor([row])` (`MainWindowWorkspace.qml:91-93`), egyes szám. | Eltérés a szerkesztő megnyitott állapotában a Kép menüből: eredeti egyes szám, nálunk többes. A nézőből (OneUp) induló ág feltétele nyitott, ezért jegy csak a szerkesztő ágra szólhat. Lásd a nyitottakat. |
+| A `0x005f8d80(ctrl,0,0,0)` a szerkesztői ágban lezárja a szerkesztési módot; ugyanez a függvény `Apply changes to the current image?` kérdést tehet fel (`IDS_ENDEDITMODALITY_*`, `0x005f8e07-0x005f8f93`), ha függő módosítás van. Hogy ez az Undo All Edits után megjelenik-e, nincs eldöntve. | Nincs ilyen második kérdés. | Nyitott (lásd lent). |
+| `IDS_CONFIRM_REDEYE_REVERT` (`0x119`): a binárisban nincs közvetlen betöltő hívás ezzel az azonosítóval (a `0x009ae710` betöltő 150 hívásából egyiknek sem ez az azonosítója; kontroll: a `0x95` és a `0xdc` pontosan a `0x005ef3e0` és `0x005ef520` kezelőben talált). Az Undo All Edits kezelői nem használják. | `MainDialogs.qml:331-345`: a vörösszemes képeknél kiegészítő figyelmeztetés (`redeyeNamesInSelection`, `batch_effect_controller.py:309-336`). | Nincs bináris bizonyíték a figyelmeztetés helyére és feltételére; nem javaslok jegyet, a döntés a vörösszem-kérdés Ghidra-körére vár. |
+| Megjegyzett beállítás: az Undo All Edits kezelők nem olvasnak és nem írnak `Preferences` kulcsot (a `DoNotAskOnEndEditModality` a `0x005f8d80`-ban van). | Nincs megjegyzett beállítás. | Egyezik. |
+
+### Hatás a fájlokra, indexre és felületre
+
+| Hatás | Eredeti Picasa 3.9 | Jelenlegi PicasaPy | Teendő |
+|---|---|---|---|
+| `.picasa.ini` kulcsok | Képenként törli: `crop` (`0x0042bb50`), `flipped` (`0x0042d7e0`, üres érték), `filters` és `redo` (`0x00460e20`), `text` és `textactive` (`0x004615b0`); a `rotate` kulcsot nem érinti. A `0x0046d7d0` fájlszintű Revert pontosan ugyanezt a négy hívást tartalmazza (`0x0046e20f-0x0046e233`), de utána még a `rotate`-et is alaphelyzetbe teszi (`0x00462790`, `0x0042c980(db,kép,-1,1)`); a két lánc különbsége a `rotate`. | `_clear_all_effects` (`batch_effect_controller.py:150-159`): csak `filters` és `crop`; majd `backuphash` (`:411`). | 1. jegytörzs: `flipped`, `text`, `textactive`, `redo` törlése; a `rotate` marad. |
+| `backuphash` | A `0x00454770` minden ini-írás után frissíti (utolsó paraméter `1`); mérés: job-254, `backuphash=37968`, más kulcs nincs. | `with_backuphash` (`batch_effect_controller.py:411`). | Egyezik. |
+| `.picasaoriginals` és a képfájl | Közvetlenül nem nyúl hozzá. Kivétel: a `redeye`, `retouch`, `picnik` szűrőt tartalmazó képnél a `0x005f3e10` a `0x0046d7d0(db,{kép},1,0)`-t hívja (Undo-Save mód: a `0x0053b2e0` párbeszéd `1`-es eredménye, feltehetően az `Undo Save` gomb, ugyanezt a harmadik paramétert állítja, `0x0053b840-0x0053b84d`). A fájl visszamásolása ebben a módban nyitott. A kép egyébként nem íródik. | Nem nyúl a `.picasaoriginals`-hoz és a képfájlhoz; a vörösszem nálunk szűrőlánc-elem, nem beégetett. | Nyitott (Ghidra), jegy nincs. |
+| SQLite index | A kezelők nem írnak SQL-t; az `]edited` állapotjelző bájtok a memóriabeli gyorsítótárban számolódnak újra (`0x00476a60`). A perzisztens adatbázis-mezőre ez a kör nem talált írást. | Mappánként `_sync_tree_locked` (`batch_effect_controller.py:427`). | Nem mérve: az eredeti perzisztens indexe. |
+| Bélyegkép | A `0x005796c0(ctrl, azonosítók, 2, 0)` a feldolgozott kijelölés minden képére frissít (`0x00579360`), `Updating thumbnails...` folyamatjelzővel, és a `peoplepanel/update` is lefut. | A bélyegkép-URL szerkesztés-érzékeny (`_thumb_url`), a nézet a végén újratöltődik. | Nem mérve. |
+| Rács | A kezelők a rácsot nem építik újra; csak a menüállapot gyorsítótára kap `-1`-et. | `_on_batch_edit_work_done` -> `_refresh_view()` (`batch_effect_controller.py:454-458`), ami változott tartalomnál `beginResetModel`-t hív (`photo_grid_state.py:207`). A forgatás célzott `dataChanged`-et használ (#7000), az Undo All Edits teljes resetet. | Nem mérve; lásd 2. pont a nyitottak között. |
+| Kijelölés | A kezelők nem írnak kijelölést (csak a `[ctrl+0x34a8]` cache-t). | A kijelölés sorindex alapú, a teljes reset utáni megmaradása nincs mérve. | Nem mérve. |
+| Visszavonhatóság | Nem vonható vissza: a `redo` is törlődik, undo-verem írás nincs a láncban. | `undoBatchEdit` visszaadja a `filters` és `crop` értéket (`batch_effect_controller.py:470-532`, `PicasaEditMenu.qml:33-37`), az eredetinek nincs `Edit` menüs Undo-ja (`eMenuEdit::ID_UNDO` literál nincs a binárisban, #1795). | PicasaPy-saját kiegészítés, nem hiba; a `redo` törlése (1. jegytörzs) beleütközik az undo-ba, ezért az undo-nak is hordoznia kell az újonnan törölt kulcsokat. |
+
+### Hibák és részleges végrehajtás
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Az ini-író (`0x00454770`) hibakódot ad, de a törlő függvények a visszatérést eldobják (`0x0042bb50` mindig `0`-val tér vissza), a könyvtári ciklus (`0x005ef650-0x005ef659`) is eldobja a `0x005ef6b0` eredményét; az Undo All Edits láncban nincs hibaüzenet-sztring. Statikusan tehát néma. Futásidejű mérés nincs. | A `_WRITE_ERRORS` hibánál `photoOpFailed` jelzés megy, és a hátralévő mappák kimaradnak (`batch_effect_controller.py:416-419`). | Nem javaslok jegyet: a PicasaPy jelzése hasznosabb, mint az eredeti statikus hallgatása. Futásidejű mérés kell (lásd NINCS MEG). |
+| Több kép: a ciklus sorban dolgozik, nincs visszagörgetés, nincs megszakítás; a `0x005ef6b0` korai kilépése (a beégetett token fájlvisszaállítási hibájánál) a kép hátralévő kulcsait kihagyja, de a ciklus a következő képpel folytatja. | Mappánként egy ini-tranzakció (`update_document(..., backup=True)`), megszakítható (`cancelBatchEdit`); hiba esetén a már megírt mappák megmaradnak. | A szemcsézettség (kép, illetve mappa) a felhasználónak nem látszik; nem eltérés-jegy. |
+
+### Két független út és cáfoló kísérlet
+
+- **A út, utasításszintű olvasás:** `0x005cbd78` -> `0x005ef3e0`/`0x005ef520` ->
+  `0x005ef6b0` -> `0x0042bb50`, `0x0042d7e0`, `0x00460e20`, `0x004615b0` -> `0x00454770`;
+  az engedélyezés `0x0056f393-0x0056f402`, `0x005cb1a0`, `0x004296a0`. A munkaszkriptek a
+  `.kutato/` mappában vannak (`dis_*.txt` kimenetek, `cfg_flag.py`, `idsrcall2.py`).
+- **B út, független szerkezeti és mérési ellenőrzés:** (1) a hívási-gráf tábla (`xrefs`)
+  szerint a fájlszintű Revert (`0x0046d7d0`), amelynek `filters`, `rotate`, `flipped`,
+  `textactive` törlését a #6967 már igazolta, pontosan ugyanazt a négy törlőt hívja,
+  mint az Undo All Edits (`0x005ef6b0`), de utána még a `rotate`-et is alaphelyzetbe
+  teszi (`0x00462790` -> `0x0042c980(db,kép,-1,1)`, `0x0046e243-0x0046e252`), az Undo All
+  Edits viszont nem; (2) az
+  erőforrás-azonosítók független bájtkeresése (`idsrcall.py`) a `0x95` és a `0xdc`
+  azonosítót kizárólag a `0x005ef3e0` és `0x005ef520` kezelőben találja; (3) a job-254
+  mérés (`filters=` eltűnik, `backuphash=` megjelenik, többes szöveg egy képnél).
+- **Egyezés:** az A és a B út egyezik a törölt készletben és abban, hogy a `rotate`
+  nem tartozik hozzá.
+- **Cáfoló kísérlet:** megpróbáltam cáfolni, hogy a `rotate` kimarad. Végigjártam a
+  `0x005ef3e0`, `0x005ef520`, `0x005ef6b0` és a négy törlő hívottjait és sztringjeit: a
+  `rotate`, `rotate(%d)` sztring és a `0x0042c980`/`0x00462790` hívás egyikben sem
+  szerepel (a `0x0042c980` hívói az indexben: `0x00425f60`, `0x004613c0`, `0x00462790`,
+  `0x00467ca0`, `0x0046d7d0`, `0x0053fe30`, `0x005ee6e0`, `0x006abae0`, `0x006b39b0`,
+  `0x00752ae0`; egyik sem az Undo All Edits lánca); az állapotbájt is `2`-t ad az elforgatott képnek, ami a `0x40` bittel
+  szürkíti a parancsot (ez csak azért következetes, mert a parancs nem törölné a
+  forgatást). A beégetett tokenes ágat ez nem zárja ki, ezért nyitott. A másik
+  kísérlet: a kiinduló `0x005e7d90`-et vizsgáltam Undo All Edits kezelőként; a
+  diszpécser-ágak és a #6989 szerinti `hidden` kulcs ezt cáfolták.
+
+### A jegy "Kész, ha" pontjai
+
+1. ✅ **Belépési pontok:** Kép menü, mappa- és albumnézeti helyi menü, néző és szerkesztő
+   helyi menü, tálca (nincs), gyorsbillentyű (nincs), film-szerkesztő gomb: fel van
+   sorolva, külön sorban.
+2. ✅ **Törölt kulcsok:** `crop`, `flipped`, `filters`, `redo`, `text`, `textactive`
+   (+ `backuphash`); a `rotate` marad (a beégetett tokenes kép kivételével, ott nyitott).
+3. ✅ **Szürkítés:** az állapotbájt és a `0x20`/`0x40`/`0x8000`/`0x4000` képlet
+   kimondva; videó és vegyes kijelölés a képletből kezelve (film-szerkesztés tartalma
+   nyitott).
+4. ⛔ **Index, bélyegkép, rács, kijelölés:** a memóriabeli gyorsítótár és a bélyegkép-frissítés
+   statikusan megvan, a perzisztens index és a látható végállapot futásidejű mérése
+   nincs meg.
+5. ⛔ **Hibák:** statikusan néma; futásidejű mérés nincs.
+6. ⛔ **Beégetett tokenes kép:** a `.picasaoriginals` visszaállítása Undo All Edits
+   alatt nincs eldöntve.
+
+### Javasolt fejlesztői jegytörzsek
+
+#### 1. Az Undo All Edits törölje a `flipped`, `text`, `textactive` és `redo` kulcsot is
+
+**Eredeti:** A Picasa 3.9 Undo All Edits képenkénti törlője (`0x005ef6b0`, hívási helyek
+`0x005ef8e8-0x005ef90c`) a `crop` (`0x0042bb50`), `flipped` (`0x0042d7e0`), `filters` és
+`redo` (`0x00460e20`), valamint `text` és `textactive` (`0x004615b0`) kulcsot törli a
+`.picasa.ini` kép-szakaszából; a `rotate` kulcsot nem.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x005ef6b0`: `crop`, `flipped`, `filters`, `redo`, `text`, `textactive` törlése, `rotate` érintetlen. | `batch_effect_controller.py:150-159` (`_clear_all_effects`): csak `filters` és `crop`; `:411` `with_backuphash`. | A `_clear_all_effects` törölje a `flipped`, `text`, `textactive`, `redo` kulcsot is; a `rotate` maradjon. |
+| A törlés visszavonhatatlan (a `redo` is törlődik). | `batch_effect_controller.py:366-432`, `:470-532`: az undo-verem csak a `filters` és `crop` előző értékét őrzi. | Az undo-verem négyeséből (mappa, név, filters, crop) a törölt kulcsokat is hordozó bejegyzés legyen, hogy a `Undo Batch Edit` ne veszítsen adatot. |
+
+**Kész, ha:** egy olyan képen, amelyen `filters`, `crop`, `flipped`, `text`, `textactive`,
+`redo` és `rotate` is van, az Undo All Edits után csak a `rotate` marad a szakaszban
+(és a `backuphash` frissül); az `Undo Batch Edit` az összes törölt kulcsot visszaírja;
+valódi `.picasa.ini` körbejárás-teszt, rontás-kontrollal (a `flipped` kihagyása
+elbuktatja).
+
+#### 2. Az Undo All Edits szürkítése kövesse az eredeti szerkesztettségi állapotot
+
+**Eredeti:** A `0x004296a0` állapotbájt (`filters` nem üres, `crop`/film-szerkesztés: `1`;
+`rotate(n)`, `n mod 4 != 0`: `2`; `flipped > 0`: `1`; különben `0`), a `0x005cb1a0` a
+kijelölés sorrendjében az első nem nulla állapotú képnél megáll (`0x20`, ha `2` volt:
+`0x40`), és a `0x0056f393-0x0056f402` képlet szerint a tétel csak akkor él, ha van `0x20`
+és nincs `0x40` bit.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| Kép menü: szürke, ha nincs szerkesztett kép a kijelölésben, vagy az első szerkesztett kép csak elforgatott (`0x0056f3bf-0x0056f402`). | `PicasaPictureMenu.qml:123`, `MainMenuBar.qml:84`: a tétel minden kijelölésnél él. | A Kép menü tétele a kijelölés szerkesztettségi állapotából engedélyeződjön (lásd lent). |
+| Helyi menük: a kijelölés állapota dönt. | `MainPhotoContextMenu.qml:49-53`: a jobbklikkelt sor; `model_helpers.py:40-45`: csak a `filters` számít, a `flipped` nem. | Az állapotfüggvény: nem üres `filters` -> szerkesztett; `rotate mod 4 != 0` és nincs más szerkesztés -> csak elforgatott; pozitív `flipped` -> szerkesztett (a `rotate` mögött); a kijelölés sorrendjében az első nem nulla állapot dönt. Az ismeretlen `+0xe4` tagot (`0x0042af00` tömb, film-szerkesztés) ez a jegy kihagyja. |
+
+**Kész, ha:** szerkesztetlen kép, csak elforgatott kép és csak `flipped` kép mindhárom
+menüben (Kép menü, helyi menük, néző) az eredeti képlet szerint szürke, szürke, illetve
+élő; két képnél, ahol az első csak elforgatott, a második szűrőláncos, a tétel
+szürke; ahol az első szűrőláncos, élő; valódi menü-kattintásos teszt (a tétel `enabled`
+állapotát olvassa, nem csak a függvényt hívja).
+
+### Új kutatási jegyjavaslatok
+
+- **A beégetett tokenes Undo All Edits:** a `redeye`, `retouch`, `picnik` szűrőt hordozó kép Undo All Edits-e a `0x0046d7d0`-t Undo-Save módban hívja; a kérdés a fájl és a `rotate`/`filters` kulcsok végállapota. Eszköz: Ghidra a `0x0046d7d0` `0x0046da92` (`bl` flag) utáni ágára, vagy Colab-mérés (Picasa: vörösszem javítás, Save, Undo All Edits, a fájl SHA-256-ja és az ini előtte/utána).
+- **Film-szerkesztések az Undo All Edits-ben:** mely kulcsokat számolja szerkesztettnek a `0x00429530`, és törlődnek-e a könyvtári Undo All Edits-tel; a film-szerkesztő `reset_trim` gombjának összevetése.
+- **A nézőből (OneUp) induló parancs ága és a szerkesztői ág második kérdése:** `editpanel/preview` `+0x20c` jelentése, `0x005f8d80` megerősítés, `0x8000` bit.
+
+### Nyitott kérdések
+
+- Ghidra-kör kell: 0x0046d7d0 - Mit csinál az Undo-Save mód (3. paraméter `1`, folyamatjelző nélkül): visszamásolja-e a `.picasaoriginals` tartalmát, és érinti-e a `rotate`, `filters`, `crop` kulcsokat, amikor a `0x005f3e10` a `redeye`, `retouch`, `picnik` tokenre hívja [blokkoló]
+- Ghidra-kör kell: 0x009c2fc0 - Az `editpanel/preview` elem `+0x20c` bájtjának jelentése, és a teljes képernyős néző (OneUp) alatt mi az értéke; melyik ág (szerkesztői egyes szám vagy könyvtári többes szám) fut a nézőből indított Undo All Edits-nél [blokkoló]
+- Ghidra-kör kell: 0x005f8d80 - A `(0,0,0)` paraméterű hívás az Undo All Edits szerkesztői ágában megjeleníti-e az `Apply changes to the current image?` megerősítést (`0x005f8e07-0x005f8f93` feltételei) [nem blokkoló]
+- Ghidra-kör kell: 0x005cb1a0 - A `0x8000` állapotbit: a `ctrl+0x668` és `ctrl+0x99c` atomikusan módosított számlálók jelentése (`0x005cb93f-0x005cb961`, `InterlockedCompareExchange`), és mikor szürkíti az Undo All Edits-et a szerkesztőben [nem blokkoló]
+- Ghidra-kör kell: 0x00429530 - A `CThumbDB` `+0xe4` metódus (`0x0042af00`, `0x00429dc0`, film-szerkesztés objektum) mely ini-kulcsokból áll, és a film-szerkesztések törlődnek-e a könyvtári Undo All Edits-tel [nem blokkoló]
+- Ghidra-kör kell: 0x005ef520 - Hol használja az eredeti az `IDS_CONFIRM_REDEYE_REVERT` (`0x119`) szöveget: a `0x009ae710` betöltő 150 hívásából egyik sem kapja ezt az azonosítót, tehát más úton töltődik be [nem blokkoló]
+- `NINCS MEG`: az Undo All Edits futásidejű végállapota (ini, fájl SHA-256, bélyegkép, rács, kijelölés, `-1` cache után a menü). Megszerzés: Colab-feladat `colab_felmero.py` szerint, Picasa 3.9: szerkesztett (filters, crop, flipped, text, elforgatott) képek, majd Kép menü, Undo All Edits, `Remove Edits`; előtte/utána az ini, a fájl kivonata és képernyőkép; külön futás csak elforgatott képpel (a tétel szürke-e) és vegyes kijelöléssel.
+- `NINCS MEG`: írásvédett `.picasa.ini` vagy lemezhiba alatti viselkedés. Megszerzés: ugyanez a Colab-futás mappaszinten írásvédett ini-vel; rögzítendő a megjelenő üzenet és az ini.
+
+**Nyitott kérdések: 0 nyílt · 8 lezárva (parancs-azonosítás, törölt kulcskészlet, `rotate` kimarad, engedélyezési képlet, hívási lánc, megerősítő szövegek, visszavonhatatlanság, hibakezelés statikusan) · 8 blokkolt (6 Ghidra, 2 `NINCS MEG` Colab) · 0 hatókörön kívül · 0 csak nyitva.**
+
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md` - ez a #7009 alszakasz, és három helyesbítő megjegyzés a #7000 alszakaszban.
