@@ -1803,7 +1803,7 @@ A közös `FUN_005e6a20` eljárás futásidejű viselkedése:
 | Funkció / Elem | Eredeti Picasa (bináris cím) | PicasaPy (fájl:sor) | Eltérés / Teendő |
 |---|---|---|---|
 | Save As főmenü belépő | Fájl ▸ Save &As... (`0x00559150`, rekord: `0x00d6da68`, `0x9d9b`) | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:128` | Egyezik. Paritásban van. |
-| Save a Copy főmenü belépő | Fájl ▸ Save a Cop&y (`0x00559150`, rekord: `0x00d6da90`, `0x9dca`) | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:134` | Egyezik. Paritásban van. |
+| Save a Copy főmenü belépő | Fájl ▸ „Save a Copy” (`0x00559150`, rekord: `0x00d6da90`, `0x9dca`) | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:134` | Egyezik. Paritásban van. |
 | Helyi menük | Nem szerepel a helyi menükben (`0x00730790`, `0x00731050`, `0x007327a0`) | `PhotoContextMenu.qml`, `ViewerContextMenu.qml` nem tartalmazza | Egyezik. |
 | Szerkesztő panel gombjai | Bal panelen nincs Save As / Save a Copy gomb (`0x00567680`) | `EditorPanel.qml` nem tartalmazza | Egyezik. |
 | Gyorsbillentyűk | Nincs gyorsbillentyű rendelve | Nincs gyorsbillentyű | Egyezik. |
