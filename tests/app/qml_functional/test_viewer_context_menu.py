@@ -224,6 +224,11 @@ class TestSaveCommandsInTheViewer:
         menu.setProperty("hasEdits", True)
         qt_app.processEvents()
         assert _child(window, "viewerMenuSave").property("enabled") is True
+        # #7017: az Undo all Edits nem a `hasEdits`-ből él, hanem az eredeti
+        # szerkesztettségi állapotból (`canUndoAllEdits`); a három menü valódi
+        # megnyitásos mérése: test_undo_all_edits_menuk_7017.py
+        menu.setProperty("canUndoAllEdits", True)
+        qt_app.processEvents()
         assert (
             _child(window, "viewerMenuUndoAllEdits").property("enabled") is True
         )

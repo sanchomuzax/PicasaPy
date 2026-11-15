@@ -99,6 +99,13 @@ Item {
                    && viewer.currentIndex >= 0
             ? (controller.savedBackupRevision,
                controller.hasSavedBackup([viewer.currentIndex])) : false
+        // #7017: az Undo all Edits a NÉZETT kép eredeti szerkesztettségi
+        // állapotából él; a modell revíziója a láncváltás és a tükrözés
+        // után újraértékelteti
+        canUndoAllEdits: typeof controller !== "undefined" && controller
+                         && viewer.photosModel && viewer.currentIndex >= 0
+            ? (viewer.photosModel.revision,
+               controller.undoAllEditsEnabled([viewer.currentIndex])) : false
 
         onSaveRequested: viewer.saveRequested(viewer.currentIndex)
         onRevertRequested: viewer.revertRequested(viewer.currentIndex)
