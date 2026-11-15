@@ -256,21 +256,6 @@ class TestFeliratEsKijeloles:
             _szerkesztes_tetelt(menu, "menuEditPasteText").property("enabled")
             is False
         ), "a képfelirat beilleszthető Text-rétegként jelent meg"
-        assert controller.captionClipboardText() == ""
-
-    def test_a_felirat_vagolapja_nem_engedelyezi_a_szovegreteg_beilleszteset(
-        self, szerk_app, qt_app
-    ):
-        window, controller, _engine = szerk_app
-        _elokeszit(window, qt_app, controller)
-        controller.setCaptionClipboardText(_FELIRAT)
-        menu_bar = window.property("menuBar")
-        menu = _megnyit(menu_bar, qt_app, "&Edit")
-        assert (
-            _szerkesztes_tetelt(menu, "menuEditPasteText").property("enabled")
-            is False
-        ), "a felirat-vágólap a Text eszköz rétegének beillesztését engedélyezte"
-        assert controller.photos.captionAt(0) == ""
 
     def test_a_kijeloles_megfordítása_valodi_kattintassal_a_masik_kepet_jelöli(
         self, szerk_app, qt_app

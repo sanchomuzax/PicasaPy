@@ -307,6 +307,11 @@ class TestNezoKepe:
         assert _varj(qt_app, lambda: gomb.property("enabled") is True)
 
         kattints(window, qt_app, gomb)
+        parbeszed = gyerek(window, "captionTrashDialog")
+        assert _varj(qt_app, lambda: parbeszed.property("opened") is True), (
+            "a törlés gomb nem nyitott megerősítő kérdést (#7027)"
+        )
+        kattints(window, qt_app, gyerek(parbeszed, "captionTrashYesButton"))
 
         assert _varj(qt_app, lambda: mezo.property("text") == ""), (
             "a törlés gomb nem ürítette ki a feliratot"

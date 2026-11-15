@@ -360,6 +360,25 @@ Rectangle {
         hostContextActions: viewerContextActions
     }
 
+    //: #7027: a képaláírás-mező mentése a szerkesztési kapuk előtt.
+    function commitCaptionEdit() {
+        viewerLayout.overlayControls.commitCaptionEdit()
+    }
+
+    //: #7027: passzív kattintás-figyelő a teljes néző fölött - a gyerekek
+    //: (gombok, egérterületek) kattintását nem veszi el, csak jelzi, hogy a
+    //: felirat-mezőn KÍVÜL történt kattintás. A mező ettől elveszti a
+    //: fókuszát, és elmenti a begépelt szöveget.
+    TapHandler {
+        objectName: "captionFocusReleaseHandler"
+        gesturePolicy: TapHandler.DragThreshold
+        onPressedChanged: {
+            if (pressed)
+                viewerLayout.overlayControls.releaseCaptionFocus(
+                    point.scenePosition)
+        }
+    }
+
     PhotoViewerQuickToolbar {
         hostViewer: viewer
     }
