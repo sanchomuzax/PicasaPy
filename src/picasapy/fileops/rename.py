@@ -110,14 +110,13 @@ def _validate_name(name: str) -> None:
 
 
 class PartialRenameError(RuntimeError):
-    """A köteg valamely fájlnál végrehajtási hiba miatt megállt.
+    """A köteg végigfutott, de egy vagy több fájl kimaradt.
 
-    A ``completed_paths`` a hiba előtt sikeresen feldolgozott fájlok kimeneti
+    A ``completed_paths`` az összes sikeresen feldolgozott fájl kimeneti
     útvonalait tartalmazza; a ``renamed_paths`` ezek közül a ténylegesen
-    átnevezetteket. A hibás fájl útvonala a ``failed_source`` és
-    ``failed_target`` mezőben van. Ennél az utolsó fájlnál az állapot
-    ellenőrzendő, mert például ini-mentési hiba már a képfájl mozgatása után
-    is keletkezhet.
+    átnevezetteket. A ``completed_pairs`` a forrás- és célutakat rendeli
+    össze, hogy a hívó a kijelölést is helyreállíthassa. A hibák a
+    ``failures`` mezőben vannak; a régi egyhibás mezők az első hibát őrzik.
     """
 
     def __init__(
@@ -128,23 +127,22 @@ class PartialRenameError(RuntimeError):
         failed_source: Path,
         failed_target: Path,
         cause: Exception,
+        failures: Sequence[tuple[Path, Path, Exception]] | None = None,
+        completed_pairs: Sequence[tuple[Path, Path]] = (),
     ) -> None:
         self.completed_paths = tuple(completed_paths)
         self.renamed_paths = tuple(renamed_paths)
         self.failed_source = failed_source
         self.failed_target = failed_target
         self.cause = cause
+        self.failures = tuple(failures or ((failed_source, failed_target, cause),))
+        self.failed_sources = tuple(source for source, _target, _cause in self.failures)
+        self.completed_pairs = tuple(completed_pairs)
 
-        if self.renamed_paths:
-            changed = ", ".join(str(path) for path in self.renamed_paths)
-            changed_text = f"Sikeresen átnevezve: {changed}. "
-        else:
-            changed_text = "A hiba előtt fájl nem lett átnevezve. "
+        skipped = ", ".join(str(path) for path in self.failed_sources)
         super().__init__(
-            "A kötegelt átnevezés hiba miatt megállt. "
-            f"{changed_text}A(z) {failed_source} feldolgozásakor állt le; "
-            f"ellenőrizze ennek és a {failed_target} célfájlnak az "
-            f"állapotát. Hiba: {cause}"
+            "A kötegelt átnevezés a hibás fájlok kihagyásával folytatódott. "
+            f"Kihagyott fájlok: {skipped}. Első hiba: {cause}"
         )
 
 
@@ -327,47 +325,54 @@ def rename_photos_many(
 
     Raises:
         ValueError: érvénytelen alapnév.
-        FileExistsError: ha 4096 céljelölt foglalt.
-        PartialRenameError: fájlonkénti végrehajtási hiba; tartalmazza a már
-            sikeresen feldolgozott útvonalakat, a hibás forrást és célnevet,
-            valamint az eredeti kivételt.
+        FileExistsError: ha egy névhez mind a 4096 céljelölt foglalt.
+        PartialRenameError: az összes fájl megpróbálása után; tartalmazza a
+            sikeresen feldolgozott útvonalakat és minden kihagyott forrást.
     """
     if not items:
         return []
     _validate_name(base_name)
     results: list[Path] = []
     renamed: list[Path] = []
+    completed_pairs: list[tuple[Path, Path]] = []
+    failures: list[tuple[Path, Path, Exception]] = []
     for item in items:
-        stem = _build_stem(
-            base_name, item, include_date=include_date,
-            include_size=include_size, locale=locale,
-        )
+        target = item.path
         try:
+            stem = _build_stem(
+                base_name, item, include_date=include_date,
+                include_size=include_size, locale=locale,
+            )
+            target = item.path.with_name(f"{stem}{item.path.suffix}")
             name = _available_name(item.path, stem)
-        except Exception as error:
-            if not renamed:
-                raise
-            raise PartialRenameError(
-                completed_paths=results,
-                renamed_paths=renamed,
-                failed_source=item.path,
-                failed_target=item.path.with_name(f"{stem}{item.path.suffix}"),
-                cause=error,
-            ) from error
-        if name == item.path.name:
-            results.append(item.path)  # no-op: a név ténylegesen nem változik
-        else:
             target = item.path.with_name(name)
-            try:
+            if name == item.path.name:
+                result = item.path  # no-op: a név ténylegesen nem változik
+            else:
                 result = rename_photo(item.path, name)
-            except Exception as error:
-                raise PartialRenameError(
-                    completed_paths=results,
-                    renamed_paths=renamed,
-                    failed_source=item.path,
-                    failed_target=target,
-                    cause=error,
-                ) from error
-            results.append(result)
+        except FileExistsError as error:
+            if "4096 próbálkozásos keretet" in str(error):
+                raise
+            failures.append((item.path, target, error))
+            continue
+        except Exception as error:
+            failures.append((item.path, target, error))
+            continue
+
+        results.append(result)
+        completed_pairs.append((item.path, result))
+        if result != item.path:
             renamed.append(result)
+
+    if failures:
+        failed_source, failed_target, cause = failures[0]
+        raise PartialRenameError(
+            completed_paths=results,
+            renamed_paths=renamed,
+            failed_source=failed_source,
+            failed_target=failed_target,
+            cause=cause,
+            failures=failures,
+            completed_pairs=completed_pairs,
+        ) from cause
     return results
