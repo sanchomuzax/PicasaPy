@@ -401,6 +401,10 @@ ApplicationWindow {
         hostWindow: window
         hostController: typeof controller !== "undefined" ? controller : null
         hostPhotoViewer: photoViewer
+        hostEditController: typeof editController !== "undefined"
+            ? editController : null
+        hostFileOpsController: typeof fileOpsController !== "undefined"
+            ? fileOpsController : null
         hostMainDialogs: mainDialogs
         hostPhotoContextMenu: mainWindowPeripheralLayers.exportPhotoContextMenu
         hostFolderPane: folderPane
@@ -425,6 +429,8 @@ ApplicationWindow {
     function photoActionIndex() { return mainLibrarySelectionState.photoActionIndex() }
     function photoActionPaths() { return mainLibrarySelectionState.photoActionPaths() }
     function photoActionTakenAt() { return mainLibrarySelectionState.photoActionTakenAt() }
+
+    function copyActionToClipboard() { mainLibrarySelectionState.copyActionToClipboard() }
     function newAlbumFolderPath() { return mainLibrarySelectionState.newAlbumFolderPath() }
     function addPhotosToScreensaver(paths) { mainLibrarySelectionState.addPhotosToScreensaver(paths) }
     function requestAddToScreensaver() { mainLibrarySelectionState.requestAddToScreensaver() }
