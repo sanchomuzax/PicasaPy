@@ -1,5 +1,6 @@
 import QtQuick
 import PicasaPy
+import "../selection.js" as Selection
 
 // A főablak rácsának fotó-helyi menüje és annak gazda-bekötése (#6136).
 PhotoContextMenu {
@@ -61,9 +62,14 @@ PhotoContextMenu {
     onHideToggleRequested: hostWindow.toggleHiddenSelection()
     onMoveRequested: hostFileOpsDialogs.ensure().openMoveToNewFolder(hostWindow.selectedPaths())
     onDeleteRequested: hostFileOpsDialogs.ensure().openDelete(hostWindow.selectedPaths())
+    // #6995: a kijelölt képek mappánként egy fájlkezelő-ablakot nyitnak; a
+    // jobbklikkelt kép a kijelölésben van (`openPhotoContextMenu`), üres
+    // kijelölésnél a célsor marad
     onLocateRequested: {
-        var p = hostController.photos.filePathAt(hostWindow.fileOpTargetRow)
-        if (p.length > 0) hostFileOpsController.revealPhoto(p)
+        var sorok = hostWindow.selectedRows()
+        if (sorok.length === 0) sorok = [hostWindow.fileOpTargetRow]
+        hostFileOpsController.revealPhotos(
+            Selection.pathsInGridOrder(hostController.photos, sorok))
     }
     // #1613: a „Keresés" almenü két új tétele.
     //
