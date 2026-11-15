@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.128] - 2026-11-15
+
+- Elrejtés és áthelyezés javítása, öt összevetés leírása (#7006).
+- Elrejtés és áthelyezés javítása, öt összevetés leírása (#7012).
+- Elrejtés és áthelyezés javítása, öt összevetés leírása (#7022).
+- Elrejtés és áthelyezés javítása, öt összevetés leírása (#7024).
+- A helyi menü Elrejtés és Megjelenítés tétele a felirata szerinti fix irányba hat a teljes kijelölésre (#7019).
+- Az Áthelyezés új mappába ablak a kijelölt kép dátumát ajánlja fel, nem a mai napot, ahogy az eredeti Picasa (#7020).
+
 ## [1.0.127] - 2026-11-15
 
 - A címkézés az eredeti Picasa szerint működik: a Tags panel ismételt megnyitása bezárja a panelt, vesszővel több címke vehető fel egyszerre, a címke helyi menüjének sorrendje az eredeti, és a legutóbbi címkék kis- és nagybetűt megkülönböztetnek (#7025).
