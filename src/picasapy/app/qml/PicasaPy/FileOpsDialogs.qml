@@ -268,7 +268,10 @@ Item {
         }
         function canRename() {
             var base = renameManyField.text.trim()
-            return base.length > 0 && base !== openedName.trim()
+            return base.length > 0
+                && (base !== openedName.trim()
+                    || includeDateCheck.checked
+                    || includeSizeCheck.checked)
         }
         property string previewText: ""
         function saveFlags() {

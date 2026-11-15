@@ -268,32 +268,32 @@ class TestRenamePhotosMany:
         real_rename = rename_module._rename
         calls = 0
 
-        def fail_on_third(source, target):
+        def fail_on_second(source, target):
             nonlocal calls
             calls += 1
-            if calls == 3:
-                raise PermissionError("injected third-file failure")
+            if calls == 2:
+                raise PermissionError("injected second-file failure")
             real_rename(source, target)
 
-        monkeypatch.setattr(rename_module, "_rename", fail_on_third)
+        monkeypatch.setattr(rename_module, "_rename", fail_on_second)
         failures = []
+        skipped_files = []
         controller.syncFailed.connect(failures.append)
+        controller.renameBatchSkipped.connect(skipped_files.append)
         _do_rename(
             controller,
             lambda: controller.renamePhotosMany(rows, "trip", False, False),
         )
 
-        assert failures
-        assert "trip.jpg" in failures[-1]
-        assert "trip-001.jpg" in failures[-1]
-        assert "c.jpg" in failures[-1]
+        assert not failures
+        assert skipped_files == [["b.jpg"]]
         assert (library / "trip.jpg").exists()
         assert (library / "trip-001.jpg").exists()
         assert not (library / "a.jpg").exists()
-        assert not (library / "b.jpg").exists()
-        assert (library / "c.jpg").exists()
+        assert (library / "b.jpg").exists()
+        assert not (library / "c.jpg").exists()
         assert {photo.name for photo in controller.photos.photos} == {
-            "trip.jpg", "trip-001.jpg", "c.jpg",
+            "trip.jpg", "trip-001.jpg", "b.jpg",
         }
 
     def test_empty_base_name_is_a_no_op(self, controller, library):
