@@ -510,7 +510,7 @@ ApplicationWindow {
     function openWebExport() { webExportDialog.open() }
     // #1472: nyomtatás — HÁROM belépési pont vezet ide (Fájl ▸ Nyomtatás…,
     // Ctrl+P, és a képtálca „Nyomtatás" gombja), ahogy az exportnál is.
-    // A célpont ugyanaz a HÁROM ág, mint a `rotateTargetRow()`-nál:
+    // A célpont ugyanaz a HÁROM ág, mint a `rotateTargetRows()`-nál:
     // diavetítés közben a VETÍTETT kép, a nézőben a MEGJELENÍTETT kép, a
     // rácsban a kijelölés.
     //
@@ -582,7 +582,7 @@ ApplicationWindow {
     function masoldASzovegreteget() { mainWindowCommands.masoldASzovegreteget() }
     function illeszdBeASzovegreteget() { mainWindowCommands.illeszdBeASzovegreteget() }
     function beillesztAVagolaprol() { mainWindowCommands.beillesztAVagolaprol() }
-    function rotateTargetRow() { return mainWindowCommands.rotateTargetRow() }
+    function rotateTargetRows() { return mainWindowCommands.rotateTargetRows() }
     function rotateTargetsAllVideo() { return mainWindowCommands.rotateTargetsAllVideo() }
     function tukrozesiSorok() { return mainWindowCommands.tukrozesiSorok() }
     function timelineCollectionForId(collectionId) { return mainWindowCommands.timelineCollectionForId(collectionId) }
