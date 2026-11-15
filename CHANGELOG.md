@@ -7,12 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.129] - 2026-11-15
+
+- Több kijelölt képnél a csillagozás képenként fordítja a csillagállapotot az eredeti Picasa szerint (#7005).
+
 ## [1.0.128] - 2026-11-15
 
-- Elrejtés és áthelyezés javítása, öt összevetés leírása (#7006).
-- Elrejtés és áthelyezés javítása, öt összevetés leírása (#7012).
-- Elrejtés és áthelyezés javítása, öt összevetés leírása (#7022).
-- Elrejtés és áthelyezés javítása, öt összevetés leírása (#7024).
+- A dokumentáció négy funkció (elrejtés, Hozzáadás albumhoz, címkézés, képaláírás) teljes folyamatát veti össze az eredeti Picasával (#7006, #7012, #7022, #7024).
 - A helyi menü Elrejtés és Megjelenítés tétele a felirata szerinti fix irányba hat a teljes kijelölésre (#7019).
 - Az Áthelyezés új mappába ablak a kijelölt kép dátumát ajánlja fel, nem a mai napot, ahogy az eredeti Picasa (#7020).
 
