@@ -210,7 +210,7 @@ class _LibraryResyncMixin:
         if mappak:
             self._on_folders_dirty(mappak)
 
-    # SZÁNDÉKOSAN nincs `@Slot` — belső fájlműveleti jelzés, QML nem hívja.
+    # SZÁNDÉKOSAN nincs `@Slot`: belső fájlműveleti jelzés, QML nem hívja.
     def resyncDeleteAttempt(self, path: str) -> None:  # noqa: N802
         """A hibával zárult mappatörlési kísérlet utáni tényleges részfa.
 
