@@ -3105,7 +3105,7 @@ Ha a felhasználó a Beillesztés (Paste) parancsot választja (`0x005feab0` -> 
 | Szerkesztés menü Copy | `0x005cb990` -> `0x005fe9f0(0)` | `src/picasapy/app/qml/PicasaPy/PicasaEditMenu.qml:53-58` | Nincs, paritásban van. |
 | Gyorsbillentyű Ctrl+C | Accelerator `0x9d3b` (`0x007823f0`) | `src/picasapy/app/qml/PicasaPy/MainKeyboardShortcuts.qml:244-255` | Nincs, paritásban van. |
 | Szerkesztés menü Cut | `0x005cb990` -> `0x005fe9f0(1)` | `src/picasapy/app/qml/PicasaPy/PicasaEditMenu.qml:46-51` | Nincs, paritásban van. |
-| Rácselemek halványítása Cut esetén | `0x00716f40` (`[item + 0x5d] = 1`) | Nincs vizuális jelölés a rácson | Paritási eltérés javítása: a vágólapra kivágott fájlokat a rácson halványítottan (pl. opacity: 0.5) kell megjeleníteni. |
+| Rácselemek halványítása Cut esetén | `0x00716f40` (`[item + 0x5d] = 1`) | Nincs vizuális jelölés a rácson | Paritási eltérés javítása: a vágólapra kivágott fájlokat a rácson halványítottan (pl. (fél átlátszósággal) kell megjeleníteni. |
 | Szerkesztő nézet (OneUp) másolás | `0x0069b000` -> `0x00a706f0` (`SetClipboardData(CF_BITMAP)`) | `fileops_controller_clipboard_mixin.py:16-56` (fájl-URL) | Paritási eltérés javítása: Szerkesztő nézetben a renderelt szerkesztett képet képadatként (`QImage`) kell a vágólapra helyezni. |
 | Szerkesztés menü Paste | `0x005cb990` -> `0x005feab0()` | `src/picasapy/app/qml/PicasaPy/PicasaEditMenu.qml:60-67` | Nincs, paritásban van. |
 | Gyorsbillentyű Ctrl+V | Accelerator `0x9d3c` (`0x007823f0`) | `src/picasapy/app/qml/PicasaPy/MainKeyboardShortcuts.qml:268-279` | Nincs, paritásban van. |
