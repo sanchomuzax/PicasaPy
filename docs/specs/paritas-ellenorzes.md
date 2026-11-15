@@ -1740,7 +1740,7 @@ Az eredeti Picasa 3.9 binárisában a mentés-család két külön parancsa a Me
    - **Gyorsbillentyű:** NINCS gyorsbillentyű rendelve a Save As-hoz sem a menükben, sem a gyorsítótáblában (az `RT_ACCELERATOR` erőforrás nem tartalmaz hozzá bejegyzést; a `Ctrl+S` kizárólag a Mentéshez [`0xe103`] tartozik).
 
 2. **`ID_FILE_SAVEACOPY` (`0x9dca`):**
-   - **Főmenü:** Fájl ▸ „Save a Copy” / Másolat mentése (menüépítő: `0x00559150`, rekord: `0x00d6da90`, szövegcímke: `0x00d6daa0`, parancskód: `0x9dca`, kulcs: `eMenuFile::ID_FILE_SAVEACOPY` [`0xc8c574`], alapértelmezett angol felirat: `Save a Cop&y` [`0xc8c594`], mnemonik: `y`, ellipszis nélkül, mert azonnali közvetlen mentést végez).
+   - **Főmenü:** Fájl ▸ „Save a Copy” / Másolat mentése (menüépítő: `0x00559150`, rekord: `0x00d6da90`, szövegcímke: `0x00d6daa0`, parancskód: `0x9dca`, kulcs: `eMenuFile::ID_FILE_SAVEACOPY` [`0xc8c574`], alapértelmezett angol felirat: `Save a Copy` [`0xc8c594`], mnemonik: `y`, ellipszis nélkül, mert azonnali közvetlen mentést végez).
    - **Helyi menük:** NEM szerepel sem a FolderPhoto (`0x00730790`), sem az AlbumPhoto (`0x00731050`), sem a OneUp (`0x007327a0`) menükben.
    - **Szerkesztő bal panelje (`0x00567680`):** NEM tartalmaz Save a Copy gombot.
    - **Gyorsbillentyű:** NINCS gyorsbillentyűje.
@@ -1823,7 +1823,7 @@ A közös `FUN_005e6a20` eljárás futásidejű viselkedése:
 ### 6. Javasolt fejlesztői jegyek
 
 1. **Jegy: A Save As és Save a Copy menüpontok letiltása videó kijelölése esetén**
-   - **Eredeti:** Az eredeti Picasa 3.9 binárisában (`0x0056e1c0`, `0x0056e2f4`, `0x0056e416`, `0x005cb2cf`) a Fájl ▸ Save &As... (`0x9d9b`) és Save a Cop&y (`0x9dca`) menüpontok kizárólag fotók kijelölésekor engedélyezettek (`0x2` állapotbit); ha a kijelölt elem videó (a `0x00562250` `isVideo` hívás `0x20` bitet állít be a fotóbit helyett), mindkét menüpont tiltottá válik (`MF_GRAYED`).
+   - **Eredeti:** Az eredeti Picasa 3.9 binárisában (`0x0056e1c0`, `0x0056e2f4`, `0x0056e416`, `0x005cb2cf`) a Fájl ▸ Save &As... (`0x9d9b`) és Save a Copy (`0x9dca`) menüpontok kizárólag fotók kijelölésekor engedélyezettek (`0x2` állapotbit); ha a kijelölt elem videó (a `0x00562250` `isVideo` hívás `0x20` bitet állít be a fotóbit helyett), mindkét menüpont tiltottá válik (`MF_GRAYED`).
    - **Nálunk:** A `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:130,136` sorában a menüpontok az általános `bar.photoActionsEnabled` tulajdonságra támaszkodnak, amely kizárólag a kijelölt sorok számát vizsgálja (`photoActionRows().length > 0`), így videó kijelölése esetén is aktívak maradnak.
    - **Teendő:** A `PicasaFileMenu.qml` Save As és Save a Copy tételeinek `enabled` feltételét ki kell egészíteni egy `!bar.isVideoSelected` (vagy a kijelölés típusát ellenőrző) feltétellel.
    - **Kész, ha:** Kijelölt videó esetén a Fájl menüben a "Save As..." és a "Save a Copy" menüpontok inaktívak (szürkék), és csak fotó kijelölésekor válnak kattinthatóvá.
