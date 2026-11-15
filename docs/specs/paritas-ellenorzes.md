@@ -4250,7 +4250,7 @@ olvastam, a fájl nevét kiírtam.
   dekompilált törzs szerint:
   1. üres (null) bemenetre hiba (`0xffffffff`);
   2. a vezető szóközöket átugorja (`_iswspace`);
-  3. karakterenként: a szóközjellegű karakter (`_iswspace` vagy `U+3000`)
+  3. karakterenként: a szóköznek számító karakter (`_iswspace` vagy `U+3000`)
      szóközzé válik; a `0x20` alatti vezérlőkarakter és a `\ / : * ? " < > |`
      kimarad; minden más marad. A szóközjellegű ellenőrzés megelőzi a
      vezérlőkarakter-szűrőt, ezért a tabulátor és a soremelés is szóköz lesz,
@@ -4289,7 +4289,7 @@ olvastam, a fájl nevét kiírtam.
   függvénymutatókon át; az azonosításukat a kimenet nem adja, a viselkedés
   látszik: a `0xffffffff` hibajelzés és az `1`-es bit levétele). Hiba esetén,
   ha `GetLastError() == 5` (hozzáférés megtagadva) és a `FUN_00992ed0` igazat
-  ad, **500 ms-onként újrapróbál** (`WaitForSingleObject(DAT_00d689cc, 500)`),
+  ad, **500 ezredmásodpercenként újrapróbál** (`WaitForSingleObject(DAT_00d689cc, 500)`),
   amíg az időkorlát le nem jár; ha közben az eseményobjektum jelez, `0xf4242` a
   visszatérés. Ha a `FUN_00992ed0` hamis, a függvény `0`-t ad vissza
   átnevezés nélkül; ennek jelentése nincs bontva. A régi Windows-ágon
@@ -4630,14 +4630,14 @@ kötegből.
   dönti el; ez nincs dekompilálva. **PicasaPy:** a `photoActionRows()` a
   `selectedRows()` útján a `selectedIndexes` tömböt adja
   (`MainLibrarySelectionState.qml:70-78`, `selection.js:32-36`), úgy, ahogy a
-  kattintások építették: a Ctrl+katt a végére fűz (`selection.js:7-12`), a
+  kattintások építették: a Ctrl+kattintás a végére fűz (`selection.js:7-12`), a
   Shift+katt növekvő tartományt ad (`selection.js:15-21`). Az
   `AdjustTimestampDialog.qml:66` a `photoRows[0]` elemet használja, tehát a
   **kattintási sorrend** első elemét, nem a rács szerinti elsőt (a "Locate on
   Disk" ezzel szemben szándékosan rácssorrendet használ, `selection.js:38-46`).
   Hogy az eredeti a kattintási vagy a rács szerinti sorrendet adja, **nincs
   meg**; egyezést ne állítsunk. Ha az eredeti rácssorrendet használ, a
-  Ctrl+kattal fordított sorrendben kijelölt képeknél az ablak más kép dátumát
+  Ctrl+kattintással fordított sorrendben kijelölt képeknél az ablak más kép dátumát
   mutatja.
 
 **A jegy lezárhatósága: NEM zárható.** A 7033 négy kérdése ("Kész, ha"):
