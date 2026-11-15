@@ -2870,5 +2870,5 @@ A hívó ellenőrző mintavétele (2026-11-15): az elrejtő ág igazolt (a `0x00
 1. A Kép menü Elrejtés tételének szürkítése csupa rejtett kijelölésnél: a `0x0056c5a0` főmenü-ága ezt nem mutatja közvetlenül.
    - Ghidra-kör kell: 0x0056c5a0 - A főmenü `0x9ca5` (Elrejtés) tételét szürkíti-e az `EnableMenuItem`, ha a kijelölés csupa rejtett kép [nem blokkoló]
 2. A `0x005683a0` utólagos lépés pontos hatása: a `0x0056884e` környezetében nincs `thumbui/albumview` nézetváltás, tehát a „következő látható kép vagy vissza a rácsra” leírás következtetés, nem bizonyíték.
-   - Ghidra-kör kell: 0x005683a0 - Mit tesz a néző, ha az aktuális képet elrejtik és a rejtett képek nem látszanak: lép, bezár vagy marad [blokkoló]
+   - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7006-7008-7009-7012-colab-decomp.txt`): a `0x005683a0` a szerkesztő vagy néző újraépítése (`IDS_EDIT_IMAGE`, `0x00571850`); ha nem marad érvényes aktuális kép (`[0x399] == -1`, a `0x005675d0` után sem), visszavált a `thumbui/albumview` rácsra. Helyesbítés: az Elrejtés utáni hívás feltétele az, hogy a szerkesztőpanel aktív (`editpanel/preview +0x20c == 0`), nem a rejtett képek láthatósága. Melyik kép lesz a következő, nyitott.
 
