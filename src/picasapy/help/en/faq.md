@@ -77,6 +77,10 @@ work to finish.
 The same confirmation appears if you close the window with its X button.
 It cannot be disabled because work could otherwise be lost.
 
+After **Exit Now**, the application closes within a few seconds, even if
+some background work does not stop by itself. Your settings are still
+saved, and your photo data is not damaged.
+
 ### “This folder is currently unavailable...”
 
 An external drive or network share is disconnected. The photo list and
@@ -232,7 +236,8 @@ well.
 This is not an error. If PicasaPy is doing a lot of work with the database,
 for example searching for faces during an import, it briefly queues a
 folder refresh and retries automatically. You do not need to do anything.
-The old `database is locked` error no longer appears.
+A folder refresh running in the background also waits for its turn instead
+of stopping with an error. The old `database is locked` error no longer appears.
 
 ### A search failed while importing settings from Picasa
 

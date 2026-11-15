@@ -155,7 +155,12 @@ hogy fut valami, és ha a munka leállítható, a pörgő mellett megjelenik a
 × leállító gomb is: „A háttérművelet leállítása". A leállítás előtt a
 program rákérdez, aztán tényleg megállítja a munkát. Hogy épp mi fut, azt
 az alsó sáv kék csíkja is kiírhatja, lásd [A beépített
-súgó](features/sugo.md).
+súgó](features/sugo.md). A jelző mellett, a jobb szélen a program
+verziószáma háttérmunka közben is látszik.
+
+Hálózati mappán a lassabb fájlolvasás (a mappa leírása, a kép adatai, a
+kép betöltése szerkesztéshez) is a háttérben fut, így a felület közben
+nem akad meg; ezt is a jelző mutatja.
 
 **Rács** — a kiválasztott mappa vagy album indexképei. Egy képre kattintva
 kijelölöd, duplán kattintva megnyitod a nézőben.

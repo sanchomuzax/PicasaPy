@@ -2,6 +2,40 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-15
+
+### Slideshow
+
+- When you pause, the control bar appears at once and stays until you
+  resume. Resuming moves straight to the next photo.
+- In a normal slideshow, the **Dissolve** transition fades evenly in
+  exactly one second. See [Viewing](features/nezegetes.md).
+
+### Timeline
+
+- Space and the play button start the slideshow paused; when it starts,
+  the first photo fades in from a grey title card of the folder or album.
+  Ctrl+Space does nothing here.
+- Returning from a folder's slideshow leaves only the folder selected.
+- For photos without a capture date, the file time from the first scan
+  counts; album cards no longer move when photos are added later; the
+  **Recently Updated** card shows the month you opened Timeline.
+
+### Library and file operations
+
+- A folder dropped on a folder row in the left pane stays where it is, as
+  in the original. See [File operations](features/fajlmuveletek.md).
+- In network folders, file reads run in the background, so the window
+  does not freeze.
+- The version number stays visible next to the background indicator.
+
+### Exiting and background work
+
+- **Exit Now** closes the application within a few seconds, even while
+  background work runs. See [FAQ](faq.md).
+- A background folder refresh no longer stops with a `database is locked`
+  error; it waits for its turn.
+
 ## 2026-11-14
 
 ### Timeline

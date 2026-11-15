@@ -89,8 +89,9 @@ already exists there, the incoming photo is given a new name; the
 existing file is never overwritten. This works in both the flat folder
 list and the tree view.
 
-You can also drag a whole folder onto another folder in the left pane.
-It becomes a subfolder there, with its contents.
+Dropping a whole folder onto another folder row in the left pane does
+nothing, just as in the original Picasa: the folder stays where it is.
+To move a folder, use the folder's context menu (see Folders below).
 
 If the destination already contains a file with the same name, choose
 **Rename Duplicates** to give the incoming files new names, or **Skip

@@ -4,6 +4,39 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-15
+
+**Diavetítés**
+
+- Szünetkor a vezérlősáv azonnal megjelenik, és a szünet végéig kint
+  marad. Folytatáskor a vetítés rögtön a következő képre lép.
+- A **Szétoszlás** átmenet normál vetítésben pontosan egy másodperc
+  alatt, egyenletesen úszik át. Lásd [Nézegetés](features/nezegetes.md).
+
+**Időrend**
+
+- A **Szóköz** és a lejátszás gomb szüneteltetve indítja a vetítést;
+  indításkor az első fotó a gyűjtemény szürke címkártyájából úszik fel.
+  A **Ctrl+Szóköz** itt nem csinál semmit.
+- Egy mappa vetítéséből visszatérve csak a mappa marad kijelölve.
+- Felvételi dátum nélküli képnél a fájl első beolvasáskori ideje számít,
+  az albumkártya a később betett képektől nem mozdul el, a **Legutóbb
+  frissítve** kártya pedig a megnyitás hónapját mutatja.
+
+**Könyvtár és fájlműveletek**
+
+- A bal hasábon mappasorra húzott mappa a helyén marad, ahogy az
+  eredetiben. Lásd [Fájlműveletek](features/fajlmuveletek.md).
+- Hálózati mappán a fájlolvasás a háttérben fut, a felület nem akad meg.
+- A verziószám háttérmunka közben is látszik a háttérjelző mellett.
+
+**Kilépés és háttérmunka**
+
+- A **Kilépés most** háttérmunka közben is néhány másodpercen belül
+  bezárja a programot. Lásd [Gyakori kérdések](faq.md).
+- A háttérben futó mappafrissítés nem áll le **database is locked**
+  hibával, hanem kivárja a sorát.
+
 ## 2026-11-14
 
 **Időrend**

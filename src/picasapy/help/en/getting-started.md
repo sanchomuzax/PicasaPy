@@ -158,7 +158,12 @@ color index. A spinner shows that work is in progress. If the operation can
 be stopped, a × stop button appears next to the spinner; the
 application asks for confirmation before stopping. The blue strip in the
 bottom bar can also show what is running; see [Built-in
-Help](features/sugo.md).
+Help](features/sugo.md). The application's version number stays visible
+next to the indicator, at the right edge, even while background work runs.
+
+In network folders, slower file reads (the folder description, photo
+details, and loading a photo for editing) also run in the background, so
+the window does not freeze meanwhile; the indicator shows this work too.
 
 ### Thumbnail grid
 
