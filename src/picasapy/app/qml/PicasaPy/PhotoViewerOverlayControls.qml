@@ -28,12 +28,6 @@ Item {
     property alias previousPreloadImage: elotoltoElozo
     property alias hostViewerPanArea: viewerPanArea
 
-    //: #7027: a begépelt felirat mentése a szerkesztési kapuk előtt
-    //: (`0x005f89a0`, a kapu `0x005f8d80` első művelete).
-    function commitCaptionEdit() {
-        captionField.commit()
-    }
-
     //: #7027: a mezőn kívüli kattintás (`0x0067ed05-0x0067ed5b`) elengedi a
     //: mező fókuszát, ami elindítja a mentést. Csak akkor, ha a kattintás
     //: tényleg kívül esett, és a mező még nála a fókusz: más szövegmező

@@ -126,6 +126,18 @@ def _felirat_beir(controller, window, qt_app, mezo, szoveg: str) -> None:
     _pump(qt_app)
 
 
+def _felirat_torles(window, qt_app, controller, kuka) -> None:
+    """A kuka gomb megerősítő ablakot nyit (#7027: `0x005f8c00`), és csak az
+    „igen” gombra („Képfelirat törlése”) töröl."""
+    _valodi_klikk(window, qt_app, kuka)
+    igen = _gyerek(window, "captionTrashYesButton")
+    wait_for_photo_op(
+        controller,
+        lambda: _valodi_klikk(window, qt_app, igen),
+        qt_app=qt_app,
+    )
+
+
 def test_lapozas_minden_belepesi_pontja_a_fokuszalt_oldalt_lepteti(
     qml_app, qt_app
 ):
@@ -264,26 +276,114 @@ def test_feliratiraskor_es_torleskor_a_kattintott_oldal_adataval_dolgozik(
             hibak.append(f"{magassag}px jobb fókusz: megváltozott a bal felirat")
 
         _fokusz(window, qt_app, nezo, "jobb")
-        wait_for_photo_op(
-            controller,
-            lambda: _valodi_klikk(window, qt_app, kuka),
-            qt_app=qt_app,
-        )
+        _felirat_torles(window, qt_app, controller, kuka)
         if _caption(controller, 1) != "":
             hibak.append(f"{magassag}px jobb fókusz: a jobb felirat nem törlődött")
         if _caption(controller, 0) != f"bal-uj-{magassag}":
             hibak.append(f"{magassag}px jobb fókusz: a bal felirat törlődött")
 
         _fokusz(window, qt_app, nezo, "bal")
-        wait_for_photo_op(
-            controller,
-            lambda: _valodi_klikk(window, qt_app, kuka),
-            qt_app=qt_app,
-        )
+        _felirat_torles(window, qt_app, controller, kuka)
         if _caption(controller, 0) != "":
             hibak.append(f"{magassag}px bal fókusz: a bal felirat nem törlődött")
 
     assert not hibak, "\n".join(hibak)
+
+
+def _gepelj(window, qt_app, mezo, szoveg: str) -> None:
+    """Valódi kattintás a mezőbe, a meglévő szöveg kijelölése, valódi
+    billentyűleütések (a mentést NEM Enter váltja ki: #7027 J2)."""
+    _valodi_klikk(window, qt_app, mezo)
+    QMetaObject.invokeMethod(mezo, "selectAll", Qt.ConnectionType.DirectConnection)
+    for karakter in szoveg:
+        QTest.keyClick(window, Qt.Key(ord(karakter.upper())))
+        qt_app.processEvents()
+    assert mezo.property("text") == szoveg
+
+
+@pytest.mark.parametrize(
+    ("oldal", "sor", "masik_sor", "masik_kep"),
+    (("jobb", 1, 0, "viewerImageElotte"), ("bal", 0, 1, "viewerImage")),
+)
+def test_gepelt_felirat_oldalvaltaskor_a_gepeles_oldalara_mentodik(
+    qml_app, qt_app, oldal, sor, masik_sor, masik_kep
+):
+    """#7027 J2: a másik képre kattintás elengedi a mező fókuszát, és a
+    begépelt szöveg a GÉPELÉS oldalának képére megy, nem az újonnan
+    kattintottéra."""
+    window, controller, _engine = qml_app
+    nezo = _nezo_es_ab(window, qt_app)
+    mezo = _gyerek(window, "captionField")
+    wait_for_photo_op(
+        controller, lambda: controller.setCaption(0, "bal"), qt_app=qt_app
+    )
+    wait_for_photo_op(
+        controller, lambda: controller.setCaption(1, "jobb"), qt_app=qt_app
+    )
+    nezo.setProperty("currentIndex", 0)
+    nezo.setProperty("masodikIndex", 1)
+    _pump(qt_app)
+
+    _fokusz(window, qt_app, nezo, oldal)
+    _gepelj(window, qt_app, mezo, "kutya")
+
+    wait_for_photo_op(
+        controller,
+        lambda: _valodi_klikk(window, qt_app, _gyerek(window, masik_kep)),
+        qt_app=qt_app,
+    )
+
+    assert _caption(controller, sor) == "kutya", (
+        f"a {oldal} oldalon begépelt szöveg nem a {oldal} képre mentődött"
+    )
+    assert _caption(controller, masik_sor) == ("jobb" if sor == 0 else "bal"), (
+        "a begépelt szöveg a MÁSIK oldal feliratát írta felül"
+    )
+    assert mezo.property("text") == _caption(controller, masik_sor), (
+        "a feliratmező az újonnan kattintott kép saját feliratát kell mutassa"
+    )
+
+
+@pytest.mark.parametrize(
+    ("oldal", "sor", "masik_sor"),
+    (("jobb", 1, 0), ("bal", 0, 1)),
+)
+def test_gepelt_felirat_lapozaskor_a_gepeles_oldalara_mentodik(
+    qml_app, qt_app, oldal, sor, masik_sor
+):
+    """#7027 J2: a lapozás a fókuszált oldalt lépteti; a begépelt szöveg a
+    RÉGI képre menjen, a nem fókuszált oldal felirata ne változzon."""
+    window, controller, _engine = qml_app
+    nezo = _nezo_es_ab(window, qt_app)
+    mezo = _gyerek(window, "captionField")
+    wait_for_photo_op(
+        controller, lambda: controller.setCaption(0, "bal"), qt_app=qt_app
+    )
+    wait_for_photo_op(
+        controller, lambda: controller.setCaption(1, "jobb"), qt_app=qt_app
+    )
+    nezo.setProperty("currentIndex", 0)
+    nezo.setProperty("masodikIndex", 1)
+    _pump(qt_app)
+
+    _fokusz(window, qt_app, nezo, oldal)
+    _gepelj(window, qt_app, mezo, "kutya")
+    masik_elotte = _caption(controller, masik_sor)
+
+    wait_for_photo_op(
+        controller,
+        lambda: QMetaObject.invokeMethod(
+            nezo, "next", Qt.ConnectionType.DirectConnection
+        ),
+        qt_app=qt_app,
+    )
+
+    assert _caption(controller, sor) == "kutya", (
+        f"a lapozás nem a {oldal} oldali régi képre mentette a szöveget"
+    )
+    assert _caption(controller, masik_sor) == masik_elotte, (
+        "a lapozás a MÁSIK oldal feliratát írta felül"
+    )
 
 
 def test_ctrl_delete_es_tukrozes_a_kattintott_oldalra_hatas(
