@@ -23,6 +23,7 @@ Rectangle {
     property bool readOnlySelection: false
     readonly property bool cimkezheto: panel.hasSelection
                                        && !panel.readOnlySelection
+    property bool addWarningVisible: false
 
     signal addRequested(string keyword)
     signal removeRequested(string keyword)
@@ -46,14 +47,23 @@ Rectangle {
         onRemoveRequested: panel.removeRequested(keyword)
     }
 
-    // teszt-horog és a beviteli mező közös útja: üres/whitespace inputra
-    // nem megy ki jel, sikeres leadás után a mező kiürül
+    // Teszt-horog és a beviteli mező közös útja: a vessző választja el a
+    // címkéket, az üres részek kimaradnak.
     function submit() {
         var text = tagInput.text.trim()
         if (text.length === 0 || !panel.hasSelection)
             return
-        panel.addRequested(text)
+        panel.addWarningVisible = false
+        var parts = text.split(",")
+        for (var i = 0; i < parts.length; i++) {
+            var keyword = parts[i].trim()
+            if (keyword.length > 0) panel.addRequested(keyword)
+        }
         tagInput.clear()
+    }
+
+    function reportAddError() {
+        panel.addWarningVisible = true
     }
 
     color: Theme.panelBg
@@ -98,6 +108,16 @@ Rectangle {
                 ToolTip.delay: Theme.tooltipDelay
                 onClicked: panel.submit()
             }
+        }
+
+        Text {
+            objectName: "tagAddWarning"
+            visible: panel.addWarningVisible
+            Layout.fillWidth: true
+            text: qsTr("Some of the text you entered could not be added as a tag.")
+            wrapMode: Text.WordWrap
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
         }
 
         Text {
