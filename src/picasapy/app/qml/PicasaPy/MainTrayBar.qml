@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import PicasaPy
+import "../selection.js" as Selection
 
 // A főablak alsó sávjának bekötése; a tálca felületét továbbra is a TrayBar adja.
 TrayBar {
@@ -47,12 +48,21 @@ TrayBar {
         hostController.rotateRightMany(hostWindow.selectedRows())
     onTrayRotateLeftRequested:
         hostController.rotateLeftMany(hostWindow.selectedRows())
-    onTrayLocateRequested: {
-        var sorok = hostWindow.selectedRows()
-        if (sorok.length === 0) return
-        var ut = hostController.photos.filePathAt(sorok[0])
-        if (ut.length > 0) hostFileOpsController.revealPhoto(ut)
+    // #6995: a tálca SAJÁT kijelölése (#2039, másik mappából tartott képek is
+    // lehetnek benne) az elsőbbséget élvezi; ha a tálcán nincs kijelölés, a
+    // rács kijelölése. Mappánként egy fájlkezelő-ablak nyílik.
+    function locatePaths() {
+        var elemek = ctl && ctl.trayItems ? ctl.trayItems : []
+        var utak = []
+        for (var i = 0; i < traySelectedIndexes.length; ++i) {
+            var elem = elemek[Number(traySelectedIndexes[i])]
+            if (elem && elem.path) utak.push(elem.path)
+        }
+        if (utak.length > 0) return utak
+        return Selection.pathsInGridOrder(
+            hostController.photos, hostWindow.selectedRows())
     }
+    onTrayLocateRequested: hostFileOpsController.revealPhotos(locatePaths())
     onTrayPropertiesRequested: hostWindow.valtsFiokLapot("properties")
     onPrintRequested: hostWindow.openPrint()
     onCollageRequested: hostWindow.openCollageTab()

@@ -6,6 +6,8 @@ from importlib import import_module
 
 from PySide6.QtCore import Slot
 
+from picasapy.paths import path_key
+
 
 def _controller_module():
     """A régi modul fogantyúihoz irányít, monkeypatch-kompatibilisen."""
@@ -41,6 +43,35 @@ class FileOpsControllerOpenMixin:
             _compat.reveal_in_file_manager(_compat.Path(path))
         except OSError as error:
             self.operationFailed.emit("reveal", str(error))
+
+    @Slot(list)
+    def revealPhotos(self, paths: list[str]) -> None:  # noqa: N802
+        """A kijelölt képek mappáinak megnyitása a fájlkezelőben (#6995).
+
+        Az eredeti `0x005c85e0` a kijelölt képek szülőmappáit összegyűjti,
+        mappánként egyszer veszi (`0x005c8754`-`0x005c87b5`), majd a
+        `0x005c8dc4`-`0x005c8dee` ciklusban minden érintett mappához KÜLÖN
+        fájlkezelő-ablakot nyit az adott mappa ELSŐ kijelölt elemére állva
+        (`0x00981280`).
+
+        Ezért mappánként EGY `reveal_in_file_manager` hívás megy, a mappa
+        első (a kapott sorrend szerinti) képével; a mappák az első
+        előfordulásuk sorrendjében következnek. A hívó a képeket a rács
+        sorrendjében adja át. Egy mappa hibája nem állítja meg a többit:
+        mindegyik hibát `operationFailed` jelzi (#112)."""
+        _compat = _controller_module()
+        elso_mappankent = {}
+        for path in paths or []:
+            local = _compat._to_local_path(str(path))
+            if not local:
+                continue
+            kep = _compat.Path(local)
+            elso_mappankent.setdefault(path_key(kep.parent), kep)
+        for kep in elso_mappankent.values():
+            try:
+                _compat.reveal_in_file_manager(kep)
+            except OSError as error:
+                self.operationFailed.emit("reveal", str(error))
 
     @Slot(str, result=bool)
     def hasOriginalOnDisk(self, path: str) -> bool:  # noqa: N802
