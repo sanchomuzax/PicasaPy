@@ -7733,6 +7733,14 @@ picasapy-origin-key: stringres:RestoreDialog::cantlaunch</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Valitse ensin vähintään yksi kuva.</translation>
         </message>
+        <message>
+            <source>The images in the folder have been deleted, but the folder itself will not
+be deleted due to the presence of additional files and/or folders.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CANT_DELETE_FOLDER</extracomment>
+            <translation>Kansion kuvat on poistettu, mutta itse kansioita ei
+poisteta, koska siinä on muita tiedostoja ja/tai kansioita.</translation>
+        </message>
     </context>
     <context>
         <name>FolderPane</name>

@@ -7742,6 +7742,14 @@ picasapy-origin-key: stringres:RestoreDialog::cantlaunch</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Vispirms atlasiet vismaz vienu attēlu.</translation>
         </message>
+        <message>
+            <source>The images in the folder have been deleted, but the folder itself will not
+be deleted due to the presence of additional files and/or folders.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CANT_DELETE_FOLDER</extracomment>
+            <translation>Mapē esošie attēli ir dzēsti, bet pati mape netiks
+dzēsta, jo tajā ir palikuši papildu faili un/vai mapes.</translation>
+        </message>
     </context>
     <context>
         <name>FolderPane</name>

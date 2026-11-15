@@ -7751,6 +7751,14 @@ picasapy-origin-key: stringres:RestoreDialog::cantlaunch</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Najprej izberite vsaj eno sliko.</translation>
         </message>
+        <message>
+            <source>The images in the folder have been deleted, but the folder itself will not
+be deleted due to the presence of additional files and/or folders.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CANT_DELETE_FOLDER</extracomment>
+            <translation>Slike v mapi so izbrisane. Mapa ne bo izbrisana,
+ker so v njej še druge datoteke in/ali mape.</translation>
+        </message>
     </context>
     <context>
         <name>FolderPane</name>
