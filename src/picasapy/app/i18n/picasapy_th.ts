@@ -7188,6 +7188,12 @@ picasapy-origin-key: stringres:CFileSaveThread:filesaveerr3</extracomment>
             <translation>ไม่สามารถบันทึกไฟล์เนื่องจากรูปแบบไฟล์มีข้อผิดพลาด</translation>
         </message>
         <message>
+            <source>Unable to save files due to a disk error. The disk may be full or read-only.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileSaveCopy:err</extracomment>
+            <translation>ไม่สามารถบันทึกไฟล์เนื่องจากข้อผิดพลาดของดิสก์ ดิสก์อาจเต็มหรืออ่านได้อย่างเดียว</translation>
+        </message>
+        <message>
             <source>Unable to revert all files due to a disk error. The disk may be full or read-only.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:FileRevert::fileerr</extracomment>

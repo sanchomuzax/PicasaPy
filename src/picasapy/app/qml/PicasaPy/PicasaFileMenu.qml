@@ -127,13 +127,13 @@ PicasaMenu {
     MenuItem {
         objectName: "menuFileSaveAs"
         text: qsTr("Save &As...")
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && bar.hasPhotoSelection
         onTriggered: bar.saveAsRequested()
     }
     MenuItem {
         objectName: "menuFileSaveCopy"
         text: qsTr("Save a Cop&y")
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && bar.hasPhotoSelection
         onTriggered: bar.saveCopyRequested()
     }
     // #1774 (mérve): az exportálás UGYANEBBEN a csoportban van, mint a
