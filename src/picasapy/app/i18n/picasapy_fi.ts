@@ -7197,6 +7197,12 @@ picasapy-origin-key: stringres:CFileSaveThread:filesaveerr3</extracomment>
             <translation>Tiedostoa ei voida tallentaa tiedostomuotovirheen takia.</translation>
         </message>
         <message>
+            <source>Unable to save files due to a disk error. The disk may be full or read-only.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileSaveCopy:err</extracomment>
+            <translation>Levyvirheen vuoksi tiedostoja ei voi tallentaa. Levy saattaa olla täynnä tai vain luettava.</translation>
+        </message>
+        <message>
             <source>Unable to revert all files due to a disk error. The disk may be full or read-only.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:FileRevert::fileerr</extracomment>

@@ -267,6 +267,8 @@ MenuBar {
     property bool photoHasPendingEdits: false
     // #5882: a Kép ▸ Unhide csak rejtett képet tartalmazó célkijelölésnél él.
     property bool hasHiddenPhotoSelection: false
+    // #6977: a Save As és Save a Copy videónál tiltott, csak fotónál él
+    property bool hasPhotoSelection: false
     // A könyvtárhoz kötött műveletek ne váljanak aktívvá a szerkesztőnézetben.
     property bool libraryPhotoActionsEnabled: false
     //: A TextInput/TextEdit aktív fókusza esetén a billentyű a mezőé.

@@ -7206,6 +7206,12 @@ picasapy-origin-key: stringres:CFileSaveThread:filesaveerr3</extracomment>
             <translation>Negalima išsaugoti failų dėl failo formato klaidos.</translation>
         </message>
         <message>
+            <source>Unable to save files due to a disk error. The disk may be full or read-only.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileSaveCopy:err</extracomment>
+            <translation>Nepavyko išsaugoti failų dėl disko klaidos. Diskas gali būti pilnas arba tik skaitomas.</translation>
+        </message>
+        <message>
             <source>Unable to revert all files due to a disk error. The disk may be full or read-only.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:FileRevert::fileerr</extracomment>
