@@ -50,7 +50,7 @@ def test_lefoglalt_nevnel_sem_a_cel_sem_a_forras_nem_valtozik(tmp_path):
 
 @pytest.mark.parametrize(
     "name",
-    ["", "   ", ".", "..", "rossz/nev", "rossz\\nev", "rossz:nev", "vege."],
+    ["", "   ", ".", "..", "..."],
 )
 def test_ervenytelen_mappanevnel_nincs_atnevezes(tmp_path, name):
     source = _mappa(tmp_path)
@@ -60,6 +60,46 @@ def test_ervenytelen_mappanevnel_nincs_atnevezes(tmp_path, name):
 
     assert source.is_dir()
     assert (source / "a.jpg").read_bytes() == b"kep"
+
+
+@pytest.mark.parametrize(
+    ("raw_name", "expected_name"),
+    [
+        ("A/B", "AB"),
+        ("..Balaton..", "Balaton"),
+        ("con", "con_"),
+        ("A\t  B", "A B"),
+        ("nul", "nul_"),
+        ("aux", "aux_"),
+        ("prn", "prn_"),
+    ],
+)
+def test_mappatulajdonsag_nev_picasa_szerint_tisztul(
+    tmp_path, raw_name, expected_name
+):
+    source = _mappa(tmp_path)
+
+    target = rename_folder(source, raw_name)
+
+    assert target == tmp_path / expected_name
+    assert target.is_dir()
+    assert (target / "a.jpg").read_bytes() == b"kep"
+    assert not source.exists()
+
+
+def test_uresre_tisztulo_nevnel_nem_indul_lemezes_atnevezes(
+    tmp_path, monkeypatch
+):
+    source = _mappa(tmp_path)
+    module = importlib.import_module("picasapy.fileops.rename_folder")
+    calls = []
+    monkeypatch.setattr(module, "_rename", lambda *args: calls.append(args))
+
+    with pytest.raises(FolderRenameError):
+        rename_folder(source, "/\\:*?\"<>|")
+
+    assert calls == []
+    assert source.is_dir()
 
 
 def test_lemezes_hiba_eseten_a_regi_mappa_marad(tmp_path, monkeypatch):
