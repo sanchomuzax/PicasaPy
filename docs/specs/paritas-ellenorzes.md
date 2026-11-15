@@ -1724,3 +1724,140 @@ A megerősítő párbeszédablakot a `0x0053b2e0` kezeli (`CThumbUI::FileRevert`
    - **Teendő:** A `save_operations.py` `revert` függvényében a törlendő kulcsok körét ki kell terjeszteni a `rotate`, `flipped` és `textactive` kulcsokra.
    - **Kész, ha:** Egy kép forgatása, mentése, majd Revert parancs végrehajtása után a `.picasa.ini`-ben nem marad sem `filters`, sem `rotate`, sem `flipped`, sem `textactive` bejegyzés.
 
+## #6970: Export Picture to Folder teljes folyamata
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Az eredeti és a jelenlegi PicasaPy forrásútjait külön ellenőriztem; a korábbi
+export-specet csak bináris leletként használtam, a PicasaPy-állításokat a mostani
+forrásból olvastam.
+
+### Belépési pontok, feltételek, egy és több kép
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Fájl menü:** `ID_FILE_EXPORTTOFOLDER`, `cmd 0x9c81`; `0x005cb990` a `0x005312b0` nyitóhoz küldi. A nyitó üres kijelölési csomópontnál visszatér, egyébként összegyűjti a kijelölt sorokat. | `PicasaFileMenu.qml:141-145`; `MainMenuBar.qml:83,283-284`. A menü akkor aktív, ha a `photoActionRows()` nem üres. Könyvtárban a sorok kijelölésből jönnek; a nézőben az aktuális kép sora. | Könyvtárnézetben egy és több kijelölt képnél ugyanaz a nyitó és párbeszéd; üres kijelölésnél nincs művelet. Az eredeti fájlmenü nézőbeli engedélyezettségét a parancsrekord és a nyitó önmagában nem dönti el. |
+| **Képtálca Export gomb:** `0x005d9cc0` az `outputlayout/folderbutton` eseményt a `0x005312b0` nyitóhoz küldi. Ehhez az úthoz numerikus menüazonosító nincs igazolva. | `TrayActionArea.qml:407-420`, `MainTrayBar.qml:43`, `ExportDialogs.qml:99-105,121-131`. A gomb könyvtárnézetben és nem üres rácskijelölésnél aktív; megnyitáskor a párbeszéd a tartott tálcát választja, ha nem üres, különben a kijelölést. | Az eredeti és a PicasaPy gombút megvan. Az eredeti nyitóhoz átadott sorok és a tartott, más mappákból származó képek viszonya nem dőlt el, ezért a rácskijelölés nélküli, de nem üres tálcára vonatkozó paritás nyitott. |
+| **Rács/album kép helyi menüje:** a `0x00730790` és `0x00731050` teljes rekordlistájában nincs `ID_FILE_EXPORTTOFOLDER`. | `PhotoContextMenu.qml:35-518`; nincs Export jel vagy menüpont. | Egyezik: a helyi menüből nincs export. |
+| **Képtálca helyi menüje:** `0x00732ee0`, teljes menüleltár; nincs Export. | `TrayContextMenu.qml:32-95`; a menüben nincs Export jel vagy menüpont. | Egyezik: a tálca jobbklikk-menüjéből nincs export. |
+| **Néző helyi menüje:** `0x007327a0` OneUp menü; nincs Export. | `ViewerContextMenu.qml:35-293`; nincs Export jel vagy menüpont. | Egyezik: a néző jobbklikk-menüjéből nincs export. |
+| **Ctrl+Shift+S:** a `0x005e60d0` CThumbUI billentyűkezelő `S` ága Ctrl+Shift esetén hívja a `0x005312b0`-t; a meglévő gyorsbillentyű-spec a billentyűutat könyvtárnézethez köti. | `MainKeyboardShortcuts.qml:427-432`; a shortcut könyvtári nézetben engedélyezett és nézőben nem fut. | Egyezik a könyvtári egyes/többes kijelölés útja; nézői gyorsbillentyű nincs. |
+| **Fájl menü a nézőből:** a főmenü rekord és a közös nyitó ismert, a nézőbeli menüállapot külön feltétele nincs az itt ellenőrzött kimenetekben. | `PicasaFileMenu.qml:141-145`, `MainMenuBar.qml:83,283-284`: a néző egyetlen aktuális képsorával aktív. | Esetleges eltérés nem állítható, amíg az eredeti OneUp melletti Fájl menü engedélyezése nincs eldöntve. Lásd a nyitott kérdést. |
+
+A `0x005312b0` közös nyitó nem választ külön ablakot egy és több képre.
+A kijelölési gyűjtő eredménye határozza meg az exportált köteget; a videóvizsgálók
+azt döntik el, hogy a filmválasztók elérhetők-e. A többes kijelölésnél az
+export-számozás a köteg teljes darabszámától függ, nem külön párbeszédtől.
+
+### A párbeszéd alapállapota és a megjegyzett értékek
+
+| Mező | Eredeti Picasa 3.9 | Jelenlegi PicasaPy |
+|---|---|---|
+| Célhely | A korábbi `DefaultExportPath`; kulcs nélkül lokalizált `Picasa\Exports\`. | A korábbi `export/defaultpath`; kulcs nélkül `<Pictures>/Picasa/Exports` (`export_controller.py:142-161`), a névvel összefűzve `ExportDialogs.qml:162-167`. Az alapút reprezentációja eltér; a Windows alatti abszolút út azonossága itt nincs kimérve. |
+| Mappanév | A forrás album/mappa neve; üres névnél lokalizált `export`. `0x0073b500` a bemeneti objektum `+8` mezőjét olvassa. | A `currentFolder` utolsó útvonaleleme; üresnél `export` (`export_controller.py:125-140`). Normál, egy mappán belüli kijelölésnél azonos forrást céloz; vegyes mappájú tálcánál az eredeti névforrás nincs eldöntve. |
+| Névmező induló állapota | A `export.fen` `focus="name"` mezőt jelöl meg; a névmező fókuszban, a szöveg kijelölve. | Megnyitáskor a mappanév-mező fókuszt kap és teljes tartalmát kijelöli (`ExportDialogs.qml:184-191`). | Egyezik. |
+| Méret | A hiányzó `FileExportSize` alapértéke `3` (`0x00738c43-0x00738c60`); a korábbi tiszta profilú job-645 felvétel 800 px átméretezést mutat. A `.fen` méretlistája 320, 480, 640, 800, 1024, 1200, 1600. A rádióállás statikus kulcsmegfeleltetése a régi specben ellentmondásos. | `size=3`, 800 px; tiszta beállításnál `resize=True`; a 7 méretlista egyezik (`export_prefs.py:30-36,91-110`, `ExportDialogs.qml:193-199`). |
+| Minőség | `FileExportQuality` hiányzó értéke 85 (`0x0073962d`, `0x0073b14a`). A `FileExportQualityType` kulcs beolvasása ismert, de hiányzó kulcsra adott párbeszéd-alapértéke nincs bizonyítva. | `quality=85`, `qualityType=0` (Automatikus) (`export_prefs.py:38-39,111-128`). |
+| Vízjel | `ExportWatermark` alapból 0, a `ExportWatermarkText` üres. | `watermark=False`, `watermarkText=""` (`export_prefs.py:140-143`). |
+| Film | `FileExportMovie` alapból 0, vagyis Első képkocka. Videó nélküli kijelölésnél a csoportcímke és a két rádió is tiltott (`0x007394b3`; eredeti képernyőkép mérési eredménye: `export-parbeszed.md` 13.10). | Alapból Első képkocka; a címke és a rádiók is tiltottak videó nélküli soroknál (`ExportDialogs.qml:210-221,506-536`). Egyezik. |
+| Sorszámozás | `ExportAddNumbers` alapból 0, kikapcsolva (`0x0073fba1`). | `addNumbers=False` (`export_prefs.py:138-142`). |
+| Következő megnyitás | A `0x00738c00` beolvassa, a `0x00739960` elfogadáskor menti: út, méret, egyéni méret, minőségfokozat, minőség, film, vízjel és szöveg, számozás. Mégse esetén nincs mentés (`0x008d2720`). | A QML megnyitáskor betölti és elfogadáskor egy menetben menti a mezőket (`ExportDialogs.qml:179-226,267-288`; `export_prefs.py:152-171`). A helyet a művelet indításakor megjegyzi (`export_controller.py:156-161`). A mappanév újranyitáskor újra a forrásból képződik. |
+
+Egy és több kép esetén a mentett mezők közös párbeszédállapotból jönnek; nincs
+külön egyképes és többképes alapérték-ág. A tiszta profilos eredeti minőségfokozat,
+a régi méret-rádió megfeleltetése és a vegyes mappájú köteg névforrása nyitott.
+
+### Kimeneti hatás és hibák
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| A célmappa a korábbi út és a mappanév összefűzése; létező cél esetén kérdez. Igen törli az előző albumot és új exportot indít. Nem a `0x007f6650`-ben `AL=0`-val tér vissza; a `0x007f6400` caller csak sikeres/igen visszatérésnél hívja az elfogadó `0x008d2720` ágat. | A kérdés `ExportDialogs.qml:610-620`; Igen `startExport(true)`, Nem `startExport(false)` (`613-614`). A `exporter.py:104-118` a Nem útján nem ürít, a `:187-212,245-248` pedig egyedi fájlneveket keres. | **Eltérés:** Nem válasznál az eredeti megszakítja az exportot, nálunk folytatódik és az ütköző fájlok új néven íródnak. A felülírási döntés paritásához javítani kell. |
+| Sorszámozás: `0x0073ee70` a `%0*d-%s` formátumot használja, szélessége az összes kép darabszámának számjegyszáma. Példa az eredeti specből: 7 kép `1-...`, 12 kép `01-...`, 178 kép `001-...`. | `exporter.py:125-132`: `max(3, len(str(len(items))))`, ezért 1-99 elemnél mindig legalább háromjegyű prefixet ír. | **Eltérés:** az eredeti kötegszámhoz igazított minimum szélességet használ, PicasaPy minimuma 3. Sorszámozott fájlnevekhez külön fejlesztői jegy javasolt. |
+| Módosított kép a Picasa képszerkesztéseit exportfájlba rendereli; módosítatlan JPEG esetén a `0x007401b4` `CopyFileW` másolóág létezik. A méretbeállítás és a módosítatlan JPEG-másolóág teljes kapcsolata nincs lezárva. | `exporter.py:191-249`, `export_controller.py:322-347`: módosításokat, forgatást, vágást, átméretezést és vízjelet renderel, no-op esetén másol. | Általános szerkesztéségetés egyezik. Az eredeti méretbeállítás és szerkesztetlen másolási ág kölcsönhatása nyitott; erre ne készüljön becslés. |
+| A cél `.picasa.ini`-jébe a `caption` és a vesszővel elválasztott `keywords` kerül (`0x00740295`, `0x007403bc`, `0x00740485`, `0x0074050d`). A kimeneti képfájl a renderelt szerkesztést tartalmazza; az export utáni `0x007414dd` `]history:export` tokent ad a cél albumhoz. | `export_metadata.py:13-51` csak a caption/keywords adatot írja `update_document`-en át; a képet az `exporter.py:191-249` állítja elő. | A `.picasa.ini` fő tartalma egyezik. A PicasaPy az üres caption/keywords mezőhöz nem hoz létre ini-tételt. |
+| A célmappa `Exported Pictures` könyvtár-kategóriát kap (`0x0073f884`, a kategóriatáblát `0x004a1560` is felsorolja). Az export záróágában nincs közvetlen újraindexelés; a kategória/token a könyvtár-adatúthoz kerül. A `ShellExecuteA("open", célmappa)` a `0x007414a8-0x007414b6` ágon feltételes. | `export_controller.py:424-463`, `library_controller_resync.py:493-585`: a cél exportcélként bekerül az indexbe és siker után újraszinkronizálódik. `ExportDialogs.qml:734-745` csak eredményablakot nyit, automatikus célmappa-megnyitás vagy sor-kijelölés nélkül. | Mindkét oldalon van célmappa-könyvtári kezelés, de a könyvtárfa/index végállapotának azonosságát a statikus lelet nem dönti el. A cél Intézőben megnyitásának feltétele még nincs értelmezve; nem állítható, hogy minden eredeti export után megtörténik. Rács-sorkijelölést az eredeti záróág nem bizonyított. Ezekre eltérés vagy fejlesztői jegy egyelőre nem állapítható meg. |
+| Célkönyvtár-létrehozási hiba külön üzenet. Írási hibánál az eredeti általános szövege a megtelt vagy írásvédett lemezt nevezi meg (`CImageOutput::filewriteerr`). Az eredeti teljeslemez-előellenőrzés léte vagy hiánya ebből a hibaágból nem dőlt el. | `export_controller.py:395-406` előre szabadhelyet ellenőriz és „not enough free disk space” hibát ad; a `exporter.py:103-118,155-159` a létrehozási és elemenkénti írási hibákat gyűjti. | A korai teljeslemez-elutasítás paritása nyitott: az eredeti előellenőrzését és mindkét program felületi ágát méréssel kell összevetni. Az írásvédett cél vagy utólagos íráshiba pontos PicasaPy felületi útja forrásból ellenőrizendő; egyelőre nincs fejlesztői jegy. |
+| Hálózati/UNC-célra vonatkozó külön ág vagy konkrét siker/hiba ebben a statikus körben nincs bizonyítva. A fájlrendszer végső visszatérése futtatási környezettől is függ. | `export_controller.py:388-406`, `exporter.py:101-118,214-249`; célút-átalakítás és `Path`-írás van, de nincs ehhez a jegyhez élő UNC-mérés. | Nyitva marad; UNC-s futáspróba kell a fájlok, az ini, az index és a látható hiba rögzítésével. |
+
+### Két független út és cáfoló kísérlet
+
+- **A út, utasításszint:** a `0x005312b0` közös nyitó, a menü-diszpécser
+  `0x005cb990`, a tálcaesemény `0x005d9cc0`, a CThumbUI billentyűkezelő
+  `0x005e60d0`, a célütközés kezelője `0x007f6650` és hívója `0x007f6400`,
+  valamint a kimeneti ág `0x0073f320` célzott diszasszemblálása.
+- **B út, független rekordok és másik réteg:** a File menü `0x00559150`
+  rekordja és `0x9c81` dispatch-adata; a teljes kontextusmenü-építők és
+  menüsorok (`0x00730790`, `0x00731050`, `0x00732ee0`, `0x007327a0`);
+  `export.fen` és a `0x00738c00`/`0x00739960` beállításút; a tiszta profil
+  job-645 mérés; a jelenlegi PicasaPy QML/Python hívási lánc. Az utak
+  egyeznek a belépések, megőrzött beállítások, collision prompt és metadata
+  kimenet létezésében. A viewer menüállapotot, vegyes tálca névforrását,
+  UNC-hibát és a célmappa-megnyitó jelző jelentését nem döntik el.
+- **Cáfoló kör:** azt a feltevést próbáltam cáfolni, hogy a felülírási
+  párbeszéd Nem válasza megszakítja az exportot. A `0x007f6650` hamis
+  válaszága a `0x007f69d3` takarítás után `AL=0`-val tér vissza; a
+  `0x007f6400` hívó csak `AL!=0` esetén jut a `0x008d2720` elfogadó ágra.
+  A QML viszont `onRejected` alatt `startExport(false)`-t hív. A két teljes
+  hívási út más mércével is ellenőrizve ugyanazt az eltérést adta.
+
+### A jegy „Kész, ha” pontjai
+
+1. ✅ **Belépési pontok:** Fájl menü, tálca Export gomb, kép/tálca/néző helyi
+   menük és Ctrl+Shift+S külön sorban szerepelnek; kijelölési feltételeik
+   dokumentálva. Eredeti OneUp melletti Fájl menüállapot és tálcagyűjtés nyitott.
+2. ⛔ **Egy és több kép ablakállapota:** közös párbeszéd és mentett mezők
+   megvannak; az eredeti minőségfokozat alapértéke, méret-rádió megfeleltetése,
+   vegyes tálca mappanév-alapja nincs eldöntve.
+3. ⛔ **Fájlnév, szerkesztés, ini, index, megnyitás és kijelölés:** a folyamat
+   dokumentált. A sorszámszélesség és az ütközés Nem ága eltér; az eredeti
+   megnyitó jelzője és automatikus rácskijelölése nyitott.
+4. ⛔ **Írásvédett, megtelt lemez, hálózati cél:** az eredeti hibaüzenet és a
+   PicasaPy előellenőrzés ismert. Az aktuális írásvédett út, tényleges UNC
+   eredmény és UNC indexelés nincs mérve.
+
+### Javasolt fejlesztői jegytörzsek
+
+#### 1. Nem válasz az export célmappa-felülírására szakítsa meg a műveletet
+
+**Eredeti:** A Picasa 3.9 `0x007f6650` célütközési kezelőjében a Nem ág
+`AL=0`-val tér vissza; a `0x007f6400` hívó emiatt nem hívja az elfogadó
+`0x008d2720` folytatást. Az Igen az előző album törlését és új exportot indítja.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Nem megszakítja az exportot, Igen üríti a korábbi albumot. | `ExportDialogs.qml:613-614` a Nem ágra `startExport(false)`-t hív; `exporter.py:104-118,187-212` megtartja a korábbi fájlokat és ütközéskor egyedi nevet választ. | A Nem ág zárja be a kérdést exportindítás nélkül; az Igen ág maradjon előző cél-tartalmat törlő export. |
+
+**Kész, ha:** létező cél esetén a Nem választás után sem új fájl, sem sorszámos
+ütközés-fájl nem keletkezik; az Igen választás előző tartalmat töröl és újra
+exportál.
+
+#### 2. Export sorszámozása a köteg méretéhez igazodjon
+
+**Eredeti:** A `0x0073ee70` `%0*d-%s` formátumának szélessége az exportált
+képszám számjegyszáma: 7 kép esetén `1-`, 12 esetén `01-`, 178 esetén `001-`
+prefix az eredeti fájlnév előtt.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A prefix szélessége a teljes képszám számjegyszáma. | `src/picasapy/export/exporter.py:125-132` minimum 3 jegyre tölti fel a sorszámot. | A minimum 3-as korlátot cserélni az eredeti kötegméret-alapú szélességre. |
+
+**Kész, ha:** számozás bekapcsolásakor 7 kép prefixe `1`-től `7`-ig, 12
+képé `01`-től `12`-ig, 178 képé `001`-től `178`-ig tart, kötőjellel és az
+eredeti fájlnévvel.
+
+### Nyitott
+
+- Ghidra-kör kell: 0x00559150 - az `ID_FILE_EXPORTTOFOLDER` Fájl menüpont OneUp nézetben milyen állapotfrissítési feltétellel aktív? [blokkoló]
+- Ghidra-kör kell: 0x005312b0 - a képtálca `folderbutton` útján a kijelölésgyűjtő a tartott, több mappából származó képeket veszi-e át, és hogyan választ névalap-forrásobjektumot? [blokkoló]
+- Ghidra-kör kell: 0x0073f320 - mi állítja be a `0x00741477` előtti megnyitójelzőt, és van-e külön UNC/hálózati útvonal- vagy hibakódág? [blokkoló]
+- `NINCS MEG`: az eredeti `FileExportQualityType` hiányzó kulcshoz tartozó tiszta profilbeli választása; Windows mérés kell üres Preferences profillal.
+- `NINCS MEG`: az eredeti teljeslemez-előellenőrzés léte, valamint írásvédett cél és betelt lemez pontos felületi ága mindkét programban; Windows méréssel rögzítendő a cél, hibaüzenet, fájlok és indexállapot.
+- `NINCS MEG`: hálózati/UNC export sikeres vagy sikertelen kimenete, cél `.picasa.ini`-je és indexbe vétele; UNC útvonalas Windows-mérés kell.
+- `NINCS MEG`: a módosítatlan JPEG `CopyFileW` útja hogyan érvényesíti a méretbeállítást; az eredeti hívó és átadott állapot célzott feltárása kell.
+- `NINCS MEG`: a működés után az eredeti UI kiválaszt-e rácssort; a `0x007414a8` záróágban ilyen művelet nem látszik, de a teljes UI-folyamatra nincs külön mérés.
+
+**Új kutatási jegyjavaslatok:** most nem nyitok külön jegyjavaslatot; a nyitott
+kérdések az Export Picture to Folder folyamat közvetlen folytatásai.
+
+**Módosított fájl:** `docs/specs/paritas-ellenorzes.md` - a #6970 új alszakasza.
+
