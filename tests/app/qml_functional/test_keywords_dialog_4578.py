@@ -121,10 +121,11 @@ def test_cimkek_parbeszed_kattintassal_megjelenit_es_ini_be_ir(
 
     panel = window.findChild(QObject, "propertiesPanel")
     assert panel is not None and panel.isVisible()
-    edit_button = _item(panel, "editKeywordsButton")
-    assert edit_button.isVisible() and edit_button.isEnabled()
-    _click(window, edit_button, qt_app)
     dialog = _item(panel, "keywordsDialog")
+    # #7037: az editKeywordsButton a paritás szerint a jobb oldali Tags panelt
+    # kapcsolja; a KeywordsDialog dialógus belső működését közvetlen megnyitással
+    # teszteljük.
+    dialog.openFor([row], row, controller.photos.itemAt(row))
     assert _wait_for(qt_app, lambda: bool(dialog.property("visible"))), (
         "a Keywords párbeszéd nem nyílt meg a kattintásra; "
         f"ablak={window.width()}x{window.height()}, "

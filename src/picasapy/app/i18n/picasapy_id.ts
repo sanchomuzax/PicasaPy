@@ -13063,6 +13063,13 @@ picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_KEYWORD_PREFS</extracomment>
             <translation>Kata kunci</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Adjust &amp;Date and Time...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_ADJUST_TIMESTAMP</extracomment>
+            <translation>Ubah &amp;Tanggal dan Waktu...</translation>
+        </message>
     </context>
     <context>
         <name>ScreensaverDialog</name>
