@@ -3774,6 +3774,132 @@ indokló eltérés.
 |---|---|---|
 | Nemnulla Shell-eredmény: 0x005edef0 megjeleníti a 0x00e05b6a IDS_CANT_DELETE_FOLDER szöveget, amely elmondja, hogy a képek már törölve lehetnek, a mappa viszont megmaradhat. | `src/picasapy/fileops/trash.py:137-140` általános hibát dob; `src/picasapy/app/fileops_controller_delete_mixin.py:38-40` a generikus üzenetet továbbítja. | A Windows mappatörlés Shell-hibájánál részleges eredményt pontosan megnevező figyelmeztetést adjon. Ne állítsa, hogy a teljes mappa érintetlen maradt. |
 
+### Bizonyíték és bizonyítottsági fok
+
+| Érték vagy állítás | Forrás |
+|---|---|
+| Főmenü és fa helyi menü parancsa 0x9d44 | bináris (0x00559150, 0x007319f0, 0x005cb990) |
+| Főmenü rekord felirat-pointere és parancsmezője | bináris (0x00d6e300, 0x00d6e30a) |
+| Helyi menü rekord felirat-parancs párosítása | bináris (0x00731f48-0x00731f56, 0x00731f9e); Ghidra-kimenet: 2026-11-15-6970-colab-decomp.txt |
+| Szomszédos 0x9df4 parancs Move Folder | bináris (0x00731f34, 0x0053f340, 0x0053f4a0); a Move Folder sztringek független xrefjei 0x00c8ac90-től |
+| Normál kérdés és DeleteFolder erőforrások | bináris (0x005fdc30, 0x00c990e8, 0x00c992c0, 0x00c99314, 0x00c99338) |
+| Mappát lomtárba adó Shell-művelet | bináris (0x005edef0, 0x00992810, 0x009929b0) |
+| Részleges eredmény figyelmeztetése | bináris (0x005edef0, 0x00e05b6a) |
+| PicasaPy belépési pontok, megerősítés és hibaút | Mai forrás: src/picasapy/app/qml/PicasaPy/MainMenuBar.qml:168-170; FolderPane.qml:236-244; FolderPaneMenus.qml:317-325,398-414; `src/picasapy/app/fileops_controller_delete_mixin.py:18-41`; `src/picasapy/fileops/trash.py:129-140` |
+| Eredeti üres/almappás/írásvédett/hálózati viselkedés, belső index/album/arc és UI végállapot | NINCS MEG; külön Windows Picasa 3.9.141 futásmérés szükséges |
+
+**Bizonyítottsági fok: feltételes.** A fő- és helyi menü parancsazonossága,
+a Recycle Bin kérdés, a Shell lomtárjelzője és a részleges hibaüzenet
+megerősített, mert külön útvonalon is egyeznek. A teljes feladat nem zárható
+le: a fa Delete billentyűje, a 2 típusú párbeszéd feltétele, a fájlrendszer
+speciális esetei, a Picasa belső indexe, albumjai, arcai és a törlés utáni
+felületi kijelölés nyitott maradt.
+
+### A két független út
+
+- A út, utasításszintű lánc: a menürekordok 0x9d44 értéke a 0x005cb990
+  diszpécserhez, onnan a 0x005ed240 és 0x005edef0 végrehajtóhoz, majd a
+  0x00992810 és 0x009929b0 Shell-híváshoz vezet.
+- B út, független szöveg- és hívásadat: a 0x00c992c0 kérdés maga mondja ki a
+  Recycle Bin célt, míg a Shell-hívás 0x40 flagje FOF_ALLOWUNDO. A
+  0x00e05b6a külön részleges eredményt ír le.
+- Egyezés: a főmenü és helyi menü ugyanazt a mappa parancsot indítja, és a
+  végrehajtás visszavonható lomtárút. A két út a részleges hiba jelentésében
+  is egyezik.
+
+### Cáfoló kísérlet
+
+Azt próbáltam cáfolni, hogy a helyi menü Delete Folder feliratához a közeli
+0x9df4 kód tartozik. A rekord mezőit a 0x007319f0 építő rekordbázisához
+párosítva a felirat a [esp+0x19c], a Delete parancs pedig ugyanazon rekord
+[esp+0x1a6] mezőjében 0x9d44. A 0x9df4 a megelőző Move Folder rekordhoz
+tartozik, és mozgatási kezelőre vezet. A cáfolatot függetlenül ellenőriztem:
+a 0x9d44 dispatch a mappatörlő 0x005edef0 útvonalra, a 0x9df4 a
+0x0053f340 / 0x0053f4a0 mozgató útvonalra vezet. A próba a parancs-felirat
+párosítást igazolta; nem dönt a fa Delete billentyűjéről.
+
+### A jegy „Kész, ha” pontjai
+
+| Pont | Állapot | Bizonyíték |
+|---|---|---|
+| Mappa menü, fa helyi menü, fa Delete, néző és tálca belépési pontok | ⛔ | Főmenü és helyi menü 0x9d44 igazolt; fa Delete bináris kezelője nyitott. A néző 0x9c9a fotótörlő, a tálca külön művelet. |
+| Üres mappa, almappák, írásvédelem és hálózati meghajtó | ⛔ | A Shell-hívás ismert; az egyedi célok eredménye csak Windows-méréssel dönthető el. |
+| Megerősítés szövege és megjegyzése | ✅ / ⛔ | Normál kérdés, Yes/No és nincs megjegyzés igazolt. A DeleteAllOnlineChecked 2-es ág kiváltó feltétele nyitott. |
+| Lomtár, .picasa.ini, index, mappafa, rács, kijelölés, albumok és arcok | ⛔ | A lomtárjelző igazolt, .ini a mappával halad. Eredeti belső adatok és UI végállapot nincs igazolva. |
+| Részleges törlés és írási hiba | ✅ / ⛔ | Nemnulla Shell-válasz részleges figyelmeztetése igazolt; külön jogosultság- és hálózati kimenet nincs mérve. |
+| PicasaPy összevetése és eltérésenkénti teendő | ✅ | Egy igazolt eltérésre kész jegytörzs készült; minden további eltéréshez hiányzik az eredeti oldali bizonyíték. |
+
+### Javasolt fejlesztői jegytörzs-bővítés
+
+**Cím:** Mappatörlés Shell-hibája: jelezzük a részleges eredményt
+
+**Törzs:**
+
+Eredeti: a 0x005edef0 mappatörlő a 0x009929b0 Shell-hívás nemnulla
+eredményénél a 0x00e05b6a IDS_CANT_DELETE_FOLDER figyelmeztetést mutatja.
+A szöveg szerint a képek már törölve lehetnek, de a mappa további fájlok
+vagy mappák miatt megmaradhat.
+
+Nálunk: `src/picasapy/fileops/trash.py:137-140` általános OSError keletkezik;
+`src/picasapy/app/fileops_controller_delete_mixin.py:38-40` ezt általános
+hibaüzenetként továbbítja.
+
+Teendő: Windows mappatörlés Shell-hibájánál külön részleges eredmény
+figyelmeztetést kell adni. A szöveg ne ígérje, hogy semmi sem változott.
+
+Kész, ha:
+
+- Nemnulla vagy megszakított Windows Shell-eredménynél a felhasználó olyan
+  figyelmeztetést kap, amely szerint a képek törölve lehetnek, miközben a
+  mappa megmaradhat.
+- A hiba nem indít csendes végleges törlést.
+
+### Új kutatási jegyjavaslatok
+
+Most nincs külön új kutatási jegyjavaslat; a fa Delete és a törlés utáni
+belső állapot ennek a folyamatnak nyitott része.
+
+### Ghidra-kiegészítés (2026-11-15, várólista 404-405)
+
+Forrás: `referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp.txt` (privát
+kutatási tár).
+
+- **`0x00a53b00`, Delete a mappafán.** Csak részválasz. Ez egy általános
+  billentyűszűrő 17 hívóval. A DELETE billentyűt (`0x2e`) a vezérlő magának
+  tartja (`FUN_00a582f0`), de a `0x9d44` parancs sem itt, sem a
+  `FUN_00a582f0` elején nem szerepel. Hogy a mappafa melyik hívón át
+  használja, ebből nem dönthető el. A fa Delete útja ezért **nyitott marad**;
+  a PicasaPy mai viselkedése (a fán nincs saját Delete) nem cáfolt.
+- **`0x005fd160`, a 2-es megerősítés feltétele.** A DeleteAllOnlineChecked
+  típus akkor jön, ha a mappa **legalább egy** elemére a katalógus vtábla
+  `+0xac` metódusa igazat ad; ezt a `0x005edef0` állítja be
+  (`cVar1 ? 2 : 0`). A `+0xac` jelentése valószínűleg „online, feltöltve”, de
+  ez nincs igazolva. **PicasaPy:** online feltöltés-nyilvántartás nélkül ez az
+  ág nem értelmezhető; amíg a `+0xac` jelentése nem igazolt, jegyet nem
+  javaslok rá.
+
+### Nyitott
+
+- Ghidra-kör kell: 0x00A582F0 - a Ghidra 404 szerint a DELETE billentyűt
+  ez a vezérlő tartja meg; a teljes törzse és a mappafa hívója kiadja-e a
+  0x9d44 parancsot? [blokkoló]
+- Részben megválaszolva (Ghidra 405): a 2-es típus a katalógus `+0xac`
+  metódusától függ, ha a mappa legalább egy elemére igaz. Ghidra-kör kell: a
+  `+0xac` metódus jelentése (online vagy feltöltött állapot-e).
+- A törlés utáni eredeti index-, album- és arcállapot, valamint a fa, rács
+  és kijelölés végállapota NINCS MEG. Megszerzés: célzott Ghidra-olvasás a
+  0x0065B840 körüli frissítési úton, majd Windows Picasa 3.9.141 mérés egy
+  és több képkijelöléssel. A meglévő 0x00662B20 Ghidra-kimenet ezt a
+  törlés utáni kiválasztás-kérdést nem dönti el.
+- Az üres, almappás, írásvédett és hálózati mappák tényleges Shell-kimenete
+  NINCS MEG. Megszerzés: négy külön tesztcélon futtatás az eredeti Windows
+  Picasában, minden futás előtt és után a fájlrendszer és a felület
+  állapotának rögzítésével.
+
+### Módosított fájlok
+
+- docs/specs/paritas-ellenorzes.md - ez a #7031 alszakasz.
+
 ## #7032: Mappatulajdonságok szerkesztése az eredeti Picasával összevetve
 
 Vizsgálati tárgy: Picasa 3.9.141.259, a bináris SHA-256 értéke
@@ -3869,46 +3995,6 @@ hibát jelent, a sikertelen írás után nem frissíti a kapcsolódó nézetet
 
 | Érték vagy állítás | Forrás |
 |---|---|
-| Főmenü és fa helyi menü parancsa 0x9d44 | bináris (0x00559150, 0x007319f0, 0x005cb990) |
-| Főmenü rekord felirat-pointere és parancsmezője | bináris (0x00d6e300, 0x00d6e30a) |
-| Helyi menü rekord felirat-parancs párosítása | bináris (0x00731f48-0x00731f56, 0x00731f9e); Ghidra-kimenet: 2026-11-15-6970-colab-decomp.txt |
-| Szomszédos 0x9df4 parancs Move Folder | bináris (0x00731f34, 0x0053f340, 0x0053f4a0); a Move Folder sztringek független xrefjei 0x00c8ac90-től |
-| Normál kérdés és DeleteFolder erőforrások | bináris (0x005fdc30, 0x00c990e8, 0x00c992c0, 0x00c99314, 0x00c99338) |
-| Mappát lomtárba adó Shell-művelet | bináris (0x005edef0, 0x00992810, 0x009929b0) |
-| Részleges eredmény figyelmeztetése | bináris (0x005edef0, 0x00e05b6a) |
-| PicasaPy belépési pontok, megerősítés és hibaút | Mai forrás: src/picasapy/app/qml/PicasaPy/MainMenuBar.qml:168-170; FolderPane.qml:236-244; FolderPaneMenus.qml:317-325,398-414; `src/picasapy/app/fileops_controller_delete_mixin.py:18-41`; `src/picasapy/fileops/trash.py:129-140` |
-| Eredeti üres/almappás/írásvédett/hálózati viselkedés, belső index/album/arc és UI végállapot | NINCS MEG; külön Windows Picasa 3.9.141 futásmérés szükséges |
-
-**Bizonyítottsági fok: feltételes.** A fő- és helyi menü parancsazonossága,
-a Recycle Bin kérdés, a Shell lomtárjelzője és a részleges hibaüzenet
-megerősített, mert külön útvonalon is egyeznek. A teljes feladat nem zárható
-le: a fa Delete billentyűje, a 2 típusú párbeszéd feltétele, a fájlrendszer
-speciális esetei, a Picasa belső indexe, albumjai, arcai és a törlés utáni
-felületi kijelölés nyitott maradt.
-
-### A két független út
-
-- A út, utasításszintű lánc: a menürekordok 0x9d44 értéke a 0x005cb990
-  diszpécserhez, onnan a 0x005ed240 és 0x005edef0 végrehajtóhoz, majd a
-  0x00992810 és 0x009929b0 Shell-híváshoz vezet.
-- B út, független szöveg- és hívásadat: a 0x00c992c0 kérdés maga mondja ki a
-  Recycle Bin célt, míg a Shell-hívás 0x40 flagje FOF_ALLOWUNDO. A
-  0x00e05b6a külön részleges eredményt ír le.
-- Egyezés: a főmenü és helyi menü ugyanazt a mappa parancsot indítja, és a
-  végrehajtás visszavonható lomtárút. A két út a részleges hiba jelentésében
-  is egyezik.
-
-### Cáfoló kísérlet
-
-Azt próbáltam cáfolni, hogy a helyi menü Delete Folder feliratához a közeli
-0x9df4 kód tartozik. A rekord mezőit a 0x007319f0 építő rekordbázisához
-párosítva a felirat a [esp+0x19c], a Delete parancs pedig ugyanazon rekord
-[esp+0x1a6] mezőjében 0x9d44. A 0x9df4 a megelőző Move Folder rekordhoz
-tartozik, és mozgatási kezelőre vezet. A cáfolatot függetlenül ellenőriztem:
-a 0x9d44 dispatch a mappatörlő 0x005edef0 útvonalra, a 0x9df4 a
-0x0053f340 / 0x0053f4a0 mozgató útvonalra vezet. A próba a parancs-felirat
-párosítást igazolta; nem dönt a fa Delete billentyűjéről.
-
 | Fő- és Folder helyi menü szerkesztési parancsa, 0x9c69 | bináris (0x00559150, 0x007319f0, 0x005cbcd6); a felirat és parancskód rekordpárosítása cím szerint ellenőrizve |
 | Folder menü engedélyezése és kijelölésfüggő feltétel | bináris (0x0056e1c0, 0x005c76b0, 0x006b1e80); a feltétel szemantikája NINCS MEG |
 | Properties mezők és jelenlegi mappából induló értékek | bináris (0x006db580, 0x0055d070, 0x006dc030, 0x00849750, 0x00849dc0); függetlenül album.fen:1-29 |
@@ -3951,45 +4037,6 @@ pedig az eredeti erőforrás és a képernyőkép azonosítja.
 
 | Pont | Állapot | Bizonyíték |
 |---|---|---|
-| Mappa menü, fa helyi menü, fa Delete, néző és tálca belépési pontok | ⛔ | Főmenü és helyi menü 0x9d44 igazolt; fa Delete bináris kezelője nyitott. A néző 0x9c9a fotótörlő, a tálca külön művelet. |
-| Üres mappa, almappák, írásvédelem és hálózati meghajtó | ⛔ | A Shell-hívás ismert; az egyedi célok eredménye csak Windows-méréssel dönthető el. |
-| Megerősítés szövege és megjegyzése | ✅ / ⛔ | Normál kérdés, Yes/No és nincs megjegyzés igazolt. A DeleteAllOnlineChecked 2-es ág kiváltó feltétele nyitott. |
-| Lomtár, .picasa.ini, index, mappafa, rács, kijelölés, albumok és arcok | ⛔ | A lomtárjelző igazolt, .ini a mappával halad. Eredeti belső adatok és UI végállapot nincs igazolva. |
-| Részleges törlés és írási hiba | ✅ / ⛔ | Nemnulla Shell-válasz részleges figyelmeztetése igazolt; külön jogosultság- és hálózati kimenet nincs mérve. |
-| PicasaPy összevetése és eltérésenkénti teendő | ✅ | Egy igazolt eltérésre kész jegytörzs készült; minden további eltéréshez hiányzik az eredeti oldali bizonyíték. |
-
-### Javasolt fejlesztői jegytörzs-bővítés
-
-**Cím:** Mappatörlés Shell-hibája: jelezzük a részleges eredményt
-
-**Törzs:**
-
-Eredeti: a 0x005edef0 mappatörlő a 0x009929b0 Shell-hívás nemnulla
-eredményénél a 0x00e05b6a IDS_CANT_DELETE_FOLDER figyelmeztetést mutatja.
-A szöveg szerint a képek már törölve lehetnek, de a mappa további fájlok
-vagy mappák miatt megmaradhat.
-
-Nálunk: `src/picasapy/fileops/trash.py:137-140` általános OSError keletkezik;
-`src/picasapy/app/fileops_controller_delete_mixin.py:38-40` ezt általános
-hibaüzenetként továbbítja.
-
-Teendő: Windows mappatörlés Shell-hibájánál külön részleges eredmény
-figyelmeztetést kell adni. A szöveg ne ígérje, hogy semmi sem változott.
-
-Kész, ha:
-
-- Nemnulla vagy megszakított Windows Shell-eredménynél a felhasználó olyan
-  figyelmeztetést kap, amely szerint a képek törölve lehetnek, miközben a
-  mappa megmaradhat.
-- A hiba nem indít csendes végleges törlést.
-
-### Új kutatási jegyjavaslatok
-
-Most nincs külön új kutatási jegyjavaslat; a fa Delete és a törlés utáni
-belső állapot ennek a folyamatnak nyitott része.
-
-### Ghidra-kiegészítés (2026-11-15, várólista 404-405)
-
 | Minden belépési pont és feltétel, beleértve menüt, mappafát, fejlécmezőt, gyorsbillentyűt, nézőt, tálcát és 0/1/több képet | ⛔ | Menüparancsok és editor-builder megvannak; a pontos kibocsátó widgetek, a keyboard út és a kijelölési kapu jelentése nyitott. |
 | Ablak, mezők, alapértékek, átnevezés és külön megerősítés | ✅ részben | A mezők és a jelenlegi mappaértékek binárisan és album.fen alapján megvannak; nincs külön sikeres megerősítő ág. A backend írás még nyitott. |
 | Fájlrendszer, .picasa.ini, index, mappafa, rács és kijelölés hatása | ⛔ | A fizikai átnevezési API és PicasaPy hatása megvan; az eredeti mezőírás, index/rendezés és kijelölési végállapot NINCS MEG. |
@@ -4043,6 +4090,60 @@ kérdésleválasztás.
 
 ### Ghidra-kiegészítés (2026-11-15, várólista 406-412)
 
+Forrás: `referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp.txt` (privát
+kutatási tár).
+
+- **`0x006b1e80`, kijelölési kapu.** A függvény képszámot nem néz: csak azt
+  vizsgálja, hogy a `this[0x1c]` objektum `0x24` virtuális metódusának eredménye nem üres
+  sztring-e. Üres, egy- és többképes kijelölés megkülönböztetése ebben nincs.
+  A tulajdonságablak engedélyezése tehát nem a képkijelöléstől függ; a mai
+  mappa-alapú PicasaPy-viselkedés ezzel **összhangban** van.
+- **`0x0055d070` és `0x0055d320`, mezők és írás.** A mezők a katalógus
+  olvasóiból jönnek (`0x18` név, `0x1c` felirat, `0x20` dátum, `0x24` hely), az
+  írás a `+4/+8/+0x10/+0xc` setterekre megy; a párosítást a `0x00849dc0`
+  `name`, `caption`, `location` és `date` kulcsai igazolják. A mentés sorrendje:
+  név, felirat, hely, `FUN_004448d0`, dátum, végül az átnevezés. Átnevezés csak
+  nem különleges mappánál és eltérő névnél fut (`FUN_009946f0`, `FUN_0052e0f0`),
+  hibánál IDS_NORENAME üzenetet ad. **Hibakezelés:** az első hibás setternél
+  kilép, a már beírt mezőket nem görgeti vissza, és setterhibára üzenetet sem
+  ad; átnevezési hibánál sem görgeti vissza a mezőket. **PicasaPy:** az
+  átnevezés indexhibája esetén lemezes visszagörgetést végez
+  (`rename_folder.py`). Ez szigorúbb az eredetinél, felhasználói kárt nem okoz,
+  ezért nem javaslok rá eltérés-jegyet. A katalógus mögötti `.picasa.ini`-író
+  nincs ebben a kötegben.
+- **`0x00856060`, rácsfejléc leírásmezője.** Nincs válasz: ez csak a
+  `CTextEditNode` konstruktora, eseménykötés és mappakulcs nincs benne. A
+  következő cím a hívója, a `0x00717810`.
+- **`0x005de8e0` és `0x00765d30`, ki küldi az eseményt.** Az `lb_predouble`
+  küldője a bal oldali **CAlbumList** (mappa- és albumlista), ezt az
+  `alist_indent` és a `CAlbumList::newalbumprompt` sztring igazolja. Az
+  `albumdouble` eseményt a főablak kapja, és a mappatulajdonság-ablakot nyitja
+  az albumlista aktuális mappájára (`this+0xeac+0x3c0`), a kijelölt képek
+  számától függetlenül. A korábbi „Néző” sor tehát valójában a **mappalista
+  dupla kattintása**, nem a néző. **PicasaPy:** a mappalista dupla kattintása a
+  fát nyitja és csukja (`FolderHierarchyView.qml:386`), tulajdonságablakot nem
+  nyit. **Erős eltérés-jelölt**; a dupla kattintás pontos célsora (mappa vagy
+  album) a következő lépésben ellenőrizendő, mielőtt fejlesztői jegy lesz
+  belőle.
+- **`0x005e60d0`, gyorsbillentyű.** A főablak beégetett Ctrl-billentyű
+  kezelőjében nincs mappatulajdonság-ág: a `0x9c69` nem szerepel, és a nyolc
+  névvel küldött parancs egyike sem mappatulajdonság. Ebben a kezelőben tehát
+  nincs gyorsbillentyű; az erőforrásbeli gyorsbillentyű-tábla nincs átnézve.
+
+### Nyitott
+
+- Megválaszolva (Ghidra 406): a kapu nem a képszámot nézi, csak egy nem üres sztringet; a kijelölés nem számít.
+- Részben megválaszolva (Ghidra 407): mezőolvasók, setterek és a hibakezelés megvan. Ghidra-kör kell: a katalógus `+4/+8/+0x10/+0xc` setterei mögötti `.picasa.ini`-író.
+- Részben megválaszolva (Ghidra 408): sorrend és visszagörgetés megvan. Ghidra-kör kell: `0x009946f0` - a MoveFileExW forrás- és célútjának összeállítása.
+- Ghidra-kör kell: 0x00717810 - a rácsfejléc leírásmezőjének (`0x00856060` hívója) elfogadási eseménye és tartós mappakulcsa. [blokkoló]
+- Megválaszolva (Ghidra 410-411): a küldő a bal oldali CAlbumList dupla kattintása, a hatókör az aktuális mappa.
+- Ellenőrizendő: a CAlbumList dupla kattintása mappasoron és albumsoron is a mappatulajdonságot nyitja-e (a `0x006db580` csak a meglévő mappa útja).
+- Részben megválaszolva (Ghidra 412): a Ctrl-kezelőben nincs gyorsbillentyű. Nyitott: az erőforrásbeli gyorsbillentyű-tábla.
+- NINCS MEG (mérés): eredeti .picasa.ini írási hiba után mi marad lemezen és a felületen. Megszerzés: Windowsos Picasa 3.9 mérés külön másolaton, külön írásvédett mappával és ini-írási hibával; NAS-bejárás nélkül.
+
+### Módosított fájlok
+
+- docs/specs/paritas-ellenorzes.md - új #7032 alfejezet a belépési pontokról, a tulajdonságablakról, a névátnevezésről és a nyitott hatásokról.
 
 ## #7033: A dátum és idő beállításának teljes folyamata
 
@@ -4253,94 +4354,6 @@ folyamatához tartoznak.
 
 Forrás: `referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp.txt` (privát
 kutatási tár).
-
-- **`0x00a53b00`, Delete a mappafán.** Csak részválasz. Ez egy általános
-  billentyűszűrő 17 hívóval. A DELETE billentyűt (`0x2e`) a vezérlő magának
-  tartja (`FUN_00a582f0`), de a `0x9d44` parancs sem itt, sem a
-  `FUN_00a582f0` elején nem szerepel. Hogy a mappafa melyik hívón át
-  használja, ebből nem dönthető el. A fa Delete útja ezért **nyitott marad**;
-  a PicasaPy mai viselkedése (a fán nincs saját Delete) nem cáfolt.
-- **`0x005fd160`, a 2-es megerősítés feltétele.** A DeleteAllOnlineChecked
-  típus akkor jön, ha a mappa **legalább egy** elemére a katalógus vtábla
-  `+0xac` metódusa igazat ad; ezt a `0x005edef0` állítja be
-  (`cVar1 ? 2 : 0`). A `+0xac` jelentése valószínűleg „online, feltöltve”, de
-  ez nincs igazolva. **PicasaPy:** online feltöltés-nyilvántartás nélkül ez az
-  ág nem értelmezhető; amíg a `+0xac` jelentése nem igazolt, jegyet nem
-  javaslok rá.
-
-### Nyitott
-
-- Ghidra-kör kell: 0x00A582F0 - a Ghidra 404 szerint a DELETE billentyűt
-  ez a vezérlő tartja meg; a teljes törzse és a mappafa hívója kiadja-e a
-  0x9d44 parancsot? [blokkoló]
-- Részben megválaszolva (Ghidra 405): a 2-es típus a katalógus `+0xac`
-  metódusától függ, ha a mappa legalább egy elemére igaz. Ghidra-kör kell: a
-  `+0xac` metódus jelentése (online vagy feltöltött állapot-e).
-- A törlés utáni eredeti index-, album- és arcállapot, valamint a fa, rács
-  és kijelölés végállapota NINCS MEG. Megszerzés: célzott Ghidra-olvasás a
-  0x0065B840 körüli frissítési úton, majd Windows Picasa 3.9.141 mérés egy
-  és több képkijelöléssel. A meglévő 0x00662B20 Ghidra-kimenet ezt a
-  törlés utáni kiválasztás-kérdést nem dönti el.
-- Az üres, almappás, írásvédett és hálózati mappák tényleges Shell-kimenete
-  NINCS MEG. Megszerzés: négy külön tesztcélon futtatás az eredeti Windows
-  Picasában, minden futás előtt és után a fájlrendszer és a felület
-  állapotának rögzítésével.
-
-### Módosított fájlok
-
-- docs/specs/paritas-ellenorzes.md - ez a #7031 alszakasz.
-
-- **`0x006b1e80`, kijelölési kapu.** A függvény képszámot nem néz: csak azt
-  vizsgálja, hogy a `this[0x1c]` objektum `0x24` virtuális metódusának eredménye nem üres
-  sztring-e. Üres, egy- és többképes kijelölés megkülönböztetése ebben nincs.
-  A tulajdonságablak engedélyezése tehát nem a képkijelöléstől függ; a mai
-  mappa-alapú PicasaPy-viselkedés ezzel **összhangban** van.
-- **`0x0055d070` és `0x0055d320`, mezők és írás.** A mezők a katalógus
-  olvasóiból jönnek (`0x18` név, `0x1c` felirat, `0x20` dátum, `0x24` hely), az
-  írás a `+4/+8/+0x10/+0xc` setterekre megy; a párosítást a `0x00849dc0`
-  `name`, `caption`, `location` és `date` kulcsai igazolják. A mentés sorrendje:
-  név, felirat, hely, `FUN_004448d0`, dátum, végül az átnevezés. Átnevezés csak
-  nem különleges mappánál és eltérő névnél fut (`FUN_009946f0`, `FUN_0052e0f0`),
-  hibánál IDS_NORENAME üzenetet ad. **Hibakezelés:** az első hibás setternél
-  kilép, a már beírt mezőket nem görgeti vissza, és setterhibára üzenetet sem
-  ad; átnevezési hibánál sem görgeti vissza a mezőket. **PicasaPy:** az
-  átnevezés indexhibája esetén lemezes visszagörgetést végez
-  (`rename_folder.py`). Ez szigorúbb az eredetinél, felhasználói kárt nem okoz,
-  ezért nem javaslok rá eltérés-jegyet. A katalógus mögötti `.picasa.ini`-író
-  nincs ebben a kötegben.
-- **`0x00856060`, rácsfejléc leírásmezője.** Nincs válasz: ez csak a
-  `CTextEditNode` konstruktora, eseménykötés és mappakulcs nincs benne. A
-  következő cím a hívója, a `0x00717810`.
-- **`0x005de8e0` és `0x00765d30`, ki küldi az eseményt.** Az `lb_predouble`
-  küldője a bal oldali **CAlbumList** (mappa- és albumlista), ezt az
-  `alist_indent` és a `CAlbumList::newalbumprompt` sztring igazolja. Az
-  `albumdouble` eseményt a főablak kapja, és a mappatulajdonság-ablakot nyitja
-  az albumlista aktuális mappájára (`this+0xeac+0x3c0`), a kijelölt képek
-  számától függetlenül. A korábbi „Néző” sor tehát valójában a **mappalista
-  dupla kattintása**, nem a néző. **PicasaPy:** a mappalista dupla kattintása a
-  fát nyitja és csukja (`FolderHierarchyView.qml:386`), tulajdonságablakot nem
-  nyit. **Erős eltérés-jelölt**; a dupla kattintás pontos célsora (mappa vagy
-  album) a következő lépésben ellenőrizendő, mielőtt fejlesztői jegy lesz
-  belőle.
-- **`0x005e60d0`, gyorsbillentyű.** A főablak beégetett Ctrl-billentyű
-  kezelőjében nincs mappatulajdonság-ág: a `0x9c69` nem szerepel, és a nyolc
-  névvel küldött parancs egyike sem mappatulajdonság. Ebben a kezelőben tehát
-  nincs gyorsbillentyű; az erőforrásbeli gyorsbillentyű-tábla nincs átnézve.
-
-### Nyitott
-
-- Megválaszolva (Ghidra 406): a kapu nem a képszámot nézi, csak egy nem üres sztringet; a kijelölés nem számít.
-- Részben megválaszolva (Ghidra 407): mezőolvasók, setterek és a hibakezelés megvan. Ghidra-kör kell: a katalógus `+4/+8/+0x10/+0xc` setterei mögötti `.picasa.ini`-író.
-- Részben megválaszolva (Ghidra 408): sorrend és visszagörgetés megvan. Ghidra-kör kell: `0x009946f0` - a MoveFileExW forrás- és célútjának összeállítása.
-- Ghidra-kör kell: 0x00717810 - a rácsfejléc leírásmezőjének (`0x00856060` hívója) elfogadási eseménye és tartós mappakulcsa. [blokkoló]
-- Megválaszolva (Ghidra 410-411): a küldő a bal oldali CAlbumList dupla kattintása, a hatókör az aktuális mappa.
-- Ellenőrizendő: a CAlbumList dupla kattintása mappasoron és albumsoron is a mappatulajdonságot nyitja-e (a `0x006db580` csak a meglévő mappa útja).
-- Részben megválaszolva (Ghidra 412): a Ctrl-kezelőben nincs gyorsbillentyű. Nyitott: az erőforrásbeli gyorsbillentyű-tábla.
-- NINCS MEG (mérés): eredeti .picasa.ini írási hiba után mi marad lemezen és a felületen. Megszerzés: Windowsos Picasa 3.9 mérés külön másolaton, külön írásvédett mappával és ini-írási hibával; NAS-bejárás nélkül.
-
-### Módosított fájlok
-
-- docs/specs/paritas-ellenorzes.md - új #7032 alfejezet a belépési pontokról, a tulajdonságablakról, a névátnevezésről és a nyitott hatásokról.
 
 - **`0x0077c670`, kezdő mód.** A dátumeltolás ablakának konstruktora és két
   kezelője (`0x0077cee0`, `0x0077cd50`) nem olvas és nem ír megjegyzett
