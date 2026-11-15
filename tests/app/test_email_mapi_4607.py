@@ -87,7 +87,8 @@ class TestWindowsMapiSend:
         with is_win, mapi:
             ok = controller.sendWithDefaultClient(["C:/a.jpg"], "T", "Sz", False)
         assert ok is False
-        assert events == [controller.tr("No email program was found.")]
+        # #6987: a 2-es kód (MAPI_E_FAILURE) az eredeti általános hibaszövege
+        assert events == ["The email could not be sent."]
 
 
 class TestWindowsMapiRobustness:
