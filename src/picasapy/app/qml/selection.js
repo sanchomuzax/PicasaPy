@@ -35,6 +35,23 @@ function effectiveRows(selectedIndexes, selectedIndex) {
     return selectedIndex >= 0 ? [selectedIndex] : []
 }
 
+// #6995: a kijelölt képek útjai a RÁCS sorrendjében, nem a kattintás
+// sorrendjében. A „Locate on Disk" mappánként az ELSŐ kijelölt képet mutatja;
+// az „első" itt a rács szerinti első (tervezői döntés: a Ctrl+katt sorrendje
+// ne számítson). A `photos` a rács modellje (`filePathAt`); a bemenő listát
+// nem módosítja.
+function pathsInGridOrder(photos, rows) {
+    var sorted = []
+    for (var k = 0; k < rows.length; ++k) sorted.push(Number(rows[k]))
+    sorted.sort(function(a, b) { return a - b })
+    var paths = []
+    for (var i = 0; i < sorted.length; ++i) {
+        var path = photos.filePathAt(sorted[i])
+        if (path.length > 0) paths.push(path)
+    }
+    return paths
+}
+
 // #135: a kijelölés stabil (fotó-id) alapú újraképzése háttér-modell-
 // frissítés (reset) után — a sor-indexek elcsúszhatnak (beszúrás/törlés/
 // átrendeződés), de az id-k nem. A `rowOfId` a modell aktuális

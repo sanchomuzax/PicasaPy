@@ -1015,6 +1015,8 @@ Az export-kód **nem egy tartományban** él. A leltár:
 *(A **„Export as HTML Page…"** külön parancs — **`0x9c95`**, rekord
 `0xd6e288` —, és NEM ide megy: az a webexport.)*
 
+*(Megjegyzés #6996: a #6989 során felmerült gyanú, miszerint a `0x9c81` a Locate on Disk kódja lenne, a bináris közvetlen vizsgálatával cáfolva; a `0xd6dab4` rekord felirata valóban az Export Picture to Folder, parancskódja a `0xd6dabe` mezőben `0x9c81`, míg a Locate on Disk a `0xd6dadc` rekordhoz tartozik `0x9c99` paranccsal.)*
+
 ### 8.2 MIT INDÍT EL kifelé
 
 A `0x005312b0` megnyitja a párbeszédet; az OK az **`CImageOutput`**-ot

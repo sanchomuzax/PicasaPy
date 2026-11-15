@@ -1,5 +1,6 @@
 import QtQuick.Window
 import PicasaPy
+import "../selection.js" as Selection
 
 // A főablak felső menüsorának bekötései; az elemeket a PicasaMenuBar kezeli.
 PicasaMenuBar {
@@ -315,10 +316,11 @@ PicasaMenuBar {
     onPrintRequested: hostWindow.openPrint()
     // #1590: Mappa ▸ Bélyegképek nyomtatása… (Ctrl+Shift+P)
     onPrintContactSheetRequested: hostWindow.openContactSheetPrint()
-    onLocateRequested: {
-        var p = hostController.photos.filePathAt(hostWindow.photoActionIndex())
-        if (p.length > 0) hostFileOpsController.revealPhoto(p)
-    }
+    // #6995: több kijelölt képnél mappánként egy fájlkezelő-ablak, az adott
+    // mappa első kijelölt képére állva (a Fájl menü és a Ctrl+Enter közös útja)
+    onLocateRequested: hostFileOpsController.revealPhotos(
+        Selection.pathsInGridOrder(
+            hostController.photos, hostWindow.photoActionRows()))
     onDeleteRequested: hostFileOpsDialogs.ensure().openDelete(
         hostWindow.viewerOpen ? hostWindow.photoActionPaths()
                           : hostWindow.selectedPaths())
