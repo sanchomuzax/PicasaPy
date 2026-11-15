@@ -3063,7 +3063,7 @@ Megerősített. A folyamat belépési pontjait, parancskódjait, vágólap-kezel
 | Szerkesztés menü Cut (`Cu&t`) | `0x005cb990` -> `0x005fe9f0(1)`, parancskód `0x9d39` (40249) | Könyvtárban legalább 1 kijelölt elem. A rácson halványított jelölést kap (`0x00716f40`). Szerkesztőben inaktív. | `PicasaEditMenu.qml:46-51` | Eltérés: a PicasaPy nem jelöli halványítottként a rácson a kivágott elemeket. |
 | Gyorsbillentyű Ctrl+X | Accelerator tábla (`0x007823f0`), parancskód `0x9d39` | Megegyezik a Szerkesztés menü Cut feltételével. | `MainKeyboardShortcuts.qml:256-267` | Egyezik a hívásban, hiányzik a vizuális jelölés. |
 | Bélyegkép helyi menü | `0x00730790` | Nincs sima Copy / Cut tétel a helyi menüben (csak `Copy Path`, `Copy Effects`, `Move to New Folder...`). | `PhotoContextMenu.qml` | Egyezik (nincs közvetlen Copy/Cut a helyi menüben). |
-| Szerkesztés menü Paste (`&Paste`) | `0x005cb990` -> `0x005feab0()`, parancskód `0x9d3c` (40252) | Belső vágólap nem üres VAGY külső vágólapon képadat/fájllista van. Szerkesztőben inaktív. Cél hiányában dialógus (`IDS_NEED_SELECTED_ALBUM`). | `PicasaEditMenu.qml:60-67` | Eltérés: cél hiányában a PicasaPy hiba-bannert mutat vagy csendben no-op. |
+| Szerkesztés menü Paste (`&Paste`) | `0x005cb990` -> `0x005feab0()`, parancskód `0x9d3c` (40252) | Belső vágólap nem üres VAGY külső vágólapon képadat/fájllista van. Szerkesztőben inaktív. Cél hiányában dialógus (`IDS_NEED_SELECTED_ALBUM`). | `PicasaEditMenu.qml:60-67` | Eltérés: cél hiányában a PicasaPy hibasávot mutat, vagy csendben nem tesz semmit. |
 | Gyorsbillentyű Ctrl+V | Accelerator tábla (`0x007823f0`), parancskód `0x9d3c` | Megegyezik a Szerkesztés menü Paste feltételével. | `MainKeyboardShortcuts.qml:268-279` | Egyezik |
 | Copy To Folder | Nincs ilyen önálló parancs | Az eredetiben külön Export (`0x9d3e`), Move Folder (`0x9df4`) és Move to New Folder (`0x9d68`) létezik. | Nincs önálló parancs | Egyezik |
 | Média típusok | Kép és videó támogatott | Legalább 1 érvényes médiaelem kijelölve. | Kép és videó támogatott | Egyezik |
@@ -3109,7 +3109,7 @@ Ha a felhasználó a Beillesztés (Paste) parancsot választja (`0x005feab0` -> 
 | Szerkesztő nézet (OneUp) másolás | `0x0069b000` -> `0x00a706f0` (`SetClipboardData(CF_BITMAP)`) | `fileops_controller_clipboard_mixin.py:16-56` (fájl-URL) | Paritási eltérés javítása: Szerkesztő nézetben a renderelt szerkesztett képet képadatként (`QImage`) kell a vágólapra helyezni. |
 | Szerkesztés menü Paste | `0x005cb990` -> `0x005feab0()` | `src/picasapy/app/qml/PicasaPy/PicasaEditMenu.qml:60-67` | Nincs, paritásban van. |
 | Gyorsbillentyű Ctrl+V | Accelerator `0x9d3c` (`0x007823f0`) | `src/picasapy/app/qml/PicasaPy/MainKeyboardShortcuts.qml:268-279` | Nincs, paritásban van. |
-| Célválasztás figyelmeztetés | `0x005791fb` (`IDS_NEED_SELECTED_ALBUM`) | `MainWindowCommands.qml:5-7` (hiba-banner) | Paritási eltérés javítása: ha nincs aktív mappa vagy album, figyelmeztető párbeszédablakot kell megjeleníteni. |
+| Célválasztás figyelmeztetés | `0x005791fb` (`IDS_NEED_SELECTED_ALBUM`) | `MainWindowCommands.qml:5-7` (hibasáv) | Paritási eltérés javítása: ha nincs aktív mappa vagy album, figyelmeztető párbeszédablakot kell megjeleníteni. |
 | Azonos mappa másolási megerősítés | `0x00579220`, `0x00c89d1c` (`CThumbUI::MoveFilesConfirmCopy`) | `fileops_controller_clipboard_mixin.py:84` (azonnali másolás) | Paritási eltérés javítása: azonos mappába másoláskor kérdezzen rá a felhasználónál a másolásra. |
 | Fájlok másolása | `0x00473bd6` (`CopyFileW`) | `src/picasapy/fileops/copy.py:53` (`shutil.copy2`) | Nincs, paritásban van. |
 | Mentett eredetik (`.picasaoriginals`) | `0x00478780` sor 509 | `src/picasapy/fileops/copy.py:78` (`copy_preserved_originals`) | Nincs, paritásban van. |
@@ -3130,14 +3130,14 @@ Ha a felhasználó a Beillesztés (Paste) parancsot választja (`0x005feab0` -> 
 2. ✅ **Vágólapra helyezett adatok és megerősítések:** Részletesen feltárva: könyvtárban belső azonosítók, szerkesztőben `CF_BITMAP` (2) képadat, nincs megerősítés másoláskor.
 3. ✅ **Beillesztés hatása a fájlokra, .picasa.ini-re, indexre, névtérre és rácsra:** Fájlok célmappába másolása, `.picasaoriginals` megőrzése, `.picasa.ini` szekció átmásolása és fejléc átnevezése, index-frissítés igazolva.
 4. ✅ **Hibák, névütközés és részleges végrehajtás:** `CopyFileW` hibakezelése, ciklus-megszakítás, meglévő másolatok megőrzése (rollback hiánya) bizonyítva.
-5. ✅ **Paritási táblázat és fejlesztői jegyjavaslatok:** Táblázat és részletes, Gemini-kész fejlesztői jegytörzsek elkészítve.
+5. ✅ **Paritási táblázat és fejlesztői jegyjavaslatok:** Táblázat és részletes fejlesztői jegytörzsek elkészítve.
 
 ### 8. Javasolt fejlesztői jegyek
 
 #### 1. jegyjavaslat: Szerkesztő nézetben (OneUp) a kép másolása a renderelt képet tegye a vágólapra fájl-URL helyett
 - **Cím:** Szerkesztő előnézet: a Copy parancs képadatot tegyen a rendszer vágólapjára fájl-URL helyett
 - **Törzs:**
-  Eredeti: `0x0069b000` -> `0x00a706f0` (`OpenClipboard`, `EmptyClipboard`, `SetClipboardData(CF_BITMAP, hBitmap)` @ `0x00a70776`). Az eredeti Picasa a szerkesztő nézetben a képszerkesztésekkel lerenderelt képet valódi képadatként (`CF_BITMAP`) teszi a vágólapra, így külső programokba közvetlenül képként beilleszthető.
+  Eredeti: `0x0069b000` -> `0x00a706f0` (`OpenClipboard`, `EmptyClipboard`, `SetClipboardData(CF_BITMAP, hBitmap)` @ `0x00a70776`). Az eredeti Picasa a szerkesztő nézetben a képszerkesztésekkel együtt kiszámolt képet valódi képadatként (`CF_BITMAP`) teszi a vágólapra, így külső programokba közvetlenül képként beilleszthető.
   Nálunk: `src/picasapy/app/fileops_controller_clipboard_mixin.py:16-56` (`_tegyd_a_vagolapra`) mindig csak a fájl lemezes URL-jét adja át (`mime.setUrls`), képfájlként.
   Teendő: A vezérlőben ellenőrizni, hogy a hívás szerkesztő nézetből (OneUp / EditPanel) érkezik-e. Ha igen, a kép aktuális renderelt felületét (`QImage`) kell a vágólapra helyezni a `clipboard.setImage(image)` hívással.
   Kész, ha: a szerkesztőben megnyitott és effektezett képen a Ctrl+C megnyomása után egy külső programban (pl. képszerkesztő vagy szövegszerkesztő) a Beillesztés közvetlenül a szerkesztett képet illeszti be.
