@@ -23,7 +23,6 @@ from tests.app.qml_functional._mappa_kep_menu_5150_helpers import (
 from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
     elokeszit_str,
     gyerek,
-    ini_ertek,
     jobbklikk_fotón,
     kattints,
     kijelol,
