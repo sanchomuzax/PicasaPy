@@ -2142,7 +2142,7 @@ A részletes, két független úton elvégzett bináris vizsgálat ezt a feltev�
 - A `0x9c81` valóban és bizonyítottan a **Fájl > Export Picture to Folder** parancskódja (`ID_FILE_EXPORTTOFOLDER`).
 - A `0x005312b0` függvény valóban az Export párbeszédablak nyitója (`CExportPrefsDialog`), amelyet mind a Fájl menü (`0x9c81`), mind a képtálca Export gombja (`outputlayout/folderbutton`) meghív.
 - A Locate on Disk valódi parancskódja nem a `0x9c81`, hanem a **`0x9c99`** (`rec 19`, `0x00d6dadc` rekord, gyorsbillentyűje "Enter"), kezelőfüggvénye pedig a `0x005cb990` diszpécserből induló **`0x005c8320`**.
-- A téves gyanút a Microsoft Visual C++ fordító utasítás-összefésülése (interleaving optimalizáció) okozta: miközben az N-edik menürekord (`rec 17`, Export) `cmdId` mezőjét (`0x00d6dabe`) töltötte fel a `0x9c81` értékkel, a fordító már előre betöltötte a verembe a következő rekord lokalizációs kulcsát (`push eMenuFileWin::ID_FILE_LOCATEONDISK`), így a felületes lineáris olvasás a kulcsot és a kódot tévesen összekapcsolta.
+- A téves gyanút a Microsoft Visual C++ fordító utasítás-összefésülése (az utasítások egymásba ütemezése) okozta: miközben az N-edik menürekord (`rec 17`, Export) `cmdId` mezőjét (`0x00d6dabe`) töltötte fel a `0x9c81` értékkel, a fordító már előre betöltötte a verembe a következő rekord lokalizációs kulcsát (`push eMenuFileWin::ID_FILE_LOCATEONDISK`), így a felületes lineáris olvasás a kulcsot és a kódot tévesen összekapcsolta.
 
 ### 2. A menürekordok bináris adatszerkezete és a Fájl menü teljes térképe
 
@@ -2161,7 +2161,7 @@ struct MenuItemRecord {
 
 A Fájl menü (`0x00559150` által feltöltött `0x00d6d960` tömb, `0x1b` = 27 elem) releváns rekordjai:
 
-| Index | Báziscím | Funkció / Kulcs | Felirat | Gyorsbillentyű | cmdId címe | cmdId (hex) | cmdId (dec) |
+| Index | Báziscím | Funkció / Kulcs | Felirat | Gyorsbillentyű | cmdId címe | cmdId (hexa) | cmdId (tízes) |
 |---|---|---|---|---|---|---|---|
 | rec 12 | `0x00d6da50` | `eMenuFile::ID_FILE_SAVE` | &Save | Ctrl+S (`0x00c8c610`) | `0x00d6da5a` | `0xe103` | 57603 |
 | rec 13 | `0x00d6da64` | `eMenuFile::ID_FILE_REVERT` | Rever&t | - | `0x00d6da6e` | `0x9d9a` | 40346 |
