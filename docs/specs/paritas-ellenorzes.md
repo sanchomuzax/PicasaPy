@@ -3580,7 +3580,7 @@ Az eredeti Picasa 3.9 a másolás helyétől függően kétféleképpen kezeli a
 2. **Szerkesztő nézet (OneUp / EditPanel):** A `0x0069b000` -> `0x00a706f0` lánc a kép szerkesztett, effektezett változatát kirajzolja egy Win32 Device Context-be, majd a szabványos Win32 vágólap API-val (`OpenClipboard` @ `0x0069b1bb`, `EmptyClipboard` @ `0x00a70715`, `SetClipboardData(CF_BITMAP, hBitmap)` @ `0x00a70776`) bitmap képadatként (`CF_BITMAP`, formátumkód 2) helyezi a vágólapra. Nincs ablak vagy megerősítés.
 3. **Megjegyzett értékek:** Nincsenek perzisztált állapotok; minden másolás felülírja a korábbi vágólap-tartalmat.
 
-*PicasaPy összevetés:* A `fileops_controller_clipboard_mixin.py:16-56` (`_tegyd_a_vagolapra`) kizárólag fájl-URL-eket (`mime.setUrls(...)`) és `x-special/gnome-copied-files` szöveget helyez a vágólapra. Szerkesztő nézetben sem teszi fel a szerkesztett képet képadatként (`QImage` / pixmap), így külső képszerkesztőkbe vagy szövegszerkesztőkbe nem illeszthető be közvetlenül képként.
+*PicasaPy összevetés:* A `fileops_controller_clipboard_mixin.py:16-56` (`_tegyd_a_vagolapra`) kizárólag fájl-URL-eket (`mime.setUrls(...)`) és `x-special/gnome-copied-files` szöveget helyez a vágólapra. Szerkesztő nézetben sem teszi fel a szerkesztett képet képadatként (`QImage` vagy `QPixmap`), így külső képszerkesztőkbe vagy szövegszerkesztőkbe nem illeszthető be közvetlenül képként.
 
 ### 3. Beillesztés végrehajtása, fájlok, ini, index és rács
 
