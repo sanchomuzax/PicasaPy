@@ -2238,3 +2238,92 @@ Nincs nyitott kérdés: a folyamat mind a négy pontja bináris címekkel és fo
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - a #6989 új szakasza.
+
+## #6988: A Print parancs teljes folyamata az eredeti Picasával összevetve
+
+### Belépési pontok
+
+Az eredeti Fájl menü `ID_FILE_PRINT` parancsának adata `0xe107`. A menüelemet a `0x0056e1c0` dinamikus engedélyezése vezérli. A `0x005cb1a0` állapot-előállító nem üres kijelölésnél `0x2` jelzőt ad; több elemnél további `0x200` jelző jelenik meg. A videóosztályozó külön `0x20`/`0x60` biteket ad, amelyek nem részei a Print menücsoport `0x2`/`0x4` kapujának. Ez azt bizonyítja, hogy a Fájl menü látható Print parancsát a videójelző önmagában nem tiltja le. A nyomtatási munkába ténylegesen bekerülő rekordokat ez nem dönti el.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Fájl menü:** `ID_FILE_PRINT`, `cmd=0xe107`; a `0x0056e1c0` a kijelölési állapot alapján engedélyezi. Üres kijelölésnél a kapu nem teljesül; egy és több kijelölt elemnél igen. A videó külön állapotjelző, és nem tiltja ezt a menükaput (`0x005cb1a0`, `0x0056e1c0`). | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:164-168`, `src/picasapy/app/qml/PicasaPy/MainMenuBar.qml:83`, `src/picasapy/app/qml/PicasaPy/MainLibrarySelectionState.qml:70-78`; a menü a néző aktuális fotósorát vagy a könyvtári kijelölést veszi. Videót nem szűr ezen a kapun. | A menü engedélyezési szintjén nincs bizonyított eltérés. A tényleges rekordlista videó/hiányzó fájl viselkedését külön kell lezárni. |
+| **Fotó- és mappa-helyi menü:** a vizsgált építők (`0x00730790`, `0x00731050`) erőforrás- és sztringlistájában nincs Print vagy Print Contact Sheet parancs. | A `PhotoContextMenu.qml` és `FolderContextMenu.qml` nem tartalmaz sima Print elemet; a `*Menu.qml` Print-keresés a `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:164-168` főmenüelemét és a `src/picasapy/app/qml/PicasaPy/PicasaFolderMenu.qml:167-173` külön Contact Sheet műveletét találta. | A vizsgált helyi menüknél nincs eltérés. A néző saját, kontextusfüggő menüjének eredeti parancslistája nincs teljesen azonosítva. |
+| **Billentyű:** a `0x005e6428` körüli eredeti billentyűkezelő módosítóállapot szerint a `0x00744ee0` útra vagy közvetlenül az `outputlayout/pbutton` aktiválására lép. A címke és a pontos Print/Ctrl+Shift+P parancs-hozzárendelés ebből a diszasszemblálásból nem állapítható meg. | `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml:695-713` köti a `Ctrl+P`-t a nyomtatáshoz; a `src/picasapy/app/qml/PicasaPy/PicasaFolderMenu.qml:173` és `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml:705-713` a `Ctrl+Shift+P`-t Contact Sheethez köti. | A két program gyorsbillentyű-paritása nyitott. Ne változzon a kötés, amíg a bináris billentyűág és az eredeti aktív nézet szerepe nincs tisztázva. |
+| **Képtálca / output gomb:** az eredeti `outputlayout/pbutton` a `0x00744a00` panelnyitó útra vezet. A tényleges nyomtatási parancs `0x00744d00` útja a kijelölt rekordok listáját adja át a nyomtatási munkának. | `src/picasapy/app/qml/PicasaPy/MainTrayBar.qml:57`, `src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:365-373`, `src/picasapy/app/qml/Main.qml:521-528`; a Photo Tray nem üres tartalma elsőbbséget kap (`src/picasapy/app/print_controller_source_mixin.py:21-50`). | A PicasaPy képtálca- és kijelölésprioritásának egyezése az eredeti rekordgyűjtéssel nyitott; a tálca gomb üres állapotban nem indul. |
+| **Néző / OneUp:** a `0x005cb990` `0xe107` dispatch ága a `param_1[0xc45]` értékétől függően általános UI-aktiválásra vagy `0x00744d00`-ra lép. A mező jelentése és az OneUp-ban átadott konkrét kép nincs azonosítva. | `src/picasapy/app/qml/PicasaPy/MainLibrarySelectionState.qml:70-78`, `src/picasapy/app/qml/Main.qml:521-528`; nézőben a megjelenített fotósor a nyomtatási cél. Megnyitáskor a panel a `viewerOpen` állapotot kikapcsolja (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:233-249`), bezáráskor nem állítja vissza. | Az eredeti nézőből átadott kép és a nézet visszaállítása nyitott. A PicasaPy viewer-visszaállítását csak binárisan igazolt elvárás alapján érdemes módosítani. |
+
+### Ablak, alapértékek és megjegyzett állapot
+
+Az eredeti nyomtatási képernyő a `thumbui/printpanel` felület, amelyet az `outputlayout/pbutton` és az `m_print_enable` vált be. Ez az alkalmazás felületén belüli panel; nem külön OS-ablak. A nyomtató nélküli nyitási ág üzenete: `A printer must be installed in order to print.` (`0x00744a00`, szöveg `0x00e017e0`).
+
+Az eredeti `printpanel.tre` `croptoggle` alapja bekapcsolt; ezt a 3.9.141 PDF-nyomtatós felvétel is megerősíti: első használatkor Full Page, Crop to Fit, 1 példány (`mérés: Colab EN 29/30`). Az utoljára választott méret kulcsa a `Preferences\PrintLastSize`, amelyet a `0x00744ba8` környékén olvas; a pontos írócím ebben a körben `NINCS MEG`. Az öt gyors méretbeállítás külön `PrintSize0`-`PrintSize4` értéket a `0x006e5ab0` betölti, a mentő ág `0x006e3990`. A nyomtatási opciókhoz a `PrinterQuality` és `PrinterUseTiles` is használatos (`0x00745f80`, `0x00746060`). Az eredeti példányszám és tájolás újraindítás utáni megőrzése ebben a körben nincs mérve.
+
+PicasaPy-ban a dialog teljes főablakot kitöltő `Item` (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:20-27`, `src/picasapy/app/qml/PicasaPy/MainWindowDialogStack.qml:319-324`). A `fitMode: "fill"` Crop to Fit módot jelent (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:117-119`, `src/picasapy/app/qml/PicasaPy/PrintFitPanel.qml:34-40`), tehát az induló kivágás módja egyezik az eredeti erőforrással. Az alap példányszám 1 (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:67-71`), a méretet `print/lastSize`-ból tölti vissza (`src/picasapy/app/print_controller_settings_mixin.py:209-224`), a printoptions beállításokat is menti (`:228-266`). A példányszám és a tájolás QSettings-be mentése nincs a vizsgált útban igazolva; a panel példánya viszont ugyanabban a folyamatban megmarad.
+
+### Hatás és hibák
+
+Az eredeti rajzolóút GDI nyomtatási munkát indít (`StartDocA`, hívás a `0x00861bb0` környezetében). Ez a nyomtató/driver út, a rendszer nyomtatási sorfájljának helye és írásvédett célra adott eredménye driver- és Windows-függő. A statikusan vizsgált útban közvetlen `.picasa.ini` vagy SQLite írás nem volt azonosítva, de ez nem zárja ki a még fel nem tárt közvetett hívásokat.
+
+| Hatás | Eredeti Picasa 3.9 | PicasaPy most |
+|---|---|---|
+| Fájlrendszer / nyomtatási cél | `0x00861bb0` GDI `StartDocA` út; Picasa által létrehozott PDF/fényképfájl nem igazolt. A nyomtatási sor és az írásvédett cél eredménye `NINCS MEG`. | `src/picasapy/app/print_controller_output_mixin.py:37-59` támogatja a PDF-célfájl írását; a nyomtatás a QPrinter útján fut. `.picasa.ini` és indexírás nem része a vizsgált print vezérlőútnak. |
+| `.picasa.ini` / index | Közvetlen írás nem látszott a feltárt print útban; teljes közvetett hatás `NINCS MEG`. | A print vezérlőút csak nyomtatási beállítást és kimenetet kezel; `.picasa.ini` vagy SQLite írás nem látszik az útban. |
+| Mappafa / rács | A `0x007448a0` panel-visszaállító a main/fullview/print/edit/acquire felületeket rendezi vissza. Mappafa és rács pontos visszaállítása, különösen OneUp után, `NINCS MEG`. | A print út nem ír mappafa- vagy indexállapotot. A nyitás elmenti rács kijelölését, bezárás visszaállítja a `selectedIndexes` és `selectedIndex` értéket (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:233-249,279-293`). |
+| Kijelölés / Photo Tray | A `0x007448a0` körül nem azonosítottam kijelölésírást; a nyomtatás utáni eredeti kijelölés- és tálcaállapot `NINCS MEG`. | A rács kijelölése bezáráskor visszaáll; a Photo Tray tartalmát a nyomtatási forrásválasztó olvassa, de nem módosítja (`src/picasapy/app/print_controller_source_mixin.py:21-50`). A néző állapota nincs visszaállítva. |
+| Sikertelen forrás / nyomtató | A `0x007434d0` printer-hibaüzenete: `Picasa has encountered a problem with the printer '%s'. Please report this error.` A hiányzó kép és az írásvédett printer-cél pontos kimenete `NINCS MEG`. | A videót/kiterjesztést és a nem betölthető képet kihagyja (`src/picasapy/app/print_controller_source_mixin.py:55-82`); üres vagy érvénytelen forrás hibát ad (`src/picasapy/app/print_controller_output_mixin.py:359-401,489-500`). Sikertelen festőindításnál általános nyomtatási hibát jelez. |
+| Megszakítás | A `0x00743650` callback `Cancelling Print...` állapotot küld és leállítási/takarítási hívásokat végez. A felületi esemény, amely ezt meghívja, és a részben kinyomtatott lapok sorsa `NINCS MEG`. | A dialog Escape/bezárás elrejti a felületet (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:296-300`), de nem küld cancel-jelet; az aktív rajzolóciklus eseményeket dolgoz fel (`src/picasapy/app/print_controller_output_mixin.py:592-616`). |
+
+### Bizonyíték és bizonyítottság
+
+| Érték / állítás | Forrás |
+|---|---|
+| File Print parancsérték `0xe107`, kijelölési kapu | `bináris (0x00559150, 0x0056e1c0, 0x005cb1a0)`; Ghidra menü/dispatch kimenet és célzott diszasszemblálás |
+| Video flag külön áll a menü kijelölési kapujától | `bináris (0x005cb1a0, 0x0056e1c0)`; a tényleges nyomtatott rekord viselkedése `NINCS MEG` |
+| Print panel, nyomtató nélküli hiba, nyomtatási job | `bináris (0x00744a00, 0x00744d00, 0x00745770)`; üzenetszöveg `0x00e017e0`, felkészítő üzenet `0x00e01d22` |
+| GDI nyomtatás | `bináris (0x00861bb0)`; `StartDocA` import feloldása a korábbi Ghidra-kimenetben |
+| Crop to Fit alap | `bináris (printpanel.tre:155-172)` és `mérés (Colab EN 29/30)` |
+| `Preferences\\PrintLastSize` olvasása | `bináris (0x00744ba8)`; pontos írócím `NINCS MEG` |
+| Első panel Full Page, 1 példány | `mérés (Colab EN 29/30)`; a mérésen túli profilok alapértéke `NINCS MEG` |
+| PicasaPy menu/tray/viewer út és dialog | Mai forrás: `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:164-168`, `src/picasapy/app/qml/Main.qml:521-528`, `src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:365-373`, `src/picasapy/app/qml/PicasaPy/PrintDialog.qml:20-27,117-119` |
+| Eredeti fájlhiány, driver írásvédelem, megszakítás indítója és kiválasztás-helyreállítás | `NINCS MEG`; szükséges: célzott Ghidra-kör, majd Windows 3.9.141 futtatási mérés |
+
+**Bizonyítottsági fok: nyitott.** A menü kapuja, a nyomtató nélküli ág, a panel Crop to Fit alapja és a mai forráskódbeli utak külön bizonyítottak. A teljes paritás nyitott, mert az eredeti nézőcél, videó/hiányzó fájl feldolgozás, driverhiba, cancel esemény és UI-visszatérés nincs végig bizonyítva. Egyetlen útra épülő megfigyelés feltételes marad; csak a független erőforrás/mérés vagy a másik kódréteg által megerősített állítás kap megerősített minősítést.
+
+### A két független út
+
+- **A út, bináris:** `0x00559150` menürekord, `0x0056e1c0` engedélyező, `0x005cb1a0` kijelölési állapot, majd `0x00744a00` panelnyitás és `0x00744d00` nyomtatási út célzott vizsgálata. A `0x007434d0`, `0x00743650` és `0x00861bb0` külön hiba-, megszakítási és GDI hívások.
+- **B út, független réteg:** a bináris menü- és printpanel-erőforrások, a `StartDocA` import feloldása, a korábbi Windows PDF-mérés, továbbá a jelenlegi QML/Python út közvetlen forrásolvasása. A Crop to Fit egyezést az eredeti erőforrás és a mai `fitMode: "fill"` egymástól függetlenül adja; az első panelmérés külön alátámasztja az induló állapotot.
+- **Egyezés:** a panelbe lépés, a Crop to Fit alap és a menü üres kijelölési kapuja egyezik a hozzájuk tartozó PicasaPy-feltételekkel. A billentyű, nézőcél, videó/hiányzó fájl, hibakezelés és a művelet utáni állapot kérdésében A és B még nem ad döntő egyezést.
+
+### Cáfoló kísérlet
+
+Azt a hipotézist próbáltam cáfolni, hogy a Picasa eredeti Fájl menüje a videókat már a menüben tiltja. A `0x005cb1a0` videojelzőit összevetettem a `0x0056e1c0` Print-csoport engedélyező feltételével: a videójelző nem szerepel a kijelölési kapuban, ezért a hipotézist a vizsgált menüszinten cáfolja. Ez a cáfoló ellenőrzés ugyanazt a mércét használja: utasításszintű feltétel és attól független menü/állapot-rekord egyezése. Azt nem bizonyítja, hogy videót ténylegesen nyomtat, mert a nyomtatási lista feldolgozása még nyitott.
+
+### A jegy „Kész, ha” pontjai
+
+| Kérdés | Állapot | Bizonyíték |
+|---|---|---|
+| Minden belépési pont és engedélyezési feltétel, beleértve videó, több kép és üres kijelölés | ⛔ | Menü és vizsgált helyi menük leírva; bináris billentyűág, néző és videó tényleges nyomtatása nyitott. |
+| Ablak, alapértékek és következő alkalomra megjegyzett állapot | ⛔ | A panel belső felület, Crop to Fit, Full Page/1 példány mérve; összes eredeti profilbeállítás és nézet-visszatérés nincs lezárva. |
+| Fájlrendszer, `.picasa.ini`, index, rács és kijelölés a művelet után | ⛔ | GDI és PicasaPy út részben azonosított; eredeti spool, közvetett írások, mappafa/rács/kijelölés végállapota nincs végigmérve. |
+| Írásvédett hely, hiányzó fájl és megszakítás | ⛔ | Nyomtató- és cancel callback címe ismert; a futásidejű hibák és a felületi megszakítás útja nincs megmérve. |
+
+### Javasolt fejlesztői jegytörzs
+
+Jelen bizonyíték alapján nem javaslok kódmódosító jegyet: nem maradt olyan eredeti viselkedésbeli eltérés, amelynek mindkét oldala kellő bizonyítékkal ismert. A `picasa-nyomtatas.md` egy régi állítása szerint a mai induló crop mód nem egyezett; ez a feladatban előírt friss forrásolvasással cáfolódott (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:117-119`, `src/picasapy/app/qml/PicasaPy/PrintFitPanel.qml:34-40`). A jegytörzs bővítése rögzítse, hogy a teljes paritás még nyitott, és az alábbi bináris/mérési kérdéseket kell lezárni. Fejlesztési lista csak a bizonyíték után készíthető.
+
+### Új kutatási jegyjavaslatok
+
+Most nem javaslok külön kutatási jegyet: a nyitott tételek ennek a Print-folyamatnak a közvetlen, befejezetlen részei.
+
+### Nyitott
+
+- A Ghidra-kimenetek cím szerinti keresése megtörtént: `0x005e6428`, `0x00744d00`, `0x007451a0` és `0x00745770` címhez nincs felhasználható teljes dekompiláció; a célzott diszasszemblálás és hívó/xref részletek nem döntik el a fenti szemantikai kérdéseket.
+- Ghidra-kör kell: 0x005e6428 - melyik módosítóbillentyű és fókuszállapot melyik eredeti parancsot indítja, különösen a PicasaPy Ctrl+P és Ctrl+Shift+P egyeztetéséhez [blokkoló]
+- Ghidra-kör kell: 0x00744d00 - pontosan mely kijelölt, Photo Tray vagy OneUp rekord kerül a nyomtatási munkába, és hol szűri a videót vagy a hiányzó képfájlt [blokkoló]
+- Ghidra-kör kell: 0x007451a0 - a nyomtatási rekord/minőség feldolgozása hogyan kezeli a videót, hiányzó vagy olvashatatlan képet [blokkoló]
+- Ghidra-kör kell: 0x00745770 - az eredeti felületi Cancel esemény hogyan jut el a 0x00743650 callbackig, és milyen panel/kijelölés állapotot állít vissza [blokkoló]
+- `NINCS MEG`: az eredeti 3.9.141 viselkedése írásvédett nyomtató/spool cél, hiányzó képfájl és megszakítás esetén. Megszerzés: Windowsos mérés külön üres profilban, külön PDF/printer célokkal; rögzítendő a hibaüzenet, létrejött fájl/spool, visszaálló UI és kijelölés.
+- `NINCS MEG`: eredeti Photo Tray tartalma és mappafa/rács állapota nyomtatás után. Megszerzés: Windowsos 3.9.141 mérés egy, majd több kijelölt képpel és eltérő Photo Tray tartalommal; előtte/utána képernyő és `.picasa.ini` és index fájlkivonatának összevetése.
+
