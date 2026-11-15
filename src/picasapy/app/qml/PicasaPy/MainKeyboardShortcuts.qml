@@ -282,20 +282,14 @@ Item {
         id: shortcutRotateRight
         sequence: "Ctrl+R"
         enabled: !hostWindow._szovegmezoneVanFokusz
-        onActivated: {
-            var row = hostWindow.rotateTargetRow()
-            if (row >= 0) hostController.rotateRight(row)
-        }
+        onActivated: hostController.rotateRightMany(hostWindow.rotateTargetRows())
     }
 
     Shortcut {
         id: shortcutRotateLeft
         sequence: "Ctrl+Shift+R"
         enabled: !hostWindow._szovegmezoneVanFokusz
-        onActivated: {
-            var row = hostWindow.rotateTargetRow()
-            if (row >= 0) hostController.rotateLeft(row)
-        }
+        onActivated: hostController.rotateLeftMany(hostWindow.rotateTargetRows())
     }
 
     Shortcut {
