@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.125] - 2026-11-15
+
+- A Ctrl+R és a Ctrl+Shift+R a rács teljes kijelölését elforgatja, üres kijelölésnél pedig a hivatalos üzenet jelenik meg (#7003).
+
 ## [1.0.124] - 2026-11-15
 
 - A háttér-előnézet időzítő-alapmérése terhelt gépen kihagy, nem buktat (#7007).
