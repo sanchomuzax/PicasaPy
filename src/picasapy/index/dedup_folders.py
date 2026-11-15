@@ -42,7 +42,8 @@ import logging
 import sqlite3
 from dataclasses import dataclass
 
-from picasapy.paths import path_key
+from picasapy.index.folder_spelling import rows_under
+from picasapy.paths import flat_key, path_key
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +149,36 @@ def _merge_photo_into(
         "SELECT ?, token, place FROM photo_albums WHERE photo_id = ?",
         (keeper_photo_id, loser_photo["id"]),
     )
+    _move_photo_bound_rows(conn, keeper_photo_id, loser_photo["id"])
     conn.execute("DELETE FROM photos WHERE id = ?", (loser_photo["id"],))
+
+
+def _move_photo_bound_rows(
+    conn: sqlite3.Connection, keeper_photo_id: int, loser_photo_id: int
+) -> None:
+    """A vesztes fotóhoz kötött, az indexben KELETKEZETT adat (#7045) átvitele
+    a törlés (és vele a CASCADE) előtt.
+
+    A névvel ellátott arc és a felismerés nyoma nem származtatható újra az
+    `.picasa.ini`-ből: ha a duplikátum másik sorában keletkezett, az
+    összevonás nem viheti el. A megmaradó fotó SAJÁT arcai elsőbbséget
+    élveznek (nincs kettőzés), a személy albumindexképe követi a fotót."""
+    if conn.execute(
+        "SELECT 1 FROM face WHERE photo_id = ? LIMIT 1", (keeper_photo_id,)
+    ).fetchone() is None:
+        conn.execute(
+            "UPDATE face SET photo_id = ? WHERE photo_id = ?",
+            (keeper_photo_id, loser_photo_id),
+        )
+    conn.execute(
+        "INSERT OR IGNORE INTO face_scan(photo_id, mtime_ns, size, ok) "
+        "SELECT ?, mtime_ns, size, ok FROM face_scan WHERE photo_id = ?",
+        (keeper_photo_id, loser_photo_id),
+    )
+    conn.execute(
+        "UPDATE person_thumbnails SET photo_id = ? WHERE photo_id = ?",
+        (keeper_photo_id, loser_photo_id),
+    )
 
 
 def _merge_loser_into_keeper(
@@ -185,6 +215,16 @@ def _merge_loser_into_keeper(
     loser_path = conn.execute(
         "SELECT path FROM folders WHERE id = ?", (loser_id,)
     ).fetchone()["path"]
+    keeper_path = conn.execute(
+        "SELECT path FROM folders WHERE id = ?", (keeper_id,)
+    ).fetchone()["path"]
+    # #7045: a fotó nélküli, helyi album a mappa ÚTVONALÁRA van kulcsolva
+    # (nincs `folders` kapcsolata), és csak itt él: a megmaradó sor útvonalára
+    # kerül, különben az egyesítés után árván maradna
+    conn.execute(
+        "UPDATE local_empty_albums SET folder_path = ? WHERE folder_path = ?",
+        (keeper_path, loser_path),
+    )
     conn.execute("DELETE FROM folder_scan_state WHERE path = ?", (loser_path,))
     conn.execute(
         "UPDATE folders SET has_ini = MAX(has_ini, (SELECT has_ini FROM "
@@ -205,6 +245,23 @@ def merge_duplicate_folders(conn: sqlite3.Connection) -> FolderMergeReport:
     `path_key`-re nézve azonos (tehát ugyanahhoz a valódi mappához
     tartozó) sorok összevonása. Idempotens — duplikátum hiányában
     nincs teendő, üres jelentést ad."""
+    return _merge_rows(conn, conn.execute("SELECT id, path, has_ini FROM folders").fetchall())
+
+
+def merge_duplicate_folders_under(conn: sqlite3.Connection, root: str) -> FolderMergeReport:
+    """Ugyanaz, mint `merge_duplicate_folders`, de csak a (hálózati) `root`
+    alatti sorokra (#7045): a szinkron a bejárás ELŐTT egyesíti a gyökér
+    kis-nagybetűs duplikátumait, hogy a bejárás ismert alakon írjon."""
+    return _merge_rows(conn, rows_under(conn, root))
+
+
+def _case_only_group(group_rows: list[sqlite3.Row]) -> bool:
+    """Csak a kis-nagybetűben (és az elválasztóban) eltérő sorok csoportja.
+    POSIX-on a `flat_key` identitás, ott ilyen csoport nem létezik."""
+    return len({flat_key(row["path"]) for row in group_rows}) == 1
+
+
+def _merge_rows(conn: sqlite3.Connection, rows: list[sqlite3.Row]) -> FolderMergeReport:
     if conn.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='folder_scan_state'"
     ).fetchone() is None:
@@ -213,7 +270,6 @@ def merge_duplicate_folders(conn: sqlite3.Connection) -> FolderMergeReport:
             "path TEXT PRIMARY KEY, mtime_ns INTEGER NOT NULL, "
             "ini_mtime_ns INTEGER)"
         )
-    rows = conn.execute("SELECT id, path, has_ini FROM folders").fetchall()
     groups: dict[str, list[sqlite3.Row]] = {}
     for row in rows:
         groups.setdefault(path_key(row["path"]), []).append(row)
@@ -223,16 +279,23 @@ def merge_duplicate_folders(conn: sqlite3.Connection) -> FolderMergeReport:
     for key, group_rows in groups.items():
         if len(group_rows) < 2:
             continue
-        # a megtartott: a legtöbb fotót tartalmazó sor (a leggazdagabb
-        # adat), egyenlőségnél a legkisebb id (a legrégebbi, legstabilabb)
-        counts = {
-            row["id"]: conn.execute(
-                "SELECT COUNT(*) AS n FROM photos WHERE folder_id = ?",
-                (row["id"],),
-            ).fetchone()["n"]
-            for row in group_rows
-        }
-        keeper = max(group_rows, key=lambda r: (counts[r["id"]], -r["id"]))
+        if _case_only_group(group_rows):
+            # #7045: a csak kis-nagybetűben eltérő sorok közül az ELSŐ
+            # (legrégebbi) marad, hogy a tárolt és megjelenített alak az
+            # eredeti legyen, és a szinkron (amely az indexben látott alakon
+            # ír) ne hozzon létre újra másikat
+            keeper = min(group_rows, key=lambda r: r["id"])
+        else:
+            # a megtartott: a legtöbb fotót tartalmazó sor (a leggazdagabb
+            # adat), egyenlőségnél a legkisebb id (a legrégebbi, legstabilabb)
+            counts = {
+                row["id"]: conn.execute(
+                    "SELECT COUNT(*) AS n FROM photos WHERE folder_id = ?",
+                    (row["id"],),
+                ).fetchone()["n"]
+                for row in group_rows
+            }
+            keeper = max(group_rows, key=lambda r: (counts[r["id"]], -r["id"]))
         loser_ids = [r["id"] for r in group_rows if r["id"] != keeper["id"]]
         if _group_has_conflict(conn, keeper["id"], loser_ids):
             skipped.append(

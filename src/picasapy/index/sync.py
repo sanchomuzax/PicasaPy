@@ -42,6 +42,9 @@ from picasapy.metadata import (
     read_file_metadata,
     read_video_metadata,
 )
+from picasapy import paths as _paths
+from picasapy.index.dedup_folders import merge_duplicate_folders_under
+from picasapy.index.folder_spelling import adopt_indexed_spelling
 from picasapy.paths import normalize_path
 from picasapy.ini.flip import FLIP_MASK
 from picasapy.scanner import (
@@ -249,6 +252,7 @@ def sync_tree(
             root_path,
         )
         return
+    root_path = Path(_ismert_alakra_igazitott_gyoker(conn, str(root_path)))
     _ensure_scan_state(conn)
     # #1249: a sírkövek mindig kizárnak — a hívónak nem kell tudnia róluk
     exclude = tuple(exclude) + removed_folder_paths(conn)
@@ -352,6 +356,19 @@ def sync_tree(
     conn.commit()
 
 
+def _ismert_alakra_igazitott_gyoker(conn: sqlite3.Connection, root: str) -> str:
+    """#7045: a hálózati gyökér az indexben már ismert kis-nagybetűs alakon.
+
+    A bejárás előtt a gyökér meglévő kis-nagybetűs duplikátumait egyesítjük
+    (adatvesztés nélkül), utána a gyökeret a megmaradt sor alakjára igazítjuk,
+    így a bejárás ugyanazt a sort frissíti, nem újat ír. Nem hálózati
+    útvonalra, illetve nem Windowson nem csinál semmit."""
+    if not _paths.windowsos_halozati_ut(root):
+        return root
+    merge_duplicate_folders_under(conn, root)
+    return adopt_indexed_spelling(conn, root)
+
+
 def sync_folder(
     conn: sqlite3.Connection,
     root: str | Path,
@@ -387,14 +404,19 @@ def sync_folder(
     az egyetlen mappa maga a „mappa-határ"."""
     if should_stop is not None and should_stop():
         return  # megszakítva még a scan előtt — az index érintetlen
-    root_path = Path(normalize_path(root))
+    # #7045: mindkét útvonal az indexben már ismert kis-nagybetűs alakon
+    root_path = Path(adopt_indexed_spelling(conn, normalize_path(root)))
     # #2483: az indulási önjavító ág a gyökeret és a mappát AZONOS értékkel
     # adja át (`sync_folder(conn, mappa, mappa)`), a feloldás viszont
     # mélységnyi `lstat`-ot jelent útvonalanként. Ugyanaz a nyers szöveg
     # ugyanarra az útra vezet — a kihagyás tehát a végeredményt nem
     # változtatja, csak a felesleges rendszerhívást takarítja meg (a #1706
     # `_resolved_protected_roots` érvelése, egy hívásra szűkítve).
-    folder_path = root_path if str(folder) == str(root) else Path(normalize_path(folder))
+    folder_path = (
+        root_path
+        if str(folder) == str(root)
+        else Path(adopt_indexed_spelling(conn, normalize_path(folder)))
+    )
     if not folder_path.is_relative_to(root_path):
         raise ValueError(f"A mappa nem a figyelt gyökér alatt van: {folder_path} ∉ {root_path}")
     _ensure_scan_state(conn)
