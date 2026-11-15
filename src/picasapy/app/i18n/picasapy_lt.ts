@@ -1099,6 +1099,68 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nerasta el. pašto programa su priedų palaikymu; atveriamas tuščias laiškas be pridėtų nuotraukų.</translation>
         </message>
+        <message>
+            <source>a picture for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_SINGLE</extracomment>
+            <translation>nuotrauka jums</translation>
+        </message>
+        <message>
+            <source>%d pictures for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_MULTI</extracomment>
+            <translation>%d nuotraukos (-ų) jums</translation>
+        </message>
+        <message>
+            <source>You have been sent 1 picture.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_SINGLE</extracomment>
+            <translation>Jums atsiųsta 1 nuotrauka.
+
+</translation>
+        </message>
+        <message>
+            <source>You have been sent %d pictures.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_MULTI</extracomment>
+            <translation>Jums atsiuntė %d nuotraukas (-ų).
+
+</translation>
+        </message>
+        <message>
+            <source>Too many file attachments to send.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_TOO_MANY_ATTACHMENTS</extracomment>
+            <translation>Prie laiško pridėta per daug failų.</translation>
+        </message>
+        <message>
+            <source>Attachment was not found</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_NO_ATTACHMENT</extracomment>
+            <translation>Priedas nerastas</translation>
+        </message>
+        <message>
+            <source>Could not open an attachment.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_CANT_OPEN_ATTACHMENT</extracomment>
+            <translation>Nepavyko atidaryti priedo.</translation>
+        </message>
+        <message>
+            <source>Unknown recipient.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_UNKNOWN_RECIPIENT</extracomment>
+            <translation>Nežinomas gavėjas.</translation>
+        </message>
+        <message>
+            <source>The email could not be sent.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_FAILURE</extracomment>
+            <translation>Nepavyko išsiųsti el. laiško.</translation>
+        </message>
     </context>
     <context>
         <name>RightDrawer</name>
@@ -9925,6 +9987,13 @@ It will change the next time PicasaPy is opened.</source>
             <translation>Pakeisti „PicasaPy“ naudojamą kalbą?
 
 Ji pasikeis kitą kartą paleidus „PicasaPy“.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="138" />
+            <source>Email %d files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::OutputToEmail</extracomment>
+            <translation>Norite siųsti el. paštu %d failus (-ų)?</translation>
         </message>
     </context>
     <context>

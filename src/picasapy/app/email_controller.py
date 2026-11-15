@@ -1,27 +1,14 @@
-"""EmailController: kijelölt képek küldése a rendszer levelezőjével
-(#32, RÉSZLEGES kör).
+"""EmailController: kijelölt képek küldése a rendszer levelezőjével (#32).
 
-Önálló QObject — a `WebExportController`/`PrintController` mintáját
-követve NEM az `AppController` mixinje (ld. `print_controller.py`
-docstringje az indoklásért). Integrátor-teendők:
-
-1. `application.py`: `EmailController(photo_source=...)` példányosítás
-   (`lambda: app_controller._photos.photos`) + `setContextProperty(
-   "emailController", ...)`.
-2. `Main.qml`/`TrayBar.qml`: a `TrayBar.emailRequested()` jelzés (MÁR kész
-   ebben a jegyben) elkapása → tárgy/szöveg bekérése (egyszerű dialógus)
-   → `emailController.sendRows(...)`.
-3. `OptionsDialog.qml` már ide köti (`OptionsTabEmail.qml`) a méret-
-   csúszdákat és az alapértelmezett-kliens kapcsolót — ez a jegy már
-   elvégezte, nincs további teendő.
-
-A tényleges küldés a rendszer levelezőjét indítja (freedesktop.org
-`xdg-email`, csatolmányokkal; ha nincs telepítve, `mailto:` URL-lel a
-rendszer alapértelmezett kezelőjén át — csatolmány nélkül, ld.
-`picasapy.mailer` docstringje). Ez SOSEM tesztelhető ténylegesen (nincs
-determinisztikus, oldalhatás-mentes módja) — a parancs-összeállítás
-(`picasapy.mailer.command`) és az átméretezés-előkészítés
-(`prepareAttachments`) igen."""
+Önálló QObject, a `WebExportController`/`PrintController` mintáját követi,
+NEM az `AppController` mixinje (ld. `print_controller.py`). A küldés a
+rendszer levelezőjét indítja: Windowson MAPI (#4607), Linuxon freedesktop.org
+`xdg-email` csatolmányokkal, ennek hiányában `mailto:` URL csatolmány nélkül
+(ld. `picasapy.mailer`). Ez SOSEM tesztelhető ténylegesen (nincs
+determinisztikus, oldalhatás-mentes módja): a parancs-összeállítás és az
+átméretezés-előkészítés (`prepareAttachments`) igen. A küldési kapu
+(megerősítés, tárgy és törzs, hibaüzenetek) az `email_send_flow` modulban él
+(#6987)."""
 
 from __future__ import annotations
 
@@ -58,6 +45,12 @@ from picasapy.mailer.mapi import (
 )
 
 from .collage_draft_guard import CollageDraftGuard
+from .email_send_flow import (
+    EmailSendFlowMixin,
+    mail_body,
+    mail_subject,
+    mapi_error_text,
+)
 from .formatting import to_file_url
 
 #: Ennyi ideig várunk az xdg-email kilépési kódjára (#4606).
@@ -316,7 +309,7 @@ def _meret(value, default: int) -> int:
     return meret
 
 
-class EmailController(QObject):
+class EmailController(EmailSendFlowMixin, QObject):
     """A `OptionsTabEmail.qml` méret-beállításai + a küldés-előkészítés
     (átméretezés és szerkesztés-beégetés) és a tényleges elküldés
     (subprocess/mailto) hídja."""
@@ -341,6 +334,11 @@ class EmailController(QObject):
     #: választotta. Paraméterei: csatolmány-útvonalak, tárgy, szöveg — a
     #: válasz a `sendWithDefaultClient()`.
     mailChoiceRequested = Signal(list, str, str)
+
+    #: #6987: 20-nál több kép elküldése előtt a felület MEGERŐSÍTÉST kér
+    #: (`CThumbUI::OutputBottleneck`). Paraméterei: a kijelölt sorok és a
+    #: tényleges képszám; az igen a `sendSelection(sorok, true)`.
+    sendConfirmRequested = Signal(list, int)
 
     def __init__(
         self,
@@ -512,11 +510,9 @@ class EmailController(QObject):
 
     @Property(bool, notify=useDefaultClientChanged)
     def useDefaultClient(self) -> bool:
-        """Igaz: a rendszer alapértelmezett levelezőjét használjuk kérdés
-        nélkül; hamis: (jövőbeli finomítás) minden küldésnél rákérdezünk —
-        a PicasaPy-ban ma mindkét eset ugyanazt az `xdg-email`/`mailto:`
-        utat járja, a kapcsoló egyelőre csak a beállítás megőrzését
-        szolgálja (FEN-paritás, ld. `OptionsTabEmail.qml`)."""
+        """Igaz: a rendszer alapértelmezett levelezője indul kérdés és belső
+        szerkesztő nélkül (`EmailPrepType = 3`, #6987); hamis: minden
+        küldésnél a választó párbeszéd kérdez (ld. `sendRows`)."""
         return self._use_default_client
 
     @Property(str, constant=True)
@@ -613,7 +609,6 @@ class EmailController(QObject):
         """A melléklet-előnézet képforrása; kézzel fűzött URL tilos (#1019)."""
         return to_file_url(path)
 
-    @Slot(list, bool, result=list)
     def prepareAttachments(self, rows, multi: bool) -> list[str]:
         """A kijelölt sorok csatolmány-fájllá alakítása: a beállított
         méret-fokozatnak megfelelő átméretezéssel (a forgatás/`filters=`
@@ -667,18 +662,22 @@ class EmailController(QObject):
             )
         return [str(path) for path in report.exported]
 
-    @Slot(list, str, str, result=bool)
     def sendRows(self, attachment_paths, subject: str, body: str) -> bool:
-        """A mellékletek átadása a levélszerkesztő felületnek.
+        """A mellékletek átadása a levelezőnek, vagy a választó kérése.
 
-        #4135: a levél minden esetben a felületen áll össze. Ha
-        `useDefaultClient` igaz, a felület átugorja a levelezőprogram-
-        választót, de a címzettet/tárgyat/szöveget továbbra is be kell
-        kérnie; a közvetlen indítás ezeket az adatokat elveszítené.
+        #6987: az eredeti saját levelezős ága (`EmailPrepType = 3`,
+        `0x00742a2c`) belső szerkesztő nélkül nyitja a rendszer levelezőjét a
+        csatolmányokkal. Ezért ha `useDefaultClient` igaz, a levél azonnal
+        megy; ha hamis, a felület a `mailChoiceRequested`-del kérdez, és a
+        válasz a `sendWithDefaultClient()`. Az üres tárgy és törzs a képszám
+        szerinti alapszöveg (`0x0073d970`).
 
-        A visszatérési `False` azt jelenti, hogy a szerkesztő megnyílt, a
-        küldés még nem történt meg."""
+        A visszatérési `False` azt jelenti, hogy a levelező még nem indult."""
         paths = list(attachment_paths)
+        subject = subject or mail_subject(len(paths))
+        body = body or mail_body(len(paths))
+        if self._use_default_client:
+            return self._kuldes(paths, subject, body)
         self.mailChoiceRequested.emit(paths, subject, body)
         return False
 
@@ -781,5 +780,5 @@ class EmailController(QObject):
         if code == MAPI_USER_ABORT:
             return False
         _log.warning("MAPI-küldés sikertelen, kód: %s", code)
-        self.emailFailed.emit(self.tr("No email program was found."))
+        self.emailFailed.emit(mapi_error_text(code))
         return False

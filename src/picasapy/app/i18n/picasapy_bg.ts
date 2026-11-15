@@ -1097,6 +1097,68 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Не е намерена програма за електронна поща с поддръжка на прикачени файлове; отваря се празно писмо без снимките.</translation>
         </message>
+        <message>
+            <source>a picture for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_SINGLE</extracomment>
+            <translation>снимка за теб</translation>
+        </message>
+        <message>
+            <source>%d pictures for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_MULTI</extracomment>
+            <translation>%d снимки за вас</translation>
+        </message>
+        <message>
+            <source>You have been sent 1 picture.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_SINGLE</extracomment>
+            <translation>Получихте 1 снимка.
+
+</translation>
+        </message>
+        <message>
+            <source>You have been sent %d pictures.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_MULTI</extracomment>
+            <translation>Получихте %d снимки.
+
+</translation>
+        </message>
+        <message>
+            <source>Too many file attachments to send.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_TOO_MANY_ATTACHMENTS</extracomment>
+            <translation>Прикачените файлове за изпращане са твърде много.</translation>
+        </message>
+        <message>
+            <source>Attachment was not found</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_NO_ATTACHMENT</extracomment>
+            <translation>Прикаченият файл не е открит</translation>
+        </message>
+        <message>
+            <source>Could not open an attachment.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_CANT_OPEN_ATTACHMENT</extracomment>
+            <translation>Не може да се отвори прикачен файл.</translation>
+        </message>
+        <message>
+            <source>Unknown recipient.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_UNKNOWN_RECIPIENT</extracomment>
+            <translation>Непознат получател.</translation>
+        </message>
+        <message>
+            <source>The email could not be sent.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_FAILURE</extracomment>
+            <translation>Имейлът не можа да бъде изпратен.</translation>
+        </message>
     </context>
     <context>
         <name>RightDrawer</name>
@@ -9895,6 +9957,13 @@ It will change the next time PicasaPy is opened.</source>
             <translation>Да променя ли езика, който PicasaPy използва?
 
 Промяната ще влезе в сила при следващото стартиране на PicasaPy.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="138" />
+            <source>Email %d files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::OutputToEmail</extracomment>
+            <translation>Да се изпратят ли %d файла по имейл?</translation>
         </message>
     </context>
     <context>

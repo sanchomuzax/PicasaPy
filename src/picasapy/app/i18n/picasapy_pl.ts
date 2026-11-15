@@ -1099,6 +1099,68 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nie znaleziono programu pocztowego obsługującego załączniki; otwieranie pustej wiadomości bez załączonych zdjęć.</translation>
         </message>
+        <message>
+            <source>a picture for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_SINGLE</extracomment>
+            <translation>zdjęcie dla Ciebie</translation>
+        </message>
+        <message>
+            <source>%d pictures for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_MULTI</extracomment>
+            <translation>Zdjęcia dla Ciebie: %d</translation>
+        </message>
+        <message>
+            <source>You have been sent 1 picture.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_SINGLE</extracomment>
+            <translation>To jest wiadomość z 1 zdjęciem.
+
+</translation>
+        </message>
+        <message>
+            <source>You have been sent %d pictures.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_MULTI</extracomment>
+            <translation>Liczba przesłanych zdjęć: %d.
+
+</translation>
+        </message>
+        <message>
+            <source>Too many file attachments to send.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_TOO_MANY_ATTACHMENTS</extracomment>
+            <translation>Nie można wysłać wskutek zbyt dużej liczby załączników.</translation>
+        </message>
+        <message>
+            <source>Attachment was not found</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_NO_ATTACHMENT</extracomment>
+            <translation>Nie znaleziono załącznika</translation>
+        </message>
+        <message>
+            <source>Could not open an attachment.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_CANT_OPEN_ATTACHMENT</extracomment>
+            <translation>Nie można otworzyć załącznika.</translation>
+        </message>
+        <message>
+            <source>Unknown recipient.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_UNKNOWN_RECIPIENT</extracomment>
+            <translation>Adresat nieznany.</translation>
+        </message>
+        <message>
+            <source>The email could not be sent.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_FAILURE</extracomment>
+            <translation>Nie można wysłać wiadomości e-mail.</translation>
+        </message>
     </context>
     <context>
         <name>RightDrawer</name>
@@ -9925,6 +9987,13 @@ It will change the next time PicasaPy is opened.</source>
             <translation>Czy zmienić język, którego używa PicasaPy?
 
 Zmiana zacznie obowiązywać po ponownym uruchomieniu programu PicasaPy.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="138" />
+            <source>Email %d files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::OutputToEmail</extracomment>
+            <translation>Wysłać pliki (%d) e-mailem?</translation>
         </message>
     </context>
     <context>

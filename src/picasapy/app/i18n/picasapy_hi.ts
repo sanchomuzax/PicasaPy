@@ -1097,6 +1097,68 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>अटैचमेंट के साथ तस्वीरें भेज सकने वाला कोई ईमेल प्रोग्राम नहीं मिला; तस्वीरें संलग्न किए बिना एक खाली ईमेल खोला जा रहा है.</translation>
         </message>
+        <message>
+            <source>a picture for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_SINGLE</extracomment>
+            <translation>आपके लिए एक चित्र</translation>
+        </message>
+        <message>
+            <source>%d pictures for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_MULTI</extracomment>
+            <translation>आपके लिए %d चित्र</translation>
+        </message>
+        <message>
+            <source>You have been sent 1 picture.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_SINGLE</extracomment>
+            <translation>आपको 1 चित्र भेजा गया है.
+
+</translation>
+        </message>
+        <message>
+            <source>You have been sent %d pictures.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_MULTI</extracomment>
+            <translation>आपको %d चित्र भेजे गए हैं.
+
+</translation>
+        </message>
+        <message>
+            <source>Too many file attachments to send.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_TOO_MANY_ATTACHMENTS</extracomment>
+            <translation>भेजने के लिए बहुत अधिक फ़ाइल अटैचमेंट.</translation>
+        </message>
+        <message>
+            <source>Attachment was not found</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_NO_ATTACHMENT</extracomment>
+            <translation>अटैचमेंट नहीं मिला</translation>
+        </message>
+        <message>
+            <source>Could not open an attachment.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_CANT_OPEN_ATTACHMENT</extracomment>
+            <translation>अटैचमेंट नहीं खोल सका.</translation>
+        </message>
+        <message>
+            <source>Unknown recipient.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_UNKNOWN_RECIPIENT</extracomment>
+            <translation>अज्ञात प्राप्तकर्ता.</translation>
+        </message>
+        <message>
+            <source>The email could not be sent.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_FAILURE</extracomment>
+            <translation>ईमेल को नहीं भेज सका.</translation>
+        </message>
     </context>
     <context>
         <name>RightDrawer</name>
@@ -9895,6 +9957,13 @@ It will change the next time PicasaPy is opened.</source>
             <translation>PicasaPy द्वारा उपयोग की जाने वाली भाषा बदलें?
 
 अगली बार PicasaPy खोलने पर यह बदलाव लागू होगा.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="138" />
+            <source>Email %d files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::OutputToEmail</extracomment>
+            <translation>%d फ़ाइलें ईमेल करें?</translation>
         </message>
     </context>
     <context>

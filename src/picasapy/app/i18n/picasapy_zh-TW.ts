@@ -1097,6 +1097,68 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>找不到支援附件的電子郵件程式；將開啟一封未附上圖片的空白郵件。</translation>
         </message>
+        <message>
+            <source>a picture for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_SINGLE</extracomment>
+            <translation>給您的圖片</translation>
+        </message>
+        <message>
+            <source>%d pictures for you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_SUBJ_MULTI</extracomment>
+            <translation>給您的 %d 張圖片</translation>
+        </message>
+        <message>
+            <source>You have been sent 1 picture.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_SINGLE</extracomment>
+            <translation>有人寄了 1 張圖片給您。
+
+</translation>
+        </message>
+        <message>
+            <source>You have been sent %d pictures.
+
+</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_BODY_MULTI</extracomment>
+            <translation>您已收到 %d 張圖片。
+
+</translation>
+        </message>
+        <message>
+            <source>Too many file attachments to send.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_TOO_MANY_ATTACHMENTS</extracomment>
+            <translation>寄送的附加檔案太多。</translation>
+        </message>
+        <message>
+            <source>Attachment was not found</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_NO_ATTACHMENT</extracomment>
+            <translation>找不到附件</translation>
+        </message>
+        <message>
+            <source>Could not open an attachment.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_CANT_OPEN_ATTACHMENT</extracomment>
+            <translation>無法開啟附件。</translation>
+        </message>
+        <message>
+            <source>Unknown recipient.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_UNKNOWN_RECIPIENT</extracomment>
+            <translation>未知的收件者。</translation>
+        </message>
+        <message>
+            <source>The email could not be sent.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MAPI_FAILURE</extracomment>
+            <translation>電子郵件無法寄出。</translation>
+        </message>
     </context>
     <context>
         <name>RightDrawer</name>
@@ -9895,6 +9957,13 @@ It will change the next time PicasaPy is opened.</source>
             <translation>要變更 PicasaPy 使用的語言嗎？
 
 下次開啟 PicasaPy 時就會變更。</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="138" />
+            <source>Email %d files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::OutputToEmail</extracomment>
+            <translation>透過電子郵件傳送 %d 個檔案？</translation>
         </message>
     </context>
     <context>

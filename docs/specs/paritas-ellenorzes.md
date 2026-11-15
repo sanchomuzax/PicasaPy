@@ -94,7 +94,7 @@ Lefutott a három megadott mérő. A `nema_slotok.py` 920 `@Slot`/`@Property` ta
 
 Az ellenőrzés statikus forrásvizsgálat. A CI-őr csak a `Clicked` és `Triggered` eseményeket, a közvetlen `enabled: false` értéket és a QML-jelzés-fogadókat keresi. A bővített eseménykeresés nem futtatja a felületet, a dinamikus `enabled` feltételek elérhetőségét pedig nem méri végig minden állapottal. A `nema_slotok.py` a kommentben szereplő `@Slot` szöveget is találatnak veszi; a `nema_beallitasok.py` nem tudja követni a szótárba olvasott értékeket. A forráslánc ezért nem helyettesíti a kattintásos próbát.
 
-**Szúrópróba, teljes hívási lánc.** A 2026-10-17 statikus ellenőrzés idején a Ctrl+5 `Shortcut` és az Időrend `MenuItem` még le volt tiltva, a menüjelzésnek pedig nem volt fogadója. Ezt az állapotot a #5377 felülírta: a `Ctrl+5` a `Main.qml:toggleTimeline()`-on át nyitja a bemutatót, a Nézet-menü `timelineRequested` jelzését a `Main.qml` fogadja, és mindkét út kijelölés nélkül működik. A valós kattintást és a teljes képernyős ablakot a `test_nezet_menu_valodi_5150.py`, a valódi billentyűt és kilépést a `test_idorend_bemutato_5377.py` ellenőrzi. Az e-mail-mód útja: QSettings → `EmailController.useDefaultClient` → Beállítások rádiógombjai → `EmailChoiceDialog.onOpened`, ahol az érték a `compose` vagy `choose` panelt választja; tehát a beállítás nem néma. Az Auto-Complete útja: helyi menüelem → mentő slot → QSettings. A bináris lelet szerint az eredeti kapcsolónak sincs olvasója; a címjavasló osztály a Gmail-ágú levélszerkesztő része. A „Don't Set” útja: `collageFormatDontSetButton` → `formatRejected()` → figyelmeztetés bezárása; a folytató művelet hiánya megfelel a gomb jelentésének. A Crop útja: `editToolCrop` → `toolActivated`/`cropActive` → a vágópanel megjelenik; a külön `cropRequested` jelzés fölösleges.
+**Szúrópróba, teljes hívási lánc.** A 2026-10-17 statikus ellenőrzés idején a Ctrl+5 `Shortcut` és az Időrend `MenuItem` még le volt tiltva, a menüjelzésnek pedig nem volt fogadója. Ezt az állapotot a #5377 felülírta: a `Ctrl+5` a `Main.qml:toggleTimeline()`-on át nyitja a bemutatót, a Nézet-menü `timelineRequested` jelzését a `Main.qml` fogadja, és mindkét út kijelölés nélkül működik. A valós kattintást és a teljes képernyős ablakot a `test_nezet_menu_valodi_5150.py`, a valódi billentyűt és kilépést a `test_idorend_bemutato_5377.py` ellenőrzi. Az e-mail-mód útja: QSettings → `EmailController.useDefaultClient` → Beállítások rádiógombjai → `EmailController.sendRows`, ahol az érték dönti el, hogy a levelező azonnal indul-e (saját levelezős mód) vagy a választó párbeszéd kérdez (#6987-től; korábban az `EmailChoiceDialog.onOpened` választott `compose` vagy `choose` panelt); tehát a beállítás nem néma. Az Auto-Complete útja: helyi menüelem → mentő slot → QSettings. A bináris lelet szerint az eredeti kapcsolónak sincs olvasója; a címjavasló osztály a Gmail-ágú levélszerkesztő része. A „Don't Set” útja: `collageFormatDontSetButton` → `formatRejected()` → figyelmeztetés bezárása; a folytató művelet hiánya megfelel a gomb jelentésének. A Crop útja: `editToolCrop` → `toolActivated`/`cropActive` → a vágópanel megjelenik; a külön `cropRequested` jelzés fölösleges.
 
 | Elem, objectName és felirat | Fájl:sor | Gyanú | Eredeti viselkedés és forrása | Ítélet |
 |---|---|---|---|---|
@@ -134,7 +134,7 @@ Az ellenőrzés statikus forrásvizsgálat. A CI-őr csak a `Clicked` és `Trigg
 | Kulcsszóablak Done `objectName=keywordDoneButton`; qsTr: `Done` | `KeywordsDialog.qml:225` | A kezelő csak a saját dialógust zárja be. | NINCS LEÍRVA külön eredeti gombként. A kulcsszómódosító vezérlők után ez zárja a párbeszédet. | működik |
 | Videó-automatikus lejátszás beállítója `setAutoPlayMovies`; objectName és qsTr-felirat nincs | `appearance_controller.py:182` | A slotmérő találta, mert a szomszédos komment `@Slot` szöveget tartalmaz. A metódus nincs dekorálva, a QML a `autoPlayMovies` tulajdonságot olvassa. | Az eredeti AutoPlayMovies videónyitáskor szabályozza az automatikus lejátszást; [ui-audit-editor.md](ui-audit-editor.md), a mai olvasó a `VideoPlayerView.qml:21-24`. | működik |
 | Hover-előnézet beállítója `setEnableHover`; objectName és qsTr-felirat nincs | `appearance_controller.py:198` | A slotmérő találta, mert a szomszédos komment `@Slot` szöveget tartalmaz. A metódus nincs dekorálva, a QML az `enableHover` tulajdonságot olvassa. | Az eredeti EnableHover a Ctrl+Alt előnézetet szabályozza; [picasa-gyorsbillentyuk.md 10.33](picasa-gyorsbillentyuk.md), a mai olvasó a `LightboxFeed.qml:124-125`. | működik |
-| E-mail mód rádiócsoport `objectName=optionsMailDefaultRadio`, `optionsMailChooseRadio`; qsTr: `Use this computer's default email program`, `Let me choose each time I send pictures` | `OptionsTabEmail.qml:54-76` | A beállításmérő csak tárolt tulajdonságot látott. | Az eredeti EmailPrepType levelezőmódot választ; [picasa-email-kuldes.md 5. szakasz](picasa-email-kuldes.md). A mai `EmailChoiceDialog.qml:35-40` a beállításból `compose` vagy `choose` kezdőlapot választ; a küldő mindkét esetben az alapértelmezett programot hívja, a Gmail-ág nem cél. | működik |
+| E-mail mód rádiócsoport `objectName=optionsMailDefaultRadio`, `optionsMailChooseRadio`; qsTr: `Use this computer's default email program`, `Let me choose each time I send pictures` | `OptionsTabEmail.qml:54-76` | A beállításmérő csak tárolt tulajdonságot látott. | Az eredeti EmailPrepType levelezőmódot választ; [picasa-email-kuldes.md 5. szakasz](picasa-email-kuldes.md). A #6987 óta a saját levelezős mód (`useDefaultClient`) belső panel nélkül, azonnal nyitja a rendszer levelezőjét a csatolmányokkal, a másik mód a választót kérdezteti, és a „Native Mail Client” rádió is közvetlenül indít; a tárgy és a törzs a képszám szerint a hivatalos `IDS_MAPI_SUBJ_*` és `IDS_MAPI_BODY_*` szöveg (a `IDS_MAPITAGLINE` reklámsor nélkül), 20-nál több képnél előbb a `CThumbUI::OutputBottleneck` kérdés jön. A `]history:email` jelölés nincs megvalósítva: az `albumdata_token.pmp` album-sorának tokenje, nem `.picasa.ini`-kulcs, a PMP-t pedig a PicasaPy csak olvassa. A Gmail-ág nem cél. | működik |
 | Képernyővédő forrásai és kijelölt képei; `objectName=screensaverSourceList`, ismétlődő `screensaverSourceCheck<n>`; feliratok: `Display photos from:`, `Selected Pictures`, illetve a mappa- és albumnevek | `ScreensaverDialog.qml:29-37,109-138`; `screensaver_controller.py:215-251,288-305` | A mérő nem tudta követni a `screensaver/sources` és `screensaver/photoPaths` kulcsokat. | Az eredeti képernyővédőhöz adott képekről a [picasa-menu-parancsok-viselkedes.md 35.3](picasa-menu-parancsok-viselkedes.md) ír; a Linuxos helyi forráslista pontos eredeti megfelelője NINCS LEÍRVA. | működik |
 | Képernyővédő `effect`, `seconds`, `showCaptions`; `objectName=screensaverEffectBox`, `screensaverSecondsSlider`, `screensaverCaptionCheck`; feliratok: `Visual effect:`, `Change pictures every:`, `Show captions` | `ScreensaverDialog.qml:150-201`; `screensaver_controller.py:253-286` | A beállításmérő nem találta meg a kulcsok használatát. | Az eredeti Google Photos-képernyővédő külön program volt; a Linuxos helyi beállításmezők pontos eredeti megfelelője NINCS LEÍRVA. [picasa-menu-parancsok-viselkedes.md 35.3](picasa-menu-parancsok-viselkedes.md) leírja a mai helyi képernyővédő adaptációját. | működik |
 | Képernyővédő tétlenségi percei; `objectName=screensaverIdleCheck`, `screensaverIdleMinutes`; feliratok: `Start when the computer is idle for`, `minutes` | `ScreensaverDialog.qml:204-244`; `screensaver_controller.py:363-407` | A mérő nem tudta követni a `screensaver/idleMinutes` kulcsot. | Az eredeti képernyővédő Windowsos külön program volt; a Linuxos tétlenségi indítás mai adaptáció. [picasa-menu-parancsok-viselkedes.md 35.3](picasa-menu-parancsok-viselkedes.md). | működik |
@@ -1968,6 +1968,276 @@ eredeti fájlnévvel.
 kérdések az Export Picture to Folder folyamat közvetlen folytatásai.
 
 **Módosított fájl:** `docs/specs/paritas-ellenorzes.md` - a #6970 új alszakasza.
+
+## #6984: Az Email parancs teljes folyamata az eredeti Picasában és összevetése a PicasaPy-jal
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Az eredeti és a jelenlegi PicasaPy forrásútjait külön ellenőriztem; a korábbi
+e-mail-kutatásokat (`picasa-email-kuldes.md`) összevetettem az utasításszintű
+bináris leletekkel és a mostani PicasaPy kóddal.
+
+### 1. Belépési pontok és engedélyezési feltételek
+
+| Belépési pont | Eredeti Picasa 3.9 (bináris cím) | Jelenlegi PicasaPy (fájl:sor) | Eltérés / Teendő |
+|---|---|---|---|
+| **Fájl menü ▸ E-mail...** | `eMenuFile::ID_FILE_EMAIL`, `cmd 0xe107` (standard MFC `ID_FILE_SEND_MAIL`), menürekord `0xd6db1c` a `0x00559150` regisztrálóban (`0x0055973d`-`0x0055977e`). A `0x005cb990` menü-diszpécser `0x005cbac3` ága könyvtár módban a `0x005316b0` nyitót, néző módban (`[ebx+0x3114] != 0`) a `0x005318c0` nyitót hívja. Engedélyezés: `0x0056e1c0` (`0x0056e36e`, `0x0056e3d5`, `0x0056e424`); ha a kijelölés üres (`[edi+0x34a4] == 0`), a menüpont tiltott (szürke). Videó esetén is engedélyezett. | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:172-177`: `objectName: "menuFileEmail"`, `text: qsTr("&E-Mail...") + "\tCtrl+E"`, `enabled: bar.photoActionsEnabled`, `onTriggered: bar.emailRequested()`. | Egyezik a menüpont létezése, gyorsbillentyűje és kijelölés-függő engedélyezése. |
+| **Képtálca E-mail gomb** | `outputlayout/ebutton` (`0x00c8fad0`). A `0x005d9cc0` eseménykezelő a `0x005daaca`-`0x005daad3` ágon közvetlenül a `0x005316b0` nyitót hívja (`call 0x005316b0`). Engedélyezett nem üres rácskijelölés vagy tartott tálca esetén. | `src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:384-403`: `objectName: "trayEmailButton"`, `text: qsTr("E-Mail")`, `enabled: viewerOpen ? viewerIndex >= 0 : selectedIndexes.length > 0`, `onClicked: trayRoot.emailRequested()`. | Egyezik a gombfunkció és a közös nyitó hívása. |
+| **Gyorsbillentyű (Ctrl+E)** | A `0x005e60d0` CThumbUI billentyűkezelőben `0x005e638b`: ha Shift nincs lenyomva (`cmp [esp+0x11], 0; je 0x5e63a2`), a néző-állapot vizsgálata (`0x005696c0`, `editpanel/previewclip2`) után a `0x005e63b1` közvetlenül a `0x005316b0` nyitót hívja. Shift esetén (`Ctrl+Shift+E`) az `enhance` ("I'm Feeling Lucky") fut (`0x005e6393`). | `src/picasapy/app/qml/PicasaPy/MainKeyboardShortcuts.qml:497-503`: `shortcutEmail`, `sequence: "Ctrl+E"`, `enabled: photoActionsEnabled && !_szovegmezoneVanFokusz`, `onActivated: hostPicasaMenuBar.emailRequested()`. | Egyezik: a Ctrl+E a Fájl menüvel azonos emailRequested útra fut. |
+| **Helyi menük (Jobbklikk)** | A rács/album kép helyi menüje (`0x00730790`, `0x00731050`), a képtálca helyi menüje (`0x00732ee0`) és a néző helyi menüje (`0x007327a0`) sem tartalmaz E-mail parancsot. | `PhotoContextMenu.qml`, `TrayContextMenu.qml`, `ViewerContextMenu.qml`: egyikben sincs E-mail menüpont. | Egyezik: helyi menükből az e-mail nem érhető el. |
+| **Néző (Viewer / OneUp)** | A felső Fájl menü a nézőből is elérhető; a `0x005cbac3` a `[ebx+0x3114] != 0` miatt a `0x005318c0` nyitót hívja, ami az aktuális egyetlen képre indítja a küldést megerősítő kérdés nélkül. A képtálca E-mail gombja a nézőből is él. A Ctrl+E a közvetlen billentyűkezelőben néző módban tiltott (`0x005696c0`). | `MainMenuBar.qml:83, 283-284` és `PicasaFileMenu.qml:175`: nézőben az aktuális kép sorával aktív. `TrayActionArea.qml:395`: nézőben `viewerIndex >= 0` esetén a gomb aktív. `MainKeyboardShortcuts.qml:500`: nézőben is aktív a menüállapot alapján. | Eredetileg a közvetlen Ctrl+E nézőben inaktív volt; a PicasaPy-ban a menü kötése miatt nézőben is elsülhet. |
+| **20 fájl feletti megerősítés** | `0x00531550` (`CThumbUI::OutputBottleneck`): ha a kijelölt képek száma > 20 (`cmp ebp, 0x14; jbe 0x53168b`), megjelenik a megerősítő kérdés: Cím: "Confirm" (`CThumbUI::OutputBottleneck::title`), Szöveg: `Email %d files?` (`0x00c89854`). Mégse esetén kilép (`eax = 0xf4242`), a `0x005316b0` nem indul el. | Nincs implementálva. A `MainWindowCommands.qml:482-495` bármilyen darabszámú kijelölésre azonnal elindítja a `prepareAttachments`-ot. | **Eltérés:** Az eredetiben 20 kép felett megerősítő kérdés védi a felhasználót a véletlen tömeges e-mailküldéstől. Fejlesztési jegy indokolt. |
+
+### 2. Megjelenő ablak és mentett beállítások
+
+- **Friss telepítés és a választó párbeszédablak (`choose_mail`):**
+  - A kapu (`0x007420f0`) a `HKCU\SOFTWARE\Google\Picasa\Picasa2\Preferences\` registry-kulcsokat olvassa:
+    - `EmailPrepType` (alapérték: `3` = saját levelezőprogram, `0x00742132`),
+    - `DoNotPromptForEmailPref` (alapérték: `0`, `0x00742154`).
+  - Mivel `DoNotPromptForEmailPref == 0`, az első alkalommal a `0x00742168` ágon **mindig megjelenik** a `choose_mail` ("Select Email" / "Válasszon levelezőprogramot") ablak.
+  - Tartalma:
+    - Rádiógomb 1: `choose_mail/mymail` ("Use my default email program." / "A számítógép alapértelmezett levelezőprogramjának használata", `EmailPrepType = 3`).
+    - Rádiógomb 2: `choose_mail/gsender` ("Use my Gmail or Google account." / "A Google Fiók használata", `EmailPrepType = 5`).
+    - Jelölőnégyzet: `choose_mail/checkbox` ("Remember this setting, don't display this dialog again." / "Ne jelenítse meg többé ezt a párbeszédpanelt.").
+    - Gombok: Help ("Súgó"), Cancel ("Mégse").
+  - **Nincs benne méretbeállítás:** a `choose_mail` dialógusban sem csúszka, sem méretválasztó nem szerepel.
+- **A beállítás megjegyzése:**
+  - A `0x0084f6b0` szerint a választott küldési mód (`EmailPrepType`) és a `DoNotPromptForEmailPref = 1` **csak akkor íródik a registrybe**, ha a felhasználó bejelölte a `choose_mail/checkbox`-ot.
+  - Ha nincs bejelölve, a választás csak az aktuális küldésre érvényesül a memóriában, a registry nem változik, és legközelebb újra megkérdezi.
+  - Ha be van jelölve, a következő alkalommal a kapu (`0x007420f0`) nem nyit ablakot, hanem közvetlenül a mentett módra ugrik.
+- **A méret- és egyéb beállítások helye:**
+  - Kizárólag az **Eszközök ▸ Beállítások ▸ E-mail** fülön (`options.fen` / `OptionsTabEmail`):
+    - Több kép mérete: 8 fokozatú csúszka (160, 320, 480, 640, 800, 1024, 1200, 1600 px), alapértéke **480 képpont** (`Preferences\EmailExportSize` = `0x1e0`).
+    - Egyedülálló képek mérete: rádiógombpár: Több elemmel azonos (`EmailSinglePicture = 0`, alap) / Eredeti méret (`EmailSinglePicture = 1`).
+    - Mozgófilmek küldése másként: Első képkocka (`EmailMovie = 0`, alap) / Teljes mozgófilm (`EmailMovie = 1`).
+    - Kimeneti formátum: Szövegközi fotók (`UseHTMLMailer = 0`, csak Outlook).
+- **Eltérés a PicasaPy-ban (Belső szerkesztőablak):**
+  - Az eredeti Picasában saját levelezőprogram (3-as mód) esetén a Picasa **soha nem nyit belső levélszerkesztő ablakot**: a fájlokat előkészíti és közvetlenül átadja a MAPI kliensnek. A beépített szerkesztőfelület (`compose_mail.tre`, címzett, tárgy, szövegmező) kizárólag a Google Mail (5-ös mód) ágon létezett.
+  - A PicasaPy-ban (`EmailChoiceDialog.qml:256-490`, `MainWindowCommands.qml:494`) a választás után a párbeszéd átvált "compose" állapotba, és bekéri a címzettet, tárgyat és üzenetet, majd a `sendWithDefaultClient` ezekkel indítja az `xdg-email`-t vagy MAPI-t.
+
+### 3. Végrehajtás és futásidejű hatás
+
+| Tulajdonság | Eredeti Picasa 3.9 (bináris cím) | Jelenlegi PicasaPy (fájl:sor) | Eltérés / Teendő |
+|---|---|---|---|
+| **Csatolmány mérete** | `EmailExportSize` (alapérték 480 px, `0x00743094`). Ha 1 kép van kijelölve ÉS `EmailSinglePicture == 1`, a méret 0 (nincs átméretezés). | `src/picasapy/mailer/command.py:21-29`, `src/picasapy/app/email_controller.py:651-656`: 480 px alapérték, 8 fokozat, 1 képnél `singlePictureOriginal` esetén `None`. | Egyezik. |
+| **Csatolmány formátuma** | MAPI ágon (`0x0074072e`, `0x0045cfa0`) minden állókép újrarenderelt JPEG-ként jön létre, fix 85-ös minőséggel (`0x007406d7`), baseline, 4:2:0. Nem-JPEG képek (PNG, TIFF, BMP, RAW) szintén JPEG 85 (4:4:4). WebP esetén WebP (minőség 75). Videó esetén: ha `EmailMovie == 1`, nyers fájlmásolat (`0x007401b8 CopyFile`); különben első képkocka JPEG állókép. | `src/picasapy/app/email_controller.py:658-663`: `ExportSettings(jpeg_quality=85, movie_full=self._movie_full)`. Változatlan videót módosítatlanul másol, ha `movie_full` igaz. | Lényegében egyezik. Szándékos eltérés (#3993): módosítatlan JPEG képeknél a PicasaPy megtartja a veszteségmentes másolatot. |
+| **Szerkesztések beégetése** | Vágás, forgatás, tükrözés, szín- és retus-szűrők minden esetben beleégnek az exportált képekbe (`0x0045cfa0`, `0x006a9650` EditStack). | `src/picasapy/export/exporter.py`: vágást, forgatást, szűrőket és tükrözést beégeti az exportált másolatba. | Egyezik. |
+| **Fájlnév** | Az exportáló a kép eredeti fájlnevét tartja meg a célmappában; e-mail ágon nincs sorszámozás-prefix. | `src/picasapy/export/exporter.py:245-248`: az eredeti fájlnevet tartja meg a célmappában. | Egyezik. |
+| **Levél tárgya (Subject)** | 1 kép: `IDS_MAPI_SUBJ_SINGLE` (`0x00caff84`) -> "Küldök egy képet" / "a picture for you". Több kép: `IDS_MAPI_SUBJ_MULTI` (`0x00caff5c`) -> "Küldök %d képet" / "%d pictures for you". | `MainWindowCommands.qml:494`: `emailController.sendRows(csatolmanyok, "", "")` üres tárggyal indítja a küldést. | **Eltérés:** A PicasaPy-ban nincs automatikus tárgysablon a képszám szerint. Fejlesztési jegy indokolt. |
+| **Levél szövegtörzse (Body)** | 1 kép: `IDS_MAPI_BODY_SINGLE` (`0x00caff9c`) -> "Ön 1 képet kapott.\n\n". Több kép: `IDS_MAPI_BODY_MULTI` (`0x00caff70`) -> "Ön %d képet kapott.\n\n". Hozzáfűzve a záró reklámsor: `IDS_MAPITAGLINE` (`0x00cb0180`) -> "Ezeket a képeket a Google Picasa programjának segítségével küldtük.\nPróbálja ki itt: http://picasa.google.com/". | `MainWindowCommands.qml:494`: üres szövegtörzs (""). Az `EmailChoiceDialog.qml` szerkesztőmezője üresen nyílik meg. | **Eltérés:** A PicasaPy-ban nincs automatikus levéltörzs- és tagline-kitöltés. Fejlesztési jegy indokolt. |
+| **Ideiglenes fájlok helye és törlése** | Hely: `%LocalAppData%\Google\Picasa2\temp\email\` (`0x00cb0190`). Törlés: küldés után a fájlok a mappában maradnak (nem törlődnek azonnal, hogy a levelezőprogram hozzáférhessen). A mappát a következő e-mail export felülírja, illetve a Picasa indítási takarítása üríti. | `email_controller.py:657`: minden alkalommal új egyedi mappa: `tempfile.mkdtemp(prefix="picasapy-mail-")`. Törlés: `_torold_regi_mail_masolatok()` az alkalmazás indulásakor törli az 1 óránál régebbi mappákat. | Funkcionálisan megfelelő; PicasaPy egyedi mappákat használ és induláskor takarít. |
+| **Kijelölés és történet-token** | A rácson a kijelölés nem változik (megmarad). Sikeres küldés esetén az érintett képek megkapják a `]history:email` tokent az adatbázisban (`0x0073f253`-`0x0073f267`). | A kijelölés megmarad. Semmilyen `]history:email` token nem íródik az adatbázisba vagy a `.picasa.ini`-be. | **Eltérés:** A PicasaPy nem jegyzi fel az elküldött képekhez a `]history:email` előzmény-tokent. Fejlesztési jegy indokolt. |
+
+### 4. Hibaesetek
+
+- **Nincs levelezőprogram:**
+  - Eredeti Picasa 3.9: ha a `MAPI32.DLL` betöltése meghiúsul (`0x008d0cb1`, `LoadLibrary < 32`), a függvény `eax = 2`-vel tér vissza (`MAPI_E_FAILURE`). A `0x0073d8c0` hibakezelő lefut és felugró ablakban megjeleníti: `IDS_MAPI_FAILURE` ("Az e-mailt nem lehetett elküldeni." / "The email could not be sent.").
+  - PicasaPy: Linuxon, ha az `xdg-email` hiányzik vagy nem 0 kóddal lép ki, és a `mailto:` URL sem nyitható meg, az `emailFailed` jelzés kibocsátja a `qsTr("No email program was found.")` üzenetet, amit a `MainWindowCommands.qml:553` a felületi hibasávban (`errorBannerText`) jelenít meg. Windowson a sikertelen MAPI hívás szintén ezt az üzenetet adja.
+- **Túl nagy csatolmány / túl sok kép:**
+  - Eredeti Picasa 3.9:
+    - MAPI ágon: ha a rendszer MAPI kliense `MAPI_E_TOO_MANY_ATTACHMENTS` (9-es hibakód) hibával tér vissza, a `0x0073d8ed` ág felugró ablakban megjeleníti: `IDS_MAPI_TOO_MANY_ATTACHMENTS` ("Túl sok mellékletet tartalmaz, ezért nem lehet elküldeni.").
+    - Gmail ágon: a `0x008525a0` előre ellenőrzi a mellékletek méretkorlátját, és ha túllépi, megjeleníti a `IDS_EMAIL_ATTACHMENTLIMIT` figyelmeztetést: "A csatolt képek túl nagyok. Távolítson el néhány mellékletet, vagy válassza az Eszközök menü Beállítások parancsát, és állítsa át a levelezési beállításokat kisebb képek küldésére.".
+  - PicasaPy: nincs előzetes méretellenőrzés; a hibakezelő minden MAPI hibára általános "No email program was found." üzenetet ad.
+- **Nem írható ideiglenes mappa / lemezhiba:**
+  - Eredeti Picasa 3.9:
+    - Ha a célmappa nem hozható létre: `0x0073f320` -> `IDS_DESTDIRCANNOCREATE` ("A célkönyvtárat nem sikerült létrehozni.").
+    - Ha az írás során lemezhiba, megtelt lemez vagy írásvédettség lép fel: `0x0073f320` -> `CImageOutput::filewriteerr` ("Lemezhiba miatt nem lehetett minden fájlt kiírni. Lehet, hogy a lemez megtelt vagy írásvédett." / "Unable to write all files due to a disk error. The disk may be full or read-only.").
+  - PicasaPy: ha a temp mappa nem írható, az `export_photos` `failed` listát ad, vagy kezeletlen `OSError` keletkezhet; a felhasználó felé nincs specifikus lemezhiba-üzenet.
+
+### 5. Két független út és cáfoló vizsgálat
+
+- **A út (Utasításszintű bináris diszasszembly):**
+  - Menütábla regisztráció: `0x00559150` (`0x0055973d`-`0x0055977e`), `cmd 0xe107`.
+  - Menü engedélyezési logika: `0x0056e1c0` (`0x0056e36e`, `0x0056e3d5`, `0x0056e424`), kijelölési számláló `[edi+0x34a4]`.
+  - Menü-diszpécser: `0x005cb990` (`0x005cbac3`), néző mód jelző `[ebx+0x3114]`.
+  - Közös nyitó és 20 fájl megerősítés: `0x005316b0` és `0x00531550` (`CThumbUI::OutputBottleneck`, küszöb `0x14`).
+  - Képtálca E-mail gomb: `0x005d9cc0` (`0x005daad3 call 0x005316b0`).
+  - Gyorsbillentyű: `0x005e60d0` (`0x005e63b1 call 0x005316b0`).
+  - Kapu és módválasztás: `0x00742970` és `0x007420f0` (`choose_mail`).
+  - MAPI és kimenet: `0x0073f320`, `0x0073f0f0`, `0x0073d970`, `0x008d0c90`, `0x0073d8c0`.
+- **B út (Erőforrások, XML-ek, string_xrefs és PicasaPy forráskód):**
+  - `referencia/i18n-hu/stringres.xml`: `IDS_MAPI_SUBJ_SINGLE`, `IDS_MAPI_SUBJ_MULTI`, `IDS_MAPI_BODY_SINGLE`, `IDS_MAPI_BODY_MULTI`, `IDS_MAPITAGLINE`, `IDS_MAPI_TOO_MANY_ATTACHMENTS`, `IDS_MAPI_FAILURE`.
+  - `choose_mail.tre` és `options.xml`: vezérlők és beállítások struktúrája.
+  - Kontextusmenük független leltára (`0x00730790`, `0x00731050`, `0x00732ee0`, `0x007327a0`): nem tartalmaznak E-mail parancsot.
+  - A két út egymással tökéletes összhangban van.
+- **Cáfoló vizsgálat:**
+  - *Feltételezés:* A Picasa a saját levelezőprogramos (MAPI) ágon is megjeleníti a beépített `compose_mail` panelt.
+  - *Cáfolat:* A `0x00742970` függvény `0x00742a2c` soránál a 3-as mód (`EmailPrepType == 3`) közvetlenül a `0x00531710` ágra ugrik, ami a `0x0073f320` kimeneti motort és a `0x0073d970` MAPI hívót indítja, majd visszatér. A `0x007422d0` `compose_mail` hívás ebben az ágban nem fut le; az kizárólag a Google Mail (5) ágon él. A hipotézis megcáfolva: a MAPI küldés közvetlenül a rendszer külső levelezőjét nyitja meg.
+
+### 6. A jegy „Kész, ha” pontjai
+
+1. ✅ **Belépési pontok:** Fájl menü (`cmd 0xe107`), képtálca E-mail gomb (`outputlayout/ebutton`), gyorsbillentyű (`Ctrl+E`), helyi menük kizárása, és a nézőbeli viselkedés folyamatszinten, bináris címekkel és forrássorokkal dokumentálva.
+2. ✅ **Ablak:** `choose_mail` párbeszéd (Saját levelező / Gmail, Remember me checkbox), Beállítások E-mail fül (8 fokozatú csúszka, 480 px alapérték, egyéni méretkapcsoló), valamint a 20 fájl feletti megerősítő kérdés (`CThumbUI::OutputBottleneck`) dokumentálva.
+3. ✅ **Hatás:** csatolmány mérete, 85-ös JPEG formátum, szerkesztéségetés, fájlnév, tárgy- és törzssablonok (`IDS_MAPI_SUBJ_*`, `IDS_MAPI_BODY_*`, `IDS_MAPITAGLINE`), ideiglenes fájlok helye és életciklusa, valamint a `]history:email` token dokumentálva.
+4. ✅ **Hibaesetek:** hiányzó levelezőprogram, túl nagy csatolmány (`MAPI_E_TOO_MANY_ATTACHMENTS`), és nem írható/megtelt lemez hibái bináris címekkel és stringres azonosítókkal dokumentálva.
+
+### 7. Javasolt fejlesztői jegytörzsek
+
+#### 1. A saját levelezőprogramos küldés ne nyisson belső compose ablakot, hanem közvetlenül a levelezőt indítsa
+
+**Eredeti:** A Picasa 3.9-ben a saját levelezőprogramos ág (`EmailPrepType = 3`, `0x00742a2c`) nem nyitja meg a belső `compose_mail` panelt (`0x007422d0`), hanem az exportálás után közvetlenül meghívja a `MAPISendMail`-t (`0x0073e25e`), ami az operációs rendszer alapértelmezett levelezőjének új levél ablakát nyitja meg a csatolmányokkal.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A saját levelező választásakor közvetlenül a külső levelező nyílik meg, belső szerkesztőpanel nélkül. | `EmailChoiceDialog.qml:39, 256-490`: a választás után a párbeszéd "compose" panelre vált, és a felhasználónak ott kell rákattintania a "Send" gombra. | Ha `useDefaultClient` aktív (vagy a felhasználó a saját levelezőt választotta), ne nyíljon belső szerkesztőpanel, hanem közvetlenül induljon el az `xdg-email` vagy MAPI hívás a csatolmányokkal. |
+
+**Kész, ha:** Az E-mail parancs kiadásakor a képek előkészítése után közvetlenül a rendszer levelezőprogramja jelenik meg a csatolmányokkal.
+
+#### 2. Kijelölési megerősítő kérdés 20 fájl felett
+
+**Eredeti:** A Picasa 3.9-ben a `0x00531550` rutin (`CThumbUI::OutputBottleneck`) ellenőrzi a kijelölt képek számát: ha a darabszám meghaladja a 20-at (`0x14`), megerősítő kérdést jelenít meg: Cím: "Confirm" (`CThumbUI::OutputBottleneck::title`), Szöveg: `Email %d files?` (`0x00c89854`). Mégse esetén a művelet megszakad.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| 20 fájl felett megerősítő dialógus kérdez rá a küldésre. | `MainWindowCommands.qml:482-495`: darabszámtól függetlenül azonnal indítja az előkészítést. | 20-nál több kijelölt elem esetén megerősítő párbeszédablakot megjeleníteni a darabszámmal, Mégse esetén megszakítani a folyamatot. |
+
+**Kész, ha:** 21 kijelölt képnél megjelenik a megerősítő kérdés; Mégse esetén nem indul el az exportálás, OK esetén folytatódik. 20 vagy kevesebb képnél kérdés nélkül indul.
+
+#### 3. Automatikus levéltárgy és levéltörzs generálása a csatolmányszám szerint
+
+**Eredeti:** A Picasa 3.9 `0x0073d970` rutinja automatikusan kitölti a levél tárgyát és törzsét:
+- Tárgy: 1 kép -> `IDS_MAPI_SUBJ_SINGLE` ("Küldök egy képet" / "a picture for you"); több kép -> `IDS_MAPI_SUBJ_MULTI` ("Küldök %d képet" / "%d pictures for you").
+- Törzs: 1 kép -> `IDS_MAPI_BODY_SINGLE` ("Ön 1 képet kapott.\n\n"); több kép -> `IDS_MAPI_BODY_MULTI` ("Ön %d képet kapott.\n\n"), mindkettő után hozzáfűzve az `IDS_MAPITAGLINE` szövegét ("Ezeket a képeket a Google Picasa programjának segítségével küldtük.\nPróbálja ki itt: http://picasa.google.com/").
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Automatikus lokalizált tárgy és törzs a képszám szerint, tagline-nal. | `MainWindowCommands.qml:494`: üres tárggyal és törzzsel hívja a vezérlőt (`sendRows(csatolmanyok, "", "")`). | A darabszámnak megfelelő tárgyat és törzset generálni a `build_xdg_email_argv` és MAPI híváshoz. |
+
+**Kész, ha:** 1 kép küldésekor "Küldök egy képet", több képnél "Küldök N képet" tárggyal és a megfelelő törzzsel nyílik meg a levél.
+
+#### 4. E-mailben elküldött képek megjelölése `]history:email` tokennel
+
+**Eredeti:** Sikeres küldés után a Picasa 3.9 a `0x0073f253`-`0x0073f267` ágon az érintett képekhez hozzárendeli a `]history:email` ("Elküldve e-mailben") előzmény-tokent az adatbázisban.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `]history:email` token bejegyzése a sikeresen elküldött képekhez. | Nincs előzmény-nyilvántartás e-mail küldés után. | Sikeres e-mail indítás után a képek metaadataihoz bejegyezni a `]history:email` tokent. |
+
+**Kész, ha:** Az e-mailben sikeresen elküldött képekhez az adatbázisban megjelenik a történet-token.
+
+#### 5. Részletes MAPI hibakódok leképezése
+
+**Eredeti:** A Picasa 3.9 a `0x0073d8c0` MAPI hibakezelőben a visszatérési kódok szerint külön hibaüzeneteket ad: `MAPI_USER_ABORT` (1) esetén csendesen kilép hibajelzés nélkül; `MAPI_E_TOO_MANY_ATTACHMENTS` (9) esetén "Túl sok mellékletet tartalmaz..."; `MAPI_E_NO_ATTACHMENT` (11) esetén "Nem található a melléklet"; `MAPI_E_CANT_OPEN_ATTACHMENT` (12) esetén "A mellékletet nem sikerült megnyitni."; egyéb kódokra "Az e-mailt nem lehetett elküldeni.".
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A MAPI hibakódok szerint specifikus üzenet jelenik meg. | `email_controller.py:784`: minden nem-OK és nem-ABORT kódra "No email program was found." üzenetet ad. | A `send_mapi` hibakódjai alapján specifikus üzenetet kibocsátani (`emailFailed`). |
+
+**Kész, ha:** Túl sok melléklet vagy megnyitási hiba esetén a megfelelő üzenet jelenik meg a felületen.
+
+### 8. Nyitott kérdések
+
+- Nincs blokkoló nyitott kérdés; a teljes folyamat belépési pontoktól az ablakokon és hatásokon át a hibakezelésig lezárt.
+- NINCS MÉRVE: Windows 11 rendszeren a modern Outlook / Thunderbird MAPI viselkedése a `temp\email\` fájlok zárolására és feloldására.
+
+**Módosított fájl:** `docs/specs/paritas-ellenorzes.md` - a #6984 új alszakasza.
+
+
+
+
+
+## #6989: A Locate on Disk parancs teljes folyamata az eredeti Picasával összevetve
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Az eredeti és a jelenlegi PicasaPy forrásútjait a bináris disassembly, az indexelt
+rekordok és a PicasaPy QML/Python forráskódjának közvetlen összevetésével ellenőriztem.
+
+### Belépési pontok, feltételek, egy és több kép
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Főmenü (Fájl):** `ID_FILE_LOCATEONDISK` (`0x9c81`), felirat `&Locate on Disk`, gyorsbillentyű `Ctrl+Enter` (`0x005595dd`-`0x005595f4`). Menüépítő: `0x00559150`. Engedélyezés: `0x0056c5a0` és `0x0056e1c0`: nem üres kijelölésnél (`[esp+0x12] != 0`), nem zárolt állapotban (`[edi+0x34a4] == 0`), és nem írásvédett gyűjteményben (`0x8000` bit törölve). Üres kijelölésnél letiltva (`MF_GRAYED`). | `PicasaFileMenu.qml:150-154`, `MainMenuBar.qml:318-321`. Engedélyezett, ha `bar.photoActionsEnabled` (kijelölés nem üres). Aktiváláskor `bar.locateRequested()`. | Egyezik az alapfolyamat és a tiltási feltétel. Eltérés: a PicasaPy `photoActionIndex()` csak az első sort adja át többes kijelölésnél (lásd lent). |
+| **Főmenü (Mappa):** `ID_ALBUM_LOCATEONDISK` (`0x9c95`), felirat `&Locate on Disk` (`0x0055b0b0`-`0x0055b0c7`). Menüépítő: `0x00559150`. Mappa nézetben az aktuális mappa lemezhelyét nyitja meg. | `PicasaFolderMenu.qml:185-190`, `MainMenuBar.qml:168-171`. Engedélyezett, ha `bar.folderLocateEnabled` (érvényes mappa, nem album/személy). Hívás: `fileOpsController.revealFolder(hostController.currentFolder)`. | Egyezik: mindkét rendszer a mappa könyvtárát nyitja meg a fájlkezelőben. |
+| **Fotó helyi menü (Könyvtár):** `FolderPhotoWin::ID_FILE_LOCATEONDISK` (`0x9c81`), felirat `&Locate on Disk` (`0x00730790` a `0x00730c78`-nál). | `PhotoContextMenu.qml:427-432`, `MainPhotoContextMenu.qml:64-67`. Felirat `Locate on Disk\tCtrl+Enter`. | Egyezik a megjelenés és funkció. (PicasaPy-ban ha van mentett eredeti, almenüt ad: File on Disk / Original on Disk, #1613). |
+| **Fotó helyi menü (Album / Emberek):** `AlbumPhotoWin::ID_FILE_LOCATEONDISK` (`0x9c81`) `Locate on &Disk` (D betűs mnemonik `0x00731471`, `0x0073579f`) és `AlbumPhoto::ID_FILE_LOCATEINPICASA` (`0x9c99`) `&Locate in Picasa` (`0x007314f7`, `0x00735817`). | `PhotoContextMenu.qml:427-458`, `MainPhotoContextMenu.qml:64-88`. `locateRequested` és `locateInPicasaRequested` (`hostController.selectFolder(mappa)`). | Egyezik a két parancs szétválasztása és a célmappára ugrás a Picasán belül. |
+| **Mappa fejléc / Mappafa helyi menü:** `FolderWin::ID_ALBUM_LOCATEONDISK` (`0x9c95`), felirat `&Locate on Disk` (`0x007319f0` a `0x00731dd1`-nél és `0x00733a40` a `0x00733b4d`-nél). | `FolderContextMenu.qml:308-311`, `FolderPaneMenus.qml:373-376`, `FolderPaneContent.qml:399-402`. Hívás: `fileOpsController.revealFolder(...)`. | Egyezik: mindkét rendszer a mappa útvonalát adja át. |
+| **Néző helyi menü (OneUp):** `FolderPhotoWin::ID_FILE_LOCATEONDISK` (`0x9c81`), felirat `&Locate on Disk` (`0x007327a0` a `0x00732b85`-nél). | `ViewerContextMenu.qml:218-223`, `PhotoViewerContextActions.qml:142-146`. Hívás: `fileOpsController.revealPhoto(viewer._aktivUt())`. | Egyezik: a nézőben az aktuálisan megtekintett kép útvonalát nyitja meg. |
+| **Képtálca bélyegkép helyi menü:** `FolderPhotoWin::ID_FILE_LOCATEONDISK` (`0x9c81`), felirat `&Locate on Disk` (`0x00732ee0` a `0x00733093`-nál). | `TrayContextMenu.qml:86-88`, `TrayBar.qml:396`, `MainTrayBar.qml:50-55`. Hívás: `fileOpsController.revealPhoto(ut)`. | Egyezik: a tálcán lévő elemre jobb gombbal kattintva elérhető a művelet. A tálca alsó gombsorán nincs Locate gomb egyik programban sem. |
+| **Gyorsbillentyű (Ctrl+Enter):** `0x005e60d0` (`CThumbUI::OnKeyDown`), `VK_RETURN` (0x0d) + `Ctrl` billentyű -> `0x005c8320(0)`. Ha a kijelölés száma > 0 (`0x005c8493`), akkor a képeket nyitja (`0x005c85e0`); ha üres a kijelölés (`0x005c8495`), akkor a mappát nyitja (`0x005d0e90`). | `PicasaMenuBar.qml:658-673`: `sequence: "Ctrl+Return"`. Ha `photoActionsEnabled`: `locateRequested()`, ha `folderLocateEnabled`: `folderLocateRequested()`. | Egyezik a prioritási sorrend és a viselkedés: kijelölt képnél a képre, üres kijelölésnél a mappára ugrás. |
+
+#### Részletes feltételek és a többes kijelölés viselkedése
+
+1. **Videófájlok kezelése:**
+   - Az eredeti Picasában a videók (`.avi`, `.wmv`, `.mov`, `.mp4` stb.) azonos úton haladnak át (`0x005c85e0` -> `0x00981280`). A fájlrendszer-útvonal átadásra kerül a ShellExecuteExA-nak `/select,"<fájl>"` paraméterrel. Nincs videó-specifikus korlátozás.
+   - A PicasaPy-ban a `revealPhoto` nem szűri a fájl típusát, a videó fájlokra ugyanúgy meghívja a `reveal_in_file_manager` függvényt. Egyezik.
+2. **Több kép kijelölése és a mappánkénti ismétlésszűrés:**
+   - **Eredeti Picasa:** A `0x005c85e0` diszpécser egy előzetes ciklust futtat a kijelölt elemeken (`0x005c8754`-`0x005c87b5`). Minden elemnél lekéri a szülőkönyvtárat (`0x009a37b0`), és összehasonlítja a már regisztrált mappákkal (`0x005c8763`-`0x005c877d`). Ha a mappa megegyezik egy korábbival, átugorja a felvételt (`0x005c87b5 jne 0x5c8ba3`). Emiatt könyvtáranként szigorúan csak a legelső kijelölt fájl kerül be a megnyitandó listába. A `0x005c8dc4`-`0x005c8dee` ciklusban ezután ahány KÜLÖNBÖZŐ mappa volt a kijelölésben, annyi független Explorer ablakot nyit meg (`call 0x00981280`). Ha a kijelölt képek mind azonos mappában vannak, pontosan egyetlen Explorer ablak nyílik az első képre fókuszálva. Ha a kijelölés több mappát fed le (pl. keresési eredmények, album vagy tálca), minden érintett mappához külön ablak nyílik.
+   - **PicasaPy jelenlegi állapota:** A menükezelők (`MainMenuBar.qml:319`, `MainPhotoContextMenu.qml:65`, `MainTrayBar.qml:53`) kivétel nélkül csak egyetlen sort adnak át (`photoActionIndex()`, `fileOpTargetRow` vagy `selectedRows()[0]`). Több kép kijelölése esetén a PicasaPy csak a fókuszban lévő vagy legelső képet jeleníti meg a fájlkezelőben, még akkor is, ha a kijelölt elemek több különböző mappában találhatók.
+   - **Teendő:** Fejlesztői jegy szükséges a többes kijelölés mappánkénti ismétlésszűrésére és megnyitására (`revealPhotos(paths)`).
+3. **Üres kijelölés:**
+   - Főmenü: mindkét programban tiltott (szürke).
+   - Gyorsbillentyű (`Ctrl+Enter`): mindkét programban a jelenlegi mappa megnyitására esik vissza.
+   - Mappa menük: mindkét programban a mappa közvetlen megnyitása (`explorer "<mappa>"`).
+
+### A párbeszédablak és a megjegyzett értékek
+
+| Mező / Tulajdonság | Eredeti Picasa 3.9 (`0x00981280`) | Jelenlegi PicasaPy (`reveal.py`) | Eltérés / Értékelés |
+|---|---|---|---|
+| Belső párbeszédablak | Nincs. Nem nyit dialógust a Picasa. | Nincs. Nem nyit dialógust a PicasaPy. | Egyezik. |
+| Megjelenő ablak | Az operációs rendszer fájlkezelője: Windows Explorer (`0x00cd85f4`), `SW_SHOW` (5) módban (`0x00981310`). | Windows: Windows Explorer (`explorer`); Linux: `xdg-open`; macOS: `open`. | Egyezik: a natív fájlkezelő indul el. |
+| Parancssori formátum | Kép esetén: `/select,"%s"` (`0x00cd8604`); Mappa esetén: `"%s"` (`0x00c8500c`). | Windows kép: `explorer /select,"<fájl>"`; Windows mappa: `explorer "<mappa>"`. | Egyezik: karakterre megegyező paraméterezés (#1152). |
+| Megjegyzett beállítások | Semmit nem jegyez meg. Nincs registry-kulcs, nincs beállítás-mentés a Picasában. | Semmit nem jegyez meg. | Egyezik. |
+| Következő megnyitás | A Windows Intéző maga jegyzi meg a saját ablakméretét és helyzetét a rendszerleíró adatbázisban; a Picasa állapotmentést nem végez. | A rendszer fájlkezelője kezeli a saját pozícióját. | Egyezik. |
+
+### Kimeneti hatás és hibák
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Fájlrendszer:** a `0x00981280` kizárólag a `ShellExecuteExA` hívást futtatja (`0x009813de`). Nincs fájl- vagy könyvtárlétrehozás, módosítás vagy törlés. | `reveal.py:115` `subprocess.run` külső folyamatot indít. | Egyezik: szigorúan olvasási jellegű külső rendszerhívás. |
+| **.picasa.ini:** nincs INI-módosítás, nem hív INI-író rutint. | Nincs hívás az `ini/` csomag felé. | Egyezik: a `.picasa.ini` érintetlen marad. |
+| **Index (adatbázis):** nincs SQLite / PMP írás, nincs újraindexelés. | Nincs hívás az `index/` csomag felé. | Egyezik: az adatbázis változatlan. |
+| **Rács és kijelölés:** a kijelölt sorok és elemek kijelölése VÁLTOZATLAN marad; a fókusz átadódik az újonnan indult külső Explorer ablaknak. | A kijelölés nem törlődik, az elemek kijelölve maradnak. | Egyezik. |
+| **Írásvédett hely:** mivel nem történik lemezre írás, az írásvédett könyvtárban lévő fájl éppúgy megjelenik az Explorerben, mint az írható. | Az ellenőrzés csak az útvonal létezését és a folyamat indítását érinti. | Egyezik: írásvédett helyen is hibátlanul lefut. |
+| **Hiányzó fájl:** a `0x00981280` a `ShellExecuteExA` visszatérési kódját nem vizsgálja hibajelzésre (`0x009813e4` után `xor eax, eax; ret;`). Nem dob belső hibát; a hibakezelést a Windows Shell végzi (maga az Intéző ad hibaüzenetet, ha az útvonal nem található). | `fileops_controller_open_mixin.py:42-44`: ha a subprocess OSError-t ad, `operationFailed` jelet küld, a felület nem fagy le. | Egyezik: nincs programösszeomlás; a PicasaPy szükség esetén műveleti hibát jelez a UI-nak. |
+| **Megszakítás:** a művelet szinkron/azonnali folyamatindítás, nincs Cancel gomb vagy háttérben futó megszakítható szál. | Nincs megszakítási állapot. | Egyezik. |
+
+### Két független út és cáfoló kísérlet
+
+- **A út, utasításszintű bináris vizsgálat:**
+  1. Menüfrissítő és engedélyező vizsgálat: `0x0056c5a0` és `0x0056e1c0` instrukcióinak elemzése, ahol a kijelölés megléte és állapota határozza meg a `0x9c81` és `0x9c95` menüpontok státuszát.
+  2. Gyorsbillentyű és eseménykezelő: `0x005e60d0` (`CThumbUI::OnKeyDown`) billentyűkód vizsgálata (`VK_RETURN` és Ctrl vizsgálat), ahonnan a vezérlés a `0x005c8320` diszpécserre jut.
+  3. Diszpécser és elágazás: `0x005c8320` utasításainak lekövetése: a kijelölésszám vizsgálata (`0x005c8493`), ha 0, akkor mappa ág (`call 0x005d0e90`), ha > 0, akkor fotó ág (`call 0x005c85e0`).
+  4. Többes kijelölés és ismétlésszűrés: `0x005c85e0` vizsgálata: a könyvtárak kigyűjtése (`0x009a37b0`), karakterenkénti összehasonlítása (`0x005c8763`-`0x005c877d`), az ismétlődések kihagyása (`0x005c87b5 jne 0x5c8ba3`), majd a ciklikus megnyitás (`0x005c8dc4`-`0x005c8dee`).
+  5. Shell hívás: `0x00981280` diszasszemblálása: `SHELLEXECUTEINFOA` feltöltése (méret: 60 bájt, `open`, `explorer`, `SW_SHOW`, `/select,"%s"` vagy `"%s"`), és a `ShellExecuteExA` hívás (`0x009813de`), majd hibavizsgálat nélküli visszatérés (`0x009813f9`).
+- **B út, adatstruktúrák, sztring-xrefek és független menürekordok:**
+  1. A `picasa3-index.sqlite` adatbázisban szereplő `string_xrefs` és `xrefs` táblák független lekérdezése: `ID_FILE_LOCATEONDISK` (`0x9c81`), `ID_ALBUM_LOCATEONDISK` (`0x9c95`), `ID_FILE_LOCATEINPICASA` (`0x9c99`), valamint a menücímkék (`&Locate on Disk`, `Locate on &Disk`, `&Locate in Picasa`).
+  2. Helyi menü építő rutinok független vizsgálata: `FolderPhotoWin` (`0x00730790`), `AlbumPhotoWin` (`0x00731050`), `FolderWin` (`0x007319f0`, `0x00733a40`), `TrayWin` (`0x00732ee0`), `ViewerWin` (`0x007327a0`), `PeoplePhotoWin` (`0x007355c0`).
+  3. Sztring konstansok beolvasása a bináris `.rdata` szekciójából közvetlen PE elemzéssel: `0x00cd85f4` (`explorer`), `0x00cd8604` (`/select,"%s"`), `0x00c8500c` (`"%s"`), `0x00c80fc0` (`open`).
+  4. A PicasaPy QML és Python forráskódjának tételes vizsgálata (`PicasaFileMenu.qml`, `PicasaFolderMenu.qml`, `MainMenuBar.qml`, `MainPhotoContextMenu.qml`, `MainTrayBar.qml`, `PhotoViewerContextActions.qml`, `fileops_controller_open_mixin.py`, `reveal.py`).
+  A két független út maradéktalanul megerősíti egymást: a belépési pontok, a hívási lánc, a paraméterezés és a mellékhatásmentes működés azonos.
+- **Cáfoló kísérlet:**
+  Azt a hipotézist próbáltam bizonyítani, hogy a `Locate on Disk` parancs több kijelölt fájl esetén a Windows Intézőben képes több fájlt egyszerre kijelölni egyetlen ablakban (pl. vesszővel vagy szóközzel összefűzött paraméterlistával).
+  - A bináris utasításainak elemzése (`0x005c87bb`-`0x005c87eb` és `0x005c8dc4`-`0x005c8dee`) egyértelműen CÁFOLTA ezt a feltevést: a `0x00981280` mindig egyetlen fájl elérési utat kap stringként (`push eax` a `0x005c8de0`-nál), és az Intéző `/select,"<fájl>"` szintaxisa sem támogat több fájlnevet egy argumentumban. Az eredeti Picasa ehelyett mappánként deduplikál, és ha a kijelölés több mappát érint, ciklusban külön `ShellExecuteExA` hívást indít minden mappára. A feltevés ezzel cáfolva, a tényleges működés bizonyítva.
+
+### A jegy „Kész, ha” pontjai
+
+1. ✅ **Belépési pontok és engedélyezési feltételek:** A Főmenü (Fájl, Mappa), a helyi menük (Könyvtár, Album, Mappa, Néző, Tálca, Emberek), a képtálca és a `Ctrl+Enter` gyorsbillentyű feltételei (üres kijelölés, egy/több kép, videó) tételesen, bináris címekkel és forráshivatkozásokkal feltárva és összevetve.
+2. ✅ **Ablak, alapértékek és megjegyzett állapot:** Bizonyítva, hogy belső dialógus nincs, a rendszer fájlkezelője indul el (`SW_SHOW`), a Picasa semmilyen értéket nem jegyez meg a művelethez kapcsolódóan.
+3. ✅ **Kimeneti hatás a fájlrendszerre, .picasa.ini-re, indexre, rácsra és kijelölésre:** Igazolva, hogy a művelet mellékhatásmentes olvasási hívás; sem a fájlrendszer, sem az ini, sem az index, sem a rácskijelölés nem módosul.
+4. ✅ **Hibakezelés:** Írásvédett hely (nem befolyásolja a futást), hiányzó fájl (az Explorer shell kezeli, nincs Picasa hibaablak), megszakítás (azonnali lefutású aszinkron hívás) részletesen lefedve.
+
+### Javasolt fejlesztői jegytörzs
+
+#### Több kép kijelölésekor a Locate on Disk mappánként nyissa meg a fájlkezelőt
+
+**Eredeti:** A Picasa 3.9 `0x005c85e0` függvénye több kijelölt kép esetén összegyűjti az érintett szülőmappákat, kiszűri az ismétlődéseket (`0x005c8754`-`0x005c87b5`), majd a `0x005c8dc4`-`0x005c8dee` ciklusban minden egyedi mappához külön fájlkezelő ablakot nyit az adott mappa első kijelölt elemére fókuszálva (`0x00981280`).
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x005c85e0`, `0x005c8754`, `0x005c8dc4`: a kijelölt képeket szülőmappánként szűri (mappánként egyszer), és minden érintett mappára meghívja az Intézőt a mappa első kijelölt elemével. | `MainMenuBar.qml:318-321`, `MainPhotoContextMenu.qml:64-67`, `MainTrayBar.qml:50-55`, `fileops_controller_open_mixin.py:33-44`: csak egyetlen képet (`photoActionIndex()`, `fileOpTargetRow`, `selectedRows()[0]`) ad át a `revealPhoto`-nak. | Bővíteni a vezérlőt `revealPhotos(paths)` metódussal, amely mappánként csoportosítja az útvonalakat, és minden egyedi mappára meghívja a fájlkezelőt az első képre fókuszálva. A menü- és tálcakezelőkben a teljes kijelölést átadni. |
+
+**Kész, ha:**
+- Ha a felhasználó több képet jelöl ki egy mappában, a `Locate on Disk` parancsra (menüből, helyi menüből, tálcáról vagy Ctrl+Enterrel) pontosan 1 fájlkezelő ablak nyílik meg az első képre fókuszálva.
+- Ha a kijelölt képek több különböző mappában találhatók (pl. albumban, keresési listában vagy tartott tálcán), a parancs minden érintett mappához külön megnyitja a fájlkezelőt az adott mappa első kijelölt elemével.
+
+### Nyitott kérdések
+
+Nincs nyitott kérdés: a folyamat mind a négy pontja bináris címekkel és forrássorokkal igazolt. Ghidra-kör nem szükséges.
+
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md` - a #6989 új szakasza.
 
 ## #6988: A Print parancs teljes folyamata az eredeti Picasával összevetve
 

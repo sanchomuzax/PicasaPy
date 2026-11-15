@@ -140,6 +140,18 @@ def _nyisd_emailt(window, qt_app, engine):
     return dialog
 
 
+def _nyisd_a_szerkesztot(dialog, qt_app):
+    """#6987: a saját levelező választása már nem nyit belső szerkesztőt (az
+    eredeti saját levelezős ága közvetlenül indítja a levelezőt), ezért a
+    Gmail-ág levélszerkesztő szakaszának nincs belépési pontja. A szakasz
+    gombjait az állapot-előkészítés után kattintjuk, ahogy az 5150_k próba is."""
+    dialog.setProperty("stage", "compose")
+    qt_app.processEvents()
+    assert _gyerek(dialog, "emailComposePanel").property("visible") is True, (
+        "a próba feltétele: a levélszerkesztőnek nyitva kell lennie"
+    )
+
+
 class TestEmail:
     def test_a_valasztó_megse_bezarja_es_nem_indit_levelet(
         self, mail_app, qt_app
@@ -159,10 +171,7 @@ class TestEmail:
     ):
         window, engine, indult = mail_app
         dialog = _nyisd_emailt(window, qt_app, engine)
-        _kattints(window, qt_app, _gyerek(window, "emailChoiceDefaultButton"))
-        assert _gyerek(window, "emailComposePanel").property("visible") is True, (
-            "a próba feltétele: a levélszerkesztőnek nyitva kell lennie"
-        )
+        _nyisd_a_szerkesztot(dialog, qt_app)
 
         _kattints(window, qt_app, _gyerek(window, "emailComposeDiscardButton"))
 
@@ -174,7 +183,7 @@ class TestEmail:
     def test_a_csatolt_kep_x_gombja_kiveszi_a_mellekletet(self, mail_app, qt_app):
         window, engine, _indult = mail_app
         dialog = _nyisd_emailt(window, qt_app, engine)
-        _kattints(window, qt_app, _gyerek(window, "emailChoiceDefaultButton"))
+        _nyisd_a_szerkesztot(dialog, qt_app)
         melleklet = _lista(dialog.property("attachmentPaths"))
         assert len(melleklet) == 1, "a próba feltétele: egy csatolt kép legyen"
         gomb = _gyerek(window, "emailComposeDiscardImageButton")

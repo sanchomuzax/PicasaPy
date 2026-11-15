@@ -255,3 +255,32 @@ class TestAFolyamatSzintuKenyszeritettKilepes:
         assert "_wait_for_rename_workers" in naplo, (
             "a napló nem mondja meg, hol állt a fő szál\n" + naplo[-2500:]
         )
+
+
+class TestAKoraiEbredes:
+    """#6991: Windowson az `Event.wait` a kért idő előtt is visszatérhet."""
+
+    def test_korai_ebredes_utan_a_maradekot_is_kivarja(self, monkeypatch):
+        ora = [100.0]
+        varasok: list[float] = []
+        kilepesek: list[str] = []
+
+        class _KoranEbredoJelzo:
+            def wait(self, ido: float) -> bool:
+                varasok.append(round(ido, 3))
+                # a kért időnél 3 ms-mal korábban tér vissza
+                ora[0] += max(ido - 0.003, 0.003)
+                return False
+
+        monkeypatch.setattr(kilepesi_hatarido, "_ora", lambda: ora[0])
+        monkeypatch.setattr(kilepesi_hatarido, "_leallitas_jelzo", _KoranEbredoJelzo())
+        monkeypatch.setattr(
+            kilepesi_hatarido,
+            "_kenyszeritsd_a_kilepest",
+            lambda: kilepesek.append(f"{ora[0]:.3f}"),
+        )
+
+        kilepesi_hatarido._orszem_szala(0.3)
+
+        assert len(varasok) >= 2, "a korai ébredés után nem várt újra"
+        assert kilepesek and float(kilepesek[0]) >= 100.3

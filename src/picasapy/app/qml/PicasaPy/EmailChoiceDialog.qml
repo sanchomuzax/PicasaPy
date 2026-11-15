@@ -2,10 +2,16 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// #4135: a választó és a levélszerkesztő ugyanazon küldési folyamat két
-// oldala. A Gmail-fiókos út a projekt specifikációja szerint megszűnt; a
-// választóban látható, de nem választható. A levelet a rendszer
-// alapértelmezett levelezőjének adjuk át, címzettel és csatolmányokkal.
+// #4135: a választó. A Gmail-fiókos út a projekt specifikációja szerint
+// megszűnt; a választóban látható, de nem választható.
+//
+// #6987: a „Native Mail Client" választása NEM nyit belső szerkesztőt: az
+// eredeti saját levelezős ága (`EmailPrepType = 3`, `0x00742a2c`) az
+// előkészítés után közvetlenül a rendszer levelezőjét nyitja a
+// csatolmányokkal. A rádióra kattintás ezért azonnal elfogad, és a hívó
+// (`MainWindowCommands.qml`) a `sendWithDefaultClient`-tel indítja a
+// levelezőt. ⚠️ A `compose` szakasz a Gmail-ág levélszerkesztője volt;
+// jelenleg nincs belépési pontja.
 Dialog {
     id: root
 
@@ -35,12 +41,9 @@ Dialog {
         rememberCheck.checked = false
         showHelp = false
         selectedAttachmentIndex = attachmentPaths.length > 0 ? 0 : -1
-        if (typeof emailController !== "undefined" && emailController) {
-            stage = emailController.useDefaultClient ? "compose" : "choose"
+        stage = "choose"
+        if (typeof emailController !== "undefined" && emailController)
             emailController.setComposeRecipient("")
-        } else {
-            stage = "choose"
-        }
     }
 
     onClosed: {
@@ -106,7 +109,7 @@ Dialog {
                             text: " "
                             Layout.fillWidth: true
                             checked: true
-                            onClicked: root.stage = "compose"
+                            onClicked: root.accept()
 
                             contentItem: RowLayout {
                                 spacing: 10
