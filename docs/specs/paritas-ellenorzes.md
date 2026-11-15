@@ -1969,3 +1969,107 @@ kérdések az Export Picture to Folder folyamat közvetlen folytatásai.
 
 **Módosított fájl:** `docs/specs/paritas-ellenorzes.md` - a #6970 új alszakasza.
 
+
+
+## #6989: A Locate on Disk parancs teljes folyamata az eredeti Picasával összevetve
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Az eredeti és a jelenlegi PicasaPy forrásútjait a bináris disassembly, az indexelt
+rekordok és a PicasaPy QML/Python forráskódjának közvetlen összevetésével ellenőriztem.
+
+### Belépési pontok, feltételek, egy és több kép
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Főmenü (Fájl):** `ID_FILE_LOCATEONDISK` (`0x9c81`), felirat `&Locate on Disk`, gyorsbillentyű `Ctrl+Enter` (`0x005595dd`-`0x005595f4`). Menüépítő: `0x00559150`. Engedélyezés: `0x0056c5a0` és `0x0056e1c0`: nem üres kijelölésnél (`[esp+0x12] != 0`), nem zárolt állapotban (`[edi+0x34a4] == 0`), és nem írásvédett gyűjteményben (`0x8000` bit törölve). Üres kijelölésnél letiltva (`MF_GRAYED`). | `PicasaFileMenu.qml:150-154`, `MainMenuBar.qml:318-321`. Engedélyezett, ha `bar.photoActionsEnabled` (kijelölés nem üres). Aktiváláskor `bar.locateRequested()`. | Egyezik az alapfolyamat és a tiltási feltétel. Eltérés: a PicasaPy `photoActionIndex()` csak az első sort adja át többes kijelölésnél (lásd lent). |
+| **Főmenü (Mappa):** `ID_ALBUM_LOCATEONDISK` (`0x9c95`), felirat `&Locate on Disk` (`0x0055b0b0`-`0x0055b0c7`). Menüépítő: `0x00559150`. Mappa nézetben az aktuális mappa lemezhelyét nyitja meg. | `PicasaFolderMenu.qml:185-190`, `MainMenuBar.qml:168-171`. Engedélyezett, ha `bar.folderLocateEnabled` (érvényes mappa, nem album/személy). Hívás: `fileOpsController.revealFolder(hostController.currentFolder)`. | Egyezik: mindkét rendszer a mappa könyvtárát nyitja meg a fájlkezelőben. |
+| **Fotó helyi menü (Könyvtár):** `FolderPhotoWin::ID_FILE_LOCATEONDISK` (`0x9c81`), felirat `&Locate on Disk` (`0x00730790` a `0x00730c78`-nál). | `PhotoContextMenu.qml:427-432`, `MainPhotoContextMenu.qml:64-67`. Felirat `Locate on Disk\tCtrl+Enter`. | Egyezik a megjelenés és funkció. (PicasaPy-ban ha van mentett eredeti, almenüt ad: File on Disk / Original on Disk, #1613). |
+| **Fotó helyi menü (Album / Emberek):** `AlbumPhotoWin::ID_FILE_LOCATEONDISK` (`0x9c81`) `Locate on &Disk` (D betűs mnemonik `0x00731471`, `0x0073579f`) és `AlbumPhoto::ID_FILE_LOCATEINPICASA` (`0x9c99`) `&Locate in Picasa` (`0x007314f7`, `0x00735817`). | `PhotoContextMenu.qml:427-458`, `MainPhotoContextMenu.qml:64-88`. `locateRequested` és `locateInPicasaRequested` (`hostController.selectFolder(mappa)`). | Egyezik a két parancs szétválasztása és a célmappára ugrás a Picasán belül. |
+| **Mappa fejléc / Mappafa helyi menü:** `FolderWin::ID_ALBUM_LOCATEONDISK` (`0x9c95`), felirat `&Locate on Disk` (`0x007319f0` a `0x00731dd1`-nél és `0x00733a40` a `0x00733b4d`-nél). | `FolderContextMenu.qml:308-311`, `FolderPaneMenus.qml:373-376`, `FolderPaneContent.qml:399-402`. Hívás: `fileOpsController.revealFolder(...)`. | Egyezik: mindkét rendszer a mappa útvonalát adja át. |
+| **Néző helyi menü (OneUp):** `FolderPhotoWin::ID_FILE_LOCATEONDISK` (`0x9c81`), felirat `&Locate on Disk` (`0x007327a0` a `0x00732b85`-nél). | `ViewerContextMenu.qml:218-223`, `PhotoViewerContextActions.qml:142-146`. Hívás: `fileOpsController.revealPhoto(viewer._aktivUt())`. | Egyezik: a nézőben az aktuálisan megtekintett kép útvonalát nyitja meg. |
+| **Képtálca bélyegkép helyi menü:** `FolderPhotoWin::ID_FILE_LOCATEONDISK` (`0x9c81`), felirat `&Locate on Disk` (`0x00732ee0` a `0x00733093`-nál). | `TrayContextMenu.qml:86-88`, `TrayBar.qml:396`, `MainTrayBar.qml:50-55`. Hívás: `fileOpsController.revealPhoto(ut)`. | Egyezik: a tálcán lévő elemre jobb gombbal kattintva elérhető a művelet. A tálca alsó gombsorán nincs Locate gomb egyik programban sem. |
+| **Gyorsbillentyű (Ctrl+Enter):** `0x005e60d0` (`CThumbUI::OnKeyDown`), `VK_RETURN` (0x0d) + `Ctrl` billentyű -> `0x005c8320(0)`. Ha a kijelölés száma > 0 (`0x005c8493`), akkor a képeket nyitja (`0x005c85e0`); ha üres a kijelölés (`0x005c8495`), akkor a mappát nyitja (`0x005d0e90`). | `PicasaMenuBar.qml:658-673`: `sequence: "Ctrl+Return"`. Ha `photoActionsEnabled`: `locateRequested()`, ha `folderLocateEnabled`: `folderLocateRequested()`. | Egyezik a prioritási sorrend és a viselkedés: kijelölt képnél a képre, üres kijelölésnél a mappára ugrás. |
+
+#### Részletes feltételek és a többes kijelölés viselkedése
+
+1. **Videófájlok kezelése:**
+   - Az eredeti Picasában a videók (`.avi`, `.wmv`, `.mov`, `.mp4` stb.) azonos úton haladnak át (`0x005c85e0` -> `0x00981280`). A fájlrendszer-útvonal átadásra kerül a ShellExecuteExA-nak `/select,"<fájl>"` paraméterrel. Nincs videó-specifikus korlátozás.
+   - A PicasaPy-ban a `revealPhoto` nem szűri a fájl típusát, a videó fájlokra ugyanúgy meghívja a `reveal_in_file_manager` függvényt. Egyezik.
+2. **Több kép kijelölése és a mappánkénti deduplikáció:**
+   - **Eredeti Picasa:** A `0x005c85e0` diszpécser egy előzetes ciklust futtat a kijelölt elemeken (`0x005c8754`-`0x005c87b5`). Minden elemnél lekéri a szülőkönyvtárat (`0x009a37b0`), és összehasonlítja a már regisztrált mappákkal (`0x005c8763`-`0x005c877d`). Ha a mappa megegyezik egy korábbival, átugorja a felvételt (`0x005c87b5 jne 0x5c8ba3`). Emiatt könyvtáranként szigorúan csak a legelső kijelölt fájl kerül be a megnyitandó listába. A `0x005c8dc4`-`0x005c8dee` ciklusban ezután ahány KÜLÖNBÖZŐ mappa volt a kijelölésben, annyi független Explorer ablakot nyit meg (`call 0x00981280`). Ha a kijelölt képek mind azonos mappában vannak, pontosan egyetlen Explorer ablak nyílik az első képre fókuszálva. Ha a kijelölés több mappát fed le (pl. keresési eredmények, album vagy tálca), minden érintett mappához külön ablak nyílik.
+   - **PicasaPy jelenlegi állapota:** A menükezelők (`MainMenuBar.qml:319`, `MainPhotoContextMenu.qml:65`, `MainTrayBar.qml:53`) kivétel nélkül csak egyetlen sort adnak át (`photoActionIndex()`, `fileOpTargetRow` vagy `selectedRows()[0]`). Több kép kijelölése esetén a PicasaPy csak a fókuszban lévő vagy legelső képet jeleníti meg a fájlkezelőben, még akkor is, ha a kijelölt elemek több különböző mappában találhatók.
+   - **Teendő:** Fejlesztői jegy szükséges a többes kijelölés mappánkénti deduplikációjára és megnyitására (`revealPhotos(paths)`).
+3. **Üres kijelölés:**
+   - Főmenü: mindkét programban tiltott (szürke).
+   - Gyorsbillentyű (`Ctrl+Enter`): mindkét programban a jelenlegi mappa megnyitására esik vissza.
+   - Mappa menük: mindkét programban a mappa közvetlen megnyitása (`explorer "<mappa>"`).
+
+### A párbeszédablak és a megjegyzett értékek
+
+| Mező / Tulajdonság | Eredeti Picasa 3.9 (`0x00981280`) | Jelenlegi PicasaPy (`reveal.py`) | Eltérés / Értékelés |
+|---|---|---|---|
+| Belső párbeszédablak | Nincs. Nem nyit dialógust a Picasa. | Nincs. Nem nyit dialógust a PicasaPy. | Egyezik. |
+| Megjelenő ablak | Az operációs rendszer fájlkezelője: Windows Explorer (`0x00cd85f4`), `SW_SHOW` (5) módban (`0x00981310`). | Windows: Windows Explorer (`explorer`); Linux: `xdg-open`; macOS: `open`. | Egyezik: a natív fájlkezelő indul el. |
+| Parancssori formátum | Kép esetén: `/select,"%s"` (`0x00cd8604`); Mappa esetén: `"%s"` (`0x00c8500c`). | Windows kép: `explorer /select,"<fájl>"`; Windows mappa: `explorer "<mappa>"`. | Egyezik: karakterre megegyező paraméterezés (#1152). |
+| Megjegyzett beállítások | Semmit nem jegyez meg. Nincs registry-kulcs, nincs beállítás-mentés a Picasában. | Semmit nem jegyez meg. | Egyezik. |
+| Következő megnyitás | A Windows Intéző maga jegyzi meg a saját ablakméretét és helyzetét a rendszerleíró adatbázisban; a Picasa állapotmentést nem végez. | A rendszer fájlkezelője kezeli a saját pozícióját. | Egyezik. |
+
+### Kimeneti hatás és hibák
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Fájlrendszer:** a `0x00981280` kizárólag a `ShellExecuteExA` hívást futtatja (`0x009813de`). Nincs fájl- vagy könyvtárlétrehozás, módosítás vagy törlés. | `reveal.py:115` `subprocess.run` külső folyamatot indít. | Egyezik: szigorúan olvasási jellegű külső rendszerhívás. |
+| **.picasa.ini:** nincs INI-módosítás, nem hív INI-író rutint. | Nincs hívás az `ini/` csomag felé. | Egyezik: a `.picasa.ini` érintetlen marad. |
+| **Index (adatbázis):** nincs SQLite / PMP írás, nincs újraindexelés. | Nincs hívás az `index/` csomag felé. | Egyezik: az adatbázis változatlan. |
+| **Rács és kijelölés:** a kijelölt sorok és elemek kijelölése VÁLTOZATLAN marad; a fókusz átadódik az újonnan indult külső Explorer ablaknak. | A kijelölés nem törlődik, az elemek kijelölve maradnak. | Egyezik. |
+| **Írásvédett hely:** mivel nem történik lemezre írás, az írásvédett könyvtárban lévő fájl éppúgy megjelenik az Explorerben, mint az írható. | Az ellenőrzés csak az útvonal létezését és a folyamat indítását érinti. | Egyezik: írásvédett helyen is hibátlanul lefut. |
+| **Hiányzó fájl:** a `0x00981280` a `ShellExecuteExA` visszatérési kódját nem vizsgálja hibajelzésre (`0x009813e4` után `xor eax, eax; ret;`). Nem dob belső hibát; a hibakezelést a Windows Shell végzi (maga az Intéző ad hibaüzenetet, ha az útvonal nem található). | `fileops_controller_open_mixin.py:42-44`: ha a subprocess OSError-t ad, `operationFailed` jelet küld, a felület nem fagy le. | Egyezik: nincs programösszeomlás; a PicasaPy szükség esetén műveleti hibát jelez a UI-nak. |
+| **Megszakítás:** a művelet szinkron/azonnali folyamatindítás, nincs Cancel gomb vagy háttérben futó megszakítható szál. | Nincs megszakítási állapot. | Egyezik. |
+
+### Két független út és cáfoló kísérlet
+
+- **A út, utasításszintű bináris vizsgálat:**
+  1. Menüfrissítő és engedélyező vizsgálat: `0x0056c5a0` és `0x0056e1c0` instrukcióinak elemzése, ahol a kijelölés megléte és állapota határozza meg a `0x9c81` és `0x9c95` menüpontok státuszát.
+  2. Gyorsbillentyű és eseménykezelő: `0x005e60d0` (`CThumbUI::OnKeyDown`) billentyűkód vizsgálata (`VK_RETURN` és Ctrl vizsgálat), ahonnan a vezérlés a `0x005c8320` diszpécserre jut.
+  3. Diszpécser és elágazás: `0x005c8320` utasításainak lekövetése: a kijelölésszám vizsgálata (`0x005c8493`), ha 0, akkor mappa ág (`call 0x005d0e90`), ha > 0, akkor fotó ág (`call 0x005c85e0`).
+  4. Többes kijelölés és deduplikáció: `0x005c85e0` vizsgálata: a könyvtárak kigyűjtése (`0x009a37b0`), karakterenkénti összehasonlítása (`0x005c8763`-`0x005c877d`), az ismétlődések kihagyása (`0x005c87b5 jne 0x5c8ba3`), majd a ciklikus megnyitás (`0x005c8dc4`-`0x005c8dee`).
+  5. Shell hívás: `0x00981280` diszasszemblálása: `SHELLEXECUTEINFOA` feltöltése (méret: 60 bájt, `open`, `explorer`, `SW_SHOW`, `/select,"%s"` vagy `"%s"`), és a `ShellExecuteExA` hívás (`0x009813de`), majd hibavizsgálat nélküli visszatérés (`0x009813f9`).
+- **B út, adatstruktúrák, sztring-xrefek és független menürekordok:**
+  1. A `picasa3-index.sqlite` adatbázisban szereplő `string_xrefs` és `xrefs` táblák független lekérdezése: `ID_FILE_LOCATEONDISK` (`0x9c81`), `ID_ALBUM_LOCATEONDISK` (`0x9c95`), `ID_FILE_LOCATEINPICASA` (`0x9c99`), valamint a menücímkék (`&Locate on Disk`, `Locate on &Disk`, `&Locate in Picasa`).
+  2. Helyi menü építő rutinok független vizsgálata: `FolderPhotoWin` (`0x00730790`), `AlbumPhotoWin` (`0x00731050`), `FolderWin` (`0x007319f0`, `0x00733a40`), `TrayWin` (`0x00732ee0`), `ViewerWin` (`0x007327a0`), `PeoplePhotoWin` (`0x007355c0`).
+  3. Sztring konstansok beolvasása a bináris `.rdata` szekciójából közvetlen PE elemzéssel: `0x00cd85f4` (`explorer`), `0x00cd8604` (`/select,"%s"`), `0x00c8500c` (`"%s"`), `0x00c80fc0` (`open`).
+  4. A PicasaPy QML és Python forráskódjának tételes vizsgálata (`PicasaFileMenu.qml`, `PicasaFolderMenu.qml`, `MainMenuBar.qml`, `MainPhotoContextMenu.qml`, `MainTrayBar.qml`, `PhotoViewerContextActions.qml`, `fileops_controller_open_mixin.py`, `reveal.py`).
+  A két független út maradéktalanul megerősíti egymást: a belépési pontok, a hívási lánc, a paraméterezés és a mellékhatásmentes működés azonos.
+- **Cáfoló kísérlet:**
+  Azt a hipotézist próbáltam bizonyítani, hogy a `Locate on Disk` parancs több kijelölt fájl esetén a Windows Intézőben képes több fájlt egyszerre kijelölni egyetlen ablakban (pl. vesszővel vagy szóközzel összefűzött paraméterlistával).
+  - A bináris utasításainak elemzése (`0x005c87bb`-`0x005c87eb` és `0x005c8dc4`-`0x005c8dee`) egyértelműen CÁFOLTA ezt a feltevést: a `0x00981280` mindig egyetlen fájl elérési utat kap stringként (`push eax` a `0x005c8de0`-nál), és az Intéző `/select,"<fájl>"` szintaxisa sem támogat több fájlnevet egy argumentumban. Az eredeti Picasa ehelyett mappánként deduplikál, és ha a kijelölés több mappát érint, ciklusban külön `ShellExecuteExA` hívást indít minden mappára. A feltevés ezzel cáfolva, a tényleges működés bizonyítva.
+
+### A jegy „Kész, ha” pontjai
+
+1. ✅ **Belépési pontok és engedélyezési feltételek:** A Főmenü (Fájl, Mappa), a helyi menük (Könyvtár, Album, Mappa, Néző, Tálca, Emberek), a képtálca és a `Ctrl+Enter` gyorsbillentyű feltételei (üres kijelölés, egy/több kép, videó) tételesen, bináris címekkel és forráshivatkozásokkal feltárva és összevetve.
+2. ✅ **Ablak, alapértékek és megjegyzett állapot:** Bizonyítva, hogy belső dialógus nincs, a rendszer fájlkezelője indul el (`SW_SHOW`), a Picasa semmilyen értéket nem jegyez meg a művelethez kapcsolódóan.
+3. ✅ **Kimeneti hatás a fájlrendszerre, .picasa.ini-re, indexre, rácsra és kijelölésre:** Igazolva, hogy a művelet mellékhatásmentes olvasási hívás; sem a fájlrendszer, sem az ini, sem az index, sem a rácskijelölés nem módosul.
+4. ✅ **Hibakezelés:** Írásvédett hely (nem befolyásolja a futást), hiányzó fájl (az Explorer shell kezeli, nincs Picasa hibaablak), megszakítás (azonnali lefutású aszinkron hívás) részletesen lefedve.
+
+### Javasolt fejlesztői jegytörzs
+
+#### Több kép kijelölésekor a Locate on Disk mappánként nyissa meg a fájlkezelőt
+
+**Eredeti:** A Picasa 3.9 `0x005c85e0` függvénye több kijelölt kép esetén összegyűjti az érintett szülőmappákat, kiszűri az ismétlődéseket (`0x005c8754`-`0x005c87b5`), majd a `0x005c8dc4`-`0x005c8dee` ciklusban minden egyedi mappához külön fájlkezelő ablakot nyit az adott mappa első kijelölt elemére fókuszálva (`0x00981280`).
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x005c85e0`, `0x005c8754`, `0x005c8dc4`: a kijelölt képeket szülőmappánként deduplikálja, és minden érintett mappára meghívja az Intézőt a mappa első kijelölt elemével. | `MainMenuBar.qml:318-321`, `MainPhotoContextMenu.qml:64-67`, `MainTrayBar.qml:50-55`, `fileops_controller_open_mixin.py:33-44`: csak egyetlen képet (`photoActionIndex()`, `fileOpTargetRow`, `selectedRows()[0]`) ad át a `revealPhoto`-nak. | Bővíteni a vezérlőt `revealPhotos(paths)` metódussal, amely mappánként csoportosítja az útvonalakat, és minden egyedi mappára meghívja a fájlkezelőt az első képre fókuszálva. A menü- és tálcakezelőkben a teljes kijelölést átadni. |
+
+**Kész, ha:**
+- Ha a felhasználó több képet jelöl ki egy mappában, a `Locate on Disk` parancsra (menüből, helyi menüből, tálcáról vagy Ctrl+Enterrel) pontosan 1 fájlkezelő ablak nyílik meg az első képre fókuszálva.
+- Ha a kijelölt képek több különböző mappában találhatók (pl. albumban, keresési listában vagy tartott tálcán), a parancs minden érintett mappához külön megnyitja a fájlkezelőt az adott mappa első kijelölt elemével.
+
+### Nyitott kérdések
+
+Nincs nyitott kérdés: a folyamat mind a négy pontja bináris címekkel és forrássorokkal igazolt. Ghidra-kör nem szükséges.
+
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md` - a #6989 új szakasza.
