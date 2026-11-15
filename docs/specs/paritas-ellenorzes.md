@@ -2257,13 +2257,13 @@ Az eredeti Fájl menü `ID_FILE_PRINT` parancsának adata `0xe107`. A menüeleme
 
 Az eredeti nyomtatási képernyő a `thumbui/printpanel` felület, amelyet az `outputlayout/pbutton` és az `m_print_enable` vált be. Ez az alkalmazás felületén belüli panel; nem külön OS-ablak. A nyomtató nélküli nyitási ág üzenete: `A printer must be installed in order to print.` (`0x00744a00`, szöveg `0x00e017e0`).
 
-Az eredeti `printpanel.tre` `croptoggle` alapja bekapcsolt; ezt a 3.9.141 PDF-nyomtatós felvétel is megerősíti: első használatkor Full Page, Crop to Fit, 1 példány (`mérés: Colab EN 29/30`). Az utoljára választott méret kulcsa a `Preferences\PrintLastSize`, amelyet a `0x00744ba8` környékén olvas; a pontos írócím ebben a körben `NINCS MEG`. Az öt gyorsméret külön `PrintSize0`-`PrintSize4` értéket a `0x006e5ab0` betölti, a mentő ág `0x006e3990`. A nyomtatási opciókhoz a `PrinterQuality` és `PrinterUseTiles` is használatos (`0x00745f80`, `0x00746060`). Az eredeti példányszám és tájolás újraindítás utáni megőrzése ebben a körben nincs mérve.
+Az eredeti `printpanel.tre` `croptoggle` alapja bekapcsolt; ezt a 3.9.141 PDF-nyomtatós felvétel is megerősíti: első használatkor Full Page, Crop to Fit, 1 példány (`mérés: Colab EN 29/30`). Az utoljára választott méret kulcsa a `Preferences\PrintLastSize`, amelyet a `0x00744ba8` környékén olvas; a pontos írócím ebben a körben `NINCS MEG`. Az öt gyors méretbeállítás külön `PrintSize0`-`PrintSize4` értéket a `0x006e5ab0` betölti, a mentő ág `0x006e3990`. A nyomtatási opciókhoz a `PrinterQuality` és `PrinterUseTiles` is használatos (`0x00745f80`, `0x00746060`). Az eredeti példányszám és tájolás újraindítás utáni megőrzése ebben a körben nincs mérve.
 
 PicasaPy-ban a dialog teljes főablakot kitöltő `Item` (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:20-27`, `src/picasapy/app/qml/PicasaPy/MainWindowDialogStack.qml:319-324`). A `fitMode: "fill"` Crop to Fit módot jelent (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:117-119`, `src/picasapy/app/qml/PicasaPy/PrintFitPanel.qml:34-40`), tehát az induló kivágás módja egyezik az eredeti erőforrással. Az alap példányszám 1 (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:67-71`), a méretet `print/lastSize`-ból tölti vissza (`src/picasapy/app/print_controller_settings_mixin.py:209-224`), a printoptions beállításokat is menti (`:228-266`). A példányszám és a tájolás QSettings-be mentése nincs a vizsgált útban igazolva; a panel példánya viszont ugyanabban a folyamatban megmarad.
 
 ### Hatás és hibák
 
-Az eredeti rajzolóút GDI nyomtatási munkát indít (`StartDocA`, hívás a `0x00861bb0` környezetében). Ez a nyomtató/driver út, a rendszer spool fájljának helye és írásvédett célra adott eredménye driver- és Windows-függő. A statikusan vizsgált útban közvetlen `.picasa.ini` vagy SQLite írás nem volt azonosítva, de ez nem zárja ki a még fel nem tárt közvetett hívásokat.
+Az eredeti rajzolóút GDI nyomtatási munkát indít (`StartDocA`, hívás a `0x00861bb0` környezetében). Ez a nyomtató/driver út, a rendszer nyomtatási sorfájljának helye és írásvédett célra adott eredménye driver- és Windows-függő. A statikusan vizsgált útban közvetlen `.picasa.ini` vagy SQLite írás nem volt azonosítva, de ez nem zárja ki a még fel nem tárt közvetett hívásokat.
 
 | Hatás | Eredeti Picasa 3.9 | PicasaPy most |
 |---|---|---|
@@ -2280,7 +2280,7 @@ Az eredeti rajzolóút GDI nyomtatási munkát indít (`StartDocA`, hívás a `0
 |---|---|
 | File Print parancsérték `0xe107`, kijelölési kapu | `bináris (0x00559150, 0x0056e1c0, 0x005cb1a0)`; Ghidra menü/dispatch kimenet és célzott diszasszemblálás |
 | Video flag külön áll a menü kijelölési kapujától | `bináris (0x005cb1a0, 0x0056e1c0)`; a tényleges nyomtatott rekord viselkedése `NINCS MEG` |
-| Print panel, nyomtató nélküli hiba, nyomtatási job | `bináris (0x00744a00, 0x00744d00, 0x00745770)`; üzenetsztring `0x00e017e0`, felkészítő üzenet `0x00e01d22` |
+| Print panel, nyomtató nélküli hiba, nyomtatási job | `bináris (0x00744a00, 0x00744d00, 0x00745770)`; üzenetszöveg `0x00e017e0`, felkészítő üzenet `0x00e01d22` |
 | GDI nyomtatás | `bináris (0x00861bb0)`; `StartDocA` import feloldása a korábbi Ghidra-kimenetben |
 | Crop to Fit alap | `bináris (printpanel.tre:155-172)` és `mérés (Colab EN 29/30)` |
 | `Preferences\\PrintLastSize` olvasása | `bináris (0x00744ba8)`; pontos írócím `NINCS MEG` |
@@ -2288,13 +2288,13 @@ Az eredeti rajzolóút GDI nyomtatási munkát indít (`StartDocA`, hívás a `0
 | PicasaPy menu/tray/viewer út és dialog | Mai forrás: `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:164-168`, `src/picasapy/app/qml/Main.qml:521-528`, `src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:365-373`, `src/picasapy/app/qml/PicasaPy/PrintDialog.qml:20-27,117-119` |
 | Eredeti fájlhiány, driver írásvédelem, megszakítás indítója és kiválasztás-helyreállítás | `NINCS MEG`; szükséges: célzott Ghidra-kör, majd Windows 3.9.141 futtatási mérés |
 
-**Bizonyítottsági fok: nyitott.** A menü kapuja, a nyomtató nélküli ág, a panel Crop to Fit alapja és a mai forrásútak külön bizonyítottak. A teljes paritás nyitott, mert az eredeti nézőcél, videó/hiányzó fájl feldolgozás, driverhiba, cancel esemény és UI-visszatérés nincs végig bizonyítva. Egyetlen útra épülő megfigyelés feltételes marad; csak a független erőforrás/mérés vagy a másik kódréteg által megerősített állítás kap megerősített minősítést.
+**Bizonyítottsági fok: nyitott.** A menü kapuja, a nyomtató nélküli ág, a panel Crop to Fit alapja és a mai forráskódbeli utak külön bizonyítottak. A teljes paritás nyitott, mert az eredeti nézőcél, videó/hiányzó fájl feldolgozás, driverhiba, cancel esemény és UI-visszatérés nincs végig bizonyítva. Egyetlen útra épülő megfigyelés feltételes marad; csak a független erőforrás/mérés vagy a másik kódréteg által megerősített állítás kap megerősített minősítést.
 
 ### A két független út
 
 - **A út, bináris:** `0x00559150` menürekord, `0x0056e1c0` engedélyező, `0x005cb1a0` kijelölési állapot, majd `0x00744a00` panelnyitás és `0x00744d00` nyomtatási út célzott vizsgálata. A `0x007434d0`, `0x00743650` és `0x00861bb0` külön hiba-, megszakítási és GDI hívások.
 - **B út, független réteg:** a bináris menü- és printpanel-erőforrások, a `StartDocA` import feloldása, a korábbi Windows PDF-mérés, továbbá a jelenlegi QML/Python út közvetlen forrásolvasása. A Crop to Fit egyezést az eredeti erőforrás és a mai `fitMode: "fill"` egymástól függetlenül adja; az első panelmérés külön alátámasztja az induló állapotot.
-- **Egyezés:** a panelbe lépés, a Crop to Fit alap és a menü üres kijelölési kapuja egyezik a hozzájuk tartozó PicasaPy-feltételekkel. A billentyű, nézőcél, videó/hiányzó fájl, hibakezelés és utóállapot kérdésében A és B még nem ad döntő egyezést.
+- **Egyezés:** a panelbe lépés, a Crop to Fit alap és a menü üres kijelölési kapuja egyezik a hozzájuk tartozó PicasaPy-feltételekkel. A billentyű, nézőcél, videó/hiányzó fájl, hibakezelés és a művelet utáni állapot kérdésében A és B még nem ad döntő egyezést.
 
 ### Cáfoló kísérlet
 
@@ -2325,5 +2325,5 @@ Most nem javaslok külön kutatási jegyet: a nyitott tételek ennek a Print-fol
 - Ghidra-kör kell: 0x007451a0 - a nyomtatási rekord/minőség feldolgozása hogyan kezeli a videót, hiányzó vagy olvashatatlan képet [blokkoló]
 - Ghidra-kör kell: 0x00745770 - az eredeti felületi Cancel esemény hogyan jut el a 0x00743650 callbackig, és milyen panel/kijelölés állapotot állít vissza [blokkoló]
 - `NINCS MEG`: az eredeti 3.9.141 viselkedése írásvédett nyomtató/spool cél, hiányzó képfájl és megszakítás esetén. Megszerzés: Windowsos mérés külön üres profilban, külön PDF/printer célokkal; rögzítendő a hibaüzenet, létrejött fájl/spool, visszaálló UI és kijelölés.
-- `NINCS MEG`: eredeti Photo Tray tartalma és mappafa/rács állapota nyomtatás után. Megszerzés: Windowsos 3.9.141 mérés egy, majd több kijelölt képpel és eltérő Photo Tray tartalommal; előtte/utána képernyő és `.picasa.ini`/index fájlhash összevetés.
+- `NINCS MEG`: eredeti Photo Tray tartalma és mappafa/rács állapota nyomtatás után. Megszerzés: Windowsos 3.9.141 mérés egy, majd több kijelölt képpel és eltérő Photo Tray tartalommal; előtte/utána képernyő és `.picasa.ini` és index fájlkivonatának összevetése.
 
