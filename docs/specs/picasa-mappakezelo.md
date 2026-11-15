@@ -2768,6 +2768,63 @@ elsőt nézte. Ezért a pecsét a **második nevet is** megpróbálja (ettől le
 a felső korlát 3 művelet, nem 2), és őr-teszt rögzíti, hogy a szinkron
 után egyik ini-változat mellett sem marad elavult a mappa.
 
+### 16.7 #6955: feldolgozási köteg és a főablak felé vezető, nyitott út (2026-11-15)
+
+**Ami a binárisból igazolható.** A `ytDirScanner` bejárási útja (`0x004e62d0`)
+fájlonként olvassa a mappát (`0x004e6cb4`); a ciklus a `0x004e772d` címen
+visszaugrik, és kilépéskor lezárja a keresési leírót (handle) (`0x004e7751`). Az
+eseményrekordokat feldolgozó ág a `0x004e7941` címen meghívja a
+`0x004e87c0` dispatchert. Ezen a közvetlen bejárási úton tehát az esemény
+átadása **a mappán belüli felsorolási ciklus és a handle lezárása után**
+történik; a dispatcher eseménytípustól függően továbbít, és ez önmagában nem
+bizonyítja a képernyőn látható mappasor beszúrását.
+
+A worker (`0x004ebff0`) egy külön, függőben lévő rekordlistát dolgoz fel a
+`0x004e9400`-ban. A `+0x4ea` jelző kapuzza ezt az ágat; a rekordindex
+visszafelé halad. Minden 16. feldolgozott rekord után meghívja a
+`0x004ea360`-at (`0x004e9665`-`0x004e9675`, `test al, 0xf`), és csak a
+nem üres kimeneti feltétel mellett hívja a `0x004e87c0`-at
+(`0x004e9698`-`0x004e96a4`). Ez a pontos **belső feldolgozási küszöb**,
+de egy másik, már függőben levő rekordokat feldolgozó ágban; nem az új mappa
+első képeire vonatkozó megjelenítési köteg.
+
+Az esemény-dispatcher (`0x004e87c0`) csak akkor járja végig a scanner `+0x484`
+callback-listáját, ha a rekord `+0x18` típusa `1` vagy `0x19`
+(`0x004e87e5`-`0x004e87f5`). Ekkor a bejegyzések első vtable-slotját hívja
+(`0x004e8806`-`0x004e882d`). A már dokumentált regisztrációs út
+(`0x004183c0` → `0x004e4ea0`) a `CThumbDB` DBLoaderét (`0x0055ece0`) köti
+ehhez a listához. A callback fájlazonosítókat dolgoz fel, mappaállapotot
+kezel, és van `]updated` albumága; a konkrét főablaki fogadót ez az út nem
+azonosítja.
+
+**A kérdés nyitva marad.** Nincs azonosítva a főablak képrácsához vagy
+mappafájához vezető fogadó, a mappafa-sor beszúrásának helye, illetve
+felületi időzítő. A 16-os belső küszöb nem ad képenkénti/kötegenkénti
+megjelenítési választ; a `meroadat.tar` névlistájában nincs ehhez tartozó
+Picasa-felvétel vagy képernyőkép. A „megjelenik az első kép a bejárás vége
+előtt” és a „mappasor az első kép előtt/után kerül be” állítás **NINCS MEG**.
+
+**Két független út és cáfoló próba.** Az A út a helyi utasításszintű
+disassembly: `0x004e62d0` a mappaciklus után, handle-zárást követően lép a
+dispatcherbe; külön a `0x004e9400` 16 rekord után hívja a belső feldolgozót.
+A friss kontextusú újralevezetés ettől függetlenül a Ghidra-kimenet és a
+callback vtable-adatút felől jutott ugyanerre: a közvetlen új-mappa átadás
+ciklus utáni, a 16-os út egy másik rekordlista ága, és egyik sem köti ki a
+főablaki kifestést. Az utak egyeznek a feldolgozási rétegek megkülönböztetésében.
+
+Cáfoló próbaként ellenőriztem azt a feltevést, hogy a `0x004ea360` hívása
+maga jelenti a 16 képenkénti felületi frissítést. A hívó valóban 16-onként
+lép be, de a célfüggvény belső beolvasási rekordokat dolgoz fel, és a
+`0x004e87c0` további esemény- és kimeneti feltételtől függ. Ez cáfolja a
+„16 = UI-köteg” azonosítást; más UI-értesítési útvonalat és a tényleges
+kifestési időt nem zárja ki.
+
+**Nyitott, blokkoló következő lépés.** `Ghidra-kör kell: 0x004e87c0: a
+scanner +0x484 callback-listájának mely regisztrált objektuma frissíti a
+főablak képrácsát vagy mappafáját, és milyen eseményre; a meglévő
+2026-11-11-6532-colab-decomp-13.txt a listabejárást és a DBLoader-ágat
+mutatja, de a főablaki fogadót és annak hatását nem [blokkoló]`.
+
 ## 17. Az OK MENTÉSI ÚTJA — a 12.1 pont lezárása (2026-08-24)
 
 A 12. lista 1. pontja azt kérte, ami a rádiógombtól a fájlkiíróig vezet.
