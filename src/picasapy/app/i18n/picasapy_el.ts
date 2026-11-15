@@ -7188,6 +7188,12 @@ picasapy-origin-key: stringres:CFileSaveThread:filesaveerr3</extracomment>
             <translation>Δεν ήταν δυνατή η αποθήκευση του αρχείου λόγω σφάλματος μορφής αρχείου.</translation>
         </message>
         <message>
+            <source>Unable to save files due to a disk error. The disk may be full or read-only.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileSaveCopy:err</extracomment>
+            <translation>Δεν είναι δυνατή η αποθήκευση των αρχείων εξαιτίας σφάλματος του δίσκου. Ο δίσκος ενδέχεται να είναι πλήρης ή μόνο για ανάγνωση.</translation>
+        </message>
+        <message>
             <source>Unable to revert all files due to a disk error. The disk may be full or read-only.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:FileRevert::fileerr</extracomment>
@@ -21267,6 +21273,33 @@ picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
             <translation>&amp;Προσθήκη ετικετών ονομάτων</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImmediateDeleteDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImmediateDeleteDialog.qml" line="25" />
+            <source>Delete Items</source>
+            <extracomment>DeleteMessage::DeleteItemsTitle
+picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::DeleteItemsTitle</extracomment>
+            <translation>Διαγραφή αντικειμένων</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImmediateDeleteDialog.qml" line="27" />
+            <source>Delete</source>
+            <extracomment>CThumbUI::ConfirmImmediateDeletion::Delete
+picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ConfirmImmediateDeletion::Delete</extracomment>
+            <translation>Διαγραφή</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImmediateDeleteDialog.qml" line="51" />
+            <source>This file cannot be moved to the Trash and will be deleted immediately. Are you sure you want to continue?</source>
+            <extracomment>CThumbUI::ConfirmImmediateDeletion::Message
+picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ConfirmImmediateDeletion::Message</extracomment>
+            <translation>Το αρχείο δεν είναι δυνατόν να μετακινηθεί στον Κάδο απορριμμάτων και θα διαγραφεί άμεσα. Είστε βέβαιοι ότι θέλετε να συνεχίσετε;</translation>
         </message>
     </context>
 </TS>

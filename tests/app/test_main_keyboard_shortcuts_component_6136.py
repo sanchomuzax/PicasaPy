@@ -11,6 +11,7 @@ _COMMANDS = _QML_DIR / "PicasaPy/MainWindowCommands.qml"
 _COMPONENT = _QML_DIR / "PicasaPy/MainKeyboardShortcuts.qml"
 _QMLDIR = _QML_DIR / "PicasaPy/qmldir"
 _PUBLIC_OBJECT_NAMES = {
+    "shortcutPermanentDeleteViewer",
     "toggleRightDrawerShortcut",
     "searchShortcut",
     "searchF3Shortcut",
@@ -76,6 +77,8 @@ _SHORTCUT_SEQUENCES = Counter(
         "Ctrl+Shift+S",
         "Ctrl+Delete",
         "Ctrl+Delete",
+        # #6969: Shift+Delete a nézőben (a rácsé a menüsávban él)
+        "Shift+Delete",
         "Ctrl+Shift+O",
         "Ctrl+E",
     )

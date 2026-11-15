@@ -267,6 +267,8 @@ MenuBar {
     property bool photoHasPendingEdits: false
     // #5882: a Kép ▸ Unhide csak rejtett képet tartalmazó célkijelölésnél él.
     property bool hasHiddenPhotoSelection: false
+    // #6977: a Save As és Save a Copy videónál tiltott, csak fotónál él
+    property bool hasPhotoSelection: false
     // A könyvtárhoz kötött műveletek ne váljanak aktívvá a szerkesztőnézetben.
     property bool libraryPhotoActionsEnabled: false
     //: A TextInput/TextEdit aktív fókusza esetén a billentyű a mezőé.
@@ -448,6 +450,9 @@ MenuBar {
     signal giftCdRequested()
     signal locateRequested()
     signal deleteRequested()
+    // #6969: a `Shift+Delete` (`0x005cb990` -> `0x005c9b00(ui, !Shift, ..)`)
+    // a Lomtár helyett a VÉGLEGES törlés ágát választja.
+    signal permanentDeleteRequested()
     // #1608: a `0x9c9a` parancs jelentése NÉZETFÜGGŐ (spec 5., két
     // független forrás: a `stringres` gyorsbillentyű-mezői és a #1154
     // rekord-mérése). Mappában „Törlés a lemezről" (Lomtár), albumban
@@ -509,6 +514,17 @@ MenuBar {
             bar.removeFromAlbumRequested()
         else
             bar.deleteRequested()
+    }
+    // #6969: a `Shift+Delete` közös belépője (rács és néző). Mappanézetben
+    // a végleges törlés ága; albumban és Emberek-albumban UGYANAZ, mint a
+    // `Delete` (az eredetiben a Shift-et csak a lemezes ág olvassa, ld.
+    // `docs/specs/ui-audit-context-menus.md` D.7.5, D.8.4), tehát tagságot
+    // távolít el, fájlt SOSEM töröl.
+    function activatePermanentDeleteCommand() {
+        if (bar.currentPersonName !== "" || bar.currentAlbumToken !== "")
+            bar.activateDeleteCommand()
+        else
+            bar.permanentDeleteRequested()
     }
     // #444: a NÉGY mentés-művelet közül három (a negyedik, az „Összes
     // szerkesztés visszavonása" a Kép menüben él, #465)
@@ -665,6 +681,16 @@ MenuBar {
                  && !bar.textEntryHasFocus
         // #1608: nézetfüggő — albumban NEM töröl lemezről
         onActivated: bar.activateDeleteCommand()
+    }
+    // #6969: a `Shift+Delete` a rácsban - ugyanaz a belépő és feltétel,
+    // mint a `Delete`-nél, de a végleges törlés ágát választja.
+    Shortcut {
+        id: shortcutPermanentDeleteFromDisk
+        objectName: "shortcutPermanentDeleteFromDisk"
+        sequence: "Shift+Delete"
+        enabled: bar.photoActionsEnabled && !bar.editorActive
+                 && !bar.textEntryHasFocus
+        onActivated: bar.activatePermanentDeleteCommand()
     }
     // #1472: a Ctrl+P eddig SEHOL nem létezett — a menüfelirat hirdette,
     // de billentyű nem tartozott hozzá. A feliratot itt szó szerint

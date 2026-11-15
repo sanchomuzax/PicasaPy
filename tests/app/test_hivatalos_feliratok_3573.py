@@ -24,8 +24,14 @@ ezt a szöveget használta, de a `0x005fdc30` szövegválasztó argumentum-
 követéses mérése (`docs/specs/picasa-fen-dialogs.md` 3.3.1) kimutatta,
 hogy ehhez a dialógushoz valójában a `DeleteMessage::NoUndoSingle`/
 `NoUndoMultiple` tartozik — a #3573-as korábbi hozzárendelés tévedés
-volt. A régi (helyes szöveggel akkor lefordított) magyar szöveg most az
-`ELAVULT_FORDITAS`-ban áll, hogy ne térjen vissza csendben.
+volt. A régi (helyes szöveggel akkor lefordított) magyar szöveg ezért az
+`ELAVULT_FORDITAS`-ban állt, hogy ne térjen vissza csendben.
+
+#6969: a szöveg a `0x005fdb80` (a Lomtár `0x0f` eredményének külön
+Delete / Cancel kérdése) üzenete, tehát az `ImmediateDeleteDialog` kontextusban
+jogosan él. A tiltás ezért kontextusra szűkült: a `FileOpsDialogs`
+törlés-megerősítőjében továbbra sem szerepelhet (ld. a
+`test_az_azonnali_torles_kerdes_csak_a_sajat_kontextusaban_el` tesztet).
 """
 
 from __future__ import annotations
@@ -255,9 +261,10 @@ ELAVULT_FORDITAS = (
     "törlődik. Ez nem vonható vissza.",
     # #3539: a #3573 idekötötte a ConfirmImmediateDeletion szöveget, de ez
     # tévedés volt (ld. a modul docstringje) — a helyes DeleteMessage::
-    # NoUndoSingle/NoUndoMultiple váltotta fel
-    "A fájl nem helyezhető át a Kukába, a program azonnal törölni fogja. "
-    "Biztosan folytatja a műveletet?",
+    # NoUndoSingle/NoUndoMultiple váltotta fel. #6969: a szöveg a
+    # `0x005fdb80`-hoz (a Lomtár `0x0f` eredményének külön kérdése) tartozik,
+    # ezért az `ImmediateDeleteDialog` kontextusban él; hogy a törlés-
+    # megerősítőbe ne térjen vissza, azt a lenti kontextus-teszt őrzi.
     "Ha eltávolítja ezt a mappát, a lemezen később bele tett új képek nem "
     "kerülnek automatikusan a könyvtárba.",
     "Egy teljes meghajtó figyelése lelassíthatja a rendszert. Érdemesebb "
@@ -430,3 +437,18 @@ class TestBackupCloseMessage:
             'qsTr("Are you sure you want to delete the backup set \\"%1\\"?")'
             in forras
         ), "a törlés-megerősítés nem a hivatalos, névvel ellátott szöveget mondja (#3573)"
+
+
+def test_az_azonnali_torles_kerdes_csak_a_sajat_kontextusaban_el() -> None:
+    """#6969: a `ConfirmImmediateDeletion::Message` a `0x0f` kérdéshez
+    tartozik - a törlés-megerősítő (`FileOpsDialogs`) ne kapja vissza."""
+    forras = (
+        "This file cannot be moved to the Trash and will be deleted "
+        "immediately. Are you sure you want to continue?"
+    )
+    uzenetek = [(k, t) for k, f, t in _uzenetek() if f == forras]
+    assert {k for k, _t in uzenetek} == {"ImmediateDeleteDialog"}
+    assert {t for _k, t in uzenetek} == {
+        "A fájl nem helyezhető át a Kukába, a program azonnal törölni "
+        "fogja. Biztosan folytatja a műveletet?"
+    }

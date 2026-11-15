@@ -187,6 +187,9 @@ Item {
             if (kind === "format")
                 //: CFileSaveThread:filesaveerr3
                 return qsTr("Unable to save file due to a file format error.")
+            if (kind === "copy_disk")
+                //: CThumbUI::FileSaveCopy:err
+                return qsTr("Unable to save files due to a disk error. The disk may be full or read-only.")
             //: CFileSaveThread::filesaveerr-win — %1 a fájlnév, %2 a hibakód
             return qsTr("Unable to save all files due to a disk error. The disk may be full or read-only.\n\n%1\nerror(%2)")
                    .arg(saveErrorDialog.fileName).arg(saveErrorDialog.code)

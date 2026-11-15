@@ -7197,6 +7197,12 @@ picasapy-origin-key: stringres:CFileSaveThread:filesaveerr3</extracomment>
             <translation>No s'ha pogut desar el fitxer a causa d'un error de format del fitxer.</translation>
         </message>
         <message>
+            <source>Unable to save files due to a disk error. The disk may be full or read-only.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileSaveCopy:err</extracomment>
+            <translation>És impossible desar fitxers a causa d'un error de disc. És possible que el disc estigui ple o que sigui només de lectura.</translation>
+        </message>
+        <message>
             <source>Unable to revert all files due to a disk error. The disk may be full or read-only.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:FileRevert::fileerr</extracomment>
@@ -21282,6 +21288,33 @@ picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
             <translation>&amp;Afegeix etiquetes de nom</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImmediateDeleteDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImmediateDeleteDialog.qml" line="25" />
+            <source>Delete Items</source>
+            <extracomment>DeleteMessage::DeleteItemsTitle
+picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::DeleteItemsTitle</extracomment>
+            <translation>Suprimeix els elements</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImmediateDeleteDialog.qml" line="27" />
+            <source>Delete</source>
+            <extracomment>CThumbUI::ConfirmImmediateDeletion::Delete
+picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ConfirmImmediateDeletion::Delete</extracomment>
+            <translation>Suprimeix</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImmediateDeleteDialog.qml" line="51" />
+            <source>This file cannot be moved to the Trash and will be deleted immediately. Are you sure you want to continue?</source>
+            <extracomment>CThumbUI::ConfirmImmediateDeletion::Message
+picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ConfirmImmediateDeletion::Message</extracomment>
+            <translation>Aquest fitxer no es pot moure a la paperera i se suprimirà immediatament. Estàs segur que vols continuar?</translation>
         </message>
     </context>
 </TS>

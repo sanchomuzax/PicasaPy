@@ -92,6 +92,11 @@ Item {
         function onOperationFailed(operation, message) {
             fileOpsDialogs.ensure().showOperationError(operation, message)
         }
+        //: #6969: a Lomtárba helyezés `0x0f` eredménye - a külön Delete /
+        //: Cancel kérdés a felhasználónak szól, némán elmaradnia nem szabad.
+        function onImmediateDeletionRequired(path) {
+            fileOpsDialogs.ensure().askImmediateDeletion(path)
+        }
     }
 
     Connections {
