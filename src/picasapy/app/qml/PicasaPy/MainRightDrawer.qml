@@ -49,6 +49,7 @@ RightDrawer {
 
 // Címkék-panel (#12): a fiók egyik lapja, Ctrl+T / Nézet → Címkék
 TagsPanel {
+    id: tagsPanelContent
     objectName: "tagsPanel"
     visible: drawerRoot.hostWindow.tagsPanelOpen
     anchors.fill: parent
@@ -80,7 +81,14 @@ TagsPanel {
            drawerRoot.hostController.keywordsOfRows(drawerRoot.hostWindow.selectedRows()))
         : []
     onAddRequested: function(keyword) {
-        drawerRoot.hostWindow.addTagToRows(drawerRoot.hostWindow.selectedRows(), keyword)
+        var rows = drawerRoot.hostWindow.selectedRows()
+        if (!drawerRoot.hostController || rows.length === 0) return
+        if (rows.length > 30) {
+            drawerRoot.hostMainDialogs.bulkTagConfirmLoader.ensure().askFor(rows, keyword)
+            return
+        }
+        var added = drawerRoot.hostController.addKeywordToRows(rows.slice(), keyword)
+        if (added === false) tagsPanelContent.reportAddError()
     }
     onRemoveRequested: function(keyword) {
         drawerRoot.hostController.removeKeywordFromRows(drawerRoot.hostWindow.selectedRows(), keyword)

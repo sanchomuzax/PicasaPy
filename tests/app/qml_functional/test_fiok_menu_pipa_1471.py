@@ -79,12 +79,13 @@ def test_az_aktiv_lapra_kattintva_a_pipa_nem_hazudik(
     )
     assert tetel.property("checked") is True
 
-    # MÉGEGYSZER ugyanarra: a panel nyitva marad (#1773), a pipának is
+    # A Tags lap ismételt aktiválása a #7025 szerint bezárja a fiókot.
+    # A többi lap aktív menütétele nyitva hagyja a panelt (#1773).
     _kattints(tetel, qt_app)
-    assert window.property(tulajdonsag) is True, (
-        "az aktív lapra kattintás nem zárhatja be a panelt (#1773)"
+    vart_nyitva = menu != "menuViewTags"
+    assert window.property(tulajdonsag) is vart_nyitva, (
+        f"a(z) {menu} ismételt aktiválása után hibás a fiókállapot"
     )
-    assert tetel.property("checked") is True, (
-        f"a(z) {menu} pipája lekapcsolt, pedig a panel nyitva maradt — "
-        "a checked kötését az AbstractButton.toggle eldobta"
+    assert tetel.property("checked") is vart_nyitva, (
+        f"a(z) {menu} pipája nem a panel állapotát mutatja"
     )

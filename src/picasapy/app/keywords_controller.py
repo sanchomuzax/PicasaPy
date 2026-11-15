@@ -173,12 +173,12 @@ class KeywordsMixin:
         """A jogosultság menet közben változhat (csatolás, hálózati kötet)."""
         self._irhatosag_gyorstar = {}
 
-    @Slot(list, str)
-    def addKeywordToRows(self, rows, keyword: str) -> None:
+    @Slot(list, str, result=bool)
+    def addKeywordToRows(self, rows, keyword: str) -> bool:
         """Címke hozzáadása; az előzményt csak aktív Legutóbbiak mellett frissíti."""
         keyword = _clean_keyword(keyword)
         if not keyword:
-            return
+            return True
         if self.quickTagsReserveRecent:
             self._record_recent_quick_tag(keyword)
 
@@ -187,7 +187,7 @@ class KeywordsMixin:
                 return keywords
             return (*keywords, keyword)
 
-        self._apply_keywords(rows, transform)
+        return self._apply_keywords(rows, transform)
 
     @Slot(list, str)
     def removeKeywordFromRows(self, rows, keyword: str) -> None:
@@ -201,7 +201,7 @@ class KeywordsMixin:
 
         self._apply_keywords(rows, transform)
 
-    def _apply_keywords(self, rows, transform) -> None:
+    def _apply_keywords(self, rows, transform) -> bool:
         """Kulcsszó-módosítás a sorokra — Picasa írási szabály: JPEG-nél az
         IPTC Keywords (2:25) a tár (sikertelen írásnál defenzív ini-
         fallback), más formátumnál a .picasa.ini `keywords=` CSV kulcsa.
@@ -209,6 +209,7 @@ class KeywordsMixin:
         photos = self._photos.photos
         valid = [photos[int(r)] for r in rows if 0 <= int(r) < len(photos)]
         by_folder: dict[str, list] = {}
+        success = True
         for photo in valid:
             by_folder.setdefault(photo.folder_path, []).append(photo)
         for folder, folder_photos in by_folder.items():
@@ -268,12 +269,14 @@ class KeywordsMixin:
                     update_document(ini_path, mutate, backup=True)
                 except _WRITE_ERRORS as error:
                     self.jelentsdAzIrasiHibat(error)
+                    success = False
                     break
                 if iptc_errors:
                     self.jelentsdAzIrasiHibat(iptc_errors[0])
             with open_index(self._db_path) as conn:
                 self._sync_tree(conn, folder)
         self._refresh_view()
+        return success
 
     # -- Gyorscímkék (#193) --------------------------------------------------
 
@@ -301,8 +304,7 @@ class KeywordsMixin:
         settings = self._get_settings()
         stored_recent = _as_str_list(settings.value(_KEY_QUICK_RECENT))
         recent = stored_recent[:_QUICK_TAG_RECENT_LIMIT]
-        folded = keyword.casefold()
-        if any(item.casefold() == folded for item in recent):
+        if keyword in recent:
             # A korábbi, nyolcelemű beállítást is két helyre szűkítjük, de
             # meglévő recent ismétlésénél a sorrend változatlan marad.
             if stored_recent != recent:
