@@ -3355,3 +3355,189 @@ E körben nincs bizonyított Add-to végállapotbeli eltérés, amelyhez biztons
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7012 alszakasz.
+
+## #7024: A képaláírás (Caption) szerkesztésének teljes folyamata az eredeti Picasával összevetve
+
+A vizsgálat az eredeti Picasa 3.9.141.259 (`Picasa3.exe`, SHA-256 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`) képaláírás-szerkesztését követi a belépési ponttól a hatásig: ki tudja szerkeszteni, mikor ment, mit ír, mi történik hibánál. A PicasaPy oldal a mai forrásból olvasva (fájl:sor), nem a korábbi specekből. A címek az eredeti virtuális címei. Három bizonyítási út: (A) a gépi kód utasításszintű visszafejtése a bináris-indexszel, (B) bájtszintű keresés a teljes `.text`-ben (típusleíró-használók, `call`-célok) és erőforrás-, RTTI- és szövegtár-olvasás, (C) a `.picasa.ini` korpusz mérése (859 fájl, 17 577 képszakasz).
+
+### 1. Az eredeti felépítése
+
+- A néző/szerkesztő (`editpanel`) alsó sávja három elemből áll: `editpanel/captionbutton` (kapcsoló, buboréksúgó „Show/Hide Caption"), `editpanel/caption` (a „Make a caption!" mező) és `editpanel/captiontrash` (törlés, „Delete this caption"). Elrendezés: `editpanel.tre:1239-1266`, szövegek: `editpaneltext.tre:41-48`.
+- A mező osztálya `CTextCaptionNode` (konstruktor `0x0067df90`, alapszöveg `CTextCaptionNode::defname` = „Make a caption!", `0x0067dfea`, `0x0067e095`). A típusleíró (`.?AVCTextCaptionNode@@`, `0x00d3e668`) a teljes `.text` bájtkeresése szerint pontosan három függvényben szerepel: `0x00565cf0` (`0x00565d96`), `0x00568010` (`0x00568051`), `0x005f89a0` (`0x005f89f1`). **Szerkeszthető képfelirat-mező tehát csak az editpanelben van**; a többi felirat-felület csak megjelenít.
+- **Mentés egyetlen helyen történik:** a `0x005f89a0` a függő szöveget a `CThumbDB` `+0x50` virtuális setterével (`0x00437cf0`) írja a `[this+0xe64]` képkulcsra (`0x005f8a3b-0x005f8a53`). A getter a `+0x4c` slot (`0x00437b20`); a slotok a `CThumbDB::vftable` (`0x00c81fa4`) bejegyzései (a bejegyzések helyét az indexből számoltam: `0x4c` és `0x50`).
+- A mező eseményei: az Enter és az Esc a `0x0076ace0` alaposztály-kezelőből a csomópont `+0x88` (`0x0067f7e0`, „captiondone") és `+0x84` (`0x0067f730`, „captioncancel") virtuális metódusát hívja. Ezek eseményt küldenek az editpanel diszpécserének (`0x005de8e0`, `0x005df4db-0x005df58f`), ami a mentést (`0x005f89a0`), illetve a szöveg visszatöltését (`0x00568010`) indítja.
+
+### 2. Belépési pontok
+
+| Belépési pont / feltétel | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|---|
+| Néző, feliratmező, kattintás a sávra | Kattintás a sáv hátterére: `0x005c48c0` (`CaptionBaseHandler`, `0x005c4996-0x005c49b9`) a `editpanel/caption` csomópontot fókuszba teszi. A mező alatt a `[this+0xe64]` kép felirata szerkesztődik. | `PhotoViewerOverlayControls.qml:466-525` (`captionBar`, `captionField`, egy mező a néző alján). | Egyezik. |
+| Gépelés a nézőben (közvetlen kezdés, kattintás nélkül) | A `PreviewHandler` billentyűkezelője (`0x005c24c0`, `PreviewHandler::vftable` 3. slot) a Ctrl nélküli karakterüzenetet (üzenettípus 0x17, `[msg+0x64]` 1-es bitje: `0x005c2565-0x005c25ab`), ha a kód `0x21` és `0xFE` között van (`0x005c25c9-0x005c25d6`), a `0x00565cf0`-nak adja (`0x005c25dc`): a karakter a felirat végére kerül, a mező szerkesztő módba lép és szennyezettnek jelöli magát (`0x00565ee6-0x00565ef8`). Backspace az utolsó karaktert törli (`0x005c273a-0x005c2748`). Kizárás: szóköz és Tab (`0x00565d38-0x00565d44`), aktív eszközmód (`[this+0x30d9]`, `0x00565d4e`), Ctrl-os billentyű (`0x005c2568`). A `"` jel `U+201C`-re cserélődik (`0x00565d8b-0x00565d90`). Rejtett sáv esetén a gépelés a kapcsolót visszakapcsolja (`0x00565d5a-0x00565d86`). | `PhotoViewerKeyboard.qml:50-75`: nyomtatható karakter nem kezelt; az `F` és a `Shift+F` az arckeretek kapcsolója (saját bővítés, `picasa-gyorsbillentyuk.md:542-543`). | **Eltérés (J3).** |
+| Felirat-kapcsoló (Show/Hide Caption) | `editpanel/captionbutton` esemény: `0x005d5e77-0x005d5e88` → `0x005f8ac0`. Az állapot a `Preferences` `LastCaptionButton` kulcsához kötött (`0x00576bc0`, `0x00576c14`; az olvasó és az író irány külön nincs igazolva). Eszközmódban (`[this+0x30d4]` 2-6) a három elem rejtett (`0x0057be53-0x0057be5f`, elrejtés `0x0057bdf2-0x0057be47`), kilépéskor visszaáll (`0x0057c013-0x0057c07d`). | `PhotoViewerOverlayControls.qml:602-650`; állapot: `controller_folder_view_mixin.py:262-287` (`view/captionVisible`, tartós). A sáv `visible`-je nem függ az eszközmódtól (`:473`). | Tartós állapot feltételesen egyezik. Az eszközmódbeli elrejtés nálunk hiányzik, a módkódok megfeleltetése nyitott (G4). |
+| Törlés gomb (`captiontrash`) | `0x005d5ee7-0x005d5ef9` → `0x005f8c00`: **megerősítő ablak**, csak igenre ír (lásd a 6. szakaszt és a J1 jegyet). Üres feliratnál a gomb tiltott (`0x00568010`: `0x005680c6-0x005680d5` a `0x009cd7e0`-nal a `[+0x20e]` letiltás-jelzőt állítja; törlés után `0x005f8cef`). | `:544-583`: kérdés nélkül töröl, üres feliratnál tiltott. | **Eltérés (J1).** A tiltás egyezik. |
+| Bélyegkép alatti felirat (Nézet, Indexkép felirata) | Csak megjelenítés: `eMenuView::ThumbnailCaption` és `ID_CAPFULL`, `ID_CAPFILE`, `ID_CAPNONE`, `ID_CAPRES`, `ID_CAPTAG` a menüépítőben (`0x00559150`). A `CTextCaptionNode` típusleírót csak az editpanel függvényei használják (1. szakasz), tehát a rácson nincs szerkesztő mező. | `PicasaViewMenu.qml:469-520`, `ThumbDelegate.qml:74-84,269-277`: csak megjelenítés. | Egyezik. |
+| Tulajdonságok (Alt+Enter) | A `PropertiesPanel` szövegkészlete: `title`, `info_*`, `Thumbnail`, `XMP`, `write_xmp`, `edit_keywords` (Szerkesztési címkék). Képfelirat-szerkesztő mező szövege nincs (erős, negatív, szövegtár-alapú). | `PropertiesPanel.qml`: nincs feliratmező. | Egyezik. |
+| Szerkesztés menü: Szöveg másolása és beillesztése | `ID_EDIT_COPYTEXT` `0x9ded`, `ID_EDIT_PASTETEXT` `0x9dee` (`0x00d6dc0c`, `0x00d6dc20`). A korábbi Colab-mérés (#1526, #5877) a Text eszköz rétegét igazolta, a képfeliratot kizárta (`picasa-menusor-csoportok.md:165-176`). | A két menüpont a Text eszköz rétegét kezeli; `pasteCaptionText` és `copyCaptionText` (`photo_ops_write_text_mixin.py:64,81`) a felületről nem hívható. | Egyezik; a hívhatatlan segédek halott kódok (J6 megjegyzés). |
+| Kép menü | A Kép menü hét tétele között felirat-parancs nincs (`picasa-menusor-csoportok.md:262-270`). | `PicasaPictureMenu.qml`: nincs felirat-tétel. | Egyezik. |
+| Mappa és album leírása (`ID_ALBUM_EDITCAPTIONS`, `0x9c69`) | „Edit Folder Description…": a mappa/album leírása, nem a képé (`stringres`: `Folder::ID_ALBUM_EDITCAPTIONS`). | `FolderPropertiesDialog.qml`, `LightboxHeaderDescription.qml`: külön funkció. | Nem képfelirat, nincs teendő. |
+| Diavetítés felirata | `oneup/caption`, `editoneup/caption` (`oneup.tre:168`, `editoneup.tre:175`) és a kapcsoló: megjelenítés, szerkesztő osztály nincs (1. szakasz). | `SlideshowControls.qml:76-80,244-251` (`slideshowCaption`, `slideshowCaptionModeButton`): megjelenítés. | Egyezik. |
+| Gyorsbillentyű | Dedikált felirat-gyorsbillentyű nincs: a `editpanel/caption*` sztringeket csak 10 függvény hivatkozza (`0x00565cf0`, `0x00566a70`, `0x00568010`, `0x0057bb50`, `0x005c48c0`, `0x005f89a0`, `0x005f8ac0`, `0x005f8c00`, `0x005fa770`, `0x0075de50`), billentyűkezelő köztük nincs; a felirat a `0x005c24c0` karaktercsatornáján át indul (fent). | Nincs felirat-gyorsbillentyű. | Egyezik (a gépelési belépő: J3). |
+| Egy kép / több kijelölt kép | Minden elérés egyetlen képkulcsot használ (`[this+0xe64]`: `0x005f8a4a`, `0x005f8c72`, `0x0056807e`). Több képes felirat-szerkesztés nincs. Kettős nézetben a fókuszált félé a felirat (#5975, `forras-audit-5186-1.md:214-232`). | `setCaption(row, text)` egy sorra (`photo_ops_write_mixin.py:253-275`); a mező a fókuszált sort írja (`PhotoViewerOverlayControls.qml:517`). | Egyezik. |
+| Videó | A `0x00594ff0` a videóvezérlő billentyűit (`[panel+0x3094] != 0`, `0x00595001`) veszi el; a többi karakter videónál is a feliratot indítja, ha `[panel+0x332e] == 0` (`0x005c25bd-0x005c25c9`). A videó felirata ténylegesen szerkeszthető-e és hova kerül: NINCS MEG (G1, G5). | A sáv videónál is látszik, az írás az ini-be megy (`photo_ops_write_text_mixin.py:172-198`). | Nem eldönthető, nyitott (G5). |
+| Írásvédett fájl | Lásd 5. szakasz. | Lásd 5. szakasz. | **Eltérés (J4).** |
+
+### 3. Mentés, elvetés, megerősítés
+
+| Helyzet | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|---|
+| Enter | `0x0076af33-0x0076af43`: a csomópont `+0x88` metódusa („captiondone"), utána a fókusz leadása (`0x0076af4b-0x0076af59`). Csak ha nincs Ctrl vagy Alt (`0x0076af13`), a csomópont látható (`[+0x20c] == 0`) és nem csak olvasható módú (`[+0x2c6] == 0`, `0x0076af00-0x0076af0d`). A mentés `0x005f89a0` (a csomópont szennyezett jelzője, `[+0x2c4]`, kell hozzá: `0x005f8a10-0x005f8a21`). | `PhotoViewerOverlayControls.qml:516-520`: `onAccepted` ment, újrakötés, fókusz a nézőre. | Egyezik. |
+| Esc | `0x0076af1f-0x0076af2f`: `+0x84` („captioncancel", szennyezett jelző törlése `0x0067f7ad`), a diszpécser a rekord feliratát tölti vissza (`0x005df583-0x005df58f` → `0x00568010`). **Az Esc elvet.** | `:521-525`: újrakötés a mentett felirathoz, fókusz a nézőre. | Egyezik. |
+| Kattintás a mezőn kívülre (fókuszvesztés) | Az egérlenyomás üzenet (`[msg+8]` 1 vagy 0xd) a csomópont téglalapján kívül, ha a csomópont a fókuszos: `+0x88` (mentés) és fókuszleadás (`0x0067ed05-0x0067ed5b`). Másik elem fókuszt kap (üzenet 0x15, szerkesztő módban): szintén `+0x88` (`0x0067ed84-0x0067edaa`). **A fókuszvesztés ment.** | Nincs kezelő: a mezőnek csak `onAccepted` és `Keys.onEscapePressed` van (`:516-525`). A gépelt szöveg mentés nélkül marad a mezőben; a projekt saját megjegyzése szerint a gépelés megszünteti a `text` kötést (`LightboxHeaderDescription.qml:6-8`), ezért képváltás után a következő képnél is a begépelt szöveg látszhat (feltételes, futásidejű próba nincs). | **Eltérés (J2).** |
+| Szerkesztési kapuk | A `0x005f8d80` első művelete a `0x005f89a0` (`0x005f8d99`): a függő felirat az eszközlezáráskor, fókuszváltáskor és mentéskor is véglegesedik. 14 közvetlen hívója van, köztük a mentő szál (`0x0053a790`), a kettős nézet fókuszváltója (`0x0056a160`), a `0x00578c30` (`0x00578ce9`) és a Ctrl+F9 lépés (`0x00578dc0`, `0x00578e79`). | Nincs megfelelő; a függő szöveg elvész. | **Eltérés (J2).** |
+| Beillesztés (Ctrl+V) | `0x0067edb6-0x0067eee4`: szerkesztő módban (`[+0x2c5] != 0`) a vágólap a szövegbe kerül, megerősítés és azonnali mentés nélkül (`0x0067ee37-0x0067ee6e`). Nem szerkesztő módban a teljes felirat cserélődik; ha van felirat, megerősítés kell (`CTextEditNode::confirm`, gomb `CTextEditNode::confirmyesbutton` = „Replace", `0x0067ee73-0x0067eee4`), majd azonnali mentés (`0x0067eefc-0x0067ef03`). | Szabványos `TextInput` beillesztés (`:487-525`), felülírás nélkül. Az eredeti szerkesztő módú ága egyezik; a nem szerkesztő módú ág (G3) nem eldönthető. | Nincs teendő, amíg G3 nyitott. |
+| Kivágás (Ctrl+X) | Szerkesztő módban a kijelölés kivágása, mentés nélkül (`0x0067efdf-0x0067f08e`); nem szerkesztő módban a teljes felirat a vágólapra, a mező kiürül és azonnal ment (`0x0067f099-0x0067f0ff`). | Szabványos `TextInput` kivágás. | Mint a beillesztésnél (G3). |
+| Változatlan szöveg | A mentés csak szennyezett jelzőnél fut (`0x005f8a10`), és a setter a régi és új szöveget bájtról bájtra összeveti: egyezésnél visszatér, nem ír semmit (`0x00437df5-0x00437e69`). | `setCaption` mindig ír: nincs egyezés-vizsgálat (`photo_ops_write_mixin.py:253-275`, `photo_ops_write_text_mixin.py:166-198`). Enter változatlan szövegen is újraírja a JPEG-et és a `backuphash`-t. | **Eltérés (J5).** |
+| Megerősítés mentéskor | Nincs: a `0x005f89a0` nem hív megerősítő ablakot. | Nincs. | Egyezik. |
+| Szóközök levágása | A mentő út a `0x0067f7e0`-ban a `0x00989f80` segédet hívja a szövegre (`0x0067f820`); hogy ez levág-e, NINCS MEG (G6). | `_felirat_iras` `strip()`-pel levág (`photo_ops_write_text_mixin.py:172`). | Nyitott (G6). |
+
+### 4. Hatás: hova ír, mi frissül
+
+| Szempont | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|---|
+| Hova kerül (JPEG) | A setter (`0x00437cf0`) a fájlba ír, ha a kép `.thm` oldalfájllal rendelkezik VAGY a képrekord `+0x18` típuskódja 2 (`0x00438566-0x00438575`), a fájl nem írásvédett (`0x0043859e-0x004385a5`) és a kép nem iPhoto/Photos-könyvtárban van (`0x004384e5-0x004384ec`). A `0xe4` tulajdonság (IPTC 2:120 Caption/Abstract, `picasa-metaadat-tulajdonsagok.md:55`) a metaadat-csomagba kerül (`0x004385ce`), üres szövegnél kikerül belőle (`0x004385fb`); a csomagot a `0x009ed330` hívás írja a fájlba (a szerepe a hívás alakjából és a hibaágból következik, feltételes). A típuskód jelentése NINCS MEG (G1); a korpusz szerint JPEG-nél a felirat nem az ini-ben él: 16 970 `jpg` szakaszból 5-ben van `caption=`, és mind az 5 online-jelzéses (`onlinechecksum` vagy `IIDLIST`). | `_felirat_iras` (`photo_ops_write_text_mixin.py:172-187`): `.jpg` és `.jpeg` fájlnál `write_iptc_caption` (`iptc_writer.py:40-45`), siker után csak a `backuphash`. | Struktúra egyezik. |
+| Hova kerül (minden más) | A fájlba írás feltételei nem teljesülnek: a `0x00438775` ág a `.picasa.ini` `caption=` kulcsát írja a `0x00454770`-nel (`0x00438778-0x0043878a`, ötödik argumentum 1: `backuphash`-ír, `0x004548a7-0x00454913`). Korpusz: 410 `bmp` szakaszból 193-ban van `caption=` (ebből 186 online-jelzéses, 7 nem), `mp4`: 8 a 52-ből, `mpg`: 2 a 29-ből, mind online-jelzéses. | `:188-198`: `.picasa.ini` `caption=`, törlésnél `with_removed`, `backuphash`. | Egyezik. |
+| Ini-kulcs sikeres fájlírás után | A sikeres fájlírás ága a szövegmutatót nullázza (`0x00438754-0x00438759`), és ugyanazzal a `0x00438778-0x0043878a` hívással nullát ad a `caption` kulcsnak: a kulcs nullával való törlése feltételes (G2), de a korpusz (5/16 970) ezt támasztja. | Siker után csak a `backuphash` frissül, a meglévő `caption=` kulcs marad. A tényleges felirat `COALESCE(caption_file, caption_ini)` (`index/queries.py:27`): ha egy JPEG-nek régi `caption=` kulcsa van az ini-ben, a feliratot törölve (`caption_file` üres) a régi ini-szöveg visszatér. | Feltételes eltérés, jegy csak G2 után (J7). |
+| Keresési index | A setter az új szöveggel (`0x00438421`: `0x004d9010`) és a régivel (`0x0043844e`: `0x004d8da0`) a `[db+0x20]` objektumot frissíti, még a fájlírás előtt; a két függvény szerepe (szövegindex-bővítés és -törlés) a hívás alakjából következik, feltételes. | `update_photo_fields` az FTS-oszlopokat (`index/schema.py:123-149`); a `_run_photo_write` a mentés után írja (`photo_ops_write_core_mixin.py:80-94`). | Egyezik. |
+| Rács és bélyegkép felirata | A mentés után a `[this+0x2ac]` figyelőobjektum `+8` metódusa a képkulccsal (`0x005f8a8a-0x005f8aa0`), majd `0x00579480(1,0)` (a `editpanel/preview` elrendezésének frissítése). | `_photoFieldUpdated` a rácsmodellt frissíti (`photo_ops_write_core_mixin.py:94`), `ThumbDelegate.qml:74-84`. | Egyezik. |
+| Visszavonás | A `0x005f89a0`, `0x005f8c00` és `0x00437cf0` útjában nincs visszavonási rekordot író hívás; a menü Visszavonás tételének hatóköre a felirattal NINCS MEG (G7). | Nincs visszavonás. | Nyitott (G7). |
+
+### 5. Hibaesetek és részleges végrehajtás
+
+| Helyzet | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|---|
+| Írásvédett fájl | A `0x00992d50` a fájl attribútumát kéri le (`[0x00d69518]` hívás útvonallal, 0 szinttel és pufferrel, majd az első bájt `& 1`, `0x00992d5a-0x00992d6d`): írásvédett fájlnál a fájlba írás kimarad, és a felirat az ini-be megy (`0x0043859e-0x004385a5` → `0x00438775`). | `_felirat_iras` nem vizsgálja az írásvédettséget: `write_iptc_caption` közvetlenül próbál írni (`iptc_writer.py:74-92`, `write_atomic`); a hiba `OSError`-ként `photoOpFailed`-et vált ki, ini-tartalék nincs (a tartalék csak akkor, ha a fájl nem érvényes JPEG). Windowson a csere írásvédett célfájlra `PermissionError` lehet (platformfüggő, futásidejű próba nincs). | **Eltérés (J4).** |
+| Írási hiba a fájlba | A `0x009ed330` nem nulla eredménye (`0x00438711-0x00438718`, feltételes: a hívás fájlírás-jellege) a hibakóddal tér vissza, az ini-írás kimarad (`0x00438727-0x0043874f` → `0x00437f51`). A hívó a visszatérési értéket eldobja (`0x005f8a51`), **hibajelzés nincs**. A memóriabeli szöveg és a szövegindex addigra már frissült (a szövegindex-állítás feltételes, lásd fent). | A hiba `photoOpFailed` jelzésként látszik (`photo_ops_write_core_mixin.py:87-89`). | Eltérés, de javulás: megtartandó. A paritás nem kívánja az elnyelést. |
+| Írási hiba az ini-be | A `0x00454770` visszatérési értékét a setter nem nézi, a függvény mindig 0-val tér vissza (`0x0043878f`, `0x004387dc`): **az ini-hiba néma**. | Az `IniSaveError` is `photoOpFailed` (`edit_controller_shared.py:137`). | Mint fent: megtartandó. |
+| Több kép részleges végrehajtása | Nincs: a felirat mindig egy képre megy (2. szakasz). | `_run_photo_writes` (köteg) csak a felületről nem hívható `pasteCaptionText`-hez van (`photo_ops_write_text_mixin.py:121-146`). | Nincs teendő. |
+| iPhoto/Photos-könyvtár képe | A `0x0047d1b0` (a `[this+0xe6d]` forrása, `0x00568a0f-0x00568a1e`) és a `0x0047d270` az `iPhoto Library`/`Photos Library` mappák `Masters` és `Originals` alatti képeit jelöli (`0x0099bce0`, `0x0099bf40`): a mező szerkesztése ezeknél tiltott (`[node+0x2c6]`, `0x00568162-0x0056816c`), a setter semmit nem ír (`0x004384ea` → `0x0043879b`); a predikátum neve a sztringekből következik, feltételes. | Nincs ilyen kép. | Nem alkalmazandó. |
+
+### 6. Szövegek (hivatalos magyar a `stringres` és a `panel-feliratok-hu` szerint)
+
+| Elem | Eredeti | Nálunk | Teendő |
+|---|---|---|---|
+| Alapszöveg a mezőben | „Készítsen képaláírást!" (`CTextCaptionNode::defname`) | „Készítsen képfeliratot!" (`picasapy_hu.ts:10795-10797`) | J8 |
+| Kapcsoló buboréksúgója | „Képfelirat megjelenítése/elrejtése" | „Felirat megjelenítése/elrejtése" (`picasapy_hu.ts:10807-10809`) | J8 |
+| Törlés buboréksúgója | „Képfelirat törlése" | „Felirat törlése" (`picasapy_hu.ts:10801-10803`) | J8 |
+| Törlés megerősítése | „Biztosan törli a kép feliratát?", gombok „Képfelirat törlése" és „Nem", cím „Jóváhagyás" (`0x005f8c08-0x005f8c33`, `0x009bac20`) | Nincs | J1 |
+| Beillesztés megerősítése | „Biztosan lecseréli a jelenlegi képfeliratot a vágólap tartalmával?", gomb „Csere" (`0x0067ee94-0x0067eebd`) | „...tartalmára? (Ez a művelet nem vonható vissza)" (`picasapy_hu.ts:11593-11597`), de a párbeszéd a felületről nem érhető el | J6 megjegyzés |
+
+### 7. Javasolt fejlesztői jegyek
+
+Csak igazolt eltérés lehet az alapjuk. A J7 feltételes (G2 dönti el), a többi igazolt.
+
+#### J1: A képaláírás törlése megerősítést kér
+
+- **Cím:** Képfelirat törlése a néző kuka gombjával: megerősítő ablak
+- **Törzs:**
+  Eredeti: `0x005f8c00` (`0x005f8c08-0x005f8c5c`): a kuka gomb (`0x005d5ef9`) a `0x009bac20` megerősítő ablakot nyitja, szöveg `IDS_CONFIRM_CAPTION_TRASH` („Biztosan törli a kép feliratát?"), igen-gomb `IDS_CONFIRM_CAPTION_YES_BUTTON` („Képfelirat törlése"), nem-gomb `il_No`, cím `ytApp::ConfirmTitle`. Csak igenre fut a törlés (`0x005f8c62-0x005f8c82`); nemre a függvény kilép (`0x005f8c5c-0x005f8d2c`).
+  Nálunk: `PhotoViewerOverlayControls.qml:572-583` (`#1816 DÖNTÉS: NINCS megerősítés`, az indok szerint az eredetiről nincs mérve). A mérés most megvan, az indok megdőlt.
+  Teendő: megerősítő párbeszéd a fenti szöveggel és gombokkal; a #1816-os megjegyzés javítása.
+  Kész, ha: a kuka gomb a kérdést mutatja; „Nem" esetén a felirat, a JPEG és a `.picasa.ini` változatlan; „Képfelirat törlése" esetén a felirat törlődik és a gomb tiltottá válik.
+
+#### J2: A függő feliratszöveg mentése fókuszvesztéskor és szerkesztési kapuknál
+
+- **Cím:** Képfelirat: a mezőn kívüli kattintás és a kapuk (mentés, eszközváltás) mentsék a begépelt szöveget
+- **Törzs:**
+  Eredeti: kattintás a mezőn kívülre `0x0067ed05-0x0067ed5b`, fókusz másik elemre `0x0067ed84-0x0067edaa`, mindkettő a „captiondone" metódus (`+0x88`) → `0x005f89a0` (mentés). A szerkesztési kapu `0x005f8d80` első művelete a `0x005f89a0` (`0x005f8d99`), 14 hívóval (köztük `0x0053a790`, `0x0056a160`, `0x00578c30`).
+  Nálunk: `PhotoViewerOverlayControls.qml:516-525`: csak Enter ment, Esc elvet; a fókuszvesztés a begépelt szöveget mentés nélkül hagyja.
+  Teendő: a mező fókuszvesztésekor (`onActiveFocusChanged` vagy `onEditingFinished`) és a képváltás, eszközmegnyitás, mentés előtt a változott szöveg mentése; Esc továbbra is elvet.
+  Kész, ha: szöveget gépelve és a rácsra/képre kattintva a felirat mentve van (indexben és IPTC-ben vagy ini-ben); képváltás után a következő kép mezője a saját feliratát mutatja.
+
+#### J3: Gépelés a nézőben közvetlenül feliratot indít
+
+- **Cím:** Néző: nyomtatható billentyű lenyomása kezdje a képaláírást; az F és a Shift+F ütközésének rendezése
+- **Törzs:**
+  Eredeti: `0x005c24c0` (`0x005c25c9-0x005c25dc`) → `0x00565cf0`: Ctrl nélküli karakter (`0x21-0xFE`) a felirat végére kerül és szerkesztő módba lép; Backspace az utolsó karaktert törli (`0x005c273a-0x005c2748`); kizárás: szóköz, Tab, eszközmód, Ctrl (`0x00565d38-0x00565d4e`, `0x005c2568`); `"` → `U+201C` (`0x00565d8b-0x00565d90`); rejtett sávnál a kapcsoló visszakapcsol (`0x00565d5a-0x00565d86`).
+  Nálunk: `PhotoViewerKeyboard.qml:50-75`: nincs ilyen kezelés; az `F` és a `Shift+F` az arckeretet kapcsolja (saját bővítés, `picasa-gyorsbillentyuk.md:542-543`), vagyis az eredetiben a felirat első betűje lenne.
+  Teendő: a nyomtatható karakter a feliratmezőbe kerüljön az eredeti kizárásaival. Javasolt alapértelmezés: az `F`/`Shift+F` betűkötések kerüljenek le, az arckapcsolók a képernyőgombok maradnak (a tulajdonos dönthet a megtartásról).
+  Kész, ha: a nézőben `a` betűt lenyomva a mező `a` szöveggel szerkesztésre nyílik, Backspace törli, szóköz nem indít, eszközmódban nem indít; az F betű feliratot kezd.
+
+#### J4: Írásvédett JPEG felirata az ini-be kerüljön
+
+- **Cím:** Képfelirat írásvédett fájlnál: `.picasa.ini` tartalék a fájlírás helyett
+- **Törzs:**
+  Eredeti: `0x0043859e-0x004385a5`: a `0x00992d50` írásvédett attribútumnál a fájlba írást kihagyja, a felirat a `.picasa.ini`-be megy (`0x00438775` → `0x00438778-0x0043878a`).
+  Nálunk: `photo_ops_write_text_mixin.py:172-187`: nincs írásvédettség-vizsgálat; `iptc_writer.py:74-92` közvetlenül ír, a hiba `photoOpFailed`.
+  Teendő: JPEG-nél, ha a fájl írásvédett, a felirat `caption=` kulcsként az ini-be megy.
+  Kész, ha: írásvédett JPEG feliratát mentve a fájl bájtra változatlan, a `.picasa.ini`-ben `caption=` van, a rács és a mező mutatja.
+
+#### J5: Változatlan szövegnél nincs írás
+
+- **Cím:** Képfelirat: ha a szöveg nem változott, ne írja újra a fájlt és az ini-t
+- **Törzs:**
+  Eredeti: `0x005f8a10` (csak szennyezett mezőnél ment), `0x00437df5-0x00437e69` (a setter az egyező szöveget eldobja).
+  Nálunk: `photo_ops_write_mixin.py:253-275`, `photo_ops_write_text_mixin.py:166-198`: mindig ír.
+  Teendő: `setCaption`: ha a levágott új szöveg egyezik a kép mai feliratával, kilép írás nélkül.
+  Kész, ha: Enter változatlan szövegen a JPEG módosítási ideje és bájtjai, valamint a `.picasa.ini` változatlan.
+
+#### J6: Szöveg-vágólap segédek és a halott beillesztő párbeszéd
+
+- **Cím:** Halott felirat-beillesztés (`pasteCaptionText`, megerősítő ablak) eltávolítása vagy bekötése
+- **Törzs:**
+  Eredeti: a beillesztés megerősítése a mezőbe épül (`0x0067ee73-0x0067eee4`), a szövege `CTextEditNode::confirm` (nincs benne „nem vonható vissza"; az `IDS_REPLACE_CAPTION` sztring az exe-ben nincs).
+  Nálunk: `photo_ops_write_text_mixin.py:64-119` és `PicasaMenuBar.qml:66-77`: a felületről nem hívható.
+  Teendő: a G3 eredményéig csak a halott út és a téves szöveg eltávolítása; bekötés csak a G3 után.
+  Kész, ha: nincs hívhatatlan `pasteCaptionText`/`copyCaptionText`, vagy bekötött és tesztelt.
+
+#### J7 (feltételes, a G2 dönt): IPTC-írás után a régi ini `caption=` kulcs törlése
+
+- **Cím:** JPEG felirat: sikeres IPTC-írás után az ini régi `caption=` kulcsa törlődjön
+- **Törzs:**
+  Eredeti: `0x00438754-0x0043878a`: sikeres fájlírás után a `caption` kulcs nullát kap (a null törlés-értelme: G2).
+  Nálunk: `photo_ops_write_text_mixin.py:178-187` nem törli; `index/queries.py:27` `COALESCE(caption_file, caption_ini)`.
+  Teendő: G2 megerősítése után az ini frissítésében `with_removed(photo.name, "caption")`.
+  Kész, ha: ini-ben `caption=Régi` mellett törölt IPTC-felirat nem hozza vissza a régi szöveget.
+
+#### J8: Hivatalos magyar szövegek
+
+- **Cím:** Felirat-sáv szövegei a hivatalos magyar szerint
+- **Törzs:**
+  Eredeti: `CTextCaptionNode::defname` „Készítsen képaláírást!", tooltipek „Képfelirat megjelenítése/elrejtése" és „Képfelirat törlése" (`panel-feliratok-hu`).
+  Nálunk: `picasapy_hu.ts:10795-10810`.
+  Teendő: a három fordítás cseréje és a `.qm` újragenerálása.
+  Kész, ha: a három szöveg a hivatalos alak, az i18n őrök (`test_i18n_dictionary_4313.py`) zöldek.
+
+### 8. Két független út és cáfoló vizsgálat
+
+- **A út (gépi kód):** a mentési lánc (`0x0076ace0` → `0x0067f7e0` → `0x005de8e0` → `0x005f89a0` → `0x00437cf0`), a törlés (`0x005d59f0` → `0x005f8c00`), a gépelés (`0x005c24c0` → `0x00565cf0`) és a setter ágai utasításról utasításra olvasva.
+- **B út (bájtkeresés és erőforrások):** a típusleíró és a `call`-célok teljes `.text` kereséssel (`CTextCaptionNode`: három használó; `0x005f89a0`: négy hívó; `0x005f8c00`: egy; `0x00565cf0`: két; `0x005f8d80`: 14), a `stringres`/`.tre` szövegek, és a korpusz mérése. Ugyanide jut a `CThumbDB` slotok sorszámozása (`+0x4c`, `+0x50`).
+- **Cáfoló vizsgálatok:** (1) a `CTextEditNode` és a `CCaptionNode` nem képfelirat-szerkesztő: az előbbi a Személyek felület névmezője (`picasa-arcfelismeres-kutatasi-naplo.md`, 15. kör: `0x00717810` → `0x00856060`, nem újra ellenőrizve), az utóbbi a vászonra tett szöveg (`Click here to type`, `0x005b59f0`, szövegalapú, feltételes). (2) A Szerkesztés menü Szöveg parancsai nem felirat-belépők: Colab-mérés (#1526, #5877). (3) A `LastCaptionButton` nem a felirat szövegét tárolja, csak a kapcsolót (`0x00576bc0`). (4) Az `IDS_REPLACE_CAPTION` sztring az exe-ben nem szerepel (bájtkeresés), a beillesztés `CTextEditNode::confirm`-et használ.
+
+### 9. Bizonyítottsági fok
+
+- **Megerősített (utasításszint és bájtkeresés):** a felirat-mező osztálya és egyetlen szerkesztő helye; Enter/Esc/kattintás-kívül/fókuszváltás viselkedése; a törlés megerősítése; a mentés egyszeri helye és a setter egyezés-ellenőrzése; az írásvédett ág a setterben; a gépelési belépő.
+- **Erős:** a JPEG felirata IPTC-ben él (a setter `0xe4` tulajdonság-írása + a korpusz); az ini-hiba némasága (a visszatérési érték elvész); a Tulajdonságok és a bélyegképek nem szerkesztő felületek (negatív, szövegalapú).
+- **Feltételes:** a null érték törlés-értelme (G2); a típuskód 2 jelentése (G1); a begépelt szöveg képváltás utáni megmaradása a PicasaPy-ban (futásidejű próba nincs).
+- A megfejtett mechanizmusból nem következik, hogy a mi kódunk javítása csökkenti-e egy mért eltérést: itt eltérés-mérés nincs, minden jegy viselkedési egyezést kér, és a "Kész, ha" pontok kattintásos próbával ellenőrizhetők (Colab felvétel nincs ehhez a körhöz).
+
+### 10. Helyesbítések a korábbi állításokhoz
+
+- `picasa-menu-parancsok-viselkedes.md` 2. szakasz: a szöveg-beillesztés megerősítése nem az `IDS_REPLACE_CAPTION` (nincs az exe-ben), hanem a `CTextEditNode::confirm`, és a „nem vonható vissza" mondat nincs benne.
+- `PhotoViewerOverlayControls.qml:572-580` (#1816): „az eredetiben szemetes-ikon közvetlen hatással" téves; az eredetiben megerősítés van (`0x005f8c00`).
+- `picasa-ini-format.md:98,1455`: „JPEG-nél IPTC, nem ini" kiegészítése: a feltétel a `.thm` oldalfájl vagy a `+0x18` típuskód 2, az írásvédett és az iPhoto-könyvtáras kép ini-be (illetve sehova) megy.
+
+### 11. Nyitott
+
+Nyitott kérdések: 7 nyílt · 25 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva".
+
+- Ghidra-kör kell: 0x00437cf0 - mit jelent a képrekord +0x18 mezőjének 2-es értéke a fájlba írás feltételében (0x00438575), mely formátumokra igaz, és a `.thm` oldalfájl-ágban (0x00438566) melyik fájlba kerül az IPTC 0xe4 tulajdonság? [nem blokkoló]
+- Ghidra-kör kell: 0x005aa260 - a null értékű kulcs (0x005aa301-0x005aa30b) törli-e a kulcsot a .picasa.ini-ből, vagy üres értéket ír? [blokkoló a J7 jegyhez]
+- Ghidra-kör kell: 0x0067eca0 - a [node+0x2c5] szerkesztő-mód jelző mikor 1 és mikor 0 a nézőben, azaz mikor érvényes a teljes felirat cseréje megerősítéssel (0x0067ee73) a szövegbe illesztés helyett (0x0067ee3e)? [nem blokkoló]
+- Ghidra-kör kell: 0x0057bb50 - a [this+0x30d4] 2-6 módkódjai melyik szerkesztő eszközöknek felelnek meg, amelyeknél a felirat-sáv rejtett (0x0057be53-0x0057be5f)? [nem blokkoló]
+- Ghidra-kör kell: 0x005c24c0 - videó megnyitva ([panel+0x3094] > 0) és [panel+0x332e] == 0 esetén (0x005c25bd-0x005c25c9) tényleg a feliratot indítja-e a betű, és mit jelent a [panel+0x332e]/[panel+0x332f] jelző? [nem blokkoló, Colabon is eldönthető]
+- Ghidra-kör kell: 0x0067f7e0 - a 0x00989f80 (0x0067f820) a begépelt szöveget levágja-e (szóközök), és milyen hosszkorlátot alkalmaz a mentés előtt? [nem blokkoló]
+- Ghidra-kör kell: 0x005f89a0 - a menü Visszavonás tétele (ID_UNDO) visszavonja-e a felirat beírását vagy törlését (a három függvényben visszavonási rekord nincs)? [nem blokkoló, Colabon is eldönthető: felirat beírása, Enter, Szerkesztés menü]
+
+### 12. Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md` - ez a #7024 alszakasz.
