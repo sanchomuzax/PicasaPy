@@ -361,6 +361,13 @@ A vetített kép **legfelső, keskeny sávjára** kattintva szünetel vagy
 folytatódik a vetítés, ugyanúgy, mint a lejátszás gombbal. A sáv nem
 látszik, és nem takarja a képet.
 
+**Szünet és folytatás.** Ha megállítod a vetítést (Szóközzel, a lejátszás
+gombbal vagy a felső sávra kattintva), a vezérlősáv **azonnal**, áttűnés
+nélkül megjelenik, és a szünet végéig kint marad, akkor is, ha az egeret
+nem mozdítod. Folytatáskor a sáv rögtön eltűnik, és a vetítés **azonnal a
+következő képre lép**; onnan a beállított megjelenítési idő szerint megy
+tovább. Az Időrendből indított vetítés szünete ettől eltér, lásd lentebb.
+
 ### Átmenetek
 
 A választó az eredeti Picasa diavetítésének hét átmenetét kínálja, ebben
@@ -370,7 +377,7 @@ a sorrendben:
 |---|---|
 | Kivágás | nincs átmenet, a következő kép azonnal ott van |
 | Pásztázás és nagyítás | a kép lassan elmozdul egyik kivágásából a másikba, és közben nagyobb vagy kisebb lesz |
-| Szétoszlás | a két kép egymásba úszik |
+| Szétoszlás | az új kép egyenletesen ráúszik az előzőre, pontosan egy másodperc alatt |
 | Törlés | az előző kép oldalra kicsúszik, és közben előtűnik a következő |
 | Kör | a következő kép kicsiből nőve, kör alakban jelenik meg |
 | Tolás | a következő kép becsúszik, és kitolja az előzőt |
@@ -380,6 +387,11 @@ A **Pásztázás és nagyítás** nem a képek közé esik, hanem magán a képe
 fut, ezért a **diaidőhöz** igazodik, nem az átmenet hosszához. Minden
 képnél két, véletlenszerűen választott kivágás között pásztáz, tehát
 nem mindig a kép közepére nagyít.
+
+A **Szétoszlás** egy másodperce nem függ a megjelenítési időtől. Az
+Időrendből indított vetítésben más: ott az áttűnés a megjelenítési idő
+nagyjából kétharmadáig tart, és nem egyenletes ütemben, hanem lassan
+indulva úszik át.
 
 Ha egy korábbi változatban olyan átmenetet választottál, ami ebben a
 listában már nincs, a vetítés a **Szétoszlás** átmenettel indul. A többi átmenet
@@ -399,11 +411,15 @@ kártya mindig ugyanarra a helyre érkezik. A háttér a kiválasztott mappa
 vagy album első képének fakított, szürke változata; kártyaváltáskor az
 előző háttér lassan átúszik az újba. A kártyák a legrégebbi képük **felvételi
 dátuma** szerint követik egymást; ha két kártya ugyanazon a napon
-kezdődik, a korábbi felvételi időpontú kerül előre. Ha egy mappában vagy albumban egyetlen
-képnek sincs felvételi dátuma, a kártyája dátum nélkül, a sor **végére**
-kerül. Az üres albumok nem kapnak kártyát, és a rejtett képek sem
-jelennek meg. A **Legutóbb frissítve** album is kártyát kap, ha van
-benne látható kép.
+kezdődik, a korábbi felvételi időpontú kerül előre. Ha egy képnek nincs
+felvételi dátuma, a fájl ideje számít helyette: az, amelyet a program a
+kép első beolvasásakor látott, így a fájl későbbi módosítása nem mozdítja
+el a kártyát. Egy **album** kártyája a benne lévő legkorábbi kép dátumát
+kapja, ahogy az album első beolvasásakor volt; az albumba később
+betett képek már nem helyezik át a kártyát. Az üres albumok nem kapnak
+kártyát, és a rejtett képek sem jelennek meg. A **Legutóbb frissítve**
+album is kártyát kap, ha van benne látható kép; ennek a kártyának a
+dátuma mindig az Időrend megnyitásának hónapja.
 
 Az Időrend mindig az **első** kártyánál nyílik meg.
 
@@ -416,14 +432,19 @@ Az Időrend mindig az **első** kártyánál nyílik meg.
   felirat már azt a mappát vagy albumot mutatja, ahová érkezni fogsz;
   amikor elengeded, a kártyasor néhány másodperc alatt odaúszik.
 - A **Szóköz** vagy a lejátszás gomb az éppen látott mappa vagy album
-  **diavetítését** indítja.
+  **diavetítését** indítja, **szüneteltetve**: az első kép áll, és a
+  vezérlősáv látszik. A lejátszás gombbal vagy a Szóközzel indul el;
+  ekkor az első fotó a mappa vagy album szürke, a nevét mutató
+  címkártyájából úszik fel.
+- A **Ctrl+Szóköz** az Időrendben nem csinál semmit.
 - Az **Esc** vagy a sáv bezáró gombja kilép az Időrendből.
 
 Akár kilépsz, akár a diavetítésből térsz vissza, a könyvtárban az a
 mappa vagy album lesz megnyitva, amelynek a kártyáját utoljára láttad,
-és az első képe lesz kijelölve. Egy kivétel van: ha a **Legutóbb
-frissítve** kártyánál lépsz ki, a könyvtár azt mutatja, amit az Időrend
-megnyitása előtt.
+és az első képe lesz kijelölve. Két kivétel van: ha egy **mappa**
+kártyájáról indított diavetítésből térsz vissza, csak a mappa marad
+kijelölve, kép nem; ha pedig a **Legutóbb frissítve** kártyánál lépsz ki,
+a könyvtár azt mutatja, amit az Időrend megnyitása előtt.
 
 ## Megjelenítési mód
 

@@ -82,6 +82,10 @@ programba, hogy megvárd a munka végét.
 Ez a kérdés akkor is előjön, ha az ablak „X" gombjával zárnád be a
 programot, és szándékosan nem lehet kikapcsolni: adat múlhat rajta.
 
+A **Kilépés most** után a program néhány másodpercen belül biztosan
+bezárul, akkor is, ha egy háttérmunka nem áll le magától. A beállításaid
+ilyenkor is elmentődnek, a képeid adatai pedig nem sérülnek.
+
 ### „Ez a mappa jelenleg nem elérhető…"
 
 Egy külső lemez vagy hálózati megosztás nincs csatlakoztatva. A képek
@@ -264,7 +268,8 @@ elindulni, az okát szintén a hibanaplóba írja a program.
 Ez nem hiba. Ha a program egyszerre sok mindent csinál az adatbázissal —
 például importálás közben arcot keres —, egy mappa frissítése rövid időre
 várólistára kerül, és a program magától újra megpróbálja. Nincs teendőd.
-A korábbi **database is locked** hibaüzenet ma már nem jelenik meg.
+A háttérben futó mappafrissítés is kivárja a sorát, ahelyett hogy hibával
+leállna. A korábbi **database is locked** hibaüzenet ma már nem jelenik meg.
 
 ### „A keresés nem sikerült: …" (Átvétel a Picasából)
 

@@ -270,6 +270,13 @@ for the next slideshow and until the application is restarted.
 Click the narrow strip at the top of the displayed photo to pause or
 resume. It does not cover or hide the picture.
 
+When you pause (with Space, the play/pause button, or the top strip), the
+control bar appears at once, without fading in, and stays until you
+resume, even if you do not move the mouse. When you resume, the bar
+disappears at once and the slideshow moves straight to the next photo;
+from there it continues at the set display time. A slideshow started
+from Timeline pauses differently; see below.
+
 ### Transitions
 
 The selector offers Picasa's seven slideshow transitions, in order:
@@ -277,6 +284,11 @@ Cut, Pan and Zoom, Dissolve, Wipe, Circle, Push, and Rectangle. Pan and
 Zoom moves within a photo for the slide duration rather than between
 photos. It pans between two randomly chosen crops, so it does not
 always zoom toward the center.
+
+**Dissolve** fades the new photo evenly over the previous one in exactly
+one second, whatever the display time. In a slideshow started from
+Timeline it is different: the fade lasts about two thirds of the display
+time and starts slowly instead of at an even pace.
 
 If a saved transition is no longer available, the slideshow uses
 Dissolve. Other transitions, such as the face-zoom effect, are available
@@ -295,9 +307,14 @@ the same place. The background is a faded, grey version of the first
 photo of the selected folder or album, and it cross-fades to the new one
 when you change cards. Cards are ordered by the oldest capture date in each folder
 or album; if two cards start on the same day, the one with the earlier
-capture time comes first. Items with no capture dates appear at the end without a date;
-empty albums and hidden photos do not appear. The **Recently Updated**
-album also gets a card when it has visible pictures. Timeline always
+capture time comes first. If a photo has no capture date, its file time
+counts instead: the one the application saw when it first scanned the
+photo, so later changes to the file do not move the card. An album's
+card gets the date of its oldest photo as it was when the album was
+first scanned; photos added to the album later do not move the card.
+Empty albums and hidden photos do not appear. The **Recently Updated**
+album also gets a card when it has visible pictures; that card always
+shows the month in which you opened Timeline. Timeline always
 opens at the first card.
 
 Use the left and right arrows or the bar's arrow buttons to move between
@@ -307,11 +324,17 @@ drag it sideways. Drag the bottom slider to move farther through time; the first
 and last library dates appear at its ends. While you drag, the label in
 the top-right corner already shows the folder or album you will land
 on; when you release, the row glides there over a few seconds. Press Space or the play
-button to start a slideshow of the current folder or album. Press Esc
+button to start a slideshow of the current folder or album. It starts
+paused: the first photo stays still and the control bar is shown. Press
+the play button or Space to start it; the first photo then fades in from
+a grey title card showing the folder or album name. Ctrl+Space does
+nothing in Timeline. Press Esc
 or use the close button to exit. On return, the library opens the last
-folder or album shown, with its first photo selected. One exception: if
-you exit on the **Recently Updated** card, the library shows what it
-showed before you opened Timeline.
+folder or album shown, with its first photo selected. There are two
+exceptions: if you return from a slideshow started on a folder card,
+only the folder stays selected, not a photo; and if you exit on the
+**Recently Updated** card, the library shows what it showed before you
+opened Timeline.
 
 ## Display mode
 

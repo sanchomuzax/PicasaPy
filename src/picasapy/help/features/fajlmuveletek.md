@@ -91,8 +91,9 @@ képek kérdés nélkül átkerülnek abba a mappába; ha ott már van azonos
 nevű fájl, a bevitt kép új nevet kap, semmi nem íródik felül. Ez a lapos
 mappalistán és a **fanézetben** is ugyanígy működik.
 
-Egy egész **mappát** is áthúzhatsz a bal hasábon egy másik mappára: a
-mappa a tartalmával együtt annak a mappának az almappája lesz.
+Egy egész **mappát** a bal hasábon egy másik mappasorra húzva nem
+történik semmi, ahogy az eredeti Picasában sem: a mappa a helyén marad.
+Mappát a **Mappa ▸ Áthelyezés…** paranccsal helyezhetsz át.
 
 Ha a célmappában már van azonos nevű fájl, választhatsz: **Másodpéldányok
 átnevezése** (a bevitt fájlok új nevet kapnak) vagy **Másodpéldányok
