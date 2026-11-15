@@ -2652,7 +2652,7 @@ Ha a felhasználó az OK gombra kattint (`al == 1` @ `0x005ea7e5`):
 
 ### 8. Javasolt fejlesztői jegyek
 
-#### 1. jegyjavaslat (feltételes, a Nyitott kérdések 1. pontja dönti el): A bélyegkép helyi menüjében a Move to New Folder elrejtése albumnézetben
+#### 1. jegyjavaslat (ELVETVE, a Ghidra-kör cáfolta): A bélyegkép helyi menüjében a Move to New Folder elrejtése albumnézetben
 - **Cím:** Bélyegkép helyi menü: Áthelyezés új mappába elrejtése albumnézetben és személy nézetben
 - **Törzs:**
   Eredeti: `0x0056c5a0` sor 1392 (`RemoveMenu(hMenu, 0x9d68, MF_BYCOMMAND)`). Az eredeti Picasa albumnézetben (`AlbumPhoto`) eltávolítja a helyi menüből az Áthelyezés új mappába parancsot, mert az album virtuális gyűjtemény, a képek nem lemezes mappaként vannak jelen.
@@ -2685,9 +2685,9 @@ Nincs szükség új kutatási jegyre; a folyamat minden lépése statikusan és 
 A hívó ellenőrző mintavétele (2026-11-15): a 2. javaslat igazolt (a `0x004ae0a0` a kijelölt kép dátumát adja vissza OLE-napban, a `0x005e9a47` hozzáad `0xcf50c8` = 1/86400 napot, azaz egy másodpercet). A másik kettő nem igazolt:
 
 1. A meglévő Ghidra-kimenetekben a `0x0056c5a0` egyetlen `RemoveMenu` hívása sem kapja a `0x9d68` kódot, és a gépi kódban sincs `0x9d68` közvetlen érték a függvényben; a változó kódú `RemoveMenu(pHVar20, UVar14, 0x400)` lehet a forrás.
-   - Ghidra-kör kell: 0x0056c5a0 - Melyik ág távolítja el a `0x9d68` (Move to New Folder) tételt albumnézetben, ha egyáltalán; a változó kódú `RemoveMenu` milyen kódokat kap [blokkoló]
+   - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7006-7008-7009-7012-colab-decomp.txt`): **cáfolva.** A `0x0056c5a0`-ban nincs `0x9d68`; a változó kódú `RemoveMenu` pozíció szerint elválasztókat töröl (`0x13`-`0x16`), a konkrét kódú törlések `0x9d96`, `0x9d97`, `0xa09f`, `0x9ca4`/`0x9ca5`, `0xa0b5`, `0xa0cb`, `0x9cd0`/`0x9c72`. Az 1. jegyjavaslat ezért elvetve.
 2. A 3. javaslat (kijelölés az új mappában) mögött nincs bináris cím.
-   - Ghidra-kör kell: 0x005e9940 - Az áthelyezés után a `0x0055d120`/`0x00478780` lánc beállítja-e a kijelölést az átmozgatott képekre az új mappa rácsában [blokkoló]
+   - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7006-7008-7009-7012-colab-decomp.txt`): **nem igazolt.** A `0x00478780` tisztán fájl- és ini-mozgató (`.picasa.ini`, `.picasaoriginals`), a `0x0055d120` album-adatbázis segéd; a `0x005e9940` siker után frissít (`0x0065b840`), majd a `[+0x2a4]` vtábla `+0x44` metódusát hívja `(azonosító, 1, 1, 0)`, ami valószínűleg az új gyűjteményre navigál. Kijelölés-beállítást egyik sem tartalmaz, ezért a 3. jegyjavaslat nem nyitható termékjegyként, amíg a `+0x44` cél nincs feloldva.
 
 ### 11. Módosított fájlok
 
