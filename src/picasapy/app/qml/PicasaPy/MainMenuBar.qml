@@ -82,6 +82,12 @@ PicasaMenuBar {
             ? hostController.hasTextOverlayStateInSelection(rows, true) : false
     }
     photoActionsEnabled: hostWindow.photoActionRows().length > 0
+    // #7017: a szürkítés egyetlen helyen, Pythonban dől el; a fotómodell
+    // revíziója a láncváltás, forgatás és tükrözés után újraértékelteti.
+    undoAllEditsEnabled: hostController
+        ? (hostController.photos.revision,
+           hostController.undoAllEditsEnabled(hostWindow.photoActionRows()))
+        : false
     photoHasPendingEdits: hostWindow.muveletiCelbanVanMentetlenSzerkesztes
     // #5882: a fotómodell revíziója frissíti ezt a kötést a hidden
     // állapot változásakor; a kijelölés a könyvtár és a néző célpontját

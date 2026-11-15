@@ -265,6 +265,10 @@ MenuBar {
     // #5883: a mentés csak a fotóművelet célpontjának mentetlen
     // szerkesztési láncával érhető el.
     property bool photoHasPendingEdits: false
+    // #7017: az Undo All Edits az eredeti szerkesztettségi állapotból él
+    // (`controller.undoAllEditsEnabled`): a kijelölés első nem nulla
+    // állapotú képe dönt, a csak elforgatott kép szürke.
+    property bool undoAllEditsEnabled: false
     // #5882: a Kép ▸ Unhide csak rejtett képet tartalmazó célkijelölésnél él.
     property bool hasHiddenPhotoSelection: false
     // #6977: a Save As és Save a Copy videónál tiltott, csak fotónál él

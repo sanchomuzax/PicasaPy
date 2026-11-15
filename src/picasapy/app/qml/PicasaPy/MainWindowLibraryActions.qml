@@ -10,11 +10,13 @@ QtObject {
     required property var hostPhotoViewer
     required property var hostToolbar
 
-    // #1773: a lapváltás EGYETLEN útja. Az aktív lapra kattintás
-    // SZÁNDÉKOSAN nem zár be: a bináris a vizsgált ágon feltétel nélkül
-    // 1-re állítja a saját gombját (a jegy „nyitott" pontja, ez az
-    // alapértelmezés). A fiók ürítése az `ureseidAFiokot()`.
+    // #7025: a Tags lap ugyanazon az úton vált, mint a Ctrl+T, Ctrl+K és
+    // a felső panelgomb. Ha már aktív, kiüríti a fiókot.
     function valtsFiokLapot(nev) {
+        if (nev === "tags" && hostWindow.activeDrawerTab === "tags") {
+            hostWindow.ureseidAFiokot()
+            return
+        }
         hostWindow.activeDrawerTab = nev
         if (nev !== "") hostWindow.utolsoFiokLap = nev
     }

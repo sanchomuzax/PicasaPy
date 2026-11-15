@@ -7,6 +7,25 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.126] - 2026-11-15
+
+- Az Összes szerkesztés visszavonása az eredeti Picasa szerint a tükrözést, a szöveget és a szerkesztési előzményeket is törli (az elforgatás marad), és csak akkor választható, ha a kijelölés első szerkesztett képe nem csak elforgatott (#7017).
+
+## [1.0.125] - 2026-11-15
+
+- A Ctrl+R és a Ctrl+Shift+R a rács teljes kijelölését elforgatja, üres kijelölésnél pedig a hivatalos üzenet jelenik meg (#7003).
+
+## [1.0.124] - 2026-11-15
+
+- A háttér-előnézet időzítő-alapmérése terhelt gépen kihagy, nem buktat (#7007).
+## [1.0.123] - 2026-11-15
+
+- A visszaállítás (Revert) az eredeti Picasa szerint működik: több képnél a kérdés a hivatalos szöveg és nincs Undo Save gomb, a mentés óta kívülről módosított fájlnál "Revert Anyway" figyelmeztetés jön, és a visszaállított kép forgatása, tükrözése és szövege is törlődik az ini-ből (#6972).
+- A felülírás elutasítása megszakítja a mappaexportot, a sorszámok szélessége pedig a köteg méretéhez igazodik (#6980).
+- Az E-mail parancs az eredeti Picasa szerint működik: 20-nál több képnél megerősítő kérdés előzi meg a küldést (Mégse esetén semmi nem készül elő), a saját levelezőprogram belső szerkesztőpanel nélkül, közvetlenül nyílik meg a csatolmányokkal, a levél tárgya és szövege a képszám szerint, a hivatalos szöveggel (az eredeti reklámsora nélkül) töltődik ki, a MAPI hibakódok pedig a hivatalos hibaüzenetekkel jelennek meg, a felhasználói megszakítás viszont csendes (#6987).
+- Windowson a kilépési határidő őre nem lép ki a határidő előtt, ha a rendszeridőzítő korábban jelez (#6991).
+- A Locate on Disk több kijelölt képnél mappánként egy fájlkezelő-ablakot nyit, az adott mappa első kijelölt képére állva, a Fájl menüből, a Ctrl+Enterrel, a kép helyi menüjéből és a tálcáról is (#6995).
+
 ## [1.0.122] - 2026-11-15
 
 - A Shift+Delete mappanézetben és a nézőben a végleges törlés megerősítését kéri (egy és több képre külön szöveggel), albumban és Emberek-albumban nem töröl fájlt, Windowson pedig a Lomtárba helyezés 0x0f eredményénél külön Delete / Cancel kérdés jön, más hibakódnál nincs végleges törlés (#6969).

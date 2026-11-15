@@ -334,3 +334,85 @@ def test_tomeges_cimkezes_30_es_31_kepnel_megerositeses(
         qt_app,
         lambda: minden_sor_tartalmazza(range(31), "harmincegy kep"),
     )
+
+
+def _submit_tag_text(window, qt_app, field, text: str) -> None:
+    _click(window, field, qt_app)
+    assert _wait_for(qt_app, lambda: field.property("activeFocus") is True)
+    assert text.isascii(), "a billentyűsegéd ASCII tesztszövegre készült"
+    for character in text:
+        if character == " ":
+            key = Qt.Key.Key_Space
+        elif character == ",":
+            key = Qt.Key.Key_Comma
+        else:
+            key = getattr(Qt.Key, f"Key_{character.upper()}")
+        QTest.keyClick(window, key)
+    QTest.keyClick(window, Qt.Key.Key_Return)
+    qt_app.processEvents()
+
+
+def test_vesszos_bevitel_kulon_cimkeket_ad_es_atugorja_az_ures_reszek(
+    qml_app, qt_app
+):
+    window, controller, _engine = qml_app
+    library = Path(controller._roots[0])
+    _make_three_photo_feed(window, controller, library, qt_app)
+    window.setProperty("selectedIndexes", [0])
+    window.setProperty("selectedIndex", 0)
+    qt_app.processEvents()
+
+    field = _item(window, "tagInput")
+    _submit_tag_text(window, qt_app, field, "tag1, , tag2,,")
+
+    assert _wait_for(
+        qt_app,
+        lambda: {str(tag) for tag in controller.keywordsOfRows([0])}
+        == {"tag1", "tag2"},
+    ), "a vesszős bevitelt nem bontotta két külön címkére, vagy üres címke keletkezett"
+    assert field.property("text") == ""
+
+
+def test_egy_cimke_irasi_hibaja_utan_a_tobbi_feldolgozodik_es_figyelmeztet(
+    qml_app, qt_app, monkeypatch
+):
+    from picasapy.app import keywords_controller as keywords_module
+
+    window, controller, _engine = qml_app
+    library = Path(controller._roots[0])
+    _make_three_photo_feed(window, controller, library, qt_app)
+    window.setProperty("selectedIndexes", [0])
+    window.setProperty("selectedIndex", 0)
+    qt_app.processEvents()
+
+    real_writer = keywords_module.write_iptc_keywords
+    real_update_document = keywords_module.update_document
+    failed_token_pending = [False]
+
+    def writer(path, keywords):
+        if "bad" in keywords:
+            failed_token_pending[0] = True
+            return False
+        return real_writer(path, keywords)
+
+    def update_document(*args, **kwargs):
+        if failed_token_pending[0]:
+            failed_token_pending[0] = False
+            raise OSError("szimulált címkeírási hiba")
+        return real_update_document(*args, **kwargs)
+
+    monkeypatch.setattr(keywords_module, "write_iptc_keywords", writer)
+    monkeypatch.setattr(keywords_module, "update_document", update_document)
+
+    field = _item(window, "tagInput")
+    _submit_tag_text(window, qt_app, field, "first good, bad, last good")
+
+    assert _wait_for(
+        qt_app,
+        lambda: {str(tag) for tag in controller.keywordsOfRows([0])}
+        == {"first good", "last good"},
+    ), "a sikertelen középső címke megállította a többi hozzáadását"
+    warning = _item(window, "tagAddWarning")
+    assert warning.property("visible") is True, (
+        "a részleges címkehiba nem jelenítette meg a hivatalos figyelmeztetést"
+    )

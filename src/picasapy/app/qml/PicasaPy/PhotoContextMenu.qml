@@ -54,6 +54,10 @@ PicasaMenu {
     // Az inaktív tétel LÁTSZIK, csak szürke (az eredeti szabálya).
     property bool hasEdits: false
     property bool hasBackup: false
+    // #7017: az Undo all Edits tétel engedélyezése a KIJELÖLÉS eredeti
+    // szerkesztettségi állapotából (nem a jobbklikkelt sor `hasEdits`-éből):
+    // a tükrözött kép is visszavonható, a csak elforgatott nem.
+    property bool canUndoAllEdits: false
     // #4536: az aktuális személy arca szerepel-e a kijelölt fotón.
     property bool peopleThumbnailFaceAvailable: false
 
@@ -306,7 +310,7 @@ PicasaMenu {
         objectName: "contextMenuUndoAllEdits"
         // #5195: az eredetiben kis `a`-val: AlbumPhoto::ID_PICTURE_REVERT
         text: qsTr("Undo all Edits")
-        enabled: menu.hasEdits
+        enabled: menu.canUndoAllEdits
         onTriggered: menu.undoAllEditsRequested()
     }
     MenuSeparator {}

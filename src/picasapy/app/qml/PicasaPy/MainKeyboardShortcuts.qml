@@ -282,20 +282,14 @@ Item {
         id: shortcutRotateRight
         sequence: "Ctrl+R"
         enabled: !hostWindow._szovegmezoneVanFokusz
-        onActivated: {
-            var row = hostWindow.rotateTargetRow()
-            if (row >= 0) hostController.rotateRight(row)
-        }
+        onActivated: hostController.rotateRightMany(hostWindow.rotateTargetRows())
     }
 
     Shortcut {
         id: shortcutRotateLeft
         sequence: "Ctrl+Shift+R"
         enabled: !hostWindow._szovegmezoneVanFokusz
-        onActivated: {
-            var row = hostWindow.rotateTargetRow()
-            if (row >= 0) hostController.rotateLeft(row)
-        }
+        onActivated: hostController.rotateLeftMany(hostWindow.rotateTargetRows())
     }
 
     Shortcut {
@@ -330,14 +324,9 @@ Item {
         enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
         onActivated: {
             if (hostWindow.viewerOpen) return
-            // #1773: a billentyű BILLENT (a menütétel nem). Megnyitáskor a
-            // címkemező fókuszát csak a billentyű kéri; a menü útja változatlan.
-            if (hostWindow.tagsPanelOpen) {
-                hostWindow.ureseidAFiokot()
-                return
-            }
+            // #7025: ugyanaz a lapváltó út, mint a Ctrl+K és a Nézet menü.
             hostWindow.valtsFiokLapot("tags")
-            tagsPanelInputFocusTimer.restart()
+            if (hostWindow.tagsPanelOpen) tagsPanelInputFocusTimer.restart()
         }
     }
 

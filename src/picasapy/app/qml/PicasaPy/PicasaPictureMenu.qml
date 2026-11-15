@@ -116,11 +116,13 @@ PicasaMenu {
     // #1774 (mérve): a mentések szerint itt csoporthatár van.
     MenuSeparator {}
     // #465 3. pont: korábban placeholder — a kijelölt kép(ek) teljes
-    // szerkesztési láncát törli, megerősítéssel (Main.qml)
+    // szerkesztési láncát törli, megerősítéssel (Main.qml). #7017: az
+    // eredeti szerkesztettségi állapot szerint szürke, ha nincs szerkesztett
+    // kép a kijelölésben, vagy az első szerkesztett kép csak elforgatott.
     MenuItem {
         objectName: "menuPictureUndoAllEdits"
         text: qsTr("Undo &All Edits")
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && bar.undoAllEditsEnabled
         onTriggered: bar.undoAllEditsRequested()
     }
     MenuSeparator {}

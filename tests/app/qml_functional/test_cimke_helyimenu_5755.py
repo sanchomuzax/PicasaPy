@@ -204,9 +204,9 @@ def test_three_menu_commands_click_through_with_official_order_and_effects(
     menu = _open_tag_menu(window, qt_app)
 
     assert _menu_texts(menu) == [
-        "Remove this tag",
-        "Search for items with this tag",
         "Add this tag to entire selection",
+        "Search for items with this tag",
+        "Remove this tag",
     ]
 
     screenshot = os.environ.get("PICASAPY_5755_SCREENSHOT")
