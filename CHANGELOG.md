@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.126] - 2026-11-15
+
+- Az Összes szerkesztés visszavonása az eredeti Picasa szerint a tükrözést, a szöveget és a szerkesztési előzményeket is törli (az elforgatás marad), és csak akkor választható, ha a kijelölés első szerkesztett képe nem csak elforgatott (#7017).
+
 ## [1.0.125] - 2026-11-15
 
 - A Ctrl+R és a Ctrl+Shift+R a rács teljes kijelölését elforgatja, üres kijelölésnél pedig a hivatalos üzenet jelenik meg (#7003).

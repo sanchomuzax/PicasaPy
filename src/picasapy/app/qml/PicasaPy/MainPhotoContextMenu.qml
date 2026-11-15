@@ -54,6 +54,12 @@ PhotoContextMenu {
     hasBackup: hostController
         ? (hostController.savedBackupRevision,
            hostController.hasSavedBackup(hostWindow.selectedRows())) : false
+    // #7017: a menü a kijelölésen dolgozik (`openPhotoContextMenu` a
+    // jobbklikkelt képet a kijelölésbe veszi), ezért az engedélyezés is
+    canUndoAllEdits: hostController
+        ? (hostController.photos.revision,
+           hostController.undoAllEditsEnabled(hostWindow.selectedRows()))
+        : false
     onSaveRequested: hostSaveDialogs.ensure().openSave(hostWindow.selectedRows())
     onRevertRequested: hostSaveDialogs.ensure().openRevert(hostWindow.selectedRows())
     onUndoAllEditsRequested: hostMainDialogs.undoAllEditsDialog.ensure().openForLibrary(

@@ -52,6 +52,9 @@ PicasaMenu {
     // inaktív tétel LÁTSZIK, csak szürke (az eredeti szabálya)
     property bool hasEdits: false
     property bool hasBackup: false
+    // #7017: az Undo all Edits az eredeti szerkesztettségi állapotból él
+    // (a tükrözött kép visszavonható, a csak elforgatott nem)
+    property bool canUndoAllEdits: false
     property bool hasOriginalOnDisk: false
     // #4621: albumból megnyitott képen a törlés-tétel az albumból eltávolít
     // (felirat és művelet ugyanabból a feltételből, a gazdától)
@@ -166,7 +169,7 @@ PicasaMenu {
         objectName: "viewerMenuUndoAllEdits"
         // #5195: az eredetiben kis `a`-val: FolderPhoto::ID_PICTURE_REVERT
         text: qsTr("Undo all Edits")
-        enabled: menu.hasEdits
+        enabled: menu.canUndoAllEdits
         onTriggered: menu.undoAllEditsRequested()
     }
     MenuSeparator {}
