@@ -7279,16 +7279,16 @@ picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
             <translation>Visszaállítás ennek ellenére</translation>
         </message>
         <message>
-            <source>This file has been changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
-            <translation>Ez a fájl a Picasán kívül módosult. Ha a visszaállítást választja, a módosítások elvesznek.</translation>
+            <translation>Ez a fájl a PicasaPy programon kívül módosult. Ha a visszaállítást választja, a módosítások elvesznek.</translation>
         </message>
         <message>
-            <source>These files have changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
-            <translation>Ezek a fájlok a Picasán kívül módosultak. Ha a visszaállítást választja, a módosítások elvesznek.</translation>
+            <translation>Ezek a fájlok a PicasaPy programon kívül módosultak. Ha a visszaállítást választja, a módosítások elvesznek.</translation>
         </message>
         <message>
             <source>Do you want to revert?</source>

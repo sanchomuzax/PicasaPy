@@ -7285,16 +7285,16 @@ picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
             <translation>Palauta silti</translation>
         </message>
         <message>
-            <source>This file has been changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
-            <translation>Tiedostoa on muokattu Picasan ulkopuolella. Muutokset menetetään palautettaessa.</translation>
+            <translation>Tiedostoa on muokattu PicasaPyn ulkopuolella. Muutokset menetetään palautettaessa.</translation>
         </message>
         <message>
-            <source>These files have changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
-            <translation>Näitä tiedostoja on muutettu Picasan ulkopuolella. Muutokset menetetään palautettaessa.</translation>
+            <translation>Näitä tiedostoja on muutettu PicasaPyn ulkopuolella. Muutokset menetetään palautettaessa.</translation>
         </message>
         <message>
             <source>Do you want to revert?</source>

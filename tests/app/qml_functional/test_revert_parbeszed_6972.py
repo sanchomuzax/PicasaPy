@@ -38,10 +38,10 @@ _I18N = Path(__file__).resolve().parents[3] / "src" / "picasapy" / "app" / "i18n
 _FORRAS_TOBBES = "Revert to original version of these files?"
 _FORRAS_EGY = "Revert to original version of file?"
 _FORRAS_CHANGED1 = (
-    "This file has been changed outside of Picasa. Reverting will lose those changes."
+    "This file has been changed outside of PicasaPy. Reverting will lose those changes."
 )
 _FORRAS_CHANGEDX = (
-    "These files have changed outside of Picasa. Reverting will lose those changes."
+    "These files have changed outside of PicasaPy. Reverting will lose those changes."
 )
 _FORRAS_FOLYTATAS = "Do you want to revert?"
 _FORRAS_GOMB = "Revert Anyway"
@@ -199,18 +199,24 @@ class TestEgyKepEsTobbKep:
         egy = ["revertOkButton", "revertUndoSaveButton", "revertCancelButton"]
         tobb = ["revertOkButton", "revertCancelButton"]
 
-        def merj(sorok: list[int]) -> tuple[list[str], float]:
+        def merj(sorok: list[int], vart: list[str]) -> tuple[list[str], float]:
             _nyisd_a_visszaallitast(window, qt_app, sorok)
-            gombok = _lathato_gombok(_gyerek(window, dialog_neve))
+            dialog = _gyerek(window, dialog_neve)
+            # a gombsor elrendezése a megnyitás után egy-két képkockával áll be
+            # (lassabb gépen később): addig várunk, de legfeljebb a korlátig
+            var_feltetelre(
+                qt_app, lambda: [nev for _x, nev in _lathato_gombok(dialog)] == vart
+            )
+            gombok = _lathato_gombok(dialog)
             ok = _gyerek(window, "revertOkButton")
             koz = gombok[1][0] - (gombok[0][0] + ok.width())
             nevek = [nev for _x, nev in gombok]
             _zard_be(window, qt_app, dialog_neve)
             return nevek, koz
 
-        nevek1, koz1 = merj([0])
-        nevek2, koz2 = merj([0, 1])
-        nevek3, koz3 = merj([0])
+        nevek1, koz1 = merj([0], egy)
+        nevek2, koz2 = merj([0, 1], tobb)
+        nevek3, koz3 = merj([0], egy)
 
         assert (nevek1, nevek2, nevek3) == (egy, tobb, egy)
         assert abs(koz2 - koz1) <= 1, f"üres rés a gombok között: {koz1} és {koz2}"

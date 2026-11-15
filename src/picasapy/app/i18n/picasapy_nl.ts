@@ -7276,16 +7276,16 @@ picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
             <translation>Toch terugzetten</translation>
         </message>
         <message>
-            <source>This file has been changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
-            <translation>Dit bestand is buiten Picasa gewijzigd. Wanneer u het terugzet, gaan deze wijzigingen verloren.</translation>
+            <translation>Dit bestand is buiten PicasaPy gewijzigd. Wanneer u het terugzet, gaan deze wijzigingen verloren.</translation>
         </message>
         <message>
-            <source>These files have changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
-            <translation>Deze bestanden zijn buiten Picasa gewijzigd. Wanneer u ze terugzet, gaan deze wijzigingen verloren.</translation>
+            <translation>Deze bestanden zijn buiten PicasaPy gewijzigd. Wanneer u ze terugzet, gaan deze wijzigingen verloren.</translation>
         </message>
         <message>
             <source>Do you want to revert?</source>

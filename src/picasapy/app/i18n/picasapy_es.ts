@@ -7285,16 +7285,16 @@ picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
             <translation>Deshacer de todos modos</translation>
         </message>
         <message>
-            <source>This file has been changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
-            <translation>Este archivo se ha cambiado fuera de Picasa. Si se recupera, se perderán estos cambios.</translation>
+            <translation>Este archivo se ha cambiado fuera de PicasaPy. Si se recupera, se perderán estos cambios.</translation>
         </message>
         <message>
-            <source>These files have changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
-            <translation>Estos archivos se han cambiado fuera de Picasa. Si se recupera, se perderán estos cambios.</translation>
+            <translation>Estos archivos se han cambiado fuera de PicasaPy. Si se recupera, se perderán estos cambios.</translation>
         </message>
         <message>
             <source>Do you want to revert?</source>

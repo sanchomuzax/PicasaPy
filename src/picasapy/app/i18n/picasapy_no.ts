@@ -7276,16 +7276,16 @@ picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
             <translation>Tilbakestill uansett</translation>
         </message>
         <message>
-            <source>This file has been changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
-            <translation>Denne filen har blitt endret utenfor Picasa. Ved tilbakestilling vil disse endringene gå tapt.</translation>
+            <translation>Denne filen har blitt endret utenfor PicasaPy. Ved tilbakestilling vil disse endringene gå tapt.</translation>
         </message>
         <message>
-            <source>These files have changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
-            <translation>Disse filene har blitt endret utenfor Picasa. Ved tilbakestilling vil disse endringene gå tapt.</translation>
+            <translation>Disse filene har blitt endret utenfor PicasaPy. Ved tilbakestilling vil disse endringene gå tapt.</translation>
         </message>
         <message>
             <source>Do you want to revert?</source>

@@ -7276,16 +7276,16 @@ picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
             <translation>되돌리기</translation>
         </message>
         <message>
-            <source>This file has been changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
-            <translation>파일이 Picasa 외부에서 변경되었습니다. 되돌리면 변경사항이 취소됩니다.</translation>
+            <translation>파일이 PicasaPy 외부에서 변경되었습니다. 되돌리면 변경사항이 취소됩니다.</translation>
         </message>
         <message>
-            <source>These files have changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
-            <translation>파일이 Picasa 외부에서 변경되었습니다. 되돌리면 변경사항이 취소됩니다.</translation>
+            <translation>파일이 PicasaPy 외부에서 변경되었습니다. 되돌리면 변경사항이 취소됩니다.</translation>
         </message>
         <message>
             <source>Do you want to revert?</source>

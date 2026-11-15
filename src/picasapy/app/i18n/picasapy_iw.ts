@@ -7285,16 +7285,16 @@ picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
             <translation>חזור לגירסה קודמת בכל זאת</translation>
         </message>
         <message>
-            <source>This file has been changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
-            <translation>‏קובץ זה השתנה מחוץ ל-Picasa. חזרה למצב קודם תגרום לאיבוד השינויים הללו.</translation>
+            <translation>‏קובץ זה השתנה מחוץ ל-PicasaPy. חזרה למצב קודם תגרום לאיבוד השינויים הללו.</translation>
         </message>
         <message>
-            <source>These files have changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
-            <translation>‏קבצים אלה השתנו מחוץ ל-Picasa. חזרה למצב קודם תגרום לביטול אותם שינויים.</translation>
+            <translation>‏קבצים אלה השתנו מחוץ ל-PicasaPy. חזרה למצב קודם תגרום לביטול אותם שינויים.</translation>
         </message>
         <message>
             <source>Do you want to revert?</source>

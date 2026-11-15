@@ -438,9 +438,9 @@ Item {
                 wrapMode: Text.WordWrap
                 text: revertChangedDialog.changedCount === 1
                       //: CThumbUI::FileRevert::changed1
-                      ? qsTr("This file has been changed outside of Picasa. Reverting will lose those changes.")
+                      ? qsTr("This file has been changed outside of PicasaPy. Reverting will lose those changes.")
                       //: CThumbUI::FileRevert::changedX
-                      : qsTr("These files have changed outside of Picasa. Reverting will lose those changes.")
+                      : qsTr("These files have changed outside of PicasaPy. Reverting will lose those changes.")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }

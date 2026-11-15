@@ -7294,16 +7294,16 @@ picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
             <translation>Přesto obnovit</translation>
         </message>
         <message>
-            <source>This file has been changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
-            <translation>Tento soubor byl změněn mimo Picasu. Jeho vrácením do původního stavu ztratíte provedené změny.</translation>
+            <translation>Tento soubor byl změněn mimo aplikaci PicasaPy. Jeho vrácením do původního stavu ztratíte provedené změny.</translation>
         </message>
         <message>
-            <source>These files have changed outside of Picasa. Reverting will lose those changes.</source>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
-            <translation>Tyto soubory byly změněny mimo Picasu. Jejich vrácením do původního stavu ztratíte provedené změny.</translation>
+            <translation>Tyto soubory byly změněny mimo aplikaci PicasaPy. Jejich vrácením do původního stavu ztratíte provedené změny.</translation>
         </message>
         <message>
             <source>Do you want to revert?</source>
