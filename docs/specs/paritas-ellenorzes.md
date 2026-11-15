@@ -3217,14 +3217,33 @@ Kész, ha:
 Most nincs külön új kutatási jegyjavaslat; a fa Delete és a törlés utáni
 belső állapot ennek a folyamatnak nyitott része.
 
+### Ghidra-kiegészítés (2026-11-15, várólista 404-405)
+
+Forrás: `referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp.txt` (privát
+kutatási tár).
+
+- **`0x00a53b00`, Delete a mappafán.** Csak részválasz. Ez egy általános
+  billentyűszűrő 17 hívóval. A DELETE billentyűt (`0x2e`) a vezérlő magának
+  tartja (`FUN_00a582f0`), de a `0x9d44` parancs sem itt, sem a
+  `FUN_00a582f0` elején nem szerepel. Hogy a mappafa melyik hívón át
+  használja, ebből nem dönthető el. A fa Delete útja ezért **nyitott marad**;
+  a PicasaPy mai viselkedése (a fán nincs saját Delete) nem cáfolt.
+- **`0x005fd160`, a 2-es megerősítés feltétele.** A DeleteAllOnlineChecked
+  típus akkor jön, ha a mappa **legalább egy** elemére a katalógus vtábla
+  `+0xac` metódusa igazat ad; ezt a `0x005edef0` állítja be
+  (`cVar1 ? 2 : 0`). A `+0xac` jelentése valószínűleg „online, feltöltve”, de
+  ez nincs igazolva. **PicasaPy:** online feltöltés-nyilvántartás nélkül ez az
+  ág nem értelmezhető; amíg a `+0xac` jelentése nem igazolt, jegyet nem
+  javaslok rá.
+
 ### Nyitott
 
-- Ghidra-kör kell: 0x00A53B00 - a mappafa fókuszában a VK_DELETE saját
-  vezérlője kiadja-e a 0x9d44 parancsot, vagy a globális 0x9c9a fotótörlés
-  marad? [blokkoló]
-- Ghidra-kör kell: 0x005FD160 - milyen virtuális objektumfeltétel választja
-  a 0 típus helyett a DeleteAllOnlineChecked 2 típusú mappatörlési
-  megerősítést? [blokkoló]
+- Ghidra-kör kell: 0x00A582F0 - a Ghidra 404 szerint a DELETE billentyűt
+  ez a vezérlő tartja meg; a teljes törzse és a mappafa hívója kiadja-e a
+  0x9d44 parancsot? [blokkoló]
+- Részben megválaszolva (Ghidra 405): a 2-es típus a katalógus `+0xac`
+  metódusától függ, ha a mappa legalább egy elemére igaz. Ghidra-kör kell: a
+  `+0xac` metódus jelentése (online vagy feltöltött állapot-e).
 - A törlés utáni eredeti index-, album- és arcállapot, valamint a fa, rács
   és kijelölés végállapota NINCS MEG. Megszerzés: célzott Ghidra-olvasás a
   0x0065B840 körüli frissítési úton, majd Windows Picasa 3.9.141 mérés egy
