@@ -3037,3 +3037,204 @@ A hívó ellenőrző mintavétele (2026-11-15): a 2. javaslat igazolt (a `0x004a
 ### 11. Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7008 alszakasz.
+
+## #7031: A mappa törlésének teljes folyamata az eredeti Picasával összevetve
+
+Vizsgálati tárgy: Picasa 3.9.141.259, Picasa3.exe SHA-256
+644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96.
+A jelenlegi PicasaPy-állítások közvetlen forrásolvasásból származnak. A
+bináris- és mérési bizonyítékot külön jelölöm. A teljes paritás feltételes:
+a belépési lánc, a lomtárút és a részleges Shell-hiba igazolt, de több
+engedélyezési feltétel és a törlés utáni belső állapot nem dőlt el.
+
+### Következtetés
+
+Az eredeti fő Mappa menü és a mappafa Delete Folder helyi menüje ugyanazt a
+0x9d44 parancsot indítja. A parancs a mappát és tartalmát a Windows lomtárába
+adja; a normál megerősítés a mappa nevét és a Recycle Bin célját nevezi meg.
+A PicasaPy e két bejáratban azonos szövegű megerősítést és Windows alatt
+ugyanilyen Shell-lomtárutat használ. Igazolt eltérés a részleges Shell-hiba
+jelzése: az eredeti külön figyelmeztet a képek és a mappa eltérő végállapotára,
+a PicasaPy generikus hibaszöveget ad tovább.
+
+### Belépési pontok, kijelölés és engedélyezés
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| Fő Mappa menü, Folder::ID_ALBUM_DELETE, parancs 0x9d44. A rekord feliratpointere 0x00d6e300, a parancsmező 0x00d6e30a; építő 0x00559150, végrehajtó 0x005cb990, amely az aktuális mappa objektumát adja tovább a 0x005ed240 és 0x005edef0 felé. | src/picasapy/app/qml/PicasaPy/MainMenuBar.qml:168-170; src/picasapy/app/qml/PicasaPy/FolderPane.qml:236-244 | A belépő és a megerősítés paritásban van. Az üres mappa és más speciális cél engedélyezése eredeti oldalon nyitott. |
+| Mappafa helyi menü, Folder::ID_ALBUM_DELETE, parancs 0x9d44. A 0x007319f0 építőnél a felirat a [esp+0x19c], a parancsmező ugyanazon rekord [esp+0x1a6] mezője, értéke 0x9d44. | src/picasapy/app/qml/PicasaPy/FolderContextMenu.qml:330-336; src/picasapy/app/qml/PicasaPy/FolderPaneMenus.qml:317-325 | A parancsút egyezik. A PicasaPy saját képet tartalmazó mappasornál nyitja a teljes helyi menüt; own == 0 esetén rövid menüt nyit, amelyben nincs törlés. Az eredeti menü engedélyezési feltétele nyitott. |
+| Delete billentyű fókuszban lévő mappafán: a binárisban lehetséges saját VK_DELETE út nincs eldöntve. A 0x00a53b00 címhez csak hivatkozó kimenet van, a függvénytörzs és a fa fókuszának parancsa nincs feloldva. | src/picasapy/app/qml/PicasaPy/FolderPaneContent.qml:304-307 csak Fel/Le kezelőt köt; src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml:678-687 sima Delete-je fotóparancs. | Ne tekintsük a globális fotó Delete parancsot mappatörlésnek. A fa saját Delete útját célzott Ghidra-körrel kell eldönteni. |
+| Néző és fotórács Delete: az eredeti fotótörlő 0x9c9a út külön parancs, nem a mappatörlő 0x9d44. A 0x005cb990 diszpécserben eltérő ágak. | src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml:514-520,678-687; src/picasapy/app/qml/PicasaPy/MainKeyboardShortcuts.qml:431-460; src/picasapy/app/qml/PicasaPy/PhotoViewerKeyboard.qml:66-78 | Egy fotó kijelölése, több fotó kijelölése és a néző aktív képe a fotóparancs bemenete; ezek nem adódnak át a 0x9d44 mappaparancsnak. A jelenlegi fában a mappatörlés külön mappautat használ. |
+| Képtálca: az eredeti Tray::ID_REMOVE_SELECTION tétel címe 0x00732f7f. Ez nem azonosított mappatörlő parancsként; a mappatörlő láncban nincs. | src/picasapy/app/qml/PicasaPy/TrayBar.qml:377-388 | A PicasaPy művelet képeket vesz ki a tálcából, nem töröl mappát vagy lemezfájlt. Eredeti tálca-művelet teljes mellékhatása nem része a bizonyított mappatörlő láncnak. |
+
+A 0x9df4 közeli érték nem a helyi menü Delete parancsa. A
+0x00731f34 körüli parancsmező az előző Move Folder rekordhoz tartozik; a
+diszpécser 0x9df4 ága a 0x0053f340 és 0x0053f4a0 útvonalon mozgatási
+szövegeket használ. A feliratot és parancsot a rekord bázisához párosítottam.
+
+Üres mappa, almappás mappa, írásvédett hely és hálózati meghajtó: az eredeti
+út a Windows Shell mappatörlő műveletére ad át egy útvonalat. A binárisból
+nem állapítható meg, hogy az adott fájlrendszer, jogosultság vagy hálózati
+állapot mellett a Shell pontosan mit engedélyez. Ezek értéke egyenként
+NINCS MEG; megszerzésükhöz külön üres, almappás, írásvédett és hálózati
+tesztmappa kell az eredeti Windows Picasában.
+
+### Megerősítés és megjegyzett állapot
+
+A 0x005fdc30 a DeleteFolderTitle, DeleteFolderWarnPC és
+DeleteFolderYesButton erőforrást választja. A kérdés szövege a
+0x00c992c0 címen:
+
+> Are you sure you want to move the folder "%s" and its contents to the Recycle Bin?
+
+A szokásos 0 típusú mappaág a 0x009bac20(1, ...) Yes/No megerősítést épít,
+Cancel gomb nélkül. A feltárt 0 típusú ág nem olvas megjegyzett törlési
+választást. Van egy 2 típusú ág is, amely a DeleteAllOnlineChecked kulcshoz
+vezet; hogy mely mappára és mikor választódik ez az ág, a 0x005fd160
+virtuális feltételének jelentése nélkül NINCS MEG.
+
+PicasaPy a főmenüből és a helyi menüből is a mappa nevét helyettesíti a
+megerősítő kérdésbe (src/picasapy/app/qml/PicasaPy/FolderPane.qml:236-244,
+src/picasapy/app/qml/PicasaPy/FolderPaneMenus.qml:317-325). A párbeszéd
+Delete Folder / No választ ad, Cancel és megjegyzési jelölő nélkül
+(src/picasapy/app/qml/PicasaPy/FolderPaneMenus.qml:398-414). A normál
+gombkészlet és a megjegyzés hiánya egyezik. A 2 típusú eredeti ág feltételes
+viselkedésének PicasaPy-megfelelője nem ismert.
+
+### Végrehajtás, fájlok és belső állapot
+
+| Hatás | Eredeti Picasa 3.9 | PicasaPy most |
+|---|---|---|
+| Lemez és lomtár | A 0x005edef0 a megerősítés után a 0x00992810 útján a 0x009929b0 Shell-hívást végzi. A 0x009929b0 wFunc értéke 3, azaz FO_DELETE, és paraméter 1-nél FOF_ALLOWUNDO is beáll. A normál út tehát lomtárba teszi a mappát és tartalmát, nem végleges törlés. | src/picasapy/app/fileops_controller_delete_mixin.py:18-41 a teljes mappautat adja a delete_to_trash függvénynek. Windows alatt src/picasapy/fileops/trash.py:79-140 a SHFileOperationW lomtárútját használja. |
+| .picasa.ini | Sikeres egész mappatörlésnél a Shell a mappa útját és tartalmát kezeli, így a .picasa.ini nem külön törlődik. Részleges hibánál a fájl végállapota a konkrét könyvtártartalomtól függhet; ezt külön futásmérés nem igazolta. | A kód nem írja külön a .picasa.ini-t; az a mappával együtt kerül a lomtárba. Ezt a szándékot a src/picasapy/app/fileops_controller_delete_mixin.py:25-27 kommentje is kimondja. |
+| Index | A belső Picasa index törlés utáni módosítása ebből a handler láncból nem állapítható meg. NINCS MEG. | Siker után folderDeleted indul (src/picasapy/app/fileops_controller_delete_mixin.py:41, application_services.py:121-124); a resync eltávolítja az eltűnt mappa indexsorait (library_controller_resync.py:195-211, index/sync_folders.py:296-325). |
+| Mappafa, rács és kijelölés | A parancs aktuális mappaobjektumot kap, de a siker utáni kiválasztott mappa, fa, rács és fotókijelölés végállapota nem igazolt. NINCS MEG. | A részfa újraszinkronizálódik; a törölt mappára mutató kiválasztás és a rács végállapota nincs a törlő handlerben külön beállítva. A tényleges megjelenő végállapot NINCS MEG, futásmérés kell. |
+| Albumtagságok és arcok | A mappatartalommal együtt kezelt .picasa.ini önmagában nem bizonyítja az alkalmazás adatbázisában lévő album- és arcállapotot. NINCS MEG. | A kód kommentje szerint a .picasa.ini visszaállítása a feliratokat, címkéket és arc-hozzárendeléseket is visszahozza (fileops_controller_delete_mixin.py:25-27). Az albumtagság és az arcok törlés utáni, illetve visszaállítás utáni állapota külön mérés nélkül NINCS MEG. |
+| Több fotó kijelölése | A 0x9d44 handler egy mappát kap, nem fotólistát; az egy vagy több kijelölt fotó nem a mappatörlő parancs argumentuma. A néző aktív fotójának törlése külön 0x9c9a fotóparancs. | A főmenü hostController.currentFolder értékét adja át; a fa helyi menüje folderPath értékét adja át. Fotók kijelölése nem bővíti a törölt mappák számát. |
+
+### Részleges törlés és hibák
+
+Az eredeti 0x005edef0 a 0x009929b0 Shell-hívás nemnulla eredménye után
+IDS_CANT_DELETE_FOLDER figyelmeztetést mutat. A szöveg címe 0x00e05b6a:
+a képek törölve lehetnek, de maga a mappa további fájlok vagy mappák
+miatt megmarad. Ez részleges eredményt jelent, nem a mappa érintetlenségét.
+Az üres, rejtett, írásvédett vagy hálózati bejegyzésekkel kapcsolatos
+konkrét részleges végállapot NINCS MEG.
+
+PicasaPy-ban Windows Shell nemnulla eredmény vagy megszakított művelet esetén
+a src/picasapy/fileops/trash.py:137-140 általános OSError keletkezik, és a
+src/picasapy/app/fileops_controller_delete_mixin.py:38-40 ezt szövegváltoztatás
+nélkül az operationFailed jelzésre küldi. Ez nem őrzi meg az eredeti
+részlegesállapot-figyelmeztetést. Ez az egyetlen most igazolt, fejlesztést
+indokló eltérés.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| Nemnulla Shell-eredmény: 0x005edef0 megjeleníti a 0x00e05b6a IDS_CANT_DELETE_FOLDER szöveget, amely elmondja, hogy a képek már törölve lehetnek, a mappa viszont megmaradhat. | src/picasapy/fileops/trash.py:137-140 általános hibát dob; src/picasapy/app/fileops_controller_delete_mixin.py:38-40 a generikus üzenetet továbbítja. | A Windows mappatörlés Shell-hibájánál részleges eredményt pontosan megnevező figyelmeztetést adjon. Ne állítsa, hogy a teljes mappa érintetlen maradt. |
+
+### Bizonyíték és bizonyítottsági fok
+
+| Érték vagy állítás | Forrás |
+|---|---|
+| Főmenü és fa helyi menü parancsa 0x9d44 | bináris (0x00559150, 0x007319f0, 0x005cb990) |
+| Főmenü rekord felirat-pointere és parancsmezője | bináris (0x00d6e300, 0x00d6e30a) |
+| Helyi menü rekord felirat-parancs párosítása | bináris (0x00731f48-0x00731f56, 0x00731f9e); Ghidra-kimenet: 2026-11-15-6970-colab-decomp.txt |
+| Szomszédos 0x9df4 parancs Move Folder | bináris (0x00731f34, 0x0053f340, 0x0053f4a0); a Move Folder sztringek független xrefjei 0x00c8ac90-től |
+| Normál kérdés és DeleteFolder erőforrások | bináris (0x005fdc30, 0x00c990e8, 0x00c992c0, 0x00c99314, 0x00c99338) |
+| Mappát lomtárba adó Shell-művelet | bináris (0x005edef0, 0x00992810, 0x009929b0) |
+| Részleges eredmény figyelmeztetése | bináris (0x005edef0, 0x00e05b6a) |
+| PicasaPy belépési pontok, megerősítés és hibaút | Mai forrás: src/picasapy/app/qml/PicasaPy/MainMenuBar.qml:168-170; FolderPane.qml:236-244; FolderPaneMenus.qml:317-325,398-414; src/picasapy/app/fileops_controller_delete_mixin.py:18-41; src/picasapy/fileops/trash.py:129-140 |
+| Eredeti üres/almappás/írásvédett/hálózati viselkedés, belső index/album/arc és UI végállapot | NINCS MEG; külön Windows Picasa 3.9.141 futásmérés szükséges |
+
+**Bizonyítottsági fok: feltételes.** A fő- és helyi menü parancsazonossága,
+a Recycle Bin kérdés, a Shell lomtárjelzője és a részleges hibaüzenet
+megerősített, mert külön útvonalon is egyeznek. A teljes feladat nem zárható
+le: a fa Delete billentyűje, a 2 típusú párbeszéd feltétele, a fájlrendszer
+speciális esetei, a Picasa belső indexe, albumjai, arcai és a törlés utáni
+felületi kijelölés nyitott maradt.
+
+### A két független út
+
+- A út, utasításszintű lánc: a menürekordok 0x9d44 értéke a 0x005cb990
+  diszpécserhez, onnan a 0x005ed240 és 0x005edef0 végrehajtóhoz, majd a
+  0x00992810 és 0x009929b0 Shell-híváshoz vezet.
+- B út, független szöveg- és hívásadat: a 0x00c992c0 kérdés maga mondja ki a
+  Recycle Bin célt, míg a Shell-hívás 0x40 flagje FOF_ALLOWUNDO. A
+  0x00e05b6a külön részleges eredményt ír le.
+- Egyezés: a főmenü és helyi menü ugyanazt a mappa parancsot indítja, és a
+  végrehajtás visszavonható lomtárút. A két út a részleges hiba jelentésében
+  is egyezik.
+
+### Cáfoló kísérlet
+
+Azt próbáltam cáfolni, hogy a helyi menü Delete Folder feliratához a közeli
+0x9df4 kód tartozik. A rekord mezőit a 0x007319f0 építő rekordbázisához
+párosítva a felirat a [esp+0x19c], a Delete parancs pedig ugyanazon rekord
+[esp+0x1a6] mezőjében 0x9d44. A 0x9df4 a megelőző Move Folder rekordhoz
+tartozik, és mozgatási kezelőre vezet. A cáfolatot függetlenül ellenőriztem:
+a 0x9d44 dispatch a mappatörlő 0x005edef0 útvonalra, a 0x9df4 a
+0x0053f340 / 0x0053f4a0 mozgató útvonalra vezet. A próba a parancs-felirat
+párosítást igazolta; nem dönt a fa Delete billentyűjéről.
+
+### A jegy „Kész, ha” pontjai
+
+| Pont | Állapot | Bizonyíték |
+|---|---|---|
+| Mappa menü, fa helyi menü, fa Delete, néző és tálca belépési pontok | ⛔ | Főmenü és helyi menü 0x9d44 igazolt; fa Delete bináris kezelője nyitott. A néző 0x9c9a fotótörlő, a tálca külön művelet. |
+| Üres mappa, almappák, írásvédelem és hálózati meghajtó | ⛔ | A Shell-hívás ismert; az egyedi célok eredménye csak Windows-méréssel dönthető el. |
+| Megerősítés szövege és megjegyzése | ✅ / ⛔ | Normál kérdés, Yes/No és nincs megjegyzés igazolt. A DeleteAllOnlineChecked 2-es ág kiváltó feltétele nyitott. |
+| Lomtár, .picasa.ini, index, mappafa, rács, kijelölés, albumok és arcok | ⛔ | Lomtárflag igazolt, .ini a mappával halad. Eredeti belső adatok és UI végállapot nincs igazolva. |
+| Részleges törlés és írási hiba | ✅ / ⛔ | Nemnulla Shell-válasz részleges figyelmeztetése igazolt; külön jogosultság- és hálózati kimenet nincs mérve. |
+| PicasaPy összevetése és eltérésenkénti teendő | ✅ | Egy igazolt eltérésre kész jegytörzs készült; minden további eltéréshez hiányzik az eredeti oldali bizonyíték. |
+
+### Javasolt fejlesztői jegytörzs-bővítés
+
+**Cím:** Mappatörlés Shell-hibája: jelezzük a részleges eredményt
+
+**Törzs:**
+
+Eredeti: a 0x005edef0 mappatörlő a 0x009929b0 Shell-hívás nemnulla
+eredményénél a 0x00e05b6a IDS_CANT_DELETE_FOLDER figyelmeztetést mutatja.
+A szöveg szerint a képek már törölve lehetnek, de a mappa további fájlok
+vagy mappák miatt megmaradhat.
+
+Nálunk: src/picasapy/fileops/trash.py:137-140 általános OSError keletkezik;
+src/picasapy/app/fileops_controller_delete_mixin.py:38-40 ezt általános
+hibaüzenetként továbbítja.
+
+Teendő: Windows mappatörlés Shell-hibájánál külön részleges eredmény
+figyelmeztetést kell adni. A szöveg ne ígérje, hogy semmi sem változott.
+
+Kész, ha:
+
+- Nemnulla vagy megszakított Windows Shell-eredménynél a felhasználó olyan
+  figyelmeztetést kap, amely szerint a képek törölve lehetnek, miközben a
+  mappa megmaradhat.
+- A hiba nem indít csendes végleges törlést.
+
+### Új kutatási jegyjavaslatok
+
+Most nincs külön új kutatási jegyjavaslat; a fa Delete és a törlés utáni
+belső állapot ennek a folyamatnak nyitott része.
+
+### Nyitott
+
+- Ghidra-kör kell: 0x00A53B00 - a mappafa fókuszában a VK_DELETE saját
+  vezérlője kiadja-e a 0x9d44 parancsot, vagy a globális 0x9c9a fotótörlés
+  marad? [blokkoló]
+- Ghidra-kör kell: 0x005FD160 - milyen virtuális objektumfeltétel választja
+  a 0 típus helyett a DeleteAllOnlineChecked 2 típusú mappatörlési
+  megerősítést? [blokkoló]
+- A törlés utáni eredeti index-, album- és arcállapot, valamint a fa, rács
+  és kijelölés végállapota NINCS MEG. Megszerzés: célzott Ghidra-olvasás a
+  0x0065B840 körüli frissítési úton, majd Windows Picasa 3.9.141 mérés egy
+  és több képkijelöléssel. A meglévő 0x00662B20 Ghidra-kimenet ezt a
+  törlés utáni kiválasztás-kérdést nem dönti el.
+- Az üres, almappás, írásvédett és hálózati mappák tényleges Shell-kimenete
+  NINCS MEG. Megszerzés: négy külön tesztcélon futtatás az eredeti Windows
+  Picasában, minden futás előtt és után a fájlrendszer és a felület
+  állapotának rögzítésével.
+
+### Módosított fájlok
+
+- docs/specs/paritas-ellenorzes.md - ez a #7031 alszakasz.
