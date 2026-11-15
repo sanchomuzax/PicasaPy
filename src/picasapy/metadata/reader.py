@@ -17,8 +17,11 @@ kiszűri — a küszöb feltornázása épp ezt a védelmet venné el.
 from __future__ import annotations
 
 import math
+import os
+import threading
 import warnings
 import xml.etree.ElementTree as ET
+from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -178,6 +181,41 @@ class ExifDetails:
 
 
 EMPTY_EXIF_DETAILS = ExifDetails()
+
+_EXIF_CACHE_CAPACITY = 512
+_EXIF_CACHE_LOCK = threading.Lock()
+_EXIF_DETAILS_CACHE: OrderedDict[str, ExifDetails] = OrderedDict()
+
+
+def _exif_cache_key(path: str | Path) -> str:
+    """EXIF-cache kulcs, lemezművelet nélkül."""
+    return os.path.normcase(os.path.normpath(str(path)))
+
+
+def _cached_exif_details(path: str | Path) -> ExifDetails | None:
+    """A már beolvasott EXIF-adatot adja vissza, lemezellenőrzés nélkül."""
+    key = _exif_cache_key(path)
+    with _EXIF_CACHE_LOCK:
+        details = _EXIF_DETAILS_CACHE.get(key)
+        if details is not None:
+            _EXIF_DETAILS_CACHE.move_to_end(key)
+        return details
+
+
+def _cache_exif_details(path: str | Path, details: ExifDetails) -> None:
+    """A workerben beolvasott EXIF-adatot teszi a korlátos gyorsítótárba."""
+    key = _exif_cache_key(path)
+    with _EXIF_CACHE_LOCK:
+        _EXIF_DETAILS_CACHE[key] = details
+        _EXIF_DETAILS_CACHE.move_to_end(key)
+        while len(_EXIF_DETAILS_CACHE) > _EXIF_CACHE_CAPACITY:
+            _EXIF_DETAILS_CACHE.popitem(last=False)
+
+
+def _clear_cached_exif_details(path: str | Path) -> None:
+    """Egy módosított kép elavult EXIF-gyorsítótárát üríti."""
+    with _EXIF_CACHE_LOCK:
+        _EXIF_DETAILS_CACHE.pop(_exif_cache_key(path), None)
 
 
 def read_exif_details(path: str | Path) -> ExifDetails:

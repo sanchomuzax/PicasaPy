@@ -105,6 +105,20 @@ def properties_entries(photo, locale: QLocale, tr, contacts_xml=None) -> list:
     Az alap-adatok az indexből jönnek; az EXIF-mezők igény szerinti
     fájl-olvasással (csak a panel megnyitásakor fut, griden sosem).
     """
+    details = (
+        read_exif_details(Path(photo.folder_path) / photo.name)
+        if photo.kind == "photo"
+        else None
+    )
+    return _properties_entries_with_details(
+        photo, locale, tr, contacts_xml, details
+    )
+
+
+def _properties_entries_with_details(
+    photo, locale: QLocale, tr, contacts_xml, details
+) -> list:
+    """A tulajdonságpanel sorai már beolvasott EXIF-adatokkal."""
     entries: list = [
         (tr("File Path"), str(Path(photo.folder_path) / photo.name)),
         (tr("File Size"), format_size(photo.size, locale, tr)),
@@ -114,7 +128,11 @@ def properties_entries(photo, locale: QLocale, tr, contacts_xml=None) -> list:
     if photo.kind != "photo":
         entries.extend(_movie_entries(photo, locale, tr))
         return entries
-    entries.extend(exif_entries(photo, locale, tr, contacts_xml))
+    entries.extend(
+        _exif_entries_with_details(
+            photo, locale, tr, contacts_xml, details
+        )
+    )
     return entries
 
 
@@ -166,6 +184,11 @@ def exif_entries(photo, locale: QLocale, tr, contacts_xml=None) -> list:
     szerinti feliratot kapják, nem a nyers EXIF-kulcsot.
     """
     details = read_exif_details(Path(photo.folder_path) / photo.name)
+    return _exif_entries_with_details(photo, locale, tr, contacts_xml, details)
+
+
+def _exif_entries_with_details(photo, locale: QLocale, tr, contacts_xml, details) -> list:
+    """EXIF-sorok előállítása lemezolvasás nélkül."""
     entries: list = []
 
     def add(label: str, value) -> None:

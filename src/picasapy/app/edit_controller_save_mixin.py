@@ -6,6 +6,20 @@ from .edit_controller_shared import (
     FilterWriteError,
     TextOverlay,
     _WRITE_ERRORS,
+    _DEFAULT_TEXT_ALIGN,
+    _DEFAULT_TEXT_BOLD,
+    _DEFAULT_TEXT_FILL_COLOR,
+    _DEFAULT_TEXT_FILL_ENABLED,
+    _DEFAULT_TEXT_ITALIC,
+    _DEFAULT_TEXT_OPACITY,
+    _DEFAULT_TEXT_OUTLINE_COLOR,
+    _DEFAULT_TEXT_OUTLINE_THICKNESS,
+    _DEFAULT_TEXT_SIZE_PT,
+    _DEFAULT_TEXT_UNDERLINE,
+    _MOD_NINCS_KITOLTES,
+    _argb_to_rgb,
+    alignment_name,
+    default_family,
     _log,
     encode_rect64,
     is_folder_writable,
@@ -21,6 +35,66 @@ from .edit_controller_shared import (
 class EditControllerSaveMixin:
     """A szerkesztési lánc és a szövegréteg mentése."""
 
+    def _load_ini_document_from_disk(self, path=None):
+        """Egyetlen ini-dokumentum betöltése a közös ini API-val."""
+        target = self._ini_path if path is None else path
+        if target is None:
+            return None
+        return load_or_empty(target)
+
+    def _current_ini_document(self):
+        """A munkamenet már betöltött ini-je, vagy egy új közös API-olvasás."""
+        if self._ini_path is None:
+            return None
+        document = getattr(self, "_cached_ini_document", None)
+        if document is None:
+            document = self._load_ini_document_from_disk()
+            self._cached_ini_document = document
+        return document
+
+    def _restore_text_overlay_state(self, *, read_ini: bool = True) -> None:
+        """A mentett feliratréteg betöltése vagy alaphelyzetbe állítása."""
+        overlay = self._read_text_overlay() if read_ini else None
+        self._text_overlay = overlay
+        self._text_selected_index = None
+        self._text_active = (
+            self._read_text_active() if overlay is not None and read_ini else False
+        )
+        self._text_overlay_visible = True
+        self._text_draft = ""
+        self._text_pending_pos = None
+        loaded = overlay.primary if overlay else None
+        self._text_fill_color = (
+            _argb_to_rgb(loaded.style.fill_argb)
+            if loaded
+            else _DEFAULT_TEXT_FILL_COLOR
+        )
+        self._text_outline_color = (
+            _argb_to_rgb(loaded.style.outline_argb)
+            if loaded
+            else _DEFAULT_TEXT_OUTLINE_COLOR
+        )
+        self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS
+        self._text_fill_enabled = (
+            loaded.style.fill_mode != _MOD_NINCS_KITOLTES
+            if loaded
+            else _DEFAULT_TEXT_FILL_ENABLED
+        )
+        self._text_opacity = _DEFAULT_TEXT_OPACITY
+        self._text_family = (
+            loaded.font if loaded is not None and loaded.font else default_family()
+        )
+        self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
+        self._text_size_edited = False
+        self._text_bold = _DEFAULT_TEXT_BOLD
+        self._text_italic = _DEFAULT_TEXT_ITALIC
+        self._text_underline = _DEFAULT_TEXT_UNDERLINE
+        self._text_align = (
+            alignment_name(loaded.style.alignment)
+            if loaded
+            else _DEFAULT_TEXT_ALIGN
+        )
+
     def persistChain(self) -> None:
         """#3014: a memóriában élő lánc kiírása a `.picasa.ini`-be.
 
@@ -35,7 +109,8 @@ class EditControllerSaveMixin:
     def _read_filters_value(self) -> str:
         if self._ini_path is None:
             return ""
-        section = load_or_empty(self._ini_path).section(self._section_name)
+        document = self._current_ini_document()
+        section = document.section(self._section_name) if document else None
         return (section.get("filters") if section else None) or ""
 
 
@@ -45,7 +120,8 @@ class EditControllerSaveMixin:
         érintetlenül megőrzi, amíg ez a modul nem szerkeszti)."""
         if self._ini_path is None:
             return None
-        section = load_or_empty(self._ini_path).section(self._section_name)
+        document = self._current_ini_document()
+        section = document.section(self._section_name) if document else None
         raw = section.get("text") if section else None
         if not raw:
             return None
@@ -61,13 +137,22 @@ class EditControllerSaveMixin:
         ez a gyakoribb eset)."""
         if self._ini_path is None:
             return True
-        section = load_or_empty(self._ini_path).section(self._section_name)
+        document = self._current_ini_document()
+        section = document.section(self._section_name) if document else None
         raw = section.get("textactive") if section else None
         return parse_text_active(raw) if raw is not None else True
 
 
     def _save(self) -> None:
         assert self._ini_path is not None
+        if getattr(self, "_network_edit_load_pending", False):
+            self._network_edit_filters_dirty_pending = True
+            return
+        if getattr(self, "_network_edit_load_failed", False):
+            self.editSaveFailed.emit(
+                getattr(self, "_network_edit_load_error", "A hálózati ini nem olvasható")
+            )
+            return
         if self._memory_only:
             # #3014: az „aa" mód nem kijelölt fele — csak az előnézet frissül
             self._register_preview_async()
@@ -101,6 +186,7 @@ class EditControllerSaveMixin:
         # A check/save közti külső írás teljes kizárását a fájlrendszer nem garantálja.
         try:
             _controller_update_document(self._ini_path, mutate, backup=True)
+            self._cached_ini_document = None
         except FilterWriteError as error:
             # #643: NEM lemezhiba — az őr utasította vissza a láncot, a fájl
             # hozzá sem lett érintve. Saját csatornán megy ki, hogy a
@@ -130,6 +216,14 @@ class EditControllerSaveMixin:
         `_save()`-től, mert ezek NEM a `filters=` láncba tartoznak, hanem
         önálló, szekció-szintű kulcsok (ld. `picasapy.ini.text_overlay`)."""
         assert self._ini_path is not None
+        if getattr(self, "_network_edit_load_pending", False):
+            self._network_edit_text_dirty_pending = True
+            return
+        if getattr(self, "_network_edit_load_failed", False):
+            self.editSaveFailed.emit(
+                getattr(self, "_network_edit_load_error", "A hálózati ini nem olvasható")
+            )
+            return
         if not self._check_writable_before_save():
             return
 
@@ -153,6 +247,7 @@ class EditControllerSaveMixin:
 
         try:
             _controller_update_document(self._ini_path, mutate, backup=True)
+            self._cached_ini_document = None
         except _WRITE_ERRORS as error:
             self.editSaveFailed.emit(str(error))
             return

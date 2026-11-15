@@ -97,7 +97,8 @@ Item {
             : false
         hasBackup: typeof controller !== "undefined" && controller
                    && viewer.currentIndex >= 0
-            ? controller.hasSavedBackup([viewer.currentIndex]) : false
+            ? (controller.savedBackupRevision,
+               controller.hasSavedBackup([viewer.currentIndex])) : false
 
         onSaveRequested: viewer.saveRequested(viewer.currentIndex)
         onRevertRequested: viewer.revertRequested(viewer.currentIndex)

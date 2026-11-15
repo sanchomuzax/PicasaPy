@@ -52,6 +52,10 @@ class SaveFeedbackMixin:
         modosultak = {normalizal(path) for path in paths}
         if not modosultak:
             return
+        from picasapy.metadata.reader import _clear_cached_exif_details
+
+        for path in paths:
+            _clear_cached_exif_details(path)
         for editor in getattr(self, "_edit_controllers", ()):
             utvonal = getattr(editor, "_image_path", None)
             foto_id = getattr(editor, "_photo_id", "")
