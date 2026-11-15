@@ -283,7 +283,10 @@ class TestGyorsbillentyuk:
         # hiányzik —, de olcsó jelzés arra, ha valaki némán kivesz egyet.
         # A tartalmi ellenőrzést a `test_gyorsbillentyuk_1616.py` söprő őre
         # végzi: az minden ÉLŐ menütételre megköveteli az élő `Shortcut`-ot.
-        assert src.count("Shortcut {") == 9
+        # #6969: a `Shift+Delete` (végleges törlés a rácsban) a tizedik -
+        # rejtett gyorsbillentyű, menütétele nincs (a Delete menüsávi
+        # belépőjének Shift-es párja).
+        assert src.count("Shortcut {") == 10
 
 
 class TestMukodoTetelekBillentyui:

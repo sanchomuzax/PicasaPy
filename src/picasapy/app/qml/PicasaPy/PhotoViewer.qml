@@ -137,6 +137,8 @@ Rectangle {
     // albumból) és a megerősítők a Main.qml-ben élnek, ezért a kérés
     // jelként megy kifelé; a célt (az aktív kép sorát) a gazda adja
     signal deleteRequested()
+    // #6969: Shift+Delete - a végleges törlés ága (nézetfüggő, ld. menüsáv)
+    signal permanentDeleteRequested()
     // #4621: albumból megnyitott képen a törlés-parancs az albumból
     // eltávolít — a helyi menü felirata ezt mutatja (a gazda köti)
     property bool deleteRemovesFromAlbum: false

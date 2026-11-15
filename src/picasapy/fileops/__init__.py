@@ -48,6 +48,7 @@ from .rename import (
 from .rename_folder import FolderRenameError, rename_folder
 from .reveal import open_folder_in_file_manager, reveal_in_file_manager
 from .trash import (
+    ImmediateDeletionNeededError,
     TrashUnavailableError,
     delete_permanently,
     delete_to_trash,
@@ -60,6 +61,7 @@ __all__ = [
     "RENAME",
     "SKIP",
     "BatchResult",
+    "ImmediateDeletionNeededError",
     "InvalidFolderNameError",
     "OriginalMove",
     "PartialRenameError",
