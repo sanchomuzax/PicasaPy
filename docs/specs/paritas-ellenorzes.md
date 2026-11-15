@@ -3054,7 +3054,7 @@ ugyanahhoz a `0x9e0e` parancshoz vezet. A végrehajtó JPEG-nél a
 `DateTimeOriginal` EXIF mezőt írja, a nem JPEG ágon fájlidőt és a
 `thumbindex.db` dátummezőjét kezeli; a PicasaPy megvalósítás EXIF-et, illetve
 SQLite-felülírást használ. A teljes paritás nem dönthető el: az eredeti
-rádióalapérték, néző/tálca helyzet, az Undo, az írásvédett lemez eredménye és
+alapértelmezett rádiógomb, néző/tálca helyzet, az Undo, az írásvédett lemez eredménye és
 néhány látható utóhatás nyitott.
 
 ### Bizonyítottsági fok
@@ -3103,7 +3103,7 @@ megjegyzi-e. **NINCS MEG.**
 
 Az eredeti módok végrehajtási jelentése: az `0x0057d7f0` több kijelölt
 elem és relatív jelző esetén az új és régi idő különbségét számolja
-(`0x0077cf70`), majd a `+0x80/+0x84` workermezőket adja át;
+(`0x0077cf70`), majd a `+0x80/+0x84` munkaszál-mezőket adja át;
 abszolút módban cél-FILETIME-t állít a `+0x78/+0x7c` mezőkbe. A
 `0x0077cfd0` az előbbi alakot a `0x00490580`, a cél-FILETIME alakot a
 `0x00490c10` workerhez köti. Egyetlen kijelölt elemnél a `0x0057d7f0`
@@ -3126,7 +3126,7 @@ ablakszélesség vagy modalitás különbségét.
 
 | Hatás | Eredeti Picasa 3.9 | Jelenlegi PicasaPy |
 |---|---|---|
-| **JPEG EXIF** | A rekord `0x37` tulajdonságát (`0x004906f7`, `0x00490d3c`) állítja, ami EXIF `0x9003` `DateTimeOriginal`. A `0x009ed330` íróút a `0x009eb290` tempfájlos ága; a csere `0x00994400`. | A `timestamp_controller.py:74-123` a forrás JPEG EXIF `0x9003` mezőjét tempfájllal cseréli. A `timestamp_controller.py:248-305` siker esetén újraszkenneli a mappát. |
+| **JPEG EXIF** | A rekord `0x37` tulajdonságát (`0x004906f7`, `0x00490d3c`) állítja, ami EXIF `0x9003` `DateTimeOriginal`. A `0x009ed330` íróút a `0x009eb290` tempfájlos ága; a csere `0x00994400`. | A `timestamp_controller.py:74-123` a forrás JPEG EXIF `0x9003` mezőjét ideiglenes fájlon át cseréli. A `timestamp_controller.py:248-305` siker esetén újraszkenneli a mappát. |
 | **Fájlidők** | A sikeres EXIF-író a `0x009eb290` útján elmenti a fájlidőket; ha az EXIF `DateTime` (`0x0132`) olvasható, a `0x00ab35e0` a hozzáférési és módosítási FILETIME-t arra teszi, a létrehozási időt érintetlenül hagyja; a `0x00ab34d0` `SetFileTime` hívással kiírja ezt a módosított szerkezetet. Hibás EXIF-írás után a `0x00992780` a létrehozási időt állítja. | Sikeres JPEG-írás után a `timestamp_controller.py:197-208` az atime/mtime értéket visszaállítja, Windowson a létrehozási időt is. Sikertelen írásnál `:179-194` Windowson a létrehozási időt próbálja állítani; más platformon nincs létrehozásiidő-írás. |
 | **Videó és nem JPEG** | A worker a `0x0049070a` és `0x00490d4f` címen a `thumbindex` típusmezőjét vizsgálja. Csak a 2-es típus megy EXIF-ágra; a videók mért típusai 8, 10 és 11, ezért a nem-EXIF ágra mennek. A `0x00992780` a fájl létrehozási idejét, a `0x004ef3c0` vagy `0x004ef5a0` a `thumbindex.db` rekord első FILETIME-ját írja és piszkosnak jelöli (`pmp-database.md:4167-4218`). | A videó/nem JPEG EXIF-írása hibára fut, majd a `timestamp_controller.py:290-305` az effektív dátumot a SQLite `photos.taken_at_override` mezőjébe írja. A fájlrendszer létrehozási idejét csak Windowson próbálja állítani (`:131-176`). |
 | **`.picasa.ini`** | A vizsgált `0x0057d7f0` → `0x0077cfd0` → worker/író lánc a forrásfájl EXIF-ét vagy a `thumbindex` rekordot kezeli; a pásztázás nem talált `.picasa.ini` író hívást ebben a láncban. Ez csak erre a műveletre szól. | A `timestamp_controller.py:248-308` EXIF-et, indexfelülírást és mappaszinkront használ; nem hív ini-író API-t. |
@@ -3155,7 +3155,7 @@ Az eredeti kódágban külön írásvédettség-előellenőrzést nem azonosíto
 Az, hogy egy Windows `readonly` attribútum vagy mappaszintű engedély mellett
 az EXIF-csere, a `SetFileTime`-tartalék és a katalógusírás közül melyik
 sikerül, csak a tényleges Picasa 3.9 futás és előtte/utána fájl- és
-adatbázisvizsgálat útján dönthető el. **NINCS MEG.**
+az adatbázis vizsgálatával dönthető el. **NINCS MEG.**
 
 A PicasaPy-ban az EXIF-kivétel kezelt tartalékág: `taken_at_override`-t ír
 (`timestamp_controller.py:179-194, 283-305`). A háttérköteg soros; egy
@@ -3236,7 +3236,7 @@ beállítása parancsot. A `0x00637fa0` hívja ezt a helyi menüépítőt.
 dátumállító az adott kép aktuális dátumával; más tulajdonságsor nem kap
 dátummódosító műveletet.
 
-Más fejlesztői jegyet nem javaslok: a rádióalapérték, néző/tálca kapu,
+Más fejlesztői jegyet nem javaslok: a alapértelmezett rádiógomb, néző/tálca kapu,
 visszavonás és látható index-végállapot nincs kellően igazolva.
 
 ### 9. Új kutatási jegyjavaslatok
@@ -3264,7 +3264,7 @@ folyamatához tartoznak.
   a `thumbindex.db` előtte/utána összevetése.
 - **NINCS MEG:** mérőadatból nincs dátummódosítási munkamenet; az archívum
   név szerinti keresése nem talált `adjust`, `timestamp` vagy `offsettime`
-  mintát, ezért archívumtageket nem bontottam ki.
+  mintát, ezért az archívum tagjait nem bontottam ki.
 
 ### 11. Módosított fájlok
 
