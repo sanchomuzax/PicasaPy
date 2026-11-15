@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import stat
 from pathlib import Path
 
 from picasapy.index import open_index
@@ -14,127 +16,29 @@ from .ini_ujraprobalas import update_document_ujraprobalva
 from .photo_ops_compat import update_document
 
 
+def _irasvedett(path: Path) -> bool:
+    """Írásvédett-e a fájl (#7027, J4).
+
+    Az eredeti a fájl írásvédett attribútumánál kihagyja a fájlba írást, és a
+    feliratot a `.picasa.ini`-be teszi (`0x0043859e-0x004385a5`). Az írási
+    jog hiányát a mód-bitből ÉS a tényleges hozzáférésből is vesszük: az
+    elsőt a Windows az írásvédett attribútumra képezi, a másodikat más
+    felhasználó tulajdonában álló fájl elkapja. (Az atomikus csere a
+    könyvtár jogán fut, ezért az írásvédett fájlt némán lecserélné.)"""
+    try:
+        mod = path.stat().st_mode
+    except OSError:
+        return False
+    return not mod & stat.S_IWRITE or not os.access(path, os.W_OK)
+
+
 class PhotoOpsWriteTextMixin:
 
-    # -- Szöveg-vágólap: a FELIRATRA hat, nem a fájlra (#1526) -------------
-    #
-    # #5877: a menü Text eszköz réteget másol; a külön képfelirat-vágólap
-    # Python oldali segédjei ettől elkülönülnek.
-    #
-    # ⚠️ Fej nélküli környezetben (`offscreen`/`minimal`) NEM nyúlunk a
-    # rendszervágólaphoz: nincs mögötte vágólap-tulajdonos, és a Qt-hívás a
-    # CI-n SZEGMENSHIBÁVAL állította meg a tesztfájlt (`exit -11`) — nem
-    # kivétellel, amit el lehetne kapni (ld. `fileops_controller`
-    # `_tegyd_a_vagolapra`). Ilyenkor egy munkamenet-szintű szövegtár áll a
-    # helyén, tehát a művelet nem lesz néma, és a próbák AZT mérik, amit
-    # feltennénk.
-
-    def _ensure_caption_clipboard(self) -> None:
-        """A külön felirat-segéd tartalék tárát inicializálja fej nélküli futáshoz."""
-        if not hasattr(self, "_caption_clipboard"):
-            self._caption_clipboard = ""
-
-    #: ⚠️ SZÁNDÉKOSAN nem `@Slot`: ez a külön képfelirat-vágólap Python-API-ja;
-    #: a Szerkesztés menü a Text eszköz réteget kezeli (#5877).
-    def setCaptionClipboardText(self, text: str) -> None:  # noqa: N802
-        """A szöveg-vágólap FELTÖLTÉSE."""
-        from PySide6.QtGui import QGuiApplication
-
-        self._ensure_caption_clipboard()
-        self._caption_clipboard = str(text or "")
-        if QGuiApplication.platformName() in ("offscreen", "minimal"):
-            return
-        vagolap = QGuiApplication.clipboard()
-        if vagolap is not None:
-            vagolap.setText(self._caption_clipboard)
-
-    def captionClipboardText(self) -> str:  # noqa: N802
-        """A szöveg-vágólap tartalma. Fej nélküli környezetben a
-        munkamenet-szintű tár, egyébként a rendszervágólap.
-
-        (Szintén nem `@Slot` — ld. a `setCaptionClipboardText` fölötti okot.)"""
-        from PySide6.QtGui import QGuiApplication
-
-        self._ensure_caption_clipboard()
-        if QGuiApplication.platformName() in ("offscreen", "minimal"):
-            return getattr(self, "_caption_clipboard", "")
-        vagolap = QGuiApplication.clipboard()
-        return "" if vagolap is None else vagolap.text()
-
-    def copyCaptionText(self, row: int) -> bool:  # noqa: N802
-        """Python oldali segéd a kép feliratának vágólapra másolásához.
-
-        A `Copy Text` menütétel külön a Text eszköz rétegét kezeli (#5877).
-
-        `False`, ha nincs mit másolni: érvénytelen sor, vagy a képnek nincs
-        felirata. Üres szöveget feltenni annyi lenne, mint kiürítni a
-        vágólapot — azt a felhasználó nem kérte."""
-        photos = self._photos.photos
-        if not 0 <= int(row) < len(photos):
-            return False
-        felirat = (self._photos.captionAt(int(row)) or "").strip()
-        if not felirat:
-            return False
-        self.setCaptionClipboardText(felirat)
-        return True
-
-    def pasteCaptionText(self, rows) -> int:  # noqa: N802
-        """Python oldali segéd a vágólap feliratként való beillesztéséhez.
-
-        Nem a Szerkesztés menü `Paste Text` parancsa (#5877). Visszaadja,
-        hány képre indult írás. Ha a kijelölésben van már feliratozott kép,
-        a QML megerősítést kér; az írás csak a `confirmCaptionPaste`
-        hívásakor indul.
-
-        ⚠️ ÜRES vágólapra nem tesz semmit: a meglévő feliratok letörlése néma
-        adatvesztés lenne — a törlésre a felirat-szerkesztő van."""
-        szoveg = self.captionClipboardText().strip()
-        if not szoveg:
-            return 0
-        photos = self._photos.photos
-        kijeloles = []
-        for row in rows:
-            try:
-                sor = int(row)
-            except (TypeError, ValueError):
-                continue
-            if 0 <= sor < len(photos):
-                kijeloles.append(photos[sor])
-        if not kijeloles:
-            return 0
-
-        # #4628: a kérdésre várva rögzítjük a célképeket és a szöveget. Így
-        # egy másik vágólap- vagy rácsváltozás nem módosítja a felhasználó
-        # által épp jóváhagyott műveletet.
-        if getattr(self, "_caption_paste_pending", None) is not None:
-            return 0
-        if any((photo.caption or "").strip() for photo in kijeloles):
-            self._caption_paste_pending = (
-                [photo.id for photo in kijeloles],
-                szoveg,
-            )
-            self.captionPasteConfirmationRequested.emit()
-            return 0
-
-        return self._write_caption_text(kijeloles, szoveg)
-
-    def _write_caption_text(self, kijeloles, szoveg: str) -> int:
-        """A már jóváhagyott vagy üres képekre menő feliratköteg."""
-        if not kijeloles or not szoveg:
-            return 0
-        # #2915: EGY soros köteg, nem képenként egy szál — ugyanabba az
-        # ini-be és indexbe írás párhuzamosan versenyhelyzet volt.
-        azonositok = [photo.id for photo in kijeloles]
-
-        def utomunka() -> None:
-            for photo_id in azonositok:
-                self._refresh_if_dropped_from_search(photo_id)
-
-        self._run_photo_writes(
-            [self._felirat_iras(photo, szoveg) for photo in kijeloles],
-            after=utomunka,
-        )
-        return len(kijeloles)
+    def _fuggo_feliratok(self) -> dict[int, str]:
+        """Az épp írás alatt álló feliratok: kép azonosítója -> szöveg."""
+        if not hasattr(self, "_fuggo_felirat_irasok"):
+            self._fuggo_felirat_irasok: dict[int, str] = {}
+        return self._fuggo_felirat_irasok
 
     def _ensure_text_layer_clipboard(self) -> None:
         if not hasattr(self, "_text_layer_clipboard_value"):
@@ -166,16 +70,16 @@ class PhotoOpsWriteTextMixin:
     def _felirat_iras(self, photo, text: str):
         """Egy kép felirat-írása `(photo_id, perform)` párként (#2915).
 
-        A `perform()` a teljes lassú munka (IPTC- vagy ini-írás); így
-        ugyanaz a kód szolgálja az egy képre menő `setCaption`-t és a
-        kijelölésre menő, SOROS köteget (`pasteCaptionText`)."""
+        A `perform()` a teljes lassú munka (IPTC- vagy ini-írás). JPEG-nél
+        a felirat a fájl IPTC-jébe megy; ha a fájl írásvédett (#7027), vagy
+        az IPTC-írás nem sikerül, a `.picasa.ini` `caption=` kulcsába."""
         text = (text or "").strip()
         is_jpeg = photo.name.lower().endswith((".jpg", ".jpeg"))
 
         def perform() -> dict:
             if is_jpeg:
                 path = Path(photo.folder_path) / photo.name
-                if write_iptc_caption(path, text):
+                if not _irasvedett(path) and write_iptc_caption(path, text):
                     ini_path = Path(photo.folder_path) / PICASA_INI_NAME
                     # #5900: az IPTC-írás után Windowson az ini átmenetileg
                     # zárolt lehet; a backuphash-lépés ezért újrapróbál.

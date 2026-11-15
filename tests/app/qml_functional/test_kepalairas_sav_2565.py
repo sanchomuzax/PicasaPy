@@ -183,7 +183,7 @@ class TestAFeliratHelyorzoje:
         )
         helyorzo = _elem(window, "captionPlaceholder")
         assert helyorzo.isVisible(), (
-            "felirat nélküli képnél az eredeti „Készítsen képfeliratot!"
+            "felirat nélküli képnél az eredeti „Készítsen képaláírást!"
             "-t ír a sávba"
         )
 
@@ -196,8 +196,12 @@ class TestAFeliratHelyorzoje:
         assert abs(_kozep_x(helyorzo) - _kozep_x(sav)) < 2
 
     def test_a_hivatalos_magyar_alak(self):
+        """`CTextCaptionNode::defname` hivatalos magyar szövege (#7027, J8):
+        „Készítsen képaláírást!” (stringres.xml 5563. sor) - a korábbi
+        „Készítsen képfeliratot!” nem az eredeti volt."""
         assert "<source>Make a caption!</source>" in _TS
-        assert "<translation>Készítsen képfeliratot!</translation>" in _TS
+        assert "<translation>Készítsen képaláírást!</translation>" in _TS
+        assert "Készítsen képfeliratot!" not in _TS
 
 
 class TestAForras:

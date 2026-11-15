@@ -360,6 +360,8 @@ Rectangle {
         hostContextActions: viewerContextActions
     }
 
+    PhotoViewerCaptionFocusRelease { hostOverlayControls: viewerLayout.overlayControls }
+
     PhotoViewerQuickToolbar {
         hostViewer: viewer
     }
@@ -394,5 +396,4 @@ Rectangle {
         hostAutoAdvanceTimer: ctrlF9AutoAdvanceTimer
         hostScreenHeight: Screen.desktopAvailableHeight
     }
-
 }

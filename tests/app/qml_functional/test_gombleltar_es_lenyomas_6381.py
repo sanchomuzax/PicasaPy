@@ -165,6 +165,27 @@ def _qml_gombleltar() -> list[dict[str, object]]:
     return leltar
 
 
+# Kattintást figyelő, de NEM gomb: nincs látható felülete, tehát lenyomott
+# képe sem lehet. Kulcs: (fájl, objectName); az érték az indoklás. Új tétel
+# csak akkor vehető fel, ha a kezelő semmit nem rajzol, és nem veszi el a
+# gyerekei kattintását (passzív kezelő).
+_NEM_GOMB_KEZELOK = {
+    ("PicasaPy/PhotoViewerCaptionFocusRelease.qml", "captionFocusReleaseHandler"): (
+        "#7027: passzív figyelő a teljes néző fölött; a mezőn kívüli kattintásra "
+        "elengedi a képaláírás-mező fókuszát, nincs felülete és nem vesz el "
+        "kattintást"
+    ),
+}
+
+
+def _nem_gomb_kezelo(elem: dict[str, object]) -> bool:
+    return (str(elem["file"]), _nev(elem)) in _NEM_GOMB_KEZELOK
+
+
+def _nev(elem: dict[str, object]) -> str:
+    return str(elem["objectName"]).strip("\"'")
+
+
 def _gombkent_hasznalt(elem: dict[str, object]) -> bool:
     tipus = elem["type"]
     blokk = str(elem["body"])
@@ -227,7 +248,9 @@ def test_minden_gombszeru_qml_elem_fajl_es_objectname_szerint_leltarban_van():
     hianyzo = [
         f"{elem['file']}:{elem['line']} ({elem['objectName']})"
         for elem in leltar
-        if _gombkent_hasznalt(elem) and not _van_sajat_lenyomas_kep(elem)
+        if _gombkent_hasznalt(elem)
+        and not _van_sajat_lenyomas_kep(elem)
+        and not _nem_gomb_kezelo(elem)
     ]
     if hianyzo:
         felsorolas = ", ".join(hianyzo[:15])
@@ -237,6 +260,20 @@ def test_minden_gombszeru_qml_elem_fajl_es_objectname_szerint_leltarban_van():
         pytest.fail(
             "új vagy meglévő kattintható MouseArea/TapHandler nem kap lenyomott "
             f"képet ({len(hianyzo)} elem): {felsorolas}"
+        )
+
+
+def test_a_nem_gomb_kivetelek_letezo_tetelekre_mutatnak():
+    """Egy elavult kivétel (átnevezett vagy kitörölt kezelő) ne rejthessen el
+    később egy ugyanilyen nevű, valódi gombot."""
+    leltar = {(str(elem["file"]), _nev(elem)): elem for elem in _qml_gombleltar()}
+    for kulcs in _NEM_GOMB_KEZELOK:
+        assert kulcs in leltar, f"a kivétel már nem létező elemre mutat: {kulcs}"
+        assert leltar[kulcs]["type"] == "TapHandler", (
+            f"a kivétel nem TapHandler-re mutat: {kulcs}"
+        )
+        assert "PressFeedback" not in str(leltar[kulcs]["body"]), (
+            f"a kivételes elemnek van lenyomott képe, a kivétel felesleges: {kulcs}"
         )
 
 
