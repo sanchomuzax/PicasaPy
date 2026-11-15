@@ -136,10 +136,25 @@ Item {
                 && viewer.currentIndex >= 0)
                 controller.rotateLeft(viewer.currentIndex)
         }
+        // #7019: a felirat szerinti irányba hat (Megjelenítésnél megjelenít,
+        // Elrejtésnél elrejt).
         onHideToggleRequested: {
+            if (viewer.appWindow && viewer.appWindow.hideSelection !== undefined
+                && viewer.appWindow.unhideHiddenSelection !== undefined) {
+                if (viewerMenu.hidden)
+                    viewer.appWindow.unhideHiddenSelection()
+                else
+                    viewer.appWindow.hideSelection()
+                return
+            }
             if (typeof controller !== "undefined" && controller
-                && viewer.currentIndex >= 0)
-                controller.toggleHiddenRows([viewer.currentIndex])
+                && viewer.currentIndex >= 0) {
+                var photo = viewer.photosModel
+                    ? viewer.photosModel.itemAt(viewer.currentIndex) : null
+                var isHidden = photo ? photo.hidden === true : viewerMenu.hidden
+                if (viewerMenu.hidden ? isHidden : !isHidden)
+                    controller.toggleHiddenRows([viewer.currentIndex])
+            }
         }
         onOpenFileRequested: {
             if (typeof fileOpsController !== "undefined" && fileOpsController
