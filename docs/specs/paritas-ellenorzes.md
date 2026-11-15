@@ -1740,7 +1740,7 @@ Az eredeti Picasa 3.9 binárisában a mentés-család két külön parancsa a Me
    - **Gyorsbillentyű:** NINCS gyorsbillentyű rendelve a Save As-hoz sem a menükben, sem a gyorsítótáblában (az `RT_ACCELERATOR` erőforrás nem tartalmaz hozzá bejegyzést; a `Ctrl+S` kizárólag a Mentéshez [`0xe103`] tartozik).
 
 2. **`ID_FILE_SAVEACOPY` (`0x9dca`):**
-   - **Főmenü:** Fájl ▸ Save a Cop&y / Másolat mentése (menüépítő: `0x00559150`, rekord: `0x00d6da90`, szövegcímke: `0x00d6daa0`, parancskód: `0x9dca`, kulcs: `eMenuFile::ID_FILE_SAVEACOPY` [`0xc8c574`], alapértelmezett angol felirat: `Save a Cop&y` [`0xc8c594`], mnemonik: `y`, ellipszis nélkül, mert azonnali közvetlen mentést végez).
+   - **Főmenü:** Fájl ▸ „Save a Copy” / Másolat mentése (menüépítő: `0x00559150`, rekord: `0x00d6da90`, szövegcímke: `0x00d6daa0`, parancskód: `0x9dca`, kulcs: `eMenuFile::ID_FILE_SAVEACOPY` [`0xc8c574`], alapértelmezett angol felirat: `Save a Cop&y` [`0xc8c594`], mnemonik: `y`, ellipszis nélkül, mert azonnali közvetlen mentést végez).
    - **Helyi menük:** NEM szerepel sem a FolderPhoto (`0x00730790`), sem az AlbumPhoto (`0x00731050`), sem a OneUp (`0x007327a0`) menükben.
    - **Szerkesztő bal panelje (`0x00567680`):** NEM tartalmaz Save a Copy gombot.
    - **Gyorsbillentyű:** NINCS gyorsbillentyűje.
@@ -1771,7 +1771,7 @@ A közös `FUN_005e6a20` eljárás futásidejű viselkedése:
 2. **`Save a Copy` (Másolat mentése):**
    - **Ablak:** SEMMILYEN ablakot nem nyit. Nem jelenik meg megerősítő kérdés, sem fájlválasztó, sem beállítási dialógus. A mentés azonnal és közvetlenül végbemegy.
    - **Célfájl neve és helye:** Mindig a forráskép saját könyvtárában készül a másolat. A fájlnév generálását a `0x00993650` végzi a `0x00cd8d64` címen található formátumsztring alapján: `"%s-%03lu"`.
-   - **Névképzés és névütközés:** A sorszámozás `001`-ről indul (`alapnev-001.ext`). Ha a fájl már létezik a lemezen (`0x00992ed0` létezés-ellenőrzés), a számláló növekszik (`add esi, 1`), így automatikusan `alapnev-002.ext`, `alapnev-003.ext` stb. jön létre (a ciklusfelső korlát `0x1000` = 4096). Ezáltal a Másolat mentése művelet sosem ír felül meglévő fájlt, és sosem ütközik néven.
+   - **Névképzés és névütközés:** A sorszámozás `001`-ről indul (`alapnev-001.ext`). Ha a fájl már létezik a lemezen (`0x00992ed0` létezés-ellenőrzés), a számláló növekszik (`add esi, 1`), így automatikusan `alapnev-002.ext`, `alapnev-003.ext` stb. jön létre (a ciklus felső korlátja `0x1000` = 4096). Ezáltal a Másolat mentése művelet sosem ír felül meglévő fájlt, és sosem ütközik néven.
 
 ### 3. Végrehajtás és futásidejű hatás
 
