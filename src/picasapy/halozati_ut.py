@@ -1,4 +1,4 @@
-"""Hálózati útvonal elérhetősége — időkorláttal és gyorsítótárral (#6344, #6349, #7048).
+"""Hálózati útvonal elérhetősége: időkorláttal és gyorsítótárral (#6344, #6349, #7048).
 
 ## Miért
 
