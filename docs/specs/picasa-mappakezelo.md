@@ -2768,7 +2768,7 @@ elsőt nézte. Ezért a pecsét a **második nevet is** megpróbálja (ettől le
 a felső korlát 3 művelet, nem 2), és őr-teszt rögzíti, hogy a szinkron
 után egyik ini-változat mellett sem marad elavult a mappa.
 
-### 16.7 #6955 — feldolgozási köteg és a főablak felé vezető, nyitott út (2026-11-15)
+### 16.7 #6955: feldolgozási köteg és a főablak felé vezető, nyitott út (2026-11-15)
 
 **Ami a binárisból igazolható.** A `ytDirScanner` bejárási útja (`0x004e62d0`)
 fájlonként olvassa a mappát (`0x004e6cb4`); a ciklus a `0x004e772d` címen
@@ -2819,7 +2819,7 @@ lép be, de a célfüggvény belső scanner-rekordeket dolgoz fel, és a
 „16 = UI-köteg” azonosítást; más UI-értesítési útvonalat és a tényleges
 kifestési időt nem zárja ki.
 
-**Nyitott, blokkoló következő lépés.** `Ghidra-kör kell: 0x004e87c0 — a
+**Nyitott, blokkoló következő lépés.** `Ghidra-kör kell: 0x004e87c0: a
 scanner +0x484 callback-listájának mely regisztrált objektuma frissíti a
 főablak képrácsát vagy mappafáját, és milyen eseményre; a meglévő
 2026-11-11-6532-colab-decomp-13.txt a listabejárást és a DBLoader-ágat
