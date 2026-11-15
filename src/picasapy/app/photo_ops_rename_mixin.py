@@ -24,6 +24,8 @@ from .photo_ops_compat import (
 
 class PhotoOpsRenameMixin:
     _renameBatchDone = Signal(list)
+    renameBatchTargets = Signal(list)
+    renameBatchSkipped = Signal(list)
 
     def _rename_result_queue(self) -> SimpleQueue:
         try:
@@ -47,11 +49,17 @@ class PhotoOpsRenameMixin:
         results = self._rename_result_queue()
         while True:
             try:
-                folders, error_message = results.get_nowait()
+                folders, rename_targets, skipped_files, error_message = (
+                    results.get_nowait()
+                )
             except Empty:
                 break
+            if rename_targets:
+                self.renameBatchTargets.emit(rename_targets)
             if folders is not None:
                 self._renameBatchDone.emit(list(folders))
+            if skipped_files:
+                self.renameBatchSkipped.emit(list(skipped_files))
             if error_message:
                 self.photoOpFailed.emit(error_message)
 
@@ -190,28 +198,50 @@ class PhotoOpsRenameMixin:
             )
             for photo in photos
         ]
+        photo_ids = tuple(photo.id for photo in photos)
+        photo_id_by_path = {
+            item.path: photo_id
+            for item, photo_id in zip(items, photo_ids, strict=True)
+        }
         result_queue = self._rename_result_queue()
 
         def worker() -> None:
             folders = None
+            rename_targets = []
+            skipped_files = []
             error_message = None
             try:
-                rename_photos_many(
+                results = rename_photos_many(
                     items, base_name,
                     include_date=include_date, include_size=include_size,
                 )
+                rename_targets = [
+                    {"photoId": photo_id, "targetPath": str(target)}
+                    for photo_id, item, target in zip(
+                        photo_ids, items, results, strict=True
+                    )
+                    if target != item.path
+                ]
             except PartialRenameError as error:
-                # Részleges futásnál a fájlok/ini-szekciók egy része már
-                # megváltozott. Frissítsük ugyanazokat a mappákat, majd a
-                # strukturált hibaszöveg mutassa meg, mely nevek készültek el.
+                # A sikeres fájlok .picasa.ini-szakasza ugyanazon a
+                # rename_photo úton változott; a teljes mapparesync az indexet
+                # is egyezteti. A tényleges célutak a kijelölés visszaállítását
+                # segítik, a kihagyott fájlnevek pedig QML-ben fordulnak.
                 folders = tuple(sorted({str(item.path.parent) for item in items}))
-                error_message = str(error)
+                rename_targets = [
+                    {"photoId": photo_id_by_path[source], "targetPath": str(target)}
+                    for source, target in error.completed_pairs
+                    if source != target
+                ]
+                skipped_files = [source.name for source in error.failed_sources]
             except (OSError, ValueError, IniSaveError, IniConflictError) as error:
                 error_message = str(error)
             else:
                 folders = tuple(sorted({str(item.path.parent) for item in items}))
             finally:
-                result_queue.put((folders, error_message))
+                result_queue.put(
+                    (folders, rename_targets, skipped_files, error_message)
+                )
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         workers = self._rename_worker_set()
