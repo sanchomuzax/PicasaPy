@@ -1724,3 +1724,114 @@ A megerősítő párbeszédablakot a `0x0053b2e0` kezeli (`CThumbUI::FileRevert`
    - **Teendő:** A `save_operations.py` `revert` függvényében a törlendő kulcsok körét ki kell terjeszteni a `rotate`, `flipped` és `textactive` kulcsokra.
    - **Kész, ha:** Egy kép forgatása, mentése, majd Revert parancs végrehajtása után a `.picasa.ini`-ben nem marad sem `filters`, sem `rotate`, sem `flipped`, sem `textactive` bejegyzés.
 
+## #6975: A Save a Copy és a Save As teljes folyamata az eredeti Picasában és összevetése a PicasaPy-jal
+
+### 1. Belépési pontok, engedélyezési feltételek és a két mentési parancs szétválasztása
+
+Az eredeti Picasa 3.9 binárisában a mentés-család két külön parancsa a Mentés másként (Save As) és a Másolat mentése (Save a Copy), amelyek mindketten a renderelt képet új fájlba írják, de eltérő paraméterrel, felülettel és engedélyezési feltétellel futnak:
+
+1. **`ID_FILE_SAVEAS` (`0x9d9b`):**
+   - **Főmenü:** Fájl ▸ Save &As... / Mentés másként... (menüépítő: `0x00559150`, rekord: `0x00d6da68`, szövegcímke: `0x00d6da8c`, parancskód: `0x9d9b`, kulcs: `eMenuFile::ID_FILE_SAVEAS` [`0xc8c5a4`], alapértelmezett angol felirat: `Save &As...` [`0xc8c5c0`], mnemonik: `A`, ellipszissel a végén, mert párbeszédablakot nyit).
+   - **Helyi menük (kép jobb-klikk):**
+     - Mappanézet (FolderPhoto, `0x00730790`): NEM szerepel a helyi menüben (csak a sima Mentés [`0xe103`] és Revert [`0x9d9a`] van benne).
+     - Albumnézet (AlbumPhoto, `0x00731050`): NEM szerepel a helyi menüben.
+     - Egyképes néző / OneUp (`0x007327a0`): NEM szerepel a helyi menüben.
+   - **Szerkesztő bal panelje (`0x00567680`):** NEM tartalmaz Save As gombot (a szerkesztőben kizárólag a Visszavonás és Újra gombok találhatók).
+   - **Gyorsbillentyű:** NINCS gyorsbillentyű rendelve a Save As-hoz sem a menükben, sem a gyorsítótáblában (az `RT_ACCELERATOR` erőforrás nem tartalmaz hozzá bejegyzést; a `Ctrl+S` kizárólag a Mentéshez [`0xe103`] tartozik).
+
+2. **`ID_FILE_SAVEACOPY` (`0x9dca`):**
+   - **Főmenü:** Fájl ▸ Save a Cop&y / Másolat mentése (menüépítő: `0x00559150`, rekord: `0x00d6da90`, szövegcímke: `0x00d6daa0`, parancskód: `0x9dca`, kulcs: `eMenuFile::ID_FILE_SAVEACOPY` [`0xc8c574`], alapértelmezett angol felirat: `Save a Cop&y` [`0xc8c594`], mnemonik: `y`, ellipszis nélkül, mert azonnali közvetlen mentést végez).
+   - **Helyi menük:** NEM szerepel sem a FolderPhoto (`0x00730790`), sem az AlbumPhoto (`0x00731050`), sem a OneUp (`0x007327a0`) menükben.
+   - **Szerkesztő bal panelje (`0x00567680`):** NEM tartalmaz Save a Copy gombot.
+   - **Gyorsbillentyű:** NINCS gyorsbillentyűje.
+
+3. **Engedélyezési feltételek (`EnableMenuItem`, `0x0056e1c0` és `0x0056c5a0`):**
+   - A `0x005cb1a0` által számított állapotmaszk alapján a `0x0056e1c0` vezérli az `EnableMenuItem` (`USER32.dll`, `0x00c40818`) hívásokat:
+     - **Kijelölés megléte:** Legalább egy képnek ki kell lennie jelölve (a `0x2` fotó bit kötelező; 0 kijelölt elemnél a `byte ptr [esp + 0x12] == 0`, így `dl = 1` -> `MF_GRAYED`, a menüpont szürke).
+     - **Szerkesztetlen kép:** Engedélyezett (nem feltétele a `0x40` nem mentett szerkesztési bit, sem a `0x80` revertable bit; szerkesztetlen kép másolata is menthető).
+     - **Több kijelölt kép:** A menüben engedélyezett (a `0x100` többszörös kijelölés bitnél a `0x0056e3d5` ág `MF_ENABLED`-et ad), DE a végrehajtáskor a közös kezelő (`FUN_005e6a20`) nem tartalmaz iterációs ciklust, és kizárólag az egyetlen aktív, fókuszban lévő képre (`*(param_1 + 0xe64)`) hajtja végre a mentést.
+     - **Videó kijelölése:** Ha kizárólag videó van kijelölve, a `0x005cb1a0` a `0x00562250` (`isVideo`) hívás alapján a `0x20` videó bitet állítja be a `0x2` fotó bit helyett, emiatt a `0x0056e416` teszt elbukik és mindkét menüpont tiltottá válik (`MF_GRAYED`).
+     - **Tiltó nézetállapotok:** Zárolt nézetállapot (`[edi + 0x34a4] != 0`) vagy írásvédett / speciális forrás esetén (`maszk & 0x8000 != 0`, `0x0056e591`) a `0x0056e5a0` és `0x0056e5aa` explicit `MF_GRAYED` hívással letiltja a `0x9d9b` és `0x9dca` parancsokat.
+
+### 2. Megjelenő ablak és folyamat
+
+A két parancsot a parancs-diszpécser (`0x005cb990`) a switch ugrótábláján (`0x005cdc30`, indexek: 38 és 65) át ugyanarra a közös eljárásra irányítja:
+- `case 0x9d9b` (40347): `0x005cc5a0`: `push 0; mov ecx, ebx; call 0x005e6a20` (Save As, `param_2 == 0`).
+- `case 0x9dca` (40394): `0x005cc5ad`: `push 1; mov ecx, ebx; call 0x005e6a20` (Save a Copy, `param_2 != 0`).
+
+A közös `FUN_005e6a20` eljárás futásidejű viselkedése:
+
+1. **`Save As` (Mentés másként...):**
+   - **Ablak:** Rendszer-fájlválasztó ablakot nyit (`0x0097f1d0`, `"SaveFile"`), a Windows szabványos fájlmentési felületével.
+   - **Alapértelmezett mappa és név:** A forrásfájl könyvtára és a forráskép eredeti fájlneve.
+   - **Szűrők:** `CThumbUI::SaveAsFilterJPG` (`"*.jpg"`), illetve ha a forráskép WebP típusú (`local_14a4[6] == 0x1f`), a szűrő kiegészül a `CThumbUI::SaveAsFilterWebP` (`"*.webp"`) bejegyzéssel.
+   - **Forrással azonos név:** Ha a felhasználó a fájlválasztóban a forráskép nevét hagyja jóvá vagy azt választja ki, a `0x005e6e81` ágon felugró figyelmeztetés jelenik meg: `IDS_CANT_SAVE_TO_SAME` (`0x009ae710`, 0xf9): "Cannot replace image. Please try again with a different filename." / "A képet nem lehet kicserélni. Próbálja újra másik fájlnévvel.", és a mentés leáll, fájlírás nélkül.
+   - **Megszakítás (Cancel):** Ha a felhasználó a fájlválasztóban a Mégse gombra kattint (`iVar11 != 0`), az eljárás csendben kilép, lemez- és adatbázis-hatás nélkül.
+
+2. **`Save a Copy` (Másolat mentése):**
+   - **Ablak:** SEMMILYEN ablakot nem nyit. Nem jelenik meg megerősítő kérdés, sem fájlválasztó, sem beállítási dialógus. A mentés azonnal és közvetlenül végbemegy.
+   - **Célfájl neve és helye:** Mindig a forráskép saját könyvtárában készül a másolat. A fájlnév generálását a `0x00993650` végzi a `0x00cd8d64` címen található formátumsztring alapján: `"%s-%03lu"`.
+   - **Névképzés és névütközés:** A sorszámozás `001`-ről indul (`alapnev-001.ext`). Ha a fájl már létezik a lemezen (`0x00992ed0` létezés-ellenőrzés), a számláló növekszik (`add esi, 1`), így automatikusan `alapnev-002.ext`, `alapnev-003.ext` stb. jön létre (a ciklusfelső korlát `0x1000` = 4096). Ezáltal a Másolat mentése művelet sosem ír felül meglévő fájlt, és sosem ütközik néven.
+
+### 3. Végrehajtás és futásidejű hatás
+
+1. **Szerkesztések beégetése:**
+   - Mindkét művelet esetén a mentett új fájlba a forrásképen lévő összes szerkesztés (vágás, forgatás, színkorrekciók, retusálás, szöveg) beégetésre kerül (`*(iVar5 + 0x94)` képkódoló hívás).
+2. **Az eredeti kép és `.picasa.ini` állapota:**
+   - Az eredeti kép lemezfájlja és `.picasa.ini` bejegyzése ÉRINTETLEN marad. Nem jön létre `.picasaoriginals` biztonsági mentés (az kizárólag a sima `Save` parancsnál készül), a szerkesztési kulcsok megmaradnak.
+3. **Az új fájl `.picasa.ini` bejegyzése:**
+   - Az eredeti Picasa 3.9 az új fájlhoz SEMMIT nem ír a célkönyvtár `.picasa.ini` fájljába (`0x005aafd0` / `0x005aadf0`). Az új kép önálló, tiszta, szerkesztetlen fotóként jelenik meg.
+4. **Indexelés és bélyegkép:**
+   - A lemezre írás után az eljárás meghívja a `0x00411a90` indexelő értesítőt, amely azonnal beolvassa az új fájlt, elkészíti hozzá a bélyegképet az SQLite adatbázisba, és megjeleníti a könyvtárnézet rácsában.
+5. **Rács kijelölése:**
+   - A mentés befejezése után a kijelölés a könyvtárrácsban az eredeti képen marad; az új másolatfájl nem kap automatikus kijelölést vagy fókuszt.
+
+### 4. Hibaesetek (írásvédett mappa, névütközés)
+
+1. **Névütközés meglévő fájllal:**
+   - Save As esetén, ha nem a forrásfájllal, hanem egy másik meglévő fájllal ütközik a név, a rendszer-fájlválasztó standard felülírási megerősítést kér.
+   - Save a Copy esetén a számozó automatikusan átlépi a létező fájlokat (`-001` -> `-002`), így ütközés nem fordulhat elő.
+2. **Írásvédett mappa vagy lemezhiba (`0x005e7022`):**
+   - Ha a célkönyvtár írásvédett, nincs írási jogosultság, vagy a lemez megtelt, a `0x005e7022` címen felugró hibaüzenet jelenik meg:
+     - Forráskulcs: `CThumbUI::FileSaveCopy:err` (`0x00c97750`).
+     - Alapértelmezett angol szöveg: `0x00c97700`: "Unable to save files due to a disk error. The disk may be full or read-only."
+     - Magyar fordítás: "Lemezhiba miatt nem lehetséges a fájlok mentése. Lehet, hogy a lemez megtelt vagy írásvédett."
+     - Megjelenítés: egyszerű `0x00980700` üzenetablak OK gombbal; nem tartalmazza az érintett fájlnevet vagy numerikus hibakódot.
+
+### 5. Paritási összevetés és eltérések táblázata
+
+| Funkció / Elem | Eredeti Picasa (bináris cím) | PicasaPy (fájl:sor) | Eltérés / Teendő |
+|---|---|---|---|
+| Save As főmenü belépő | Fájl ▸ Save &As... (`0x00559150`, rekord: `0x00d6da68`, `0x9d9b`) | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:128` | Egyezik. Paritásban van. |
+| Save a Copy főmenü belépő | Fájl ▸ Save a Cop&y (`0x00559150`, rekord: `0x00d6da90`, `0x9dca`) | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:134` | Egyezik. Paritásban van. |
+| Helyi menük | Nem szerepel a helyi menükben (`0x00730790`, `0x00731050`, `0x007327a0`) | `PhotoContextMenu.qml`, `ViewerContextMenu.qml` nem tartalmazza | Egyezik. |
+| Szerkesztő panel gombjai | Bal panelen nincs Save As / Save a Copy gomb (`0x00567680`) | `EditorPanel.qml` nem tartalmazza | Egyezik. |
+| Gyorsbillentyűk | Nincs gyorsbillentyű rendelve | Nincs gyorsbillentyű | Egyezik. |
+| Engedélyezés (szerkesztetlen kép) | Engedélyezett (`0x2` fotó bit, `0x0056e426`) | `bar.photoActionsEnabled` aktív | Egyezik. |
+| Engedélyezés (több kijelölt kép) | Menüben engedélyezett (`0x100` bit), de csak 1 képre hajtódik végre (`*(param_1 + 0xe64)`) | `MainMenuBar.qml:340-344` `photoActionIndex()` alapján 1 képre hívja | Egyezik. |
+| Engedélyezés (videó kijelölése) | Tiltott / szürke (`MF_GRAYED`, hiányzó `0x2` fotó bit, `0x0056e416`) | `photoActionsEnabled` videóra is aktív marad | **Eltérés.** Videó kijelölésekor nálunk a menüpontok aktívak maradnak. Fejlesztési jegy javasolt. |
+| Save As fájlválasztó | Rendszer-fájlválasztót nyit (`0x0097f1d0`), JPG és WebP szűrőkkel | `SaveDialogs.qml:153-162` `FileDialog` JPG és WebP szűrőkkel | Egyezik. |
+| Save As forrással azonos név | `IDS_CANT_SAVE_TO_SAME` figyelmeztetés (`0x005e6e81`) | `SaveDialogs.qml:186` `IDS_CANT_SAVE_TO_SAME` üzenet | Egyezik. Bitre azonos szöveg. |
+| Save a Copy közvetlen mentés | Nincs ablak, azonnali végrehajtás (`0x005e6a20`) | `SaveDialogs.qml:65` közvetlenül hívja a vezérlőt | Egyezik. |
+| Save a Copy fájlnév minta | `"%s-%03lu"` (`0x00cd8d64`, `0x00993650`) -> `kep-001.jpg` | `src/picasapy/edit/save_copy.py:77` `"{stem}-{number:03d}{suffix}"` | Egyezik. Pontosan megegyező formátum. |
+| Szerkesztések beégetése | Beégnek az új fájlba (`*(iVar5 + 0x94)`) | `_render_for_save` beégeti a szerkesztéseket | Egyezik. |
+| Eredeti kép és .picasa.ini | Érintetlen marad, nincs `.picasaoriginals` | `save_copy.py:170-208` érintetlenül hagyja | Egyezik. |
+| Új fájl .picasa.ini | Semmit nem ír az ini-be (`0x005aafd0`) | `save_copy.py:197-208` nem ír az ini-be | Egyezik. |
+| Indexelés és kijelölés | Új kép indexelődik, eredeti kijelölve marad | `noteOutputWritten`, eredeti kijelölve marad | Egyezik. |
+| Lemezhiba / írásvédettség szövege | "Unable to save files due to a disk error. The disk may be full or read-only." (`0x00c97700`) | `SaveDialogs.qml:191` fájlnevet és numerikus hibakódot fűz hozzá | **Eltérés.** A hibaablak szövege nálunk a `filesaveerr-win` formátumát követi. |
+
+### 6. Javasolt fejlesztői jegyek
+
+1. **Jegy: A Save As és Save a Copy menüpontok letiltása videó kijelölése esetén**
+   - **Eredeti:** Az eredeti Picasa 3.9 binárisában (`0x0056e1c0`, `0x0056e2f4`, `0x0056e416`, `0x005cb2cf`) a Fájl ▸ Save &As... (`0x9d9b`) és Save a Cop&y (`0x9dca`) menüpontok kizárólag fotók kijelölésekor engedélyezettek (`0x2` állapotbit); ha a kijelölt elem videó (a `0x00562250` `isVideo` hívás `0x20` bitet állít be a fotóbit helyett), mindkét menüpont tiltottá válik (`MF_GRAYED`).
+   - **Nálunk:** A `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:130,136` sorában a menüpontok az általános `bar.photoActionsEnabled` tulajdonságra támaszkodnak, amely kizárólag a kijelölt sorok számát vizsgálja (`photoActionRows().length > 0`), így videó kijelölése esetén is aktívak maradnak.
+   - **Teendő:** A `PicasaFileMenu.qml` Save As és Save a Copy tételeinek `enabled` feltételét ki kell egészíteni egy `!bar.isVideoSelected` (vagy a kijelölés típusát ellenőrző) feltétellel.
+   - **Kész, ha:** Kijelölt videó esetén a Fájl menüben a "Save As..." és a "Save a Copy" menüpontok inaktívak (szürkék), és csak fotó kijelölésekor válnak kattinthatóvá.
+
+2. **Jegy: A Save As és Save a Copy lemezhiba ablakának pontos szövegezése**
+   - **Eredeti:** Az eredeti Picasa 3.9-ben (`0x005e7022`) írásvédett mappa vagy lemezhiba esetén a `CThumbUI::FileSaveCopy:err` (`0x00c97750`) erőforrás jelenik meg: "Unable to save files due to a disk error. The disk may be full or read-only." (`0x00c97700`), fájlnév és numerikus hibakód nélkül.
+   - **Nálunk:** A `src/picasapy/app/qml/PicasaPy/SaveDialogs.qml:191` sorában a hibaablak a normál mentés `CFileSaveThread::filesaveerr-win` sablonját használja: `Unable to save all files due to a disk error. The disk may be full or read-only.\n\n%1\nerror(%2)`.
+   - **Teendő:** A `SaveDialogs.qml`-ben a `kind === "saveCopyError"` vagy megfelelő ágon a `FileSaveCopy:err` szöveget kell visszaadni: `qsTr("Unable to save files due to a disk error. The disk may be full or read-only.")`.
+   - **Kész, ha:** Írásvédett célmappába irányuló Save As vagy Save a Copy művelet meghiúsulásakor a felugró párbeszédablak pontosan a "Unable to save files due to a disk error. The disk may be full or read-only." szöveget mutatja.
+
+
