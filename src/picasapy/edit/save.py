@@ -231,7 +231,20 @@ ORIGINALS_DIR_NAMES = (LEGACY_ORIGINALS_DIR_NAME, ORIGINALS_DIR_NAME)
 _FILTERS_KEY = "filters"
 _REDO_KEY = "redo"
 _MODDATE_KEY = "moddate"
-_EDIT_BOOKKEEPING_KEYS = (_FILTERS_KEY, _REDO_KEY)
+_ROTATE_KEY = "rotate"
+_FLIPPED_KEY = "flipped"
+_TEXTACTIVE_KEY = "textactive"
+# A Visszaállítás (Revert) által törölt szerkesztés-könyvelés (#6972). Az
+# eredeti `0x0046d7d0` a `filters` mellett a `rotate`, `flipped` és
+# `textactive` sort is törli, mert a visszamásolt fájl a szerkesztés előtti
+# fizikai kép. A `redo` a saját, régebbi mentés-könyvelésünk maradéka.
+_EDIT_BOOKKEEPING_KEYS = (
+    _FILTERS_KEY,
+    _REDO_KEY,
+    _ROTATE_KEY,
+    _FLIPPED_KEY,
+    _TEXTACTIVE_KEY,
+)
 
 _INI_FILENAME = INI_NAME
 

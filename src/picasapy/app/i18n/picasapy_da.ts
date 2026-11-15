@@ -7310,9 +7310,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
             <translation>Vend tilbage til den oprindelige version af filen?</translation>
         </message>
         <message>
-            <source>Revert to original version of these file(s)?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vil du gendanne originalversionen af disse filer?</translation>
+            <source>Revert to original version of these files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::messageX</extracomment>
+            <translation>Vend tilbage til den oprindelige version af disse filer?</translation>
         </message>
         <message>
             <source>This cannot be undone and all changes will be lost.</source>
@@ -7329,6 +7330,30 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
             <source>To undo the last save and keep edits click 'Undo Save'.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Klik på 'Fortryd gem' for at fortryde den seneste gemning og beholde redigeringerne.</translation>
+        </message>
+        <message>
+            <source>Revert Anyway</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
+            <translation>Vend tilbage alligevel</translation>
+        </message>
+        <message>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
+            <translation>Denne fil er blevet ændret uden for PicasaPy. Hvis du vender tilbage, vil disse ændringer gå tabt.</translation>
+        </message>
+        <message>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
+            <translation>Disse filer er blevet ændret uden for PicasaPy. Hvis du vender tilbage, vil disse ændringer gå tabt.</translation>
+        </message>
+        <message>
+            <source>Do you want to revert?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::continue</extracomment>
+            <translation>Vil du vende tilbage?</translation>
         </message>
         <message>
             <source>File operation failed</source>

@@ -7328,9 +7328,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
             <translation>Vratiti na izvornu verziju datoteke?</translation>
         </message>
         <message>
-            <source>Revert to original version of these file(s)?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vratiti izvorne verzije ovih datoteka?</translation>
+            <source>Revert to original version of these files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::messageX</extracomment>
+            <translation>Vratiti na izvornu verziju ovih datoteka?</translation>
         </message>
         <message>
             <source>This cannot be undone and all changes will be lost.</source>
@@ -7347,6 +7348,30 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
             <source>To undo the last save and keep edits click 'Undo Save'.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Da biste poništili zadnje spremanje i sačuvali izmjene, kliknite „Poništi spremanje”.</translation>
+        </message>
+        <message>
+            <source>Revert Anyway</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
+            <translation>Ipak vrati prethodno</translation>
+        </message>
+        <message>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
+            <translation>Ta je datoteka izmijenjena izvan programa PicasaPyPy. Te će se promjene vraćanjem izgubiti.</translation>
+        </message>
+        <message>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
+            <translation>Te su datoteke promijenjene izvan programa PicasaPy. Vraćanjem će se izgubiti te promjene.</translation>
+        </message>
+        <message>
+            <source>Do you want to revert?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::continue</extracomment>
+            <translation>Želite vratiti?</translation>
         </message>
         <message>
             <source>File operation failed</source>

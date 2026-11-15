@@ -7313,9 +7313,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
             <translation>Visszatér a fájl eredeti változatához?</translation>
         </message>
         <message>
-            <source>Revert to original version of these file(s)?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Visszaállítja ezeket a fájlokat az eredeti változatra?</translation>
+            <source>Revert to original version of these files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::messageX</extracomment>
+            <translation>Visszatér a fájlok eredeti változatához?</translation>
         </message>
         <message>
             <source>This cannot be undone and all changes will be lost.</source>
@@ -7332,6 +7333,30 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
             <source>To undo the last save and keep edits click 'Undo Save'.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Az utolsó mentés visszavonásához és a szerkesztések megtartásához kattintson a "Mentés visszavonása" gombra.</translation>
+        </message>
+        <message>
+            <source>Revert Anyway</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
+            <translation>Visszaállítás ennek ellenére</translation>
+        </message>
+        <message>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
+            <translation>Ez a fájl a PicasaPy programon kívül módosult. Ha a visszaállítást választja, a módosítások elvesznek.</translation>
+        </message>
+        <message>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
+            <translation>Ezek a fájlok a PicasaPy programon kívül módosultak. Ha a visszaállítást választja, a módosítások elvesznek.</translation>
+        </message>
+        <message>
+            <source>Do you want to revert?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::continue</extracomment>
+            <translation>Vissza szeretne térni?</translation>
         </message>
         <message>
             <source>File operation failed</source>

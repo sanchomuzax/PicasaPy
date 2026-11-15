@@ -7310,9 +7310,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
             <translation>Balikan ang orihinal na bersyon ng file?</translation>
         </message>
         <message>
-            <source>Revert to original version of these file(s)?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ibalik sa orihinal na bersyon ang mga file na ito?</translation>
+            <source>Revert to original version of these files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::messageX</extracomment>
+            <translation>Balikan ang orihinal na bersyon ng mga file na ito?</translation>
         </message>
         <message>
             <source>This cannot be undone and all changes will be lost.</source>
@@ -7329,6 +7330,30 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
             <source>To undo the last save and keep edits click 'Undo Save'.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Para i-undo ang huling pag-save at panatilihin ang mga edit, i-click ang ‘I-undo ang Pag-save’.</translation>
+        </message>
+        <message>
+            <source>Revert Anyway</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
+            <translation>Ibalik Gayon Pa Man</translation>
+        </message>
+        <message>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
+            <translation>Ang file na ito ay nabago na sa labas ng PicasaPy. Kapag binalikan ay mawawala ang mga pagbabagong iyon.</translation>
+        </message>
+        <message>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
+            <translation>Ang mga file na ito ay nagbago sa labas ng PicasaPy. Kapag ibinalik ay mawawala ang mga pagbabagong iyon.</translation>
+        </message>
+        <message>
+            <source>Do you want to revert?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::continue</extracomment>
+            <translation>Gusto mo bang ibalik?</translation>
         </message>
         <message>
             <source>File operation failed</source>

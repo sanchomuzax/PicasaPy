@@ -75,7 +75,7 @@ def _kerdes_szovege(dialog) -> str:
         text = item.property("text")
         if text in (
             "Revert to original version of file?",
-            "Revert to original version of these file(s)?",
+            "Revert to original version of these files?",
         ):
             return text
     raise AssertionError("a Revert kérdéssora nem található")

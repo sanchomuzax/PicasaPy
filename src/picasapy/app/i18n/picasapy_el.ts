@@ -7310,9 +7310,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
             <translation>Επαναφορά στην αρχική έκδοση του αρχείου;</translation>
         </message>
         <message>
-            <source>Revert to original version of these file(s)?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Να γίνει επαναφορά αυτών των αρχείων στην αρχική έκδοση;</translation>
+            <source>Revert to original version of these files?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::messageX</extracomment>
+            <translation>Επαναφορά στην αρχική έκδοση αυτών των αρχείων;</translation>
         </message>
         <message>
             <source>This cannot be undone and all changes will be lost.</source>
@@ -7329,6 +7330,30 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::undosave</extracomment>
             <source>To undo the last save and keep edits click 'Undo Save'.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Για να αναιρέσετε την τελευταία αποθήκευση και να διατηρήσετε τις αλλαγές, κάντε κλικ στην επιλογή «Αναίρεση αποθήκευσης».</translation>
+        </message>
+        <message>
+            <source>Revert Anyway</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumUI::FileRevert::yesbutton</extracomment>
+            <translation>Επαναφορά</translation>
+        </message>
+        <message>
+            <source>This file has been changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changed1</extracomment>
+            <translation>Αυτό το αρχείο έχει αλλάξει εκτός PicasaPy. Με την επαναφορά θα χαθούν αυτές οι αλλαγές.</translation>
+        </message>
+        <message>
+            <source>These files have changed outside of PicasaPy. Reverting will lose those changes.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::changedX</extracomment>
+            <translation>Αυτά τα αρχεία έχουν αλλάξει εκτός του PicasaPy. Με την επαναφορά θα χαθούν αυτές οι αλλαγές.</translation>
+        </message>
+        <message>
+            <source>Do you want to revert?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::continue</extracomment>
+            <translation>Θέλετε να κάνετε επαναφορά;</translation>
         </message>
         <message>
             <source>File operation failed</source>
