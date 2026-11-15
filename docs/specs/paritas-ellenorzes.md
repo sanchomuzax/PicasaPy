@@ -2821,7 +2821,7 @@ Az eredeti Picasa 3.9 elrejtési és megjelenítési folyamata képszinten és m
    - Ha a Nézet ▸ Rejtett képek (`ID_VIEW_SHOWHIDDEN`, `0x00c8cfb8`) beállítás be van kapcsolva, a képek a rácson maradnak, de rejtett állapotjelzőt kapnak.
    - Ha a beállítás ki van kapcsolva, az elrejtett képek azonnal eltűnnek a rácsból, a kijelölés ürül, és a mappa darabszáma azonnal csökken.
 
-4. **Előnézet / szerkesztő utólépése (`0x005683a0`):**
+4. **Előnézet / szerkesztő utólagos lépése (`0x005683a0`):**
    A `0x005e7e2a`-`0x005e7e57` szakaszban, ha az `editpanel/preview` (`0xc88a2c`) objektum létezik és nem mutatja a rejtett képeket (`byte ptr [eax + 0x20c] == 0`), és Elrejtés parancs futott (`param_1 == 1`), meghívja a `0x005683a0(edi)` központi nézetváltót:
    - A pontos hatás nem igazolt (lásd Nyitott kérdések 2.); a valószínű viselkedés: a néző a következő látható képre lép, vagy visszavált a rácsnézetbe.
 
@@ -2834,7 +2834,7 @@ Az eredeti Picasa 3.9 elrejtési és megjelenítési folyamata képszinten és m
 |---|---|---|
 | Főmenü Elrejtés engedélyezése: `0x0056c5a0` (`0x0056cd8d`): csak akkor él, ha van nem rejtett kép a kijelölésben. | `PicasaPictureMenu.qml:130`: `enabled: bar.photoActionsEnabled`. | A Kép ▸ Elrejtés tétel csak akkor legyen aktív, ha a kijelölésben van legalább egy látható (még nem rejtett) fotó (`bar.hasVisiblePhotoSelection`), hasonlóan a Megjelenítés meglévő `bar.hasHiddenPhotoSelection` feltételéhez. |
 | Helyi menü parancs-végrehajtása vegyes kijelölésnél: a kattintott menüpont (Hide vagy Unhide) fixen a saját irányába egységesíti a kijelölést (`0x005e7d90(1)` vagy `0x005e7d90(0)`). | `MainPhotoContextMenu.qml:62`: `onHideToggleRequested: hostWindow.toggleHiddenSelection()`; `MainWindowCommands.qml:475`: `hostController.toggleHiddenRows(rows)`. | A helyi menüben a felirat (`PhotoContextMenu.qml:320`) a jobbklikkelt kép alapján vált (`hideChecked`), de a `toggleHiddenRows` vegyes kijelölésnél mindig elrejt (`hide_all = not all(p.hidden)`). Ha a jobbklikkelt kép rejtett, a menü „Megjelenítés”-t mutat, de a kattintás mindent elrejt. Javítás: a menüpont explicit `hideSelection()`-t vagy `unhideHiddenSelection()`-t hívjon a feliratának megfelelően. |
-| Képnéző utólépése rejtéskor: `0x005e7e57` -> `0x005683a0`: ha a nézett kép elrejtődik és `!showHidden`, a nézet a következő látható képre lép, vagy visszavált a könyvtárba, ha elfogytak a képek. | `PhotoViewerContextActions.qml:135`: `controller.toggleHiddenRows([viewer.currentIndex])`. | A nézőben történő elrejtés után, ha `!controller.showHidden`, a néző léptessen a következő megjeleníthető képre, vagy ha nincs több kép a mappában, zárja be a nézőt (`hostWindow.closePhotoViewer()`). |
+| Képnéző utólagos lépése rejtéskor: `0x005e7e57` -> `0x005683a0`: ha a nézett kép elrejtődik és `!showHidden`, a nézet a következő látható képre lép, vagy visszavált a könyvtárba, ha elfogytak a képek. | `PhotoViewerContextActions.qml:135`: `controller.toggleHiddenRows([viewer.currentIndex])`. | A nézőben történő elrejtés után, ha `!controller.showHidden`, a néző léptessen a következő megjeleníthető képre, vagy ha nincs több kép a mappában, zárja be a nézőt (`hostWindow.closePhotoViewer()`). |
 | Megerősítés képszinten: nincs megerősítés (`0x005e7d90`). | `MainWindowLibraryActions.qml:84-110`: nincs megerősítés. | Egyezik, teendő nincs. |
 | Gyorsbillentyű: nincs (`0x00d6e504 = 0`, `0x00d6e518 = 0`). | Nálunk nincs gyorsbillentyű kötve. | Egyezik, teendő nincs. |
 | Képtálca: nincs elrejtés gomb. | Nálunk nincs elrejtés gomb a tálcán. | Egyezik, teendő nincs. |
@@ -2858,7 +2858,7 @@ Az eredeti Picasa 3.9 elrejtési és megjelenítési folyamata képszinten és m
 
 #### 3. (feltételes, a Nyitott kérdések 2. pontja dönti el) A fotónéző léptetése vagy bezárása az aktuális fotó elrejtésekor
 
-**Eredeti:** A `0x005e7e57` -> `0x005683a0` utólépés az előnézetben/szerkesztőben nyitott kép elrejtésekor (ha a rejtett képek nem láthatóak) átléptet a következő látható képre, vagy ha elfogytak a képek, visszavált a könyvtári rácsra.
+**Eredeti:** A `0x005e7e57` -> `0x005683a0` utólagos lépés az előnézetben/szerkesztőben nyitott kép elrejtésekor (ha a rejtett képek nem láthatóak) átléptet a következő látható képre, vagy ha elfogytak a képek, visszavált a könyvtári rácsra.
 **Nálunk:** `PhotoViewerContextActions.qml:135` csak elrejti a képet, de a néző nem navigál el róla.
 **Teendő:** Ha a nézőben megjelenített fotó elrejtésre kerül, és a `controller.showHidden` hamis, a néző váltson a következő látható képre; ha a mappában nincs több megjeleníthető kép, zárja be a nézőt (`hostWindow.closePhotoViewer()`).
 **Kész, ha:** `showHidden == false` mellett a nézőben megnyitott képet helyi menüből elrejtve a néző a következő képre lép; egyetlen képet tartalmazó mappában elrejtve a néző bezáródik és visszatér a könyvtárba; teszt igazolja.
@@ -2869,6 +2869,6 @@ A hívó ellenőrző mintavétele (2026-11-15): az elrejtő ág igazolt (a `0x00
 
 1. A Kép menü Elrejtés tételének szürkítése csupa rejtett kijelölésnél: a `0x0056c5a0` főmenü-ága ezt nem mutatja közvetlenül.
    - Ghidra-kör kell: 0x0056c5a0 - A főmenü `0x9ca5` (Elrejtés) tételét szürkíti-e az `EnableMenuItem`, ha a kijelölés csupa rejtett kép [nem blokkoló]
-2. A `0x005683a0` utólépés pontos hatása: a `0x0056884e` környezetében nincs `thumbui/albumview` nézetváltás, tehát a „következő látható kép vagy vissza a rácsra” leírás következtetés, nem bizonyíték.
+2. A `0x005683a0` utólagos lépés pontos hatása: a `0x0056884e` környezetében nincs `thumbui/albumview` nézetváltás, tehát a „következő látható kép vagy vissza a rácsra” leírás következtetés, nem bizonyíték.
    - Ghidra-kör kell: 0x005683a0 - Mit tesz a néző, ha az aktuális képet elrejtik és a rejtett képek nem látszanak: lép, bezár vagy marad [blokkoló]
 
