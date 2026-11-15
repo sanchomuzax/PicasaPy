@@ -75,7 +75,7 @@ class TestIniAtvitel:
         )
 
         nev = jelentes.exported[0].name
-        assert nev.startswith("001-"), nev
+        assert nev.startswith("1-"), nev
         assert load_or_empty(cel / PICASA_INI_NAME).section(nev) is not None
 
 
@@ -145,16 +145,21 @@ class TestCelmappaUtkozes:
         assert cel.read_bytes() == b"ez egy fajl"
 
 
-@pytest.mark.parametrize("darab,szelesseg", [(1, 3), (999, 3), (1000, 4)])
-def test_a_sorszam_szelessege(tmp_path, darab, szelesseg):
-    """Megőrző (#369): a `%0*d-%s` szélessége a kötegmérethez igazodik."""
+@pytest.mark.parametrize("darab,elso,utolso", [
+    (7, "1-", "7-"),
+    (12, "01-", "12-"),
+    (178, "001-", "178-"),
+])
+def test_a_sorszam_szelessege(tmp_path, darab, elso, utolso):
+    """A nullázás szélessége a teljes köteg képszámának jegyszáma."""
     forras = _kep(tmp_path / "src" / "a.jpg")
     jelentes = export_photos(
-        [ExportItem(source=forras)] * 1,
+        [ExportItem(source=forras)] * darab,
         tmp_path / f"ki{darab}",
         ExportSettings(add_numbers=True),
     )
-    assert jelentes.exported[0].name.startswith("0" * (szelesseg - 1) + "1-") or darab > 1
+    assert jelentes.exported[0].name.startswith(elso)
+    assert jelentes.exported[-1].name.startswith(utolso)
 
 
 class TestFilmMod:

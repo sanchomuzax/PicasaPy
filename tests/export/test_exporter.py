@@ -332,7 +332,7 @@ class TestSettingsValidation:
 
 class TestAddNumbers:
     """#369 (export.fen paritás): „Add numbers to file names to preserve
-    order" — a fájlnevek elé 3 jegyű sorszám kerül, bemeneti sorrendben."""
+    order" esetén a köteg méretéhez igazodó előtag kerül a fájlnevek elé."""
 
     def test_numbers_are_prefixed_in_input_order(self, tmp_path):
         sources = [make_jpeg(tmp_path / name) for name in ("c.jpg", "a.jpg", "b.jpg")]
@@ -342,8 +342,25 @@ class TestAddNumbers:
             ExportSettings(add_numbers=True),
         )
         assert [p.name for p in report.exported] == [
-            "001-c.jpg", "002-a.jpg", "003-b.jpg",
+            "1-c.jpg", "2-a.jpg", "3-b.jpg",
         ]
+
+    @pytest.mark.parametrize(
+        "darab,elso,utolso",
+        [(7, "1-", "7-"), (12, "01-", "12-"), (178, "001-", "178-")],
+    )
+    def test_a_sorszam_szelessege_a_koteg_meretehez_igazodik(
+        self, tmp_path, darab, elso, utolso
+    ):
+        source = make_jpeg(tmp_path / "kep.jpg")
+        report = export_photos(
+            [ExportItem(source)] * darab,
+            tmp_path / f"out-{darab}",
+            ExportSettings(add_numbers=True),
+        )
+
+        assert report.exported[0].name.startswith(elso)
+        assert report.exported[-1].name.startswith(utolso)
 
     def test_disabled_by_default_keeps_original_names(self, tmp_path):
         source = make_jpeg(tmp_path / "kép.jpg")
@@ -360,7 +377,7 @@ class TestAddNumbers:
             tmp_path / "out",
             ExportSettings(add_numbers=True),
         )
-        assert [p.name for p in report.exported] == ["001-kép.jpg", "002-kép.jpg"]
+        assert [p.name for p in report.exported] == ["1-kép.jpg", "2-kép.jpg"]
 
     def test_width_grows_for_large_batches(self, tmp_path):
         # 1000+ elemnél a 3-jegyű séma nem lenne elég — a szélesség a teljes
