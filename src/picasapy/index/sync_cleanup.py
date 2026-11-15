@@ -9,6 +9,7 @@ from pathlib import Path
 
 
 from picasapy.halozati_ut import elerheto
+from picasapy.paths import flat_key
 
 from .sync_compat import legacy
 
@@ -28,10 +29,16 @@ def _prune_folders(conn: sqlite3.Connection, root: Path, seen_paths: set[str]) -
     EGYÜTT bennmarad az indexben, `offline = 1` jelöléssel; a takarítás
     csak a bizonyítottan eltűnt mappákra fut. Ld. `folder_looks_offline`.
     """
+    # #7045: Windowson a csak kis-nagybetűben eltérő sor UGYANAZ a mappa, amit
+    # a scan látott. Nem avatkozunk bele (az egyesítés dolga, adatvesztés
+    # nélkül): a törlés itt egy ellentmondó szerkesztésű, szándékosan
+    # egyesítetlenül hagyott sor adatát vinné el. POSIX-on a `flat_key`
+    # identitás, a viselkedés változatlan.
+    latott_kulcsok = {flat_key(path) for path in seen_paths}
     stale = [
         (row["id"], row["path"])
         for row in conn.execute(*_under_root_query("SELECT id, path", root))
-        if row["path"] not in seen_paths
+        if row["path"] not in seen_paths and flat_key(row["path"]) not in latott_kulcsok
     ]
     for folder_id, path in stale:
         # Óvni csak azt érdemes, amiben van is mit veszíteni: fotó nélküli

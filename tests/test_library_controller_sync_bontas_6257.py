@@ -22,8 +22,10 @@ _MOZGATOTT_FORRASOK = {
     # #6476: szándékos változás, a változatlan mappa célzott szinkronja kimarad
     ("library_controller_sync_dirty.py", "_LibrarySyncDirtyMixin", "_on_folders_dirty"):
         "70c62407559ad934ef7c798ef3d2eba73767fd965bb69300139fe1cc3e17498b",
+    # #7044: szándékos változás, a gyökérkeresés hálózati útvonalon nem old fel
+    # (nincs `Path.resolve()`), a fő szál nem vár a hálózatra
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_root_for_folder"):
-        "f5afe5e6920a3047137f970df48e26bd2eeec92e67c8b544b126859d86d66efd",
+        "3db0043891df1f66e3bb3bc719f56242b1a0eee89b327171b270b3b1e678bc48",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_poll_current_folder"):
         "f5bfba83bc9be104e360305f62562ca79816cdfae78965cab55309b81375025f",
     (

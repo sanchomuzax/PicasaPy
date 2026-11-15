@@ -223,7 +223,7 @@ def _scan_tree(
     # nem a célé. Ezért a leszálláskor a jelző symlinknél `False`-ra vált —
     # ott a feloldás visszakapcsol.
     root_path = Path(normalize_path(root_path))
-    exclude_paths = tuple(Path(item).resolve() for item in exclude)
+    exclude_paths = tuple(Path(normalize_path(item)) for item in exclude)
     filters = name_filters if name_filters is not None else default_name_filters()
     folders: list[FolderScan] = []
     _walk(

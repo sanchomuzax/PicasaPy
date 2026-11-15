@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from PySide6.QtCore import Slot
 from picasapy.index import folder_scan_stamps, open_index
+from picasapy.paths import is_same_or_under
 
 from .folder_freshness import next_sweep_batch, stale_folders
 from .hatter_prioritas import kerjafonal_alacsony_prioritasa
@@ -16,11 +15,11 @@ class _LibrarySyncSweepMixin:
     def _root_for_folder(self, folder: str) -> str | None:
         """A jelzett mappához tartozó figyelt gyökér (a `sync_folder`
         védőkorlátjához) — a leghosszabb egyező előtag, ha van ilyen."""
-        folder_path = Path(folder).resolve()
+        # #7044: a `normalize_path` hálózati útvonalat feloldás nélkül kezel,
+        # a `Path.resolve()` ott minden hívással a hálózatra várt
         best: str | None = None
         for root in self._roots:
-            root_path = Path(root).resolve()
-            if folder_path == root_path or folder_path.is_relative_to(root_path):
+            if is_same_or_under(folder, root):
                 if best is None or len(root) > len(best):
                     best = root
         return best
