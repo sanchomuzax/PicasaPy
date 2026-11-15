@@ -1958,8 +1958,6 @@ eredeti fájlnévvel.
 ### Nyitott
 
 - **Megválaszolva (Ghidra-kör, `referencia/ghidra/2026-11-15-6970-colab-decomp.txt`, privát):** a menüt a `0x00559150` csak építi; az Export (`0x9c81`) a `0x0056e1c0`-ban a Save As, Save a Copy, Print, Email és Delete csoporttal együtt kap engedélyt (az állapotszó 2-es vagy 4-es bitje és `param_1[0xd29]==0`; a `0x8000` bit mindet tiltja). Hogy a `param_1[0xd13]` nézet a néző-e, a kód nem mondja ki, ezért a mai engedélyezés marad. A képtálca mappagombjánál (`0x005312b0`) a névalap a jelenlegi nézet objektumáé, ennek hiányában `IDS_DEFAULT_EXPORT`; a kijelölésgyűjtő (`0x005c7990`, `0x005c7ab0`) nincs dekompilálva. A `0x0073f320` 8-as esete a végén `ShellExecuteA("open", <célmappa>)`-val megnyitja a célmappát, ha készült kimenet és a jelző nulla; nem létrehozható célnál `IDS_DESTDIRCANNOCREATE` jön és megszakít; külön UNC- vagy hálózati ág nincs. A PicasaPy mindkettőt így teszi.
-- Ghidra-kör kell: 0x005312b0 - a képtálca `folderbutton` útján a kijelölésgyűjtő a tartott, több mappából származó képeket veszi-e át, és hogyan választ névalap-forrásobjektumot? [blokkoló]
-- Ghidra-kör kell: 0x0073f320 - mi állítja be a `0x00741477` előtti megnyitójelzőt, és van-e külön UNC/hálózati útvonal- vagy hibakódág? [blokkoló]
 - `NINCS MEG`: az eredeti `FileExportQualityType` hiányzó kulcshoz tartozó tiszta profilbeli választása; Windows mérés kell üres Preferences profillal.
 - `NINCS MEG`: az eredeti teljeslemez-előellenőrzés léte, valamint írásvédett cél és betelt lemez pontos felületi ága mindkét programban; Windows méréssel rögzítendő a cél, hibaüzenet, fájlok és indexállapot.
 - `NINCS MEG`: hálózati/UNC export sikeres vagy sikertelen kimenete, cél `.picasa.ini`-je és indexbe vétele; UNC útvonalas Windows-mérés kell.
