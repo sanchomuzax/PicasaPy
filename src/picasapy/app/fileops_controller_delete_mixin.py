@@ -50,12 +50,25 @@ class FileOpsControllerDeleteMixin:
 
         A windowsos (rendszer-lomtáras) ágon a KÉP megy előbb, ezért ott a
         hiba a már megtörtént törlés UTÁN jöhet — ilyenkor a `photoDeleted`
-        is kimegy, a hibaüzenet mellett (ld. `_torles_utan_hibaval`)."""
+        is kimegy, a hibaüzenet mellett (ld. `_torles_utan_hibaval`).
+
+        #6969: ha a Shell a Lomtárba helyezésre PONTOSAN `0x0f`-et felel
+        (`ImmediateDeletionNeededError`), nem hiba megy ki, hanem az
+        `immediateDeletionRequired` jelzés: a felület külön Delete / Cancel
+        kérdést nyit, és csak jóváhagyásra hívja a `deletePhotoPermanently`-t.
+        Minden más hibakód `operationFailed` marad, végleges törlés nélkül."""
         _compat = _controller_module()
         try:
             _compat.delete_photo_to_trash(_compat.Path(path))
         except _compat.CompanionLeftBehindError as error:
             self._torles_utan_hibaval(path, error)
+            return
+        except _compat.ImmediateDeletionNeededError:
+            # #6969: az eredeti (`0x005c9b00`) csak a PONTOSAN `0x0f`
+            # Lomtár-eredménynél kérdez külön (`0x005fdb80`). A fájl
+            # érintetlen; a végleges törlést a felület csak jóváhagyásra
+            # kéri a `deletePhotoPermanently`-től.
+            self.immediateDeletionRequired.emit(path)
             return
         except OSError as error:
             self.operationFailed.emit("delete", str(error))

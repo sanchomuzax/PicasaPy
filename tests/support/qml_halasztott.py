@@ -41,6 +41,7 @@ FILEOPS_PARBESZEDEK = frozenset(
         "moveConfirmDialog",
         "duplicateNamesDialog",
         "deleteConfirmDialog",
+        "immediateDeleteDialog",
         "fileOpsErrorDialog",
         "batchSummaryDialog",
         "batchProgressDialog",

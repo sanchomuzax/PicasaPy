@@ -67,6 +67,11 @@ HIVATALOS: dict[tuple[str, str], str] = {
     # CThumbUI::SaveAsFilterJPG / SaveAsFilterWebP — a fájlválasztó szűrői
     ("SaveDialogs", "JPEG Files (*.jpg)"): "JPEG-fájlok (*.jpg)",
     ("SaveDialogs", "WebP Files (*.webp)"): "WebP-fájlok (*.webp)",
+    # CThumbUI::FileSaveCopy:err (#6977)
+    (
+        "SaveDialogs",
+        "Unable to save files due to a disk error. The disk may be full or read-only.",
+    ): "Lemezhiba miatt nem lehetséges a fájlok mentése. Lehet, hogy a lemez megtelt vagy írásvédett.",
     # CThumbUI::FileSave::progfile / progfiles — EGY tizedesjegy (%.1f)
     ("SaveProgressPanel", "Saving file %1%"): "Fájl mentése: %1%",
     ("SaveProgressPanel", "Saving %1 files %2%"): "%1 fájl mentése %2%",

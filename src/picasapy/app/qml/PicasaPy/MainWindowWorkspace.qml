@@ -166,6 +166,9 @@ Item {
         // menüsáv KÖZÖS, nézetfüggő elágazásán megy át
         deleteRemovesFromAlbum: hostRefs.picasaMenuBar.deleteRemovesFromAlbum
         onDeleteRequested: hostRefs.picasaMenuBar.activateDeleteCommand()
+        // #6969: Shift+Delete a nézőben - ugyanaz a nézetfüggő belépő
+        onPermanentDeleteRequested:
+            hostRefs.picasaMenuBar.activatePermanentDeleteCommand()
             }
         }
     }

@@ -41,9 +41,13 @@ class SaveErrorMixin:
     #: a fájl-visszaállítás hivatalos, általános lemezhiba-üzenete (#5268)
     revertErrorOccurred = Signal()
 
-    def _report_save_error(self, error: BaseException, path: Path) -> None:
+    def _report_save_error(
+        self, error: BaseException, path: Path, *, is_copy: bool = False
+    ) -> None:
         """Egy mentés-hiba besorolása és felküldése a felületnek."""
         self.saveErrorOccurred.emit(
-            save_error_kind(error), path.name, save_error_code(error)
+            save_error_kind(error, is_copy=is_copy),
+            path.name,
+            save_error_code(error),
         )
 

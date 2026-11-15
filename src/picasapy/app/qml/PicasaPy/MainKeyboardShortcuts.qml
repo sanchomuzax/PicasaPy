@@ -466,6 +466,20 @@ Item {
         onActivated: hostPicasaMenuBar.activateDeleteCommand()
     }
 
+    // #6969: a `Shift+Delete` a nézőben (a rácsé a menüsávban él, a
+    // `shortcutPermanentDeleteFromDisk`). Ugyanaz a feltétel, mint a
+    // `Ctrl+Delete`-nél; nézetfüggő: albumból megnyitott képen tagságot
+    // távolít el, fájlt nem töröl.
+    Shortcut {
+        id: shortcutPermanentDeleteViewer
+        objectName: "shortcutPermanentDeleteViewer"
+        sequence: "Shift+Delete"
+        enabled: hostWindow.viewerOpen && hostPhotoViewer
+                 && !hostWindow._szovegmezoneVanFokusz
+                 && hostPhotoViewer._kijeloltSort() >= 0
+        onActivated: hostPicasaMenuBar.activatePermanentDeleteCommand()
+    }
+
 
     Shortcut {
         id: shortcutOpenInEditor

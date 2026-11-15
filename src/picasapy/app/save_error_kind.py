@@ -36,6 +36,8 @@ KIND_SAME = "same"
 KIND_FORMAT = "format"
 #: lemezhiba: tele lemez, írásvédettség, zárolás (`filesaveerr-win`)
 KIND_DISK = "disk"
+#: lemezhiba másolat mentésekor (`FileSaveCopy:err`) - #6977
+KIND_COPY_DISK = "copy_disk"
 
 #: A `FileNameCollisionError` üzenetébe a `save_copy` ezt írja, ha a cél a
 #: forrás — a két ág üzenete más, a kivétel-osztály viszont közös
@@ -43,7 +45,7 @@ KIND_DISK = "disk"
 _SAME_MARKER = "azonos a forrással"
 
 
-def save_error_kind(error: BaseException) -> str:
+def save_error_kind(error: BaseException, *, is_copy: bool = False) -> str:
     """A kivételhez tartozó hivatalos hibaág azonosítója.
 
     A sorrend számít: a névütközés a `SaveError` leszármazottja, tehát
@@ -54,10 +56,10 @@ def save_error_kind(error: BaseException) -> str:
     if isinstance(error, FileExistsError):
         return KIND_COLLISION
     if isinstance(error, (OSError, IniSaveError, IniConflictError)):
-        return KIND_DISK
+        return KIND_COPY_DISK if is_copy else KIND_DISK
     if isinstance(error, (SaveError, ValueError)):
         return KIND_FORMAT
-    return KIND_DISK
+    return KIND_COPY_DISK if is_copy else KIND_DISK
 
 
 def save_error_code(error: BaseException) -> int:
