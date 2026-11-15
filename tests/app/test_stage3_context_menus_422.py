@@ -152,8 +152,8 @@ class TestFolderListContextMenu:
 class TestTagContextMenu:
     """A címke menüje — a `Tags` osztály 3 tétele, mind bekötve."""
 
-    # #5755: az eredeti sorrend: eltávolítás, keresés, kijelölésre adás.
-    EXPECTED = ["tagMenuRemove", "tagMenuFindTagged", "tagMenuAddToSelection"]
+    # #7025: az eredeti sorrend: kijelölésre adás, keresés, eltávolítás.
+    EXPECTED = ["tagMenuAddToSelection", "tagMenuFindTagged", "tagMenuRemove"]
 
     def test_all_three_commands_are_present_in_order(self, qml_engine):
         menu = _load(qml_engine, "TagContextMenu")

@@ -162,6 +162,17 @@ class TestFiokEsKereses:
             "a Ctrl+K nem nyitotta meg a Címkék lapot"
         )
 
+        billentyu(window, qt_app, "tagsPanelAltShortcut", Qt.Key.Key_K, CTRL)
+        assert varj(qt_app, lambda: window.property("activeDrawerTab") == ""), (
+            "a második Ctrl+K nem zárta be a Címkék lapot"
+        )
+
+        window.setProperty("activeDrawerTab", "people")
+        billentyu(window, qt_app, "tagsPanelAltShortcut", Qt.Key.Key_K, CTRL)
+        assert varj(qt_app, lambda: window.property("activeDrawerTab") == "tags"), (
+            "a Ctrl+K másik aktív lapról nem váltott a Címkékre"
+        )
+
     def test_az_F3_a_keresomezore_viszi_a_fokuszt(self, kep_app, qt_app):
         window, controller, _engine = kep_app
         elokeszit(window, qt_app, controller)
