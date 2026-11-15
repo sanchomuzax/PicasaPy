@@ -96,6 +96,14 @@ Item {
         return sorok.length > 0 ? Number(sorok[0]) : -1
     }
 
+    // #7020: a fókuszban lévő (utoljára aktív) kép felvételi ideje: a kézi
+    // felülírás vagy az EXIF ideje, ugyanaz, amit a rács mutat ("" = nincs)
+    function photoActionTakenAt() {
+        var sor = hostWindow.photoActionIndex()
+        if (sor < 0 || !hostController) return ""
+        return hostController.photos.itemAt(sor).takenAt || ""
+    }
+
     function photoActionPaths() {
         var rows = hostWindow.photoActionRows()
         var paths = []

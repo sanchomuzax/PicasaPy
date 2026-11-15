@@ -317,7 +317,8 @@ PicasaMenuBar {
     // csak a NEVET kéri, a kijelölés útvonalait a hívás pillanatában
     // gyűjtjük (ugyanaz a minta, mint a `Move…`/`Törlés…` tételeknél).
     onMoveToNewFolderRequested:
-        hostFileOpsDialogs.ensure().openMoveToNewFolder(hostWindow.photoActionPaths())
+        hostFileOpsDialogs.ensure().openMoveToNewFolder(
+            hostWindow.photoActionPaths(), hostWindow.photoActionTakenAt())
     // #1472: Fájl ▸ Nyomtatás… / Ctrl+P — a nyomtatás-párbeszéd
     onPrintRequested: hostWindow.openPrint()
     // #1590: Mappa ▸ Bélyegképek nyomtatása… (Ctrl+Shift+P)

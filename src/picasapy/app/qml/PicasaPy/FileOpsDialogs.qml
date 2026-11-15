@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
+import "ujmappa_datum.js" as UjMappaDatum
 
 // Fájlművelet-dialógusok (#15, #150-ben kiemelve a Main.qml-ből):
 // átnevezés (F2), áthelyezés mappába, lomtárba törlés megerősítéssel,
@@ -32,11 +33,10 @@ Item {
         moveFolderDialog.paths = paths
         if (moveFolderDialog.paths.length > 0) moveFolderDialog.open()
     }
-    // #5853: Fájl ▸ Áthelyezés új mappába… ugyanazt a Folder Properties
-    // párbeszédet használja, mint a mappa létrehozása/felosztása. A mezők
-    // elfogadása a meglévő kötegelt mozgatási útvonalat indítja.
-    function openMoveToNewFolder(paths) {
-        moveToNewFolderDialog.openFor(paths)
+    // #5853/#7020: ugyanaz a Folder Properties ablak, mint a mappa létrehozásánál;
+    // az Ok a kötegelt mozgatást indítja, a dátum a fókuszban lévő kép napja + 1 mp.
+    function openMoveToNewFolder(paths, takenAt) {
+        moveToNewFolderDialog.openFor(paths, takenAt)
     }
     // #6969: `permanent` = a `Shift+Delete` (`0x005cb990` -> `0x005c9b00`):
     // a Lomtár helyett a végleges törlés ágát választja, saját egyes és
@@ -390,14 +390,14 @@ Item {
         newFolderCreation: true
         showAutomaticDate: false
         property var paths: []
-        function openFor(pathList) {
+        function openFor(pathList, takenAt) {
             if (!pathList || pathList.length === 0) return
             paths = pathList.slice()
             mode = "folder"
             folderPath = ""
             folderName = untitledFolderName
             folderLocation = ""
-            currentDate = Qt.formatDate(new Date(), "yyyy-MM-dd")
+            currentDate = UjMappaDatum.kezdoDatum(takenAt)
             currentDescription = ""
             currentMusicEnabled = false
             currentMusicFile = ""
