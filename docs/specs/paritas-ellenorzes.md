@@ -1465,6 +1465,93 @@ A mérés célja annak rögzítése, hogy az Indexképek frissítése parancs mi
      - A Picasa profilkönyvtárában található `thumbs.db` fájl nem törlődik a lemezről (mérete a parancs futásakor nem esik nullára).
      - A könyvtárnézeti rácsban a bélyegképek a memóriából való ürülés után a háttérben egymás után újra elkészülnek és frissülnek.
 
+## #6963: Delete from Disk teljes folyamata
+
+Az eredeti `ID_FILE_DELETEFROMDISK` azonosítója `0x9c9a`, de nem minden
+nézetben jelent lemezműveletet: mappanézetben képfájlt töröl, album- és
+Emberek-album nézetben az albumtagság eltávolítására is használja. A
+megerősítő út és a Shell-művelet közvetlenül visszafejtett; az eredeti
+metaadat- és nézetfrissítési hatás részletei nyitva maradtak.
+
+### Eredeti / PicasaPy / teendő
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Fájl menü és `Delete`:** `eMenuFile::ID_FILE_DELETEFROMDISK`, `0x00559150`, parancs `0x9c9a`; a menüállapot-kezelő `0x0056c5a0`. A `0x9c9a` diszpécserága `0x005cb990`-ben a `0x005c9b00` kezelőre jut. A menüállapot-kód a `0x70`/`0x8a` menükontextusban csak akkor engedélyezi a parancsot, ha van aktív objektum (`[param_1+0xeac]`) és a `0x004ac8f0` segéd igazat ad. A File menü szövegtára `&Delete from Disk...`; a parancs kezelője a nézetet is vizsgálja. | `PicasaFileMenu.qml:155-159`, `PicasaMenuBar.qml:492-511,658-667`, `MainMenuBar.qml:308-325`. A Fájl tétel a `photoActionsEnabled` állapotot követi; ablak-`Delete` csak aktív kép-műveleti sorral, nem szerkesztés és nem szövegmező-fókusz esetén él. A közös művelet mappanézetben töröl, albumokban eltávolít. | **Részben egyezik.** A `0x9c9a` nézetfüggő hatása nálunk is közös belépőn megy át. Az eredeti menükontextusok `0x70`/`0x8a` értékeinek felhasználói jelentése és a `0x004ac8f0` kiválasztási feltétel pontosítása nyitott; az eredeti File menü album-nézeti látható felirata külön futásidejű felvételt igényel. |
+| **Kép helyi menüje, mappanézet:** `FolderPhoto::ID_FILE_DELETEFROMDISK`, `0x00730790`; a menüépítő `0x0056c5a0` a feliratot `Delete from Disk`-ként állítja, a parancs `0x9c9a`. A helyi menü gyorsbillentyű-felirata `Ctrl+Delete`. | `PhotoContextMenu.qml:460-471`; a tétel csak akkor látszik, ha nincs album- vagy személyalbum-nézetben. A jel a `MainPhotoContextMenu.qml:63` útján a kijelölt képek útvonalait adja a törlő dialógusnak. | **Egyezik** a mappanézeti belépő és a kijelölési feltétel. |
+| **Album- és Emberek-album helyi menüje:** `AlbumPhoto::ID_FILE_DELETEFROMDISK`, `0x00731050`, illetve `PplAlbumPhoto::ID_FILE_DELETEFROMDISK`, `0x007355c0`. Mindkettőn ugyanaz a `0x9c9a` parancs eltávolító feliratot kap; a fájl nem lemezről törlődik. | `PhotoContextMenu.qml:194-220`, `PicasaMenuBar.qml:492-511`, `MainMenuBar.qml:318-325`. A helyi menü albumtagságot vagy személyalbum-hozzárendelést távolít el. | **Egyezik** a helyi menü parancsának nézetfüggő jelentése. |
+| **Kép helyi menüje és néző:** `0x007327a0` a néző parancsmenüje; a `0x9c9a` ugyanarra a kezelőre fut. A nézőben az aktuális kép az érintett cél; albumból nyitott képnél a parancs albumtagságot távolít el. A menü `Ctrl+Delete` feliratot ad. | `ViewerContextMenu.qml:242-249`, `MainKeyboardShortcuts.qml:450-466`, `PhotoViewerKeyboard.qml:66-70`, `MainMenuBar.qml:308-320`. A néző billentyűje csak megnyitott nézőnél, érvényes aktuális képnél és szövegmező-fókusz nélkül él; a Fájl menü útja a nézett kép útvonalát adja át. | **Egyezik** a célkép és a `Ctrl+Delete` nézőbeli útja. A Shift-módosítós nézőút külön vizsgálandó. |
+| **`Delete` / `Ctrl+Delete` / `Shift+Delete`:** a `Delete` a Fájl menü parancsszövegének gyorsbillentyűje, a kép helyi menüje `Ctrl+Delete`-et hirdet; mindkettő a `0x9c9a` parancs. A `0x005cb990` a `GetAsyncKeyState(0x10)` állapotát adja át a `0x005c9b00`-nak. Shift nélkül a megerősítő a Lomtárba helyezést választja; Shift mellett a közvetlen végleges törlést. | `PicasaMenuBar.qml:658-667`, `MainKeyboardShortcuts.qml:437-466`, `PhotoViewerKeyboard.qml:66-70`. A sima `Delete` és a `Ctrl+Delete` létezik; `Shift+Delete`-hez nem találtam külön kötést. | **Eltér:** a PicasaPy forrásában nincs a binárisban látható Shift+Delete közvetlen végleges-törlési út. Fejlesztői jegy javasolt, lásd lent. |
+| **Képtálca:** a `0x00732ee0` teljes menüépítője View and Edit, Hold Selection, Remove Selection, két forgatás, Locate on Disk, elválasztó és Properties tételeket készít; `0x9c9a`/`ID_FILE_DELETEFROMDISK` nincs benne. | `TrayContextMenu.qml:33-95` ugyanilyen szerepű menüt ad, `Remove Selection` tétellel; nincs lemezről törlés. | **Egyezik:** a képtálca helyi menüjéből nincs külön Delete from Disk parancs. Ez nem bizonyítja, hogy egy másik, aktív rács-kijelölésre vonatkozó ablakbillentyűt a fókusz hogyan kezel. |
+| **Egy kijelölt fájl, Lomtáras törlés:** `0x005fdc30` `Delete Items` címet, `DeleteSingle` üzenetet és `Delete Image` gombot választ. Üzenet: `Are you sure you want to send the selected file to the Recycle Bin? (It will also be removed from any albums in which it appears)`. A közös `confirm.fen` út a `No` gomb szövege nélkül épül, így a látható gombok `Delete Image` és `Cancel`. A `0x005fd670` a közös gombsor 1-es elemét választja; a job-252 egyképes felvételleírása Cancel-fókuszt és Enterre elmaradó törlést rögzít. | `FileOpsDialogs.qml:535-557`, `ConfirmDialog.qml:50-76,164-190`. Nálunk a két gomb `Delete Image` és `Cancel`, a Cancel kap fókuszt. | **Egyezik** a szöveg és a gombok. Az eredeti egyképes Enter-hatás csak a korábbi job-252 felvételleírásból ismert; annak nyers képe a helyi mérőadat-archívumban nem található. |
+| **Több kijelölt fájl, Lomtáras törlés:** `0x005fdc30` a `DeleteMultiple` üzenetet és `Delete Items` gombot választja. Üzenet: `Are you sure you want to send the %d selected items to the Recycle Bin?\n(They will also be removed from any albums in which they appear)`. A közös builder ugyanazt a gombsor-indexet állítja be, nincs darabszámfüggő gombág; a bináris önmagában nem nevezi meg a billentyű-alapgombot. | `FileOpsDialogs.qml:558-566`; `pathList.length > 1` esetén ugyanaz a szöveg, gomb `Delete Items`; a közös `ConfirmDialog` Cancel-fókuszt állít. | **Feltételesen egyezik:** a közös index egyképes Windows-felvétellel Cancelként azonosítható, de több kijelölésnél Enter-próba nincs, ezért a tényleges alapgomb-hatás **NINCS MEG**. |
+| **Shift+Delete, egy és több fájl:** `0x005fdc30` a `NoUndoSingle`/`NoUndoMultiple` üzenetet és `Delete File`/`Delete Files` gombot választja. Üzenetek: `Are you sure you want to permanently delete the selected file? (This cannot be undone.)` illetve `Are you sure you want to delete %d selected files? (This cannot be undone.)`. A `Preferences\\DoNotConfirmDeleteFromDisk` beállítás igaz értéke kihagyhatja a szokásos megerősítőt (`0x005fd670`). A prompt gombválasztó-indexe közös a Lomtáras ággal; külön Shift+Delete Enter-mérés nincs. | `FileOpsDialogs.qml:568-583` a végleges ágat csak akkor nyitja meg, ha a `trashAvailableFor()` hamis; a Shift billentyű nem választ külön ágat. A Cancel-fókusz beállítása közös (`ConfirmDialog.qml:50-76`). | **Eltér:** az eredeti Shift+Delete út és a mai, lomtár hiányakor megjelenő figyelmeztetés külön döntési eset. A billentyűút fejlesztése javasolt. |
+| **Lomtáras fájlművelet és 0x0f hiba:** `0x005c9b00` fájlonként hívja a `0x009929b0` segédet. A segéd `wFunc=3` Shell műveleti rekordot épít, `0x00d695a0` wrapperhez jut; `0x009b1d50` a `0x00c40628` IAT-címen `SHELL32!SHFileOperationW`-t hív. A normál ágon az `0x40` bitet is a `0x414` flaghez adja. Ha a visszatérési érték pontosan `0x0f`, a `0x005fdb80` kérdése jelenik meg: `This file cannot be moved to the Trash and will be deleted immediately. Are you sure you want to continue?`, gombok `Delete` / `Cancel`; Delete után a `0x009929b0(0)` végleges próbálkozás fut. E párbeszéd Enter-alapgombját sem a bináris, sem a helyi mérés nem azonosította. | `trash.py:50-104,118-177`, `fileops_controller_delete_mixin.py:44-63`, `FileOpsDialogs.qml:594-599`. Windowson a PicasaPy szintén `SHFileOperationW`-t használ, de bármely nem nulla eredményt `operationFailed` hibává alakítja; nincs `0x0f`-re külön megerősítő és végleges újrapróbálás. | **Eltér:** hiányzik az eredeti `0x0f` utáni megerősítés és újrapróbálás. Fejlesztői jegy javasolt. Más Shell-hibakódot nem szabad automatikusan ennek az ágnak tekinteni. |
+| **Törlés utáni `.picasa.ini`, album, index, mappafa és kijelölés:** a `0x005c9b00` tartalmaz `.picasa.ini` és `.picasaoriginals` objektumokat, album-eltávolító szöveget, valamint sikeres fájltörlési listát. A függvény meglévő Ghidra-kimenete nem oldja fel a releváns virtuális hívások célját; ebből a körből **NINCS MEG**, hogy a fő mappa-ini kép-szekciója törlődik-e, hogyan változik az index/fa darabszám, és milyen sort jelöl ki utána a rács. | `fileops_controller_delete_mixin.py:44-107` törli vagy lomtárba teszi a képet és kísérőit; `photo_delete.py:252-259` a kísérő eredeti képek ini-szekcióit takarítja. A fő mappa `.picasa.ini` írása nem része a törlő útvonalnak. `application_services.py:100-110` azonnal kiveszi a rácssort és a mappa újraszinkronizálását kéri; `library_controller_sync.py:83-106` frissíti a csoport- és státusz-számokat. `FileOpsDialogs.qml:585-608` a legkisebb korábbi kijelölt sor indexén folytatja a kijelölést, üres rácsnál törli. | **NINCS MEG a paritás.** Ghidra-feltárás kell az eredeti ini/index/fa/kijelölés hatásához; a javasolt Ghidra-kérdéseket lent adom meg. |
+| **Írásvédett fájl vagy hálózati megosztás:** statikusan csak a lomtáras út `0x0f` visszatérési értékének külön ágát bizonyítottam; azt, hogy az egyes Windowsos állapotok mely kódot eredményezik, a bináris nem mondja meg. | `trash.py:257-268` Windowson minden útvonalra elérhetőnek tekinti a rendszer-Lomtárat; `trash.py:100-104` nem nulla Shell-eredménynél `OSError`-t ad; `fileops_controller_delete_mixin.py:60-62` ezt hibaként jelzi, nem indít végleges törlést. | **NINCS MEG az eredeti OS-kimenet.** Windowsos írásvédett mintával és hálózati megosztással kell rögzíteni a Shell visszatérési értékét és a felületet. |
+
+### Bizonyítottsági fok és független utak
+
+- **Bizonyítottsági fok: feltételes.** A parancsazonosító, belépési út, a megerősítő szövegágak és a Shell-műveleti hívás statikusan visszakövethető. A teljes utóhatás, az OS-hibakódok okai és a többes Enter-próba nincs lezárva.
+- **A út:** `0x005cb990` `case 0x9c9a` -> `0x005c9b00` -> `0x009929b0` -> a `0x00d695a0` Shell-kompatibilitási wrapper -> `0x009b1d50` -> a PE IAT `0x00c40628` (`SHELL32!SHFileOperationW`). A `0x005fdc30`, `0x005fd670` és `0x005fdb80` a döntő promptokat és a fallbacket választja.
+- **B út:** az importkereszttábla a `0x00d695a0` címet `SHELL32!SHFileOperationA` wrapperként és a `0x009b1d50` függvényként tartja nyilván; a közvetlen PE-importfeloldás a wrapper belső `0x00c40628` hívását `SHFileOperationW`-ként nevezi meg. Ettől külön a menüszövegekre mutató hivatkozások a főmenü- és kép-helyimenü-rekeszeket a `0x9c9a` parancshoz kötik. A két út a fizikai törlő API és a parancsrekesz azonosságában egyezik.
+
+### Cáfoló kísérlet
+
+Megpróbáltam cáfolni azt a tágabb feltevést, hogy a `0x9c9a` minden előfordulása
+fizikailag törli a képet, illetve hogy bármilyen lomtárhiba végleges törléshez
+vezet. A `0x00731050` és `0x007355c0` helyi menüiben ugyanaz a parancs eltávolító
+feliratot kap, a fájltörlő ág helyett a nézethez kötött művelet fut; a teljes
+`0x00732ee0` képtálca-menüben nincs `0x9c9a`. Az utasításszintű cáfoló körben a
+`0x005caca3` utáni kód `cmp eax, 0xf` feltételt vizsgál, és csak egyezésnél hívja
+a `0x005fdb80` ablakot; az eltérő visszatérés a külön fallback-ágat átugorja.
+A `0x009929b0` shell-wrapper hívása, a `0x005fdb80` üzenete és a PE importcíme
+ugyanezt az értelmezést támasztja alá. Így az a korábbi feltételezés, hogy
+írásvédett fájl minden hibája automatikusan végleges-törlési kérdést ad, nem
+igazolt.
+
+### A jegy „Kész, ha” pontjai
+
+1. ✅ **Belépési pontok:** a Fájl menü, mappa-kép helyi menü, `Delete`, `Ctrl+Delete`, néző és képtálca külön sorban dokumentálva. A pontos `0x004ac8f0` feltétel szemantikája és a fókuszált tálca melletti globális billentyűállapot nyitott.
+2. ⛔ **Egy és több kép megerősítése:** az egyes és többes szöveg, valamint a gombok dokumentálva; az egyképes Lomtáras Enter-viselkedésre csak korábbi felvételleírás van, a többes és Shift+Delete út alapgomb-hatása és a `0x0f` fallback Enter-hatása **NINCS MEG**.
+3. ⛔ **Fájlrendszer, ini, index, album, mappafa és rácskijelölés:** a Shell-művelet ismert, de az eredeti ini/index/fa/kijelölési utóhatás nincs feloldva.
+4. ⛔ **Írásvédelem és hálózati megosztás:** a `0x0f` fallback-ág ismert, de a konkrét Windowsos állapotok visszatérési kódja és képernyőhatása nincs mérve.
+
+### Javasolt fejlesztői jegytörzs
+
+**Eredeti:** Picasa 3.9-ben a `0x9c9a` parancs mappanézetben sima `Delete`-re
+Lomtáras megerősítést ad, `Shift+Delete`-re pedig végleges törlési
+megerősítést. A Lomtáras Shell-művelet pontos `0x0f` eredménye külön
+`This file cannot be moved to the Trash and will be deleted immediately...`
+megerősítést nyit; a Delete gomb újrapróbálja véglegesen törölni, a Cancel
+meghagyja a fájlt. A `0x9c9a` album- és Emberek-album nézetben eltávolító
+parancs, nem fizikai törlés.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| `Shift+Delete` a `0x005cb990` -> `0x005c9b00` úton `NoUndoSingle`/`NoUndoMultiple` ágat és végleges műveletet választ. | `PicasaMenuBar.qml:658-667`, `MainKeyboardShortcuts.qml:437-466` és `PhotoViewerKeyboard.qml:66-70` nem köt Shift+Delete utat; a végleges prompt csak lomtár-hiány esetén választódik. | Hozzáadni az eredeti módosítós billentyűutat mappanézethez és nézőhöz; album/Emberek-album kontextusban megőrizni az eltávolító viselkedést. |
+| A lomtáras művelet csak `0x0f` hibánál nyitja a külön véglegesítési kérdést, majd `0` undo-flaggel újrapróbál. | `trash.py:100-104` minden nem nulla eredményt `OSError`-ré alakít; `fileops_controller_delete_mixin.py:60-62` hibát jelez, nincs `0x0f` fallback. | A Shell visszatérési kódot megőrizni, a pontos `0x0f`-hez adni az eredeti kérdést és retryt; más kód ne kerüljön ebbe az ágba. |
+
+**Kész, ha:**
+
+1. Mappanézeti egyes és többes kijelölésnél a `Delete` Lomtáras, a `Shift+Delete` a `NoUndoSingle`/`NoUndoMultiple` megfelelő szövegét és gombját használja.
+2. Lomtáras eredmény `0x0f` esetén a külön `Delete`/`Cancel` kérdés jelenik meg; Delete végleges újrapróbát indít, Cancel után a kép és a rácssor megmarad.
+3. Más Shell-hibakód nem indít automatikus végleges törlést.
+4. Album- és Emberek-album nézetben a `0x9c9a` továbbra is csak tagságot távolít el.
+5. A Cancel kezdeti fókusza és a single/multi üzenet a fenti eredeti ágakkal egyezik.
+
+### Nyitott
+
+- Ghidra-kör kell: 0x005c9b00 - a törlési út virtuális hívásai közül melyik módosítja a fő mappa `.picasa.ini` kép-szekcióját és az albumtagságot, és milyen feltétellel? A meglévő dekompilátum a virtuális célokat nem nevezi meg. [blokkoló]
+- Ghidra-kör kell: 0x005c9b00 - melyik hívás veszi ki a sikeresen törölt képet a belső indexből és mappafából, és hogyan választja ki a törlés utáni következő rácssort? A meglévő dekompilátum a virtuális célokat nem nevezi meg. [blokkoló]
+- `NINCS MEG`: írásvédett fájl és hálózati megosztás esetén a Windows `SHFileOperationW` tényleges visszatérési kódja és felületi eredménye. Megszerzés: külön Windows-próba egy írásvédett képpel és egy hálózati megosztáson lévő képpel; rögzíteni kell a promptokat, a Shell eredményét, a fájl jelenlétét és a kijelölést.
+- `NINCS MEG`: többes kijelölésnél az Enter ténylegesen Cancelként zárja-e a promptot. Megszerzés: legalább két kijelölt képpel Enter-próba Windows alatt.
+- `NINCS MEG`: a Shift+Delete végleges törlési prompt és a `0x0f` utáni Delete/Cancel prompt Enter-alapgombja. Megszerzés: külön Windowsos Enter-próba mindkét párbeszédre, az ágak és az egy/több kijelölés rögzítésével.
+
+**Új kutatási jegyjavaslatok:** nincs; a nyitott pontok ehhez a folyamathoz tartoznak.
+
+**Módosított fájl:** `docs/specs/paritas-ellenorzes.md` - a jelen #6963 alszakasz.
+
 ## #6964: A Rename parancs folyamatszintű összevetése az eredeti Picasával
 
 A vizsgálat célja a `Rename` (`ID_FILE_RENAME`, `0x9d4f`) teljes folyamatának összevetése az eredeti Picasa 3.9 binárisával (belépési pontok, engedélyezési feltételek, ablakmezők, sorszámozás, hatás a fájlrendszerre, `.picasa.ini`-re, indexre, kijelölésre és sorrendre, valamint hibakezelés).
