@@ -40,14 +40,14 @@ Rectangle {
     function isDateEntry(entry) {
         if (!entry) return false
         var lbl = entry.label || ""
-        return lbl === "Camera Date" || lbl === qsTranslate("formatting", "Camera Date")
+        return lbl === "Camera Date" || lbl === qsTranslate("", "Camera Date")
     }
 
     function isKeywordsEntry(entry) {
         if (!entry) return false
         var lbl = entry.label || ""
         return lbl === "Keywords" || lbl === "Tags"
-            || lbl === qsTranslate("formatting", "Keywords")
+            || lbl === qsTranslate("", "Keywords")
             || lbl === qsTr("Tags") || lbl === qsTr("Keywords")
     }
 
