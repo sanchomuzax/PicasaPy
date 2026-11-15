@@ -1464,3 +1464,120 @@ A mérés célja annak rögzítése, hogy az Indexképek frissítése parancs mi
      - A mappa könyvtárában található `.picasa.ini` fájl módosítási időbélyege (`mtime`) és mérete változatlan marad.
      - A Picasa profilkönyvtárában található `thumbs.db` fájl nem törlődik a lemezről (mérete a parancs futásakor nem esik nullára).
      - A könyvtárnézeti rácsban a bélyegképek a memóriából való ürülés után a háttérben egymás után újra elkészülnek és frissülnek.
+
+## #6967: A Revert parancs teljes folyamata az eredeti Picasában és összevetése a PicasaPy-jal
+
+### 1. Belépési pontok, engedélyezési feltételek és a két revert-parancs szétválasztása
+
+Az eredeti Picasa 3.9 binárisában két külön visszaállítási parancs létezik, amelyek eltérő célt szolgálnak és eltérő feltételekkel engedélyezettek:
+
+1. **`ID_FILE_REVERT` (`0x9d9a`):**
+   - **Főmenü:** Fájl ▸ Revert / Visszaállítás (menüépítő: `0x00559150`, rekord: `0x00d6da64`, parancskód: `0x9d9a`, felirat: `Rever&t` / `Vissz&aállítás`, mnemonik: `t`).
+   - **Helyi menük (kép jobb-klikk):**
+     - Mappanévzet (FolderPhoto context menu): `0x00730790` (`0x00730c91`, `0x9d9a`).
+     - Albumnézet (AlbumPhoto context menu): `0x00731050` (`0x0073148a`, `0x9d9a`).
+     - Egyképes szerkesztő / néző nézet (OneUp context menu): `0x007327a0` (`0x00732b9c`, `0x9d9a`).
+   - **Engedélyezési feltétel (`EnableMenuItem`, `0x0056e1c0` és `0x0056c5a0`):**
+     A `0x5cb1a0` által visszaadott státuszbájtban a 7. bit (`0x80`, revertable) kötelező. Ez azt jelenti, hogy kizárólag olyan képnél engedélyezett, amely már korábban lemezre lett mentve, és létezik hozzá `.picasaoriginals` (vagy régebbi verzióknál `Originals`) biztonsági mentés. Ha a kép szerkesztetlen, vagy csak memóriában szerkesztett (még nincs lemezre mentve), a menüpont inaktív / szürke (`MF_GRAYED`). Tiltja továbbá a `0x8000` felső tiltó jelző (pl. írásvédett / speciális gyűjtemény) és a nem engedélyezett nézetállapot (`0x34a4 != 0`).
+   - **Szerkesztő gombja:** A szerkesztő bal paneljén (`editpanel`, `0x00567680`) NINCS Revert gomb. A szerkesztő bal hasábján kizárólag `filter_undo` (Visszavonás) és `filter_redo` (Újra) gombok találhatók. A Revert a szerkesztőben is kizárólag a Fájl menüből vagy a kép helyi menüjéből (`0x007327a0`) érhető el.
+   - **Gyorsbillentyű:** NINCS gyorsbillentyű rendelve az `ID_FILE_REVERT`-hez sem a menükben, sem a gyorsítótáblában (az erőforrások között az `RT_ACCELERATOR` és a `SHORTCUTS.XML` nem tartalmaz hozzá bejegyzést).
+
+2. **`ID_PICTURE_REVERT` (`0x9d2d`):**
+   - **Főmenü:** Kép ▸ Undo All Edits / Összes szerkesztés visszavonása (menüépítő: `0x00559150`, rekord: `0x00d6e4d4`, parancskód: `0x9d2d`, felirat: `Undo &All Edits` / `Összes szerkesztés vissz&avonása`, mnemonik: `a`).
+   - **Helyi menük (kép jobb-klikk):**
+     - Mappanévzet: `0x00730790` (`0x0073093b`, `0x9d2d`).
+     - Albumnézet: `0x00731050` (`0x007311fb`, `0x9d2d`).
+     - Szerkesztő nézet: `0x007327a0` (`0x0073298a`, `0x9d2d`).
+   - **Engedélyezési feltétel (`0x0056e1c0` / `0x0056f3d0` és `0x0056c5a0` / `0x0056d9b0`):**
+     Akkor engedélyezett, ha van nem mentett memóriabeli szerkesztés (`0x40` jelző), és nincs `0x8000` tiltás. Ha a kép szerkesztetlen, inaktív.
+   - **Gyorsbillentyű:** NINCS gyorsbillentyűje.
+
+### 2. Megerősítő párbeszédablak folyamata és szövegei (`ID_FILE_REVERT`, `0x0053b2e0`)
+
+A megerősítő párbeszédablakot a `0x0053b2e0` kezeli (`CThumbUI::FileRevert`):
+
+1. **Ablak címe:**
+   - `CThumbUI::FileRevert::title` = "Revert" / "Visszaállítás" (`0x00c8a8b8`).
+
+2. **Egy kijelölt kép esetén (`0x0053b666`):**
+   - Fő kérdés: `CThumbUI::FileRevert::message1` = "Revert to original version of file?" / "Visszatér a fájl eredeti változatához?" (`0x00c8a768`).
+   - Figyelmeztető szöveg: `CThumbUI::FileRevert::message2` = "\n\nThis cannot be undone and all changes will be lost." / "\n\nEz a művelet nem vonható vissza, és az összes módosítás elvész." (`0x00c8a7ae`).
+   - Kiegészítő magyarázat mentett előzménynél (`0x0053b6e7`): `CThumbUI::FileRevert::message1undo` = "\n\nTo undo the last save and keep edits click 'Undo Save'." / "\n\nAz utolsó mentés visszavonásához és a szerkesztések megtartásához kattintson a \"Mentés visszavonása\" gombra." (`0x00c8a806`).
+   - Gombok:
+     - `CThumbUI::FileRevert::revert` = "Revert" / "Visszaállítás" (`0x00c8a890`).
+     - `CThumbUI::FileRevert::undosave` = "Undo Save" / "Mentés visszavonása" (`0x00c8a864`) - csak akkor jelenik meg, ha a kép mentve volt lemezre és van mit visszavonni.
+     - "Cancel" / "Mégse" (`0x00c884a0`).
+
+3. **Több kijelölt kép esetén (`0x0053b61a`):**
+   - Fő kérdés: `CThumbUI::FileRevert::messageX` = "Revert to original version of these files?" / "Visszatér a fájlok eredeti változatához?" (`0x00c8a71c`).
+   - Figyelmeztető szöveg: `CThumbUI::FileRevert::message2` = "\n\nThis cannot be undone and all changes will be lost." (`0x00c8a7ae`).
+   - Gombok: kizárólag "Revert" és "Cancel". Több kijelölt képnél az eredeti binárisban NEM jelenik meg az "Undo Save" gomb és a `message1undo` magyarázat (`0x0053b6e3` elágazás kihagyja).
+
+4. **Külsőleg módosított fájlok figyelmeztetése (`0x0053b87e`-`0x0053bb87`):**
+   - Ha a lemezen található fájl utolsó módosítási ideje eltér a Picasa által mentett `moddate` értéktől (külső képszerkesztőben módosult):
+     - Egy képnél: `CThumbUI::FileRevert::changed1` = "This file has been changed outside of Picasa. Reverting will lose those changes." / "Ez a fájl a Picasán kívül módosult. Ha a visszaállítást választja, a módosítások elvesznek." (`0x00c8a970`).
+     - Több képnél: `CThumbUI::FileRevert::changedX` = "These files have changed outside of Picasa. Reverting will lose those changes." / "Ezek a fájlok a Picasán kívül módosultak. Ha a visszaállítást választja, a módosítások elvesznek." (`0x00c8a9e8`).
+     - Folytatás kérdése: `CThumbUI::FileRevert::continue` = "\n\nDo you want to revert?" / "\n\nVissza szeretne térni?" (`0x00c8aa5a`).
+     - Gombok: `CThumUI::FileRevert::yesbutton` = "Revert Anyway" / "Visszaállítás ennek ellenére" (`0x00c8aab4`), és "Cancel" / "Mégse" (`0x00c8aa94`).
+
+### 3. Végrehajtás és futásidejű hatás
+
+1. **Lemezművelet és `.picasaoriginals` (`0x0046d7d0`, `0x00462ba0`):**
+   - A `0x00462ba0` megkeresi a kép könyvtárában a `.picasaoriginals` (illetve korábbi telepítéseknél az `Originals`) mappát (`0x00462ccd`, `0x00462d2e`).
+   - A biztonsági másolatként megőrzött eredeti fájlt visszamásolja a fotó helyére, felülírva a szerkesztett lemezfájlt.
+2. **`.picasa.ini` könyvelés törlése (`0x0046d7d0`):**
+   - A `0x0046d7d0` eljárás megnyitja a mappa `.picasa.ini` fájlját (`0x0046d967`), és a visszaállított fotó szakaszából törli a szerkesztési kulcsokat: `filters` (`0x0046ed76`), `rotate` (`0x0046e721`, `0x0046f537`), `flipped` (`0x0046e796`, `0x0046f9ef`), és `textactive` (`0x0046fee8`, `0x00470184`).
+   - A fotóhoz tartozó egyéb metaadatok (`star`, `caption`, `faces`, albumtagságok, `backuphash`, `originhash`) változatlanul megmaradnak.
+3. **Folyamatjelző ablak (`0x0053b2e0`):**
+   - A lemezművelet közben folyamatjelző párbeszéd látható: `CThumbUI::FileRevert::progress` = "Reverting Files." / "Fájlok visszaállítása" (`0x00c8a8d4`).
+4. **Bélyegkép és index (`0x0053bc54`-`0x0053bee7`):**
+   - A memóriabeli gyorsítótár ürül (`0x0053bc54`, `call 0x45ff60`), az indexelő szál újraolvassa a lemezfájlt, és a háttérben újrarendereli a bélyegképet az eredeti kép alapján (`0x0053bee7`, `call 0xa54b70`).
+   - Ha a szerkesztőben éppen nyitva van a visszaállított fotó (`0x0053bc8a`), a szerkesztő azonnal újratölti az eredeti képet a memóriába és a megjelenítőbe (`0x0053bce9`, `0x0053bd30`).
+5. **Rács kijelölése:**
+   - A művelet lefutása után a kijelölés nem törlődik, a visszaállított képek kijelölve maradnak a könyvtárnézeti rácsban.
+
+### 4. Hibaesetek (írásvédettség, hiányzó eredeti)
+
+1. **Hiányzó eredeti biztonsági mentés:**
+   - Az eredeti Picasában normál esetben a menüpont meg sem jelenik aktívként, ha a képhez nem tartozik `.picasaoriginals` mappa.
+   - Ha a mappa vagy a benne lévő fájl lemezről való törlése miatt a futás közben hiányzik, a `0x00462ba0` hibakóddal tér vissza, a művelet leáll, és a felhasználó lemezhiba üzenetet kap.
+2. **Írásvédett fájl vagy lemezhiba (`0x0053bbb0`):**
+   - Ha a célfájl írásvédett, vagy a lemez megtelt, a `0x0053bbb0` címen felugró ablak jelenik meg:
+     - Cím: "Revert" / "Visszaállítás" (`CThumbUI::FileRevert::title`, `0x00c8a8b8`).
+     - Szöveg: `FileRevert::fileerr` = "Unable to revert all files due to a disk error. The disk may be full or read-only." / "Lemezhiba miatt nem lehetséges az összes fájl visszaállítása. Lehet, hogy a lemez megtelt vagy írásvédett." (`0x00c8a908`).
+
+### 5. Paritási összevetés és eltérések táblázata
+
+| Funkció / Elem | Eredeti Picasa (bináris cím) | PicasaPy (fájl:sor) | Eltérés / Teendő |
+|---|---|---|---|
+| Főmenü belépési pont | Fájl ▸ Revert (`0x00559150`, rekord: `0x00d6da64`, `0x9d9a`) | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:113` | Egyezik. Paritásban van. |
+| Kép menü belépési pont | Kép ▸ Undo All Edits (`0x00559150`, rekord: `0x00d6e4d4`, `0x9d2d`) | `src/picasapy/app/qml/PicasaPy/PicasaPictureMenu.qml:124` | Egyezik. Külön parancsként létezik. |
+| Helyi menü belépési pontok | Mappa (`0x00730790`), Album (`0x00731050`), OneUp (`0x007327a0`) mindkettőt tartalmazza | `src/picasapy/app/qml/PicasaPy/PhotoContextMenu.qml:403`, `ViewerContextMenu.qml:208` | Egyezik. Mindkét menüpont megvan a helyi menükben. |
+| Szerkesztő gombsor | Bal panelen nincs Revert gomb (csak `filter_undo`, `0x00567680`) | `src/picasapy/app/qml/PicasaPy/EditorPanel.qml` | Egyezik. Nálunk sincs Revert gomb a bal hasábon. |
+| Gyorsbillentyű | Nincs gyorsbillentyű sem `0x9d9a`-hoz, sem `0x9d2d`-hez | Nincs gyorsbillentyű | Egyezik. |
+| Engedélyezési feltétel (Revert) | Csak lemezre mentett, `.picasaoriginals` másolattal bíró képnél aktív (`0x80`, `0x0056e561`) | `PicasaFileMenu.qml:117`, `PhotoContextMenu.qml:405` (`hasSavedBackup` / `hasBackup`) | Egyezik. Nem mentett szerkesztésnél szürke. |
+| Egy kép megerősítő kérdése | `message1` + `message2` + `message1undo` (`0x0053b666`) | `SaveDialogs.qml:313-337` | Egyezik. A szövegek és gombok megegyeznek. |
+| Több kép megerősítő kérdése | `CThumbUI::FileRevert::messageX` = "Revert to original version of these files?" (`0x00c8a71c`, `0x0053b61a`) | `SaveDialogs.qml:316` `qsTr("Revert to original version of these file(s)?")` | **Eltérés.** Nálunk a szöveg `these file(s)?`, míg az eredetiben `these files?`. Javítandó. |
+| Több kép gombjai (Undo Save) | Több képnél NINCS "Undo Save" gomb és nincs magyarázó sor (`0x0053b6e3`) | `SaveDialogs.qml:269-280`, `329-337` | **Eltérés.** Nálunk több képnél is látható az Undo Save gomb és a hint. Több képnél elrejtendő. |
+| Külsőleg módosított fájlok | Időbélyeg-eltérésnél `changed1`/`changedX` + "Revert Anyway" (`0x0053b87e`) | Nem kezeli | **Eltérés.** Külső szerkesztésnél figyelmeztető ablak hiányzik. Fejlesztési jegy javasolt. |
+| `.picasa.ini` törölt kulcsok | Törli: `filters`, `rotate`, `flipped`, `textactive` (`0x0046d7d0`) | `src/picasapy/edit/save_operations.py:366` csak `filters` és `redo`-t töröl | **Eltérés.** A Revert a fizikai eredetit állítja vissza, így az INI-ben a forgatást és szöveget is törölni kell. |
+| Folyamatjelző szövege | "Reverting Files." (`0x00c8a8d4`, `CThumbUI::FileRevert::progress`) | `SaveProgressPanel.qml:46` `qsTr("Reverting Files.")` | Egyezik. |
+| Lemezhiba / írásvédettség | "Unable to revert all files due to a disk error. The disk may be full or read-only." (`0x00c8a908`) | `SaveDialogs.qml:180` | Egyezik. Bitre azonos fordítás. |
+| Bélyegkép, index, kijelölés | Bélyegkép és megnyitott kép újratöltődik, kijelölés megmarad (`0x0053bc54`) | `save_restore.py`, `save_feedback.py` | Egyezik. |
+
+### 6. Javasolt fejlesztői jegyek
+
+1. **Jegy: Revert megerősítő ablak szövegének és gombjainak paritása több kép kijelölésekor**
+   - **Eredeti:** Az eredeti Picasa 3.9 binárisában (`0x0053b2e0`, `0x0053b61a`, `0x0053b6e3`) több kép kijelölésekor a megerősítő kérdés szövege: `Revert to original version of these files?` (`CThumbUI::FileRevert::messageX`, `0x00c8a71c`), és az "Undo Save" gomb (`0x00c8a864`), valamint a hozzátartozó magyarázó sor (`CThumbUI::FileRevert::message1undo`, `0x00c8a806`) kizárólag egyetlen kép kijelölése esetén jelenik meg; több képnél az "Undo Save" nem érhető el.
+   - **Nálunk:** A `src/picasapy/app/qml/PicasaPy/SaveDialogs.qml:316` sorában a többesszámú szöveg `these file(s)?` formátumú, és a `revertUndoSaveButton` valamint `revertUndoSaveHint` több kép esetén is látható.
+   - **Teendő:**
+     1. A `SaveDialogs.qml:316` szövegének javítása: `qsTr("Revert to original version of these files?")`.
+     2. A `revertUndoSaveButton` és `revertUndoSaveHint` láthatóságának feltételhez kötése: `visible: revertConfirmDialog.fileCount === 1`.
+   - **Kész, ha:** 1 kép kijelölésekor a Revert ablak tartalmazza az "Undo Save" gombot és a magyarázatot; 2 vagy több kép kijelölésekor a kérdés pontosan a "Revert to original version of these files?" szöveget mutatja, az "Undo Save" gomb és magyarázat pedig rejtve marad.
+
+2. **Jegy: A Revert művelet során a forgatási és felirat-kulcsok törlése a `.picasa.ini`-ből**
+   - **Eredeti:** A `Picasa3.exe` `0x0046d7d0` eljárása a mentett eredeti visszamásolásakor a `.picasa.ini`-ből a `filters` kulcson kívül törli a `rotate`, `flipped` és `textactive` sorokat is, mivel a visszamásolt fájl a szerkesztés előtti fizikai képet adja vissza.
+   - **Nálunk:** A `src/picasapy/edit/save_operations.py:366` eljárás csak a `filters` és `redo` kulcsokat törli, így a korábbi forgatás és felirat bejegyzése bent marad az ini-ben.
+   - **Teendő:** A `save_operations.py` `revert` függvényében a törlendő kulcsok körét ki kell terjeszteni a `rotate`, `flipped` és `textactive` kulcsokra.
+   - **Kész, ha:** Egy kép forgatása, mentése, majd Revert parancs végrehajtása után a `.picasa.ini`-ben nem marad sem `filters`, sem `rotate`, sem `flipped`, sem `textactive` bejegyzés.
+
