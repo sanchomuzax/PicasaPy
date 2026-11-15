@@ -2835,7 +2835,7 @@ ugyanezen `+0x294` részt előbb `ILoaderUI::vftable` (`0x00c90418`), majd
 
 | `CThumbUI` slot | Cél | Disassemblyből igazolható hatás |
 |---|---:|---|
-| `+0x04` | `0x0077b260` | A DBLoader `0x0055ece0` ciklusának minden rekordja előtt indexet és összdarabot ad át. A cél a `0x0051ef60` függvénybe hív, amely az „Acquiring %d of %d files” szöveget és az arányt a `CThumbUI+0x7dc` interfész `+0x0c`/`+0x08` slotján át továbbítja. Ez progressz-értesítés, nem bizonyított képrács-frissítés. |
+| `+0x04` | `0x0077b260` | A DBLoader `0x0055ece0` ciklusának minden rekordja előtt a rekord sorszámát és az összes rekord számát adja át. A cél a `0x0051ef60` függvénybe hív, amely az „Acquiring %d of %d files” szöveget és az arányt a `CThumbUI+0x7dc` interfész `+0x0c`/`+0x08` slotján át továbbítja. Ez progressz-értesítés, nem bizonyított képrács-frissítés. |
 | `+0x08` | `0x0077b290` | Belső jelzőt állít a `CThumbUI+0xb29` mezőben, az azonosító-egyezés esetén a `+0xb2b` mezőben is; közvetlen ablaküzenet nincs benne. |
 | `+0x0c` | `0x0077b2b0` | A `+0xb8c` jelzőt állítja, és két átadott értéket a `+0xb94`/`+0xb98` mezőbe gyűjt. |
 | `+0x10` | `0x0077b2d0` | `CThumbUI::UpdateThumbs`; a `CThumbUI+0x30f0` (a slot `this+0x2e5c`) célobjektumot ellenőrzi, és csak nem-null értéknél hívja annak `+0x68` virtuális slotját. A konstruktor ezt a célmezőt nullázza (`0x00564dce`); későbbi bekötése és a célmetódus képernyőhatása nincs azonosítva. |
@@ -2843,17 +2843,17 @@ ugyanezen `+0x294` részt előbb `ILoaderUI::vftable` (`0x00c90418`), majd
 Így a DBLoader bizonyos feldolgozási ágakban **rekordonként, szinkron módon
 eléri** az `UpdateThumbs` metódust, de ebből nem következik, hogy minden kép
 láthatóvá válik, vagy hogy a célobjektum a bejárás alatt ténylegesen be van
-kötve. A slot `+0x0c` közben gyűjtőjellegű belső állapotot tárol; a slot `+0x04`
+kötve. A slot `+0x0c` közben összesítő belső állapotot tárol; a slot `+0x04`
 a fájlszámláló progresszét továbbítja.
 
-**QPC és időzítés.** A `0x0051ef60` előbb hívja a progresszfelirat és az arány
+**QPC és időzítés.** A `0x0051ef60` előbb hívja a folyamatjelző felirat és az arány
 virtuális slotjait (`0x0051f004` és `0x0051f021` között), utána adja át a vezérlést a
 `0x00980400` üzenetkezelő segédnek (`0x0051f055` és `0x0051f05b` között). A segéd
 `0x009a51b0`-vel QPC-alapú eltelt időt számol, majd üzenetvárakozási és
 üzenetpumpa-ágra lép. A hívó a `0x00c7dafc` címen tárolt `0.5f` értéket mindkét
 időparaméterhez átadja; a segéd a második értéket a `0x00cf3e10` címen tárolt
 `1000.0` szorzóval alakítja milliszekundummá. Ez a fél másodperces QPC-kapu
-**a progresszfrissítés utáni üzenetkezelést** szabályozza. Nem képek kötegelési
+**a folyamatjelző frissítése utáni üzenetkezelést** szabályozza. Nem képek kötegelési
 vagy képrács-értesítési időköze: az értesítés a segéd hívása előtt történik.
 
 **Mappafa-sor.** A scanner közvetlen mappabejárása (`0x004e62d0`) előbb
