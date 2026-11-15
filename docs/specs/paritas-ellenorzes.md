@@ -2546,3 +2546,83 @@ egy lépést ad hozzá, balra egyet levon modulo 4 szerint (a 0 balra forgatásb
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7000 alszakasz.
+
+## #7012: A Hozzáadás albumhoz teljes folyamata az eredeti Picasával összevetve
+
+**Állapot: nyitott.** A menüpontok címkéjét és néhány kontextusfüggő parancsazonosítót a bináris rekordjaiból azonosítottam, a PicasaPy jelenlegi útja a forrásból követhető. Az eredeti albumválasztás utáni írási kezelő és a végállapot nincs igazolva, ezért a két termék teljes műveleti paritása nem állítható.
+
+### Belépési pontok és engedélyezés
+
+| Eredeti (bináris cím vagy mérés) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| Fájl menü, `New Album...`, `Ctrl+N`: a főmenü `0x00559150` rekordja és a `referencia/i18n/enUS/shortcuts.xml:115-117` bejegyzése. Ez album-létrehozás, nem meglévő albumhoz adás. A főmenü rekordbázisa `0xd6e498`; a `0x0055b777` `eax` forrása `0x00c8d8b8` (`&View and Edit`), parancsmezője `0xd6e4a2 = 0x9ca0`. A következő rekord címkéje `&Batch Edit`, `0xd6e4ac` bázison. | `PicasaFileMenu.qml:23-27`; `MainMenuBar.qml:300-304`; `PicasaMenuBar.qml:750-754` | Ne számítsuk a `New Album` parancsot meglévő albumhoz adásnak. Eredeti közvetlen Add-to főmenü- vagy billentyűparancs: `NINCS MEG`. Az angol gyorsbillentyű-erőforrásban a `New Album` `Ctrl+N`; Add-to bejegyzést nem találtam. |
+| Mappa bélyegképének helyi menüje: `&Add to Album` rekord `0x00730790`, parancsmező `0x9ca0`. | `PhotoContextMenu.qml:167-192`; `MainPhotoContextMenu.qml:124-138`; több kijelölés vagy az utolsó aktív kép: `MainLibrarySelectionState.qml:25-30` | Egy és több képnél ugyanaz a sorlista kerül az `addRowsToAlbum`-nak. Eredeti engedélyezés egy képre, több képre, videóra és már albumtag képre: `NINCS MEG`. PicasaPy útjában nincs képtípus-szűrés (`photo_ops_write_text_mixin.py:202-204`). |
+| Album bélyegképének helyi menüje: `&Add to Album` rekord `0x00731050`, parancsmező `0x9ca0`. | Ugyanaz a kép-helyi menü és callback, `PhotoContextMenu.qml:167-192`; `MainPhotoContextMenu.qml:124-138` | A PicasaPy a kijelölt sorokat a megnevezett tokenhez adja; a már tagságban levő token ismétlése nem dupláz (`ini/albums.py:65-80`). Az eredeti ismételt hozzáadás eredménye: `NINCS MEG`. |
+| Néző helyi menüje: `&Add to Album` rekord `0x007327a0`, parancsmező `0x9cc6`; a főablak diszpécsere ezt `0x00566270`-re küldi (`0x005cb990`). Ez a híváslánc még nem bizonyítja a kiválasztott albumba írást. | `ViewerContextMenu.qml:129-145`; `PhotoViewerContextActions.qml:118-121` | PicasaPyban az almenü csak legalább egy saját album esetén aktív, és a parancs az aktív nézősort adja át, tehát egy képet. Eredeti album nélküli, videós, már tagságban levő és többképes nézőállapot: `NINCS MEG`. A nézőben PicasaPy `New Album...` sort nem találtam. |
+| Emberek-album képmenüje: `&Add to Album` rekord `0x007355c0`, parancsmező `0x9e39`; a főablak diszpécsere `0x00603660`-ra irányítja. | `PhotoContextMenu.qml:167-192`; `MainPhotoContextMenu.qml:129-131` | A PicasaPy általános album-hozzáadó útja a kijelölt sorokat használja. Az eredeti `0x00603660`-as ág albumtagságra gyakorolt hatása, engedélyezése és hibái `NINCS MEG`. |
+| Képtálca: a `thumbui/addtobuttcon` a `thumbui/scratchback` gyereke, felirata `Add to`, súgója `Add selected items to an Album`. A gomb eseményútja `0x005fe130`, amely a tálca kijelöléséből építi/frissíti a `Labels` listát (`0x00664130`). A jobbklikkes `Hold Selection` másik rekord, bár ugyanazt a `0x9ca0` azonosítót használja. | `TrayScratchPanel.qml:497-539,542-577`; `tray_album_controller.py:237-257` | PicasaPy gombja csak nem üres tálcánál aktív, a meglévő albumot választva a tartott sorokat írja. Az eredeti gomb engedélyezési feltétele és az egyes tartott elemtípusok eredménye: `NINCS MEG`. |
+| Húzás meglévő album sorára: az eredeti `lb_drop` esemény a `0x005e39a0`-hoz jut, de a meglévő Ghidra-kimenet a kérdéses fotólista és albumtagság kapcsolatát nem dönti el. A mappa-sor húzási kutatása nem bizonyít fotó-húzási viselkedést. | `AlbumsSection.qml:260-272`; `FolderPaneContent.qml:54-58`; `MainFolderPane.qml:137-140` | PicasaPy csak saját `payload == "photos"` húzást fogad, és az ejtett sorokat a célalbum tokenjéhez adja (`AlbumsSection.qml:42-45`). Az eredeti fotó-húzás, egy vagy több kép, videó, ismételt tagság és lemezhatás: `NINCS MEG`; lásd a Ghidra-kérést lent. |
+| Húzás az albumlista üres területére: a binárisban szerepel a `You can drag and drop pictures here to make a new album.` szöveg (`0x00765d30` út); ez az üres lista promptja, nem bizonyíték az ejtés utáni dialógusra vagy írásra. | `AlbumsSection.qml:62-108`; `MainFolderPane.qml:130-135`; `FileOpsDialogs.qml:90-95` | PicasaPy a kijelölt képekkel `Untitled` albumot készít párbeszéd nélkül. Eredeti prompt utáni végrehajtás és mérési felvétel: `NINCS MEG` ebben a körben. |
+
+Az eredeti `0x0056e1c0` menüállapot-kezelő módosítja az `0x9ca0`-hoz tartozó engedélyezést, de a vizsgált dekompilálás állapotbitjei nem felelnek meg bizonyítottan az egy kép, több kép, videó vagy már tag kategóriáknak. A menüpont megjelenése vagy a lista felépítése önmagában nem bizonyít műveleti engedélyezést.
+
+### Ablak, almenü, alapérték és megjegyzett állapot
+
+- Az eredeti helyi menükben az `Add to Album` rekord mellett a dinamikus albumlista és az `ID_LABELSNEW` / `New Album...` elem felépítése látható (`0x0056c5a0`, meglévő Ghidra-kimenet: `2026-10-21-idorend-32.txt`). A `0x00664130` `Labels` listát állít össze, és a `il_NewAlbumName` szöveget használja. A listaelem kiválasztásakor futó tartós írás nincs benne bizonyítva. A tálca erőforrásában az `Add to` gombhoz ugyancsak albumválasztó tartozik.
+- Az eredeti Fájl menü `New Album...` útjáról egy korábbi, külön mérés Album Properties ablakot rögzített (`paritas-ellenorzes.md:971`, `mérés (ki00/kepernyo__11.png)`). Ez nem azonosítja bizonyítottan az Add to Album almenü New Album elemének pontos kezelőjét. A mezők az albumablak leírásában szerepelnek (`picasa-fen-dialogs.md:255-273`), de az Add-to út alapértékei és megjegyzett értékei: `NINCS MEG`.
+- PicasaPy kép-helyi menüjében a meglévő albumok dinamikus listája után `New Album...` szerepel (`PhotoContextMenu.qml:167-192`); ez a tulajdonság-párbeszédet nyitja a kijelölt sorokkal (`MainPhotoContextMenu.qml:129-138`, `FileOpsDialogs.qml:82-111`). Nyitáskor a név fordított `Untitled`, a dátum, hely, leírás és zeneútvonal üres, a zene kikapcsolt; a függvény minden nyitáskor ezeket állítja vissza (`FileOpsDialogs.qml:100-111,114-116`).
+- A PicasaPy tálcamenü meglévő albumokat, `Screensaver`, `Starred Photos` és `New Album...` tételeket kínál (`TrayScratchPanel.qml:542-577`). A New Album a tulajdonság-párbeszédet nyitja a tálca tartalmával (`MainTrayBar.qml:82-85`). A néző menü csak meglévő albumokat tartalmaz (`ViewerContextMenu.qml:131-145`).
+- PicasaPy üres albumlista-területre ejtéskor párbeszéd nélkül `Untitled` albumot készít (`FileOpsDialogs.qml:90-95,114-116`). Ez más belépési út, mint a menü `New Album...` parancsa.
+
+### Tárolás és felületi hatás
+
+| Hatás | Eredeti Picasa 3.9 | Jelenlegi PicasaPy |
+|---|---|---|
+| Kép- és fájlrendszer | A kiválasztott albumra futó íróág nincs feloldva. Képfájl mozgatása/másolása: `NINCS MEG`. | A meglévő albumhoz adó út mappánként `.picasa.ini`-t ír; ebben a hívási ágban nem találtam képfájl-mozgatást (`photo_ops_write_text_mixin.py:206-227`). Az ini-írás backupolt (`:225`). |
+| `.picasa.ini` tagság | Az album művelet `albums=` kulcsra gyakorolt eredeti hatása: `NINCS MEG`. | A token az érintett fotó `albums=` CSV-jéhez kerül; meglévő token ismétlése változatlan dokumentumot ad (`ini/albums.py:65-80`; `photo_ops_album_membership_mixin.py:28-62`). |
+| Albumdefiníció, contacts/album adatbázis és SQLite index | Az Add-to művelet bármelyik adatbázisában történt írás vagy szinkron: `NINCS MEG`. Az album adatbázis inicializáló nyomai nem bizonyítják, hogy ezt a parancsot szolgálják ki. | A batch minden érintett mappánál `_sync_tree(conn, folder)`-t hív, majd siker után újratölti az albumlistát (`photo_ops_write_text_mixin.py:206-227`; `photo_ops_album_membership_mixin.py:255-268`; `controller_photo_list_mixin.py:183-197`). |
+| Bal oldali albumfa | Művelet utáni fa és darabszám: `NINCS MEG`. | Siker esetén az albumlista újratöltése `albumsChanged` jelet küld, az albummodell az indexből számolja a tagságot (`controller_photo_list_mixin.py:183-197`). Köztes írási hiba esetén ez a siker utáni ág nem fut le. |
+| Rács és kijelölés | Rács, sorok, kijelölés és fókusz végállapota: `NINCS MEG`. | Sikeres batch után `_refresh_view()` újraolvassa az aktuális nézetet. A `_show()` a fotórács modelljére állítja az új rekordokat; eltérő rekordtuple esetén a modell-reset megtörténik (`controller_sync_mixin.py:65-101,111-157`; `photo_grid_state.py:192-211`). A kijelölés QML/Qt végállapotát ebből nem következtetem ki. |
+| Ismételt hozzáadás | A már albumtag kép eredeti kezelése: `NINCS MEG`. | `with_album` nem ír be második példányt és nem változtatja a sorrendet (`ini/albums.py:65-80`). |
+| Visszavonás | Az eredeti Undo/Undo All Edits vagy más visszavonás tagságra gyakorolt hatása: `NINCS MEG`. | A vizsgált `addRowsToAlbum` és `_write_album_batch` útban undo-hívást nem találtam. Felhasználói visszavonási lehetőség: `NINCS MEG`. |
+
+### Hibák és részleges végrehajtás
+
+- Eredeti: a `.picasa.ini` vagy album-adatbázis írási hibájának üzenete, megszakítási viselkedése, az előzőleg feldolgozott képek állapota és az esetleges visszagörgetés: `NINCS MEG`.
+- PicasaPy: a kijelölt sorok mappánként csoportosulnak, mappánként külön atomikus `update_document` fut, majd az indexfa resyncje (`photo_ops_write_text_mixin.py:206-227`). Több mappás batch ezért nem egyetlen `.picasa.ini`-írás. Ha egy későbbi mappa írása hibát dob, a korábbi sikeres fájlírások már megtörténtek; a teljes index-tranzakció pontos részleges állapotát nem állítom.
+- PicasaPy az ismert írási kivételeket `albumWriteFailed` jelzéssé alakítja, hamissal visszatér, a banner az üzenetet mutatja (`photo_ops_album_membership_mixin.py:255-268`; `MainErrorBanner.qml:89-92`). A `_refresh_view()` és az albumlista siker utáni újratöltése ilyenkor nem fut le.
+- **Helyesbítés:** az `open_index` `finally`-ban `conn.close()`-t hívja; a `_GuardedConnection.__exit__` rollback ága ettől nem fut (`index/database.py:340-373`). A megelőző jegyzet rollback-állítása nem bizonyított, visszavonva.
+
+### Bizonyítottság, független utak és cáfoló kísérlet
+
+- **A út, bináris rekord és utasításszintű vizsgálat:** a `&Add to Album` string-xref címekhez a helyi menük rekordbázisát és parancsmezőjét követtem. A `0x00559150` menürekordnál a `0x0055b777` `eax`-forrása `0x00c8d8b8`; ez a `0xd6e498` címkéjét állítja `&View and Edit` értékre, a hozzá tartozó parancsmező `0xd6e4a2 = 0x9ca0`. A következő, `0xd6e4ac` bázisú rekord címkéje `&Batch Edit` (`0x0055b79f`), tehát nem az előző parancs címkéje.
+- **B út, független erőforrás:** a `thumbui.tre` és `thumbui_text.tre` az `Add to` tálcagomb helyét és `Add selected items to an Album` súgóját rögzíti; ezt a bináris `0x005fe130` -> `0x00664130` listafelépítő útja is megerősíti. Ez a két út a tálca Add-to felület létezésében egyezik. A többi helyi menü parancsazonosítója egy bináris útból feltételes, az albumtagság írási végállapotát egyik út sem igazolja.
+- **Cáfoló kísérlet:** cáfoltam azt a jelöltet, hogy a `0x9ca0` minden helyen Add to Album. A főmenü rekordja `&View and Edit`; a tálca jobbklikk-menüjének `0xd6edca` mezője ugyanezt az azonosítót a `&Hold Selection` felirathoz használja (`0x00732f35` `Tray::ID_PICTURE_HOLDINPICTURETRAY`, `0x00732f3a` `eax = 0x00cae63c`, `0x00732f4c` `0x9ca0`). Mindkettőt a rekord bázisa, szövegforrása és parancsmezője alapján ellenőriztem. A parancsszám ezért önmagában nem jelentést hordozó, globális azonosító.
+- **Bizonyítottsági fok:** a tálcagomb mint Add-to felület megerősített két független úttal. A helyi menük egyedi felirat/parancs párosítása egy bináris útra támaszkodik, ezért feltételes. A jegy teljes folyamata nyitott, mert az eredeti tagságíró, adatbázis-hatás, részleges hiba, visszavonás és végső UI-állapot nem dőlt el.
+
+### A jegy „Kész, ha” pontjai
+
+1. ⛔ **Minden belépő és feltétel, egy és több kép, videó, már albumban lévő kép:** a táblázat külön kezeli a fájlmenüt, két bélyegkép-nézetet, nézőt, Emberek-albumot, tálcát, meglévő albumra és üres területre ejtést. Az eredeti engedélyezési feltételek és a video/ismételt tagság viselkedése nyitott.
+2. ⛔ **Ablak/almenü, alapérték és megjegyzett állapot:** a címkék/listaépítés és a jelenlegi dialógusértékek dokumentálva vannak. Az eredeti Add-to New Album elem dialógusa, értékei és megjegyzése nyitott.
+3. ⛔ **Tárolás, index, fa, rács, kijelölés, ismétlés és undo:** PicasaPy útja forrásból le van írva. Az eredeti `.picasa.ini`, adatbázis, index, UI-végállapot, ismétlés és visszavonás nyitott.
+4. ⛔ **Írási hiba és részleges végrehajtás:** PicasaPy hibajelzése dokumentált, az eredeti íróút és a pontos PicasaPy-index részleges hibaállapot további vizsgálatot igényel.
+
+### Javasolt fejlesztői jegytörzs
+
+E körben nincs bizonyított Add-to végállapotbeli eltérés, amelyhez biztonságosan fejlesztési jegy írható. Előbb a nyitott eredeti műveletet kell célzottan feloldani; a leírt PicasaPy viselkedés jelenlegi forrásállapot, nem önmagában paritásdöntés.
+
+### Új kutatási jegyjavaslatok
+
+- **Az eredeti Add to Album tagságíró és hibautja.** Kérdés: a dinamikus albumtétel kattintása mely kezelőn keresztül írja a képek tagságát, az `albums` mezőt, az album/contacts adatbázist és az indexet; mi történik egy/multiple, videó, már tag és írási hiba esetén; visszavonható-e? Hol keresd: `0x00664130` Labels-lista kiválasztási callback, `0x005cb990` command-diszpécser. A meglévő `2026-10-29-koteg-33.txt` a lista felépítését, `2026-10-21-idorend-30.txt` a dispatchert mutatja, de nem a kijelölt albumtagság-írást.
+- **Fotók húzása meglévő albumra az eredeti Picasában.** Kérdés: az `0x005e39a0` `lb_drop` út fotó-kijelölést fogad-e, és mely albumtagság- vagy fájlrendszer-műveletet futtatja? A meglévő `2026-11-13-6845-6532-colab-decomp.txt` mappa/album-lista húzásról szóló dekompilálása ezt a fotó-húzási esetet nem dönti el.
+
+### Nyitott
+
+- Ghidra-kör kell: 0x00664130 - a dinamikus Labels/Add to Album lista elemének kiválasztási callbackje mely kezelőre jut, és az albumtoken milyen `.picasa.ini`/adatbázis/index-írást indít; milyen a többképes, videós, ismételt-tagsági és írásihiba-ág? [blokkoló]
+- Ghidra-kör kell: 0x005e39a0 - a fotók meglévő album sorára ejtése az albumtagságot módosítja-e vagy más műveletet végez, és milyen forrás-, cél- és fájltípus-feltételekkel? [blokkoló]
+- NINCS MEG: eredeti Add-to/New Album párbeszéd alapértékei és megjegyzett állapota. Megszerzés: célzott Picasa 3.9 mérés a meglévő-album almenü New Album útján, képernyőkép és minden mező rögzítésével, majd külön ismétlés újranyitással.
+- NINCS MEG: az eredeti Add-to siker/hiba utáni fa, rács, kijelölés, kép- és adatbázis-végállapot, valamint visszavonás. Megszerzés: a blokkoló Ghidra-kör után előtte/utána mérés kis, egy- és többmappás tesztkészleten; fájlok, `.picasa.ini`, album/contacts adatbázis és UI-állapot összevetése. A meglévő mérőadat-archívum taglistájában ehhez releváns Add-to/album-dialog felvételt nem találtam.
+
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md` - ez a #7012 alszakasz.
