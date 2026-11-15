@@ -32,11 +32,13 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
+import time
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
 import numpy as np
-from PySide6.QtCore import Property, Signal, Slot, QUrl
+from PySide6.QtCore import Property, QMetaObject, Qt, Signal, Slot, QUrl
 
 from picasapy.cvimage import read_image_bytes
 from picasapy.edit.save import SaveError, revert, save_edited, undo_save
@@ -48,6 +50,7 @@ from picasapy.edit.save_copy import (
 from picasapy.edit.session import EditSession
 from picasapy.ini import IniConflictError, IniSaveError, PhotoCropReader
 from picasapy.lazy_import import lazy_callable
+from picasapy.halozati_ut import halozati_gyoker
 from picasapy.scanner import PICASA_INI_NAME
 
 from .paint_mask import maszk_vonasokbol, van_mentett_ecsetvonas
@@ -67,6 +70,9 @@ apply_filters = lazy_callable("picasapy.render.chain", "apply_filters")
 can_render_filter = lazy_callable("picasapy.render.chain", "can_render_filter")
 normalize_crop_ops = lazy_callable("picasapy.render.chain", "normalize_crop_ops")
 apply_flip = lazy_callable("picasapy.render.flip", "apply_flip")
+
+_BACKUP_CACHE_TTL_S = 2.0
+_BACKUP_CACHE_LOCK = threading.Lock()
 
 
 def _konyvtar_tartalma(konyvtar: Path) -> list[Path]:
@@ -121,8 +127,12 @@ class SaveMixin(
         # gyűjteményében 127 mappában előfordul; enélkül a „Visszaállítás"
         # menütétel ott szürke maradna, magyarázat nélkül.
         tovek: dict[str, set[str]] = {}
+        remote: dict[str, list[str]] = {}
         for record in self._selected_records(rows):
             mappa = str(record.folder_path)
+            if halozati_gyoker(mappa) is not None:
+                remote.setdefault(mappa, []).append(str(record.name))
+                continue
             if mappa not in tovek:
                 nevek: set[str] = set()
                 for dir_name in ORIGINALS_DIR_NAMES:
@@ -136,7 +146,69 @@ class SaveMixin(
             to = Path(record.name).stem
             if any(nev.startswith(to) for nev in tovek[mappa]):
                 return True
-        return False
+
+        if not remote:
+            return False
+        cache = getattr(self, "_network_backup_cache", None)
+        if cache is None:
+            cache = {}
+            self._network_backup_cache = cache
+            self._network_backup_pending = set()
+        now = time.monotonic()
+        result = False
+        refresh = []
+        with _BACKUP_CACHE_LOCK:
+            for folder, photo_names in remote.items():
+                cached = cache.get(folder)
+                if cached is None or now - cached[1] >= _BACKUP_CACHE_TTL_S:
+                    refresh.append(folder)
+                if cached is not None:
+                    names = cached[0]
+                    if any(
+                        any(name.startswith(Path(photo_name).stem) for name in names)
+                        for photo_name in photo_names
+                    ):
+                        result = True
+            refresh = [
+                folder for folder in refresh
+                if folder not in self._network_backup_pending
+            ]
+            self._network_backup_pending.update(refresh)
+
+        if refresh:
+            def worker() -> None:
+                updates = {}
+                for folder in refresh:
+                    names: set[str] = set()
+                    try:
+                        for dir_name in ORIGINALS_DIR_NAMES:
+                            originals = Path(folder) / dir_name
+                            if originals.is_dir():
+                                names.update(
+                                    path.name for path in _konyvtar_tartalma(originals)
+                                )
+                    except OSError:
+                        # Nem elérhető megosztásnál az eredmény üres marad;
+                        # a rövid cache TTL után a következő QML-kérés újrapróbálja.
+                        pass
+                    updates[folder] = (frozenset(names), time.monotonic())
+                with _BACKUP_CACHE_LOCK:
+                    self._network_backup_cache.update(updates)
+                    self._network_backup_pending.difference_update(refresh)
+                QMetaObject.invokeMethod(
+                    self,
+                    "_notify_network_backup_cache_changed",
+                    Qt.ConnectionType.QueuedConnection,
+                )
+
+            self._start_background(worker, name="picasapy-backup-check", busy=False)
+        return result
+
+    @Slot()
+    def _notify_network_backup_cache_changed(self) -> None:
+        """A hálózati eredeti-mappák újraolvasása után frissíti a QML-kötéseket."""
+        self._saved_backup_revision += 1
+        self.savedBackupChanged.emit()
 
     @Slot(list)
     def saveRowsToDisk(self, rows) -> None:  # noqa: N802 - QML-stílus

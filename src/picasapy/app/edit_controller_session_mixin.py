@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
+import logging
+import threading
 from typing import TYPE_CHECKING
+
+from PySide6.QtCore import QMetaObject
+from picasapy.halozati_ut import halozati_gyoker
+from picasapy.ini import parse_document
+from picasapy.metadata.reader import _cache_exif_details, _cached_exif_details
 
 from .edit_controller_shared import (
     AZONOSSAG,
@@ -11,6 +18,7 @@ from .edit_controller_shared import (
     Path,
     Property,
     QLocale,
+    QtNamespace,
     Slot,
     _DEFAULT_BRUSH_SIZE,
     _DEFAULT_TEXT_ALIGN,
@@ -23,12 +31,8 @@ from .edit_controller_shared import (
     _DEFAULT_TEXT_OUTLINE_THICKNESS,
     _DEFAULT_TEXT_SIZE_PT,
     _DEFAULT_TEXT_UNDERLINE,
-    _MOD_NINCS_KITOLTES,
     _ONE_SHOT_NAMES,
     _TOGGLE_NAMES,
-    _argb_to_rgb,
-    alignment_name,
-    default_family,
     formatting,
     read_exif_details,
 )
@@ -37,6 +41,10 @@ from .edit_controller_signals import EditControllerSignalsMixin as _Signals
 
 if TYPE_CHECKING:
     from .edit_controller import EditController
+
+
+_NETWORK_EDIT_STATE_LOCK = threading.Lock()
+_log = logging.getLogger(__name__)
 
 
 class EditControllerSessionMixin:
@@ -63,21 +71,43 @@ class EditControllerSessionMixin:
         self._memory_only = False
         self._photo_id = photo_id
         self._image_path = path
-        self._image_size = self._read_image_size(path)
+        network_path = halozati_gyoker(path) is not None
+        self._network_edit_generation = getattr(
+            self, "_network_edit_generation", 0
+        ) + 1
+        generation = self._network_edit_generation
+        self._network_edit_load_pending = network_path
+        self._network_edit_load_failed = False
+        self._network_edit_load_error = ""
+        self._network_edit_filters_dirty_pending = False
+        self._network_edit_text_dirty_pending = False
+        self._cached_ini_document = None
+        self._network_crop_suggestions_key = None
+        self._network_crop_suggestions = []
+        self._network_crop_suggestions_pending = set()
+        self._network_crop_suggestion_results = {}
+        self._image_size = None if network_path else self._read_image_size(path)
         self._ini_path = path.parent / PICASA_INI_NAME
         self._section_name = path.name
-        self._session = EditSession.from_value(self._read_filters_value())
+        self._session = (
+            EditSession()
+            if network_path
+            else EditSession.from_value(self._read_filters_value())
+        )
         # #1908/#4067: a festett ecset-maszk munkamenet-élettartamú — MÁS
         # képre váltva eldobódik (az eredeti sem tárolja). A
         # `paintMaskSupported` az új `_session`-ből számolódik, ezért a
         # `paintMaskChanged` jelzés csak a lánc betöltése UTÁN mehet ki;
         # közben még az előnézet regisztrációja előtt ürítjük a régi maszkot.
         self._paint_mask_kepvaltas(photo_id)
-        self._opening_crop, self._opening_crop_ini_readable = (
-            self._crop_reader.read(self._ini_path, self._section_name)
-        )
+        if network_path:
+            self._opening_crop, self._opening_crop_ini_readable = None, True
+        else:
+            self._opening_crop, self._opening_crop_ini_readable = (
+                self._crop_reader.read(self._ini_path, self._section_name)
+            )
         self._opening_crop_ops = self._crop_ops(self._session)
-        self._camera_summary = formatting.camera_summary_text(
+        self._camera_summary = "" if network_path else formatting.camera_summary_text(
             read_exif_details(path), QLocale(), formatting.fordit
         )
         # Perzisztens, rétegenkénti undo (#116 visszajelzés): a mentett lánc
@@ -103,51 +133,119 @@ class EditControllerSessionMixin:
         # forráskép arányát tartjuk)
         self._crop_aspect: float | None = None
         self._brush_size = _DEFAULT_BRUSH_SIZE
-        self._text_overlay = self._read_text_overlay()
-        self._text_selected_index = None
-        self._text_active = (
-            self._read_text_active() if self._text_overlay is not None else False
-        )
-        self._text_overlay_visible = True
-        self._text_draft = ""
-        self._text_pending_pos = None
-        # A mentett felirat KÉT színe visszatölthető (#371) — a többi
-        # stílus-beállításnak nincs `text=` mezője, azok alapértékre állnak.
-        loaded = self._text_overlay.primary if self._text_overlay else None
-        self._text_fill_color = (
-            _argb_to_rgb(loaded.style.fill_argb) if loaded else _DEFAULT_TEXT_FILL_COLOR
-        )
-        self._text_outline_color = (
-            _argb_to_rgb(loaded.style.outline_argb)
-            if loaded
-            else _DEFAULT_TEXT_OUTLINE_COLOR
-        )
-        self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS
-        # #2108: a mód 1-es értéke azt jelenti, hogy NINCS kitöltés.
-        self._text_fill_enabled = (
-            loaded.style.fill_mode != _MOD_NINCS_KITOLTES
-            if loaded
-            else _DEFAULT_TEXT_FILL_ENABLED
-        )
-        self._text_opacity = _DEFAULT_TEXT_OPACITY
-        self._text_family = (
-            loaded.font if loaded is not None and loaded.font else default_family()
-        )
-        self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
-        self._text_size_edited = False
-        self._text_bold = _DEFAULT_TEXT_BOLD
-        self._text_italic = _DEFAULT_TEXT_ITALIC
-        self._text_underline = _DEFAULT_TEXT_UNDERLINE
-        # #2108: a mentett igazítás visszatölt — eddig minden újranyitás
-        # `left`-re esett vissza, akkor is, ha a fájlban `right` állt.
-        self._text_align = (
-            alignment_name(loaded.style.alignment)
-            if loaded
-            else _DEFAULT_TEXT_ALIGN
-        )
+        self._restore_text_overlay_state(read_ini=not network_path)
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
+        if network_path:
+            self._start_network_edit_state_load(
+                generation, path, self._ini_path, self._section_name
+            )
+
+
+    def _start_network_edit_state_load(
+        self, generation: int, image_path: Path, ini_path: Path, section_name: str
+    ) -> None:
+        """A hálózati kép méretét, ini-állapotát és EXIF-jét egy worker olvassa."""
+        def worker() -> None:
+            error = None
+            try:
+                document = self._load_ini_document_from_disk(ini_path)
+                section = document.section(section_name)
+                crop = section.get("crop") if section is not None else None
+                crop_readable = True
+            except OSError as exc:
+                document = parse_document("")
+                crop = None
+                crop_readable = False
+                error = str(exc)
+                _log.warning("A hálózati .picasa.ini nem olvasható: %s", ini_path)
+            size = self._read_image_size(image_path)
+            details = _cached_exif_details(image_path)
+            if details is None:
+                details = read_exif_details(image_path)
+                _cache_exif_details(image_path, details)
+            result = (
+                generation,
+                str(image_path),
+                document,
+                crop,
+                crop_readable,
+                size,
+                details,
+                error,
+            )
+            with _NETWORK_EDIT_STATE_LOCK:
+                self._network_edit_state_result = result
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_network_edit_state",
+                QtNamespace.ConnectionType.QueuedConnection,
+            )
+
+        self._start_background(worker, name="picasapy-edit-file-read", busy=False)
+
+
+    @Slot()
+    def _apply_network_edit_state(self) -> None:
+        """A háttérben beolvasott hálózati metaadat GUI-szálas átvétele."""
+        with _NETWORK_EDIT_STATE_LOCK:
+            result = getattr(self, "_network_edit_state_result", None)
+            self._network_edit_state_result = None
+        if result is None:
+            return
+        (
+            generation,
+            image_path,
+            document,
+            crop,
+            crop_readable,
+            size,
+            details,
+            error,
+        ) = result
+        if (
+            generation != getattr(self, "_network_edit_generation", -1)
+            or str(self._image_path) != image_path
+        ):
+            return
+        self._network_edit_load_pending = False
+        self._network_edit_load_failed = error is not None
+        self._network_edit_load_error = error or ""
+        self._cached_ini_document = document
+        self._image_size = size
+        loaded_session = EditSession.from_value(self._read_filters_value())
+        if self._network_edit_filters_dirty_pending:
+            loaded_session = EditSession(
+                ops=loaded_session.ops + self._session.ops
+            )
+        self._session = loaded_session
+        self._opening_crop = crop
+        self._opening_crop_ini_readable = crop_readable
+        self._opening_crop_ops = self._crop_ops(self._session)
+        self._undo_stack = self._seed_undo_from_chain(self._session)
+        self._redo_stack.clear()
+        if not self._network_edit_text_dirty_pending:
+            self._restore_text_overlay_state()
+        self._camera_summary = formatting.camera_summary_text(
+            details, QLocale(), formatting.fordit
+        )
+        filters_dirty = self._network_edit_filters_dirty_pending
+        text_dirty = self._network_edit_text_dirty_pending
+        self._network_edit_filters_dirty_pending = False
+        self._network_edit_text_dirty_pending = False
+        self._bump_revision()
+        self._register_preview()
+        self.toolsChanged.emit()
+        if error:
+            self.editSaveFailed.emit(error)
+            return
+        # A betöltés alatt tett szerkesztés eddig csak a memóriában állt:
+        # most, a beolvasott ini-re fésülve kerül a lemezre.
+        if filters_dirty:
+            self._save()
+        if text_dirty:
+            self._save_text()
 
 
     @Slot()
@@ -159,6 +257,10 @@ class EditControllerSessionMixin:
         10–30 MB-os dekódolt forrás visszakerülne az LRU-ba), és utólagos
         `revisionChanged`-et emitálna egy már üres szerkesztő-állapotra."""
         self._preview_job += 1
+        self._network_edit_generation = getattr(
+            self, "_network_edit_generation", 0
+        ) + 1
+        self._network_edit_load_pending = False
         if self._photo_id:
             self._provider.unregister(self._kulcs)
         self._memory_only = False

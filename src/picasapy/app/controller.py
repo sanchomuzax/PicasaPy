@@ -309,7 +309,7 @@ class AppController(
         self._filter_status = ""
         self._restore_full_folder_pane()
         self._get_settings().setValue("session/lastFolder", folder_path)
-        self._folder_description = self._read_folder_description(folder_path)
+        self._folder_description = self._folder_description_for_open(folder_path)
         # #1644: az „olvasatlan" jelölő a mappa MEGNYITÁSAKOR áll vissza —
         # a felhasználó megnézte, ami benne van.
         #

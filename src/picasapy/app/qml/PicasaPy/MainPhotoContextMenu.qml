@@ -51,7 +51,8 @@ PhotoContextMenu {
                 .hasEdits === true))
         : false
     hasBackup: hostController
-        ? hostController.hasSavedBackup(hostWindow.selectedRows()) : false
+        ? (hostController.savedBackupRevision,
+           hostController.hasSavedBackup(hostWindow.selectedRows())) : false
     onSaveRequested: hostSaveDialogs.ensure().openSave(hostWindow.selectedRows())
     onRevertRequested: hostSaveDialogs.ensure().openRevert(hostWindow.selectedRows())
     onUndoAllEditsRequested: hostMainDialogs.undoAllEditsDialog.ensure().openForLibrary(

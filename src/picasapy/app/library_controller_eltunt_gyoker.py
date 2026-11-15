@@ -29,10 +29,11 @@ import logging
 import os
 from pathlib import Path
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QMetaObject, Qt, Slot
 
 from picasapy.index import open_index
 from picasapy.index.sync_folders import watched_root_missing
+from picasapy.halozati_ut import halozati_gyoker
 
 logger = logging.getLogger(__name__)
 
@@ -101,19 +102,70 @@ def atnevezett_gyoker(conn, gyoker: str | Path) -> bool:
 class _LibraryEltuntGyokerMixin:
     @Slot()
     def _eltunt_gyokerek_rendezese(self) -> None:
-        """A szinkron végén: az átnevezett vagy törölt figyelt gyökér rendezése."""
-        for gyoker in tuple(self._roots):
-            if not watched_root_missing(gyoker) or not szulo_jelen_van(gyoker):
-                continue
-            with open_index(self._db_path) as conn:
-                nevek = indexelt_fajlnevek(conn, gyoker)
-            uj = atnevezett_testver(gyoker, nevek)
-            if uj is None:
-                # máshová helyezték át vagy törölték: a #1560 védelme marad
+        """A szinkron végén háttérben vizsgálja az eltűnt figyelt gyökereket."""
+        if getattr(self, "_missing_root_check_running", False):
+            return
+        roots = tuple(self._roots)
+        if not any(halozati_gyoker(root) is not None for root in roots):
+            # Helyi lemezen megtartjuk a korábbi közvetlen útvonalat; a
+            # hálózati `stat()`-ok az alábbi workerben futnak.
+            results = []
+            for gyoker in roots:
+                if not watched_root_missing(gyoker) or not szulo_jelen_van(gyoker):
+                    continue
+                with open_index(self._db_path) as conn:
+                    nevek = indexelt_fajlnevek(conn, gyoker)
+                uj = atnevezett_testver(gyoker, nevek)
+                if uj is not None:
+                    results.append((gyoker, uj))
+            self._missing_root_results = results
+            self._apply_missing_root_results()
+            return
+        self._missing_root_check_running = True
+
+        def worker() -> None:
+            results = []
+            for gyoker in roots:
+                if not watched_root_missing(gyoker) or not szulo_jelen_van(gyoker):
+                    continue
+                with open_index(self._db_path) as conn:
+                    nevek = indexelt_fajlnevek(conn, gyoker)
+                uj = atnevezett_testver(gyoker, nevek)
+                if uj is not None:
+                    results.append((gyoker, uj))
+            self._missing_root_results = results
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_missing_root_results",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        def on_error(error: Exception) -> None:
+            self._missing_root_check_running = False
+            logger.warning("A figyelt gyökerek háttérellenőrzése hibára futott: %s", error)
+
+        self._start_background(
+            worker,
+            name="picasapy-watched-root-check",
+            on_error=on_error,
+        )
+
+    @Slot()
+    def _apply_missing_root_results(self) -> None:
+        """A háttérben készített gyökér-rendezést biztonságosan alkalmazza."""
+        self._missing_root_check_running = False
+        results = getattr(self, "_missing_root_results", ())
+        self._missing_root_results = ()
+        for gyoker, uj in results:
+            if gyoker not in self._roots:
                 continue
             if self._find_root(uj) is None:
                 if self._kovesd_a_gyoker_athelyezeset(gyoker, uj):
-                    logger.info("#6751: az átnevezett figyelt mappa követve: %s -> %s", gyoker, uj)
+                    logger.info(
+                        "#6751: az átnevezett figyelt mappa követve: %s -> %s",
+                        gyoker,
+                        uj,
+                    )
                 continue
             logger.info(
                 "#6751: a figyelt mappát átnevezték egy már figyelt mappára (%s); "

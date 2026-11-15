@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+import logging
+import threading
+
+from PySide6.QtCore import QMetaObject, Qt
+from picasapy.halozati_ut import halozati_gyoker
+
 from .edit_controller_shared import (
     EditSession,
     FilterOp,
+    Path,
     Property,
     Rect64,
     Slot,
@@ -17,6 +24,10 @@ from .edit_controller_shared import (
 )
 
 from .edit_controller_signals import EditControllerSignalsMixin as _Signals
+from .edit_preview_source import _decode_source
+
+_CROP_RESULT_LOCK = threading.Lock()
+_log = logging.getLogger(__name__)
 
 class EditControllerCropMixin:
     """A vágóeszköz tulajdonságai, javaslatai és parancsai."""
@@ -140,6 +151,20 @@ class EditControllerCropMixin:
         """
         if not self._photo_id or self._image_path is None:
             return []
+        if halozati_gyoker(self._image_path) is not None:
+            if getattr(self, "_network_edit_load_pending", False):
+                return []
+            if getattr(self, "_network_edit_load_failed", False):
+                return []
+            key = (
+                getattr(self, "_network_edit_generation", 0),
+                str(self._image_path),
+                self._crop_aspect,
+            )
+            if getattr(self, "_network_crop_suggestions_key", None) == key:
+                return list(self._network_crop_suggestions)
+            self._queue_network_crop_suggestions(key)
+            return []
         image = self._provider.source_image(self._kulcs, self._image_path)
         if image is None:
             return []
@@ -155,6 +180,67 @@ class EditControllerCropMixin:
             }
             for suggestion in suggestions
         ]
+
+
+    def _queue_network_crop_suggestions(self, key: tuple) -> None:
+        """A hálózati kép dekódolása és a javaslatok számítása workerben fut."""
+        pending = getattr(self, "_network_crop_suggestions_pending", None)
+        if pending is None:
+            pending = set()
+            self._network_crop_suggestions_pending = pending
+            self._network_crop_suggestion_results = {}
+        with _CROP_RESULT_LOCK:
+            if key in pending:
+                return
+            pending.add(key)
+        generation, image_path, aspect = key
+        path = Path(image_path)
+        faces = self._saved_face_rects()
+        color_managed = self._provider.color_management
+
+        def worker() -> None:
+            try:
+                image = _decode_source(path, color_managed=color_managed)
+                suggestions = suggest_crops(image, faces=faces, aspect=aspect) if image is not None else ()
+                results = [
+                    {
+                        "key": suggestion.key,
+                        "x": suggestion.rect.left,
+                        "y": suggestion.rect.top,
+                        "w": suggestion.rect.right - suggestion.rect.left,
+                        "h": suggestion.rect.bottom - suggestion.rect.top,
+                    }
+                    for suggestion in suggestions
+                ]
+            except Exception as error:  # noqa: BLE001 - hálózati kép hibája üres javaslatot ad
+                _log.warning("A hálózati vágási javaslat nem számítható ki (%s): %s", path, error)
+                results = []
+            with _CROP_RESULT_LOCK:
+                self._network_crop_suggestion_results[key] = results
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_network_crop_suggestions",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        self._start_background(worker, name="picasapy-network-crop-suggestions", busy=False)
+
+
+    @Slot()
+    def _apply_network_crop_suggestions(self) -> None:
+        """Az elkészült hálózati javaslatok átadása a GUI-kötésnek."""
+        with _CROP_RESULT_LOCK:
+            results = dict(self._network_crop_suggestion_results)
+            self._network_crop_suggestion_results.clear()
+            self._network_crop_suggestions_pending.difference_update(results)
+        generation = getattr(self, "_network_edit_generation", -1)
+        path = str(getattr(self, "_image_path", ""))
+        aspect = self._crop_aspect
+        for key, suggestions in results.items():
+            if key == (generation, path, aspect):
+                self._network_crop_suggestions_key = key
+                self._network_crop_suggestions = suggestions
+                self._bump_revision()
 
 
     @Slot(float)
@@ -175,8 +261,14 @@ class EditControllerCropMixin:
         """
         if self._ini_path is None:
             return ()
+        if getattr(self, "_network_edit_load_pending", False):
+            return ()
         try:
-            document = load_or_empty(self._ini_path)
+            document = (
+                self._current_ini_document()
+                if hasattr(self, "_current_ini_document")
+                else load_or_empty(self._ini_path)
+            )
             section = document.section(self._section_name)
             raw = section.get("faces") if section is not None else None
             if not raw:

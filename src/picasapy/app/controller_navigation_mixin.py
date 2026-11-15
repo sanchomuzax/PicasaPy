@@ -57,7 +57,7 @@ class FolderNavigationMixin:
             return
         self._current_folder = folder_path
         self._view_mode = ("folder", folder_path)
-        self._folder_description = self._read_folder_description(folder_path)
+        self._folder_description = self._folder_description_for_open(folder_path)
         self.statusChanged.emit()
 
     def _clear_unread(self, folder_path: str) -> None:
