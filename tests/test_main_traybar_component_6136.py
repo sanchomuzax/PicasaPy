@@ -78,4 +78,5 @@ def test_a_talca_vezerloje_ugyanugy_vedett_a_hianyzokontekstustol():
     main = _MAIN.read_text(encoding="utf-8")
     component = _COMPONENT.read_text(encoding="utf-8")
     assert 'hostFileOpsController: typeof fileOpsController !== "undefined"' in main
-    assert "hostFileOpsController.revealPhoto(ut)" in component
+    # #6995: a Locate on Disk a tálca kijelölt képeit adja át, mappánként egy ablakra
+    assert "hostFileOpsController.revealPhotos(locatePaths())" in component

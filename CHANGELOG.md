@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.122] - 2026-11-15
+
+- A Shift+Delete mappanézetben és a nézőben a végleges törlés megerősítését kéri (egy és több képre külön szöveggel), albumban és Emberek-albumban nem töröl fájlt, Windowson pedig a Lomtárba helyezés 0x0f eredményénél külön Delete / Cancel kérdés jön, más hibakódnál nincs végleges törlés (#6969).
+- A Save As és a Save a Copy videónál tiltott, lemezhibánál a másolat-mentés hivatalos hibaszövege jelenik meg (#6977).
+
 ## [1.0.121] - 2026-11-15
 
 - Windowson a kilépési határidő a folyamat leállításához saját, külön cserélhető hívást használ; a működés nem változik (#6960).

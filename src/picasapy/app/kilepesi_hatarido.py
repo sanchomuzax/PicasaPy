@@ -21,6 +21,7 @@ import logging
 import os
 import sys
 import threading
+import time
 import traceback
 from collections.abc import Callable
 
@@ -43,6 +44,8 @@ _orszem: threading.Thread | None = None
 #: állítják le a hosszú határidőre indított őrszálat.
 _leallitas_jelzo = threading.Event()
 _os_exit = os._exit
+#: A monoton óra fogantyúja (a tesztek ezt cserélik, #6991).
+_ora = time.monotonic
 
 
 def _platform() -> str:
@@ -155,8 +158,16 @@ def _kenyszeritsd_a_kilepest() -> None:
 
 
 def _orszem_szala(hatarido_s: float) -> None:
-    if _leallitas_jelzo.wait(hatarido_s):
-        return
+    # Windowson az `Event.wait` az időzítő felbontása miatt a kért idő előtt
+    # is visszatérhet (#6991): a maradékra újra várunk, amíg a határidő a
+    # monoton óra szerint is le nem telt.
+    vege = _ora() + hatarido_s
+    while True:
+        maradek = vege - _ora()
+        if maradek <= 0:
+            break
+        if _leallitas_jelzo.wait(maradek):
+            return
     _kenyszeritsd_a_kilepest()
 
 
