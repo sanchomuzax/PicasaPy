@@ -204,11 +204,17 @@ class TestEgyKepEsTobbKep:
             dialog = _gyerek(window, dialog_neve)
             # a gombsor elrendezése a megnyitás után egy-két képkockával áll be
             # (lassabb gépen később): addig várunk, de legfeljebb a korlátig
-            var_feltetelre(
-                qt_app, lambda: [nev for _x, nev in _lathato_gombok(dialog)] == vart
-            )
-            gombok = _lathato_gombok(dialog)
             ok = _gyerek(window, "revertOkButton")
+
+            def _beallt() -> bool:
+                gombok = _lathato_gombok(dialog)
+                if [nev for _x, nev in gombok] != vart or len(gombok) < 2:
+                    return False
+                # a kivett gomb helye is bezárult (a rés a gombtávolság nagyságrendje)
+                return gombok[1][0] - (gombok[0][0] + ok.width()) < 40
+
+            var_feltetelre(qt_app, _beallt)
+            gombok = _lathato_gombok(dialog)
             koz = gombok[1][0] - (gombok[0][0] + ok.width())
             nevek = [nev for _x, nev in gombok]
             _zard_be(window, qt_app, dialog_neve)

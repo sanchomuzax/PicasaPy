@@ -303,6 +303,10 @@ Item {
                 revertButtonBox.takeItem(index)
                 revertUndoSaveButton.visible = false
             }
+            // a gombsor azonnal rendeződjön újra, ne maradjon rés a kivett gomb helyén
+            var sor = revertButtonBox.contentItem
+            if (sor && typeof sor.forceLayout === "function")
+                sor.forceLayout()
         }
         onOpened: {
             if (revertConfirmDialog.focusCancelOnOpen)
