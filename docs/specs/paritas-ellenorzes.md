@@ -2132,4 +2132,83 @@ bináris leletekkel és a mostani PicasaPy kóddal.
 
 **Módosított fájl:** `docs/specs/paritas-ellenorzes.md` - a #6984 új alszakasza.
 
+## #6996: Az Export Picture to Folder és a Locate on Disk parancskódjai és menürekordjai
+
+### 1. A felvetett gyanú és a cáfolat összefoglalása
+
+A jegy kiindulási felvetése szerint a `0x9c81` parancskód a binárisban nem az Exporthoz, hanem a Locate on Disk parancshoz tartozik, mert a `0x005595d0`-`0x005595f4` szakaszon a `0xd6dabe` címre írt `0x9c81` kód közvetlenül a `push 0x00c8c4fc` (`eMenuFileWin::ID_FILE_LOCATEONDISK`) és `mov eax, 0x00c8c520` (`&Locate on Disk`) utasítások után szerepel.
+
+A részletes, két független úton elvégzett bináris vizsgálat ezt a feltevést megcáfolta:
+- A `0x9c81` valóban és bizonyítottan a **Fájl > Export Picture to Folder** parancskódja (`ID_FILE_EXPORTTOFOLDER`).
+- A `0x005312b0` függvény valóban az Export párbeszédablak nyitója (`CExportPrefsDialog`), amelyet mind a Fájl menü (`0x9c81`), mind a képtálca Export gombja (`outputlayout/folderbutton`) meghív.
+- A Locate on Disk valódi parancskódja nem a `0x9c81`, hanem a **`0x9c99`** (`rec 19`, `0x00d6dadc` rekord, gyorsbillentyűje "Enter"), kezelőfüggvénye pedig a `0x005cb990` diszpécserből induló **`0x005c8320`**.
+- A téves gyanút a Microsoft Visual C++ fordító utasítás-összefésülése (interleaving optimalizáció) okozta: miközben az N-edik menürekord (`rec 17`, Export) `cmdId` mezőjét (`0x00d6dabe`) töltötte fel a `0x9c81` értékkel, a fordító már előre betöltötte a verembe a következő rekord lokalizációs kulcsát (`push eMenuFileWin::ID_FILE_LOCATEONDISK`), így a felületes lineáris olvasás a kulcsot és a kódot tévesen összekapcsolta.
+
+### 2. A menürekordok bináris adatszerkezete és a Fájl menü teljes térképe
+
+A menüépítő ciklus (`0x00a6aee0`, `add ebp, 0x14`) alapján minden egyes menürekord pontosan 20 bájt (`0x14`) méretű:
+
+```c
+struct MenuItemRecord {
+    const char *pszText;     // +0x00: lokalizált felirat (0 esetén elválasztóvonal / SEPARATOR)
+    const char *pszShortcut; // +0x04: gyorsbillentyű felirat vagy adatmutató
+    uint16_t    flags;       // +0x08: jelzők (1 = kiemelt / alapértelmezett, 0 = normál)
+    uint16_t    cmdId;       // +0x0a: Windows parancskód (Command ID)
+    void       *pSubmenu;    // +0x0c: almenü rekordtömb mutatója (vagy 0)
+    uint32_t    submenuCount;// +0x10: almenü tételeinek száma (vagy 0)
+}; // sizeof = 20 (0x14) bájt
+```
+
+A Fájl menü (`0x00559150` által feltöltött `0x00d6d960` tömb, `0x1b` = 27 elem) releváns rekordjai:
+
+| Index | Báziscím | Funkció / Kulcs | Felirat | Gyorsbillentyű | cmdId címe | cmdId (hex) | cmdId (dec) |
+|---|---|---|---|---|---|---|---|
+| rec 12 | `0x00d6da50` | `eMenuFile::ID_FILE_SAVE` | &Save | Ctrl+S (`0x00c8c610`) | `0x00d6da5a` | `0xe103` | 57603 |
+| rec 13 | `0x00d6da64` | `eMenuFile::ID_FILE_REVERT` | Rever&t | - | `0x00d6da6e` | `0x9d9a` | 40346 |
+| rec 14 | `0x00d6da78` | SEPARATOR | - | - | `0x00d6da82` | 0 | 0 |
+| rec 15 | `0x00d6da8c` | `eMenuFile::ID_FILE_SAVEAS` | Save &As... | - | `0x00d6da96` | `0x9d9b` | 40347 |
+| rec 16 | `0x00d6daa0` | `eMenuFile::ID_FILE_SAVEACOPY` | Save a Cop&y | - | `0x00d6daaa` | `0x9dca` | 40394 |
+| **rec 17** | **`0x00d6dab4`** | **`eMenuFile::ID_FILE_EXPORTTOFOLDER`** | **Export Pi&cture to Folder...** | **Ctrl+Shift+S** (`0x00c7eae8`) | **`0x00d6dabe`** | **`0x9c81`** | **40065** |
+| rec 18 | `0x00d6dac8` | SEPARATOR | - | - | `0x00d6dad2` | 0 | 0 |
+| **rec 19** | **`0x00d6dadc`** | **`eMenuFileWin::ID_FILE_LOCATEONDISK`** | **&Locate on Disk** | **Enter** (`0x00c8c4f4`) | **`0x00d6dae6`** | **`0x9c99`** | **40089** |
+| rec 20 | `0x00d6daf0` | `eMenuFile::ID_FILE_DELETEFROMDISK` | &Delete from Disk... | Delete (`0x00c7eab8`) | `0x00d6dafa` | `0x9c9a` | 40090 |
+| rec 21 | `0x00d6db04` | SEPARATOR | - | - | `0x00d6db0e` | 0 | 0 |
+| rec 22 | `0x00d6db18` | `eMenuFile::ID_FILE_PRINT` | &Print... | Ctrl+P (`0x00c8c468`) | `0x00d6db22` | `0xe107` | 57607 |
+| rec 23 | `0x00d6db2c` | `eMenuFile::ID_FILE_EMAIL` | &E-Mail... | Ctrl+M (`0x00c8c43c`) | `0x00d6db36` | `0x9c97` | 40087 |
+| rec 24 | `0x00d6db40` | `eMenuFile::ID_FILE_EPROCESS` | Order Prin&ts... | - | `0x00d6db4a` | `0x9c98` | 40088 |
+
+A fenti adatokból közvetlenül leolvasható:
+- A `rec 17` kezdőcíme `0x00d6dab4`, szövege az `ID_FILE_EXPORTTOFOLDER`, parancskód mezője `0x00d6dab4 + 0x0a = 0x00d6dabe`, értéke `0x9c81`.
+- A `rec 18` egy elválasztó (`0x00d6dac8`).
+- A `rec 19` kezdőcíme `0x00d6dadc`, szövege az `ID_FILE_LOCATEONDISK`, parancskód mezője `0x00d6dadc + 0x0a = 0x00d6dae6`, értéke `0x9c99`.
+
+### 3. A `0x005cb990` szétosztó működése
+
+A főablak menü-diszpécsere (`0x005cb990`) a parancskódok szerint az alábbi ágakra ugrik:
+- **`0x9c81` (Export Picture to Folder):** Az első switch-tábla 63. indexén (`0x9c81 - 0x9c42 = 0x3f`, `byte ptr [0x005cdb34 + 0x3f] == 14`) a `0x005cbaac` címre ugrik, amely meghívja a `0x005312b0` függvényt.
+- **`0x005312b0` törzse:** Megerősítetten az Export ablak nyitója. Felépíti a `CExportPrefsDialog` objektumot (`0x0052e700`, erőforrás "export.fen"), betölti az alapértelmezett export nevet (`IDS_DEFAULT_EXPORT`), beolvassa a beállításokat (`0x0073b110`, `0x0073b310`), majd a `0x00531810` rutinnak átadva megjeleníti a modális párbeszédablakot. Ugyanezt a `0x005312b0` nyitót hívja a képtálca Exportálás gombja (`outputlayout/folderbutton`) a `0x005d9cc0` eseménykezelőből (`0x005dac5b` sor).
+- **`0x9c99` (Locate on Disk):** Az első switch-tábla 87. indexén (`0x9c99 - 0x9c42 = 0x57`, `byte ptr [0x005cdb34 + 0x57] == 23`) a `0x005cbae2` címre ugrik, amely a `0x005c8320` függvényt hívja meg. Ez a függvény felelős a fájl lemezen való megkereséséért és az Intézőben való kijelöléséért.
+- **`0x9dca` (Save a Copy):** A második switch-tábla 134. indexén (`0x9dca - 0x9d44 = 0x86`, `byte ptr [0x005cde04 + 0x86] == 65`) a `0x005cc5ad` címre ugrik, és a `0x005e6a20(1)` rutint hívja (`Save a Copy` mentési ág). A `0x9d9b` (`Save As`) ezzel párhuzamosan a `0x005cc5a0` ágon a `0x005e6a20(0)` rutint futtatja.
+
+### 4. A specek érintettsége és a téves felvetés lezárása
+
+1. **`docs/specs/export-parbeszed.md` (1011. sor):** A lapon szereplő állítás (`parancs 0x9c81, rekord 0xd6dab4, azonosító 0xd6dabe -> a szétosztó 63. indexén 0x005cbaac -> 0x005312b0`) **helyes és igaz**. Nem igényel módosítást.
+2. **`docs/specs/paritas-ellenorzes.md` (#6970 szakasz, 1232., 1242., 1849., 1899., 1960. sor):** Az Export parancskódjaként megadott `0x9c81` és kezelőjeként megadott `0x005312b0` **helyes és igaz**.
+3. **Menüengedélyezés (`0x0056e1c0`):** A menüengedélyező ciklus a `local_34` tömbön keresztül mind a `0x9c81` (Export), mind a `0x9c99` (Locate on Disk), mind a `0x9dca` (Save a Copy) azonosítókat azonos feltétellel kezeli (`(local_5c & 6) != 0 && param_1[0xd29] == 0`), így a menüengedélyezési következtetések érvényben maradnak.
+4. **Következtetés:** A #6996 jegyben megfogalmazott kétely megcáfolva; a kódok és a kezelők megfeleltetése a specekben pontos volt.
+
+### 5. Két független út és cáfoló vizsgálat
+
+- **A út (adatstruktúra és utasításfolyam):** A `0x00559150` függvényben a menürekordok memóriacímeinek és a `0x00a6aee0` rekordléptetőnek a vizsgálata. A 20 bájtos struktúra mezőinek pontos illeszkedése igazolja, hogy a `0x00d6dab4` bázisú rekord a `0x00d6dabe` eltoláson kapja a `0x9c81` értéket, felirata pedig az `Export Pi&cture to Folder...`. A Locate on Disk a `0x00d6dadc` bázison él, és a `0x00d6dae6` mezőjébe a `0x9c99` kerül.
+- **B út (eseményelosztás és kezelőtörzsek):** A `0x005cb990` switch-tábla elemzése és a hívott célfüggvények felderítése. A `0x9c81` ág a `0x005312b0` nyitóhoz vezet, amelyben megtalálható a `CExportPrefsDialog`, az `export.fen` és az `IDS_DEFAULT_EXPORT` string, valamint a tálca `outputlayout/folderbutton` gombja is ide csatlakozik. A `0x9c99` ág a `0x005c8320` rutinhoz vezet, ami a lemezen való megkeresés logikáját valósítja meg.
+- **Egyezés:** Mindkét független elemzési út egybehangzóan bizonyítja, hogy az Export kódja `0x9c81`, a Locate on Disk kódja pedig `0x9c99`.
+- **Cáfoló vizsgálat:** Megkíséreltük igazolni a feltevést, hogy a `0x005312b0` a Locate on Disk kezelője lehetne. A cáfolat sikertelen: a `0x005312b0` függvényben semmilyen fájlkezelő megnyitás vagy Explorer-kijelölés nem található, kizárólag a Picasa modális Export dialógusának inicializálása és eseménykezelése zajlik benne. A képtálca Export gombjának közvetlen `0x005312b0` hívása szintén kizárja, hogy a függvény a Locate on Disk funkcióhoz tartozna.
+
+### 6. A jegy „Kész, ha” pontjai
+
+- ✅ **Mi az Export valódi parancskódja és menürekordja:** Bizonyítva: `ID_FILE_EXPORTTOFOLDER` parancskódja `0x9c81`, rekordja a Fájl menü 17. eleme (`0x00d6dab4`), cmdId címe `0x00d6dabe`.
+- ✅ **A szétosztó ágai és a `0x005312b0` szerepe:** Bizonyítva: a `0x005cb990` szétosztóban a `0x9c81` a 63. indexen (`0x005cbaac`) a `0x005312b0` Export-nyitót hívja; a Locate on Disk kódja `0x9c99`, amelyet a `0x005cbae2` ág a `0x005c8320` kezelőhöz irányít.
+- ✅ **A specek és következtetések ellenőrzése:** Bizonyítva: a korábbi specifikációkban rögzített `0x9c81` és `0x005312b0` összerendelés helyes, a #6989-es felvetés téves riasztás volt.
+
+
 
