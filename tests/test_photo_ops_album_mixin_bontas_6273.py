@@ -56,13 +56,16 @@ _EREDETI_NYILVANOS_NEVEK = {
     "write_album_places",
 }
 
-# A bontás előtti photo_ops_album_mixin.py 22 metódusának LF-normalizált,
-# UTF-8 forrásszöveg-lenyomata a dekorátortól a metódus záró soráig.
+# A bontás előtti photo_ops_album_mixin.py metódusainak LF-normalizált,
+# UTF-8 forrásszöveg-lenyomata a dekorátortól a metódus záró soráig. A #7101
+# az albumtagság két belső segédjét és az `addRowsToAlbum` forrását módosítja.
 _EREDETI_FORRAS_SHA256 = {
     # #6281: az index-beli üres album kezelése (két új segéd, öt módosult metódus)
     "_fuggo_ures_album": "6d9fede6f567d5ddf6572d46ebceaf988e921360b2d338255710c353a6a14516",
     "_fuggo_ures_album_frissit": "a72813e92efdf9aa77224f89f05090af1886465f321cd643117bbc0a859d5860",
-    "addRowsToAlbum": "79097cd609e59098501f9d323e629a39943e92d68c0148688b0b507453f1298e",
+    "addRowsToAlbum": "98c24a20a950a99f11cbd0589ddf85e18b9b5795b9138fba41dd593ce33251bc",
+    "_album_membership_mutator": "912803685d40a02ebb4095811e6c019ca0f8c685a643aae6a3faa8780f67e672",
+    "_known_album_fields": "e47fc1c0bc094ed874334b957274d794cd37957d0fc328e5cb8a2296db6b4874",
     "removeRowsFromAlbum": "6ece39f95ddb1d0fc0a5590d3c256139b2b5937e55210112a1a4402f7e025be1",
     "deleteAlbum": "82152426a235bc13e9dc864f9e7253362ebe481eaf18870b66854da553ae5ffa",
     "sortAlbum": "d037c31c30de643224579a7f939e1d26c2c266416472cb22cb9802e961637869",
