@@ -5690,7 +5690,7 @@ ismert.
 | **Album / Folder főmenü - törlés:** a `0x00559150` menü felépíti az `eMenuLabelFolder::ID_ALBUM_DELETE` (`Delete...`) tételt `0x9d44` paranccsal; a `0x005cb990` a `0x005ed240` törlőútra irányítja. A `0x0056e1c0` állapotfrissítő szabályozza a parancs engedélyezését, de a különleges/üres albumok feltételének teljes jelentése nyitott. | `PicasaFolderMenu.qml:198-213` - a Delete elem csak mappamódban aktív; `AlbumContextMenu.qml:55-58` albumtörlés; `FolderPane.qml:362-368` | A PicasaPy Album főmenü jelenleg nem engedi az album törlését; a bal hasáb album-helyi menüje igen. Az eredeti főmenü parancsa és kezelője bizonyított, de a rendes albumra vonatkozó engedélyező ág pontos szemantikája nyitott; a különbség feltételes fejlesztői jelölt. |
 | **Bal hasáb album-helyi menü:** `0x00732160`: `&Edit Album Description...` (`0x00cae3a8`) és `&Delete Album` (`0x00cae450`); a parancsmezők a megelőző-rekord szabállyal `0x9c69` és `0x9d44`. A törlés a `0x005ed240`-be, a szerkesztés a `0x006db580`-ba jut. | `AlbumContextMenu.qml:55-65`; `FolderPane.qml:351-368`; `FolderPaneMenus.qml:120-135` | A jelenlegi helyi menü mindkét parancsot kínálja. A törlés-visszaigazoló ablak gombjai eltérnek; lásd „Ablakok”. |
 | **Emberek-album helyi menü:** `0x007359e0` `&Edit People Album...` és `&Delete People Album` tételeket épít; a törlés kezelője a `0x005ed240` specializált ágát is használja. A found-people, `]star` és `]screensaver` belső albumnevek külön védelmi ágon figyelmeztetést adnak (`0x00c97d44`, `0x00c97cb0`, `0x00c97cfc`). | `PeopleAlbumContextMenu.qml:26-65`; `FolderPaneMenus.qml:138-163,165-238` | A mai Emberek-album szerkesztése a személykezelő útja; törlése külön ablakban kérdez rá, és opcionális online-arc jelölőt ad. Az eredeti feliratokból önmagukban nem következtetek a szerkesztő végső hatására. |
-| **Újalbum UI-esemény / toolbar:** a `thumbui/newalbum` esemény a `0x005d9cc0`-ban a `0x005eb810`-at hívja; a konkrét vizuális elem helyét ez a kimenet nem nevezi meg. A tálca `thumbui/albumbutton` külön Add-to út (`0x005e9bb0`). | `MainWindowToolbar.qml:73-78` üres album tulajdonságablakot is nyit. | A PicasaPy toolbar útjának eredeti UI-megfelelője nyitott; a `thumbui/newalbum` eseményt nem azonosítom bizonyíték nélkül a toolbar gombjával. |
+| **Új album felületi eseménye, eszköztár:** a `thumbui/newalbum` esemény a `0x005d9cc0`-ban a `0x005eb810`-at hívja; a konkrét vizuális elem helyét ez a kimenet nem nevezi meg. A tálca `thumbui/albumbutton` külön Add-to út (`0x005e9bb0`). | `MainWindowToolbar.qml:73-78` üres album tulajdonságablakot is nyit. | A PicasaPy toolbar útjának eredeti UI-megfelelője nyitott; a `thumbui/newalbum` eseményt nem azonosítom bizonyíték nélkül a toolbar gombjával. |
 
 ### Ablakok, alapértékek és megjegyzett állapot
 
@@ -5735,10 +5735,10 @@ ismert.
 |---|---|---|
 | Új album rekordja | A `0x005eb810` elfogadáskor `0x0055d120(0,0,0)`-t hív; a `0x0055d120` az `0x004ada80` létrehozó útján katalógus-gyűjtemény rekordot hoz létre (`0x00443c00`), majd a mezőíróhoz jut. A tartós album-adatbázis fájlneve és az üres album tartóssága ebből nem dőlt el. | Kijelölt fotóknál új, véletlen token és `[.album:<token>]`/`albums=` definíció kerül az érintett `.picasa.ini`-kbe (`photo_ops_album_membership_mixin.py:137-175,235-253`). Üres album metaadata a profil-index SQLite táblájába kerül, mappa ini-írás nélkül (`:177-233`). |
 | Albumtagság és ini-szinkron | A `0x00536a90` a gyűjtemény memóriabeli képlistáját módosítja. A #7012-ben feltárt `AlbumSync` → `PicasaIniManager` (`0x00556ff0`/`0x00557760` → `0x0052c350`) út `.picasa.ini`-be írja az `albums` és `token` kulcsokat; az `AlbumIniSync` beállítás ezt befolyásolja. A pontos trigger, sorrend és hibaág még nyitott; lásd #7012 „Nyitott”. | Kijelölt képek írása kötegelt ini API-n fut, az albumlista siker után újratöltődik (`photo_ops_album_membership_mixin.py:255-268`). |
-| Album tulajdonságok / átnevezés | `0x006db580` az OK után `0x0055d320`-at hív; ez mező-settereket futtat. Setterhibánál korábban sikerült mezőket nem gördít vissza, és saját üzenetablakot nem épít (#7032 Ghidra-kiegészítés). A tényleges ini-író és az album-névütközés kezelése nyitott. | `editAlbumProperties` módosítja a nevet, dátumot, helyet és leírást minden érintett ini-ben; üres függő albumnál profil-indexet frissít; siker után újratölti a listát/nézetet (`photo_ops_album_properties_mixin.py:72-132`). A zene külön út. Ismert írási hibát `albumWriteFailed` jelzi (`:127-129`). |
+| Album tulajdonságok / átnevezés | `0x006db580` az OK után `0x0055d320`-at hív; ez mező-settereket futtat. Ha egy mezőíró (setter) hibát jelez, a korábban sikerült mezőket nem gördít vissza, és saját üzenetablakot nem épít (#7032 Ghidra-kiegészítés). A tényleges ini-író és az album-névütközés kezelése nyitott. | `editAlbumProperties` módosítja a nevet, dátumot, helyet és leírást minden érintett ini-ben; üres függő albumnál profil-indexet frissít; siker után újratölti a listát/nézetet (`photo_ops_album_properties_mixin.py:72-132`). A zene külön út. Ismert írási hibát `albumWriteFailed` jelzi (`:127-129`). |
 | Törlés és képfájlok | Elfogadott törlés után a `0x005ed240` katalógus-vtable `+0xec` metódust hív és nézetfrissítést végez (`0x0065b840`). A virtuális törlőcél, az ini-szinkron pontos lefutása és a képfájlok bájtjainak végállapota: `NINCS MEG`. | A `[.album:<token>]` definíciót és minden érintett `albums=` hivatkozást eltávolítja; az üres albumot a profil-indexből veszi ki. Képfájlokat nem töröl (`photo_ops_album_membership_mixin.py:93-125`). |
 | Albumlista, rács és kijelölés | Új album sikerén a `0x005eb810` frissít (`0x0065b840`) és az `0x004af790` által visszaadott új azonosítót az aktuális album mezőjébe írja. Törlés után frissít, de a bal hasáb/rács/kijelölés pontos végállapota nyitott. | Új album létrehozásakor a callback eldobja a visszaadott tokent (`FileOpsDialogs.qml:123-137`); nem hív `showAlbum`-ot. Siker után a lista frissül. Törlés után `_refresh_view()` fut (`photo_ops_album_membership_mixin.py:119-125`), de a jelenlegi album-/kijelölési végállapot külön nem igazolt. |
-| Névütközés, írási hiba, részleges állapot, visszavonás | Névütközés: `NINCS MEG`. A `0x0055d320` setter-hibánál visszatér; korábbi sikeres setterek maradnak. A `.picasa.ini` írási hiba, törlési hiba, rollback és undo: `NINCS MEG`. | Az üres album `local_empty_albums` sora tokennel kulcsolt, a `name` mezőn nincs unique constraint (`index/schema.py:238-249`); a létrehozó tokenalapú (`photo_ops_album_membership_mixin.py:207-208`). A vizsgált útban névütközés-ellenőrzést nem találtam. A kezelt írási hibák hibajelzést adnak; több mappás írás teljes rollbackje ebből a forrásból nem állítható. Közvetlen undo-út: `NINCS MEG`. |
+| Névütközés, írási hiba, részleges állapot, visszavonás | Névütközés: `NINCS MEG`. A `0x0055d320` setter-hibánál visszatér; korábbi sikeres setterek maradnak. A `.picasa.ini` írási hiba, törlési hiba, rollback és undo: `NINCS MEG`. | Az üres album `local_empty_albums` sora tokennel kulcsolt, a `name` mezőn nincs egyediségi megkötés (`index/schema.py:238-249`); a létrehozó tokenalapú (`photo_ops_album_membership_mixin.py:207-208`). A vizsgált útban névütközés-ellenőrzést nem találtam. A kezelt írási hibák hibajelzést adnak; több mappás írás teljes rollbackje ebből a forrásból nem állítható. Közvetlen undo-út: `NINCS MEG`. |
 
 ### Bizonyíték és bizonyítottság
 
@@ -5752,7 +5752,7 @@ ismert.
 | Törlés szövege és védett albumok | bináris (`0x005fdc30`, `0x005ed240`, `0x00c97cb0`, `0x00c97cfc`, `0x00c97d44`); független `confirm.fen` sablon (`picasa-fen-dialogs.md:273-282`) |
 | AlbumSync `albums`/`token` író | bináris (`0x00556ff0`, `0x00557760`, `0x0052c350`); részletesen a #7012 Tároló táblázatában, trigger/időzítés nyitott |
 | PicasaPy mai műveleti utak | fájl:sor: a fenti összehasonlító táblák; közvetlen QML/Python-forrásolvasás |
-| Album DB fájlneve, empty-album eredeti tartóssága, delete vtable cél, collision, album-ág confirm jelölő, undo és pontos UI-végállapot | `NINCS MEG` |
+| Album DB fájlneve, empty-album eredeti tartóssága, a törlés vtábla-célja, névütközés, az album-ág megerősítés-jelölője, visszavonás és pontos UI-végállapot | `NINCS MEG` |
 
 ### A két független út
 
@@ -5814,7 +5814,7 @@ engedélyezése ne következzen a normál album útból.
 **Kész, ha:** a normál és különleges albumok főmenü-engedélyezése a
 feloldott `0x0056e1c0`-ággal egyezik; engedélyezett törlésnél a jelenlegi
 albumtörlő út fut. A PicasaPy albumtörlője ne változtassa meg a képfájlokat
-(ez a jelenlegi controller viselkedése; az eredeti bájtvégállapot külön
+(ez a jelenlegi controller viselkedése; az eredeti végállapota külön
 nyitott mérési pont).
 
 #### 2. Az új album létrehozása után nyíljon meg az új album
@@ -5865,7 +5865,7 @@ folyamathoz tartozik.
 - `Ghidra-kör kell: 0x006DC030: az új Album Properties párbeszéd dátum/hely/leírás/zene mezőinek kezdeti értéke profilból vagy állandó alapértékből jön-e, mi marad meg bezárás/újranyitás után, és Cancel esetén történik-e mellékhatás. A meglévő `album.fen` és hívó a mezőket mutatja, de az induló állapotot nem. [blokkoló]`
 - `Ghidra-kör kell: 0x0055D320: az albumobjektum név-setterének konkrét virtuális célja, és az elutasítja-e a másik album megjelenített nevével ütköző értéket. A meglévő #7032 dekompiláció a setterhívást és részleges hibát mutatja, de az albumnév egyediségét nem. [blokkoló]`
 - A `0x00556ff0` AlbumSync trigger/időzítés és `0x0052c350` ini-író hibasorrend Ghidra-kérése már szerepel a #7012 „Nyitott” részében; nem kérek rájuk új kört. Ugyanott szerepel a `0x005e9bb0` Add-to/tálcás új album dialóguskérdése.
-- **NINCS MEG:** File ▸ New Album menüpont/`Ctrl+N` engedélyezése kijelölés nélkül. Út: célzott menüállapot-követés vagy külön Picasa 3.9 mérés üres kijelöléssel; a `0x005eb810` rutin guardjának hiánya önmagában nem bizonyítja a menüpont állapotát.
+- **NINCS MEG:** File ▸ New Album menüpont/`Ctrl+N` engedélyezése kijelölés nélkül. Út: célzott menüállapot-követés vagy külön Picasa 3.9 mérés üres kijelöléssel; a `0x005eb810` rutin feltétel-ellenőrzésének hiánya önmagában nem bizonyítja a menüpont állapotát.
 - **NINCS MEG:** törlés után a bal hasáb, rács, aktív album és fotókijelölés pontos végállapota; create/delete/rename undo-viselkedése; `.picasa.ini`/album-adatbázis részleges hibája és rollbackje. Út: célzott Ghidra-kör után kontrollált, előtte/utána Picasa 3.9 mérés.
 - **NINCS MEG:** az új Album Properties nem név jellegű mezőinek értéke/megőrzése és az eredeti albumági „Don't ask again” jelölő beállításkulcsa. Út: a fenti `0x006dc030` és `0x005fd670` célzott feloldása, majd mérés.
 
@@ -5936,7 +5936,7 @@ nulla (`0x0055c368`).
   (`0x0065b906`-`0x0065b988`). Vagyis a gyors gépelés közbülső lenyomásait az
   eredeti átugorja, a végén biztosan lefut egy keresés. A PicasaPy minden
   `onTextEdited`-re szinkron kereső hívást indít (`MainWindowToolbar.qml:59-64`),
-  és csak a javaslatlista debounce-ol (150 ezredmásodperc,
+  és csak a javaslatlista vár késleltetéssel (150 ezredmásodperc,
   `MainWindowCommands.qml:730-733`).
 - **A szöveg feldolgozása.** (1) A szöveg elejéről és végéről levágja a
   szóközt, vesszőt, pontot, per- és visszaper jelet (`StrTrimA` ` ,./\`,
@@ -6105,7 +6105,7 @@ gyártót, EXIF-szavakat, kiterjesztést, dátumot és helyet nem keresi.
 |---|---|---|
 | **X gomb (`searchclr`).** `0x005d8810` → `0x005d47e0(this, 1, 0)` (`0x005d891c`-`0x005d8920`). Törli a szöveget (`0x005d4965`-`0x005d4974`), mind a hat gombot (`0x005d48aa`-`0x005d48f6`), az idő-csúszkát (`0x005d4906`-`0x005d491e`), a két belső listát (`0x005d4927`-`0x005d494e`), a hasonlósági mintát (`0x005d8280`), a fókuszt a mezőre teszi (`0x005d4989`), majd az előző fókuszelemre (`0x005d498f`-`0x005d49c9`), és `0x0065b840(this,0,0,1)`-gyel újraépít (`0x005d49eb`). | `MainToolbar.qml:583-606`, `MainWindowToolbar.qml:65-69` | Részben egyezik: a gombok és a kor-csúszka törlése hiányzik, mert nálunk külön nézetmódok (E1). |
 | **Back to View All.** `viewallbutton` (`0x005d9564`): `0x005d47e0(this, 0, 0)` (nem épít újra), majd a keresősáv gombját kikapcsolja (`0x005d957c`-`0x005d959a`), ami `(1, 1)` útra visz: újraépítés és pozíció-visszaállítás. Súgója: `Exit Search Mode`. | `MainLibraryCanvas.qml:35-75`, `controller_filter_mixin.py:153-164` | Egyezik a gomb és a felirat; a pozíció-visszaállítás hiányzik (E2). |
-| **`Ctrl+F`/`F3` mégegyszer; a sáv gombja.** `0x005d4a20` → `0x005d47e0(this, 1, 1)`. | `MainToolbar.qml:64-68` | E2: a kikapcsolás nálunk nincs. |
+| **`Ctrl+F`/`F3` még egyszer; a sáv gombja.** `0x005d4a20` → `0x005d47e0(this, 1, 1)`. | `MainToolbar.qml:64-68` | E2: a kikapcsolás nálunk nincs. |
 | **`Esc` a rácson.** `0x005c42d0`: nem karakter-esemény (`+0x64` 1-es bit nulla), `[esemény+0x10] == 0x1b`; ha a `0x0057c430(4)` hamis, `0x005d47e0([esi+8], 1, 0)` (`0x005c433a`-`0x005c4342`), különben a `publish/cancel` kattintása (`0x005c430c`-`0x005c432e`). A rutin keresés nélkül is lefut (újraépít). | nincs (`MainKeyboardShortcuts.qml`-ben nincs `Esc` a könyvtárnézethez; a mező `Esc`-je csak a javaslatlistát zárja, `MainToolbar.qml:540-551`) | **Új** (E2). |
 | **`Esc` a keresőmezőben.** A `CSearchEditBox` kezelője (`0x0077d380`) nem tartalmaz `0x1b` összevetést (csak nyilak, PageUp/Down, Enter). A mező saját üzenet-feldolgozása NINCS MEG. | `MainToolbar.qml:540-551` | NINCS MEG (Nyitott: `0x0077D380`). |
 | **Üresre törlés billentyűvel.** A szöveg üresre törlése után a `0x0065b840` `[this+0xe94] = -1`-et ír (`0x0065ba4d`), a szűrő fajtája 0 lesz, a keresési jelző kikapcsol, a nézet a normál nézethez tér vissza (`0x0065aa80`, `0x00662c53`); a megjegyzett pozíció elvész. | `search_controller.py:38-44` (üres szöveg: mappa-feed) | Egyezik a fő hatás. |
@@ -6261,11 +6261,11 @@ Lezárva (a bizonyítékkal): a belépési pontok (1. szakasz); az eseményút �
 ### Cáfoló kísérletek és kizárt út
 
 - **„A gépelés késleltetve indul."** Cáfolva: `SetTimer` nincs a `0x005e4ac0`, `0x0065b840`, `0x00662b20`, `0x005d47e0` függvények importjai között (a híváslistát a PE import-táblából feloldva néztem), és az `EN_CHANGE` ág közvetlenül hívja a keresést. A kivétel a `0x0097fb90` billentyűsor-őr.
-- **„A keresés fájlokat nyit meg."** Cáfolva a hívott függvényekre (`CreateFile`, `FindFirstFile` és hálózati API egyik sincs az importjaikban); a DB-réteg vtáblahívásait nem követtem.
+- **„A keresés fájlokat nyit meg."** Cáfolva a hívott függvényekre (`CreateFile`, `FindFirstFile` és hálózati API egyik sincs az importjaikban); az adatbázisréteg vtábla-hívásait nem követtem.
 - **„A `Searchfor` almenü maga is keresést indít."** Kizárva: saját parancsa nulla (`0x0055c368`), a hét gyerek a `color:` tokent írja (`picasa-menu-parancsok-viselkedes.md` 20.).
 - **A `CThumbUI::searchmatch` (` (%d matches)`) és a `CThumUI::searchsizekey` (`size<`, magyarul `méret<`) kulcsok** a szövegtárban vannak, de az EXE-ben hivatkozó literál nincs (nyers bájtkeresés a teljes PE-n, a prefixszel egyező találatok a `searchmatchstr` és `searchmatchnum` voltak): az eredeti ezeket nem használja. Egy `méret<` típusú keresés tehát nem bizonyított.
 - **Elvetett értelmezés:** a `searchoptions/moviesearch` (`0x005d4a90`, `Preferences\SupportMovies`) és a `searchcontainer/moviesearch` két külön elem; a kapcsolat köztük nincs bizonyítva, ezért a filmszűrő láthatóságát ez a lap nem állítja a `SupportMovies`-hoz.
 
 ### Módosított fájlok
 
-- `docs/specs/paritas-ellenorzes.md`: új #7072 szakasz a keresés belépő- és kilépőútjaival, a szóindex mért tartalmával, a gépelés és az eredménysáv viselkedésével, tíz eltéréssel (E1-E10, ebből az E10 feltételes), hat javasolt jegytörzssel, nyolc nevesített Ghidra-körrel és egy Colab-feladattal.
+- `docs/specs/paritas-ellenorzes.md`: új #7072 szakasz a keresés belépő- és kilépőútjaival, a szóindex mért tartalmával, a gépelés és az eredménysáv viselkedésével, tíz eltéréssel (E1-E10, ebből az E10 feltételes), hat javasolt jegyleírással, nyolc nevesített Ghidra-körrel és egy Colab-feladattal.
