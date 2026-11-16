@@ -7724,6 +7724,14 @@ picasapy-origin-key: stringres:RestoreDialog::cantlaunch</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>ابتدا دست‌کم یک عکس انتخاب کنید.</translation>
         </message>
+        <message>
+            <source>The images in the folder have been deleted, but the folder itself will not
+be deleted due to the presence of additional files and/or folders.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CANT_DELETE_FOLDER</extracomment>
+            <translation>‏تصاویر موجود در پوشه حذف شده‌اند اما خود پوشه به دلیل
+ وجود فایل‌ها و/یا پوشه‌های دیگر حذف نخواهد شد.</translation>
+        </message>
     </context>
     <context>
         <name>FolderPane</name>
@@ -13068,6 +13076,13 @@ picasapy-origin-key: stringres:PropertiesPanel::edit_keywords</extracomment>
 picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_KEYWORD_PREFS</extracomment>
             <translation>کلمات کلیدی</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Adjust &amp;Date and Time...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_ADJUST_TIMESTAMP</extracomment>
+            <translation>‏تنظیم &amp;تاریخ و زمان…</translation>
         </message>
     </context>
     <context>

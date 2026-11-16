@@ -4,11 +4,42 @@ from __future__ import annotations
 
 from pathlib import Path
 from PySide6.QtCore import Slot
+from picasapy.ini import load_or_empty, read_folder_location, with_folder_location
 from picasapy.scanner import PICASA_INI_NAME
 from .photo_ops_controller import _WRITE_ERRORS
 
 
 class AppControllerFolderDescriptionMixin:
+    @Slot(str, result=str)
+    def folderLocationOf(self, folder_path: str) -> str:  # noqa: N802
+        """A fizikai mappa `[Picasa]/location` értéke a tulajdonságablakhoz."""
+        if not folder_path:
+            return ""
+        document = load_or_empty(Path(folder_path) / PICASA_INI_NAME)
+        return read_folder_location(document)
+
+    @Slot(str, str, result=bool)
+    def setFolderLocationOf(  # noqa: N802
+        self, folder_path: str, location: str
+    ) -> bool:
+        """A mappa helyének mentése az ini API-val; hiba esetén False."""
+        if not folder_path:
+            return False
+        ini_path = Path(folder_path) / PICASA_INI_NAME
+
+        from . import controller as controller_module
+
+        try:
+            controller_module.update_document(
+                ini_path,
+                lambda document: with_folder_location(document, location),
+                backup=True,
+            )
+        except _WRITE_ERRORS as error:
+            self.jelentsdAzIrasiHibat(error)
+            return False
+        return True
+
     def _set_folder_hidden_in_ini(self, path: str, hidden: bool) -> None:
         """A rejtési írás cserélhető pontja a korábbi controller API-hoz."""
         from . import controller as controller_module

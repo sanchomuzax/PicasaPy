@@ -187,6 +187,7 @@ _KOTELEZO_VALTOZATOK = {
         "hostController: null; "
         "hostPhotoViewer: ({ _kijeloltSort: function() { return -1 }, "
         "facesEditRevision: 0 }); "
+        "hostEditController: null; hostFileOpsController: null; "
         "hostMainDialogs: ({}); hostPhotoContextMenu: ({}); "
         "hostFolderPane: ({}); hostScreensaverAlbumConfirmLoader: ({}); "
         "hostFaceScanDialog: ({}); hostFaceScanController: null; "

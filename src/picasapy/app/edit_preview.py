@@ -519,6 +519,23 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
             mtime = None
         return self._resolve_source(str(photo_id), Path(path), mtime, shared_cache=True)
 
+    def rendered_image(self, photo_id: str) -> QImage | None:
+        """A fotó MEGJELENÍTETT (szerkesztésekkel renderelt) képe, vagy `None` (#7030).
+
+        Ugyanaz a tárolt kép, amit a néző a `requestImage`-en át kap, tehát
+        a vágólapra kerülő kép nem külön számítás. Önálló MÁSOLATOT adunk:
+        a hívó (vágólap) tovább él a szolgáltató LRU-tárának ürítésénél.
+
+        Szándékosan a megjelenítési mód ELŐTTI képet adja: az a
+        `requestImage` képernyőre ható átalakítója, a vágólapra a kiszámolt
+        kép kerül. A placeholder-képet sem adjuk ki: ha a fotónak még nincs
+        renderelt képe, `None` jön, és a hívó nem másol helyőrzőt."""
+        with self._lock:
+            image = self._images.get(str(photo_id))
+        if image is None or image.isNull():
+            return None
+        return image.copy()
+
     def histogram_for(self, photo_id: str) -> dict:
         """Az utoljára renderelt előnézet RGB-hisztogramja (#25), vagy üres
         hisztogram, ha a fotó nincs (már) regisztrálva."""

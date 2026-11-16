@@ -264,7 +264,9 @@ Rectangle {
             controller ? controller.folderDateOverride(path) : ""
         paneMenus.folderPropertiesDialog.currentDescription =
             controller ? controller.folderDescriptionOf(path) : ""
-        paneMenus.folderPropertiesDialog.folderLocation = ""
+        paneMenus.folderPropertiesDialog.folderLocation =
+            controller && controller.folderLocationOf
+                ? controller.folderLocationOf(path) : ""
         paneMenus.folderPropertiesDialog.currentMusicEnabled =
             controller && controller.folderMusicEnabled
                 ? controller.folderMusicEnabled(path) : false

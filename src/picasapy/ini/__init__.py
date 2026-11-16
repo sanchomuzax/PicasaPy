@@ -103,6 +103,7 @@ from .folder_date import (
     without_folder_date_override,
 )
 from .folder_music import read_folder_music, with_folder_music
+from .folder_location import read_folder_location, with_folder_location
 from .io import (
     IniConflictError,
     IniSaveError,
@@ -195,6 +196,7 @@ __all__ = [
     "is_hidden_folders_category",
     "HIDDEN_FOLDERS_CATEGORY",
     "read_folder_music",
+    "read_folder_location",
     "read_folder_date_override",
     "remove_all_face_data",
     "reset_all_faces",
@@ -212,6 +214,7 @@ __all__ = [
     "with_folder_category",
     "without_folder_category",
     "with_folder_music",
+    "with_folder_location",
     "with_contact",
     "with_reassigned_face",
     "without_face",

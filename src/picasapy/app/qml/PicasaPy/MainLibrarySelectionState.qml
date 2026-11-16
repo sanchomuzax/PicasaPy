@@ -14,6 +14,8 @@ Item {
     required property var hostWindow
     required property var hostController
     required property var hostPhotoViewer
+    required property var hostEditController
+    required property var hostFileOpsController
     required property var hostMainDialogs
     required property var hostPhotoContextMenu
     required property var hostFolderPane
@@ -113,6 +115,30 @@ Item {
             if (path.length > 0) paths.push(path)
         }
         return paths
+    }
+
+    // #7030: a Másolás célja nézőben a MEGJELENÍTETT, szerkesztésekkel
+    // kiszámolt kép, képadatként - az eredeti Picasa a szerkesztőben így
+    // tesz (`0x00a706f0`, `0x00a70776`: `SetClipboardData`, `CF_BITMAP`,
+    // hívó: `0x0069b000`, #7028). A könyvtárban a kijelölt képek FÁJLJAI
+    // kerülnek fel (#1526). Ha a néző képe nem másolható (videó, a
+    // munkamenet másik fotón áll, még nincs renderelt kép), a fájl-
+    // vágólapra esünk vissza: a Másolás így sosem marad néma.
+    function copyActionToClipboard() {
+        if (hostWindow.viewerOpen) {
+            // a FŐ vezérlő a KIJELÖLT oldalt szerkeszti (#3187), és a
+            // `photoActionRows()` is a kijelölt oldal sorát adja
+            var viewer = hostWindow.ensurePhotoViewer()
+            var rows = hostWindow.photoActionRows()
+            if (viewer && viewer.photosModel && hostEditController
+                    && rows.length === 1
+                    && hostEditController.copyRenderedImageToClipboard(
+                        String(viewer.photosModel.idAt(Number(rows[0])))))
+                return
+        }
+        if (hostFileOpsController)
+            hostFileOpsController.copyFilesToClipboard(
+                hostWindow.photoActionPaths())
     }
 
     // #5835: mappa nélküli nézetben a kijelölt vagy fókuszban levő kép

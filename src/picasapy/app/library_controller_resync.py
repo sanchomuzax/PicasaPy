@@ -210,6 +210,28 @@ class _LibraryResyncMixin:
         if mappak:
             self._on_folders_dirty(mappak)
 
+    # SZÁNDÉKOSAN nincs `@Slot`: belső fájlműveleti jelzés, QML nem hívja.
+    def resyncDeleteAttempt(self, path: str) -> None:  # noqa: N802
+        """A hibával zárult mappatörlési kísérlet utáni tényleges részfa.
+
+        A Shell a képek egy részét már törölhette, miközben fájlok vagy
+        almappák miatt a mappa megmarad. Ezért a lemezen látható és az index
+        által ismert részfát is újraolvassuk; az indexből eltűnt mappákat így
+        eltávolítjuk, a megmaradtakat és tartalmukat pedig megtartjuk.
+        """
+        folder = normalize_path(to_local_path(path))
+        if not folder:
+            return
+        disk_tree = self._reszfa_a_lemezen(folder) if Path(folder).is_dir() else ()
+        # A mozgatás régi oldalának segédje szándékosan kihagyja a figyelt
+        # gyökeret. Itt viszont explicit törlési kísérlet történt, ezért a
+        # gyökér index-részfáját is egyeztetni kell a lemezzel.
+        with open_index(self._db_path) as conn:
+            indexed_tree = folder_paths_under(conn, folder)
+        mappak = _legacy()._dedupe_paths((*disk_tree, *indexed_tree))
+        if mappak:
+            self._on_folders_dirty(mappak)
+
     def _kovesd_a_gyoker_athelyezeset(self, regi: str, uj: str) -> bool:
         """A FIGYELT GYÖKÉR áthelyezésének követése (#1542).
 

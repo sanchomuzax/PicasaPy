@@ -40,6 +40,11 @@ RowLayout {
                     && viewer.appWindow.valtsFiokLapot !== undefined)
                 viewer.appWindow.valtsFiokLapot("tags")
         }
+        onAdjustTimestampRequested: {
+            var row = focusRow >= 0 ? focusRow : viewer.currentIndex
+            if (row >= 0 && viewer.appWindow && viewer.appWindow.createDialogs)
+                viewer.appWindow.createDialogs.ensure().openTimestamp([row])
+        }
     }
 
     //: #2566: a másik három lap CSAK AKKOR létezik, ha a NÉZŐ

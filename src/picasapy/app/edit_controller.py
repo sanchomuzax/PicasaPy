@@ -125,6 +125,7 @@ from .edit_controller_session_mixin import EditControllerSessionMixin
 from .edit_controller_history_mixin import EditControllerHistoryMixin
 from .edit_controller_save_mixin import EditControllerSaveMixin
 from .edit_controller_preview_mixin import EditControllerPreviewMixin
+from .edit_controller_clipboard_mixin import EditControllerClipboardMixin
 from .edit_controller_crop_mixin import EditControllerCropMixin
 from .edit_controller_retouch_mixin import EditControllerRetouchMixin
 from .edit_controller_redeye_mixin import EditControllerRedeyeMixin
@@ -137,6 +138,7 @@ class EditController(
     EditControllerHistoryMixin,
     EditControllerSaveMixin,
     EditControllerPreviewMixin,
+    EditControllerClipboardMixin,
     EditControllerCropMixin,
     EditControllerRetouchMixin,
     EditControllerRedeyeMixin,
