@@ -3036,15 +3036,110 @@ bekapcsolt recentnél kimarad.
 - `NINCS MEG`: futásidejű eldöntő mérés az Autofill jelöltsorrendjére. Megszerzés: Colab-feladat az eredeti Picasa 3.9-cel, három mappa ismert beolvasási sorrenddel, olyan címkékkel, ahol a gyakoriság és az első előfordulás sorrendje eltér; recent be- és kikapcsolva a tíz mező szövege, majd a mezők kiürítése után újabb Autofill.
 - `NINCS MEG`: az eredeti Picasa-mérés a fájlok SHA-256-jával és a `.picasa.ini` előtte/utána tartalmával, egy- és többképes JPEG, videó, vegyes címkeállapot, írásvédett fájl/mappa és írási hiba mellett. A hálózat nélküli kutatói körben ilyen mérőadat nem állt rendelkezésre; az új gyűjtéshez a felhős mérőkörnek izolált profilban rögzítenie kell az eredeti Picasa végállapotot.
 
-### Módosított fájlok
+### Zárókör: a jelenlegi forrás és a megmaradt bizonyítékok (2026-11-16)
 
-- `docs/specs/paritas-ellenorzes.md` - ez a #7022 alszakasz.
+Ez a zárókör a fenti korábbi „Nálunk” állításokat és fejlesztői javaslatokat
+felülírja ott, ahol a munkafa mostani forrása mást mutat. A Ghidra-kiegészítés 3
+megmarad; az alábbi kiegészítés a korábban nyitott tételeket újraminősíti.
 
-**Nyitott kérdések: 0 nyílt · 9 lezárva (parancs-azonosítás, törölt kulcskészlet, `rotate` kimarad, engedélyezési képlet, hívási lánc, megerősítő szövegek, visszavonhatatlanság, hibakezelés statikusan, Autofill jelöltforrás és kitöltési szabály) · 11 blokkolt (8 Ghidra, 3 `NINCS MEG` Colab) · 0 hatókörön kívül · 0 csak nyitva.**
+#### Belépési pontok és a mostani forrás
+
+| Eredeti (bináris cím vagy mérés) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Nézet > Tags:** az eredeti lapváltó az aktív Tags lap ismételt kérésére bezárja a jobb oldali fiókot; másik lapról Tags-re vált (`0x005d9760`, `0x005d99a0`, `0x005d9ad8`). | A menü a `MainMenuBar.qml:384-385` útján a `MainWindowLibraryActions.qml:15-23` kapcsolóhoz jut. | A könyvtárnézetben egyezik. A korábbi, csak megnyitást állító fejlesztői javaslat elavult, nem kell hozzá külön jegy. |
+| **Ctrl+T és Ctrl+K:** közös bináris Tags-panel kapcsoló (`0x005e60d0`, `0x0065ab00`); a magasabb szintű néző- és szerkesztőállapot-őrök teljes eredménye nyitott. | Mindkét gyorsbillentyű a `valtsFiokLapot("tags")` függvényt hívja (`MainKeyboardShortcuts.qml:110-113,328-334`); az engedélyezés könyvtárnézetre és nem szövegmező-fókuszra korlátozott (`MainWindowCommands.qml:229-233`). | A könyvtárnézetben egyezik. Az eredeti teljes képernyős nézőbeli és szerkesztőbeli engedélyezést a lent megadott mérés dönti el; a régi, Ctrl+K-ra külön megnyitást javasló sor nem aktuális. |
+| **Add Tag:** vesszőnként bont, az üres részeket kihagyja (`0x0063bb30`); a bináris figyelmeztető szöveg egyes elutasított elemek esetére létezik (`0x0063bb9d`, `0x0063bd90`). | `TagsPanel.qml:50-63` vesszőnként külön kérést küld és az üres tokeneket kihagyja; a fő panel hibát jelez (`MainRightDrawer.qml:83-92`). | A tokenizálás egyezik. Az eredeti részhiba és a fájlírás hibájának pontos kapcsolata nem következik a feliratból, a mérés része. A régi „vessző helyett szóköz” fejlesztői javaslat már nem indokolt. |
+| **Címkesor helyi menü:** Add, Search, Remove (`0x00735480`). | A jelenlegi sorrend Add, Search, Remove (`TagContextMenu.qml:27-41`). | Egyezik; a korábbi sorrendjavító javaslat elavult. |
+| **Tulajdonságok > Edit Tags:** `0x00638990` eseménye a Tags-panel kapcsolójáig jut (`0x0065ab50`). | A gomb és a helyi menü `editTagsRequested` jelet ad (`PropertiesPanel.qml:129-162`); a könyvtár és a néző befogadója a Tags lapot kapcsolja (`MainRightDrawer.qml:149`, `PhotoViewerRightPanels.qml:38-42`). | A régi modális ablakra vonatkozó eltérés nem áll fenn. A `KeywordsDialog` példány jelenléte önmagában nem bizonyít megnyitást; a kattintási jel útját ellenőriztem. |
+| **Quick Tags alapérték:** tíz kézi hely; a felső kettő a két recent értéknek foglalható; hiányzó `quicktags::enable_recents` alapértéke be van kapcsolva (`0x0083efa2`, `0x0063c7d0`). | Tíz szerkesztőmező (`QuickTagsConfigDialog.qml:122-131`); a két felső hely alapértelmezetten fenntartott (`keywords_controller.py:393-402`). | A darabszám és az alapérték egyezik. |
+| **Quick Tags előzmény:** ismételt, már tárolt érték nem rendeződik át; a bináris összevetés pontos és kis-/nagybetű-érzékeny (`0x0063b960`, `0x0063c120`). | `keywords_controller.py:341-359` a pontos Python-karakterláncot keresi; egyezésnél visszatér átrendezés nélkül. | Egyezik; a korábbi `casefold`-javító javaslat a jelenlegi forrásra nézve elavult. |
+| **Quick Tags Autofill:** egyszeri mezőkitöltő; a jelöltlista szűrője a panel forráslistájának első 100 elemére fut (`0x0083f580`, `0x0063d260`, `0x0063d550`). | A beállítóban egyszeri gomb van, a jelöltek az ablak megnyitásakor gyorsítótárba kerülnek (`QuickTagsConfigDialog.qml:50-58,68-75,151-169`; `keywords_controller.py:420-459`). A jelenlegi kód előbb kiszűri a legutóbbi címkéket, majd 100 jelölt után áll meg (`keywords_controller.py:428-442`). | Az egyszeri művelet egyezik. A korlát eltér: az eredeti előbb a forrás első 100 elemét veszi, aztán szűri a legutóbbi értékeket; nálunk a 100-as határ a szűrés után van. Az eredeti forráslista sorrendjét még mérni kell. |
+| **Mégse és recent kapcsoló:** a meglévő diszasszembly szerint a kapcsoló eseménye azonnal írja a preferenciát (`0x0083f2f0`); a Mégse ágban nem azonosítottam visszaállító írást. | A jelenlegi párbeszéd megnyitáskor menti a két kezdőértéket, Mégsekor pedig visszaírja őket (`QuickTagsConfigDialog.qml:68-83`). | Lehetséges eltérés, de a Picasa látható, kilépés utáni értéke csak egy statikus úton következtethető. A mérésben ellenőrizendő, ezért külön implementációs jegyet még nem nyitok. |
+| **Címke törlése és vegyes kijelölés:** a `0x0063c5a0` út a kijelölési frissítés előtt az `IKeywordUpdate` interfész `+8` helyét hívja; a megvalósítás teljes fájlhatása nyitott. | A `keywords_controller.py:193-202` minden kiválasztott sorból eltávolítja a kis-/nagybetűtől függetlenül egyező címkét. | A Picasa vegyes címkéjű kijelölésének lemez- és felületvégeredménye mérendő; a régi „csak felületi frissítő” leírás túl erős volt, lásd a cáfoló kísérletet. |
+
+#### A jelenlegi PicasaPy-hatás és hibák
+
+- Egy címke hozzáadása a sor címkelistáját kis-/nagybetűtől függetlenül egyedíti; törléskor minden egyező alakot eltávolít a kijelölt sorokból (`keywords_controller.py:176-202`). Több kijelölt kép hozzáadásakor a fő panel 30 fölött megerősítést kér (`MainRightDrawer.qml:83-92`). A néző Tags panelje a nézett képet célozza (`PhotoViewerRightPanels.qml:76-103`).
+- `.jpg` és `.jpeg` esetén a PicasaPy a teljes IPTC Keywords `2:25` mezőt írja, kulcsszavanként egy adatmezővel (`metadata/iptc_writer.py:48-58`). Ezen az úton XMP-író hívás nincs. Sikertelen IPTC-írás után, illetve más kiterjesztésnél a `.picasa.ini` `keywords=` vesszővel összefűzött értéke a tartalék (`keywords_controller.py:229-244`). A módosítás után a kód `backuphash`-t ír és az ini-t menti (`:245-269`).
+- A fő panel előre mappaszintű írási próbát végez, egyetlen írásvédett mappa is tiltja a bevitelt (`keywords_controller.py:138-174`, `MainRightDrawer.qml:69-76`). A néző Tags paneljének nincs ilyen bekötése (`PhotoViewerRightPanels.qml:76-95`), ezért ott a komponens alapértéke érvényesül. Ez a PicasaPy forrás viselkedése; az eredeti engedélyezési paritás mérésre vár.
+- IPTC-hibánál a kód ini-tartalékot próbál és a hibát jelenti, ha az ini-frissítés sikerült. Ini-írási kivételnél hibát jelent, a további mappákat leállítja; a hibás mappához a `break` miatt indexszinkron nem fut, de az aktív nézet újratöltése a ciklus után megtörténik (`keywords_controller.py:230-279`). Mivel az IPTC-írás az ini-frissítés előtt, képenként történik, a későbbi ini-hiba korábban módosított JPEG-et részleges állapotban hagyhat.
+- Sikeres mappaírás után a kód frissíti a mappafát az SQLite-indexben és újratölti az aktív keresési vagy mappanézetet (`keywords_controller.py:276-279`, `controller_sync_mixin.py:65-130`). A `set_photos` lecseréli a modell sorait (`controller_photo_list_mixin.py:155-157`); ez a Python út nem üríti kifejezetten a `selectedIndexes` vagy `selectedIndex` értékeit (`MainLibrarySelectionState.qml:29-32`). A végső kijelölés és az eredeti rácsállapot egyezése nem következik ezekből a hívásokból.
+
+#### A megmaradt „NINCS MEG” és Ghidra-kérdések újraminősítése
+
+- **Eredeti lemezvégállapot, index és visszavonás: `NINCS MEG`.** A `0x0063bed0` és `0x0063c5a0` címek hívási lánca a `CThumbUI::IKeywordUpdate` felületig követhető, de a kiválasztott képeken végrehajtott virtuális műveletek, az IPTC/XMP/ini kiírás, a hiba utáni állapot és a visszavonás nem bizonyított. A régi `0x005c76b0` dekompilálás a kijelölésgyűjtőt írja le, nem zárja le ezt a távolabbi ágat.
+- **Részleges eredeti mérés (job-242): `mérés (docs/specs/paritas-ellenorzes.md:831; docs/specs/picasa-beviteli-mezok.md:364-372)`.** Egy JPEG-hez címke került a Tags panelen; a képernyőn a `proba` az `AI image` fölött szerepelt és az első Quick Tag `proba` volt. Az ini kivonat `backuphash=33706` értéket tartalmazott `keywords=` sor nélkül. Az eredeti JPEG és a nyers mérőfájl a megadott mérőtarban nincs, így ez nem azonosítja a kép IPTC/XMP mezőjét vagy bájtváltozását, és nem bizonyít többképes, videós, mixed-delete vagy hibás esetet.
+- **Quick Tags listaéletciklus és sorrend: részben megválaszolva.** A Ghidra 425 kimenet igazolja a forrás első 100 elemét követő recent-szűrést, de nem a panel `+0x2c0` listájának létrehozási sorrendjét és frissülését. A jelenlegi kód `all_photos` indexsorrendet használ, az ablak megnyitásakor pillanatfelvételt készít. Az eredeti kimenetet kontrollált címkekészlettel kell rögzíteni.
+- **Ctrl+T/K néző- és szerkesztőkapu: nyitott, de nem igényel külön Ghidra-kört.** A `0x005e60d0` állapotőrei diszasszemblyből részben ismertek, a teljes képernyős nézőbeli felhasználói eredményt egy billentyűpróba dönti el. A jelenlegi kód mindkét billentyűt letiltja a nézőben.
+- **A korábbi `Ghidra-kör kell` sorok döntése:** a `0x005c76b0` és `0x0063c5a0` régi kérései a fájlírás statikus útját és vegyes kijelölés belső végpontját keresték. A kijelölt elemek virtuális hívásai most követve vannak, de azok fájlhatása nyitott; a mért végállapot dönti el a felhasználói viselkedést, ezért a belső függvénynév nem blokkoló. A `0x00638990` kérdést a meglévő Ghidra-kimenet megválaszolja: a Tulajdonságok útja a Tags lap kapcsolója. A `0x005e60d0` és a `0x0056c420` nézőállapot-őreinek belső jelentése helyett a billentyűpróba dönti el az elérhetőséget; a belső függvénynév nem blokkoló. A `0x0083f580` / `0x0063d260` / `0x0063d550` kérdésből a 425-ös kör feloldotta a korlátot és a recent-szűrőt; a `0x00437380`, `0x004936c0` és `0x006393b0` dekompilálásával keresett `+0x2c0` lista sorrendjét és frissülését ugyanennek a mérésnek a jelöltsorrend- és újranyitási próbája válaszolja meg. A belső listaépítő azonosítása nem külön blokkoló. Ezekre most nem kérek új Ghidra-kört.
+- A `meroadat.tar` nem tartalmazott a címkézési műveletekhez név szerint illő mérési tagot. A korábbi `job-242` sor dokumentált, de annak képe és nyers JPEG-je most nem áll rendelkezésre. A PicasaPy forrás és ez az egy eredeti képernyőállapot két külön bizonyíték, de a tárolási végpont állítására nem adnak egyező leletet, ezért az összesített fok **nyitott**.
+
+#### A két független út
+
+- **A út, eredeti bináris:** a `0x0063a5e0` hívó EAX-ben a Tags panelt adja át a `0x0063c5a0` függvénynek; a `0x005643e0` konstruktor az `IKeywordUpdate` táblát a fő objektum `+0x284` mezőjére állítja. A tábla adatcíme `0x00c906d8`; a `+8` hely `0x0065b3b0`-ra mutat. Az utasításokban ez a metódus kijelölt elemeket jár be, elemenként két további virtuális helyet hív, majd `0x0065ac80` frissítést indít. Ez bizonyítja, hogy a remove út nem merül ki a panel rajzolásában, de nem nevezi meg az elemenkénti metódusok lemezíró hatását.
+- **B út, PicasaPy forrás és megmaradt mérési sor:** a jelenlegi Python/QML út fájlonként megnevezi az IPTC és ini írást, az indexfrissítést, a hibaágat és a panel frissítését; a job-242 korábbi képernyőleírása egy eredeti, egyképes hozzáadás látható végállapotát rögzíti.
+- **Egyezés:** az Add Tag felületi hozzáadása és a Quick Tag recent megjelenése egyezik az egyetlen dokumentált job-242 állapottal. A lemezírásra, vegyes törlésre, hibára vagy visszavonásra a két út nem ad egyező, teljes bizonyítékot. Az összesített minősítés ezért nem „megerősített”.
+
+#### Cáfoló kísérlet
+
+Ellenőriztem azt az alternatívát, hogy a `0x0063c5a0` kizárólag panel- vagy listafrissítés. A hívó `0x0063a5e0` utasításszinten igazolja, hogy EAX-ben a panel kerül a függvénybe; a konstruktorból és a `0x00c906d8` vtable-adatból feloldott `+8` hely a `0x0065b3b0` metódusra jut, amely kijelölt elemenként `+0x60` és `+0x64` virtuális hívást tesz. Ez cáfolja a „csak rajzolás” értelmezést. A cáfoló eredményt külön út ellenőrizte: a virtuális tábla közvetlen bájtjai és a célfüggvény diszasszemblyje. A fájlíró célját ettől nem következtetem ki.
+
+#### A jegy „Kész, ha” pontjai
+
+1. ⛔ **Belépési pontok, engedélyezés, egy/több kép, videó, vegyes állapot:** az eredeti menü- és billentyűparancsok statikusan azonosítottak; a nézőkapu, kiválasztott képszám, videó és vegyes állapotú törlés tényleges eredménye hiányzik. Bizonyíték: `0x005d9760`, `0x005e60d0`, `0x0063a5e0`, `0x0063c5a0`; PicasaPy-forrás `MainWindowCommands.qml:232-233`, `MainRightDrawer.qml:83-95`, `PhotoViewerRightPanels.qml:76-103`.
+2. ⛔ **Panel, alapérték, javaslatlista és megjegyzett beállítás:** a tíz mező, két recent hely és az alapértelmezett bekapcsolás ismert; az eredeti forráslista sorrendje, frissülése és a Mégse utáni recent érték futásidejű ellenőrzése hiányzik. Bizonyíték: `0x0083ea00`, `0x0083f580`, `0x0063d260`, Ghidra 425; PicasaPy-forrás `QuickTagsConfigDialog.qml:50-83,122-169`, `keywords_controller.py:393-402,420-507`.
+3. ⛔ **Fájl, metaadat, `.picasa.ini`, index, keresés, rács, kijelölés, vegyes törlés és visszavonás:** PicasaPy forrásút megvan, az eredeti végállapot nem. A job-242 csak egy JPEG látható állapotát és ini-kivonatot rögzít; IPTC/XMP és JPEG nincs megmérve. Bizonyíték: `mérés (job-242, docs/specs/paritas-ellenorzes.md:831)`, `keywords_controller.py:204-279`, `metadata/iptc_writer.py:48-58`.
+4. ⛔ **Írásvédelem, íráshiba és részleges végrehajtás:** a PicasaPy ág forrásból levezetett, az eredeti Picasa hibás és részleges végállapota hiányzik. Bizonyíték: `keywords_controller.py:138-174,230-279`; eredeti: `NINCS MEG`.
+
+#### Javasolt fejlesztői jegytörzs
+
+A korábbi hat fejlesztői javaslatból az aktív lap kapcsolása, a vesszőnkénti
+tokenizálás, a helyi menü sorrendje, a recent pontos egyezése, az egyszeri
+Autofill gomb és a Tulajdonságok útja a mostani forrásban már megvan. Ezekből
+ne készüljön új, duplikált implementációs jegy. A bizonyított maradékhoz egy
+szűk fejlesztői jegytörzs készíthető:
+
+**Cím:** A Quick Tags Autofill a forrás első 100 eleméből szűrjön.
+
+**Eredeti:** a `0x0063d260` a panel `+0x2c0` listájának első 100 elemét veszi,
+majd a `0x0063d550` legutóbb használt címkéket kizáró szűrőjével jelölteket
+hagy ki. Ha az első 100 között mindkét ilyen címke szerepel, legfeljebb 98
+jelölt marad.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| A korlát a forrás első 100 elemére esik, utána következik a legutóbb használt címkéket kizáró szűrés (`0x0063d260`, `0x0063d550`). | A legutóbbi értékek kizárása megelőzi a 100 jelöltes korlátot (`keywords_controller.py:428-442`); a rekordbejárás `all_photos` sorrendje (`:431-440`). | A forrás első 100 eleméből állítsa elő a jelölteket, majd szűrje ki a legutóbbi értékeket. Az eredeti forrás sorrendjét az alább megadott mérésből kell átvenni, nem szabad becsülni. |
+
+**Kész, ha:** a rögzített Picasa-mintán az Autofill jelöltjei sorrendben
+megegyeznek; a korlát a recent-szűrés előtt fut; ha a forrás első 100 eleméből
+kettő recent címke kiesik, legfeljebb 98 érték marad; az ismételt gombnyomás és
+a mezők kiürítése a mérésben rögzített eredményt adja. A törlési, fájlírási és
+visszavonási paritásról csak az alábbi mérés után lehet végrehajtható fejlesztői
+jegyet írni.
 
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7009 alszakasz, és három helyesbítő megjegyzés a #7000 alszakaszban.
+
+### Zárási döntés
+
+**A #7022 jelenleg nem zárható. Az egyetlen blokkoló egy kontrollált Picasa
+3.9.141.259 Windows-mérési kör**, amelynek egy elszigetelt könyvtárban kell
+rögzítenie: a Nézet > Tags és Ctrl+T/Ctrl+K engedélyezését könyvtárban,
+nézőben és szerkesztőben; egy és több kép, videó, valamint vegyes címkeállapot
+hozzáadási és törlési végeredményét; a JPEG IPTC és XMP állapotát, a `.picasa.ini`-t és a
+fájl hashét előtte/utána; index, keresés, rács és kijelölés frissülését; visszavonást,
+írásvédelem, egyszeri és szándékosan hibás írás részleges eredményét; továbbá
+100-nál több Quick Tags forráselem sorrendjét, recent szűrését, ismételt
+Autofillt, párbeszédnyitást és Mégsét. A korábbi job-242 egyképes képernyő- és
+ini-kivonatát újra fel kell használni részleges kontrollként, az elveszett
+JPEG-végállapotot azonban nem szabad meglevőnek tekinteni.
+
+Ez az egy mérési kör dönti el a felsorolt felhasználói viselkedéseket és a
+Quick Tags fejlesztői jegy pontos forráslistás sorrendjét. A korlát és a
+recent-szűrés sorrendjének eltérése már bizonyított, ezért az Autofill-jegytörzs
+marad. A per-elemes virtuális cél statikus értelmezése a méréshez nem külön
+blokkoló; ezért most nem kérek új Ghidra-kört.
 
 ## #7001: A csillagozás teljes folyamata az eredeti Picasával összevetve: belépési pontok és hatás
 

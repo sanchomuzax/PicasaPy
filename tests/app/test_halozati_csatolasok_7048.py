@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import posixpath
 import threading
 import time
@@ -158,6 +159,7 @@ def app_controller(qt_app, tmp_path):
     controller.shutdown()
 
 
+@pytest.mark.skipif(os.name != "posix", reason="Linux-viselkedést mér (POSIX-útvonal, /proc/mounts), Windowson nem érvényes (#7096)")
 def test_linuxos_halozati_mappaleiras_hatterben_olvasodik(
     qt_app, app_controller, monkeypatch
 ):
