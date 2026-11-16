@@ -87,34 +87,37 @@ Item {
         dialogs.openNewAlbumProperties(controller.currentFolder, rows)
     }
 
+    // #7100: az Add to Album ▸ New Album... (fotó- és nézőmenü) ugyanezt az
+    // ablakot nyitja, de a dátuma a kijelölés ELSŐ képének ideje mínusz egy
+    // másodperc (nincs dátum: üres). A Fájl menü útja (`openNewAlbum`) más
+    // belépő, annak dátuma változatlanul üres.
+    function openAddToNewAlbum(rows) {
+        if (!controller || !rows || rows.length === 0) return
+        var elso = controller.photos.itemAt(Number(rows[0]))
+        dialogs.openNewAlbumProperties(
+            controller.currentFolder, rows,
+            UjMappaDatum.albumDatum(elso ? elso.takenAt : ""))
+    }
+
     // #7102: a helyőrző sorra ejtés az Album Properties párbeszédet nyitja;
-    // a menüs New Album út külön marad, továbbra is üres alapdátummal.
+    // alapdátuma a mai nap mínusz egy másodperc (`0x005ea770`, mai idő).
     function createAlbumFromDrop(rows) {
         if (!controller || !rows || rows.length === 0) return
-        var dialog = toolbarAlbumPropertiesDialog
-        dialogs.newAlbumPhotoRows = rows.slice()
-        dialog.albumFolderPath = controller.currentFolder
-        dialog.albumToken = ""
-        dialog.albumName = dialog.untitledFolderName
-        dialog.currentDate = Qt.formatDate(
-            new Date(Date.now() - 1000), "yyyy-MM-dd")
-        dialog.albumLocation = ""
-        dialog.currentDescription = ""
-        dialog.currentMusicEnabled = false
-        dialog.currentMusicFile = ""
-        dialog.open()
+        dialogs.openNewAlbumProperties(
+            controller.currentFolder, rows,
+            Qt.formatDate(new Date(Date.now() - 1000), "yyyy-MM-dd"))
     }
 
     // #5812: az eszköztár új album gombja az Album Properties párbeszédet
     // nyitja. Jóváhagyáskor a controller az albumdefiníciót az aktuális
     // mappa ini-jébe írja, képtagság létrehozása nélkül.
-    function openNewAlbumProperties(folderPath, rows) {
+    function openNewAlbumProperties(folderPath, rows, isoDate) {
         var dialog = toolbarAlbumPropertiesDialog
         dialogs.newAlbumPhotoRows = rows && rows.length > 0 ? rows.slice() : []
         dialog.albumFolderPath = folderPath || ""
         dialog.albumToken = ""
         dialog.albumName = dialog.untitledFolderName
-        dialog.currentDate = ""
+        dialog.currentDate = isoDate || ""
         dialog.albumLocation = ""
         dialog.currentDescription = ""
         dialog.currentMusicEnabled = false

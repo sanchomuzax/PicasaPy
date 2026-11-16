@@ -66,6 +66,58 @@ def _albums_of(library, folder, name):
 
 
 class TestAddHeldToAlbum:
+    def test_materializes_definition_in_other_held_folder_idempotently(
+        self, controller, tmp_path
+    ):
+        from picasapy.index import open_index, sync_tree
+
+        ctl, library = controller
+        token = "604c294a68b0de9cc9222c4714f289d5"
+        source_ini = library / "egy" / ".picasa.ini"
+        source_ini.write_text(
+            f"[.album:{token}]\n"
+            "name=Tálcás album\n"
+            f"token={token}\n"
+            "date=2024-07-15T10:30:00+02:00\n"
+            "location=Budapest\n"
+            "description=Nyári képek\n"
+            "[a.jpg]\n"
+            "albums=korabbi,masik\n",
+            encoding="utf-8",
+        )
+        source_before = load_document(source_ini).section(f".album:{token}").items()
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, library, incremental=False)
+        ctl._reload()
+        assert _hold_from_both_folders(ctl, library) == 2
+
+        assert ctl.addHeldToAlbum(token) is True
+
+        destination_ini = library / "ketto" / ".picasa.ini"
+        destination = load_document(destination_ini)
+        album = destination.section(f".album:{token}")
+        assert album is not None
+        assert album.get("name") == "Tálcás album"
+        assert album.get("date") == "2024-07-15T10:30:00+02:00"
+        assert album.get("location") == "Budapest"
+        assert album.get("description") == "Nyári képek"
+        assert _albums_of(library, "egy", "a.jpg") == (
+            "korabbi",
+            "masik",
+            token,
+        )
+        assert _albums_of(library, "ketto", "b.jpg") == (token,)
+        assert (
+            load_document(source_ini).section(f".album:{token}").items()
+            == source_before
+        )
+
+        source_after = source_ini.read_bytes()
+        destination_after = destination_ini.read_bytes()
+        assert ctl.addHeldToAlbum(token) is True
+        assert source_ini.read_bytes() == source_after
+        assert destination_ini.read_bytes() == destination_after
+
     def test_adds_every_held_picture_across_folders(self, controller):
         ctl, library = controller
         assert _hold_from_both_folders(ctl, library) == 2

@@ -150,7 +150,15 @@ PhotoContextMenu {
         if (hostController) hostRemoveFromAlbumDialog.ensure().openFor(
             hostWindow.selectedRows(), hostController.currentAlbumToken)
     }
-    onNewAlbumRequested: hostFileOpsDialogs.ensure().openNewAlbum(hostWindow.selectedRows())
+    // #7100: az Add to Album ▸ New Album... dátuma az első kijelölt kép ideje
+    // mínusz egy másodperc
+    onNewAlbumRequested: hostFileOpsDialogs.ensure().openAddToNewAlbum(hostWindow.selectedRows())
+    // #7100: a Starred Photos HOZZÁAD (a már csillagos képet nem fordítja meg),
+    // a Screensaver ugyanazt teszi, mint a tálcamenü sora
+    onStarredPhotosRequested: {
+        if (hostController) hostController.addStarMany(hostWindow.selectedRows())
+    }
+    onScreensaverRequested: hostWindow.requestAddToScreensaver()
     // #422 4. lépcső: az Emberek-album kép-szintű parancsai. A tételek
     // csak személy-albumban látszanak (üres `personName` = rejtve).
     personName: hostController ? hostController.currentPersonName : ""

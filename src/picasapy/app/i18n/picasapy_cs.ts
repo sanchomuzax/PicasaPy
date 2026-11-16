@@ -10780,6 +10780,20 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ctrl+Delete</translation>
         </message>
+        <message>
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>Fotky označené hvězdičkou</translation>
+        </message>
+        <message>
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>Spořič obrazovky</translation>
+        </message>
     </context>
     <context>
         <name>ZoomNavigator</name>
@@ -15148,6 +15162,25 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Vlastnosti</translation>
+        </message>
+        <message>
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>Fotky označené hvězdičkou</translation>
+        </message>
+        <message>
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>Spořič obrazovky</translation>
+        </message>
+        <message>
+            <source>New Album...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nové album...</translation>
         </message>
     </context>
     <context>

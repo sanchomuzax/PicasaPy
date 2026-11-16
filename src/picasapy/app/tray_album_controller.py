@@ -6,8 +6,11 @@ from PySide6.QtCore import Slot
 
 from picasapy import tray
 from picasapy.index import open_index, photos_in_folder
-from picasapy.index.albums import album_photos
-from picasapy.ini.albums import with_album
+from picasapy.index.albums import (
+    _pending_empty_album,
+    _remove_empty_album,
+    album_photos,
+)
 
 from .tray_state_controller import _TraySignalsMixin
 
@@ -251,7 +254,14 @@ class TrayAlbumMixin(_TraySignalsMixin):
         photos = self._tray_records()
         if not token or not photos:
             return False
-        return self._write_album_batch(
-            photos, lambda document, photo: with_album(document, photo.name, token)
-        )
+        with open_index(self._db_path) as conn:
+            pending = _pending_empty_album(conn, token)
+        mutate = self._album_membership_mutator(token, pending)
+        if not self._write_album_batch(photos, mutate):
+            return False
+        if pending is not None:
+            with open_index(self._db_path) as conn:
+                _remove_empty_album(conn, token)
+                self._load_albums(conn)
+        return True
 
