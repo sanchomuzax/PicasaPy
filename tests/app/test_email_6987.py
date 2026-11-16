@@ -1,6 +1,6 @@
 """#6987: az E-mail parancs az eredeti Picasa 3.9 szerint (vezérlő-szint).
 
-Az eredeti (`docs/specs/paritas-ellenorzes.md`, #6984):
+Az eredeti (`docs/specs/paritas-ellenorzes-archiv-1.md`, #6984):
 
 - 20-nál több képnél megerősítő kérdés előzi meg az előkészítést
   (`CThumbUI::OutputBottleneck`, `0x00531550`); Mégse esetén nincs előkészítés;
