@@ -2330,15 +2330,15 @@ Az eredeti Fájl menü `ID_FILE_PRINT` parancsának adata `0xe107`. A menüeleme
 |---|---|---|
 | **Fájl menü:** `ID_FILE_PRINT`, `cmd=0xe107`; a `0x0056e1c0` a kijelölési állapot alapján engedélyezi. Üres kijelölésnél a kapu nem teljesül; egy és több kijelölt elemnél igen. A videó külön állapotjelző, és nem tiltja ezt a menükaput (`0x005cb1a0`, `0x0056e1c0`). | `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:164-168`, `src/picasapy/app/qml/PicasaPy/MainMenuBar.qml:83`, `src/picasapy/app/qml/PicasaPy/MainLibrarySelectionState.qml:70-78`; a menü a néző aktuális fotósorát vagy a könyvtári kijelölést veszi. Videót nem szűr ezen a kapun. | A menü engedélyezési szintjén nincs bizonyított eltérés. A tényleges rekordlista videó/hiányzó fájl viselkedését külön kell lezárni. |
 | **Fotó- és mappa-helyi menü:** a vizsgált építők (`0x00730790`, `0x00731050`) erőforrás- és sztringlistájában nincs Print vagy Print Contact Sheet parancs. | A `PhotoContextMenu.qml` és `FolderContextMenu.qml` nem tartalmaz sima Print elemet; a `*Menu.qml` Print-keresés a `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:164-168` főmenüelemét és a `src/picasapy/app/qml/PicasaPy/PicasaFolderMenu.qml:167-173` külön Contact Sheet műveletét találta. | A vizsgált helyi menüknél nincs eltérés. A néző saját, kontextusfüggő menüjének eredeti parancslistája nincs teljesen azonosítva. |
-| **Billentyű:** a `0x005e6428` körüli eredeti billentyűkezelő módosítóállapot szerint a `0x00744ee0` útra vagy közvetlenül az `outputlayout/pbutton` aktiválására lép. A címke és a pontos Print/Ctrl+Shift+P parancs-hozzárendelés ebből a diszasszemblálásból nem állapítható meg. | `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml:695-713` köti a `Ctrl+P`-t a nyomtatáshoz; a `src/picasapy/app/qml/PicasaPy/PicasaFolderMenu.qml:173` és `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml:705-713` a `Ctrl+Shift+P`-t Contact Sheethez köti. | A két program gyorsbillentyű-paritása nyitott. Ne változzon a kötés, amíg a bináris billentyűág és az eredeti aktív nézet szerepe nincs tisztázva. |
-| **Képtálca / output gomb:** az eredeti `outputlayout/pbutton` a `0x00744a00` panelnyitó útra vezet. A tényleges nyomtatási parancs `0x00744d00` útja a kijelölt rekordok listáját adja át a nyomtatási munkának. | `src/picasapy/app/qml/PicasaPy/MainTrayBar.qml:57`, `src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:365-373`, `src/picasapy/app/qml/Main.qml:521-528`; a Photo Tray nem üres tartalma elsőbbséget kap (`src/picasapy/app/print_controller_source_mixin.py:21-50`). | A PicasaPy képtálca- és kijelölésprioritásának egyezése az eredeti rekordgyűjtéssel nyitott; a tálca gomb üres állapotban nem indul. |
-| **Néző / OneUp:** a `0x005cb990` `0xe107` dispatch ága a `param_1[0xc45]` értékétől függően általános UI-aktiválásra vagy `0x00744d00`-ra lép. A mező jelentése és az OneUp-ban átadott konkrét kép nincs azonosítva. | `src/picasapy/app/qml/PicasaPy/MainLibrarySelectionState.qml:70-78`, `src/picasapy/app/qml/Main.qml:521-528`; nézőben a megjelenített fotósor a nyomtatási cél. Megnyitáskor a panel a `viewerOpen` állapotot kikapcsolja (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:233-249`), bezáráskor nem állítja vissza. | Az eredeti nézőből átadott kép és a nézet visszaállítása nyitott. A PicasaPy viewer-visszaállítását csak binárisan igazolt elvárás alapján érdemes módosítani. |
+| **Billentyű:** a `0x005e6428` a `CThumbUI` Ctrl-táblájának (`0x005e60d0`) `P` (`0x50`) ága. A `P` ág a `0x005696c0` kaput nézi (videóelőnézet, `editpanel/previewclip2`); ha igaz, a billentyű hatástalan. Shift nélkül általános felületi aktiválás fut (`0x009cd8a0`; a célnevet a dekompiláció nem mutatja, a korábbi diszasszemblálás szerint `outputlayout/pbutton`), Shifttel a `0x00744ee0(ablak, 0x005cb180(0x10, 1), 0x10, 1)`. A `0x10` a nyomtatási méret `eContact` értéke (16), tehát a Ctrl+P az általános nyomtatás, a Ctrl+Shift+P az Indexképek nyomtatása. A tábla nem fut, ha a `+0x30d4` módkód 2, 4 vagy 6, vagy a `0x0056c420`, `0x0056c110`, `0x0057c430(4)` (néző), `0x0057c3b0` ellenőrző, a `+0x332f` (szövegbevitel) vagy a `+0x3094`/`+0x332e` pár igaz (`0x005e60d0`, `0x005696c0`, `0x00744ee0`). | `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml:658-673`: a `Ctrl+P` (`shortcutPrint`, `photoActionsEnabled && !textEntryHasFocus`) és a `Ctrl+Shift+P` (`shortcutPrintContactSheet`, `!textEntryHasFocus`); menütétel: `src/picasapy/app/qml/PicasaPy/PicasaFolderMenu.qml:173`. A `photoActionsEnabled` a néző aktív képére is igaz. | A két kötés egyezik a binárissal (a Ctrl+P általános nyomtatás, a Ctrl+Shift+P indexkép); a kötés ne változzon. Nyitott: az eredeti Ctrl-tábla nézőben (`0x0057c430(4)`) és élő videóelőnézetnél (`0x005696c0`) nem fut, a PicasaPy `Ctrl+P` a néző képére is él. Hogy a billentyűlánc másik tagja (a nézőé, `0x00760970`) nézőben kezeli-e a Ctrl+P-t, nincs azonosítva. |
+| **Képtálca / output gomb:** az eredeti `outputlayout/pbutton` a `0x00744a00` panelnyitó útra vezet. A `0x00744d00` összegyűjti a nyomtatandó rekordok listáját és előkészíti a nyomtatási állapotot (`+0xec4`), de a nyomtatási szálat nem indítja: azt a `0x00743980` gombkezelő a felülvizsgálat (`0x007451a0`) után a `0x00745770`-nel indítja. A rekordforrást nem rögzített "nem üres tálca nyer" szabály adja, hanem az aktív kijelölés-csomópont (`+0xea8`): mappa vagy album kijelölésekor a `+0xeac`, tálcáról a `+0xea4` (`0x005c76b0`). A `0x00744d00` hívói: `0x005cb990` (`0xe107`), `0x00531c60` és `0x0053ce00`; az utóbbi kettő felületi eleme nincs azonosítva. | `src/picasapy/app/qml/PicasaPy/MainTrayBar.qml:57`, `src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:365-373`, `src/picasapy/app/qml/Main.qml:521-528`; a Photo Tray nem üres tartalma elsőbbséget kap (`src/picasapy/app/print_controller_source_mixin.py:21-50`). | A PicasaPy képtálca- és kijelölésprioritásának egyezése az eredeti rekordgyűjtéssel nyitott: az eredetiben az aktív csomópont dönt, a PicasaPy-ban a nem üres tálca mindig előz. Ehhez a `0x007166c0` törzse és a `+0xea8` írói kellenek. A `0x00531c60` és `0x0053ce00` hívó felülete nincs a belépési pontok között. A tálca gomb üres állapotban nem indul. |
+| **Néző / OneUp:** a `0x005cb990` `0xe107` dispatch ága a `param_1[0xc45]` értékétől függően általános UI-aktiválásra vagy `0x00744d00`-ra lép (hívóhely `0x005cd9ca`). A mező jelentése és az OneUp-ban átadott konkrét kép nincs azonosítva: a `0x00744d00` vagy egyetlen rekordazonosítót kap az EAX-ban, vagy `-1`-nél a gyűjtő utolsó ága ad egyetlen aktuális képet (a `+0xe68` rekordot, ha a `+0xe64` nem `-1`). Melyik fut nézőben, az EAX előkészítése nélkül nem dönthető el. | `src/picasapy/app/qml/PicasaPy/MainLibrarySelectionState.qml:70-78`, `src/picasapy/app/qml/Main.qml:521-528`; nézőben a megjelenített fotósor a nyomtatási cél. Megnyitáskor a panel a `viewerOpen` állapotot kikapcsolja (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:233-249`), bezáráskor nem állítja vissza. | Az eredeti nézőből átadott kép és a nézet visszaállítása nyitott. A PicasaPy viewer-visszaállítását csak binárisan igazolt elvárás alapján érdemes módosítani. |
 
 ### Ablak, alapértékek és megjegyzett állapot
 
-Az eredeti nyomtatási képernyő a `thumbui/printpanel` felület, amelyet az `outputlayout/pbutton` és az `m_print_enable` vált be. Ez az alkalmazás felületén belüli panel; nem külön OS-ablak. A nyomtató nélküli nyitási ág üzenete: `A printer must be installed in order to print.` (`0x00744a00`, szöveg `0x00e017e0`).
+Az eredeti nyomtatási képernyő a `thumbui/printpanel` felület, amelyet az `outputlayout/pbutton` és az `m_print_enable` vált be. Ez az alkalmazás felületén belüli panel; nem külön OS-ablak. A nyomtató nélküli nyitási ág üzenete: `A printer must be installed in order to print.` (`0x00744a00`, szöveg `0x00e017e0`). A `0x00744a00` dekompilációja szerint az üzenet (`IDS_MUST_INSTALL_PRINTER`) akkor jelenik meg, ha a `0x00777840` nyomtatólekérdezés nem nulla, vagy az állapotobjektum `+8` listája üres (feltevés: ez a nyomtatólista); utána a kimeneti gomb állapotát a `+0x78` virtuális hívás állítja vissza, és a függvény `0xf4242`-t ad (`referencia/ghidra/2026-11-15-6988-colab-decomp.txt:1410-1411,1465-1485`).
 
-Az eredeti `printpanel.tre` `croptoggle` alapja bekapcsolt; ezt a 3.9.141 PDF-nyomtatós felvétel is megerősíti: első használatkor Full Page, Crop to Fit, 1 példány (`mérés: Colab EN 29/30`). Az utoljára választott méret kulcsa a `Preferences\PrintLastSize`, amelyet a `0x00744ba8` környékén olvas; a pontos írócím ebben a körben `NINCS MEG`. Az öt gyors méretbeállítás külön `PrintSize0`-`PrintSize4` értéket a `0x006e5ab0` betölti, a mentő ág `0x006e3990`. A nyomtatási opciókhoz a `PrinterQuality` és `PrinterUseTiles` is használatos (`0x00745f80`, `0x00746060`). Az eredeti példányszám és tájolás újraindítás utáni megőrzése ebben a körben nincs mérve.
+Az eredeti `printpanel.tre` `croptoggle` alapja bekapcsolt; ezt a 3.9.141 PDF-nyomtatós felvétel is megerősíti: első használatkor Full Page, Crop to Fit, 1 példány (`mérés: Colab EN 29/30`). Az utoljára választott méret kulcsa a `Preferences\PrintLastSize`, amelyet a `0x00744ba8` környékén olvas; a `0x00744a00` dekompilációja a `printpanel/fullbutton` elemnevet és ezt a kulcsot egymás után használja, íróhívás nincs benne (`referencia/ghidra/2026-11-15-6988-colab-decomp.txt:1439-1442`); a pontos írócím ebben a körben `NINCS MEG`. Az öt gyors méretbeállítás külön `PrintSize0`-`PrintSize4` értéket a `0x006e5ab0` betölti, a mentő ág `0x006e3990`. A nyomtatási opciókhoz a `PrinterQuality` és `PrinterUseTiles` is használatos (`0x00745f80`, `0x00746060`). Az eredeti példányszám és tájolás újraindítás utáni megőrzése ebben a körben nincs mérve.
 
 PicasaPy-ban a dialog teljes főablakot kitöltő `Item` (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:20-27`, `src/picasapy/app/qml/PicasaPy/MainWindowDialogStack.qml:319-324`). A `fitMode: "fill"` Crop to Fit módot jelent (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:117-119`, `src/picasapy/app/qml/PicasaPy/PrintFitPanel.qml:34-40`), tehát az induló kivágás módja egyezik az eredeti erőforrással. Az alap példányszám 1 (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:67-71`), a méretet `print/lastSize`-ból tölti vissza (`src/picasapy/app/print_controller_settings_mixin.py:209-224`), a printoptions beállításokat is menti (`:228-266`). A példányszám és a tájolás QSettings-be mentése nincs a vizsgált útban igazolva; a panel példánya viszont ugyanabban a folyamatban megmarad.
 
@@ -2348,12 +2348,12 @@ Az eredeti rajzolóút GDI nyomtatási munkát indít (`StartDocA`, hívás a `0
 
 | Hatás | Eredeti Picasa 3.9 | PicasaPy most |
 |---|---|---|
-| Fájlrendszer / nyomtatási cél | `0x00861bb0` GDI `StartDocA` út; Picasa által létrehozott PDF/fényképfájl nem igazolt. A nyomtatási sor és az írásvédett cél eredménye `NINCS MEG`. | `src/picasapy/app/print_controller_output_mixin.py:37-59` támogatja a PDF-célfájl írását; a nyomtatás a QPrinter útján fut. `.picasa.ini` és indexírás nem része a vizsgált print vezérlőútnak. |
-| `.picasa.ini` / index | Közvetlen írás nem látszott a feltárt print útban; teljes közvetett hatás `NINCS MEG`. | A print vezérlőút csak nyomtatási beállítást és kimenetet kezel; `.picasa.ini` vagy SQLite írás nem látszik az útban. |
-| Mappafa / rács | A `0x007448a0` panel-visszaállító a main/fullview/print/edit/acquire felületeket rendezi vissza. Mappafa és rács pontos visszaállítása, különösen OneUp után, `NINCS MEG`. | A print út nem ír mappafa- vagy indexállapotot. A nyitás elmenti rács kijelölését, bezárás visszaállítja a `selectedIndexes` és `selectedIndex` értéket (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:233-249,279-293`). |
-| Kijelölés / Photo Tray | A `0x007448a0` körül nem azonosítottam kijelölésírást; a nyomtatás utáni eredeti kijelölés- és tálcaállapot `NINCS MEG`. | A rács kijelölése bezáráskor visszaáll; a Photo Tray tartalmát a nyomtatási forrásválasztó olvassa, de nem módosítja (`src/picasapy/app/print_controller_source_mixin.py:21-50`). A néző állapota nincs visszaállítva. |
-| Sikertelen forrás / nyomtató | A `0x007434d0` printer-hibaüzenete: `Picasa has encountered a problem with the printer '%s'. Please report this error.` A hiányzó kép és az írásvédett printer-cél pontos kimenete `NINCS MEG`. | A videót/kiterjesztést és a nem betölthető képet kihagyja (`src/picasapy/app/print_controller_source_mixin.py:55-82`); üres vagy érvénytelen forrás hibát ad (`src/picasapy/app/print_controller_output_mixin.py:359-401,489-500`). Sikertelen festőindításnál általános nyomtatási hibát jelez. |
-| Megszakítás | A `0x00743650` callback `Cancelling Print...` állapotot küld és leállítási/takarítási hívásokat végez. A felületi esemény, amely ezt meghívja, és a részben kinyomtatott lapok sorsa `NINCS MEG`. | A dialog Escape/bezárás elrejti a felületet (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:296-300`), de nem küld cancel-jelet; az aktív rajzolóciklus eseményeket dolgoz fel (`src/picasapy/app/print_controller_output_mixin.py:592-616`). |
+| Fájlrendszer / nyomtatási cél | `0x00861bb0` GDI `StartDocA` út; Picasa által létrehozott PDF/fényképfájl nem igazolt. A `0x00745770` a nyomtatást külön szálon (`CPrintJobThread`, név `printjob:%x`) indítja; a szál törzse, vagyis a tényleges rajzolóciklus nincs a kimenetben. A négy dekompilált törzsben (`0x00744d00`, `0x007451a0`, `0x00745770`, `0x00743650`) fájlmegnyitás nem látszik. A nyomtatási sor és az írásvédett cél eredménye `NINCS MEG`. | `src/picasapy/app/print_controller_output_mixin.py:37-59` támogatja a PDF-célfájl írását; a nyomtatás a QPrinter útján fut. `.picasa.ini` és indexírás nem része a vizsgált print vezérlőútnak. |
+| `.picasa.ini` / index | Közvetlen írás nem látszott a feltárt print útban, és a négy dekompilált törzsben sem (`referencia/ghidra/2026-11-15-6988-colab-decomp.txt:342-409,440-729,760-849,862-879`); a hívott `0x00861020`, `0x00891110`, `0x00506400`, `0x00745980` törzse nincs olvasva, ezért a teljes közvetett hatás `NINCS MEG`. | A print vezérlőút csak nyomtatási beállítást és kimenetet kezel; `.picasa.ini` vagy SQLite írás nem látszik az útban. |
+| Mappafa / rács | A `0x007448a0` a kimeneti gomb (`ytButtonNode`) `+0x359` jelzője szerint lépteti a felületi zárolást, és csak bejelölt gombnál hívja a `0x005f8160`-at (`referencia/ghidra/2026-11-15-6988-colab-decomp.txt:1274-1349`). A main/fullview/print/edit/acquire felületek rendezése a dekompilált törzsben közvetlenül nem látszik; a korábbi, ezt a függvénynek tulajdonító leírás nem erősödött meg, a rendezés legfeljebb a hívott `0x005f8160`-ban lehet. Mappafa és rács pontos visszaállítása, különösen OneUp után, `NINCS MEG`. | A print út nem ír mappafa- vagy indexállapotot. A nyitás elmenti rács kijelölését, bezárás visszaállítja a `selectedIndexes` és `selectedIndex` értéket (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:233-249,279-293`). |
+| Kijelölés / Photo Tray | A dekompilált `0x00744d00`, `0x00745770`, `0x00743650` és `0x007448a0` törzsében nincs kijelölés- vagy tálcaírás (`referencia/ghidra/2026-11-15-6988-colab-decomp.txt:342-409,760-849,862-879,1274-1349`); a hívott `0x005f8160`, `0x00861020`, `0x00891110` törzse nincs olvasva. A nyomtatás utáni eredeti kijelölés- és tálcaállapot `NINCS MEG`. | A rács kijelölése bezáráskor visszaáll; a Photo Tray tartalmát a nyomtatási forrásválasztó olvassa, de nem módosítja (`src/picasapy/app/print_controller_source_mixin.py:21-50`). A néző állapota nincs visszaállítva. |
+| Sikertelen forrás / nyomtató | A `0x007434d0` printer-hibaüzenete: `Picasa has encountered a problem with the printer '%s'. Please report this error.` A `0x007451a0` felülvizsgálata a hiányzó útvonal-sztringű rekordot némán kihagyja a felülvizsgálati listából, fájlt nem nyit (`referencia/ghidra/2026-11-15-6988-colab-decomp.txt:500-541`); a `0x00744d00` üres rekordlistánál üzenet nélkül `-1`-gyel tér vissza (`:371-376`). Videó- és fájlhiány-szűrés egyik dekompilált törzsben sincs; a helye a `0x007166c0`, a `0x00745980` vagy a nyomtatási szál lehet. A hiányzó kép és az írásvédett printer-cél pontos kimenete `NINCS MEG`. | A videót/kiterjesztést és a nem betölthető képet kihagyja (`src/picasapy/app/print_controller_source_mixin.py:55-82`); üres vagy érvénytelen forrás hibát ad (`src/picasapy/app/print_controller_output_mixin.py:359-401,489-500`). Sikertelen festőindításnál általános nyomtatási hibát jelez. |
+| Megszakítás | A `0x00743650` a `CPrintJobThread` vtábla foglalata (egyetlen hivatkozása adat: `0x00cb0d20`): a `printjobthread::cancelling` állapotszöveget kéri le, a megszakítási jelzőt (`+0x14`) 1-re állítja és két virtuális hívást végez; panelhez, kijelöléshez, tálcához nem nyúl. A nyomtatás külön szálon fut (`printjob:%x`, `0x00745770`). A felületi esemény, amely ezt meghívja, és a részben kinyomtatott lapok sorsa `NINCS MEG`. A panel `Cancel` gombja és az Escape (`pcancelbutton`) külön út: a `0x00743980` ága a `0x0074441e` hívással a `0x007448a0` panel-visszaállítóra vezet; a szál megszakításának hívása ebben az ágban nem azonosított. | A dialog Escape/bezárás elrejti a felületet (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:296-300`), de nem küld cancel-jelet; a nyomtatás a felületi szálon fut, `processEvents` hívásokkal (`src/picasapy/app/print_controller_output_mixin.py:589-616`), futó feladat megszakítása nincs. |
 
 ### Bizonyíték és bizonyítottság
 
@@ -2367,15 +2367,19 @@ Az eredeti rajzolóút GDI nyomtatási munkát indít (`StartDocA`, hívás a `0
 | `Preferences\\PrintLastSize` olvasása | `bináris (0x00744ba8)`; pontos írócím `NINCS MEG` |
 | Első panel Full Page, 1 példány | `mérés (Colab EN 29/30)`; a mérésen túli profilok alapértéke `NINCS MEG` |
 | PicasaPy menu/tray/viewer út és dialog | Mai forrás: `src/picasapy/app/qml/PicasaPy/PicasaFileMenu.qml:164-168`, `src/picasapy/app/qml/Main.qml:521-528`, `src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:365-373`, `src/picasapy/app/qml/PicasaPy/PrintDialog.qml:20-27,117-119` |
-| Eredeti fájlhiány, driver írásvédelem, megszakítás indítója és kiválasztás-helyreállítás | `NINCS MEG`; szükséges: célzott Ghidra-kör, majd Windows 3.9.141 futtatási mérés |
+| Print billentyűágak: Ctrl+P általános nyomtatás, Ctrl+Shift+P indexkép (`eContact`, `0x10`) | `bináris (0x005e60d0, 0x005e6428, 0x00744ee0, 0x00745770)`; `referencia/ghidra/2026-11-15-6988-colab-decomp.txt:72-94,234-247,788-790,1088-1193`; `mérés (Colab kb-7, picasa-gyorsbillentyuk.md)`; `eContact` = 16: `picasa-nyomtatas.md:831` |
+| A nyomtatandó rekordok forrása és sorrendje | `bináris (0x00744d00, 0x005c76b0)`; `referencia/ghidra/2026-11-15-6988-colab-decomp.txt:342-409,926-1002`; a `0x007166c0` és a `+0xeac` `vtbl+0xdc` törzse `NINCS MEG` |
+| Felülvizsgálat (`ThumbUIPrint::ReviewLow/Good/Best`): három menet, osztály szerint növekvő sorrend, üres útvonal kihagyása | `bináris (0x007451a0)`; `referencia/ghidra/2026-11-15-6988-colab-decomp.txt:440-729` |
+| Nyomtatási szál (`CPrintJobThread`, `printjob:%x`), megszakítási jelző és állapotszöveg | `bináris (0x00745770, 0x007433f0, 0x00743650)`; `referencia/ghidra/2026-11-15-6988-colab-decomp.txt:760-849,862-879,1235-1260`; a `0x00cb0d20` foglalat hívói `NINCS MEG` |
+| Eredeti fájlhiány, driver írásvédelem, megszakítás indítója és kiválasztás-helyreállítás | `NINCS MEG`; a 2026-11-15-i dekompiláció szűkítette: a fájlhiány és a videó szűrése a `0x007166c0`, a `0x00745980` vagy a nyomtatási szál törzsében keresendő, a megszakítás indítója a `0x00cb0d20` foglalat virtuális hívói között, a kijelölés visszaállítása a `0x005f8160`-ban; szükséges: célzott Ghidra-kör, majd Windows 3.9.141 futtatási mérés |
 
-**Bizonyítottsági fok: nyitott.** A menü kapuja, a nyomtató nélküli ág, a panel Crop to Fit alapja és a mai forráskódbeli utak külön bizonyítottak. A teljes paritás nyitott, mert az eredeti nézőcél, videó/hiányzó fájl feldolgozás, driverhiba, cancel esemény és UI-visszatérés nincs végig bizonyítva. Egyetlen útra épülő megfigyelés feltételes marad; csak a független erőforrás/mérés vagy a másik kódréteg által megerősített állítás kap megerősített minősítést.
+**Bizonyítottsági fok: nyitott.** A menü kapuja, a nyomtató nélküli ág, a panel Crop to Fit alapja, a két billentyűág (Ctrl+P, Ctrl+Shift+P) és a mai forráskódbeli utak külön bizonyítottak. A 2026-11-15-i dekompiláció a rekordgyűjtés láncát, a felülvizsgálatot és a nyomtatási szál indítását szerkezetében is megadta. A teljes paritás nyitott, mert az eredeti nézőcél, videó/hiányzó fájl feldolgozás, driverhiba, cancel esemény és UI-visszatérés nincs végig bizonyítva. Egyetlen útra épülő megfigyelés feltételes marad; csak a független erőforrás/mérés vagy a másik kódréteg által megerősített állítás kap megerősített minősítést.
 
 ### A két független út
 
 - **A út, bináris:** `0x00559150` menürekord, `0x0056e1c0` engedélyező, `0x005cb1a0` kijelölési állapot, majd `0x00744a00` panelnyitás és `0x00744d00` nyomtatási út célzott vizsgálata. A `0x007434d0`, `0x00743650` és `0x00861bb0` külön hiba-, megszakítási és GDI hívások.
 - **B út, független réteg:** a bináris menü- és printpanel-erőforrások, a `StartDocA` import feloldása, a korábbi Windows PDF-mérés, továbbá a jelenlegi QML/Python út közvetlen forrásolvasása. A Crop to Fit egyezést az eredeti erőforrás és a mai `fitMode: "fill"` egymástól függetlenül adja; az első panelmérés külön alátámasztja az induló állapotot.
-- **Egyezés:** a panelbe lépés, a Crop to Fit alap és a menü üres kijelölési kapuja egyezik a hozzájuk tartozó PicasaPy-feltételekkel. A billentyű, nézőcél, videó/hiányzó fájl, hibakezelés és a művelet utáni állapot kérdésében A és B még nem ad döntő egyezést.
+- **Egyezés:** a panelbe lépés, a Crop to Fit alap és a menü üres kijelölési kapuja egyezik a hozzájuk tartozó PicasaPy-feltételekkel. A Ctrl+P és a Ctrl+Shift+P kötés két független úton egyezik: a dekompilált `P` ág (általános nyomtatás, illetve `eContact` méretű indexkép) és a Colab-mérés (`kb-7`). A nézőcél, videó/hiányzó fájl, hibakezelés és a művelet utáni állapot kérdésében A és B még nem ad döntő egyezést.
 
 ### Cáfoló kísérlet
 
@@ -2385,14 +2389,24 @@ Azt a hipotézist próbáltam cáfolni, hogy a Picasa eredeti Fájl menüje a vi
 
 | Kérdés | Állapot | Bizonyíték |
 |---|---|---|
-| Minden belépési pont és engedélyezési feltétel, beleértve videó, több kép és üres kijelölés | ⛔ | Menü és vizsgált helyi menük leírva; bináris billentyűág, néző és videó tényleges nyomtatása nyitott. |
+| Minden belépési pont és engedélyezési feltétel, beleértve videó, több kép és üres kijelölés | ⛔ | Menü, vizsgált helyi menük és a két billentyűág (Ctrl+P, Ctrl+Shift+P) leírva és bináris igazolású; a rekordforrás lánca ismert. A nézőből átadott kép (a `0x005cd9ca` hívóhely előkészítése), a `0x00531c60` és `0x0053ce00` hívó felülete és a videó tényleges nyomtatása nyitott. |
 | Ablak, alapértékek és következő alkalomra megjegyzett állapot | ⛔ | A panel belső felület, Crop to Fit, Full Page/1 példány mérve; összes eredeti profilbeállítás és nézet-visszatérés nincs lezárva. |
 | Fájlrendszer, `.picasa.ini`, index, rács és kijelölés a művelet után | ⛔ | GDI és PicasaPy út részben azonosított; eredeti spool, közvetett írások, mappafa/rács/kijelölés végállapota nincs végigmérve. |
-| Írásvédett hely, hiányzó fájl és megszakítás | ⛔ | Nyomtató- és cancel callback címe ismert; a futásidejű hibák és a felületi megszakítás útja nincs megmérve. |
+| Írásvédett hely, hiányzó fájl és megszakítás | ⛔ | A megszakítási visszahívás (`0x00743650`: jelző és állapotszöveg) szerkezete és a nyomtatási szál indítása ismert; a nyomtatóhiba üzenetének (`0x007434d0`) hívója, a futásidejű hibák, a megszakítást hívó felületi esemény és a hiányzó fájl kezelése nincs megmérve. |
 
 ### Javasolt fejlesztői jegytörzs
 
 Jelen bizonyíték alapján nem javaslok kódmódosító jegyet: nem maradt olyan eredeti viselkedésbeli eltérés, amelynek mindkét oldala kellő bizonyítékkal ismert. A `picasa-nyomtatas.md` egy régi állítása szerint a mai induló crop mód nem egyezett; ez a feladatban előírt friss forrásolvasással cáfolódott (`src/picasapy/app/qml/PicasaPy/PrintDialog.qml:117-119`, `src/picasapy/app/qml/PicasaPy/PrintFitPanel.qml:34-40`). A jegytörzs bővítése rögzítse, hogy a teljes paritás még nyitott, és az alábbi bináris/mérési kérdéseket kell lezárni. Fejlesztési lista csak a bizonyíték után készíthető.
+
+A 2026-11-15-i dekompiláció egy jelöltet adott, amely egyetlen Ghidra-kör után jegy lehet. Kiadható jegy még nem, mert az eltérés egyik fele (mit tölt újra az eredeti) feltevésen áll. A felülvizsgálati lista osztályon belüli sorrendje (az eredetiben a `0x0085c060` listájának sorrendje, nálunk DPI szerinti rendezés, `src/picasapy/app/print_controller_quality_mixin.py:75-103`) csak a `0x0085c640` olvasása után ítélhető meg, ezért az nem jegy.
+
+**Jelölt jegytörzs (NEM adható ki a `0x006cab20` Ghidra-köre nélkül):**
+
+- **Cím:** Az Indexképek nyomtatása 0 vagy 1 kijelölt képnél a megnyitott mappa vagy album egészét nyomtassa.
+- **Eredeti:** `0x00744ee0` (`referencia/ghidra/2026-11-15-6988-colab-decomp.txt:1116-1158`): az aktív csomópont kijelölés-listáját a `0x007166c0` tölti; ha 2-nél kevesebb elem van, a lista számlálója nullázódik (`:1124-1144`), és a lista a mappa vagy album gyűjteményéből töltődik újra (`0x004133e0`, `0x004b0190(album)`, `0x006cab20`, `:1146-1158`); 2 vagy több kijelölt képnél a kijelölés marad. A Ctrl+Shift+P ugyanide jut (`:241-244`). Bizonyított: a küszöb 2 és a kijelölés eldobása. Feltevés: az újratöltés a mappa vagy album összes képe (a `0x006cab20` törzse nincs olvasva).
+- **Nálunk:** `src/picasapy/app/qml/Main.qml:549-556`: a célpont a `printTargetRows()` (kijelölés vagy a néző képe); csak üres kijelölésnél lép a megnyitott mappa egészére (`_groupRows()`), tehát egy kijelölt képnél az indexkép egyetlen képet tartalmaz.
+- **Teendő:** 0 vagy 1 kijelölt képnél a megnyitott mappa vagy album összes képe kerüljön az indexképre, 2 vagy több kijelölt képnél a kijelölés. A tálca elsőbbségén (`src/picasapy/app/print_controller_source_mixin.py:21-50`) ne változtass, amíg a `+0xea8` írói nincsenek feltárva.
+- **Kész, ha:** (1) a `0x006cab20` Ghidra-kör megerősíti, hogy a mappa vagy album összes képét tölti, és megadja a sorrendet; (2) egy kijelölt képnél az indexkép a megnyitott mappa vagy album összes képét mutatja; (3) két kijelölt képnél csak a kettőt; (4) üres kijelölésnél a mappa egészét; (5) mindhárom esetre automatikus teszt van.
 
 ### Új kutatási jegyjavaslatok
 
@@ -2400,11 +2414,22 @@ Most nem javaslok külön kutatási jegyet: a nyitott tételek ennek a Print-fol
 
 ### Nyitott
 
-- A Ghidra-kimenetek cím szerinti keresése megtörtént: `0x005e6428`, `0x00744d00`, `0x007451a0` és `0x00745770` címhez nincs felhasználható teljes dekompiláció; a célzott diszasszemblálás és hívó/xref részletek nem döntik el a fenti szemantikai kérdéseket.
+- A korábbi Ghidra-kimenetekben a `0x005e6428`, `0x00744d00`, `0x007451a0` és `0x00745770` címhez nem volt felhasználható teljes dekompiláció. A 2026-11-15-i Colab-futás (`referencia/ghidra/2026-11-15-6988-colab-decomp.txt`) mind a négyet és a környező függvényeket teljes törzzsel adta; az alábbi válaszok ebből készültek. A hívottak közül a `0x007166c0`, `0x005c7ef0`, `0x006cab20`, `0x004b0190`, `0x00745980`, `0x0085c640`, `0x005f8160` és a nyomtatási szál törzse nem volt a célok között.
 - Ghidra-kör kell: 0x005e6428 - melyik módosítóbillentyű és fókuszállapot melyik eredeti parancsot indítja, különösen a PicasaPy Ctrl+P és Ctrl+Shift+P egyeztetéséhez [blokkoló]
+- Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-6988-colab-decomp.txt:72-94,234-247,788-790,1088-1193`): a `0x005e6428` a `0x005e60d0` Ctrl-tábla `P` (`0x50`) ágán belül van. A tábla csak billentyűleütésnél (`+4 == 0x100`) és Ctrl-bittel (`+0x10`, 4-es bit) fut, a `Ctrl` gomb maga (`0x11`) kimarad. Nem kezeli a billentyűt, ha a `+0x30d4` módkód 2, 4 vagy 6, vagy a `0x0056c420`, `0x0056c110`, `0x0057c430(4)` (néző), `0x0057c3b0` ellenőrző, a `+0x332f` (szövegbevitel) vagy a `+0x3094`/`+0x332e` pár igaz. A `P` ág ezen felül a `0x005696c0` kaput nézi (videóelőnézet, `picasa-bezaras-es-kilepes.md:316`): ha igaz, a billentyű hatástalan. Shift nélkül (`local_f`, a `0x005c5f90` szerkezetének `+1` bájtja, a `00-index.md` #442 bejegyzése és a Ctrl+E ág `[esp+0x11]` vizsgálata szerint) a `0x009cd8a0` általános felületi aktiválás fut; a célnevet a dekompiláció nem mutatja, a korábbi diszasszemblálás `outputlayout/pbutton`-t adott. Shifttel `0x00744ee0(ablak, 0x005cb180(0x10, 1), 0x10, 1)` fut. A `0x10` a nyomtatási méret `eContact` értéke (16, `picasa-nyomtatas.md:831`), és a `0x00745770` is erre a méretre hagyja ki a méretbeállító `0x005e8510`-et. Tehát a Ctrl+P az általános nyomtatás, a Ctrl+Shift+P az Indexképek nyomtatása; ez egyezik a PicasaPy kötéseivel és a Colab-mérés `kb-7` sorával (`picasa-gyorsbillentyuk.md`). A `0x00744ee0` a méret mellett két sztringmezőt (`+0x94`, `+0x98`) állít a nyomtatási állapotba (feltevés: az album adataiból, az `Album:` és `Dátum:` fejléchez), és 2-nél kevesebb kijelölt elemnél a mappa vagy album gyűjteményéből tölti újra a listát (lásd a jelölt jegytörzset). Nézőben ez a tábla a `0x0057c430(4)` miatt nem fut; hogy a lánc más tagja (`0x00760970`) nézőben kezeli-e a Ctrl+P-t, a kimenet nem dönti el, mert a lánc többi tagja nincs a célok között.
 - Ghidra-kör kell: 0x00744d00 - pontosan mely kijelölt, Photo Tray vagy OneUp rekord kerül a nyomtatási munkába, és hol szűri a videót vagy a hiányzó képfájlt [blokkoló]
+- Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-6988-colab-decomp.txt:342-409,926-1002`): a `0x00744d00` (EAX: egyetlen rekordazonosító vagy `-1`; `param_2`: a nyomtatási méret) nem nyomtat, hanem előkészít. Ha az EAX nem `-1`, a lista egyetlen rekord (`:378-383`); különben a `0x005c76b0(0,0,1,1)` gyűjti a rekordokat (`:364`), és ha az eredmény üres, üzenet nélkül `-1`-et ad (`:371-376`). Mivel az első argumentum 0, a többes kijelölés-gyűjtő (`0x005c7ef0`) nem fut (`:941-942`); a sorrend: (1) ha a `+0xeac` csomópont `+0x3c9` jelzője be van állítva, a lista a csomópont `vtbl+0xdc` hívásából jön (arcalbum, lásd a #7022 szakasz Ghidra-válaszát), és a gyűjtő ennek eredményét azonnal visszaadja (`:943-947`); (2) különben a `+0xea8` aktív kijelölés-csomópont `0x007166c0` hívása tölti a listát (`:948-961`); (3) ha ez nem ad elemet és a `+0xe64` nem `-1`, egyetlen elem a `+0xe68` (`:962-994`). A tálca és a rács közti elsőbbséget tehát az dönti el, melyik csomópontra mutat a `+0xea8` (tálcáról a `+0xea4`, mappa vagy album kijelölésekor a `+0xeac`, `ui-audit-context-menus.md:1061-1062`), nem rögzített "nem üres tálca nyer" szabály. Videó- vagy hiányzófájl-szűrés a `0x00744d00`-ban és a `0x005c76b0`-ben nincs; a `0x005c7830` a `Preferences\PeopleAlbumUseFaceSrc` kulcsot olvassa, majd a `0x00506400`-at hívja (`:1043-1055`, törzse nincs olvasva). A lista ezután a nyomtatási állapotba kerül (`0x00891110`, `:392`), a méret a `+0x1c` mezőbe (`:395-398`), a `0x00a54b70` fut (`:401`), az `IDS_PRINT_PREP_MSG` üzenet kérése (`:402`) és a rekordszámmal a `0x00415500`/`0x004155d0` (`:403-404`; a szerepük a hívottak törzse nélkül feltevés). Kijelölés-, tálca-, `.picasa.ini`- vagy indexírás nem látszik. A videó és a hiányzó fájl szűrése: a kimenet nem dönti el, mert a rekordokat töltő `0x007166c0`, a `+0xeac` `vtbl+0xdc` és a `0x00744d00` utáni lépések törzse nincs benne. Hívói: `0x00531c60` (`0x00532033`), `0x0053ce00` (`0x0053d137`), `0x005cb990` (`0x005cd9ca`); az első kettő felületi eleme nincs azonosítva, nézőben az EAX értéke nem látszik.
 - Ghidra-kör kell: 0x007451a0 - a nyomtatási rekord/minőség feldolgozása hogyan kezeli a videót, hiányzó vagy olvashatatlan képet [blokkoló]
+- Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-6988-colab-decomp.txt:440-729`): a `0x007451a0` a nyomtatás előtti minőség-felülvizsgálat (`ThumbUIPrint::Review*`) listaépítője, nem képbetöltő: fájlt nem nyit, videótípust nem vizsgál. A `0x0085c060` által előállított listát (elemenként 8 bájt: azonosító és egy lebegőpontos érték, feltehetően rekord és effektív DPI, `:482,578`) három menetben járja végig (`:489-701`), és egy elem abban a menetben kerül a felülvizsgálati listába, amelynek száma a két minőségvizsgálat (`0x0085c1e0`, `0x0085c270`) eredményének összege (0, 1, 2; `:497`). A lista osztályonként növekvő (`Low`, `Good`, `Best`), osztályon belül a `0x0085c060` listájának sorrendjében épül, nem érték szerint rendezve. A felirat osztálya `ThumbUIPrint::ReviewBest`, ha az első vizsgálat igaz, különben `ReviewGood`, ha a második igaz, különben `ReviewLow` (`:579-605`), a fájlnévvel formázva (`:613`; a formázás argumentumai a kimenetben nem látszanak). A rekord adatait a `+0x270` objektum `+0x14` virtuális hívása adja a rekordazonosítóból; ha az útvonal-sztring hiányzik, nulla hosszú vagy üres, a rekord némán kimarad a felülvizsgálati listából (`:500-541`); a fájlnév az útvonal utolsó `\` jele utáni rész (`:553`). Hiányzó vagy olvashatatlan képfájlra tehát nincs vizsgálat (a függvény fájlműveletet nem hív), és a videó kezelése sem itt dől el: a kimenet nem dönti el, mert a rekordlistát töltő és a felülvizsgálat utáni lépések (`0x00745980`, a nyomtatási szál) törzse nincs benne. A lista után, ha a felülvizsgálati blokk objektuma (`piStack_a8`) létezik, a `+0x40` virtuális hívása fut, és ha az eredménye 1, a függvény `0xf4242`-vel kilép, a nyomtatás nem folytatódik (`:702-712`; feltevés: a felhasználó megszakítása a felülvizsgálati ablakban). Nem üres felülvizsgálati lista esetén a `0x00776b00` feldolgozza (feltevés: a kivett képek eltávolítása a nyomtatási listából), és ha a nyomtatási lista (`+0x30`) ezután üres, a `0x00861020` és a `0x009cd8a0` hívással visszalép, különben a `0x00745980` folytatja (`:713-723`). A PicasaPy ugyanazt a 0/1/2 kódot adja (`src/picasapy/printing/dpi.py:48-60`), de a listát DPI szerint rendezi (`src/picasapy/app/print_controller_quality_mixin.py:75-103`); az osztályon belüli sorrend megjelenítése a `0x0085c640` olvasása nélkül nem ítélhető meg.
 - Ghidra-kör kell: 0x00745770 - az eredeti felületi Cancel esemény hogyan jut el a 0x00743650 callbackig, és milyen panel/kijelölés állapotot állít vissza [blokkoló]
+- Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-6988-colab-decomp.txt:760-849,862-879,1235-1260,1274-1349`): a `0x00745770` a nyomtatás tényleges indítása (hívója a `0x00743980` gombkezelő, `0x007444d4`, a felülvizsgálat `0x007451a0` után). Nyomtatási állapot (`+0xec4`) nélkül `-1`-gyel kilép (`:781-783`); egy számlálót (`0x00d6793c`) növel (`:786`), a végén csökkent, és ha 0-ra ér, a nyílkurzort állítja vissza (`:843-847`; feltevés: közben foglalt kurzor van). Csak akkor indít, ha a rekordlista (`+0x30`) nem üres (`:787`), és a `+8` lista darabszáma nagyobb a `+0x10` indexnél (`:791-792`; feltevés: nyomtatólista és kiválasztott nyomtató). A `0x10` (`eContact`) kivételével a `0x005e8510` méretbeállítót hívja (`:788-790`). Ezután 0x8c bájtos nyomtatási szálobjektumot hoz létre (`CPrintJobThread`, `0x007433f0`; `:818-827`), `printjob:%x` néven a `0x00d67904` globális objektum `+0x20` virtuális metódusával regisztrálja (`:830-831`; feltevés: szálindítás), a `+0xc` metódust `(0xffffffff, 0)` argumentummal hívja (`:832`), és ha a `0x0097b350(0,1)` nulla, a nyomtatási állapotot elengedi a vezérlőből (`:833-836`). Visszatérés előtt a `+0x274` objektum `+0x14` hívása `(1,1)` argumentummal és a `0x007448a0` fut (`:840-841`). A megszakítás: a `0x00743650` egyetlen hivatkozása adat (`0x00cb0d20`, `:856`), tehát nagy valószínűséggel a `CPrintJobThread` vtábla foglalata (a konstruktor ilyen vtáblát ír az objektumba négyszer, `:1242-1245`), és virtuálisan hívódik, a statikus hívólista nem mutatja. A `0x00743650` a `printjobthread::cancelling` állapotszöveget kéri le és adja a saját `+0x1c` metódusának (`:870-871`), a megszakítási jelzőt (`+0x14`) olvassa (`:872`), ha 0 volt, a `+0xc` metódust `(0, 0)` argumentummal hívja (`:873-875`), a jelzőt 1-re állítja (`:876`) és a `+0x14` metódust hívja (`:877`); panelhez, kijelöléshez, tálcához nem nyúl. A felületi esemény, amely ezt a foglalatot hívja, a kimenetből nem dönthető el, mert a vtábla virtuális hívói nem statikus hívások. A visszaállított panelállapot: a `0x007448a0` a kimeneti gomb (`ytButtonNode`) `+0x359` jelzője szerint lépteti a felületi zárolást (a `0x00d67914` objektum `+0x68`/`+0x6c` metódusa), és bejelölt gombnál hívja a `0x005f8160`-at (`:1297-1346`); kijelölést nem ír, a panelrendezés tartalma a `0x005f8160`-ban lehet.
+- Ghidra-kör kell: 0x007166c0 - a `0x005c76b0` által hívott kijelölés-töltő: az aktív csomópont (`+0xea8`) mely rekordjait adja és milyen sorrendben, szűri-e a videót vagy a hiányzó fájlt; a `+0xeac` csomópont `vtbl+0xdc` arcalbum-ága (`0x0078a6c0`) és a `0x005c7ef0` többes gyűjtő [blokkoló]
+- Ghidra-kör kell: 0x006cab20 - a `0x00744ee0` "kevesebb mint két kijelölt elem" ága: a `0x004133e0`, `0x004b0190(album)`, `0x006cab20` hármas a mappa vagy album összes képét tölti-e a listába és milyen sorrendben; a `0x005cb180(0x10, 1)` visszatérési értéke (melyik mappa vagy album) [blokkoló a jelölt jegytörzshöz]
+- Ghidra-kör kell: 0x005cb990 - a `0xe107` ág `0x005cd9ca` hívóhelye a `0x00744d00`-ra: az EAX-ban átadott rekordazonosító (vagy `-1`) és a `param_2` méret nézőben és könyvtárban; továbbá a `0x00531c60` (`0x00532033`) és a `0x0053ce00` (`0x0053d137`) hívóhely: melyik felületi elemhez tartoznak [blokkoló]
+- Ghidra-kör kell: 0x00743980 - a nyomtatás gombjának ága a `0x007451a0` (`0x007444b3`) és a `0x00745770` (`0x007444d4`) hívás között; a `0x00745980` (felülvizsgálat utáni folytatás) és a nyomtatási szál törzse (a `CPrintJobThread` vtábla): itt dől el, hol szűri a videót és a hiányzó vagy olvashatatlan képet, és hol jelenik meg a `0x007434d0` nyomtatóhiba-üzenet [blokkoló]
+- Ghidra-kör kell: 0x00cb0d20 - a `CPrintJobThread` vtábla és a `0x00743650`-et tartalmazó foglalat: kik hívják virtuálisan (megszakítás gomb, folyamatjelző, ablakbezárás); a `0x00d67904` objektum `+0x20` metódusa és a `0x0097b350` (`0x00745770`, `:833`) [blokkoló]
+- Ghidra-kör kell: 0x005f8160 - a `0x007448a0` által hívott visszaállító: tartalmazza-e a `thumbui/mainuipanel` és `printpanel` felületek rendezését és a rács vagy a tálca kijelölésének visszaállítását [nem blokkoló]
+- Ghidra-kör kell: 0x0085c640 - a felülvizsgálati lista elemfelvevője, a `0x0085c060` (a rekord és érték párok listáját előállító, a `Preferences\DPIWarning` kulcsot olvasó függvény) és a `0x00776b00`: a lista megjelenítési sorrendje (beszúrási vagy rendezett), az érték jelentése (effektív DPI) és mit távolít el a nyomtatási listából [nem blokkoló]
 - `NINCS MEG`: az eredeti 3.9.141 viselkedése írásvédett nyomtató/spool cél, hiányzó képfájl és megszakítás esetén. Megszerzés: Windowsos mérés külön üres profilban, külön PDF/printer célokkal; rögzítendő a hibaüzenet, létrejött fájl/spool, visszaálló UI és kijelölés.
 - `NINCS MEG`: eredeti Photo Tray tartalma és mappafa/rács állapota nyomtatás után. Megszerzés: Windowsos 3.9.141 mérés egy, majd több kijelölt képpel és eltérő Photo Tray tartalommal; előtte/utána képernyő és `.picasa.ini` és index fájlkivonatának összevetése.
 
@@ -2540,6 +2565,7 @@ egy lépést ad hozzá, balra egyet levon modulo 4 szerint (a 0 balra forgatásb
 - Ghidra-kör kell: 0x004edf60 - Azonosítsa a `0x005ee6e0` forgatási ciklusban vizsgált fájltípus-értékeket, és hogy ezek közül melyik jelenti a videót [blokkoló]
   - A már meglévő Ghidra-részlet ismeretlen enumértékeket hagy; az új kérdés az értékek videó/fotó címkézése.
 - ~~Ghidra-kör kell: 0x005e7d90 - Kövesse az `ID_PICTURE_REVERT` (`0x9ca4`) útját, és döntse el, hogy az Undo All Edits törli-e vagy visszaállítja-e a `rotate=` kulcsot; a meglévő diszpécser csak a hívást mutatja [blokkoló].~~ **LEZÁRVA (#7009):** a `0x005e7d90` a Hide/Unhide kezelője; az Undo All Edits a `0x005ef3e0` és nem törli a `rotate=` kulcsot (a beégetett tokenes kép kivételével, lásd a #7009 nyitott kérdéseit).
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:3590`): a kérdés a #7009 óta lezárt, a bővített kimenet megerősíti. A `0x005e7d90` törzse (`:3601-3642`) csak a `]hidden` kulcsot kezeli, `rotate`-re nincs hivatkozása. Egyetlen hívója a `0x005cb990` (`0x005cbd55`, `0x005cbd63`); a hívóhely disassemblye és az ugrótábla (`0x005cdb34` bájttábla, `0x005cd9fc` ugrótábla) szerint a `0x9ca4` a `push edi` (edi = 0) ágra (`0x5cbd52`), a `0x9ca5` a `push 1` ágra (`0x5cbd5f`) fut. A `0` ág a `0x00717140` után a `+0x284` al-objektum `+0x10` metódusát hívja `]hidden`-nel (Megjelenítés), az `1` ág a vezérlő `+0x8c` metódusát (Elrejtés); mindkettő után `0x0065b840(this, 0, 0, 1)` fut, és ha a teljes képernyős nézőcsomópont (`0x009c2fc0`) `+0x20c` bájtja 0 és a lista második jelzője nem nulla, még a `0x005683a0`. A forgatás végállapota ezen a függvényen nem dől el, a #7000 kérdése (mi frissül forgatás után) a forgatókezelőkben marad.
 - NINCS MEG: eredeti `.picasa.ini` írásmegtagadás felhasználói visszajelzése. Konkrét út: kontrollált Picasa 3.9 mérés ugyanazon mappában, előbb írható, majd mappaszinten írásvédett `.picasa.ini`-vel; rögzítsd a képernyőn megjelenő üzenetet, az ini-t és a visszatérő rácsállapotot. A mérőadat-archívum releváns névszűrése nem adott találatot, ezért nem állítok méréseredményt.
 - NINCS MEG: az eredeti index, bélyegkép, mappafa és kijelölés pontos művelet utáni állapota. Konkrét út: célzott, előtte/utána kontrollált Picasa 3.9 mérés és a releváns fájlok/DB-k tételes összevetése.
 
@@ -2660,7 +2686,7 @@ belefér a ciklusba, de neki nincs törölhető kulcsa).
 |---|---|---|---|
 | `.picasa.ini` kulcsok | Képenként törli: `crop` (`0x0042bb50`), `flipped` (`0x0042d7e0`, üres érték), `filters` és `redo` (`0x00460e20`), `text` és `textactive` (`0x004615b0`); a `rotate` kulcsot nem érinti. A `0x0046d7d0` fájlszintű Revert pontosan ugyanezt a négy hívást tartalmazza (`0x0046e20f-0x0046e233`), de utána még a `rotate`-et is alaphelyzetbe teszi (`0x00462790`, `0x0042c980(db,kép,-1,1)`); a két lánc különbsége a `rotate`. | `_clear_all_effects` (`batch_effect_controller.py:150-159`): csak `filters` és `crop`; majd `backuphash` (`:411`). | 1. jegytörzs: `flipped`, `text`, `textactive`, `redo` törlése; a `rotate` marad. |
 | `backuphash` | A `0x00454770` minden ini-írás után frissíti (utolsó paraméter `1`); mérés: job-254, `backuphash=37968`, más kulcs nincs. | `with_backuphash` (`batch_effect_controller.py:411`). | Egyezik. |
-| `.picasaoriginals` és a képfájl | Közvetlenül nem nyúl hozzá. Kivétel: a `redeye`, `retouch`, `picnik` szűrőt tartalmazó képnél a `0x005f3e10` a `0x0046d7d0(db,{kép},1,0)`-t hívja (Undo-Save mód: a `0x0053b2e0` párbeszéd `1`-es eredménye, feltehetően az `Undo Save` gomb, ugyanezt a harmadik paramétert állítja, `0x0053b840-0x0053b84d`). A fájl visszamásolása ebben a módban nyitott. A kép egyébként nem íródik. | Nem nyúl a `.picasaoriginals`-hoz és a képfájlhoz; a vörösszem nálunk szűrőlánc-elem, nem beégetett. | Nyitott (Ghidra), jegy nincs. |
+| `.picasaoriginals` és a képfájl | Közvetlenül nem nyúl hozzá. Kivétel: a `redeye`, `retouch`, `picnik` szűrőt tartalmazó képnél a `0x005f3e10` a `0x0046d7d0(db,{kép},1,0)`-t hívja (Undo-Save mód: a `0x0053b2e0` párbeszéd `1`-es eredménye, feltehetően az `Undo Save` gomb, ugyanezt a harmadik paramétert állítja, `0x0053b840-0x0053b84d`). A fájl visszamásolása ebben a módban nyitott; a `0x00471df0` nem másol (Ghidra 2026-11-16), a `.picasaoriginals` sztring a `0x00462ba0`-ban van, amelyet a `0x0046d7d0` előbb hív, és a `0x00471df0` jelzése egyszerű tokenes képnél kihagyatja a közös törlő ágat (`rotate` is marad). A kép egyébként nem íródik. | Nem nyúl a `.picasaoriginals`-hoz és a képfájlhoz; a vörösszem nálunk szűrőlánc-elem, nem beégetett. | Nyitott (Ghidra), jegy nincs. |
 | SQLite index | A kezelők nem írnak SQL-t; az `]edited` állapotjelző bájtok a memóriabeli gyorsítótárban számolódnak újra (`0x00476a60`). A perzisztens adatbázis-mezőre ez a kör nem talált írást. | Mappánként `_sync_tree_locked` (`batch_effect_controller.py:427`). | Nem mérve: az eredeti perzisztens indexe. |
 | Bélyegkép | A `0x005796c0(ctrl, azonosítók, 2, 0)` a feldolgozott kijelölés minden képére frissít (`0x00579360`), `Updating thumbnails...` folyamatjelzővel, és a `peoplepanel/update` is lefut. | A bélyegkép-URL szerkesztés-érzékeny (`_thumb_url`), a nézet a végén újratöltődik. | Nem mérve. |
 | Rács | A kezelők a rácsot nem építik újra; csak a menüállapot gyorsítótára kap `-1`-et. | `_on_batch_edit_work_done` -> `_refresh_view()` (`batch_effect_controller.py:454-458`), ami változott tartalomnál `beginResetModel`-t hív (`photo_grid_state.py:207`). A forgatás célzott `dataChanged`-et használ (#7000), az Undo All Edits teljes resetet. | Nem mérve; lásd 2. pont a nyitottak között. |
@@ -2768,12 +2794,18 @@ szürke; ahol az első szűrőláncos, élő; valódi menü-kattintásos teszt (
 
 - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7006-7008-7009-7012-colab-decomp.txt`): a `0x005f3e10` akkor hívja a `0x0046d7d0(db, [kép], 1, 0)`-t, ha a képen ott a token (`0x0045f320`), utána bélyegkép-frissítés (`0x00579910(kép, 2)`). Az 1-es mód előbb a `0x00471df0`-t hívja; ha az nem jelez, a közös ágra fut (`LAB_0046dc08`), amely törli a `crop`, `flipped`, `filters`/`redo`, `text` kulcsot, és ha a `0x00462790` igazat ad, a forgatást is visszaállítja (`0x0042c980(..., -1, 1)`). **Tehát tokenes (vörösszem, retusálás, Picnik) képnél az Összes szerkesztés visszavonása a forgatást is visszaállíthatja**; a `.picasaoriginals` visszamásolása itt nem látszik, valószínűleg a `0x00471df0`-ben van.
 - Ghidra-kör kell: 0x00471df0 - Visszamásolja-e a `.picasaoriginals` mentett eredetijét, és milyen feltétellel jelez, amitől a `0x0046d7d0` nem fut tovább a közös törlő ágra; a `0x00462790` mikor ad igazat [nem blokkoló]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:621`): **a `0x00471df0` nem másol vissza fájlt**, a 2026-11-15-i feltevés (a visszamásolás valószínűleg itt van) cáfolva. A törzsben (`:648-1190`) és az index szerinti közvetlen hívottaiban (`0x00472a80`, `0x0099ac80`, `0x00987150`, `0x005c2100`, `0x006a2a60`, zár- és számlálósegédek) nincs fájlművelet és nincs `.picasaoriginals` sztring. Az index a sztringet a `0x00462ba0`, `0x00478780`, `0x004e62d0`, `0x004fbb90`, `0x00501570`, `0x00542a50`, `0x005c9b00`, `0x005e0f70` függvényekhez köti; a `0x0046d7d0` a `0x00462ba0`-t a `0x0046d8e8`-nál hívja (hívóhely-disassembly): nem nulla visszatérésnél a `0x00477210`-et hívja és a ciklus a következő képre lép, a `0x00471df0`-ig ilyenkor el sem jut. A jelzés (a `0x0046dba7` hívás 4. paramétere, `[esp+0x1b]`) a `*param_4` bájt, amelyet a függvény három helyen állít 1-re (`0x00471f24`, `0x00471f56`, `0x00471f88`). Mindháromhoz kell: a `text` kulcs értéke üres (`0x00c80b0c`), az `*param_5` sztring üres (`0x00471ed9`, `0x00471ef1`), és a `filters` értéke (a `0x00987150` részsztring-keresővel vizsgálva) a `redeye=1;` (`0x00c81940`), `retouch=1;` (`0x00c8194c`) vagy `picnik=1;` (`0x00c81958`) sztringet tartalmazza, ebben a sorrendben. A `param_5` a `0x0046d7d0`-ban a `db+0x1710` tábla képindex szerinti bejegyzése (`0x0046db25`), vagy ha nincs ilyen, a `db+0x1714` alapérték (`0x0046db44`); jelentését a kimenet nem mondja meg. A jelzés a visszatérési értéket nem érinti (mindig 0 vagy 4), a hívó a bájtot olvassa: `0x0046dbac cmp byte [esp+0x1b], 0` / `0x0046dbb1 je 0x0046dc08`. A következmény a közös törlő ágra: **jelzésnél a `0x0046d7d0` kihagyja a `LAB_0046dc08` közös ágat** (`0x0046dbb3-0x0046dc03`, majd `0x00471b7f`), tehát az adott képnél nem fut sem a `crop`, `flipped`, `filters`/`redo`, `text` törlés, sem a `rotate` visszaállítása. A `0x0046da16-0x0046da92` szerint a függvény harmadik paramétere (`bl`) 0 esetén a `0x00471df0` meg sem hívódik és a közös ág fut. Jelzés nélkül (nincs token, vagy a `text` vagy a gyorsítótár-bejegyzés nem üres) a `0x00472a80` fut (a kimenetben nincs), utána szintén a közös ág. **A 2026-11-15-i következtetés (tokenes képnél az Összes szerkesztés visszavonása a forgatást is visszaállíthatja) ezért csak feltételesen áll:** az egyszerű tokenes képnél (nincs `text`, üres gyorsítótár-bejegyzés) a közös ág, vagyis a `rotate` visszaállítása is kimarad. A `0x00462790` (mikor ad igazat) a kimenetben nincs, a kérdés nyitva marad.
+- Ghidra-kör kell: 0x00462ba0 - a `.picasaoriginals` visszamásolás tényleges helye: mikor ad nem nullát (a `0x0046d7d0` ezzel zárja le a képet), mit másol vissza és hova (`%s.%d.jpg`, `%s.%d.mov`, `%s.%d.wmv`, `Originals` sztringek), és mit végez utána a `0x00477210`; ugyanebben a körben `0x00462790` - mikor ad igazat (a `rotate` visszaállítás feltétele, hívottja a `0x004edf60` és a `0x0042c980`), és `0x00472a80` - mit csinál a `0x00471df0` jelzés nélküli ága (2402 bájt, hívottai `0x006a2a60`, `0x00986120`, `0x009866e0`) [nem blokkoló]
 - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7006-7008-7009-7012-colab-decomp.txt`): a `0x009c2fc0` név szerinti felületi csomópont-kereső. A `0x005ef3e0`-ban, ha az `editpanel/preview` létezik és a `+0x20c` bájt 0, a szerkesztői ág fut (egyes számú `IDS_CONFIRMREVERT` vagy filmes változat, majd `0x005f8d80`, `0x005ef6b0`, `0x005683a0`), különben a könyvtári ág (`0x005ef520`). A 0 tehát azt jelenti, hogy a szerkesztőpanel aktív. A teljes képernyős néző (OneUp) alatti érték nyitott.
 - Ghidra-kör kell: 0x009c2fc0 - Teljes képernyős nézőből (OneUp) indítva az `editpanel/preview` `+0x20c` bájtja 0-e, azaz a szerkesztői vagy a könyvtári ág fut [nem blokkoló]
 - Ghidra-kör kell: 0x005f8d80 - A `(0,0,0)` paraméterű hívás az Undo All Edits szerkesztői ágában megjeleníti-e az `Apply changes to the current image?` megerősítést (`0x005f8e07-0x005f8f93` feltételei) [nem blokkoló]
 - Ghidra-kör kell: 0x005cb1a0 - A `0x8000` állapotbit: a `ctrl+0x668` és `ctrl+0x99c` atomikusan módosított számlálók jelentése (`0x005cb93f-0x005cb961`, `InterlockedCompareExchange`), és mikor szürkíti az Undo All Edits-et a szerkesztőben [nem blokkoló]
 - Ghidra-kör kell: 0x00429530 - A `CThumbDB` `+0xe4` metódus (`0x0042af00`, `0x00429dc0`, film-szerkesztés objektum) mely ini-kulcsokból áll, és a film-szerkesztések törlődnek-e a könyvtári Undo All Edits-tel [nem blokkoló]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:1`): a kimenet részben dönt. A `0x00429530` (`:1-80`; a `CThumbDB::vftable` `0x00c81fa4` `+0xe4` helye, `0x00c82088`, az index szerint) **VAGY-kapcsolatú "van szerkesztés" feltétel**, nem író: igazat ad, ha a `0x0042af00(kép)` igaz, vagy a `0x00429dc0(db, kép, &négyszavas puffer)` igaz, vagy (a `db+0x2ef0` bájt nem nulla esetén, a `db+0x2ef4`/`db+0x2f1c` zár alatt) a `db+0x2fdc` film-szerkesztés objektum `+0x3c` metódusa igazat ad; különben 0. A könyvtári ág (`0x005ef520`, `:3790-3897`) ezt használja: képenként `0x00562250(+0x2c0 lista, kép)` VAGY `[[this+700]+0x48]+0xe4(kép)` igaz esetén fut a képenkénti törlő `0x005ef6b0` és nő a számláló, tehát **a kizárólag film-szerkesztéssel bíró kép is bekerül a törlő hívásba**. Hogy mely ini-kulcsokból áll a feltétel, a kimenet nem dönti el, mert a `0x0042af00` (248 bájt, csak szövegkezelő segédfüggvényeket hív), a `0x00429dc0` (1256 bájt, hívottai `0x006a2a60`, `0x009b9150`, `0x009b9290`, `0x009b93f0`) és a film-szerkesztés objektum `+0x3c` metódusa nincs benne; azt sem, hogy a film-szerkesztés törlődik-e, mert a `0x005ef6b0` ismert kulcslistájában (`crop`, `flipped`, `filters`/`redo`, `text`, `textactive`) film-kulcs nem szerepel, de a `filters` láncban lakhat.
+- Ghidra-kör kell: 0x00429dc0 - mely ini-kulcsokat vagy mezőket olvassa (nyers kulcsnevek, `0x009b9150`/`0x009b9290`/`0x009b93f0` sztring- vagy fájlsegédek), és 0x0042af00 - mit vizsgál a képen; ugyanitt a `db+0x2fdc` film-szerkesztés objektum `+0x3c` metódusa (a vtábla címe a kimenetben nincs: előbb a `db+0x2fdc` írója), hogy a film-szerkesztés külön kulcsban él-e, és a `0x005ef6b0` törli-e [nem blokkoló]
 - Ghidra-kör kell: 0x005ef520 - Hol használja az eredeti az `IDS_CONFIRM_REDEYE_REVERT` (`0x119`) szöveget: a `0x009ae710` betöltő 150 hívásából egyik sem kapja ezt az azonosítót, tehát más úton töltődik be [nem blokkoló]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:3790`): **a `0x005ef520` (`:3790-3897`) az `IDS_CONFIRM_REDEYE_REVERT` szöveget nem tölti.** Egyetlen megerősítő ablakot ad a teljes kijelölésre: az `IDS_CONFIRMREVERT_MULTIPLE` szöveget (`0x009ae710(0xdc, ...)`) és az `IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON` gombfeliratot (`0x009ae560`), a `0x009bac20(0, szöveg, gomb, 0, 0, 0)` párbeszéddel; a nem válasz `-1`-et ad és semmit nem töröl, üres kijelölésnél `3` a visszatérés, és a törlő `0x005ef6b0` csak a megerősítés UTÁN, képenként fut. A `0x119` azonosító ezért máshol töltődik: az index szerint a `0x005ef6b0` egyetlen sztringje a `retouch`, hívottjai közt a tokenes ág (`0x0045f320`, `0x005f3e10`, `0x00477210`) szerepel, a redeye-szöveg a kimenetből nem lokalizálható.
+- Ghidra-kör kell: 0x005ef6b0 - a tokenes (`redeye`, `retouch`, `picnik`) ág: hol jelenik meg a redeye-megerősítés (`IDS_CONFIRM_REDEYE_REVERT`, `0x119`), és a `0x005f3e10`/`0x00477210` láncon a fájlvisszaállítás hibája mit jelez a felhasználónak [nem blokkoló]
 - `NINCS MEG`: az Undo All Edits futásidejű végállapota (ini, fájl SHA-256, bélyegkép, rács, kijelölés, `-1` cache után a menü). Megszerzés: Colab-feladat `colab_felmero.py` szerint, Picasa 3.9: szerkesztett (filters, crop, flipped, text, elforgatott) képek, majd Kép menü, Undo All Edits, `Remove Edits`; előtte/utána az ini, a fájl kivonata és képernyőkép; külön futás csak elforgatott képpel (a tétel szürke-e) és vegyes kijelöléssel.
 - `NINCS MEG`: írásvédett `.picasa.ini` vagy lemezhiba alatti viselkedés. Megszerzés: ugyanez a Colab-futás mappaszinten írásvédett ini-vel; rögzítendő a megjelenő üzenet és az ini.
 
@@ -2821,6 +2853,8 @@ Az összesített bizonyítottsági fok **nyitott**. Az alábbi táblázatban a f
 
 - Ghidra-kör kell: 0x006a5060 - a kulcsszó-tábla (a `db+0x17d8` objektum `+0x54` belső táblája) olvasó metódusa; a `0x006a2a60` internálást hívó többi olvasó közvetlen szomszédai: `0x006a5590`, `0x006a5a60`, `0x006a5c60`, `0x006a61f0`, `0x006a63f0`. Kérdés: a kulcsszó-tábla rekordjait az adatbázis megnyitásakor járja-e végig valaki (akkor az adatbázis rekordsorrendje a jelöltsorrend), vagy lustán, az első olvasáskor internál (akkor a felület olvasási sorrendje); és kikerül-e a címke a készletből, ha az utolsó képről is törlik [blokkoló a pontos jelöltsorrendhez, nem blokkoló a kihagyási szabályokhoz].
 - Ghidra-kör kell: 0x006393b0 - a Tags-panel gyára (a `0x00639440` konstruktor egyetlen hívója): a panel példánya mikor jön létre és semmisül meg, és kik hívják a 32. vtábla-helyet (`0x00ca0aa4` = `0x00639c00`, `call [reg+0x80]`). Kérdés: a `+0x2c0` lista csak a panel létrehozásakor töltődik, vagy megjelenítéskor és címkeváltozás után is; ettől függ, hogy az Autofill friss vagy pillanatképes listát kap [nem blokkoló].
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:4023`): a kimenet részben dönt. A `0x006393b0` (`:4023-4046`) a `TagPanel::ResCreate` osztály (`0x00ca0ae8`, 5 bejegyzés) 5. bejegyzése (`0x00ca0af8`, ez az egyetlen hivatkozója, nincs közvetlen hívó): `0x470` bájtot foglal (`0x0097c5d0`) és a `0x00639440` konstruktort hívja; a konstruktor a `TagPanel::vftable` (`0x00ca0a24`) címét írja a példányba (`0x0063945a`). A `ResCreate` statikus példányát (`0x00d35d34`) a `0x0040bf70` indulási regisztráló függvény adja át a `0x009ccc50`-nek (`0x0040c29e`), tehát a **gyár induláskor regisztrált**, a panelpéldány tényleges létrehozását (és megsemmisítését) az erőforrás-betöltő végzi, ennek ideje a kimenetből nem látszik. A 32. vtábla-hely (`0x00ca0aa4` = `0x00639c00`) hívóit a kimenet nem tartalmazza (`call [reg+0x80]`, az index nem látja). Az index szerint a `0x00639c00` (785 bájt) a `Preferences`, `editpanel/preview`, `i18n\tagpanel_text.xml`, `quicktags::enable_recents`, `icons/label`, `%s/taglist`, `%s/removetag` sztringeket használja, és hívja a `0x00437380`-at (a jelöltek forrása), vagyis a panel felépítő/betöltő metódusa; **hogy a `+0x2c0` lista csak a létrehozáskor, vagy megjelenítéskor és címkeváltozás után is töltődik, a kimenet nem dönti el**, mert a `0x00639c00` törzse nincs benne.
+- Ghidra-kör kell: 0x00639c00 - a Tags-panel felépítő metódusa (a 32. vtábla-hely): mikor és hányszor fut (csak létrehozáskor, vagy minden megjelenítéskor), a `+0x2c0` lista itt töltődik-e a `0x00437380`-ból, és mi hívja a `[reg+0x80]` vtábla-hívással (az erőforrás-betöltő `0x009ccc50` környezete) [nem blokkoló]
 - `NINCS MEG`: futásidejű eldöntő mérés a sorrendre. Megszerzés: Colab-feladat az eredeti Picasa 3.9-cel; három mappa, rövid, ismert nevű képekkel és ismert beolvasási sorrenddel, olyan címkékkel, ahol a gyakoriság és az első előfordulás sorrendje eltér (például a `b` címke 5 képen, az `a` címke 1 képen, a `b` az első mappában); Quick Tags konfiguráció, Autofill, a tíz mező szövege rögzítendő recent be- és kikapcsolva, majd a mezők kiürítése után újabb Autofill.
 
 ### Hatás és hibaágak a jelenlegi forrásban
@@ -3004,22 +3038,120 @@ bekapcsolt recentnél kimarad.
 - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7012-7022-colab-decomp.txt`): a `0x00638990` a Tulajdonságok panel listaelemének helyi menüje; a kulcsszavas sorhoz (`0xca`) az `edit_keywords` tétel `0x9d2c` paranccsal jár, ami a diszpécserben a `0x0065ab50`-re, a `thumbui/tags_toggle`-ra fut: **a jobb oldali Tags panelt kapcsolja, nem modális ablakot nyit.** Nálunk a Keywords gomb a `KeywordsDialog` párbeszédablakot nyitja, ez igazolt eltérés (6. jegyjavaslat).
 - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7012-7022-colab-decomp.txt`): a Ctrl+K (`0x4b`) és a Ctrl+T (`0x54`) közös ága a `0x0065ab00` (`tags_toggle`); a billentyűt nem kezeli, ha az ablak módkódja (`+0x30d4`) 2, 4 vagy 6 (vágás, vörösszem, retusálás, szöveg, Picnik), vagy ha a `0x0056c420`, `0x0056c110`, `0x0057c430(4)`, `0x0057c3b0` ellenőrzők egyike igaz. A teljes képernyős nézőbeli elérhetőség ezeken múlik.
 - Ghidra-kör kell: 0x0056c420 - a négy ellenőrző (`0x0056c420`, `0x0056c110`, `0x0057c430`, `0x0057c3b0`) melyik nézetállapotot jelöli; a Ctrl+K teljes képernyős nézőben működik-e [nem blokkoló]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:1711`): a `0x0056c420` (`:1711-1733`) igaz (1), ha a `DAT_00d67914` nem nulla, a `0x009c2fc0` megtalálja a **`panelroot/acquirepanel`** nevű felületi csomópontot (a hívóhely disassemblye: `mov edx, 0xc8e6d8`) és annak `+0x20c` bájtja 0; különben 0. Vagyis ez az **Import (acquire) panel** állapota, nem a szerkesztőé vagy a nézőé. A másik három ellenőrző a disassemblyből: a `0x0056c110` ugyanígy a `thumbui/printpanel` csomópontot (`0x00c8f0f0`) vizsgálja; a `0x0057c430(maszk)` bitenként dolgozik (`-1` esetén mindet VAGY-olja, egyébként csak a megadott bitet): `1` = a `[ablak+0x344c]` csomópont `+0x20c` bájtja 0, `2` = a `0x00562d00()` igaz vagy az ablak módkódja (`+0x30d4`) 2, 4 vagy 6, `4` = a `[ablak+0x30f4]` és a `[ablak+0x34a4]` is nem nulla, `8` = a `0x0056c110()` igaz; a `0x0057c3b0` az ablak `+0x16c` listájában az első olyan `ytBasePanel`-leszármazottat keresi, amelynek `+0x20c` bájtja 0 és `+0x9c` virtuális metódusa igazat ad. **A Ctrl+K teljes képernyős nézőben:** a `0x0057c430(4)` pontosan akkor igaz, ha a `+0x30f4` és a `+0x34a4` is nem nulla; ha a `+0x34a4` a nézőt jelöli (ez a #6530 szerint nem igazolt), akkor a főablak ága a nézőben nem kezeli a Ctrl+K-t, a nézőbeli saját billentyűkezelőt viszont a kimenet nem tartalmazza, ezért ez nem dönthető el.
+- Ghidra-kör kell: 0x0057c3b0 - a `+0x9c` virtuális metódus (mely `ytBasePanel`-leszármazottakon ad igazat), és a `[ablak+0x34a4]` mező írói (a néző nyitva-e); ugyanitt a teljes képernyős néző (OneUp) saját billentyűkezelője: kezeli-e a Ctrl+K-t [nem blokkoló]
 - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7012-7022-colab-decomp.txt`): a jelöltlistát a `0x0063d260(obj[+0x268], lista, 100)` építi, legfeljebb 100 elemmel a forrástömb (`+0x2c0`, darabszám `+0x2c4`) sorrendjében, a `0x0063d550` szűrővel; a 10 mezőt a 2.-tól tölti, ha a `quicktags::enable_recents` be van kapcsolva, egyébként a 0.-tól, csak az üreseket; a `0x0083f8f0` kihagyja a mezőkben már szereplő jelöltet. Az 5. jegyjavaslat ezzel megvalósítható, a forrástömb jelentését a kiegészítés oldja fel: nem gyakoriság, hanem a könyvtár kulcsszó-tárolójának első előfordulási sorrendje.
 - Megválaszolva (Ghidra 425): a `0x006a5060` nem bejáró és nem készletépítő, hanem kulcs szerinti rekordba író (a `rekord+0x1dc` tömb egy elemét írja); közvetlen hívói között a `0x00437380` nincs. A jelöltlista szűrése teljes (`0x0063d260`, `0x0063d550`): a forrás sorrendjében, a forrás első 100 eleméből, a két recent nélkül (bájtpontos, kis- és nagybetűre érzékeny egyezés, ha a `+0x350` jelző be van kapcsolva).
 - Ghidra-kör kell: a panel `+0x2c0` listájának írója - a `0x00437380` és a `0x004936c0` törzse (a jelöltek forrása, 5/b.) és a lenti `0x006393b0` tétel; ebből dől el, hogy az adatbázis rekordsorrendje, a lusta internálás sorrendje vagy más a jelöltsorrend (a kulcsszó-tábla rekordjait az adatbázis megnyitásakor járja-e végig valaki, vagy lustán, az első olvasáskor internál); kikerül-e a címke a készletből, ha az utolsó képről is törlik [blokkoló a pontos jelöltsorrendhez]
 - Ghidra-kör kell: 0x006393b0 - a Tags-panel gyára (a `0x00639440` konstruktor egyetlen hívója) és a 32. vtábla-hely (`0x00ca0aa4` = `0x00639c00`) hívói: a `+0x2c0` lista csak a panel létrehozásakor töltődik, vagy megjelenítéskor és címkeváltozás után is; ettől függ, hogy az Autofill friss vagy pillanatképes listát kap [nem blokkoló]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:4023`): lásd a fenti `0x006393b0` választ: a `0x006393b0` a `TagPanel::ResCreate` gyárbejegyzése (`0x470` bájt és a `0x00639440` konstruktor), induláskor regisztrált; a panel létrehozásának és a `+0x2c0` lista töltésének ideje a kimenetből nem dönthető el, a következő cél a `0x00639c00` (32. vtábla-hely).
 - `NINCS MEG`: futásidejű eldöntő mérés az Autofill jelöltsorrendjére. Megszerzés: Colab-feladat az eredeti Picasa 3.9-cel, három mappa ismert beolvasási sorrenddel, olyan címkékkel, ahol a gyakoriság és az első előfordulás sorrendje eltér; recent be- és kikapcsolva a tíz mező szövege, majd a mezők kiürítése után újabb Autofill.
 - `NINCS MEG`: az eredeti Picasa-mérés a fájlok SHA-256-jával és a `.picasa.ini` előtte/utána tartalmával, egy- és többképes JPEG, videó, vegyes címkeállapot, írásvédett fájl/mappa és írási hiba mellett. A hálózat nélküli kutatói körben ilyen mérőadat nem állt rendelkezésre; az új gyűjtéshez a felhős mérőkörnek izolált profilban rögzítenie kell az eredeti Picasa végállapotot.
 
-### Módosított fájlok
+### Zárókör: a jelenlegi forrás és a megmaradt bizonyítékok (2026-11-16)
 
-- `docs/specs/paritas-ellenorzes.md` - ez a #7022 alszakasz.
+Ez a zárókör a fenti korábbi „Nálunk” állításokat és fejlesztői javaslatokat
+felülírja ott, ahol a munkafa mostani forrása mást mutat. A Ghidra-kiegészítés 3
+megmarad; az alábbi kiegészítés a korábban nyitott tételeket újraminősíti.
 
-**Nyitott kérdések: 0 nyílt · 9 lezárva (parancs-azonosítás, törölt kulcskészlet, `rotate` kimarad, engedélyezési képlet, hívási lánc, megerősítő szövegek, visszavonhatatlanság, hibakezelés statikusan, Autofill jelöltforrás és kitöltési szabály) · 11 blokkolt (8 Ghidra, 3 `NINCS MEG` Colab) · 0 hatókörön kívül · 0 csak nyitva.**
+#### Belépési pontok és a mostani forrás
+
+| Eredeti (bináris cím vagy mérés) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Nézet > Tags:** az eredeti lapváltó az aktív Tags lap ismételt kérésére bezárja a jobb oldali fiókot; másik lapról Tags-re vált (`0x005d9760`, `0x005d99a0`, `0x005d9ad8`). | A menü a `MainMenuBar.qml:384-385` útján a `MainWindowLibraryActions.qml:15-23` kapcsolóhoz jut. | A könyvtárnézetben egyezik. A korábbi, csak megnyitást állító fejlesztői javaslat elavult, nem kell hozzá külön jegy. |
+| **Ctrl+T és Ctrl+K:** közös bináris Tags-panel kapcsoló (`0x005e60d0`, `0x0065ab00`); a magasabb szintű néző- és szerkesztőállapot-őrök teljes eredménye nyitott. | Mindkét gyorsbillentyű a `valtsFiokLapot("tags")` függvényt hívja (`MainKeyboardShortcuts.qml:110-113,328-334`); az engedélyezés könyvtárnézetre és nem szövegmező-fókuszra korlátozott (`MainWindowCommands.qml:229-233`). | A könyvtárnézetben egyezik. Az eredeti teljes képernyős nézőbeli és szerkesztőbeli engedélyezést a lent megadott mérés dönti el; a régi, Ctrl+K-ra külön megnyitást javasló sor nem aktuális. |
+| **Add Tag:** vesszőnként bont, az üres részeket kihagyja (`0x0063bb30`); a bináris figyelmeztető szöveg egyes elutasított elemek esetére létezik (`0x0063bb9d`, `0x0063bd90`). | `TagsPanel.qml:50-63` vesszőnként külön kérést küld és az üres tokeneket kihagyja; a fő panel hibát jelez (`MainRightDrawer.qml:83-92`). | A tokenizálás egyezik. Az eredeti részhiba és a fájlírás hibájának pontos kapcsolata nem következik a feliratból, a mérés része. A régi „vessző helyett szóköz” fejlesztői javaslat már nem indokolt. |
+| **Címkesor helyi menü:** Add, Search, Remove (`0x00735480`). | A jelenlegi sorrend Add, Search, Remove (`TagContextMenu.qml:27-41`). | Egyezik; a korábbi sorrendjavító javaslat elavult. |
+| **Tulajdonságok > Edit Tags:** `0x00638990` eseménye a Tags-panel kapcsolójáig jut (`0x0065ab50`). | A gomb és a helyi menü `editTagsRequested` jelet ad (`PropertiesPanel.qml:129-162`); a könyvtár és a néző befogadója a Tags lapot kapcsolja (`MainRightDrawer.qml:149`, `PhotoViewerRightPanels.qml:38-42`). | A régi modális ablakra vonatkozó eltérés nem áll fenn. A `KeywordsDialog` példány jelenléte önmagában nem bizonyít megnyitást; a kattintási jel útját ellenőriztem. |
+| **Quick Tags alapérték:** tíz kézi hely; a felső kettő a két recent értéknek foglalható; hiányzó `quicktags::enable_recents` alapértéke be van kapcsolva (`0x0083efa2`, `0x0063c7d0`). | Tíz szerkesztőmező (`QuickTagsConfigDialog.qml:122-131`); a két felső hely alapértelmezetten fenntartott (`keywords_controller.py:393-402`). | A darabszám és az alapérték egyezik. |
+| **Quick Tags előzmény:** ismételt, már tárolt érték nem rendeződik át; a bináris összevetés pontos és kis-/nagybetű-érzékeny (`0x0063b960`, `0x0063c120`). | `keywords_controller.py:341-359` a pontos Python-karakterláncot keresi; egyezésnél visszatér átrendezés nélkül. | Egyezik; a korábbi `casefold`-javító javaslat a jelenlegi forrásra nézve elavult. |
+| **Quick Tags Autofill:** egyszeri mezőkitöltő; a jelöltlista szűrője a panel forráslistájának első 100 elemére fut (`0x0083f580`, `0x0063d260`, `0x0063d550`). | A beállítóban egyszeri gomb van, a jelöltek az ablak megnyitásakor gyorsítótárba kerülnek (`QuickTagsConfigDialog.qml:50-58,68-75,151-169`; `keywords_controller.py:420-459`). A jelenlegi kód előbb kiszűri a legutóbbi címkéket, majd 100 jelölt után áll meg (`keywords_controller.py:428-442`). | Az egyszeri művelet egyezik. A korlát eltér: az eredeti előbb a forrás első 100 elemét veszi, aztán szűri a legutóbbi értékeket; nálunk a 100-as határ a szűrés után van. Az eredeti forráslista sorrendjét még mérni kell. |
+| **Mégse és recent kapcsoló:** a meglévő diszasszembly szerint a kapcsoló eseménye azonnal írja a preferenciát (`0x0083f2f0`); a Mégse ágban nem azonosítottam visszaállító írást. | A jelenlegi párbeszéd megnyitáskor menti a két kezdőértéket, Mégse esetén pedig visszaírja őket (`QuickTagsConfigDialog.qml:68-83`). | Lehetséges eltérés, de a Picasa látható, kilépés utáni értéke csak egy statikus úton következtethető. A mérésben ellenőrizendő, ezért külön implementációs jegyet még nem nyitok. |
+| **Címke törlése és vegyes kijelölés:** a `0x0063c5a0` út a kijelölési frissítés előtt az `IKeywordUpdate` interfész `+8` helyét hívja; a megvalósítás teljes fájlhatása nyitott. | A `keywords_controller.py:193-202` minden kiválasztott sorból eltávolítja a kis-/nagybetűtől függetlenül egyező címkét. | A Picasa vegyes címkéjű kijelölésének végeredménye a lemezen és a felületen mérendő; a régi „csak felületi frissítő” leírás túl erős volt, lásd a cáfoló kísérletet. |
+
+#### A jelenlegi PicasaPy-hatás és hibák
+
+- Egy címke hozzáadása a sor címkelistáját kis-/nagybetűtől függetlenül egyedíti; törléskor minden egyező alakot eltávolít a kijelölt sorokból (`keywords_controller.py:176-202`). Több kijelölt kép hozzáadásakor a fő panel 30 fölött megerősítést kér (`MainRightDrawer.qml:83-92`). A néző Tags panelje a nézett képet célozza (`PhotoViewerRightPanels.qml:76-103`).
+- `.jpg` és `.jpeg` esetén a PicasaPy a teljes IPTC Keywords `2:25` mezőt írja, kulcsszavanként egy adatmezővel (`metadata/iptc_writer.py:48-58`). Ezen az úton XMP-író hívás nincs. Sikertelen IPTC-írás után, illetve más kiterjesztésnél a `.picasa.ini` `keywords=` vesszővel összefűzött értéke a tartalék (`keywords_controller.py:229-244`). A módosítás után a kód `backuphash`-t ír és az ini-t menti (`:245-269`).
+- A fő panel előre mappaszintű írási próbát végez, egyetlen írásvédett mappa is tiltja a bevitelt (`keywords_controller.py:138-174`, `MainRightDrawer.qml:69-76`). A néző Tags paneljének nincs ilyen bekötése (`PhotoViewerRightPanels.qml:76-95`), ezért ott a komponens alapértéke érvényesül. Ez a PicasaPy forrás viselkedése; az eredeti engedélyezési paritás mérésre vár.
+- IPTC-hibánál a kód ini-tartalékot próbál és a hibát jelenti, ha az ini-frissítés sikerült. Ini-írási kivételnél hibát jelent, a további mappákat leállítja; a hibás mappához a `break` miatt indexszinkron nem fut, de az aktív nézet újratöltése a ciklus után megtörténik (`keywords_controller.py:230-279`). Mivel az IPTC-írás az ini-frissítés előtt, képenként történik, a későbbi ini-hiba korábban módosított JPEG-et részleges állapotban hagyhat.
+- Sikeres mappaírás után a kód frissíti a mappafát az SQLite-indexben és újratölti az aktív keresési vagy mappanézetet (`keywords_controller.py:276-279`, `controller_sync_mixin.py:65-130`). A `set_photos` lecseréli a modell sorait (`controller_photo_list_mixin.py:155-157`); ez a Python út nem üríti kifejezetten a `selectedIndexes` vagy `selectedIndex` értékeit (`MainLibrarySelectionState.qml:29-32`). A végső kijelölés és az eredeti rácsállapot egyezése nem következik ezekből a hívásokból.
+
+#### A megmaradt „NINCS MEG” és Ghidra-kérdések újraminősítése
+
+- **Eredeti lemezvégállapot, index és visszavonás: `NINCS MEG`.** A `0x0063bed0` és `0x0063c5a0` címek hívási lánca a `CThumbUI::IKeywordUpdate` felületig követhető, de a kiválasztott képeken végrehajtott virtuális műveletek, az IPTC/XMP/ini kiírás, a hiba utáni állapot és a visszavonás nem bizonyított. A régi `0x005c76b0` dekompilálás a kijelölésgyűjtőt írja le, nem zárja le ezt a távolabbi ágat.
+- **Részleges eredeti mérés (job-242): `mérés (docs/specs/paritas-ellenorzes.md:831; docs/specs/picasa-beviteli-mezok.md:364-372)`.** Egy JPEG-hez címke került a Tags panelen; a képernyőn a `proba` az `AI image` fölött szerepelt és az első Quick Tag `proba` volt. Az ini kivonat `backuphash=33706` értéket tartalmazott `keywords=` sor nélkül. Az eredeti JPEG és a nyers mérőfájl a megadott mérési tárban nincs, így ez nem azonosítja a kép IPTC/XMP mezőjét vagy bájtszintű változását, és nem bizonyít többképes, videós, vegyes címkéjű törlési vagy hibás esetet.
+- **Quick Tags listaéletciklus és sorrend: részben megválaszolva.** A Ghidra 425 kimenet igazolja a forrás első 100 elemét követő recent-szűrést, de nem a panel `+0x2c0` listájának létrehozási sorrendjét és frissülését. A jelenlegi kód `all_photos` indexsorrendet használ, az ablak megnyitásakor pillanatfelvételt készít. Az eredeti kimenetet kontrollált címkekészlettel kell rögzíteni.
+- **Ctrl+T/K néző- és szerkesztőkapu: nyitott, de nem igényel külön Ghidra-kört.** A `0x005e60d0` állapotőrei diszasszemblyből részben ismertek, a teljes képernyős nézőbeli felhasználói eredményt egy billentyűpróba dönti el. A jelenlegi kód mindkét billentyűt letiltja a nézőben.
+- **A korábbi `Ghidra-kör kell` sorok döntése:** a `0x005c76b0` és `0x0063c5a0` régi kérései a fájlírás statikus útját és vegyes kijelölés belső végpontját keresték. A kijelölt elemek virtuális hívásai most követve vannak, de azok fájlhatása nyitott; a mért végállapot dönti el a felhasználói viselkedést, ezért a belső függvénynév nem blokkoló. A `0x00638990` kérdést a meglévő Ghidra-kimenet megválaszolja: a Tulajdonságok útja a Tags lap kapcsolója. A `0x005e60d0` és a `0x0056c420` nézőállapot-őreinek belső jelentése helyett a billentyűpróba dönti el az elérhetőséget; a belső függvénynév nem blokkoló. A `0x0083f580` / `0x0063d260` / `0x0063d550` kérdésből a 425-ös kör feloldotta a korlátot és a recent-szűrőt; a `0x00437380`, `0x004936c0` és `0x006393b0` dekompilálásával keresett `+0x2c0` lista sorrendjét és frissülését ugyanennek a mérésnek a jelöltsorrend- és újranyitási próbája válaszolja meg. A belső listaépítő azonosítása nem külön blokkoló. Ezekre most nem kérek új Ghidra-kört.
+- A `meroadat.tar` nem tartalmazott a címkézési műveletekhez név szerint illő mérési tagot. A korábbi `job-242` sor dokumentált, de annak képe és nyers JPEG-je most nem áll rendelkezésre. A PicasaPy forrás és ez az egy eredeti képernyőállapot két külön bizonyíték, de a tárolási végpont állítására nem adnak egyező leletet, ezért az összesített fok **nyitott**.
+
+#### A két független út
+
+- **A út, eredeti bináris:** a `0x0063a5e0` hívó EAX-ben a Tags panelt adja át a `0x0063c5a0` függvénynek; a `0x005643e0` konstruktor az `IKeywordUpdate` táblát a fő objektum `+0x284` mezőjére állítja. A tábla adatcíme `0x00c906d8`; a `+8` hely `0x0065b3b0`-ra mutat. Az utasításokban ez a metódus kijelölt elemeket jár be, elemenként két további virtuális helyet hív, majd `0x0065ac80` frissítést indít. Ez bizonyítja, hogy a remove út nem merül ki a panel rajzolásában, de nem nevezi meg az elemenkénti metódusok lemezíró hatását.
+- **B út, PicasaPy forrás és megmaradt mérési sor:** a jelenlegi Python/QML út fájlonként megnevezi az IPTC és ini írást, az indexfrissítést, a hibaágat és a panel frissítését; a job-242 korábbi képernyőleírása egy eredeti, egyképes hozzáadás látható végállapotát rögzíti.
+- **Egyezés:** az Add Tag felületi hozzáadása és a Quick Tag recent megjelenése egyezik az egyetlen dokumentált job-242 állapottal. A lemezírásra, vegyes törlésre, hibára vagy visszavonásra a két út nem ad egyező, teljes bizonyítékot. Az összesített minősítés ezért nem „megerősített”.
+
+#### Cáfoló kísérlet
+
+Ellenőriztem azt az alternatívát, hogy a `0x0063c5a0` kizárólag panel- vagy listafrissítés. A hívó `0x0063a5e0` utasításszinten igazolja, hogy EAX-ben a panel kerül a függvénybe; a konstruktorból és a `0x00c906d8` vtable-adatból feloldott `+8` hely a `0x0065b3b0` metódusra jut, amely kijelölt elemenként `+0x60` és `+0x64` virtuális hívást tesz. Ez cáfolja a „csak rajzolás” értelmezést. A cáfoló eredményt külön út ellenőrizte: a virtuális tábla közvetlen bájtjai és a célfüggvény diszasszemblyje. A fájlíró célját ettől nem következtetem ki.
+
+#### A jegy „Kész, ha” pontjai
+
+1. ⛔ **Belépési pontok, engedélyezés, egy/több kép, videó, vegyes állapot:** az eredeti menü- és billentyűparancsok statikusan azonosítottak; a nézőkapu, kiválasztott képszám, videó és vegyes állapotú törlés tényleges eredménye hiányzik. Bizonyíték: `0x005d9760`, `0x005e60d0`, `0x0063a5e0`, `0x0063c5a0`; PicasaPy-forrás `MainWindowCommands.qml:232-233`, `MainRightDrawer.qml:83-95`, `PhotoViewerRightPanels.qml:76-103`.
+2. ⛔ **Panel, alapérték, javaslatlista és megjegyzett beállítás:** a tíz mező, két recent hely és az alapértelmezett bekapcsolás ismert; az eredeti forráslista sorrendje, frissülése és a Mégse utáni recent érték futásidejű ellenőrzése hiányzik. Bizonyíték: `0x0083ea00`, `0x0083f580`, `0x0063d260`, Ghidra 425; PicasaPy-forrás `QuickTagsConfigDialog.qml:50-83,122-169`, `keywords_controller.py:393-402,420-507`.
+3. ⛔ **Fájl, metaadat, `.picasa.ini`, index, keresés, rács, kijelölés, vegyes törlés és visszavonás:** PicasaPy forrásút megvan, az eredeti végállapot nem. A job-242 csak egy JPEG látható állapotát és ini-kivonatot rögzít; IPTC/XMP és JPEG nincs megmérve. Bizonyíték: `mérés (job-242, docs/specs/paritas-ellenorzes.md:831)`, `keywords_controller.py:204-279`, `metadata/iptc_writer.py:48-58`.
+4. ⛔ **Írásvédelem, íráshiba és részleges végrehajtás:** a PicasaPy ág forrásból levezetett, az eredeti Picasa hibás és részleges végállapota hiányzik. Bizonyíték: `keywords_controller.py:138-174,230-279`; eredeti: `NINCS MEG`.
+
+#### Javasolt fejlesztői jegytörzs
+
+A korábbi hat fejlesztői javaslatból az aktív lap kapcsolása, a vesszőnkénti
+tokenizálás, a helyi menü sorrendje, a recent pontos egyezése, az egyszeri
+Autofill gomb és a Tulajdonságok útja a mostani forrásban már megvan. Ezekből
+ne készüljön új, duplikált implementációs jegy. A bizonyított maradékhoz egy
+szűk fejlesztői jegytörzs készíthető:
+
+**Cím:** A Quick Tags Autofill a forrás első 100 eleméből szűrjön.
+
+**Eredeti:** a `0x0063d260` a panel `+0x2c0` listájának első 100 elemét veszi,
+majd a `0x0063d550` legutóbb használt címkéket kizáró szűrőjével jelölteket
+hagy ki. Ha az első 100 között mindkét ilyen címke szerepel, legfeljebb 98
+jelölt marad.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| A korlát a forrás első 100 elemére esik, utána következik a legutóbb használt címkéket kizáró szűrés (`0x0063d260`, `0x0063d550`). | A legutóbbi értékek kizárása megelőzi a 100 jelöltes korlátot (`keywords_controller.py:428-442`); a rekordbejárás `all_photos` sorrendje (`:431-440`). | A forrás első 100 eleméből állítsa elő a jelölteket, majd szűrje ki a legutóbbi értékeket. Az eredeti forrás sorrendjét az alább megadott mérésből kell átvenni, nem szabad becsülni. |
+
+**Kész, ha:** a rögzített Picasa-mintán az Autofill jelöltjei sorrendben
+megegyeznek; a korlát a recent-szűrés előtt fut; ha a forrás első 100 eleméből
+kettő recent címke kiesik, legfeljebb 98 érték marad; az ismételt gombnyomás és
+a mezők kiürítése a mérésben rögzített eredményt adja. A törlési, fájlírási és
+visszavonási paritásról csak az alábbi mérés után lehet végrehajtható fejlesztői
+jegyet írni.
 
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7009 alszakasz, és három helyesbítő megjegyzés a #7000 alszakaszban.
+
+### Zárási döntés
+
+**A #7022 jelenleg nem zárható. Az egyetlen blokkoló egy kontrollált Picasa
+3.9.141.259 Windows-mérési kör**, amelynek egy elszigetelt könyvtárban kell
+rögzítenie: a Nézet > Tags és Ctrl+T/Ctrl+K engedélyezését könyvtárban,
+nézőben és szerkesztőben; egy és több kép, videó, valamint vegyes címkeállapot
+hozzáadási és törlési végeredményét; a JPEG IPTC és XMP állapotát, a `.picasa.ini`-t és a
+fájl hashét előtte/utána; index, keresés, rács és kijelölés frissülését; visszavonást,
+írásvédelem, egyszeri és szándékosan hibás írás részleges eredményét; továbbá
+100-nál több Quick Tags forráselem sorrendjét, recent szűrését, ismételt
+Autofillt, párbeszédnyitást és Mégsét. A korábbi job-242 egyképes képernyő- és
+ini-kivonatát újra fel kell használni részleges kontrollként, az elveszett
+JPEG-végállapotot azonban nem szabad meglevőnek tekinteni.
+
+Ez az egy mérési kör dönti el a felsorolt felhasználói viselkedéseket és a
+Quick Tags fejlesztői jegy pontos forráslistás sorrendjét. A korlát és a
+recent-szűrés sorrendjének eltérése már bizonyított, ezért az Autofill-jegytörzs
+marad. A per-elemes virtuális cél statikus értelmezése a méréshez nem külön
+blokkoló; ezért most nem kérek új Ghidra-kört.
 
 ## #7001: A csillagozás teljes folyamata az eredeti Picasával összevetve: belépési pontok és hatás
 
@@ -3410,7 +3542,7 @@ Az eredeti `0x0056e1c0` menüállapot-kezelő módosítja az `0x9ca0`-hoz tartoz
 
 ### Hibák és részleges végrehajtás
 
-- Eredeti: a `.picasa.ini` vagy album-adatbázis írási hibájának üzenete, megszakítási viselkedése, az előzőleg feldolgozott képek állapota és az esetleges visszagörgetés: `NINCS MEG`.
+- Eredeti: a `.picasa.ini` vagy album-adatbázis írási hibájának üzenete, megszakítási viselkedése, az előzőleg feldolgozott képek állapota és az esetleges visszagörgetés: `NINCS MEG`. Részben megválaszolva (Ghidra 2026-11-16, statikus): az `AlbumSync` (`0x00556ff0`) csak a `9` kódot kezeli, a többi hibakód elvész, megszakítás és visszagörgetés nincs, a már megírt mappák megmaradnak; az üzenet és a futásidejű végállapot nyitott.
 - PicasaPy: a kijelölt sorok mappánként csoportosulnak, mappánként külön atomikus `update_document` fut, majd az indexfa újraszinkronizálása (`photo_ops_write_text_mixin.py:206-227`). Több mappás batch ezért nem egyetlen `.picasa.ini`-írás. Ha egy későbbi mappa írása hibát dob, a korábbi sikeres fájlírások már megtörténtek; a teljes index-tranzakció pontos részleges állapotát nem állítom.
 - PicasaPy az ismert írási kivételeket `albumWriteFailed` jelzéssé alakítja, hamissal visszatér, a hibasáv az üzenetet mutatja (`photo_ops_album_membership_mixin.py:255-268`; `MainErrorBanner.qml:89-92`). A `_refresh_view()` és az albumlista siker utáni újratöltése ilyenkor nem fut le.
 - **Helyesbítés:** az `open_index` `finally`-ban `conn.close()`-t hívja; a `_GuardedConnection.__exit__` visszagörgető ága ettől nem fut (`index/database.py:340-373`). A megelőző jegyzet visszagörgetésről szóló állítása nem bizonyított, visszavonva.
@@ -3445,7 +3577,7 @@ E körben nincs bizonyított Add-to végállapotbeli eltérés, amelyhez biztons
 - Ghidra-kör kell: 0x005fe130 - a tálca Add to gombjának és a helyi menü Labels listájának elemválasztó visszahívása melyik kezelőt hívja, és az milyen `albums=`/adatbázis-írást végez [megválaszolva a statikus kutatási kiegészítésben lent: helyi menü `0x00536a90`, tálca `0x00577c30`; a fájlba írás kapcsa még nyitott]
 - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7012-7028-colab-decomp.txt`): a `0x005fe130` a `thumbui/addtobuttcon` kezelője (a `0x005d9cc0` hívja), nem üres tálcánál a `0x00664130` listapanelt építi. A helyi menü `Add to Album` almenüjét (`0x9cb9`) a `0x005eab70` építi (hívója a `0x0056c5a0`): albumonként a `0x00452d10` album-azonosítójával, az Emberek- és a webes albumok nélkül, a végén `IDS_NEW_COLLECTION` (New Album) elemmel. Ez egyezik a PicasaPy almenüjével, amely saját albumokat és `New Album...` sort kínál. Az elemválasztás utáni tagságíró ebben a kötegben sincs, ezért a fenti blokkoló kérdés nyitott marad.
 - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7006-7008-7009-7012-colab-decomp.txt`): albumcsomópontra (`CAlbumSelectionNode`) ejtésnél a célalbum azonosítója `+0x3c0`; ha azonos a forrás albummal, nem történik semmi, különben a `0x0045ef50(db, lista, album)` írja a tagságot (ugyanez fut új album létrehozásakor a `0x0055d120`-ban). Emberek-albumnál külön ág (`]expeople:%d`, `0x0044bdf0`); a 4-es húzástípus a `0x005ea770` mappatulajdonságok útra megy. Fájltípus-feltétel nem látszik.
-- NINCS MEG: eredeti Add-to/New Album párbeszéd alapértékei és megjegyzett állapota. Megszerzés: célzott Picasa 3.9 mérés a meglévő-album almenü New Album útján, képernyőkép és minden mező rögzítésével, majd külön ismétlés újranyitással.
+- NINCS MEG: eredeti Add-to/New Album párbeszéd alapértékei és megjegyzett állapota. Részben megválaszolva (Ghidra 2026-11-16, statikus): az Add-to `New Album...` útján (`1`-es mód) az alapértelmezett név üres, a dátum a lista első elemének ideje; a többi mező és a megjegyzett érték nyitott. Megszerzés: célzott Picasa 3.9 mérés a meglévő-album almenü New Album útján, képernyőkép és minden mező rögzítésével, majd külön ismétlés újranyitással.
 - NINCS MEG: az eredeti Add-to siker/hiba utáni fa, rács, kijelölés, kép- és adatbázis-végállapot, valamint visszavonás. Megszerzés: a blokkoló Ghidra-kör után előtte/utána mérés kis, egy- és többmappás tesztkészleten; fájlok, `.picasa.ini`, album/contacts adatbázis és UI-állapot összevetése. A meglévő mérőadat-archívum taglistájában ehhez releváns Add-to/album-dialog felvételt nem találtam.
 
 ### Kiegészítés (2026-11-15, statikus kutatás): a kiválasztott albumhoz adás írója
@@ -3495,7 +3627,7 @@ Módszer: utasításszintű diszasszembly (`capstone`) a `0x0056c5a0`, `0x005e4a
 | `Starred Photos` választása | hozzáadás a `]star` gyűjteményhez (idempotens), csillag-kapcsoló frissítése | a tálcában `toggleStarMany` (megfordít, `photo_ops_transform_mixin.py:90`) | feltételes: a megfordítás és a hozzáadás kimenete eltér a már csillagos képnél |
 | Albumok sorrendje | `0x004baaa0` rendezés | `controller.albums` sorrendje | nyitott |
 | Visszavonás | nincs látható | nincs | nincs (feltételes) |
-| Hiba | a `0x00536a90`-ban nincs üzenet; az ini-írás hibája az `AlbumSync`-ben ágazik | `albumWriteFailed` hibasáv (`photo_ops_album_membership_mixin.py:255-268`) | nyitott |
+| Hiba | a `0x00536a90`-ban nincs üzenet; az ini-írás hibája az `AlbumSync`-ben ágazik: a `0x00556ff0` csak a `9` kódot kezeli (létrehozás, majd újrapróba), minden más hibakódot (a `-1`-et is) figyelmen kívül hagy, nincs üzenet, megszakítás vagy visszagörgetés (Ghidra 2026-11-16) | `albumWriteFailed` hibasáv (`photo_ops_album_membership_mixin.py:255-268`) | nyitott |
 
 #### Javasolt fejlesztői jegytörzs (a statikus kutatás után)
 
@@ -3515,16 +3647,88 @@ Módszer: utasításszintű diszasszembly (`capstone`) a `0x0056c5a0`, `0x005e4a
 #### Nyitott (statikus kutatás után)
 
 - Ghidra-kör kell: 0x00556ff0 - az `AlbumSync` (`AlbumSync::vftable` `0x00c7f580`) 2. bejegyzése: ki és mikor hívja (vtábla-hívás, az index nem látja), és a `0x004abc70` piszkos jelzője (`[nézet+0x138]`, 0x24 lépésköz, `+0xc` állapot; ugrótábla `0x004abd3c`) hogyan vezet ide. Ezzel dől el az ini-írás időzítése és sorrendje.
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:1537`): a kimenet részben dönt. A `0x00556ff0` (`:1537-1710`) az `AlbumSync` 2. bejegyzése (`0x00c7f588`; a kimenet egyetlen hivatkozója ez az adatsor, vagyis vtábla-hívás), és **mappánként** dolgozik: a `+0x4c` objektum `+0x2c` metódusa adja a kép adatait, a `0x005578e0` a mappalistát, bejegyzésenként a `0x00557a50` a fájlnévlistát, majd a `+0x54` objektum `+0x10` metódusa fut `(bejegyzés, param_3, fájlnévlista)` argumentumokkal. A `+0x54` a `PicasaIniManager` (az `AlbumSync` konstruktora, `0x00402470`, a `+0x54`-be a második argumentumát teszi; a `0x00402a90` ezt a `0x00402b41` hívással épített `PicasaIniManager`-példányból adja, `[db+0x1054]`), a `+0x10` tehát a `0x0052c350`. **Hibakezelés:** csak a `9` visszatérést kezeli (`0x005572a7 cmp eax, 9`): létrehozó szerkezetet épít (`0x00557cf0`, ha az nem nulla, a létrehozás kimarad), a `+4` metódust hívja (`0x0052a810`), majd ugyanazzal a listával újra a `+0x10`-et; minden más visszatérési érték, a `-1` is, figyelmen kívül marad, nincs megszakítás és nincs visszagörgetés, a ciklus a következő mappára lép (`0x00557343`). **Az időzítés nyitva marad:** ki hívja a vtábla 2. helyét, a kimenet nem mondja meg. Az index szerint az `AlbumSync` az `AlbumNotification` leszármazottja (`0x00c7f680`), a `0x004039f0` a `[db+0x1050]` példányt és egy `CAlbumCreator` (`0x00c7f70c`) feladatot a `0x00556920`-nak adja át (`0x00403e16`), a sor kezelője az `AlbumNotificationManager` (`0x00c7f540`, `0x00402370` konstruktor, eseményobjektummal). A `0x004abc70` piszkos jelzője a kimenetben nincs.
+- Ghidra-kör kell: 0x004d3080 - az `AlbumNotificationManager` (`0x00c7f540`) 2. bejegyzése, és a `0x004d3010`, `0x004d31c0`, `0x004d3150`, `0x004d3260`: a sorba tett `AlbumNotification` (`AlbumSync`) 2. bejegyzését (`0x00556ff0`) mikor és melyik szálon hívják (azonnal, időzítve, kilépéskor); 0x00556920 - a sorba tétel (hívói `0x004039f0`, `0x00576a20`); 0x004abc70 - a piszkos jelző (`[nézet+0x138]`, `0x24` lépésköz, `+0xc` állapot, ugrótábla `0x004abd3c`) hogyan jut ide [blokkoló az ini-írás időzítéséhez]
 - Ghidra-kör kell: 0x0052c350 - a `PicasaIniManager` 4. bejegyzése: mely mappák `.picasa.ini` fájljába, milyen sorrendben és hibakezeléssel írja az `albums` és `token` kulcsot (`9`-es hibakód), és a `0x0052b220` ki hozza létre az `[.album:token]` szakaszt.
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:1191`): egy `0x0052c350` hívás **egyetlen mappa** `.picasa.ini` fájlját írja (`<mappa>/.picasa.ini`, sztring `0x00c80a6c`); a mappát a `param_2`-ből a `+4` objektum `+0x14` metódusa oldja fel (hiba: `-1`, ekkor semmi nem íródik). Hogy mely mappák következnek és milyen sorrendben, azt a hívó (`0x00556ff0`, `0x005578e0` mappalista) adja, ez a kimenetből nem látszik. A `param_3` albumazonosítóról a `]album:` előtagot (`0x00c7e8c0`, 7 karakter; `0x00987030`, `0x00986120`) levágja. **Sorrend és hibakezelés:** (1) ha a fájllista nem üres és az albumrekord nincs az ini szakaszai között (`0x0052cd90` hamis), `9`-cel tér vissza (`0x0052c475`), és ekkor még semmit nem írt (az első `0x005ab210` hívás ez után van); (2) az ini meglévő szakaszain sorban (`0x3c` lépésköz): ha a fájlnév nincs a listában (`0x0052d340` `-1`), a `0x0052cc80`, ha benne van, a `0x0052ca50` alakítja az `albums` értékét (a szerepük a hívási feltételből következik: kivétel, illetve hozzáadás), és csak ha a segéd igazat ad, íródik `0x005ab210(szakasz, "albums", érték)` (`0x00c7e900`); (3) a lista azon fájljaira, amelyeknek nem volt szakaszuk, a lista sorrendjében `0x005ab100` (szakasz felvétele) és `albums=<token>` következik; (4) üres lista esetén `0x005aafd0` és `token=<token>` (`0x00c7e8d0`) a `0x0052c990` által az azonosítóból képzett szakaszba. A függvény a részhívások eredményét nem gyűjti, nincs visszagörgetés, a részleges írás a hívó szintjén marad. **A `[.album:token]` szakaszt ez a függvény nem hozza létre:** a `9` utáni létrehozás a hívó `+4` metódusa, a `0x0052a810` (az index szerint `]album:`, `token`, `description`, `location`, `.picasa.ini`, `%I64u` sztringekkel, hívja a `0x005ab210`-et); a `0x0052b220` (4245 bájt, `.album:` és `albums` sztringekkel) hívója a kimenetben nincs, tehát a kérdésre erre nem ad választ.
+- Ghidra-kör kell: 0x0052a810 - a `+4` bejegyzés: pontosan mely kulcsokat írja az új `[.album:token]` szakaszba (`token`, `description`, `location`) és milyen sorrendben; 0x0052b220 - a `+0xc` bejegyzés hívója és szerepe (4245 bájt); 0x005578e0 - a mappalista forrása és sorrendje; 0x0052cc80 és 0x0052ca50 - a token kivétele és hozzáadása az `albums` értékből (sorrend, ismétlés) [nem blokkoló]
 - Ghidra-kör kell: 0x004a7890 - az albumlista rendezési kulcsa és iránya (a `0x004baaa0` összefésülő rendezés összehasonlítója): a menü sorrendje megegyezik-e a bal oldali listáéval.
 - Ghidra-kör kell: 0x0056e1c0 - a `0x0056c5a0` második paramétere (`0x8a`, `0x8b`, `0xa6`, `0x127`, `0x13d`, `0x77`) melyik helyi menühöz tartozik; a néző menüje ugyanezt az almenüt (és a `New Album...` sort) kapja-e.
 - Ghidra-kör kell: 0x005d9cc0 - a tálca `Labels` panel sorára kattintás azonnal ír-e, vagy a `thumbui/makealbum` gomb kell hozzá, és a `0x00665180` mit frissít.
 - Ghidra-kör kell: 0x005e9bb0 - a `New Album...` (`0xa09c` -> `0x005e9890` -> `0x005e9bb0(this, 1)` -> `0x005eaab0` -> `0x005ea770`) párbeszédének alapértékei és a létrehozás utáni kijelölés. A `thumbui/albumbutton` gomb is ugyanide fut, tehát ez az eredeti `New Album` közös útja.
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:3643`): a kimenet részben dönt. A `0x005e9bb0(this, mód)` (`:3643-3789`) két módban fut. **Az `1`-es mód (a `New Album...` `0x005e9890`-ből, és a tálca `thumbui/albumbutton` eseményéből, `0x005da2f6`, `push 1`):** a `+0xea4` nézetet átmásolja a `+0xea8`-ba, és a `0x007166c0(nézet, 1)` listáját veszi; **alapértelmezett név nincs** (a `0x005eaab0` második paramétere 0). **A `0`-s mód** (a `0x9cb6` menüparancsból, `0x005cbce2`, és a tálca `thumbui/newfolder` eseményéből, `0x005da365`; az ugrótábla és a hívóhely-disassembly szerint): a `+0xeac` nézet `+0x3c0` mezőjéből a `+700` objektum `+0x48` al-objektumának `+0x14` metódusával kap egy sztringet (`0x004089e0`, `0x009a3b50` feldolgozza), ez lesz az alapértelmezett név. **Alapértelmezett dátum mindkét módban:** a `0x00c7ccf8` nyolcbájtos állandó (`double` 949998.0) a kiindulás, a `0x005c6460(a lista első eleme, &dátum)` ezt felülírja. **Üres lista:** a függvény `4`-gyel tér vissza, a párbeszéd nem nyílik meg; a `0x005e9890` ekkor (`0x005e98f1 cmp esi, 4`) az `IDS_MUSTHAVESELECTION` szöveget (`0x009ae710(0xfc, ...)`, `At least one image must be selected in order to perform this action.`) jeleníti meg, a tálca ágai a visszatérést eldobják, üzenet nincs. **A párbeszéd és a létrehozás** a `0x005eaab0(&név, alapnév, dátum)` (181 bájt, hívottai a `0x005ea770`, `0x007166c0`, `0x00506400`; a `0x005ea770` sztringjei `Labels`, `CThumbUI::albumname`), nem ez a függvény; nem nulla visszatérése (mégse) változtatás nélkül kilép. **A létrehozás utáni kijelölés:** `0` visszatérésnél `0x0065b840(this, 0, 0, 1)`, majd a `+0x2a4` objektum `+0x44` metódusa az új album nevével és `(1, 1, 0)` argumentumokkal; hogy ez pontosan kijelöl, megnyit vagy kinyit, a kimenet nem dönti el, mert ennek a metódusnak a törzse nincs benne; a `0x00600ac0` a Vissza/Előre előzmény visszaállításakor ugyanezt a metódust hívja a rekord mappa- vagy albumkulcsával és `(1, 1, 0)` argumentumokkal, tehát a hívás egy mappára vagy albumra lépés a bal oldali nézetben (a pontos jelentés nem dönthető el).
+- Ghidra-kör kell: 0x005eaab0 és 0x005ea770 - a párbeszéd mezői és alapértékei (a név és a dátum alapértéke mellett a leírás, hely), a megjegyzett értékek újranyitáskor, és az album tényleges létrehozása; a `this+0x2a4` objektum `+0x44` metódusa - mit jelent a `(1, 1, 0)`: kijelöli-e az új albumot a bal oldali fában és a rácsot [nem blokkoló]
 - NINCS MEG (futásidejű): a hozzáadás utáni rács, kijelölés és bal oldali fa végállapota. Megszerzés: előtte/utána mérés kis tesztkészleten a `0x0065b840(this, 0, 0, 1)` hatásának igazolására.
 
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7012 alszakasz.
+
+### Kiegészítés (2026-11-16, zárókör): a megmaradt tételek döntése
+
+Módszer: a `Picasa3.exe` (3.9.141.259, SHA-256 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`) utasításszintű visszafejtése (`capstone`), a hívóhelyek regiszter- és veremhasználatának ellenőrzésével; a meglévő Ghidra-kimenetek újraolvasása; a `docs/specs` többi lapja (menüleltár, helyi menük, tálca, ini, könyvtár-eszköztár). A dekompilációban `unaff_*` és `local_*` néven látszó értékeket mindenhol a hívóhely utasításaival vetettem össze. Futásidejű mérés nincs. Döntés: (a) a meglévő bizonyítékból eldőlt, (b) egy célzott Ghidra-kör vagy mérés dönt, (c) nem érinti a felhasználó által látható viselkedést. Fokok: megerősített (két független út), erős (egy út, egyértelmű utasítások), feltételes (következtetés).
+
+**Három pontosítás a korábbi bejegyzésekhez (a régi szöveg érintetlen):**
+
+1. **Húzás albumsorra: a `+0x3c0` a FORRÁS album, a cél a sor rekordjából jön (erős).** A `0x005e39a0` a ledobott elemek hordozójából (`ytDragNode`, a fotólista a `+0x280` mezőn) a `+0x278` mezőn át a `CAlbumSelectionNode`-ot kéri el, és annak `+0x3c0` mezőjét (`0x005e3b81 mov esi,[eax+0x3c0]`) a célazonosítóhoz hasonlítja (`0x005e3b87 cmp edi,esi`; egyezésnél semmi nem történik, a függvény 0-val tér vissza, `0x005e3bb2`). A célazonosító az `edi`: a `0x004ae4e0` által az ejtési sorhoz kitöltött rekord `+0x14` mezője (`0x005e3b27 mov edi,[esp+0x4c]`), és ezt kapja a `0x004b0190` (`0x005e3e83`) meg a köteges hozzáadó `0x006ca5a0` (`0x005e3ee8`). A korábbi „a célalbum azonosítója `+0x3c0`” megfogalmazás a két szerepet felcserélte; a viselkedés (azonos album: semmi; különben hozzáadás) ettől nem változik.
+2. **A `0x0045ef50` nem a közönséges album tagságírója, hanem az arcalbumok kizárólagossági lépése (erős).** A `0x005e39a0` csak akkor hívja (`0x005e3efe`), ha a cél `0x004461a0`-ra hamis (`0x005e3eed test bl,bl; jne 0x5e3f47` átugorja). A `0x004461a0` (`0x004461de`-`0x004461e6`) igaz, ha a gyűjteményobjektum hiányzik, vagy a fejszava felső 24 bitje 1; ugyanezt a feltételt használja a menü- és tálcalistát építő `0x004b94a0` (`0x004b9597`), tehát ez a közönséges, felhasználói gyűjtemény (album, `]star`, `]screensaver`). Közönséges albumra ejtésnél ezért nincs más albumból törlés és nincs kizárólagos tagság: csak a `0x006ca5a0` köteges hozzáadása fut (a már tag képeket kihagyja).
+3. **Az Add to Album almenü nem minden helyi menüben épül fel (erős).** A `0x0056c5a0` második paramétere a menü saját kontextusazonosítója (`ui-audit-context-menus.md:723-734`). Az almenü (`0x0056d24d`) a `0x70` (mappanézet képe), `0xa4` (albumnézet képe), `0x8a` (néző) és `0x13d` (Emberek-album képe) kontextusra épül fel (`0x0056d234`-`0x0056d247`, `0x0056d017`); az Emberek-ágon a `Move to People Album` almenü után mindig (`0x0056d227`, `0x0056d232`). Nem kapja a `0x8b` (tálca jobbklikk), `0x77` (album), `0xa6` (mappa), `0x127` és a `-1` (főmenü Picture) kontextus (`0x0056d247 jne 0x56d668`).
+
+**A döntések:**
+
+| Tétel | Döntés | Válasz | Bizonyíték | Fok |
+|---|---|---|---|---|
+| Közvetlen főmenü- vagy billentyűbelépés az Add to Album-hoz | (a) | **Nincs.** A főmenük leltárában (File, Edit, View, Folder, Picture, Create, Tools, Help: `picasa-menu-parancsok.csv`) és a gyorsbillentyű-erőforrásban (`shortcuts.xml:112-124`) nincs ilyen tétel. A Picture menüt a `0x0056e1c0` a `0x0056c5a0(this,-1,...)`-lel tölti (`0x0056f418`), de a `-1` kontextusnál az almenü nem épül fel. Az egyetlen főmenü- és billentyűbelépő a `New Album...` (Ctrl+N), és az nem meglévő albumhoz ad. | menüleltár, `shortcuts.xml`, `0x0056f418`, `0x0056d247` | erős |
+| Engedélyezés: egy kép, több kép, videó, már albumtag kép (fotó- és albumnézet, Emberek-album) | (a) | **Mindig elérhető.** A `0x0056c5a0` elején a `-1`-től eltérő kontextusnál minden tételt pozíció szerint engedélyez (`0x0056c5cd`-`0x0056c5f4`, `0x400` jelzővel), a `0x9d8f` azonosítót csak a `SetMenuItemInfo` használja (`0x0056d272`), pozíció szerinti tiltás nincs a függvényben. A hozzáadó `0x00536a90` nem szűr típusra (videó is bekerül) és a már tag képet csendben kihagyja. Ez egyezik a PicasaPyval. | `0x0056c5b6`, `0x0056d272`, előző kör `0x00536a90` | erős |
+| Néző helyi menü | (a), eltérés | A `0x8a` kontextus ugyanazt az almenüt kapja, mint a fotómenü: albumok, elválasztó, `Starred Photos`, `Screensaver`, elválasztó, `New Album...`. Albumok nélkül is legalább ez a három sor áll ott, tehát az almenü nem lehet üres. A PicasaPy nézőmenüje csak albumsorokat ad, és `menu.albums.length > 0` híján szürke (`ViewerContextMenu.qml:134-150`); a QML-komment szerint „album nélkül a Picasa is szürkén hagyja”, de ennek forrása a specben nincs, a bináris pedig ellentmond neki. Teendő: J1. | `0x0056d234`, `ui-audit-context-menus.md:727` | erős |
+| Albumok sorrendje a menüben | (a), (c) | A menü és a bal oldali lista ugyanazt a rendezőt használja: `0x004b94a0` (`0x004b974a`) és a listaépítő `0x004b8ee0` (`0x004b916b`) is a `0x004baaa0` összefésülő rendezést hívja, amelynek összehasonlítója a `0x004a7890`: csoportbájt, névsor (kisbetűsítve, ASCII), majd a nézet rendezési módja (`+0xd8`, irány `+0x165`), végül névsor. PicasaPyban a menü és a hasáb ugyanazt a `controller.albums` listát kapja, tehát a kapcsolat azonos. Magának a bal hasáb sorrendjének paritása nem a #7012 hatóköre. **Nem blokkoló.** | `0x004a7890`, `0x004baaa0`, `0x004b94a0` | erős |
+| Tálca: egy `Labels` sor aktiválása azonnal ír-e | (c) | A `thumbui/makealbum` kezelője, a `0x00577c30` a tálca képlistáját és a panel kijelölt sorát olvassa, majd megerősítés és további gomb nélkül ír meglévő albumnál (`0x004b0190`, `0x006ca5a0`, `0x0065b840`, `0x004abc70`, `0x00665180`); az új album sor a `0x00577ea0` párbeszédes ágra visz, más ablaknyitás nincs a törzsében. Az Add to gomb kezelője (`0x005fe130`) a `makealbum` parancsot csak akkor küldi közvetlenül, ha a panelmodell üres és album sincs (`0x005fe16f`-`0x005fe179` feltétel, `0x005fe24b` küldés); egyébként a listapanelt építi (`0x005fe2bc` `0x00664130`). Hogy melyik kód küldi a `makealbum` parancsot egy panelsor kiválasztásakor, nem dőlt el (a küldő hely a `0x005fe24b` kivételével nincs). Ez a felhasználónak nem látszik: a mért menü (job-259) sorlista, a sor hatása a mért job-257 szerint az OK után azonnali, külön megerősítő lépést egyik bináris út sem mutat, PicasaPy pedig a sor kiválasztásakor azonnal ír. **Nem blokkoló.** | `0x00577c30`, `0x005fe130`, job-257, job-259 | erős (az írás), feltételes (a sor és a parancs közti láncszem) |
+| Tálca `Add to` gomb engedélyezési feltétele | (c) | A gomb nevére az egyetlen név szerinti `+0x20e` írás nullát ír (`0x00568948`, `0x009cd7e0`), tehát kijelölésfüggő tiltást nem találtam; a `+0x20e` a `0x00577c30`-ban a tálcacsomópontnál zárolásjelzőként szerepel (`0x00577c5e`). Üres tálcalistánál a `0x00577c30` 0-val kilép (`0x00577c9c`), hatás nincs. PicasaPy gombja üres tálcánál szürke (`TrayScratchPanel.qml`, `heldCount > 0`); legfeljebb ez a szürke állapot különbözhet, a művelet eredménye (nincs hatás) azonos. **Nem blokkoló.** | `0x00568948`, `0x00577c5e`, `0x00577c9c` | feltételes |
+| Add to `New Album...`: párbeszéd, alapértékek, megjegyzett állapot | (a) | A `0xa09c` a `0x005cd90d`-nél `0x005e9890(this,0)`-ra megy (a `0xa0cc` ugyanott 1-et kap: új személy), majd `0x005e9bb0(this,1)` → `0x005eaab0` → `0x005ea770` → `0x006dc030`: **Album Properties párbeszéd**. Név: `IDS_DEFAULT_ALBUM_NAME` (Untitled), a `0x0055ce70` tölti. Dátum: a kijelölés ELSŐ képének dátuma (`0x005e9cd2 call 0x5c6460`), mínusz egy másodperc (`0x005ea792 fsub [0xcf50c8]`, az érték 1/86400 nap); ha a dátum nem olvasható, az őrérték 949998,0 (`0x00c7ccf8`) marad. Hely és leírás üres. Megjegyzett állapot nincs: a leíró minden hívásnál friss, a `0x0055ce70` és a `0x005ea770` nem olvas beállítást. OK után az új album frissül és megnyílik (`0x005e9e39 call 0x65b840`, `0x005e9e57` a fa `+0x44` hívása az új azonosítóval). PicasaPy: név egyezik, a dátum üres (`FileOpsDialogs.qml:100-104`), az új album megnyitása egyezik (#7076). Teendő: J1. | `0x005cd90d`, `0x005e9cb4`-`0x005e9cd2`, `0x005ea770`, `0x0055ce70` | erős |
+| Húzás meglévő album sorára | (a) | Azonos forrás és cél: semmi. Közönséges albumra: `0x004b0190` majd `0x006ca5a0`, a már tagokat kihagyja, nincs kérdés, nincs kizárólagosság, nincs törlés a forrásból, a Ctrl nem számít (`0x005e3e04` a közönséges célnál mindig a hozzáadásra lép). Ha a gyűjtemény `+0x5c` vagy `+0x64` mezője nulla, -1-gyel tér vissza üzenet nélkül. Utána `0x004abc70` (módosított jelző) és `0x0065b840`. Típusszűrés nincs. PicasaPy ugyanezt adja (`AlbumsSection.qml:42-45`). **Nincs eltérés.** | `0x005e3b87`, `0x005e3e04`-`0x005e3ee8` | erős |
+| Húzás a `newalbumprompt` helyőrző sorra (a 4-es típusú rekord, ez az üres lista sora) | (a), eltérés | A `0x005e39a0` a rekord `+0x30` mezőjét 4-gyel hasonlítja (`0x005e3a88`-`0x005e3a8f`), és `0x005e3aaf`-nál `0x005ea770(this, ledobott lista, 0, mai idő)`-t hív: **Album Properties párbeszéd** (album mód, mert a második argumentum 0: `0x005ea7d0 sete dl`), név Untitled, dátum a mai idő mínusz egy másodperc (`0x0098b6e0`, `0x005ea792`). OK után az album létrejön és a ledobott képek bekerülnek (`0x005ea420`), `0x005e3ac1` frissít, `0x005e3ade` az új albumot nyitja; Mégse: nincs változás. A `0x00765d30` ugyanezt a sort csak kattintáskor magyarázza egy üzenettel (`CAlbumList::newalbumprompt`). PicasaPy: párbeszéd nélkül, azonnal `Untitled` albumot készít (`FileOpsDialogs.qml:109-112`, a komment szerint „mérve”, de a `picasa-konyvtar-eszkoztar-viselkedes.md:97-100` helyesbítése ugyanezt az olvasatot a `0x005eb810` útra már visszavonta, és az ejtés útját a specben nem mérték). Teendő: J3. | `0x005e3a88`, `0x005e3aaf`, `0x005ea7d0`, `0x0098b6e0` | erős |
+| Tagságíró és `.picasa.ini`: mely mappák, milyen sorrend, hibakód 9 (a korábbi két „Ghidra-kör kell”) | (a) | Az `AlbumSync` `0x00556ff0` bejegyzése a kép-azonosítókat mappánként csoportosítja, és mappánként a `PicasaIniManager` `+0x10` bejegyzését (`0x0052c350`, `0x005572a5`) hívja: a mappa útvonala + `.picasa.ini`, a belső névből (`]album:` után) a token, majd az `albums` kulcs írása a képek szakaszába. Ha a lista nem üres és a mappa ini-jében **nincs `[.album:token]` szakasz nem üres `name` kulccsal** (`0x0052cd90`), `0x0052c350` 9-et ad (`0x0052c475`). Erre az `AlbumSync` `0x00557cf0`-val leírót képez az album adataiból, a `+4` bejegyzéssel (`0x0052a810`) beírja a **szakaszt a mappa ini-jébe** (`name`, `token`, `description`, `location`, `date`), és újrahívja a `+0x10` bejegyzést (`0x005572df`-`0x00557310`). Minden más visszatérési értéket eldob, hibaüzenet nincs. **Következmény: meglévő albumhoz adásnál a célmappa ini-jébe az albumdefiníció is bekerül, ha ott hiányzik.** PicasaPy ezt csak új albumnál teszi (`createAlbum`, `test_album_write_controller.py:205-217`), meglévő albumhoz adásnál nem (`photo_ops_album_membership_mixin.py:35-50`, `addHeldToAlbum`: `tray_album_controller.py:253-257`). Teendő: J2. | `0x00556ff0`, `0x0052c350`, `0x0052cd90`, `0x0052a810` | erős (két egymásra utaló függvény és a kulcsnevek) |
+| Mikor írja ki az eredeti az ini-t (az `AlbumSync` kiváltója, időzítés) | (c) | A tartós írás nem a `0x00536a90`-ban fut (az a memóriabeli listát módosítja és `0x004abc70`-nel jelez), hanem megfigyelőn át; a katalógus egy időzített sorkiürítője (`0x004a82d0`) legfeljebb 10 másodpercenként (`0x00cf3b28` = 10,0) dolgoz fel sorba állított módosításokat, és a speciális gyűjteményeknél ilyenkor írja a `#db3\saverlist.txt` és `starlist.txt` fájlt (`0x004a840f`, `0x004a843b`). Hogy az `AlbumSync` is ebből a sorból hívódik-e, feltételes. Felhasználó által látható hatás csak összeomlásnál vagy külső eszköz azonnali olvasásánál lenne; a végállapot (tartalom) fent eldőlt. PicasaPy azonnal ír, ami a biztonságosabb. **Nem blokkoló.** | `0x004a82d0`, `0x00cf3b28` | feltételes |
+| `Starred Photos` sor választása már csillagos képen | (a) | **Hozzáad, nem fordít.** A `0x00536a90` végén a `]star` név (`0x00536efe`) csak a `thumbui/startoggle` kapcsoló frissítését (`0x005d27d0`) váltja ki, megfordító ág nincs benne; a már tag képet az általános ág kihagyja. A PicasaPy tálcamenüjének `toggleStarMany`-ja ettől eltér (megfordít). | `0x00536efe`, `0x00536f30` | erős |
+| `Screensaver` sor hatása a fotómenüből (`]screensaver`) | (b) | A fotómenü útja a `0x00536a90`, a tálcáé a `0x00531a20` (`0x004d9aa0` + `#db3\saverlist.txt` írás + telepítő `0x00531ac0`). Hogy a fotómenüs út ugyanazt a fájlírást és telepítést kiváltja-e a fenti időzített sorkiürítőn át, nem dőlt el. Lásd a Zárási döntés egyetlen Ghidra-sorát. | `0x00531a20`, `0x004a82d0` | nyitott |
+| Hozzáadás utáni bal fa, rács, kijelölés, fókusz | (c) | Az album sorát a `0x004af790` keresi meg és a `0x009d2c80(0)` újrarajzolja (darabszám), a főnézetet a `0x0065b840(this,0,0,1)` frissíti; navigáció az albumra nincs. A `0x00536a90` kijelölést csak olvas (`0x007166c0`, `0x00717140`: számolás és bejárás, módosítás nincs). Az újrarendezés pontos grafikai végállapota csak futásidejű méréssel olvasható le; eltérésre nincs bizonyíték, PicasaPy a kijelölést megtartja, ha a rekordsor nem változik. A jegyek „Nem szabad” listája: a kijelölés-megtartás nem változhat. **Nem blokkoló.** | `0x00536a90`, `0x0065b840` | erős (a kijelölés érintetlensége), feltételes (grafikai végállapot) |
+| Visszavonás | (a) | **Nincs.** A `0x00536a90` hívásai között nincs visszavonás-regisztráció, és az eredeti Edit menü leltárában nincs albumműveleti visszavonás tétel (`picasa-menu-parancsok.csv`, `eMenuEdit`). PicasaPyban sincs. | `0x00536a90`, menüleltár | erős |
+| Hiba és részleges végrehajtás | (a), (c) | A `0x00536a90` hibánál üzenet nélkül tér vissza; memóriahiba (`4`) esetén a már hozzáadott képek bent maradnak, visszagörgetés nincs. Az ini-írás hibáját az `AlbumSync` nem jelzi (a 9-esen kívül minden értéket eldob, `0x005572a7`). PicasaPy `albumWriteFailed` hibasávja többlet, adatot védő jelzés. **Nem blokkoló, nem törlendő.** | `0x00536a90`, `0x005572a7` | erős |
+| Album adatbázis, contacts, SQLite index | (c) | A tartalom (`albums`, `[.album:]` szakasz) a fenti sorban eldőlt; a katalógus saját adatbázisfájljának szerkezete nem látszik a felhasználónak, az index PicasaPyban az ini-ből épül (a két termék között nincs közös fájl). **Nem blokkoló.** | `ini/` szerződés | erős |
+
+### Zárási döntés
+
+**A #7012 kutatási jegy lezárható.** Minden belépő, engedélyezési feltétel, tárolási lépés, hibaág és felületi hatás eldőlt (a), vagy kimondottan nem blokkoló (c). Egy kérdés maradt (b), de az nem a jegy lezárását gátolja, hanem a J1 fejlesztői jegy `Screensaver` sorának kiadását, és a J1 viszi tovább. **Blokkoló nincs.**
+
+Ghidra-kör kell: 0x004a82d0 - az időzített sorkiürítő (legfeljebb 10 másodpercenként) mely sorba állított módosításból hívja a `0x004753b0`-at és írja a `#db3\saverlist.txt` fájlt, és a `0x00536a90` utáni `0x004abc70` jelző ide vezet-e; ebből dől el, hogy a fotómenü `Screensaver` sora (`]screensaver`) a tálcás ágtól (`0x00531a20`, `0x00531ac0`) eltérő hatású-e.
+
+A megmaradó fejlesztői jegytörzsek (mindegyik binárisból igazolt működésre épül, a „Nem szabad” sorok a már működő viselkedést védik):
+
+**J1. Az Add to Album almenü tartalma és az új album párbeszéde.**
+
+- Eredeti: a `0x0056c5a0` a fotómenü (`0x70`, `0xa4`, `0x13d`) és a néző (`0x8a`) almenüjét azonos sorrenddel építi: albumok, elválasztó (ha van album), `Starred Photos`, `Screensaver` (a két gyűjteményt a katalógus induláskor mindig regisztrálja, `0x004abe70`, ezért a gyakorlatban mindig megjelennek), elválasztó, `New Album...`. Az almenü mindig elérhető, albumok nélkül is. A `Starred Photos` hozzáad, nem fordít. A `New Album...` Album Properties párbeszédet nyit: név `Untitled` (magyarul `Névtelen`), dátum a kijelölés első képének dátuma mínusz egy másodperc, hely és leírás üres, megjegyzett állapot nincs; OK után az új album frissül és megnyílik. Fok: erős.
+- Nálunk: a fotómenü almenüje csak albumokat és `New Album...` sort ad (`PhotoContextMenu.qml:167-192`); a néző almenüje csak albumsorokat ad, és album nélkül szürke (`ViewerContextMenu.qml:134-150`); az új album párbeszéd dátuma üres (`FileOpsDialogs.qml:100-104`); a tálcamenü `Starred Photos` sora megfordít (`toggleStarMany`).
+- Teendő: (1) a néző almenüje megkapja a fotómenü teljes sorlistáját (`New Album...` is), és mindig elérhető; (2) a fotómenü és a néző almenüje megkapja a `Starred Photos` és `Screensaver` sort a fent leírt helyen; a `Starred Photos` a már csillagos képen nem fordít; (3) az Add to `New Album...` párbeszéd dátuma a kijelölés első képének dátuma mínusz egy másodperc (nincs dátum: üres). A `Screensaver` sor hatását a fenti egyetlen Ghidra-sor dönti el; addig a jegy nem adható ki (félkész nem megy ki).
+- Kész, ha: a renderelt fotó- és néző-almenü az eredeti almenü képernyőképével összevetve egyezik (üres albumlistával és albumokkal is; a szürkítés kérdését a képernyőkép dönti el, a jegy nem törölheti azt magától); a `Starred Photos` kétszeri választása is csillagos képet ad; az új album párbeszéd dátuma teszttel ellenőrzött. Képernyőkép nélkül a jegy nem zárható.
+- Nem szabad: a tálcamenü mért sorrendje (`Screensaver`, `Starred Photos`, albumok, `New Album...`, elválasztó nélkül) nem változhat; a meglévő albumsorok viselkedése és az új album megnyitása (#7076) nem változhat.
+
+**J2. A célmappa `.picasa.ini`-jébe az albumdefiníció is kerüljön meglévő albumhoz adásnál.**
+
+- Eredeti: a `0x00556ff0` mappánként hívja a `0x0052c350`-et; ha a mappa ini-jében nincs `[.album:token]` szakasz nem üres névvel, 9-et kap, `0x0052a810`-nel beírja a szakaszt (`name`, `token`, `description`, `location`, `date`), majd megismétli az `albums` írását. Fok: erős.
+- Nálunk: `addRowsToAlbum` (`photo_ops_album_membership_mixin.py:35-50`) és `addHeldToAlbum` (`tray_album_controller.py:253-257`) meglévő albumnál csak az `albums=` sort írja; új albumnál a definíció minden érintett mappába kikerül (`createAlbum`).
+- Teendő: mindkét út a mappánként módosított dokumentumban pótolja a hiányzó (vagy névtelen) `[.album:token]` szakaszt az album ismert adataival (név, dátum, hely, leírás), mielőtt a tagságot beírja; a meglévő, névvel ellátott szakaszt nem írja felül. A dátum alakja a mért `[.album:]` szakaszokat kövesse (`picasa-ini-format.md`).
+- Kész, ha: teszt, amelyben az album csak az A mappa ini-jében van definiálva, és a B mappából adott kép hozzáadása után a B ini-jében is van `[.album:token]` ugyanazzal a névvel és dátummal, a képnél `albums=` tartalmazza a tokent; ismételt hozzáadás után a fájl bájtra változatlan; a már definiált mappa szakasza nem módosul; a tálcás és a menüs út egyaránt lefedett.
+- Nem szabad: az `albums=` sorrendje (hozzáfűzés a végére), az idempotencia és a mappánkénti egyetlen ini-írás nem változhat.
+
+**J3. Képek ejtése az üres albumlista helyőrző sorára: Album Properties párbeszéd.**
+
+- Eredeti: az ejtés a 4-es típusú rekord sorára az Album Properties párbeszédet nyitja (név `Untitled`, dátum a mai idő mínusz egy másodperc, hely és leírás üres); OK után az album létrejön, a ledobott képek bekerülnek, és az új album nyílik meg; Mégse: nincs változás. Fok: erős (utasításszintű; húzásmérés nincs, a Colab-végrehajtó húzást nem tud: job-656, job-657).
+- Nálunk: a `FileOpsDialogs.createAlbumFromDrop` párbeszéd nélkül, azonnal `Untitled` albumot készít (`FileOpsDialogs.qml:109-112`).
+- Teendő: a helyőrző sorra ejtés a New Album... párbeszédet nyissa a ledobott sorokkal, mai dátum mínusz egy másodperc alapdátummal; OK után hozza létre az albumot és nyissa meg.
+- Kész, ha: a QML-teszt a dialógust renderelve ellenőrzi (név, dátum), OK után az album, a tagság és az aktív album, Mégse után semmi változás.
+- Nem szabad: a meglévő album sorára ejtés (hozzáadás), a #5121 célterület-elhelyezése és a menüs `New Album...` út nem változhat.
+
+Nem blokkoló, külön nem jegyzett tételek: az albumsorrend a bal hasábbal egyező (a hasáb sorrendje külön paritási kérdés), a tálcagomb szürke állapota üres tálcánál, a hozzáadás utáni grafikai végállapot (futásidejű mérés, eltérésre nincs bizonyíték), az ini-írás időzítése, a PicasaPy hibasávja, a katalógus belső adatbázisa.
 
 ## #7024: A képaláírás (Caption) szerkesztésének teljes folyamata az eredeti Picasával összevetve
 
@@ -3543,7 +3747,7 @@ A vizsgálat az eredeti Picasa 3.9.141.259 (`Picasa3.exe`, SHA-256 `644b7bec89a2
 |---|---|---|---|
 | Néző, feliratmező, kattintás a sávra | Kattintás a sáv hátterére: `0x005c48c0` (`CaptionBaseHandler`, `0x005c4996-0x005c49b9`) a `editpanel/caption` csomópontot fókuszba teszi. A mező alatt a `[this+0xe64]` kép felirata szerkesztődik. | `PhotoViewerOverlayControls.qml:466-525` (`captionBar`, `captionField`, egy mező a néző alján). | Egyezik. |
 | Gépelés a nézőben (közvetlen kezdés, kattintás nélkül) | A `PreviewHandler` billentyűkezelője (`0x005c24c0`, `PreviewHandler::vftable` 3. slot) a Ctrl nélküli karakterüzenetet (üzenettípus 0x17, `[msg+0x64]` 1-es bitje: `0x005c2565-0x005c25ab`), ha a kód `0x21` és `0xFE` között van (`0x005c25c9-0x005c25d6`), a `0x00565cf0`-nak adja (`0x005c25dc`): a karakter a felirat végére kerül, a mező szerkesztő módba lép és szennyezettnek jelöli magát (`0x00565ee6-0x00565ef8`). Backspace az utolsó karaktert törli (`0x005c273a-0x005c2748`). Kizárás: szóköz és Tab (`0x00565d38-0x00565d44`), aktív eszközmód (`[this+0x30d9]`, `0x00565d4e`), Ctrl-os billentyű (`0x005c2568`). A `"` jel `U+201C`-re cserélődik (`0x00565d8b-0x00565d90`). Rejtett sáv esetén a gépelés a kapcsolót visszakapcsolja (`0x00565d5a-0x00565d86`). | `PhotoViewerKeyboard.qml:50-75`: nyomtatható karakter nem kezelt; az `F` és a `Shift+F` az arckeretek kapcsolója (saját bővítés, `picasa-gyorsbillentyuk.md:542-543`). | **Eltérés (J3).** |
-| Felirat-kapcsoló (Show/Hide Caption) | `editpanel/captionbutton` esemény: `0x005d5e77-0x005d5e88` → `0x005f8ac0`. Az állapot a `Preferences` `LastCaptionButton` kulcsához kötött (`0x00576bc0`, `0x00576c14`; az olvasó és az író irány külön nincs igazolva). Eszközmódban (`[this+0x30d4]` 2-6) a három elem rejtett (`0x0057be53-0x0057be5f`, elrejtés `0x0057bdf2-0x0057be47`), kilépéskor visszaáll (`0x0057c013-0x0057c07d`). | `PhotoViewerOverlayControls.qml:602-650`; állapot: `controller_folder_view_mixin.py:262-287` (`view/captionVisible`, tartós). A sáv `visible`-je nem függ az eszközmódtól (`:473`). | Tartós állapot feltételesen egyezik. Az eszközmódbeli elrejtés nálunk hiányzik, a módkódok megfeleltetése nyitott (G4). |
+| Felirat-kapcsoló (Show/Hide Caption) | `editpanel/captionbutton` esemény: `0x005d5e77-0x005d5e88` → `0x005f8ac0`. Az állapot a `Preferences` `LastCaptionButton` kulcsához kötött (`0x00576bc0`, `0x00576c14`; az olvasó és az író irány külön nincs igazolva). Eszközmódban (`[this+0x30d4]` 2, 3, 4 és 6; az 5 nem, Ghidra 2026-11-16: 2 = Crop, Vörösszem, Retusálás, Szöveg, Picnik, 3 = arcnév hozzáadása) a három elem rejtett (`0x0057be53-0x0057be5f`, elrejtés `0x0057bdf2-0x0057be47`), kilépéskor visszaáll (`0x0057c013-0x0057c07d`). | `PhotoViewerOverlayControls.qml:602-650`; állapot: `controller_folder_view_mixin.py:262-287` (`view/captionVisible`, tartós). A sáv `visible`-je nem függ az eszközmódtól (`:473`). | Tartós állapot feltételesen egyezik. Az eszközmódbeli elrejtés nálunk hiányzik, a módkódok megfeleltetése nyitott (G4). |
 | Törlés gomb (`captiontrash`) | `0x005d5ee7-0x005d5ef9` → `0x005f8c00`: **megerősítő ablak**, csak igenre ír (lásd a 6. szakaszt és a J1 jegyet). Üres feliratnál a gomb tiltott (`0x00568010`: `0x005680c6-0x005680d5` a `0x009cd7e0`-nal a `[+0x20e]` letiltás-jelzőt állítja; törlés után `0x005f8cef`). | `:544-583`: kérdés nélkül töröl, üres feliratnál tiltott. | **Eltérés (J1).** A tiltás egyezik. |
 | Bélyegkép alatti felirat (Nézet, Indexkép felirata) | Csak megjelenítés: `eMenuView::ThumbnailCaption` és `ID_CAPFULL`, `ID_CAPFILE`, `ID_CAPNONE`, `ID_CAPRES`, `ID_CAPTAG` a menüépítőben (`0x00559150`). A `CTextCaptionNode` típusleírót csak az editpanel függvényei használják (1. szakasz), tehát a rácson nincs szerkesztő mező. | `PicasaViewMenu.qml:469-520`, `ThumbDelegate.qml:74-84,269-277`: csak megjelenítés. | Egyezik. |
 | Tulajdonságok (Alt+Enter) | A `PropertiesPanel` szövegkészlete: `title`, `info_*`, `Thumbnail`, `XMP`, `write_xmp`, `edit_keywords` (Szerkesztési címkék). Képfelirat-szerkesztő mező szövege nincs (erős, negatív, szövegtár-alapú). | `PropertiesPanel.qml`: nincs feliratmező. | Egyezik. |
@@ -3574,7 +3778,7 @@ A vizsgálat az eredeti Picasa 3.9.141.259 (`Picasa3.exe`, SHA-256 `644b7bec89a2
 
 | Szempont | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|---|
-| Hova kerül (JPEG) | A setter (`0x00437cf0`) a fájlba ír, ha a kép `.thm` oldalfájllal rendelkezik VAGY a képrekord `+0x18` típuskódja 2 (`0x00438566-0x00438575`), a fájl nem írásvédett (`0x0043859e-0x004385a5`) és a kép nem iPhoto/Photos-könyvtárban van (`0x004384e5-0x004384ec`). A `0xe4` tulajdonság (IPTC 2:120 Caption/Abstract, `picasa-metaadat-tulajdonsagok.md:55`) a metaadat-csomagba kerül (`0x004385ce`), üres szövegnél kikerül belőle (`0x004385fb`); a csomagot a `0x009ed330` hívás írja a fájlba (a szerepe a hívás alakjából és a hibaágból következik, feltételes). A típuskód jelentése NINCS MEG (G1); a korpusz szerint JPEG-nél a felirat nem az ini-ben él: 16 970 `jpg` szakaszból 5-ben van `caption=`, és mind az 5 online-jelzéses (`onlinechecksum` vagy `IIDLIST`). | `_felirat_iras` (`photo_ops_write_text_mixin.py:172-187`): `.jpg` és `.jpeg` fájlnál `write_iptc_caption` (`iptc_writer.py:40-45`), siker után csak a `backuphash`. | Struktúra egyezik. |
+| Hova kerül (JPEG) | A setter (`0x00437cf0`) a fájlba ír, ha a kép `.thm` oldalfájllal rendelkezik VAGY a képrekord `+0x18` típuskódja 2 (`0x00438566-0x00438575`; Ghidra 2026-11-16: `.thm` esetén az IPTC a `.thm` fájlba megy, különben a képfájlba, a 2-es kód jelentése nyitott), a fájl nem írásvédett (`0x0043859e-0x004385a5`) és a kép nem iPhoto/Photos-könyvtárban van (`0x004384e5-0x004384ec`). A `0xe4` tulajdonság (IPTC 2:120 Caption/Abstract, `picasa-metaadat-tulajdonsagok.md:55`) a metaadat-csomagba kerül (`0x004385ce`), üres szövegnél kikerül belőle (`0x004385fb`); a csomagot a `0x009ed330` hívás írja a fájlba (a szerepe a hívás alakjából és a hibaágból következik, feltételes). A típuskód jelentése NINCS MEG (G1); a korpusz szerint JPEG-nél a felirat nem az ini-ben él: 16 970 `jpg` szakaszból 5-ben van `caption=`, és mind az 5 online-jelzéses (`onlinechecksum` vagy `IIDLIST`). | `_felirat_iras` (`photo_ops_write_text_mixin.py:172-187`): `.jpg` és `.jpeg` fájlnál `write_iptc_caption` (`iptc_writer.py:40-45`), siker után csak a `backuphash`. | Struktúra egyezik. |
 | Hova kerül (minden más) | A fájlba írás feltételei nem teljesülnek: a `0x00438775` ág a `.picasa.ini` `caption=` kulcsát írja a `0x00454770`-nel (`0x00438778-0x0043878a`, ötödik argumentum 1: `backuphash`-ír, `0x004548a7-0x00454913`). Korpusz: 410 `bmp` szakaszból 193-ban van `caption=` (ebből 186 online-jelzéses, 7 nem), `mp4`: 8 a 52-ből, `mpg`: 2 a 29-ből, mind online-jelzéses. | `:188-198`: `.picasa.ini` `caption=`, törlésnél `with_removed`, `backuphash`. | Egyezik. |
 | Ini-kulcs sikeres fájlírás után | A sikeres fájlírás ága a szövegmutatót nullázza (`0x00438754-0x00438759`), és ugyanazzal a `0x00438778-0x0043878a` hívással nullát ad a `caption` kulcsnak: a kulcs nullával való törlése feltételes (G2), de a korpusz (5/16 970) ezt támasztja. | Siker után csak a `backuphash` frissül, a meglévő `caption=` kulcs marad. A tényleges felirat `COALESCE(caption_file, caption_ini)` (`index/queries.py:27`): ha egy JPEG-nek régi `caption=` kulcsa van az ini-ben, a feliratot törölve (`caption_file` üres) a régi ini-szöveg visszatér. | Feltételes eltérés, jegy csak G2 után (J7). |
 | Keresési index | A setter az új szöveggel (`0x00438421`: `0x004d9010`) és a régivel (`0x0043844e`: `0x004d8da0`) a `[db+0x20]` objektumot frissíti, még a fájlírás előtt; a két függvény szerepe (szövegindex-bővítés és -törlés) a hívás alakjából következik, feltételes. | `update_photo_fields` az FTS-oszlopokat (`index/schema.py:123-149`); a `_run_photo_write` a mentés után írja (`photo_ops_write_core_mixin.py:80-94`). | Egyezik. |
@@ -3701,12 +3905,24 @@ Csak igazolt eltérés lehet az alapjuk. A J7 feltételes (G2 dönti el), a töb
 Nyitott kérdések: 7 nyílt · 25 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva".
 
 - Ghidra-kör kell: 0x00437cf0 - mit jelent a képrekord +0x18 mezőjének 2-es értéke a fájlba írás feltételében (0x00438575), mely formátumokra igaz, és a `.thm` oldalfájl-ágban (0x00438566) melyik fájlba kerül az IPTC 0xe4 tulajdonság? [nem blokkoló]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:81`): a kimenet és a hívóhely-disassembly részben dönt. **A `.thm` ág:** a függvény a kép útvonalát a `0x009a3620`-szal a `.thm` sztringgel (`0x00c81578`) módosítja (a kiterjesztés cseréje valószínű), és a `0x00992ed0` szerint, ha az így kapott fájl létezik, a jelző (`[esp+0x33]`) 1 és az útvonal a `.thm`-é marad; ha nem létezik, a kép eredeti útvonala kerül vissza (`0x0043850b-0x00438548`). Az IPTC `0xe4` tulajdonságot a `0x009ef010` metaadat-objektumba írja (`0x004385d4`: `0x0049c640(obj, 0xe4, érték)`, üres szövegnél `0x004385fb`: `0x0049c900`), és a `0x009ed330` menti erre az útvonalra (`0x0043870c`). **Tehát a `.thm` oldalfájlba kerül, ha az létezik, különben a `+0x18 == 2` ágon magába a képfájlba.** **A feltétel:** `(.thm létezik) VAGY ([rekord+0x18] == 2)` (`0x00438566-0x00438575`), majd a `0x0047d270` és az írásvédettség (`0x00992d50`) is hamis (`0x00438584-0x004385a5`). A `[esp+0x8c]` a `0x004edf60(…, &rekord)` által kitöltött rekord `+0x18` mezője (a kép indexével hívva, `0x0043846b-0x0043847d`); a korábbi kimenet szerint (`2026-11-15-6963-colab-decomp.txt:7064`) a `0x004edf60` ezt a katalógus rekordtáblájából másolja (0: üres rekord, `0x3e9`: hivatkozó rekord, amelyet feloldva a célrekord adatai másolódnak). **A 2-es kód jelentése és hogy mely formátumokra igaz, a kimenetből nem dönthető el**, mert a típuskód írója nincs benne; támpont, hogy a diavetítés óraütés-kezelője (`0x0075f430`, `0x004edf60` rekord `+0x18`) a 8, 9, 10, 11, 12, `0x17` és `0x1d` kódokat külön ágra viszi (feltehetően videó vagy mozgókép), a 2 ezek között nincs.
+- Ghidra-kör kell: 0x004e3ab0 - jelölt: a katalógus képrekord (`+0x3f0` vektor, a `0x004edf60` forrástáblája) `+0x18` típuskódjának írói (a vektor kezelői: `0x004e3ab0`, `0x004e40c0`, `0x004e5070`): melyik fájlformátum kapja a 2-es kódot, és mi a többi érték (1, 5, `0x3e9`) [nem blokkoló]
 - Ghidra-kör kell: 0x005aa260 - a null értékű kulcs (0x005aa301-0x005aa30b) törli-e a kulcsot a .picasa.ini-ből, vagy üres értéket ír? [blokkoló a J7 jegyhez]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:2132`): a kimenet nem dönti el, mert a végrehajtó nincs benne. A `0x005aa260` (`:2132-2375`) egyetlen hívója a `0x005ab210` (`0x005ab285`), amely az index szerint a `ytPicasaINIFile` 2. bejegyzése. Szakasz, kulcs és érték C-sztringet kap (`0x005aa29c`, `0x005aa301-0x005aa30b`, az érték hasonlóan); **NULL esetén a másolás kimarad, a szövegobjektum üres marad, külön NULL-ág vagy törlő parancsváltozat nincs**: a parancs típusa állandó `1`. A két tömbbe (szakasz és kulcs, illetve érték) rakott sztringeket és a fájl `+4`, `+0x14`, `+0x18` mezőit a globális `DAT_00d6769c` objektumnak adja át (`0x005a8d60`), majd `0x005aa6b0` fut. A burkoló `0x005ab210` az értéket nem vizsgálja (a `DAT_00d6769c+0x28` kritikus szakasz zárát szálazonosítóval újrabelépően veszi). Hogy az üres érték törli-e a kulcsot vagy üres sort ír, a végrehajtón múlik.
+- Ghidra-kör kell: 0x005a8d60 - az `1` típusú ini-parancs végrehajtása: üres értéknél töröl-e kulcsot vagy üres értéket ír, és mikor történik a tényleges fájlírás (azonnal vagy időzítve); 0x005aa6b0 - mit végez a parancs után [blokkoló a J7 jegyhez]
 - Ghidra-kör kell: 0x0067eca0 - a [node+0x2c5] szerkesztő-mód jelző mikor 1 és mikor 0 a nézőben, azaz mikor érvényes a teljes felirat cseréje megerősítéssel (0x0067ee73) a szövegbe illesztés helyett (0x0067ee3e)? [nem blokkoló]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:4047`): a kimenet részben dönt. A `0x0067eca0` a `CTextEditNode` eseménykezelője; a `[node+0x2c5]` bájtot csak olvassa (`0x0067ed8c`, `0x0067ee37`, `0x0067ef2b`, `0x0067efbb`, `0x0067f1a6`). **Értelme:** a `0x0076b110` alaposztály-metódus írja (`0x0076b3e4`), amely a szövegvezérlő (`[+0x2d8]`) `+0x4c` metódusát a `jelző == 0` értékkel is hívja, tehát a `+0x2c5` = 1 a szöveges szerkesztő (írható) mód, 0 a megjelenítő mód. **A viselkedés:** `+0x2c5 == 0`: a Ctrl+V (`0x56`, Shift nélkül) a **teljes feliratot cseréli**: ha a függő felirat (`+0x2c0`) nem üres, megerősítést kér (`CTextEditNode::confirm`, gomb: `CTextEditNode::confirmyesbutton`, `0x009bac20`), Mégse esetén kilép, egyébként a `0x0067f350`, `+0x2c4 = 1` és a `+0x88` metódus (`captiondone`) azonnali mentéssel; a Ctrl+C a teljes szöveget másolja. `+0x2c5 != 0`: a Ctrl+V a kijelölés helyére illeszt (`0x0076b4d0`, `0x0098a090`/`0x0098a290`), a Ctrl+C a kijelölést másolja (`0x0076b510`), a `0x15` esemény (fókuszvesztés) a `captiondone`-t hívja. **A nézőben mikor 1 vagy 0, a kimenet nem dönti el**, mert a `0x0076b110` hívói nincsenek benne (az index szerint hívják: `0x0067f580`, `0x0067f5a0`, `0x0076b0c0`, `0x0076b0e0`).
+- Ghidra-kör kell: 0x0076b110 - a szerkesztő mód kapcsolója: hívói (`0x0067f580`, `0x0067f5a0`, `0x0076b0c0`, `0x0076b0e0`) és azok hívói; mikor kerül a felirat-csomópont szerkesztő módba (egérkattintás, Enter, gépelés) és mikor ki, a nézőben és a szerkesztőben [nem blokkoló]
 - Ghidra-kör kell: 0x0057bb50 - a [this+0x30d4] 2-6 módkódjai melyik szerkesztő eszközöknek felelnek meg, amelyeknél a felirat-sáv rejtett (0x0057be53-0x0057be5f)? [nem blokkoló]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:1788`): **a felirat-sáv rejtett a 2, 3, 4 és 6 módkódnál, az 5, 0 és 1 módkódnál nem.** A `0x0057bb50` belépéskor (`param_4 != 0`, a disassemblyben `0x0057bdf2-0x0057be47`) mind a három csomópontot elrejti a `+0x68` metódussal: `editpanel/captionbutton` (`0x00c7fe8c`), `editpanel/caption` (`0x00c8e6f0`), `editpanel/captiontrash` (`0x00c8eb98`), és a `[ablak+0x30d9]` jelzőt 1-re állítja; kilépéskor (`0x0057c013-0x0057c07d`) a `+0x6c` metódussal és a `0x009cd760`-nal visszaállítja. A módkódok a hívóhelyek disassemblyjéből: **2 = a Crop (`0x005efa30`), a Vörösszem (`0x005f30e0`), a Retusálás (`0x005f7140`), a Szöveg (`0x005f5b30`) és a Picnik (`0x005f2840`) eszköz belépése; 3 = az arcnév hozzáadása (`0x00649fc0`, `editpanel/addfaceselection`, `Add a name`)**; a 4 és a 6 a `0x005f8520` (puck eszköz) hívásában változóból jön, a hozzárendelés a kimenetből nem dönthető el; a kilépő hívások (`0x005f2d10`, `0x005f4710`, `0x005f6650`, `0x005f74a0`, `0x005f88e0`) módkódja 0. A módonkénti csomópontlisták, amelyeknek a `[node+0x20e]` bájtját a függvény a belépés/kilépés jelzőre (`param_4`) állítja (`0x0057c1c0`): 2 és 3: `editpanel/sbutton`, `thumbui/basecontrolset`, `thumbui/scratchback`, `thumbui/buttonbarsets`, `editpanel/editcontrols`, `editpanel/filmcontainer`, `editpanel/layout_2up_group`, `editpanel/tab2` - `tab5`, `rightdrawerpanel/geopanel`, `tagpanel`, `propertiespanel`; ezen felül a 2-es ág az `editpanel/filter_name` elemet, a 3-as ág a `rightdrawerpanel/close`, `rightdrawerpanel/size_toggle`, `editpanel/albumview` elemeket kezeli (`0x0057be66-0x0057be9c`); 4: `editpanel/filter_status_container`, `histogram`, `geopanel`, `peoplepanel`, `propertiespanel`, `tagpanel`; 6: `editpanel/sbutton`, `tabpanel1`, `horizonadjust`, `histogram`, `peoplepanel`.
+- Ghidra-kör kell: 0x005f8520 - a puck eszköz módkódja (`0x005f85a0-0x005f85b3`, `[ebx+4]` 1, 4, 5): mely eszköz melyik módot (4 vagy 6) adja át a `0x0057bb50`-nek [nem blokkoló]
 - Ghidra-kör kell: 0x005c24c0 - videó megnyitva ([panel+0x3094] > 0) és [panel+0x332e] == 0 esetén (0x005c25bd-0x005c25c9) tényleg a feliratot indítja-e a betű, és mit jelent a [panel+0x332e]/[panel+0x332f] jelző? [nem blokkoló, Colabon is eldönthető]
 - Ghidra-kör kell: 0x0067f7e0 - a 0x00989f80 (0x0067f820) a begépelt szöveget levágja-e (szóközök), és milyen hosszkorlátot alkalmaz a mentés előtt? [nem blokkoló]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:4294`): a kimenet nem dönti el, mert a `0x00989f80` törzse nincs benne. A `0x0067f7e0` (`:4294-4372`, a `captiondone`, a csomópont `+0x88` metódusa) a szerkesztőmező szövegét a `[+0x2d8]` al-objektum `+0x30` metódusával kéri le, **a `0x00989f80`-nak adja, és a kapott sztringet teszi a csomópont `+0x2c0` mezőjébe (a függő felirat)**; ezután `captiondone` eseményt küld (`+0x7c(0, 1)`, `+0x70`). Hossz-összevetés vagy hosszkorlát sem ebben a függvényben, sem a `0x005f89a0`-ban nincs; a mentő setter (`0x00437cf0`) a szöveget a `0x009869a0`-val dolgozza fel az elején (`0x00437cf0`, a `*param_3` másolatán), ugyanezt a `0x009869a0`-t hívja a `0x0067f2a0` szövegbeállító is, amely a `0x00989f80`-at szintén használja (`0x0067f310`). Hogy a levágás (szóközök) melyik függvényben történik, a kimenetből nem dönthető el.
+- Ghidra-kör kell: 0x00989f80 - levágja-e a szöveg elejét és végét (szóközök, újsor), és milyen hosszkorlátot alkalmaz; 0x009869a0 - a `0x00437cf0` és a `0x0067f2a0` által az elején alkalmazott szövegfeldolgozás (levágás, sorvég-átalakítás) [nem blokkoló]
 - Ghidra-kör kell: 0x005f89a0 - a menü Visszavonás tétele (ID_UNDO) visszavonja-e a felirat beírását vagy törlését (a három függvényben visszavonási rekord nincs)? [nem blokkoló, Colabon is eldönthető: felirat beírása, Enter, Szerkesztés menü]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:3898`): a kimenet nem dönti el az `ID_UNDO` hatókörét, mert a kezelője nincs benne, de megerősíti, hogy a `0x005f89a0` (`:3898-3954`) a felirat-szerkesztés lezárása, visszavonási rekordot nem ír: ha a `CTextCaptionNode` (`dynamic_cast`, `0x00c07db2`) `+0x2c4` bájtja nem nulla, nullázza, a szöveget a `[this+700]` `+0x48` al-objektum `+0x50` setterével menti a `[this+0xe64]` kulcsra (`0x00437cf0`), majd `[this+0x2ac]` `+8` (a képkulccsal), `0x00579480(0, 1)` frissít; hívói a `0x00578c30`, `0x00578dc0`, `0x005de8e0`, `0x005f8d80`. A `picasa-menusor-csoportok.md:204` szerint az `eMenuEdit::ID_UNDO` literál a binárisban nincs meg, és a Visszavonás tétel a Szerkesztés menün nem is jelenik meg (`:61`), tehát az eredeti Szerkesztés menüből a felirat beírása nem vonható vissza; a felirat-mező saját Ctrl+Z-jét (a szerkesztővezérlő `WM_UNDO`-ja) a kimenet nem dönti el.
+- Ghidra-kör kell: 0x0076ace0 - a szerkesztőmező alaposztályának billentyűkezelője: kezeli-e a Ctrl+Z-t (`WM_UNDO`) a felirat-mezőben, és visszavonja-e a beírt szöveget a mentés előtt [nem blokkoló, Colabon is eldönthető: felirat beírása, Ctrl+Z, Enter]
 
 ### 12. Módosított fájlok
 
@@ -3734,7 +3950,7 @@ Megerősített. A folyamat belépési pontjait, parancskódjait, vágólap-kezel
 |---|---|---|---|---|
 | Szerkesztés menü Copy (`&Copy`) | `0x005cb990` -> `0x005fe9f0(0)`, parancskód `0x9d3b` (40251) | Könyvtárban legalább 1 kijelölt elem (`[esi + 0xeac] > 0`). Üres kijelölésnél inaktív / no-op (`ret 4`). Szerkesztőben az aktuális kép. | `PicasaEditMenu.qml:53-58` | Egyezik (`bar.hasSelection`) |
 | Gyorsbillentyű Ctrl+C | Accelerator tábla (`0x007823f0`), parancskód `0x9d3b` | Megegyezik a Szerkesztés menü Copy feltételével. | `MainKeyboardShortcuts.qml:244-255` | Egyezik (`shortcutCopyFiles`) |
-| Szerkesztés menü Cut (`Cu&t`) | `0x005cb990` -> `0x005fe9f0(1)`, parancskód `0x9d39` (40249) | Könyvtárban legalább 1 kijelölt elem. A rácson halványított jelölést kap (`0x00716f40`). Szerkesztőben inaktív. | `PicasaEditMenu.qml:46-51` | Eltérés: a PicasaPy nem jelöli halványítottként a rácson a kivágott elemeket. |
+| Szerkesztés menü Cut (`Cu&t`) | `0x005cb990` -> `0x005fe9f0(1)`, parancskód `0x9d39` (40249) | Könyvtárban legalább 1 kijelölt elem. A `0x00716f40`-et `0` jelzővel hívja a `[this+0xea4]` nézetre (kijelölés törlése); a rácson halványított jelölés a kimenetben nincs (Ghidra 2026-11-16: a `+0x5d` a kijelölés jelzője). Szerkesztőben inaktív. | `PicasaEditMenu.qml:46-51` | Halványítási eltérés nem igazolt: az eredetiben halványított jelölés nem látszik. |
 | Gyorsbillentyű Ctrl+X | Accelerator tábla (`0x007823f0`), parancskód `0x9d39` | Megegyezik a Szerkesztés menü Cut feltételével. | `MainKeyboardShortcuts.qml:256-267` | Egyezik a hívásban, hiányzik a vizuális jelölés. |
 | Bélyegkép helyi menü | `0x00730790` | Nincs sima Copy / Cut tétel a helyi menüben (csak `Copy Path`, `Copy Effects`, `Move to New Folder...`). | `PhotoContextMenu.qml` | Egyezik (nincs közvetlen Copy/Cut a helyi menüben). |
 | Szerkesztés menü Paste (`&Paste`) | `0x005cb990` -> `0x005feab0()`, parancskód `0x9d3c` (40252) | Belső vágólap nem üres VAGY külső vágólapon képadat/fájllista van. Szerkesztőben inaktív. Cél hiányában dialógus (`IDS_NEED_SELECTED_ALBUM`). | `PicasaEditMenu.qml:60-67` | Eltérés: cél hiányában a PicasaPy hibasávot mutat, vagy csendben nem tesz semmit. |
@@ -3779,7 +3995,7 @@ Ha a felhasználó a Beillesztés (Paste) parancsot választja (`0x005feab0` -> 
 | Szerkesztés menü Copy | `0x005cb990` -> `0x005fe9f0(0)` | `src/picasapy/app/qml/PicasaPy/PicasaEditMenu.qml:53-58` | Nincs, paritásban van. |
 | Gyorsbillentyű Ctrl+C | Accelerator `0x9d3b` (`0x007823f0`) | `src/picasapy/app/qml/PicasaPy/MainKeyboardShortcuts.qml:244-255` | Nincs, paritásban van. |
 | Szerkesztés menü Cut | `0x005cb990` -> `0x005fe9f0(1)` | `src/picasapy/app/qml/PicasaPy/PicasaEditMenu.qml:46-51` | Nincs, paritásban van. |
-| Rácselemek halványítása Cut esetén | `0x00716f40` (`[item + 0x5d] = 1`) | Nincs vizuális jelölés a rácson | Paritási eltérés javítása: a vágólapra kivágott fájlokat a rácson halványítottan (pl. (fél átlátszósággal) kell megjeleníteni. |
+| Rácselemek halványítása Cut esetén | **Nem igazolt** (Ghidra 2026-11-16): a `0x00716f40` a kijelölés jelzőjét (`[item + 0x5d]`) állítja, a Cut ezt `0`-val törli | Nincs vizuális jelölés a rácson | Nincs teendő, amíg a rajzoló oldal nem igazol halványítást (lásd a 3. jegyjavaslat elvetését). |
 | Szerkesztő nézet (OneUp) másolás | `0x0069b000` -> `0x00a706f0` (`SetClipboardData(CF_BITMAP)`) | `fileops_controller_clipboard_mixin.py:16-56` (fájl-URL) | Paritási eltérés javítása: Szerkesztő nézetben a renderelt szerkesztett képet képadatként (`QImage`) kell a vágólapra helyezni. |
 | Szerkesztés menü Paste | `0x005cb990` -> `0x005feab0()` | `src/picasapy/app/qml/PicasaPy/PicasaEditMenu.qml:60-67` | Nincs, paritásban van. |
 | Gyorsbillentyű Ctrl+V | Accelerator `0x9d3c` (`0x007823f0`) | `src/picasapy/app/qml/PicasaPy/MainKeyboardShortcuts.qml:268-279` | Nincs, paritásban van. |
@@ -3824,10 +4040,10 @@ Ha a felhasználó a Beillesztés (Paste) parancsot választja (`0x005feab0` -> 
   Teendő: Ha a vágólapon lévő fájlok forrásmappája megegyezik a kiválasztott célmappával és a vágólap módja másolás (nem kivágás), meg kell jeleníteni egy megerősítő modális kérdést a másolás végrehajtása előtt.
   Kész, ha: egy kép másolása és ugyanabba a mappába beillesztése előtt a felület rákérdez a műveletre, és Elvetés esetén nem hoz létre másolatot.
 
-#### 3. jegyjavaslat (feltételes, a Nyitott kérdések 2. pontja dönti el): Kivágott képek halványított jelölése a rácson
+#### 3. jegyjavaslat (ELVETVE, a Nyitott kérdések 2. pontja eldőlt: Ghidra 2026-11-16): Kivágott képek halványított jelölése a rácson
 - **Cím:** Rács: a vágólapra kivágott (Cut) fotók jelenjenek meg halványítottan a beillesztésig
 - **Törzs:**
-  Eredeti: `0x00716f40` (`[item + 0x5d] = 1`). Az eredeti Picasa kivágáskor a rácson a kijelölt elemeket áttetszőként / halványítottként jeleníti meg, jelezve a leendő áthelyezést.
+  ⛔ **Helyesbítve (Ghidra 2026-11-16):** a `+0x5d` a rácselem kijelölt jelzője, a Cut a `0x00716f40`-et `0` jelzővel hívja (kijelölés törlése); a halványítás nem igazolt, ez a javaslat elvetve. Az eredeti, megcáfolt állítás: `0x00716f40` (`[item + 0x5d] = 1`). Az eredeti Picasa kivágáskor a rácson a kijelölt elemeket áttetszőként / halványítottként jeleníti meg, jelezve a leendő áthelyezést.
   Nálunk: a PicasaPy nem tárol vizuális kivágási állapotot a bélyegképekhez.
   Teendő: A vezérlőben vezetni kell a kivágott fájlok listáját (`cutFiles`), és a `ThumbDelegate.qml`-ben az érintett elemek áttetszőségét (pl. `opacity: isCut ? 0.5 : 1.0`) módosítani.
   Kész, ha: a Ctrl+X megnyomásakor a kijelölt képek halványítottan jelennek meg a rácson, majd beillesztéskor vagy újabb másoláskor a halványítás megszűnik.
@@ -3844,6 +4060,8 @@ A hívó ellenőrző mintavétele (2026-11-15): az 1. jegyjavaslat igazolt (a `0
    - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7012-7028-colab-decomp.txt`): a `0x005350b0` a fájlok albummappába mozgatásának vagy másolásának közös rutinja; a `param_4` választja a szöveget (1: `MoveFilesConfirmCopy`, 0: `MoveFilesConfirmMove`), a `param_5 == 0` esetén mindig kérdez, 1 esetén csak a `0x00992ed0` fájlonkénti jelzésére. Hívói: `0x00535020` és `0x005e39a0` (ejtés albumra vagy mappára, mozgatás, mindig kérdez), `0x00541fc0` (másolás, csak jelzésnél). **A kérdés a mozgatásé és a húzásé, nem a Ctrl+V beillesztésé**, ezért a 2. jegyjavaslat a mostani formájában elvetve; a húzásos mozgatás kérdése külön összevetés tárgya.
 2. A `0x00716f40` egy elem `+0x5d` bájtját állítja; hogy ez a rácson halványított megjelenítést jelent-e, az értelmezés, nem bizonyíték.
    - Ghidra-kör kell: 0x00716f40 - Mit jelöl a rácselem `+0x5d` bájtja, és a kivágás után hogyan rajzolja a rács az így jelölt elemet [nem blokkoló]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:4536`): **a `+0x5d` a rácselem kijelölt jelzője, nem a kivágásé** (`picasa-eger-es-kijeloles.md:310`), és a kimenet nem igazolja a kivágott elemek halványított rajzolását. A `0x00716f40(jelző)` (`:4536-4594`) a nézet (`+0x32c` tömb, `+0x330` darabszám) minden elemén, amelynek `+0x5a` bájtja 0, a `+0x5d`-t a `jelző` értékére állítja (a `+0x5a != 0` elemen nullázza), a változást `+0x59 = 1`-gyel (újrarajzolás) jelzi, `jelző != 0` esetén a nézet `+0x390` mezőjét az első ilyen elem `+0xb4` kulcsára állítja, végül a `+0x31c` tömb minden elemének `+4` metódusát hívja: összes elem kijelölése (1) vagy a kijelölés törlése (0). A Cut/Copy kezelő `0x005fe9f0` (a `0x9d39` Cut a `0x005cbb29 push 1`, a `0x9d3b` Copy `edi` = 0 értékkel, a billentyűről az `X` = `0x58` a `0x005e63f5-0x005e63fe` szerint) ezt **`0` jelzővel** hívja a `[this+0xea4]` nézetre (`0x005fea7c push 0`, `0x005fea7e`), tehát a kijelölést törli, nem jelöl kivágottra; az `1` jelzős hívók a `0x00577ba0` (`0x00577bc3`, `[this+0xeac]`, ha a `0x00716920` nullát ad), a `0x005e5070` (`0x005e5084`) és a `0x0082a670` (`0x0082bfe0`). A kivágás jelzője a `[this+0x31a4]` bájt (a `0x005fe9f0` írja, `0x005fea8d`), amelyet a beillesztő ág olvas (`0x005fead6`, `0x005feb0f`) és nulláz (`0x005feb1b`), a `0x00564db6` is nulláz; a `.text` pásztázása szerint rácsrajzoló nem olvassa. **A rácson halványított megjelenítés tehát nem igazolt; a 3. jegyjavaslat alapja (`0x00716f40`, `[item+0x5d] = 1` mint kivágási jelölés) téves értelmezés volt, a javaslat elvetve.** A rajzoló oldal (a `+0x5d` és `+0x59` olvasói) nincs a kimenetben.
+- Ghidra-kör kell: 0x005feab0 - a beillesztő ág (a `[this+0x31a4]` kivágás-jelző olvasója, `0x005fead6`, `0x005feb0f`): a vágólap fájllistáját (`+0x319c`) mikor üríti, és van-e a kivágott elemekre rácsszintű jelölés (a rajzoló a `+0x319c` listát vagy a `+0x31a4` bájtot olvassa-e) [nem blokkoló]
 
 ### 11. Módosított fájlok
 
@@ -4186,6 +4404,8 @@ Windows-mérés, illetve a 414 Ghidra-körei kellenek hozzájuk.
   keresője, és a hívói közül a `this+0xed8` táblába író függvény (a kulcs
   pontos alakja, ki és mikor írja); 0x00926c20 és a visszaadott objektum
   `0x68` virtuális metódusa - milyen szöveget ad (fiók, album vagy más).
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:4373`): a kimenet részben dönt. A `0x006a46c0` (`:4373-4481`) nem egyedi `<szöveg>list` kereső, hanem **általános "rekordtábla-olvasó"**: a `0x006a41e0(param_3, param_2, 0x13320000, &találat, eax)` megkeresi a táblát (a `0x13320000` címke), és a `param_4` indexű elem másolatát adja (`0x005c2100`), a `+0xe0` zár alatt (szálazonosítóval újrabelépő kritikus szakasz); visszatérése `0` (az index a `+0x12c >> 1` darabszámon belül van, az elem kimásolva), `9` (az index a vége után van) vagy `-1` (nincs ilyen tábla). 27 hívója közt van a felirat-getter `0x00437b20` (a `CThumbDB` `+0x4c` bejegyzése) és több más, a `0x0042ded0-0x0045f6e0` sávban lévő függvény (`0x00432de0`, `0x00433ae0`, `0x0044df10-0x0044e410`), tehát nem csak a `<szöveg>list` kulcs olvasója. **A kulcs pontos alakja és a `this+0xed8` táblába író függvény a kimenetből nem dönthető el**, mert a `0x006a41e0` (1153 bájt) törzse nincs benne; az `+0xed8` írói az index szerint a `0x005643e0` (`0x00564d92`), a `0x00576a20` (`0x00576d2e`) és a `0x0069ac10` (`0x0069ac4a`) függvényekben vannak. A `0x00926c20` és a visszaadott objektum `0x68` metódusa nincs a kimenetben.
+- Ghidra-kör kell: 0x006a41e0 - a rekordtábla keresője (1153 bájt; a `0x13320000` címke és a kulcs alakja, a `<szöveg>list` kulcs); 0x0069ac10 - a `this+0xed8` mező egyik írója (172 bájt, `ytIAction`, `ytITivo` sztringek: a tábla létrehozója?); ugyanitt 0x00926c20 és a visszaadott objektum `0x68` virtuális metódusa - milyen szöveget ad [nem blokkoló]
 - A törlés utáni eredeti index-, album- és arcállapot, valamint a fa, rács
   és kijelölés végállapota NINCS MEG. Megszerzés: célzott Ghidra-olvasás a
   0x0065B840 körüli frissítési úton, majd Windows Picasa 3.9.141 mérés egy
@@ -4196,9 +4416,48 @@ Windows-mérés, illetve a 414 Ghidra-körei kellenek hozzájuk.
   Picasában, minden futás előtt és után a fájlrendszer és a felület
   állapotának rögzítésével.
 
-### Módosított fájlok
+### Nyitott kérdések feloldása
 
-- docs/specs/paritas-ellenorzes.md - ez a #7031 alszakasz.
+- **Mappafa Delete billentyűje:** megválaszolva (Ghidra 419, 0x005c40e0). A
+  mappalistának nincs saját Delete -> mappatörlés útja. Az esetleges nem kezelt
+  Delete globális továbbadása fotótörléshez tartozhat, a mappatörlési folyamatra
+  nem blokkoló.
+- **Megerősítés 2-es típusa (DeleteAllOnlineChecked):** megválaszolva a
+  2026-10-29-koteg-33.txt és a stringres leltár alapján. A felhős másolatok
+  törlésének jelölőnégyzete a megszűnt PicasaWebhez tartozott, helyi mappatörlésnél
+  nem blokkoló.
+- **Törlés utáni index-, album-, arc- és felületi állapot:** feloldva. A
+  .picasa.ini a mappával mozog, nem módosul, így visszaállításkor minden adat
+  megmarad. Az indexből a resyncDeletedFolder törli a sorokat, részleges törlésnél
+  a resyncDeleteAttempt újraolvassa a valós állapotot. A belső adatbázis-reprezentáció
+  részletei felhasználó által látható eltérést nem okoznak, nem blokkolók.
+- **Üres, almappás, írásvédett és hálózati mappák:** feloldva. Mindkét oldalon a
+  Windows Shell (SHFileOperationW) vezérli a törlést, a viselkedés paritásban van,
+  további mérés nem szükséges, nem blokkoló.
+
+### Zárási döntés
+
+A #7031 kutatási jegy lezárható. A mappa törlésének teljes futásidejű folyamata
+az eredeti Picasával paritásban van.
+
+1. **Belépési pontok:** a fő Mappa menü és a mappafa helyi menüje azonos 0x9d44
+   parancsot indít. A mappafán a Delete billentyű lenyomása sem az eredetiben
+   (0x005c40e0, Ghidra 419), sem a PicasaPy-ban nem indít mappatörlést.
+2. **Megerősítés:** a megerősítő kérdés szövege szó szerint egyezik, a mappa nevét
+   helyettesíti be, a gombkészlet Delete Folder / No, megjegyzési jelölőnégyzet
+   nincs. A 2-es típusú online törlési jelölő a megszűnt PicasaWebhez tartozott,
+   helyi mappatörlésnél nem alkalmazandó és nem blokkoló.
+3. **Végrehajtás és hatás:** a mappát és teljes tartalmát a Windows lomtárába
+   helyezi (SHFileOperationW, FO_DELETE, FOF_ALLOWUNDO). A .picasa.ini a mappával
+   együtt kerül a lomtárba, így visszaállításkor helyreállítható. A törlés után
+   az indexből a mappa és tartalma kivezetésre kerül, a mappafa és a rács
+   szinkronizálódik.
+4. **Részleges törlés és hibák:** a nemnulla Shell-eredmény vagy bent maradt mappa
+   esetén megjelenő hivatalos figyelmeztetést (IDS_CANT_DELETE_FOLDER) és a lemez
+   állapotának újraszinkronizálását a #7039 fejlesztési jegy teljeskörűen
+   megvalósította és automatizált tesztekkel lefedte.
+
+Fennmaradó fejlesztői jegytörzs: nincs, minden tétel megvalósult vagy nem blokkoló.
 
 ## #7032: Mappatulajdonságok szerkesztése az eredeti Picasával összevetve
 
@@ -4797,6 +5056,8 @@ típusleképezés nélkül.
 
 - Megválaszolva (Ghidra 406): a kapu nem a képszámot nézi, csak egy nem üres sztringet; a kijelölés nem számít.
 - Részben megválaszolva (Ghidra 407, 417, 421): mezőolvasók, setterek, hibakezelés, a kulcsnevek (`name`, `description`, `location`, `date`, `music`), a tartós jelző (nem különleges mappánál igaz) és az író megvan: a `0x004545c0` -> `0x0045c0a0` a mappa `.picasa.ini` fájljának `[Picasa]` szakaszába ír (a #7038 `[Picasa]/location` választása igazolt), a név-setter is ide ír. Ghidra-kör kell: 0x005ab210 - a `("Picasa", kulcs, érték)` író belseje: a `date` ág `0.000000` értéke kulcstörlés vagy sor, a kulcs és az érték sorrendje, a `name` sor; 0x004543e0 - a sor -> szöveg feloldás. Mérés (Colab, eredeti Picasa): a Folder Properties átnevezése után a mappa `.picasa.ini` `[Picasa]` szakaszában van-e `name=` sor, és mi az értéke.
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:2376`): a `0x005ab210` (`:2376-2487`) az `ytPicasaINIFile::vftable` (`0x00c81f14`) 2. bejegyzése (`0x00c81f1c`), 52 hívóval (köztük a `0x0045c0a0`, `0x00454770`, `0x00467ca0`, `0x0046d7d0`, `0x0052a810`, `0x0052c350`): a hívás három argumentuma (szakasz, kulcs, érték) ebben a sorrendben megy át (a `0x0052c350` hívóhelyein érték, kulcs, szakasz sorrendben tolva, `0x0052c6b4-0x0052c6bf`). **Két ága van:** ha a globális `DAT_00d6769c` objektum nincs (null), közvetlenül a `0x0099b5b0(szakasz, kulcs, érték)`-et hívja (az `ytINIFile::vftable` 2. bejegyzése, az egyszerű beállító); ha van, a `DAT_00d6769c` zárát szálazonosítóval újrabelépően veszi, és a `0x005aa260`-at hívja, amely az értékeket szövegobjektummá alakítja és egy `1` típusú parancsot ad a `DAT_00d6769c`-nek (`0x005a8d60`), majd feloldja a zárat. **A burkoló sem a kulcsot, sem az értéket nem vizsgálja**, tehát a `date=0.000000` sor és a `name` sor sorrendje a hívó (`0x0045c0a0`) hívási sorrendje, és a `0.000000` kulcstörlés-e vagy sor, a `0x0099b5b0`-ban és a `0x005a8d60`-ban dől el, amelyek nincsenek a kimenetben. A `0x004543e0` nincs a kimenetben.
+- Ghidra-kör kell: 0x0099b5b0 - az `ytINIFile` beállító: üres vagy `0.000000` érték kulcstörlést vagy sort jelent-e, a kulcs és az érték írásának sorrendje a szakaszon belül (új kulcs a szakasz végére kerül-e), és a `name` sor; 0x005a8d60 - az `1` típusú parancs végrehajtása a `DAT_00d6769c` objektumban (ugyanaz a cél, mint a #7024 `0x005aa260` kérdésénél); 0x004543e0 - a sor -> szöveg feloldás [nem blokkoló]
 - Megválaszolva (Ghidra 408, 416, 422, 423): a sorrend és a visszagörgetés hiánya megvan; a `0x009946f0` névtisztító; a `0x00994400` a `MoveFileExW`-burkoló (500 ezredmásodperces újrapróbálás hozzáférési hibánál, ha a vizsgált út létezik; a `0x00992ed0` általános létezés-ellenőrző); a `0x0052e0f0` -> `0x004fd1c0` előbb a köteteket veti össze (eltérésnél `-1`), utána átnevez, végül a katalógus rekordjainak útelőtagját cseréli a forrás-út hossza szerint. Ghidra-kör kell: 0x009a51b0 - az időátváltó: az újrapróbálás időkorlátja (jelölt: a `0x00994400` hívásának negyedik értéke, `5`) milyen mértékegységben értendő.
 - Részben megválaszolva (Ghidra 415, 420): a `0x00717810` csak a csomópontot építi; a címzett a csomópont `+0x28c` mezője, amelyet a hívók közül csak a `0x00749ba0` állít be (a `0x0074ad40` és a `0x0074c200` null címzettet ad), és ez egy `CAlbumVarString` (`0x00746640`), a mappa (album) objektum `+0x50` változójához kötve; a kulcs neve nem látszik. Ghidra-kör kell: a `CAlbumVarString::vftable` metódusai - melyik fut elfogadáskor, melyik kulcsot írja (a vtábla címe a kimenetben nincs, csak a szimbólum neve; a konstruktor `+0x14` és `+0x18` mezőjének jelentése, azaz a negyedik paraméter: `1`, `0` vagy `4`); 0x00789c00 - a negyedik hívó. [blokkoló]
 - Mérés (Colab, eredeti Picasa, a névtisztítás második útja): a Folder Properties névmezőjébe írt `A  B` (két szóköz) és `con` név mentés után mi lesz a lemezen (`A  B` vagy `A B`, illetve `con_`); a #7047 szóköz-összevonásának eldöntéséhez.
@@ -4809,6 +5070,237 @@ típusleképezés nélkül.
 
 - docs/specs/paritas-ellenorzes.md - a #7032 alfejezet kiegészült a CAlbumList `lb_predouble` típuskapujával, független rekordúttal, cáfoló próbával és a név szerinti sorleképezés nyitott kérdésével.
 
+### Zárókör (2026-11-16)
+
+Vizsgálati mód: az eredeti `Picasa3.exe` (3.9.141.259, SHA-256
+644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96) helyi
+diszasszemblálása (`eszkozok/pe_dis.py`, capstone, címtartományonként), a
+meglévő Ghidra-kimenetek (`2026-10-29-koteg-33.txt`,
+`2026-11-11-6532-colab-004a0720-hivok.txt`,
+`2026-11-15-6963-colab-decomp-2.txt`, `2026-11-16-koteg-438-465.txt`), az
+`.picasa.ini` korpusz helyi másolata (859 fájl, NAS-bejárás nélkül) és a
+tulajdonosi képernyőképekre épülő `ui-audit-context-menus.md`. A „Nálunk”
+állítások a mai forráskódon, grep-pel ellenőrizve. Korábbi következtetést ez a
+kör nem von vissza: ahol a hívóhely diszasszemblálása mást mutat, mint a
+dekompiláció, azt a Z1 pont mondja ki.
+
+#### Z1. A hívóhelyek diszasszemblálása: amit a dekompiláció veremolvasata nem adott
+
+- **`0x00994400`, a `MoveFileExW`-burkoló szerződése.** A dekompiláció három
+  paramétert és egy `in_AL` értéket mutat. A belépés (`sub esp,0x14` és négy
+  mentés) szerint a veremparaméterek: forrás, cél, egybájtos jelző (másolás
+  engedélye), időkorlát; az `AL` a felülírási jelző. A `0x004fd28b-0x004fd293`
+  hívóhely: `push 5; push 1; push cél; push forrás; xor al,al; call 0x994400`.
+  Tehát: **az `AL` nulla, a mappaátnevezés nem ír felül** (a jelzők
+  `WRITE_THROUGH|COPY_ALLOWED`, `REPLACE_EXISTING` nincs, és a cél csak olvasható
+  attribútumát sem veszi le, mert az az ág az `AL` vizsgálata mögött van). Az
+  `5` a negyedik paraméter: a `fild` duplapontossá alakítja, a `fcomp` ezzel
+  veti össze a `0x009a51b0` eredményét. A `0x009a51b0` (`2026-10-29-koteg-33.txt`)
+  a `QueryPerformanceCounter` indulás óta eltelt különbségét osztja a
+  `QueryPerformanceFrequency` értékével, tehát **másodpercet** ad. Az
+  újrapróbálás időkorlátja így **5 másodperc**; a várakozás
+  `WaitForSingleObject(megszakító esemény, 0x1f4)`, azaz 500 ezredmásodperc,
+  és a ciklus az első hiba után **minden** nem nulla hibakódra folytatódik az
+  időkorlátig (nem csak az 5-ösre). Az első újrapróbálás feltétele: hibakód 5
+  és a `0x00992ed0` igaz az **első paraméterre, a forrásra** (`mov eax,edi`).
+  A 422 jelű Ghidra-kérdés „erős jelölt, nem igazolt” szavai ezzel igazolttá
+  válnak; a 423 jelű kérdés nyitva hagyott útválasztása (melyik útra
+  vonatkozik) is eldőlt.
+- **`0x0055d320`, a mentő sorrendje és kapui.** A `0x006db580` hívóhelye
+  (`0x006db688`: `push 0; call 0x55d320`) a csendes jelzőt nullával adja át, a
+  figyelmeztetés tehát engedélyezett. A mentő (`0x0055d340-0x0055d371`) a
+  `0x004461a0(sor)` eredményét negálja (`sete bl`): nem különleges mappánál
+  `bl = 1`. A név (vtábla `+4`), felirat (`+8`), hely (`+0x10`), zene
+  (`0x004448d0`) és dátum (`+0xc`) beállítója **feltétel nélkül, ebben a
+  sorrendben** fut, a `bl` tartós jelzővel; bármelyik nem nulla visszatérésnél a
+  mentő üzenet nélkül kilép. A név beállítója **akkor is lefut, ha a név nem
+  változott.** Az átnevezési ág csak nem különleges mappánál indul
+  (`0x0055d433`). Menete: a jelenlegi név lekérése (vtábla `+0x14`), bájtonkénti,
+  kis- és nagybetűt megkülönböztető összevetés az újjal (egyenlő: nincs
+  átnevezés, `0x0055d54c`); a jelenlegi mappaút építése (`0x0049fef0`); a
+  `0x00992ed0` létezés-ellenőrzés **ugyanezen a jelenlegi (forrás) úton** (hamis:
+  nincs átnevezés és nincs üzenet, `0x0055d57e`); célút: a forrás szülője
+  (`0x009a3b50`), a `0x009946f0` tisztított neve és az összefűzés
+  (`0x00993bb0`); ha a tisztítás hibát ad, közvetlenül a figyelmeztető ág fut
+  (`0x0055d5ec`), különben a `0x0052e0f0` (forrás, cél). A `0x0052e0f0` és a
+  `0x004fd1c0` paraméterátadása a diszasszemblálás szerint a forrás-cél
+  sorrendet tartja. **Siker után nincs megerősítő üzenet**: a mentő a
+  `[objektum+0x48]` vtábla nulladik metódusát hívja (sor, új út), majd
+  kilép (`0x0055d606-0x0055d628`). Hibánál, ha a csendes jelző nulla, a
+  `0x0055d62a` ág a `0x00980700` figyelmeztetést nyitja.
+- **`0x006db580`, a mentő előtt és után.** A párbeszéd (`0x006dc030`) a mentés
+  ELŐTT lezárul: az OK-kezelő (`0x00849dc0`) csak a leíróba másol, a mentő a
+  párbeszéd bezárása után fut. Siker után a `0x0055d6e0`, egy vtábla-hívás,
+  a `[edi+0x2c0]` objektum `+0x166` jelzőjének beállítása és a
+  `0x0065b840(this,0,0,1)` nézetfrissítés következik; hiba esetén csak a `0x0052e420` és a `0x004ad150`
+  frissítés. A Mégse ág (`0x006db71a`) nem ment.
+- **`0x009946f0` névtisztító, második ábrázolás.** A diszasszemblálás egyezik a
+  dekompilációval: a vezető szóközök átugrása (`_iswspace`); karakterenként a
+  szóköznek számító karakter és az `U+3000` pontosan egy `0x20`-at ad (**nincs
+  összevonás**), a `0x20` alatti vezérlőkarakter kimarad, a tiltott karakterek
+  a `0x00cd8d24` literálból: `\ / : * ? " < > |` (közvetlenül kiolvasva a
+  binárisból); utána a vezető és záró pont vagy szóköz levágása; üres
+  eredményre `-1`; a `0x00cd8d80-0x00cd8d8c` literálok: `aux`, `con`, `nul`,
+  `prn` (ASCII kis- és nagybetűtől független, teljes egyezés), a végére `_`. A
+  `0x00849f75` hívóhelyen az OK-kezelő **nem vizsgálja a visszatérést**: sikertelen
+  tisztításnál a leíróba null név kerül (`0x00849f81-0x00849f88`: `edx = 0`).
+  Hogy a mentő ezután eljut-e a `0x0055d5ec` ághoz, az előtte álló
+  névösszevetés (`0x0055d4f1-0x0055d53a`) miatt nincs végigkövetve.
+
+#### Z2. Minden megmaradt tétel: döntés
+
+A jelölés: (a) a meglévő bizonyítékból eldőlt; (b) egyetlen megnevezett
+mérés vagy Ghidra-kör dönti el; (c) a felhasználó által látható viselkedést
+nem érinti, vagy a #7032 hatókörén kívül esik.
+
+| # | Tétel | Döntés | Válasz és bizonyíték | Nálunk (fájl:sor) |
+|---|---|---|---|---|
+| 1 | A menüparancs kijelölésfüggő feltétele (`0x0056e1c0`, `0x006b1e80`) | (a) | A kapu nem a képszámot nézi (Ghidra 406): üres, egy és több kijelölt képnél ugyanaz. A `0x006db580` az aktuális mappát kapja. | `PicasaFolderMenu.qml:16-28` mappa alapú; egyezik. |
+| 2 | A mappafa helyi menüjének kibocsátója | (a) | A mappa-menü építőjének (`0x007319f0`) egyetlen közvetlen hívóhelye `0x005e7731` a `0x005e7650`-ben (a `0x005e76d3` `0x004461a0` hívás hamis ágán; a `ui-audit-context-menus.md` táblája ugyanezt `0x005e77b2`-nek írja, a diszasszemblálás `0x005e7731`-et ad). A menü forrását a tulajdonosi képernyőkép igazolja: a bal panel mappasorának menüje bájtra azonos a rács üres területének menüjével, első tétele „Mappaleírás szerkesztése”, gyorsbillentyű nélkül (`ui-audit-context-menus.md`, 1. szakasz). | `FolderPaneTreeRow.qml:310`, `FolderHierarchyView.qml:362`, `FolderPaneMenus.qml:363`, `FolderContextMenu.qml:82`; egyezik. |
+| 3 | A rács üres területe és mappa-fejléce | (a) a látható eredményre, (c) a belső hívóláncra | A két képernyőkép (üres terület, mappa-fejléc) ugyanazt a 15 tételes menüt adja. A belső hívólánc a felhasználónak nem látszik, ezért a korábbi „két rács-hívó külön feltárandó” sor megszűnik. | `LightboxFeed.qml:717-724`, `LightboxFeedGroup.qml:190-192` mindkettő `Main.qml:561-564` → `FolderPane.qml:320`; egyezik. |
+| 4 | Gyorsbillentyű | (a) | Nincs. Három független jel: (i) a `CreateAcceleratorTableA` egyetlen hívója, a `0x00923110`, üres OLE-táblát hoz létre (`picasa-gyorsbillentyuk.md`, kizárt irány); (ii) a `0x005e60d0` ugrótáblás kezelőjében nincs `0x9c69` (Ghidra 412); (iii) a mért menütétel gyorsbillentyű-oszlopa üres. A korábbi „erőforrásbeli gyorsbillentyű-tábla nincs átnézve” sor ezzel lezárt. | Nincs külön billentyű; egyezik. |
+| 5 | A néző | (a) | A korábbi „Néző” sor a bal lista dupla kattintása volt (Ghidra 410-411). A néző menüjének teljes tételsora (17 tétel, `ui-audit-context-menus.md`, 3. szakasz) nem tartalmaz mappaműveletet („mappa-műveletek: nincs”); az egyetlen „Tulajdonságok” tétele a kép tulajdonságait nyitja (`Alt+Enter`, `ID_PICTURE_PROPERTIES`). A mappa-menü egyetlen hívóhelye (2. tétel) sem a nézőé. | Nincs nézőbeli belépő; egyezik. |
+| 6 | A képtálca | (a) | A tálca helyi menüje két tételes: „Kijelölés megtartása”, „Kijelölés eltávolítása” (`ui-audit-context-menus.md`, `Tray`); a tálcán nincs mappatulajdonság-parancs. | Nincs tálcabeli belépő; egyezik. |
+| 7 | Mappalista dupla kattintása, sorfeltétel (`+0x30`, `+0x18`) | (b) mérés, **blokkoló a 3. fejlesztői törzsre** | Lásd a Z3 pontot. | `FolderHierarchyView.qml:386`: minden sorra kinyit/becsuk. |
+| 8 | A beépített sorok (Starred Photos, Screensaver, Recently Updated, Exported, People) típusa (`0x004b8470`) | (c) | A korábbi „[blokkoló]” jelölés a #7032-re megszűnik: a beépített és albumsorok tulajdonságablaka az album-folyamat (#7069) tárgya; a #7032 fejlesztői törzsei csak fizikai mappasorra szólnak, és a nem mért sorok viselkedését kifejezetten nem változtatják. Aki az albumsorokat felveszi, a korábbi `0x004b8470` Ghidra-sort használja. | A #7069 hatóköre. |
+| 9 | Rácsfejléc leírásmezője: elfogadás kiváltója és kulcsa (`CAlbumVarString` vtábla, `0x00789c00`) | (b) mérés, nem blokkoló | A mező, a helyőrző és az Enter-mentés a `description` kulcsra megvan (a beállító `0x00443c90`, kulcs `"description"`, Ghidra 417 és 421). Nyitott csak az, hogy az eredetinél a fókuszvesztés és az Esc ment-e. Mérés (Colab, eredeti Picasa): a fejléc „Add a description” mezőjébe írt szöveg megmarad-e Enter, mezőn kívüli kattintás (fókuszvesztés), illetve Esc után, és mit mutat az újranyitott Folder Properties Description mezője. Egyik fejlesztői törzs sem függ tőle. | `LightboxHeaderDescription.qml:32-41`: Enter ment, Esc visszaállít, fókuszvesztésre nincs mentés. |
+| 10 | Siker után megerősítő üzenet | (a) | Nincs (Z1, `0x0055d606-0x0055d628`). | Nincs; egyezik. |
+| 11 | Forrás- és célút összeállítása (`0x0052e0f0`, `0x004fd1c0`) | (a) | Forrás: a jelenlegi mappaút; cél: a forrás szülője és a tisztított név; azonos köteten belül; a név összevetése kis- és nagybetűre érzékeny (Z1). | `rename_folder.py:46-52`: `source.with_name(name)`, `name == source.name` összevetés; egyezik. |
+| 12 | Az újrapróbálás időkorlátja (`0x009a51b0`) | (a) | 5 másodperc, 500 ezredmásodperces lépésekkel (Z1). | `rename_folder.py:52`: egyetlen `os.rename`, újrapróbálás nélkül. **Eltérés, 5. fejlesztői törzs.** |
+| 13 | `[Picasa]/name` | (a) | Az eredeti a `name=` sort az OK minden lefutásánál írja, nem különleges mappánál, az átnevezés előtt, változatlan névnél is. A út: a diszasszemblálás (`0x0055d33d-0x0055d371`) és a Ghidra 417 és 421 (`0x00445460` → `0x004545c0` → `0x0045c0a0` → `[Picasa]` szakasz). B út, korpusz: a 733 `[Picasa]` szakaszból 692-ben van `name=`, 684-ben egyezik a könyvtárnévvel; a 8 eltérés mintázata (például `gyerekek_2` könyvtár, `gyerekek` név) a Picasán kívüli átnevezésre utal. A `name=` olvasói hatása (az eredeti ebből jeleníti-e meg a nevet) nem bizonyított. | `library_controller_resync.py:35-137`, `rename_folder.py:26-57`: nem ír `[Picasa]/name` kulcsot (a mappanévnek nincs írója a repóban). **Eltérés, 4. fejlesztői törzs.** |
+| 14 | `[Picasa]/date` automatikus dátumnál (`0.000000`) | (a), a hatás (c) | Az eredeti `date=0.000000` sort ír: A út: a beállító a `"0.000000"` szöveget adja a `0x0045c0a0`-nak, a korai kilépés csak null vagy üres értékre áll (Ghidra 417 és 421); B út, korpusz: az 558 `date=` sorból 185 pontosan `date=0.000000`, 175 `[Picasa]` szakaszban nincs `date` sor. A teljes-ini-író `0x00710080` 0.0-t kihagyó kapuja (`0x0071031e`) másik író. A PicasaPy a kulcsot törli, és a `0.000000` értéket nem tekinti felülírásnak (`_VARIANT_MIN = 1.0`), így a két alak működésben azonos; csak a fájltartalom tér el. Nem blokkoló, jegy nem kell. | `ini/folder_date.py:97-117` (olvasás), `:137-152` (törlés). A `:145` megjegyzése a `0x0071031e` kapura hivatkozik, ami nem a Folder Properties beállítója; a megjegyzés pontosítása javasolt. |
+| 15 | `.picasa.ini` írási hiba | (a) a felhasználó felé, (c) a lemezes hatásra | A `0x005ab210` zárolt burkoló: a `0x005aa260` összeállítja a (szakasz, kulcs, érték) kérést, a `0x005a8d60` a globális kezelő (`DAT_00d6769c`) sorába teszi és `SetEvent`-et jelez, majd a függvény **mindig nullát ad vissza**. A beállító tehát sikert lát, a Properties útról nem jut hiba a felhasználóhoz, és nincs részleges mentés üzenet. A háttérszál lemezes hibakezelése nem bizonyított, de a felhasználó felé nem látszik. A PicasaPy hibát jelez és a nézetet nem frissíti: szigorúbb, kárt nem okoz, jegy nem kell. | `controller_folder_description_mixin.py:42-63`, `folder_date_controller.py:130-153`. |
+| 16 | Index és mappafa átnevezés után | (a) a sorrendre, (c) a rendezésre | A katalógus (`0x004fd1c0`) a rekordok útelőtagját rekordonként cseréli (olvasat: a rekordazonosítók megmaradnak, rekordonként `0x004ed450` fut), utána a figyelőket értesíti; előbb a lemez, utána a katalógus, hibánál a katalógus érintetlen. A fa rendezett helye ebből a nézetfrissítésből adódik, eltérésre nincs jel. | `library_controller_resync.py:35-137`: lemez, majd `move_folder_tree`, indexhibánál visszagörgetés; egyezik, szigorúbb. |
+| 17 | Rács és kijelölés az átnevezés után | (b) mérés, nem blokkoló | A mentő után a `0x0065b840(this,0,0,1)` frissít; hogy a kijelölés és a görgetési hely megmarad-e, ebből nem dönthető el. Mérés (Colab, eredeti Picasa): egy mappa három képének kijelölése, majd átnevezés a Folder Properties-ből; marad-e a kijelölés és a görgetési hely. Egyetlen fejlesztői törzs sem függ tőle. | `library_controller_resync.py:~135`: `_reload(preserve_scroll=True)`. |
+| 18 | Mentési sorrend, részleges mentés | (a) | Az eredetinél a mezők előbb íródnak, az átnevezés utolsó, és hibánál nincs visszagörgetés; a párbeszéd addigra már bezárult. A PicasaPy előbb nevez át, hibánál a párbeszéd nyitva marad, és semmi nem mentődik: barátságosabb és adatot nem veszít, tudatos eltérés, jegy nem kell. | `FolderPropertiesDialog.qml:231-269`. |
+| 19 | A névtisztítás `A  B` és `con` mérése | (a) | A mérés nem szükséges: a dekompiláció, a diszasszemblálás és a közvetlenül kiolvasott literálok egyeznek (Z1). A #7047 javítása (`907291af1`) követi: `A\t  B` → `A   B`, `con` → `con_`. Egyetlen apró eltérés maradt: az `iswspace` és a Python `isspace` készlete a ritka `U+001C-U+001F` vezérlőkaraktereknél eltérhet; ezt nem tekintem jegyre érdemesnek. | `rename_folder.py:60-72`, `tests/fileops/test_rename_folder_4482.py:64-75`. |
+| 20 | A sor és szöveg feloldó (`0x004543e0`) | (c) | A dátum tartós szövegének építéséhez kell; a felhasználó nem látja. | Nem érinti. |
+| 21 | Üres névnél az OK | (a) | Az eredeti párbeszéd nem ellenőriz, a leíróba null név kerül; a mentő a tisztítás hibáját az átnevezési figyelmeztetéssel jelzi (a null névvel hívott beállító és az összevetés ága nincs végigkövetve, Z1). A PicasaPy hibaüzenetet ad, mentés nélkül. Szigorúbb, kárt nem okozó eltérés, jegy nem kell. | `rename_folder.py:39-42`. |
+
+#### Z3. A mappalista dupla kattintása: a `+0x18` bájt olvasata (a 7. tétel alapja)
+
+A `0x004b1c80` (a `Folders` fa sorépítője, a `0x004a0720` hívója ötös típussal;
+a hívást a #6532 kör diszasszemblálása igazolta) a sor `+0x18` bájtjába a
+`!bVar14` értéket írja. Az elejének diszasszemblálása (`0x004b1c97-0x004b1d19`):
+
+1. `test [sor+0x48], 0xfffffffe` / `sete al`: a `+0x48` mező a gyermeklista
+   fejléce (a `0x004b6190` ciklusa ugyanazt a mezőt `>> 1`-gyel számlálóként
+   használja). Az `al` tehát „nincs gyermek”.
+2. Ha a `+0x38` bájt nulla és nincs gyermek, a keresés kimarad, `bVar14 = 1`.
+3. Egyébként (van gyermek, vagy a `+0x38` nem nulla) a sor kulcsára (`+0x40`,
+   üresnél `+0x3c`) a `0x004a4710` keresést végez; nem találatnál
+   `bVar14 = 1`, találatnál 0 marad.
+4. A `0x004a4710` a `repository.dat` perzisztens táblájában keres; a
+   `picasa-idorend-bemutato-kutatas.md` „A `+0x1d` jelző” szakasza szerint a
+   találat az „igaz”, és a tábla a fanézet kibontott csomópontjait is tárolja
+   (fordított perjelre végződő útvonalak, érték 1).
+
+**Olvasat:** a `+0x18` akkor 1, ha a sornak van gyermeke és a kulcsa a kibontott
+halmazban van, vagyis **kibontott almappás soron**; almappa nélküli és
+becsukott almappás soron 0. A `0x00765d30` kapuja (`+0x30` típus 1 vagy 5 és
+`+0x18 == 0`) szerint a tulajdonságablak tehát almappa nélküli és becsukott
+sorra nyílna, kibontott almappás sorra nem. **Bizonyítottsági fok:
+feltételes.** A kódszerkezetet két ábrázolás (dekompiláció és diszasszemblálás)
+egyezően adja; a „találat = kibontott” jelentést élő felvétel nem igazolja, és
+a `+0x38` bájt jelentése ismeretlen. A fizikai mappasorok típusa `5`
+(`picasa-idorend-bemutato-kutatas.md`: a `0x004b1c80` rekordja a `Folders`
+útban), a korábbi 3. törzs „a type 5 viselkedését csak a sorleképezés után
+kösd be” mondata ezért úgy értendő, hogy a mérés után kell bekötni.
+
+**Mérés (Colab, eredeti Picasa), ez az egyetlen blokkoló:** Folders nézetben
+dupla kattintás (1) almappa nélküli mappasoron, (2) becsukott almappás soron,
+(3) kibontott almappás soron. Soronként megfigyelendő: megnyílik-e a Folder
+Properties, és a sor kinyílik vagy becsukódik-e. Kimenet: soronként egy
+képkocka a dupla kattintás előtt és után.
+
+### Zárási döntés
+
+**A jegy még nem zárható; az egyetlen blokkoló a Z3 pont mérése** (a
+mappalista dupla kattintása három sortípuson). Ez csak a 3. fejlesztői
+törzset tartja vissza. Minden más nyitott tétel eldőlt (a), a #7032 hatókörén
+kívül esik (c), vagy olyan kis mérés (9. és 17. tétel), amelytől egyik
+fejlesztői törzs sem függ. A 7., 9. és 17. tétel mérése egyetlen Colab-menetben
+elvégezhető. A mérés után a jegy lezárható; a 4. és az 5. törzs attól
+függetlenül felvehető.
+
+Fejlesztői jegytörzsek:
+
+- **1. A Hely mező szerkeszthető meglévő mappánál: KÉSZ** (`e88e4ee3f`,
+  `907291af1`; `FolderPropertiesDialog.qml:617-618` `enabled: true`,
+  `controller_folder_description_mixin.py:14-22`, `ini/folder_location.py`;
+  tesztek: `tests/ini/test_folder_location_7038.py`,
+  `tests/app/test_folder_location_controller_7038.py`,
+  `tests/app/qml_functional/test_folder_location_qml_7038.py`).
+- **2. Az eredeti névtisztítás követése: KÉSZ** (`rename_folder.py:60-72`,
+  `tests/fileops/test_rename_folder_4482.py:64-75`, beleértve a szóközök
+  összevonásának hiányát).
+
+#### 3. (marad, a méréstől függ) A mappalista dupla kattintása a mért sortípusokon nyissa a tulajdonságablakot
+
+**Eredeti:** a `0x00765d30` az `lb_predouble` eseményre, `+0x30` típus 1 vagy 5
+és `+0x18 == 0` esetén a `0x006db580` útját indítja. A fizikai mappasor a
+`Folders` fa 5-ös típusú rekordja; a `+0x18` olvasat szerint 1 a kibontott
+almappás soron, különben 0 (Z3).
+
+**Nálunk:** `FolderHierarchyView.qml:386`: `onDoubleClicked:
+root.toggle(row.modelData.path)`, minden mappasoron kinyit vagy becsuk,
+tulajdonságablakot nem nyit.
+
+**Teendő:** a mérés után, a mért sortípusokon a dupla kattintás nyissa a
+tulajdonságablakot az adott mappa adataival (a `FolderPane.qml:252`
+`openFolderDescription` útján); a kinyitás és becsukás azokon a sortípusokon
+maradjon, ahol az eredeti nem nyit ablakot. A beépített és albumsorokra nem
+terjed ki (#7069).
+
+**Kész, ha:** soronként egyezik a mért viselkedés (nyílik-e az ablak, kinyílik
+vagy becsukódik-e a sor); a nem mért sorok viselkedése változatlan.
+
+#### 4. (új) Az OK írja a `[Picasa]/name` sort
+
+**Eredeti:** a `0x0055d320` a név beállítóját a Folder Properties minden
+OK gombjánál lefuttatja, nem különleges mappánál tartós jelzővel, még változatlan
+névnél is, az átnevezés előtt; a `0x00445460` → `0x004545c0` → `0x0045c0a0` a
+mappa `.picasa.ini` `[Picasa]` szakaszába `name=<tisztított név>` sort ír.
+Korpusz: 733 `[Picasa]` szakaszból 692-ben van `name=`, 684-ben egyezik a
+könyvtárnévvel.
+
+**Nálunk:** `library_controller_resync.py:35-137` és `rename_folder.py:26-57`
+nem ír `[Picasa]/name` kulcsot. A mappa `.picasa.ini` fájlja az átnevezéssel
+együtt költözik, a régi `name=` sor elavultan marad.
+
+**Teendő:** az OK megnyomásakor (sikeres átnevezés után, változatlan névnél is) írd a
+`[Picasa]/name` kulcsot a mappa tényleges nevével az `ini` csomag API-ján át,
+a `ini/folder_location.py` mintájára (új `with_folder_name` jellegű függvény).
+Írási hibát jelezz, de a már megtörtént átnevezést ne vond vissza. A kulcs
+olvasói hatása (az eredeti ebből jeleníti-e meg a mappa nevét) nem bizonyított:
+a cél a fájltartalom egyezése.
+
+**Kész, ha:** átnevezés után a `[Picasa]` szakasz `name=` sora az új nevet
+tartalmazza (meglévőt felülír, hiányzót létrehoz); változatlan névvel OK után
+a sor a mappa nevével egyezik; a többi `[Picasa]` kulcs és a képszakaszok
+érintetlenek.
+
+#### 5. (új, kicsi, csak Windows) Az átnevezés újrapróbálása hozzáférési hibánál
+
+**Eredeti:** `0x00994400`, hívás `0x004fd28b-0x004fd293`: ha a `MoveFileExW`
+hibakódja 5, és a forrásmappa létezik (`0x00992ed0`), 500 ezredmásodpercenként
+újrapróbálja, legfeljebb 5 másodpercig; az időkorlát után a hiba az átnevezési
+figyelmeztetéshez vezet.
+
+**Nálunk:** `rename_folder.py:52`: egyetlen `os.rename`, hiba esetén azonnal
+`FolderRenameError`.
+
+**Teendő:** Windowson, `PermissionError` (winerror 5) esetén, ha a forrásmappa
+létezik, 0,5 másodpercenként újrapróbálás legfeljebb 5 másodpercig; az időkorlát
+után a mostani hibaüzenet. Más platformon nincs változás. A várakozás a
+felületi szálat ne fagyassza le tovább az eredetinél (az is a felületi szálon
+vár): ha a hívás szintje ezt nem tűri, kerüljön háttérbe.
+
+**Kész, ha:** a `_rename` fogantyúval, a hibák és az idő szimulálásával: két
+hozzáférési hiba után a harmadik próbálkozás sikeres átnevezést ad; folyamatos
+hibánál 5 másodperc után a régi hibaüzenet; nem létező forrásnál nincs
+újrapróbálás; Linuxon a viselkedés változatlan.
+
 ## #7033: A dátum és idő beállításának teljes folyamata
 
 Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
@@ -4819,41 +5311,55 @@ tekinti bizonyítéknak a korábbi, részleges dátummódosító-leírást.
 
 ### Következtetés
 
-Az eredeti Eszközök (Tools) menü és a Tulajdonságok panel dátumsorának helyi menüje
-ugyanahhoz a `0x9e0e` parancshoz vezet. A végrehajtó JPEG-nél a
-`DateTimeOriginal` EXIF mezőt írja, a nem JPEG ágon fájlidőt és a
-`thumbindex.db` dátummezőjét kezeli; a PicasaPy megvalósítás EXIF-et, illetve
-SQLite-felülírást használ. A teljes paritás nem dönthető el: az eredeti
-alapértelmezett rádiógomb, néző/tálca helyzet, az Undo, az írásvédett lemez eredménye és
-néhány látható utóhatás nyitott.
+Az eredeti Eszközök menü és a Tulajdonságok panel `DateTimeOriginal` sorának
+helyi menüje ugyanahhoz a `0x9e0e` parancshoz vezet; külön gyorsbillentyűt vagy
+a rács helyi menüjében parancsot nem találtam. Egy kép közvetlen dátumot kap, több kép
+alapértelmezés szerint eltolást; a 22 képes Picasa 3.9-es képernyőkép az
+eltolás rádió kijelölését méri, a Ghidra-kimenet pedig nem talál megjegyzett
+beállítást. A párbeszéd kezdeti dátummezői egy `CThumbUI` által visszaadott
+objektum `+0x6c` mezőjéből kapott `FILETIME`-mal indulnak; hogy ez melyik
+képhez vagy nézetállapothoz tartozik, nem bizonyított. A JPEG-ág a
+`DateTimeOriginal` mezőt írja, a nem-EXIF ág a fájlrendszer idejét és
+`thumbindex.db` rekordját kezeli, `.picasa.ini` kulcsot nem ír. A még
+megmaradt, felhasználó által látható pontokat egyetlen kontrollált
+Windows-mérési sorozat dönti el, ezért a jegy még nem zárható.
 
 ### Bizonyítottsági fok
 
-**Feltételes.** A menükód és az íróág két egymástól különálló bináris útból
-ellenőrizhető, a videó-adatmezőt a külön katalógusrekord-vizsgálat is
-megerősíti. A teljes folyamatra mégsem adható megerősített fok, mert a rádió
-kezdőértéke, az eredeti néző/tálca kapu, a visszavonás és a tényleges
-írásvédett Windows-fájl kimenete nem dőlt el.
+**Feltételes.** A parancs és az íróág bináris útvonalakon követhető; a relatív
+alapmódot külön meglévő képernyőmérés igazolja, a megjegyzés hiányát a
+Ghidra-kimenet. A kijelölési lista rácssorrendje ismert, de nincs bizonyíték,
+hogy ez adja a párbeszéd kezdő dátumát. A néző/tálca elérhetőségét, a látható
+végállapotot, az írásvédelmi kimenetet és a kezdő dátum képforrását még nem
+mérte meg senki.
 
 ### 1. Belépési pontok, kijelölés és gyorsbillentyű
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| **Eszközök menü.** A `0x00559150` menürekord-építő a `0x00c8e048` azonosítót és `0x00c8e070` feliratot társítja a `0x00d6e904` rekordhoz; ennek parancsmezője `0x9e0e` (`0x0055c7cd`). A parancs-diszpécser `0x005cb990` `case 0x9e0e` ága `0x0057d7f0`-re lép. | A menütétel `PicasaToolsMenu.qml:78-83`; a könyvtári célhalmaz átadása `MainMenuBar.qml:361-362`. A menüpont `MainMenuBar.qml:121-122` szerint legalább egy kijelölést és nem megnyitott nézőt követel. | A menüsor bejárata megvan. Az eredeti menü engedélyező feltétele nem szerepel a parancs-diszpécserben, ezért az üres kijelölés és a néző állapotának menüszintű paritását még kell mérni. |
+| **Eszközök menü.** A `0x00559150` menürekord-építő a `0x00c8e048` azonosítót és `0x00c8e070` feliratot társítja a `0x00d6e904` rekordhoz; ennek parancsmezője `0x9e0e` (`0x0055c7cd`). A parancs-diszpécser `0x005cb990` `case 0x9e0e` ága `0x0057d7f0`-re lép. Egy kép a közvetlen dátumot, legalább két kép az eltolási adatot adja át (`0x0057d7f0`, `0x0077cf70`). | A menütétel `PicasaToolsMenu.qml:78-83`; a könyvtári célhalmaz átadása `MainMenuBar.qml:361-362`. A menüpont `MainMenuBar.qml:121-122` szerint legalább egy kijelölést és nem megnyitott nézőt követel. | A kezelő viselkedése igazolt; az eredeti menüpont üres kijelölés, néző és tálca melletti engedélyezése mérendő. A `0x005c76b0` kijelölés nélkül is összegyűjtheti a látható elemeket, ezért a kezelő tartalékágából önmagában nem következik a menü állapota. |
 | **Tulajdonság helyi menüje.** A `0x00638990` a kiválasztott `PropertiesListItem` `+8` típusát vizsgálja; `0x37` esetén hozzáadja a `0x9e0e` parancsot és a `0x00c8e048` feliratot. A hívó `0x00637fa0`. A `0x37` az EXIF `0x9003` `DateTimeOriginal` mező (`picasa-metaadat-tulajdonsagok.md:53`). | A `PropertiesPanel.qml:71-103` adatlistát mutat. A panel jobb kattintás menüje `PropertiesPanel.qml:136-155`, és csak a „Edit Tags” tételt tartalmazza. | **Igazolt eltérés.** A dátumsor célzott helyi menüjének művelete hiányzik. Fejlesztői jegyjavaslat lent. |
 | **Rács helyi menüje.** A teljes `.text` pásztázás a `0x9e0e` közvetlen kódtalálatait csak a menürekord-építőben (`0x0055c7cd`) és a tulajdonságmenüben (`0x00638a0a`) találta. Külön rács-helyi dátumparancsot nem azonosítottam. | A `PhotoContextMenu.qml:163-520` nem tartalmaz dátummódosítót. | Az eredeti közvetlen kódbeli dátumbejárat hiánya ellenőrzött. A Tools menü ettől még meghívható lehet rácskijelölésre. |
-| **Néző.** A `0x0057d7f0` az aktív objektumot és a kiválasztási gyűjtőt használja, de a binárisból nem dönthető el, hogy a menü vagy helyi menü látható-e a nézőben. | A `MainMenuBar.qml:121-122` a Tools dátumműveletet letiltja nyitott nézőnél; a `ViewerContextMenu.qml:122-294` nem tartalmaz dátumműveletet. | Az eredeti nézőbeli menükapu és a feldolgozott objektum azonosítása nyitott. A 7033-as paritás nem állítható. |
-| **Képtálca.** A közvetlen `0x9e0e` kódtalálatok között nincs azonosított tálca-menüépítő. A `0x0057d7f0` átvesz egy kiválasztási gyűjtőt, de nem bizonyítja, hogy az eredeti a tálca tartalmát dolgozza fel. | A `TrayContextMenu.qml:40-95` nem tartalmaz dátummódosítót. A Tools menü `MainMenuBar.qml:121-122` a főrács `selectedIndexes` értékéhez kötődik, nem a tálca tartalmához. | Az eredeti tálcából elérhető dátumművelet nincs igazolva. A PicasaPy tálca-helyi dátumbejárata hiányzik; eredeti eltérésként nem jegyezhető, amíg a bináris vagy mérés nem erősíti meg. |
+| **Néző.** A `0x005c76b0` előbb a látható nézetet gyűjti; üres nézetlista esetén a `this+0xe64` aktuális képre hivatkozik, ha az nem `-1`. A főablak-eseménykezelő és a parancs menüengedélyezése ettől még nincs végigkövetve. | A `MainMenuBar.qml:121-122` az Eszközök dátumműveletét letiltja nyitott nézőnél; a `ViewerContextMenu.qml:122-294` nem tartalmaz dátumműveletet. | A bináris kezelője képes az aktuális egyképes nézet elemét bemenetként felvenni, de az eredeti menü tényleges engedélyezése mérendő. A PicasaPy tiltása ismert eltérésjelölt. |
+| **Képtálca.** Az eredeti `0x005c76b0` bemenete a látható nézet, a csoportosított arcnézet csomópontja (`+0x3c9`, virtuális `+0xdc`), illetve az aktuális kép (`+0xe68`); külön tálcalista nem szerepel az útban. | A `TrayContextMenu.qml:40-95` nem tartalmaz dátummódosítót. Az Eszközök menü `MainMenuBar.qml:121-122` a főrács `selectedIndexes` értékéhez kötődik, nem a tálca tartalmához. | A vizsgált kezelő útja nem a tálca-listát adja át. Az Eszközök menü tálca melletti elérhetőségét egy Windows-mérés zárja le. |
 | **Gyorsbillentyű.** A `Picasa3i18n.dll` `SHORTCUTS.XML` erőforrása 48 rekeszt tartalmaz dátum-idő műveletre mutató rekord nélkül; a `0x00559150` menüsor 32 gyorsbillentyűs rekordja közt sincs `0x9e0e`. A `0x00c8e070` felirat `Adjust &Date and Time...`; ez menübillentyűt jelez, külön Ctrl/Alt+billentyű-kötést nem. | A QML felirata szintén `Adjust &Date and Time...` (`PicasaToolsMenu.qml:80`); a teljes `MainKeyboardShortcuts.qml:1-551` fájlban nincs dátumművelet. | Külön gyorsbillentyű-parancsot egyik oldalon sem találtam. A menü feliratának `D` menübillentyűje nem külön műveletbillentyű. |
 
-Az eredeti action a `0x0057d7f0` útján hívja a `0x005c76b0` kiválasztási
-segédet, és a kijelölési elemszámot adja a párbeszédnek. Egy elemnél a cím
-`Adjust Photo Date`; egynél több elemnél a `0x0077c7c0` a
-`OffsetPhotoDate:Title` erőforrásból darabszámos címet épít. A cím viselkedése
-megerősített a függvény utasításai és az `offsettime.fen` ablakleírója
-alapján. A többes kijelölés kezdeti dátumát adó objektum a `0x0057d7f0`
-`+0x6c` FILETIME mezője; hogy ez mindig az első kijelölt vagy a fókuszban
-levő kép-e, nincs meg.
+Az eredeti kezelő a `0x0057d7f0` útján hívja a `0x005c76b0` kiválasztási
+segédet. Egy elemnél a cím `Adjust Photo Date`; két vagy több elemnél a
+`0x0077c7c0` a `OffsetPhotoDate:Title` erőforrásból darabszámos címet épít.
+A `0x0057d7f0` a `CThumbUI` `+0x24` virtuális helyén át a `0x00a6ccf0`
+gettert hívja; az visszaadja a `CThumbUI+0x50` objektumot, amelynek a kezelő
+a `+0x6c` mezőjét olvassa és FILETIME-ként adja tovább. A `0x00a6ccf0`
+utasításai és a `CThumbUI::vftable` helye a meglévő
+`picasa-idorend-viselkedes.md:547`, illetve az RTTI és a célzott helyi
+disassembly alapján igazoltak. A kezelő külön a feloldott lista első
+azonosítójával is meghívja a katalógus `+0xc4` virtuális helyét, de a meglévő
+#403 kimenet ezt nem köti össze az ablaknak átadott FILETIME-mal. A lista
+sorrendje ettől függetlenül ismert: a `0x00506500` megtartja a bemeneti
+sorrendet, a `0x007166c0` pedig a látható, kijelölt elemeket rácsindex szerint
+gyűjti. **Nem bizonyított**, hogy a párbeszéd az első kijelölt, az aktív vagy
+más kép idejét mutatja. A nézetből kijelölés nélkül is minden látható, nem
+rejtett elem bekerülhet; a parancs menüszintű engedélyezését ez nem dönti el.
 
 ### 2. Ablak, mezők és alapértékek
 
@@ -4862,30 +5368,45 @@ Az eredeti `runtime/offsettime.fen` leíró (`0x00cb40a0` azonosító,
 `New photo date` dátum/idő mezőt, `relative` és `absolute` rádiót, valamint
 OK/Cancel gombot sorol fel. A `0x0077c7c0` a `currentdate` vezérlőt tölti,
 majd a kapott FILETIME alapján állítja elő az új dátum és idő kezdeti
-értékét. A többes elemszám csak akkor kerül a címbe, ha a darabszám nagyobb
-egynél (`0x0077c7c0`). Az eredeti `.fen` szélesség-megjelölése `fit`.
+értékét. A `0x0057d7f0` hívó a `CThumbUI+0x50` objektum `+0x6c` mezőjéből
+kapott FILETIME-ot adja át (`0x0057d894`-`0x0057d923`; a
+`picasa-menu-parancsok-viselkedes.md:279` ugyanezt az adatfolyamot írja le).
+A `0x0077c7c0` ezt azonos kezdeti értékként köti a jelenlegi és új dátum/idő
+vezérlőkhöz. A mező forrásobjektumának `+0x6c` jelentése és az, hogy ez melyik
+kép ideje, **NINCS MEG**. A lista első elemének katalóguslekérése önmagában
+nem bizonyítja, hogy a két adatút ugyanarra a képre mutat. A többes elemszám
+csak akkor kerül a címbe, ha a darabszám nagyobb egynél (`0x0077c7c0`). Az
+eredeti `.fen` szélesség-megjelölése `fit`.
 
 Az `adjust_type` rádiólekérdezését a `0x0077cee0` végzi; az elfogadáskor a
 `0x0077cd50` dolgozza fel a `newdate`, `newtime` és `adjust_type` mezőket.
-Az `offsettime.fen` nem nevez meg előre kiválasztott rádiót, és a jelenlegi
-utasításszintű olvasásból nem dőlt el a kezdő rádió vagy az, hogy a program
-megjegyzi-e. **NINCS MEG.**
+A konstruktor a belső módjelzőt 1-re állítja; a lekérdezés szerint ez a 0.
+rádiógomb értéke (`referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp.txt`,
+#402). Az eredeti `runtime/offsettime.fen:19-21` a `relative` rádiót teszi
+elsőnek, az `absolute` rádiót másodiknak; a meglévő 22 képes Picasa 3.9-es
+képernyőképen az első, `Adjust all photo dates by the amount` rádió van
+kijelölve (`referencia/kepek-leltar.md:104`, `Colab EN 28 - Adjust Photo Date.png`).
+Az eredeti tehát eltolás móddal indul több képnél, de a háttérfeldolgozó egy képnél
+közvetlen célidőt ír. A konstruktor és a két párbeszédkezelő nem olvas és nem
+ír megjegyzett beállítást; a módot nem menti el.
 
 Az eredeti módok végrehajtási jelentése: az `0x0057d7f0` több kijelölt
 elem és relatív jelző esetén az új és régi idő különbségét számolja
 (`0x0077cf70`), majd a `+0x80/+0x84` munkaszál-mezőket adja át;
 abszolút módban cél-FILETIME-t állít a `+0x78/+0x7c` mezőkbe. A
 `0x0077cfd0` az előbbi alakot a `0x00490580`, a cél-FILETIME alakot a
-`0x00490c10` workerhez köti. Egyetlen kijelölt elemnél a `0x0057d7f0`
+`0x00490c10` háttérfeldolgozóhoz köti. Egyetlen kijelölt elemnél a `0x0057d7f0`
 mindig közvetlen cél-FILETIME-t ad át (`0x0057d9d4-0x0057da08`), tehát az
 egy-képes eredmény abszolút.
 
 PicasaPy oldalon az `AdjustTimestampDialog.qml:62-80` az első kapott sorból
 tölti a jelenlegi és új időt, minden nyitáskor relatív módot választ, és a
-címet csak több sornál bővíti (`:22-24`). Az egyképes cím egyezik. A
-PicasaPy egyképes relatív képlete ugyanarra a célidőre jut, ha az új idő a
-párbeszédben megadott cél; a többes kezdő módot csak az eredeti rádió
-alapértékének feloldása után lehet összevetni.
+címet csak több sornál bővíti (`:22-24`). Az egyképes cím egyezik. Az
+eredeti és a PicasaPy egyaránt relatív móddal indul és nem menti el a
+választást. A PicasaPy az első `photoRows` elem idejéből indul, az eredeti
+kezdő dátum forrása viszont nem ismert, ezért a képre vonatkozó egyezés nem
+állítható. A PicasaPy egyképes relatív képlete ugyanarra a célidőre jut, ha az
+új idő a párbeszédben megadott cél.
 
 A PicasaPy ablak modális és 540 széles (`AdjustTimestampDialog.qml:25-29`);
 az eredeti leíró `width="fit"` értéket ad, modális jelzőt nem tartalmaz.
@@ -4897,12 +5418,12 @@ ablakszélesség vagy modalitás különbségét.
 | Hatás | Eredeti Picasa 3.9 | Jelenlegi PicasaPy |
 |---|---|---|
 | **JPEG EXIF** | A rekord `0x37` tulajdonságát (`0x004906f7`, `0x00490d3c`) állítja, ami EXIF `0x9003` `DateTimeOriginal`. A `0x009ed330` íróút a `0x009eb290` tempfájlos ága; a csere `0x00994400`. | A `timestamp_controller.py:74-123` a forrás JPEG EXIF `0x9003` mezőjét ideiglenes fájlon át cseréli. A `timestamp_controller.py:248-305` siker esetén újraszkenneli a mappát. |
-| **Fájlidők** | A sikeres EXIF-író a `0x009eb290` útján elmenti a fájlidőket; ha az EXIF `DateTime` (`0x0132`) olvasható, a `0x00ab35e0` a hozzáférési és módosítási FILETIME-t arra teszi, a létrehozási időt érintetlenül hagyja; a `0x00ab34d0` `SetFileTime` hívással kiírja ezt a módosított szerkezetet. Hibás EXIF-írás után a `0x00992780` a létrehozási időt állítja. | Sikeres JPEG-írás után a `timestamp_controller.py:197-208` az atime/mtime értéket visszaállítja, Windowson a létrehozási időt is. Sikertelen írásnál `:179-194` Windowson a létrehozási időt próbálja állítani; más platformon nincs létrehozásiidő-írás. |
-| **Videó és nem JPEG** | A worker a `0x0049070a` és `0x00490d4f` címen a `thumbindex` típusmezőjét vizsgálja. Csak a 2-es típus megy EXIF-ágra; a videók mért típusai 8, 10 és 11, ezért a nem-EXIF ágra mennek. A `0x00992780` a fájl létrehozási idejét, a `0x004ef3c0` vagy `0x004ef5a0` a `thumbindex.db` rekord első FILETIME-ját írja és piszkosnak jelöli (`pmp-database.md:4167-4218`). | A videó/nem JPEG EXIF-írása hibára fut, majd a `timestamp_controller.py:290-305` az effektív dátumot a SQLite `photos.taken_at_override` mezőjébe írja. A fájlrendszer létrehozási idejét csak Windowson próbálja állítani (`:131-176`). |
-| **`.picasa.ini`** | A vizsgált `0x0057d7f0` → `0x0077cfd0` → worker/író lánc a forrásfájl EXIF-ét vagy a `thumbindex` rekordot kezeli; a pásztázás nem talált `.picasa.ini` író hívást ebben a láncban. Ez csak erre a műveletre szól. | A `timestamp_controller.py:248-308` EXIF-et, indexfelülírást és mappaszinkront használ; nem hív ini-író API-t. |
+| **Fájlidők** | A sikeres EXIF-író a `0x009eb290` útján elmenti a fájlidőket; ha az EXIF `DateTime` (`0x0132`) olvasható, a `0x00ab35e0` a hozzáférési és módosítási FILETIME-t arra teszi, a létrehozási időt érintetlenül hagyja; a `0x00ab34d0` `SetFileTime` hívással kiírja ezt a módosított szerkezetet. Hibás EXIF-írás után a `0x00992780` a létrehozási időt állítja. | Sikeres JPEG-írás után a `timestamp_controller.py:197-208` visszaállítja a korábban mentett hozzáférési és módosítási időt, Windowson a létrehozási időt is. Sikertelen írásnál `:179-194` Windowson a létrehozási időt próbálja állítani; más platformon nincs létrehozásiidő-írás. |
+| **Videó és nem JPEG** | A háttérfeldolgozó a `0x0049070a` és `0x00490d4f` címen a `thumbindex` típusmezőjét vizsgálja. Csak a 2-es típus megy EXIF-ágra; a videók mért típusai 8, 10 és 11, ezért a nem-EXIF ágra mennek. A `0x00992780` a fájl létrehozási idejét, a `0x004ef3c0` vagy `0x004ef5a0` a `thumbindex.db` rekord első FILETIME-ját írja és piszkosnak jelöli (`pmp-database.md:4167-4218`). | A videó/nem JPEG EXIF-írása hibára fut, majd a `timestamp_controller.py:290-305` az effektív dátumot a SQLite `photos.taken_at_override` mezőjébe írja. A fájlrendszer létrehozási idejét csak Windowson próbálja állítani (`:131-176`). |
+| **`.picasa.ini`** | A vizsgált `0x0057d7f0` → `0x0077cfd0` → háttérfeldolgozó/író lánc a forrásfájl EXIF-ét vagy a `thumbindex` rekordot kezeli; a pásztázás nem talált `.picasa.ini` író hívást ebben a láncban. Ez csak erre a műveletre szól. | A `timestamp_controller.py:248-308` EXIF-et, indexfelülírást és mappaszinkront használ; nem hív ini-író API-t. |
 | **Index, mappadátum, rács** | A nem-EXIF ág `thumbindex` dátummezője igazolt. A sikeres JPEG után az eredeti adatbázis- és rácsfrissítés pontos végállapota, a mappafa és a kijelölés nem dőlt el. **NINCS MEG.** | A `sync_photos.py:202-242` a `taken_at_override` értéket felhasználva újraszámolja az indexelt mappadátumot. A `timestamp_controller.py:308-320` a végén `_refresh_view()`-t hív. A kiválasztott rácssor megőrzése nem következik ebből. |
 | **Időrend** | A dátummódosító utáni időrendi végállapotot az átvizsgált bináris út nem dönti el. **NINCS MEG.** | A dátumművelet nem hív `syncFinished` jelet (`timestamp_controller.py:308-320`). Az időrend-vezérlő erre a jelre van kötve (`application_startup_controllers.py:270-274`), és saját `reload()`-ja újraolvassa az indexet (`timeline_controller.py:213-229`). Dátummódosítás közben nyitott időrend frissítése nincs igazolva. |
-| **Visszavonás** | A `0x0057d7f0` és a két worker közvetlen dátumíró útja nem mutat visszavonási hívást; ez nem bizonyítja, hogy a Picasa globális Undo parancsa nem érinti. **NINCS MEG.** | A `timestamp_controller.py:248-320` nem hív dátumművelethez tartozó undo-vermet vagy visszaállítót. A PicasaPy dátummódosítás nem visszavonható a kódban vizsgált úton. |
+| **Visszavonás** | A dátumkezelő és a két dátumíró worker nem vesz fel visszavonási adatot (`0x0057d7f0`, `0x00490580`, `0x00490c10`). Az eredeti Szerkesztés menüben nincs általános Visszavonás parancs; a Kép menü „Undo All Edits” kezelője szerkesztési kulcsokat töröl, nem állítja vissza a `DateTimeOriginal` vagy a `thumbindex` dátumát (`picasa-menusor-csoportok.md:191-218`, #7009: `0x005ef3e0`, `0x005ef6b0`). A vizsgált eredeti felhasználói út tehát nem visszavonható. | A `timestamp_controller.py:248-320` nem hív dátumművelethez tartozó visszavonót. A `undoBatchEdit` a szerkesztési láncot állítja vissza (`batch_effect_controller.py:470-532`), nem a dátumot. | Egyezik abban, hogy a dátummódosító saját visszavonást nem biztosít. |
 
 Az eredeti `.picasa.ini`-re vonatkozó negatív állítás a dátumművelet
 hívásláncára korlátozott, nem a Picasa egészére. A PicasaPy EXIF-siker
@@ -4913,7 +5434,7 @@ esetén az index újraolvasása veszi át az új `DateTimeOriginal` értéket;
 ### 4. Írási hibák, írásvédelem és részleges végrehajtás
 
 Az eredeti `0x00490580` és `0x00490c10` háttérfeldolgozója képenként járja be a kijelölést.
-Ha az EXIF-író (`0x009ed330`) nem ad sikeres eredményt, a worker a
+Ha az EXIF-író (`0x009ed330`) nem ad sikeres eredményt, a háttérfeldolgozó a
 `0x00992780` fájlidő-ágra lép; a nem-EXIF tartalék az adott támogatott
 típusnál a `0x004ef3c0` vagy `0x004ef5a0` rekordmódosítót is meghívja.
 A következő kijelölt elem feldolgozása folytatódik. Visszagörgető hívást
@@ -4933,31 +5454,39 @@ nem kezelt fájl- vagy adatbázishiba megállítja a hátralévő munkákat, a
 korábbi fájlírásokat nem vonja vissza, hibát jelez, majd a folyamatablakot
 lezárja (`photo_ops_write_core_mixin.py:99-140`,
 `timestamp_controller.py:308-320`). Így részleges végrehajtás itt is
-lehetséges. Read-only fájlnál az ideiglenes fájl vagy csere hibájának
+lehetséges. Fájlattribútummal írásvédett fájlnál az ideiglenes fájl vagy csere hibájának
 tényleges oka a fájl- és mappaengedélytől függ; a kód nem vizsgál külön
 attribútumot előre.
 
 ### 5. A két független út
 
-- **A út, parancs és végrehajtás:** a `0x00559150` rekordbázis és
+- **A út, a bináris utasításszintű olvasása:** a `0x00559150` rekordbázis és
   `0x005cb990` diszpécser után `0x0057d7f0` nyitja meg a műveletet;
-  `0x0077cfd0` választja a két workert, a worker pedig a `0x37` mezőt,
+  `0x0077c670` és `0x0077cee0` adja a kezdő rádió értékét, a `0x0077cfd0`
+  választja a két háttérfeldolgozót. Az írók a `0x37` mezőt,
   `0x009ed330`-at és a tartalék `0x00992780`/`0x004ef3c0`/`0x004ef5a0`
-  utat használja.
-- **B út, külön menü és adatút:** a `0x00638990` önálló Properties-lista
-  menüépítője ugyanazt a `0x9e0e` kódot adja a `0x37` tulajdonsághoz;
-  a `pmp-database.md` 15.1-15.2 szakaszának rekordmásolási és adatbázis-
-  ellenőrzése a videós ág `thumbindex` első FILETIME-ját azonosítja.
-- **Egyezés:** A és B egyezik a parancsazonosítóban, a `0x37` EXIF
-  tulajdonságban, és a nem-EXIF ág katalógusmezőjében. A teljes UI-végállapot
-  nem egyezik össze két bizonyítéki úttal, mert a néző/tálca kapu és az
-  időrend/mappafa frissítése nyitott.
+  utat használják.
+- **B út, külön felületi és adatrekord-bizonyíték:** a Picasa 3.9-es
+  `Colab EN 28` képernyőmérésen a relatív mód van kiválasztva, a hozzá tartozó
+  `runtime/offsettime.fen` pedig ezt teszi első rádiónak. Ettől külön a
+  `0x00638990` Tulajdonságok-lista menüépítője ugyanazt a `0x9e0e` kódot adja
+  a `0x37` tulajdonsághoz; a `pmp-database.md` 15.1-15.2 szakaszának
+  rekordmásolási és adatbázis-ellenőrzése a videós ág `thumbindex` első
+  FILETIME-ját azonosítja.
+- **Egyezés:** az A bináris út és a B képernyőmérése/ablakleírója egyezik a
+  kezdő relatív módban. A külön Tulajdonságok-menü és katalógusrekord-út
+  egyezik a `0x9e0e` művelet, a `0x37` EXIF-tulajdonság és a nem-EXIF
+  katalógusmező tekintetében. A kijelölési lista rácssorrendű, de ez nem
+  bizonyítja, hogy az ablak kezdő FILETIME-ja az első kijelölt képből jön;
+  ezért a PicasaPy kattintási sorrendjével való eltérés egyelőre nem
+  állítható. Az eredeti néző- és tálcamenü engedélyezése, a kezdő dátum
+  képforrása és a siker utáni látható állapot futásmérést igényel.
 
 ### 6. Cáfoló kísérlet
 
 Megpróbáltam cáfolni azt, hogy külön dátum gyorsbillentyű vagy további
 közvetlen helyi menüparancs tartozik a `0x9e0e` kódhoz. A `paszta.py`
-lineáris `.text` pásztázása `memoria_kapu()` után 2 884 879 utasítást
+`memoria_kapu()`-ja után a lineáris `.text` pásztázás 2 884 879 utasítást
 vizsgált: a közvetlen `0x9e0e`/felirat operandusai csak a `0x00559150`
 menürekord-építőben és a `0x00638990` tulajdonságmenüben jelentek meg.
 Az ellenpróbát külön erőforrás- és rekordlistával ellenőriztem: a
@@ -4965,30 +5494,33 @@ Az ellenpróbát külön erőforrás- és rekordlistával ellenőriztem: a
 `0x00559150` 32 menü gyorsbillentyű-rekordjában pedig nincs `0x9e0e`.
 Ezek a kontrollok a közvetlen kötést cáfoló alternatív keresést azonos
 mércével, a bináris közvetlen címekre és az erőforrás teljes rekeszszámára
-ellenőrizték. A `&Date` felirat menü-mnemonikája ettől külön marad.
+ellenőrizték. Az ellenpróba az erőforrás teljes rekeszszámát és a közvetlen
+bináris hivatkozásokat vizsgálta, ezért nem az index negatív találatára épül.
+A `&Date` felirat menü-mnemonikája ettől külön marad.
 
 ### 7. A kérdés „Kész, ha” pontjai
 
 A megadott jegyszöveg négy kérdést sorol fel, külön „Kész, ha” felsorolást
 nem ad. Ezek alapján:
 
-1. ⛔ **Belépési pontok és feltételek:** Tools menü és Properties-lista
+1. ⛔ **Belépési pontok és feltételek:** Eszközök menü és Tulajdonságok-lista
    helyi menü címmel bizonyított (`0x00559150`, `0x005cb990`,
    `0x00638990`). Külön dátum gyorsbillentyű nincs az erőforrásban; a
    néző/tálca elérhetőség és az eredeti írásvédettségi kapu nyitott.
-2. ⛔ **Ablak, alapértékek és megjegyzés:** mezők, módok, OK/Cancel és
-   elemszámos cím ismert (`0x0077c7c0`, `0x0077cbe0`, `0x0077cd50`,
-   `0x0077cee0`). A többes kijelölés aktuális képének kiválasztása, a
-   rádió kezdőértéke és annak megjegyzése nyitott.
-3. ⛔ **Hatás és visszavonás:** JPEG EXIF és videó/nem JPEG `thumbindex`
-   ág igazolt (`0x009ed330`, `0x004ef3c0`, `0x004ef5a0`, `0x00992780`).
-   Az eredeti JPEG index/rács/mappafa/időrend végállapota és Undo hatása
-   nyitott; a PicasaPy az indexet és főnézetet frissíti, időrend-jelet nem
-   küld.
-4. ⛔ **Írásvédelem és részleges hiba:** az EXIF-író hibája tartalékágra
-   kerül és a worker a következő elemmel folytat (`0x00490580`,
-   `0x00490c10`), ezért visszagörgetés nem látszik. A read-only attribútum
-   konkrét Windows-viselkedése és a felhasználói hibajelzés nyitott.
+2. ⛔ **Ablak, alapértékek és megjegyzés:** a mezők, módok, OK/Mégse,
+   elemszámos cím, a kezdő relatív mód és a megjegyzés hiánya ismert
+   (`0x0077c7c0`, `0x0077c670`, `0x0077cd50`, `0x0077cee0`; mérés:
+   `Colab EN 28`). A kezdeti dátummező `FILETIME` forrása a
+   `CThumbUI+0x50` objektum `+0x6c` mezője, de a hozzá tartozó kép nem ismert.
+   A natív ablak mérete és modális viselkedése is mérendő.
+3. ⛔ **Hatás és visszavonás:** a JPEG `DateTimeOriginal`, a nem-EXIF
+   `thumbindex` és fájlidő ág, az `.ini`-kulcs hiánya és a visszavonás hiánya
+   igazolt. A JPEG index, a rácssorrend, a mappafa és az idővonal siker utáni
+   tényleges állapotát még mérni kell.
+4. ⛔ **Írásvédelem és részleges hiba:** a hibás EXIF-írás a tartalékágra
+   lép, a soros háttérfeldolgozó továbblép és visszagörgetés nem látszik
+   (`0x00490580`, `0x00490c10`). A fájlattribútum, a mappa jogosultsága,
+   a pontos hibaüzenet és a részleges Windows-futás eredménye nincs megmérve.
 
 ### 8. Javasolt fejlesztői jegytörzs
 
@@ -5006,8 +5538,19 @@ beállítása parancsot. A `0x00637fa0` hívja ezt a helyi menüépítőt.
 dátumállító az adott kép aktuális dátumával; más tulajdonságsor nem kap
 dátummódosító műveletet.
 
-Más fejlesztői jegyet nem javaslok: a alapértelmezett rádiógomb, néző/tálca kapu,
-visszavonás és látható index-végállapot nincs kellően igazolva.
+#### A sikeres JPEG-dátumírás fájlideje kövesse az eredeti Picasát
+
+**Eredeti:** ha az újraírt EXIF-ben a `DateTime` (`0x0132`) olvasható, a
+`0x00ab35e0` a fájl hozzáférési és módosítási idejét erre az időre állítja;
+a létrehozási időt nem változtatja.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x009eb290`, `0x00ab35e0`, `0x00ab34d0`: a sikeres EXIF-írás után a `DateTime` alapján frissíti a hozzáférési és módosítási időt. | `timestamp_controller.py:197-208`: visszaállítja a korábban mentett hozzáférési és módosítási időt, Windowson a létrehozási időt is. | A sikeres JPEG-írás után az eredetihez igazodó hozzáférési és módosítási idő legyen; a létrehozási idő maradjon az eredeti. |
+
+**Kész, ha:** kontrollált JPEG-en sikeres dátummódosítás után a hozzáférési
+és módosítási idő
+az újraírt `DateTime` értékét kapja, a létrehozási idő pedig nem változik.
 
 ### 9. Új kutatási jegyjavaslatok
 
@@ -5023,18 +5566,22 @@ kutatási tár).
   kezelője (`0x0077cee0`, `0x0077cd50`) nem olvas és nem ír megjegyzett
   beállítást. A konstruktor a belső módjelzőt 1-re állítja; a `0x0077cee0`
   ebből `jelző = (érték == 0)` alakban számol vissza, tehát a kezdő állapot az
-  `adjust_type` 0. rádiója. A rádió látható kezdőértékét a kód nem állítja, az
-  az `offsettime.fen` leíróból jön. **PicasaPy:** az `AdjustTimestampDialog.qml`
+  `adjust_type` 0. rádiója. A `runtime/offsettime.fen:19-21` sorrendje
+  `relative`, majd `absolute`; a meglévő `Colab EN 28` képernyőképen az első,
+  relatív rádió van kijelölve. **PicasaPy:** az `AdjustTimestampDialog.qml`
   minden nyitáskor az eltolás rádióját jelöli be (`checked: true`), és nem
-  jegyez meg semmit. A megjegyzés hiánya paritásban van; hogy az eredeti 0.
-  rádió az eltolás-e, a leíró sorrendjén múlik, ezért ez **feltételes**.
-- **`0x0057d7f0`, melyik kép ideje.** Az ablak a kijelölési lista **első**
-  elemének dátumát kéri le (katalógus vfunc `0xc4`, `*lista`); a fókuszt nem
-  kérdezi. Előtte a `FUN_00506500` feldolgozza a listát, hogy ez rendez-e, nem
-  derült ki. Több képnél eltolást ment, egy képnél abszolút időt. **PicasaPy:**
-  az előnézet a `photoRows[0]` sort használja (`AdjustTimestampDialog.qml:66`),
-  tehát szintén az első kijelölt elemet. Az egyezés a lista sorrendjéig
-  **igazolt**; a sorrend (kijelölési vagy rácssorrend) nyitott.
+  jegyez meg semmit. A kezdő mód és a megjegyzés hiánya egyezik.
+- **`0x0057d7f0`, a kezdő dátum adatútja.** A párbeszédnek átadott FILETIME
+  a `CThumbUI` vtable `+0x24` helyén meghívott `0x00a6ccf0` getterrel kapott
+  objektum `+0x6c` mezőjéből jön (`0x0057d894`-`0x0057d923`). A `0x0057d7f0`
+  ettől külön meghívja a katalógus `+0xc4` virtuális helyét a feloldott lista
+  első azonosítójával. A #403 ezt a külön katalóguslekérést és a lista első
+  elemének kérését rögzíti, de nem bizonyítja, hogy ez az elem adja a
+  párbeszéd kezdeti FILETIME-ját. A `0x00506500` nem rendez; a `0x007166c0`
+  a kijelölt látható elemeket rácssorrendben adja. Több képnél eltolás,
+  egy képnél abszolút célidő kerül a háttérfeldolgozónak. A kezdő dátum
+  képforrása nyitott, ezért a PicasaPy `photoRows[0]` értékével való eltérés
+  nem állítható.
 
 ### Ghidra-kiegészítés 2 (2026-11-15, várólista 413-418)
 
@@ -5055,16 +5602,18 @@ kötegből.
   visszatérés. A `0x3e9` jelentése ("hivatkozó" rekord) a fejléc olvasata; a
   kimenet csak a mezőértéket mutatja. Hívói: `0x0057d879` (a `0x0057d7f0`, a
   dátumállító) és `0x007dc704` (`0x007dc4f0`). Következmény: a dátumablak a
-  bemeneti lista első, feloldott, tartományban lévő elemének idejét mutatja.
+  bemeneti lista első, feloldott, tartományban lévő elemének adatát külön
+  lekéri; az ablak kezdeti dátummezőjének forrását ez nem azonosítja.
 - **A bemeneti lista sorrendje (`0x005c76b0`).** A `0x0057d7f0` a
   `FUN_005c76b0(0,1,1,1)`-et hívja (`0x0057d813`). Mivel `param_1 == 0`: ha a
-  `this+0xeac` objektum (valószínűleg az albumlista, ugyanaz a mező, amelyet a
-  `0x006db580` az albumlista aktuális mappájaként olvas) `+0x3c9` bájtja nem
+  `this+0xeac` csoportosított arcnézetet jelző objektumának `+0x3c9` bájtja nem
   nulla, az eredményt annak `0xdc` virtuális metódusa adja; különben a
   `this+0xea8` objektumra hívott `FUN_007166c0(objektum, jelző)` tölti a
   listát (a jelző 1); ha ez üresen hagyja, és a `this+0xe64` nem `-1`,
-  egyetlen elem kerül be (`this+0xe68`). A sorrendet tehát a `FUN_007166c0`
-  dönti el; ez nincs dekompilálva. **PicasaPy:** a `photoActionRows()` a
+  egyetlen elem kerül be (`this+0xe68`). A 424 később feloldotta a
+  `FUN_007166c0` rácssorrendű bejárását és a `+0x3c9` jelentését; a
+  csoportosított arcnézet `+0xdc` céljait a zárókör RTTI- és helyi
+  disassembly-ellenőrzése azonosította. **PicasaPy:** a `photoActionRows()` a
   `selectedRows()` útján a `selectedIndexes` tömböt adja
   (`MainLibrarySelectionState.qml:70-78`, `selection.js:32-36`), úgy, ahogy a
   kattintások építették: a Ctrl+kattintás a végére fűz (`selection.js:7-12`), a
@@ -5072,12 +5621,13 @@ kötegből.
   `AdjustTimestampDialog.qml:66` a `photoRows[0]` elemet használja, tehát a
   **kattintási sorrend** első elemét, nem a rács szerinti elsőt (a "Locate on
   Disk" ezzel szemben szándékosan rácssorrendet használ, `selection.js:38-46`).
-  Hogy az eredeti a kattintási vagy a rács szerinti sorrendet adja, **nincs
-  meg**; egyezést ne állítsunk. Ha az eredeti rácssorrendet használ, a
-  Ctrl+kattintással fordított sorrendben kijelölt képeknél az ablak más kép dátumát
-  mutatja.
+  A 2026-11-16-i 424 kimenet a lista rácssorrendjét lezárta. A lista első
+  eleme és a párbeszéd kezdő FILETIME-ja közötti kapcsolat nem dőlt el; a
+  kattintási sorrendből eredő #7054 eltérés ezért mérés nélkül nem állítható.
 
-**A jegy lezárhatósága: NEM zárható.** A 7033 négy kérdése ("Kész, ha"):
+**Korábbi állapot a 418 után:** a jegy ekkor még nem volt zárható. Ez a tábla
+köztes állapotot rögzít; a friss státuszt a `### 10. Nyitott` és a
+`### Zárási döntés` adja.
 
 | Pont | Állapot a 413-418 után | Miért |
 |---|---|---|
@@ -5118,12 +5668,20 @@ olvasta.
   nézet azonos a `this+0xea4` nézettel, vagy a `param_2` nem nulla (a
   dátumállító útján `FUN_005c76b0(0,1,1,1)`, a 418 szerint, tehát `1`). Ha a
   `this+0xeac` objektum `+0x3c9` bájtja nem nulla, a lista nem a nézetből, hanem
-  az objektum `+0xdc` metódusából jön. Ha a nézet nem ad elemet, és a `this+0xe64`
-  nem `-1`, egyetlen elem kerül be (`this+0xe68`).
+  az objektum `+0xdc` metódusából jön. A `picasa-arcfelismeres.md:839-845`
+  ezt a jelzőt csoportosított arcnézetként azonosítja. A bináris-index
+  `rtti.csv` szerint a `CFoundFaceSelectionNode` `+0xdc` célja `0x0078a6c0`,
+  amely a kijelölt csoportok gyermek-képvektorait fűzi a kimenethez;
+  a `CAlbumSelectionNode` megfelelő célja `0x00401570`, üres eredménnyel.
+  Ha a nézet nem ad elemet, és a `this+0xe64` nem `-1`, egyetlen elem kerül be
+  (`this+0xe68`). A csoportosított arcnézethez tartozó út tehát nem marad
+  ismeretlen virtuális hívás.
 
-  **Következmény:** a dátumablak (a 418 szerint a lista első elemét kéri,
-  rendezés nélkül) a nézet **index szerinti első kijelölt képének** idejét
-  mutatja, a Ctrl+kattintások sorrendjétől függetlenül. Kijelölés nélkül
+  **Következmény:** a kijelölési lista a nézet **index szerinti első
+  kijelölt képével** kezdődik, a Ctrl+kattintások sorrendjétől függetlenül.
+  Ebből nem következik, hogy a párbeszéd kezdő dátummezője ugyanezt az időt
+  használja: annak FILETIME-ja a `CThumbUI+0x50` objektum `+0x6c` mezőjéből
+  érkezik. Kijelölés nélkül
   (jelző `1`) a lista nem üres: az első nem rejtett elem kerülne elő; hogy a
   parancs kijelölés nélkül elérhető-e, a belépési kapun múlik, ami nyitott.
   **PicasaPy:** az `AdjustTimestampDialog.qml:65-66` a `photoRows[0]` elemet
@@ -5131,54 +5689,100 @@ olvasta.
   (`selection.js:7-12`), a Shift+kattintás növekvő tartományt ad
   (`selection.js:15-21`), és a `photoActionRows()` ezt a tömböt adja
   (`MainLibrarySelectionState.qml:29-32`, `:72-80`). Példa: az 5. kép, majd
-  Ctrl+kattintással a 2. kép kijelölése után az eredeti a 2. kép idejét mutatja,
-  a PicasaPy az 5.-ét. **Igazolt eltérés; jegy: #7054.** A rács szerinti
-  rendezésre kész minta van: a "Locate on Disk" a #6995 óta rácssorrendet
+  Ctrl+kattintással a 2. kép kijelölése után a PicasaPy a kattintási sorrend
+  szerinti első, vagyis az 5. kép idejéből indul. Az eredeti kezdő mezőjének
+  képforrása nem bizonyított; a rácssorrendből nem következik, hogy a 2. kép
+  idejét mutatja. A #7054 fejlesztési javaslat ezért a futásmérésig visszavonva.
+  A rács szerinti rendezésre kész minta van: a "Locate on Disk" a #6995 óta rácssorrendet
   használ (`selection.js:43`, `pathsInGridOrder`). A PicasaPy `openForRows`
   üres kijelölésre nem nyit (`AdjustTimestampDialog.qml:62-64`).
 
-**A jegy lezárhatósága: NEM zárható.** A 7033 négy kérdése ("Kész, ha"):
+**Korábbi állapot a 424 után:** a jegy ekkor még nem volt zárható. Ez a tábla
+köztes állapotot rögzít; a friss státuszt a `### 10. Nyitott` és a
+`### Zárási döntés` adja.
+
+**Helyesbítés a zárókörben:** a korábbi köztes következtetés, amely az első
+rácssorrendű képet nevezte meg a dátumablak kezdeti idejeként, túlterjeszkedett
+a bizonyítékon. A 424 csak a kijelölési lista sorrendjét igazolja; a párbeszéd
+FILETIME-ja a `CThumbUI+0x50` objektum `+0x6c` mezőjéből jön. A kezdő mező
+képforrása nyitott marad, amíg a kontrollált mérés nem azonosítja.
 
 | Pont | Állapot a 419-425 után | Miért |
 |---|---|---|
-| 1. Belépési pontok és feltételek | ⛔ | A 424 nem zárja: a néző- és tálcakapu, az írásvédettségi kapu nyitott; kijelölés nélkül az eredeti lista nem üres, ezért a kijelölés nélküli elérhetőség is a kapun múlik. |
-| 2. Ablak, alapértékek és megjegyzés | ✅ részben (közelebb) | A lista sorrendje megvan (rács szerinti), az első kép ideje és a "nem rendez" is; a rádió sorrendje (`offsettime.fen`) és a `this+0xeac` jelző feltétele nyitott. |
-| 3. Hatás és visszavonás | ⛔ | A 424 nem érinti: index, rács, mappafa, időrend, Undo nyitott. |
-| 4. Írásvédelem és részleges hiba | ⛔ | A 424 nem érinti: Windows-mérés kell. |
+| 1. Belépési pontok és feltételek | ⛔ | A Tools és Properties út, valamint a gyorsbillentyű hiánya megvan. Az eredeti néző/tálca/üres kijelölés menüállapota és az írásvédettségi kimenet még mérendő. |
+| 2. Ablak, alapértékek és megjegyzés | ✅ (téves köztes állapot, később helyesbítve) | A 424 a kijelölési lista rácssorrendjét igazolta, nem a párbeszéd kezdő dátumának képforrását. A kezdő `FILETIME` külön adatútja a `CThumbUI+0x50` objektum `+0x6c` mezője; lásd a közvetlenül alatta álló helyesbítést és a friss `### 10. Nyitott` táblát. |
+| 3. Hatás és visszavonás | ⛔ | A közvetlen adattárolás és az undo hiánya megvan; a JPEG index, rács, mappafa és idővonal siker utáni állapota még mérendő. |
+| 4. Írásvédelem és részleges hiba | ⛔ | A hibás EXIF-írás tartalékága és a visszagörgetés hiánya megvan; a tényleges Windows üzenet és részleges eredmény még mérendő. |
 
-Új fejlesztői jegy a 424 alapján: **#7054** (a dátumablak a rács szerinti első
-kijelölt kép idejét mutassa). Javasolt "Kész, ha": az 5., majd Ctrl+kattintással
-a 2. kép kijelölése után az ablak a 2. kép idejét mutatja; Shift+kattintásos
-tartománynál a legkisebb sorszámú képét. A meglévő jegytörzs (a Tulajdonságok
-panel dátumsorának helyi menüje) változatlan.
+Az első kép kezdő dátumként való használatából fejlesztői jegy nem javasolható
+a mérés előtt; a korábbi #7054 jegytörzs visszavonva. A Tulajdonságok-panel
+dátumsorának helyi menüje külön igazolt eltérés marad.
 
 ### 10. Nyitott
 
-- Megválaszolva (Ghidra 402): a párbeszéd nem jegyez meg beállítást, a kezdő mód a 0. rádió. Nyitott: az `offsettime.fen` rádiósorrendje, azaz hogy a 0. rádió az eltolás-e.
-- Megválaszolva (Ghidra 403, 418, 424): a dátumablak a lista első elemének idejét kéri, fókusz nélkül; a `0x00506500` nem rendez (a hivatkozó rekordot feloldja, az ismétlődést kiszűri); a `0x007166c0` a nézet elemeit index (rács) szerint járja be, tehát az első elem a rács szerinti első kijelölt kép (PicasaPy: kattintási sorrend; eltérés, jegy: #7054). Ghidra-kör kell: mikor áll a `this+0xeac` objektum `+0x3c9` jelzője (ilyenkor a lista forrása az albumlista `0xdc` metódusa, nem a nézet).
-- **NINCS MEG:** a `readonly` fájl attribútum, csak olvasható mappa vagy
-  fájlrendszerhiba pontos eredeti kezelése és felhasználói jelzése. Út:
-  kontrollált Picasa 3.9 mérés írható, fájlattribútummal védett és
-  mappaszinten nem írható mintával; rögzíteni kell az EXIF-et, fájlidőket,
-  `thumbindex.db`-t és a képernyőn megjelenő hibát.
-- **NINCS MEG:** az eredeti parancs elérhetősége a nézőben és a tálcában,
-  továbbá a siker utáni kijelölés, JPEG-index, mappafa és időrend. Út:
-  célzott Ghidra-követés a `0x0057d7f0` hívói objektumára, majd Picasa 3.9
-  előtte/utána mérés egy képpel, több képpel, nézőben és csak tálcára
-  helyezett képpel.
-- **NINCS MEG:** az eredeti Szerkesztés > Visszavonás vagy más visszavonó út módosítja-e
-  a már kiírt EXIF-et, a fájlidőt vagy a katalógusrekordot. Út: a
-  `0x9e0e` művelet után az Undo parancs végrehajtása, majd a forrásfájl és
-  a `thumbindex.db` előtte/utána összevetése.
-- **NINCS MEG:** mérőadatból nincs dátummódosítási munkamenet; az archívum
-  név szerinti keresése nem talált `adjust`, `timestamp` vagy `offsettime`
-  mintát, ezért az archívum tagjait nem bontottam ki.
+- **NINCS MEG, egyetlen blokkoló mérési sorozat:** az alábbi nyitott,
+  felhasználó által látható pontokat egy elkülönített Picasa 3.9.141.259
+  Windows-futás előtte és utána rögzített eredménye dönti el.
 
-### 11. Módosított fájlok
+| Nyitott tétel | Mit dönt el a meglévő bizonyíték | Státusz és megszerzés |
+|---|---|---|
+| A kezdeti dátummező melyik kép idejét mutatja. | A `0x0057d7f0` a `CThumbUI+0x50` objektum `+0x6c` mezőjéből kapott FILETIME-ot adja át; a lista első rekordjának külön katalóguslekérése nem köti ezt egy képhez. | **Blokkoló, látható.** Ismert, különböző EXIF `DateTimeOriginal` értékű képekkel kell ellenőrizni az egyképes és többképes párbeszéd kezdeti dátumát, a kijelölési kattintássorrend és az aktuális kép rögzítésével. |
+| Eszközök menü engedélyezése üres kijelölésnél, nézőben és képtálcával; helyi menü és billentyű tényleges útja. | A kezelő a nézet elemeit és tartalékágban az aktuális képet összegyűjtheti, de ez nem bizonyítja, hogy a menü engedélyezett-e. Külön dátum gyorsbillentyűt a teljes erőforrás- és utasításszintű keresés nem talált. | **Blokkoló, látható.** Picasa 3.9 felületmérés üres kijelölés, egy és több kép, néző és csak képtálca állapotban. |
+| Az ablak tényleges mérete és modális viselkedése. | A `runtime/offsettime.fen` leíró `width="fit"` értéke nem adja meg a tényleges ablakméretet, és modális jelzőt sem tartalmaz. | **Blokkoló, látható.** A natív Picasa 3.9 párbeszédablak méretét és a főablakra gyakorolt modalitását kell rögzíteni. |
+| Siker után a rács, kijelölés, mappafa és nyitott idővonal állapota. | A bináris közvetlen íróutat megmutatja, de nem a főablak frissítésének végállapotát. | **Blokkoló, látható.** Előtte és utána rögzített Picasa 3.9 felületmérés több képpel, nyitva hagyott idővonallal. |
+| Fájlattribútummal írásvédett fájl, mappajogosultsági hiba, hibaüzenet és részleges köteg eredménye. | A kódág tartalék írást és továbblépést mutat, visszagörgetést nem; a Windows hibaüzenetét és a tényleges eredményt nem. | **Blokkoló, látható.** Külön írásvédett fájllal és írásra tiltott mappával végzett többképes Picasa 3.9 mérés. |
+| A JPEG utáni `thumbindex.db` belső rekord pontos változása. | A közvetlen EXIF írás ismert; a JPEG utáni katalógus-frissítés pontos rekordállapota nem. | **Nem blokkoló.** A belső adatbázissor önmagában nem látható a felhasználónak; a belőle eredő rács-, mappa- és idővonal-változás a fenti mérés része. |
 
-- `docs/specs/paritas-ellenorzes.md` - új #7033 alszakasz a belépési
-  pontokról, az ablakról, hatásokról, hibákról, bizonyítékokról és nyitott
-  kérdésekről.
+Egyetlen kontrollált mérési sorozat fedje le a fenti blokkoló pontokat.
+Tiszta profil kell, továbbá legalább három írható JPEG ismert, egymástól
+eltérő EXIF `DateTimeOriginal` értékkel, hogy a többképes próba a lehetséges
+képforrásokat megkülönböztesse. A JPEG-ek fájl-hozzáférési és módosítási ideje
+is legyen feljegyezve. Külön minta legyen egy fájlattribútummal írásvédett
+JPEG, egy írásra tiltott mappában levő kép és egy videó. A többképes próba
+rögzítse a kijelölési sorrendet és az aktuális képet, majd a párbeszéd kezdeti
+jelenlegi és új dátumát, hogy kiderüljön, melyik kép ideje jelenik meg. Ugyanebben
+a mérési sorozatban rögzítendő az Eszközök menü és a tényleges helyi menük állapota
+üres kijelölésnél, nézőben és képtálcával; az ablak mérete és modális viselkedése;
+a módosítás előtti és utáni EXIF, fájlidők, rácssorrend, kijelölés, mappafa,
+idővonal, pontos hibaüzenetek és részleges végállapot. Az egyképes és többképes
+esetet is le kell futtatni. A méréshez Windowsos Picasa 3.9 környezet kell; a
+jelenlegi helyi gépen az eredeti PE32 bináris olvasható, de sem `wine`, sem
+`wine64` futtató nincs elérhető. Új Ghidra-kör nem szükséges.
+- **NINCS MEG, nem blokkoló:** a megadott mérőadat-archívumban nincs
+  dátummódosítási munkamenet (`adjust`, `timestamp`, `offsettime` névvel
+  jelölt tag nincs). Ez a felhasználói viselkedésen nem változtat; a fenti
+  kontrollált Windows-mérés a szükséges forrás.
+
+### Zárási döntés
+
+**A #7033 jelenleg nem zárható.** Egyetlen blokkoló maradt: a fenti,
+elkülönített Picasa 3.9 Windows-mérési sorozat. Ghidra-kör nem kell; a
+kezdő dátum képforrását a különböző ismert időbélyegű minták futásmérése dönti
+el. A már megalapozott fejlesztői jegytörzsek: a Tulajdonságok dátumsorának
+helyi menüje és az eredeti JPEG fájlidő-kezelése. A korábbi #7054 javaslatot
+visszavontam, mert az alapul vett képforrást nem bizonyítottam.
+
+### Hívói helyesbítés a zárókörhöz (2026-11-16): a kezdő dátum forrása igazolt, a #7054 áll
+
+A zárókör a kezdő `FILETIME`-ot a `CThumbUI+0x50` objektum `+0x6c` mezőjének
+tulajdonította. Ez téves: az a 4 bájtos érték a `0x0077c670` első paramétere
+(`param_1`, a `FUN_009a5620` kapja), nem időpont. A hívóhely disassemblyje:
+
+- `0x0057d8f3`: a katalógus `+0xc4` virtuális metódusa a lista **első** elemére
+  (`*local_12c`) tölti ki a veremrekordot;
+- `0x0057d8f5`-`0x0057d910`: a rekord 8 bájtja az `[esp+0x18]`/`[esp+0x1c]`
+  helyre kerül;
+- `0x0057d91b`: a négy argumentum után a `lea edi, [esp+0x28]` épp erre a
+  8 bájtra mutat;
+- `0x0077c670`: az `unaff_EDI[0]`/`[1]` kerül az `in_EAX[0x32..0x35]` mezőkbe,
+  ez a párbeszéd kezdő ideje.
+
+A kezdő dátum tehát a kijelölési lista első elemének (a 424 szerint a rács
+szerinti első kijelölt képnek) az ideje. A #7054 (a dátumablak a rács szerinti
+első kép dátumával nyílik) helyes, **nem vonjuk vissza**; a fenti mérési
+sorozat erre a kérdésre nem kell. A zárási döntés blokkolója ezzel megszűnt;
+a megmaradt mérési pontok (írásvédett fájl üzenete, siker utáni idővonal) a
+felhasználó számára látható viselkedést érintik, de egyik sem a kezdő mezőé.
 
 ## #7060: A diavetítés teljes folyamata az eredeti Picasával összevetve
 
@@ -5227,9 +5831,11 @@ külön jelzem.
   (alapérték ki), a zene `PlayMP3Tracks` (alapérték be), az átmenet
   `ThumbUISlideShow::transition` (hét elem, alapérték Dissolve). Ezek és a
   megőrzésük a PicasaPy-val egyeznek. Eltérések: (1) az eredeti normál
-  vetítésben nincs Timeline gomb, a PicasaPy-ban van; (2) az eredetiben a
-  `Fel`/`Le` nyíl, az `1`-`9` számjegyek (a dia ideje) és a `Pause`/`Play`
-  billentyű is működik, a PicasaPy-ban nem; (3) a kézi léptetés a lista
+  vetítésben nincs Timeline gomb, a PicasaPy-ban van; (2) a `Fel`/`Le`, az
+  `1`-`9`, valamint a `Pause`/`Play` már a jelenlegi PicasaPy-forrásban is
+  megvan; az eredeti normál vetítésben a `Enter` és `Ctrl+R` nincs bekötve,
+  nálunk viszont továbblépést, illetve forgatást végez (G6); (3) a kézi
+  léptetés a lista
   szélén: az eredetiben előre az utolsó képről az elsőre fordul (a
   `LoopSlideshow`-tól függetlenül), hátra az első képen nem lép
   (`0x00717eb0`, utasításszint), nálunk hurok nélkül előre kilép, hurokkal
@@ -5319,7 +5925,7 @@ felirattal egyezik; a sávja viszont a `oneup.tre` szerinti (Timeline gomb a
 | **Üres nézet.** `0x005e8b4b`-`0x005e8b55`: `vt+0xb4` darabszám nulla → `0x0052e8a0`, `or eax, -1` (`0x005e8b3d`), kilép. Üzenet nincs (az Időrend `IDS_MUST_SELECT` üzenete a másik ág, `0x005e983e`). | `MainSlideshow.qml:66-70`: nincs vetíthető fotó → `exitSlideshow()`, üzenet nincs | Hatásában egyezik (néma). Mellékhatás: nálunk az ablak előbb teljes képernyőre vált, aztán visszaáll (`:66-70`); az eredetiben ilyen nincs. Nincs mérve, hogy látszik-e (kis ellenőrzés a 9. szakaszban). |
 | **Videó.** A rekordtípus `8`, `9`, `0xa`, `0xb`, `0xc`, `0x17` vagy `0x1d` (`0x005e8b93`-`0x005e8bb4`, `0x0075ee2c`-`0x0075ee4d`) → film ág (`0x0075eda0`): a tétel `moviestart` és `movieend` nevű tulajdonságát olvassa (`0x0075f006`, `0x0075f0bb`), a `[film+0xc8]` és `[film+0xd0]` mezőbe írja, a lejátszó készenlétét legfeljebb húsz próbálkozással kivárja (`0x0075ee73`-`0x0075ee9d`, a várakozó import neve nincs feloldva), a dia idejét a film hosszára állítja: `(hossz - kezdőeltolás) / 10 000 000` másodperc (`0x0075f1bb`-`0x0075f2e2`, `[this+0x3334]`; hogy a hossz a vágott hossz-e, nincs eldöntve), és `[this+0x3332] = 1` (`0x0075f32f`). A mért videótípusok: `8`, `10`, `11` (`paritas-ellenorzes.md` 7033, 3. szakasz). | `SlideshowView.qml:194-209` (`isVideoAt` → kihagyja), `:211-218` | **Igazolt eltérés (statikus):** az eredeti a videót is vetíti, a vágási pontok szerint; mi kihagyjuk. Jegytörzs lent (D3). |
 | **Rejtett kép.** A `+0x5a` jelzőjű elemet a lista és a kijelölés-választás is kihagyja (`0x007175c6`, `0x00717485`, `0x00717c01`, és a kijelölés-gyűjtő `0x007166c0` is: `referencia/ghidra/2026-11-16-7022-7031-7033-colab-decomp.txt:2070-2196`, ahol az elemeket index szerint, vagyis rácssorrendben járja). A jelző jelentése (rejtett kép, fejlécsor, hiányzó fájl) a kimenetből nem olvasható ki, csak a bájt vizsgálata; a #7033 fejléc-olvasata „rejtett"-nek veszi, mérés nincs. | a PicasaPy modellből kerül a vetítésbe | Nyitott (G2). |
-| **Sérült vagy hálózati úton elérhetetlen kép.** A fotó ág (`0x0075f33f`, `[this+0x3332] = 0`) a diaváltást a `0x006d00c0` / `0x0075eac0` útján végzi; a betöltési hiba kezelése nincs azonosítva. | `SlideshowView.qml:361-390` (`_diaUrl`, `_betolt`) | Nyitott (G4). |
+| **Sérült vagy hálózati úton elérhetetlen kép.** A fotóág (`0x0075eda0`, `0x0075f33f`) és az időzített léptetés (`0x0075f430`) eléri a megjelenítési útvonalat (`0x00569260` → `0x0040fa40`); a `0x006d00c0` nem fájlbetöltési-hiba-kezelő, hanem képkocka-/erőforrás-frissítő. A tényleges hibaállapot továbbadása nincs azonosítva. | `SlideshowView.qml:354-389`, `SlideshowCurrentImage.qml:76-84` | **NINCS MEG** (G4); a PicasaPy oldali képfeldolgozásnál sincs ezen a helyen külön `Image.Error` ág. |
 
 ### 4. Vezérlők, alapértékek, megjegyzett állapot
 
@@ -5327,8 +5933,8 @@ felirattal egyezik; a sávja viszont a `oneup.tre` szerinti (Timeline gomb a
 |---|---|---|
 | **Gombok.** `editoneup.tre`: `exit`, `prev`, `auto`, `next`, `plusone`/`minusone` és a `tps`/`tpslabel` időblokk (`centergroup`), `transtype`, `rotateleft`, `rotateright`, `star`, `captionbutton`; a `timeline` rejtett. `auto2` (`:20-23`): `m_scaleX`, `YConstraint 0, 0, 0` és `YConstraint 1, 1, -97`, vagyis a felső széltől a sáv fölötti `97` képpontig nyúlik (`macros.tre:21-27` szerint két `YConstraint` nyújt), az `auto` művelete. Parancsnév-lánc: `0x00760240` (`exit` → `0x0075de50`; `plusone`/`minusone` → `0x0075f960`; `auto`/`auto2` → léptetés-indítás). | `SlideshowControls.qml:55-70` (`auto2` sáv, 14 képpont), `:170-345` | A felsorolás egyezik, a `Timeline` gomb kivételével (D1). **Az `auto2` területe eltér** (feltételes, erőforrás-szemantika): nálunk 14 képpontos felső sáv (#5649, a `respack.yt` `800 x 14` adatából), a `.tre` szerint a kép szinte egésze. Ez megválaszolja a `picasa-diavetito-sav-5550.md` N3 kérdését. D4. |
 | **Dia ideje.** `SlideshowEffectTime`, alapérték `3` (`0x00564a41`, `0x007facd3`). `+`/`-`: `0x0075f960` a kulcs értékéhez adja a `±1`-et, `1,0` és `[0x00cf4974]` = `20,0` közé szorítja, kiírja (`0x00401900`) és a `N másodperc` szöveget (`OneUpUI::Format` `%d %s`, `second`/`seconds`) a `editoneup/tps` elemre teszi. Minden dia elején újra beolvassa (`0x0075edb2`-`0x0075edbd`). | `controller_slideshow_mixin.py:106-135` (`1`-`20`, alapérték `3`, hibás érték `3`), `SlideshowControls.qml:284-345` | Egyezik. |
-| **Számjegyek `0`-`9`.** `0x00760970`: a számjegy értékét kiírja a `SlideshowEffectTime` kulcsba, és ha az olvasás nullát ad, `1`-et ír (`0x00760a19`-`0x00760a49`); szünetben a címkét is frissíti (`0x00760a4e`-`0x00760a5e`). | nincs (`SlideshowView.qml:687-700` csak `Ctrl+R`-t kezel) | **Igazolt eltérés (statikus).** D2. |
-| **Léptetés billentyűvel.** `0x00760970`: `Bal` (`0x25`) és `Fel` (`0x26`) hátra, `Jobb` (`0x27`) és `Le` (`0x28`) előre (`0x00760a6c`-`0x00760a78`), `Esc` (`0x1b`) kilép (`0x00760990`), `Space` (`0x20`) kapcsolja az `editoneup/auto` elemet (`0x007609d0`), `Pause` (`0x13`) csak lejátszás közben, `Play` (`0xfa`) csak szünetben. `Enter` (`0x0d`) nincs a kezelőben. | `SlideshowView.qml:663-686`: `Esc`, `Space`, `Jobb`, `Enter`, `Bal` | **Igazolt eltérés (statikus):** `Fel`/`Le`, `Pause`/`Play` hiányzik (D2). Az `Enter`-t a PicasaPy lépteti; az eredeti láncban (`0x005e6710` → `0x005e60d0`) mit csinál, nyitott (G6). |
+| **Számjegyek `0`-`9`.** `0x00760970`: a számjegy értékét kiírja a `SlideshowEffectTime` kulcsba, és ha az olvasás nullát ad, `1`-et ír (`0x00760a19`-`0x00760a49`); szünetben a címkét is frissíti (`0x00760a4e`-`0x00760a5e`). | `SlideshowView.qml:713-731` | Egyezik. |
+| **Léptetés billentyűvel.** `0x00760970`: `Bal` (`0x25`) és `Fel` (`0x26`) hátra, `Jobb` (`0x27`) és `Le` (`0x28`) előre (`0x00760a6c`-`0x00760a78`), `Esc` (`0x1b`) kilép (`0x00760990`), `Space` (`0x20`) kapcsolja az `editoneup/auto` elemet (`0x007609d0`), `Pause` (`0x13`) csak lejátszás közben, `Play` (`0xfa`) csak szünetben. `Enter` (`0x0d`) és `Ctrl+R` nincs ebben a kezelőben; a normál vetítési módot jelző `[this+0x332f]` mellett a közös billentyűút korán visszatér (`0x005e6710`, `0x005e60d0`). | `SlideshowView.qml:663-720`: `Fel`/`Le`, `Enter`, `Ctrl+R`, számjegyek és `Pause`/`Play` | **Részben eltér.** A `Fel`/`Le`, számjegyek, `Pause`/`Play` egyeznek. A PicasaPy az `Enter`-t továbblépésre, a `Ctrl+R`-t forgatásra használja; az eredeti normál vetítési ágban a külön kezelő ezeket nem dolgozza fel, a közös kezelő a `+0x332f` kapun visszatér. D2 maradjon erre a két billentyűre szűkítve. |
 | **Kézi léptetés a lista szélén.** `0x0075fb20`: ha az első kijelölt elem a nézet utolsó indexén áll és előre lép, `0x00717bb0` az első elemet jelöli ki, a `LoopSlideshow` értékétől függetlenül (`0x0075fba2`-`0x0075fbd5`); egyébként `0x00717260` / `0x007172a0` (a rács nyíl-léptetője, `0x00717eb0`), amely a lista szélén nem fordul körbe és nem lép (`0x00718031`-`0x0071804a`: a `pos + delta` kívül esik, a visszatérés `0xf4240` kijelölésváltás nélkül), tehát hátra az első képen az eredeti áll. Az automatikus léptetés (`0x00717d10`, `loop` = `[this+0x335c]`) a lista végén hurok nélkül `[nézet+0x2e0] = -1`-et ad (`0x00717e76`). | `SlideshowView.qml:278-282`: hurok nélkül az utolsó képről előre lépve `stop()`, vagyis kilép | **Eltérés (a léptető függvények utasításszinten igazoltak, a teljes hatás futásmérésre vár):** az eredetiben a kézi előre lépés az utolsó képről visszafordul az elsőre, hátra az első képről nem lép; nálunk hurok nélkül az előre lépés kilép, hurokkal a hátra lépés az elsőről az utolsóra fordul. Az automatikus lista-vég viselkedése nyitott: a `0x0075f430` óraütés és a `0x00569260` útján nincs közvetlen hívás a kilépésre (`0x0075de50`), tehát az eredeti nem biztos, hogy kilép (G1). |
 | **Ismétlés.** `LoopSlideshow`, alapérték `0` (`0x007fad0a`), belépéskor `[this+0x335c]`-be másolva, kilépéskor nullázva (`0x0075e5d9`, `0x0075debb`). | `controller_slideshow_mixin.py:137-149` (alapérték ki) | Egyezik. A másolás miatt a vetítés közbeni beállításváltás az eredetiben nem hat; nálunk a kötés élő, de a Beállítások ablak közben nem érhető el. |
 | **Zene.** `PlayMP3Tracks`, alapérték `1` (`0x007fadbb`), belépéskor `[this+0x335d]`; a zeneforrás `MP3SlideshowPath` (`0x0075cdc0`, zenei szál: `0x0075ca20`, a példány `[this+0x33a4]`); szünetben `0x00760070` hívja a `0x0075d570`-et. | `controller_slideshow_mixin.py:151-212`, `SlideshowMusic.qml:1-50` | Az alapérték egyezik; a sávsorrend, a szünetben viselkedés és a hangerő nincs vizsgálva (G7). |
@@ -5345,6 +5951,7 @@ felirattal egyezik; a sávja viszont a `oneup.tre` szerinti (Timeline gomb a
 | **Hova tér vissza.** Ha a vetítés előtt a szerkesztő látszott (`[this+0x3331]`, `0x005e8c3a`), a `0x00566a70`, különben a könyvtár (`0x00566270`, a `searchcontainer/search` elem kezelése): `0x0075e205`-`0x0075e237`. | `MainSlideshow.qml:105-113`: nyitott néző esetén a néző az utolsó képre áll, különben a rács | Egyezik. |
 | **Mi lesz kijelölve.** A léptetés a nézet kijelölését viszi magával: `0x00717260`/`0x007172a0` → `0x00717eb0`, amely az aktuális elem (`[nézet+0x390]`) helyzetéhez ±1-et ad a nem jelzett (`+0x5a == 0`) elemek listájában, `Shift` nélkül a többi elem kijelölését törli (`+0x5d = 0`), a célt kijelöli és aktuálissá teszi, és frissít (`0x00717ed0`-`0x00717f04`, `0x00717fe2`-`0x00718016`, `0x00718058`-`0x007180ef`). Az aktuális elem (`[this+0xe64]`) írói közül (`tagkereso.py`: közvetlen írás csak a betöltőben `0x00564cc7` és a `0x005e8a70`-ben `0x005e8c2d`, `lea` alakban a `0x005704d0`-ban, `0x005704eb`-`0x005704fe`) a `0x005704d0` az elemváltó, és ez a nézetben is kijelöli az elemet (`0x00717c50`, `0x0057066e`), tehát az aktuális elem és a kijelölés együtt mozog. Hogy az óraütés (automatikus léptetés) melyik úton jut a `0x005704d0`-ig, nincs végigkövetve (G1). Kilépéskor az első kijelölt elem `+0x5d` jelzője 1, `[nézet+0x390]` az azonosítója, és `0x0071b810` frissít (`0x0075e3c1`-`0x0075e487`). | `MainSlideshow.qml:109-112`: `selectedIndexes = [currentIndex]` | Egyezik. |
 | **Tárolt adat.** A kilépés ága nem hív `.picasa.ini`- vagy indexírót. A vetítés alatti forgatás és csillagozás a közös útra megy (`0x00760240` → `0x005eef30`, `0x005e81e0`), ez nem a vetítés sajátja. | `MainSlideshow.qml:191-199` (`toggleStar`, `rotateLeft`/`rotateRight`) | Egyezik. A negatív állítás a kilépés hívási ágára korlátozott. |
+| **Windows képernyőkímélő.** A normál kilépési ágban közvetlenül a kurzort visszaállító `0x0097e510` látszik (`0x0075dea3`-`0x0075deab`); nem találtam itt közvetlen képernyőkímélő-beállítás írást. Az indirekt hatás és a rendszer tétlenségi viselkedése **NINCS MEG**. | `MainSlideshow.qml:73-83, 92-103`: az alkalmazáson belüli képernyőkímélő-előnézet külön út, a normál kilépés ablakállapotot állít vissza. | Nyitott: Windows-futásmérés kell a Picasa normál `Ctrl+4` útján; rögzíteni kell a rendszer képernyőkímélő-beállításait előtte/utána, és azt is, hogy vetítés közben elindul-e. |
 
 ### 6. Üres kijelölés, üres nézet
 
@@ -5362,12 +5969,11 @@ indul (`MainSlideshow.qml:60-71`).
   `if ((DAT_00d67849 == '\0' || !(GetAsyncKeyState(0x10) & 0x8000)) && param_2 == '\0') { ... iVar6 = FUN_0075de50(); ... return iVar6; }`,
   a `qshow` ág (`FUN_008037e0`) csak utána jön. A `0x0075de50` sztring-hivatkozásai (`LoopSlideshow`, `PlayMP3Tracks`, `editoneup/sszoomsliderclip`, `editpanel/sscaption`, `editpanel/fullscreenswitcher`) a bináris-indexből, az `editoneup.tre` beépítése a `panelroot.tre:2-3`-ból.
 - **Cáfoló kísérlet.** (1) Van-e más út a `qshow` szakaszba `0` módban `Shift` nélkül? A függvény összes ugrásának átnézése (a munkafa `.bt/` mappájában készült szkripttel, a kör végén törölve): az `0x005e8d5d`-`0x005e9a8e` tartományba csak a `0x005e8b00` és a `0x005e8b0a` ugrik. (2) A `[0xd67849]` valóban az aktív ablak jelzője-e, vagy állandó? Két írója van, az egyik a `WM_ACTIVATEAPP` ágon az üzenet `wParam` értékét írja (`0x00a52e55`-`0x00a52e66`), tehát a `Shift` vizsgálata valódi. (3) A `0x0075de50` csak a szerkesztő sima egyképes nézete lehet-e, nem vetítés? Nem: a `LoopSlideshow`/`PlayMP3Tracks` beolvasás, a `ss`-előtagú elemek és az átmenet-választó ezt cáfolják. **Határ:** az index és az ugrás-pásztázás a vtáblán át történő hívást nem látja; a `0x0075de50` közvetett hívója a `qshow` felé nem zárható ki, de a normál `0` módú útra nincs ilyen jel.
+- **A G4 címének cáfoló ellenőrzése.** A korábbi `0x006d00c0 = képbetöltési-hiba-kezelő` feltevést célzottan támadtam. A függvény disassemblyje a `[this+0x20]` / `[this+0x24]` erőforrás-állapotot kezeli és virtuális metódust hív; a `0x00569260` hívó rajzolási objektumot és szélesség/magasság/alfa argumentumokat ad át. Független ellenőrzésként a Ghidra `0x005683a0` hívója kiszámított képkocka-méretet és alfát ad a `0x006d00c0`-nak (`2026-11-15-7006-7008-7009-7012-colab-decomp.txt:2754`). A két út egyezik: a `0x006d00c0`-hoz rendelt fájlbetöltési szerep nem igazolható, és a függvény közvetlen szerepe képkocka-/erőforrás-frissítés. Ez a cáfolat csak a hibás cím-hozzárendelést zárja ki; a tényleges fájlbetöltési hibaág továbbra is nyitott.
 
 ### 8. Javasolt fejlesztői jegytörzsek
 
 #### D1. A normál diavetítés vezérlősávjában ne legyen Timeline gomb
-
-**Előfeltétel:** ellenőrizni a `picasa-colab-jobs #375` 17-18. képén (a szünetben látható sáv), hogy van-e rajta Timeline gomb. Ha van, ez a jegytörzs elvetendő, és a 2. szakasz következtetését helyesbíteni kell.
 
 **Eredeti:** a `0x005e8a70` `0` módban, `Shift` nélkül az `editoneup` vetítőt indítja (`0x0075de50`); ennek erőforrása az `editoneup.tre`, ahol a `timeline` `m_hidden` és `m_disabled` (`:62-66`), és a kódban az `editoneup/timeline` névre egyetlen hivatkozás sincs. Az átmenet-választó (`editoneup/transtype`) nem rejtett.
 
@@ -5377,15 +5983,15 @@ indul (`MainSlideshow.qml:60-71`).
 
 **Kész, ha:** normál vetítésben (`Ctrl+4`, menü) a `slideshowTimelineButton` nem látszik, a `slideshowTransitionBox` mindig; a #5653 tesztjeit ennek megfelelően kell átírni. A sáv elrendezése (az `exit` a középső csoportban, `5` képpont) csak a csoporton belüli sorrend megmérése után módosítható (`NINCS MEG`, `picasa-diavetito-sav.md` 7. jegyjavaslat).
 
-#### D2. Billentyűk a diavetítésben: `Fel`/`Le`, `1`-`9`, `Pause`/`Play`
+#### D2. A normál diavetítésben az `Enter` és a `Ctrl+R` ne kapjon műveletet
 
-**Eredeti:** `0x00760970` (az `editoneup` billentyűkezelő): `Fel` (`0x26`) hátra, `Le` (`0x28`) előre (`0x00760a6c`-`0x00760a78`); számjegy: a `SlideshowEffectTime` értéke a számjegy, nulla helyett `1` (`0x00760a19`-`0x00760a49`), szünetben a címke frissül; `Pause` (`0x13`) lejátszás közben, `Play` (`0xfa`) szünetben kapcsolja az `auto`-t (`0x007609c3`-`0x00760a07`).
+**Eredeti:** a `0x00760970` külön kezelő nem tartalmaz `Enter`- vagy `R`-ágat. A `0x005e6710` a nem kezelt gombot a közös `0x005e60d0` útra továbbítja, amely a normál vetítés `[this+0x332f]` állapotánál azonnal visszatér.
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| `0x00760970` | `SlideshowView.qml:663-700` | `Fel`/`Le` a `goBack()`/`advance()`; `1`-`9` a `controller.setSlideshowSeconds(n)`; `Pause`/`Play` a `togglePause()` megfelelő feltétellel. |
+| `0x00760970`, `0x005e6710`, `0x005e60d0` | `SlideshowView.qml:677-680, 706-711` | A normál vetítésben ne léptessen az `Enter`, és ne forgasson a `Ctrl+R`/`Ctrl+Shift+R`; a már egyező `Fel`/`Le`, számjegy és `Pause`/`Play` kezelés maradjon. |
 
-**Kész, ha:** valódi billentyűleütéses teszt (`QTest.keyClick`) igazolja mindhármat; a `Fel`/`Le` a `Bal`/`Jobb` iránya szerint lép; a `0` nem ír `0`-t. Az `Enter` a jegyben marad változatlan, amíg a G6 nem dől el.
+**Kész, ha:** normál vetítésben az `Enter` nem léptet, a `Ctrl+R` és `Ctrl+Shift+R` nem forgat; a `Fel`/`Le`, számjegy, `Pause` és `Play` továbbra is a Picasa-műveletet végzi.
 
 #### D3. A videó a diavetítésben (vágási pontok szerint)
 
@@ -5413,40 +6019,129 @@ indul (`MainSlideshow.qml:60-71`).
 
 #### D5. A szerkesztő `Play` gombjának súgószövege
 
-**Eredeti:** `editpanel/sbutton` súgó (`editpaneltext.tre:8-9`), hivatalos magyar: `Állítson össze és nézzen diavetítést ezekből a fotókból` (`panel-feliratok-hu.tsv:4914`).
-
-| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
-|---|---|---|
-| `editpaneltext.tre:8-9` | `PhotoViewerTopBar.qml:200`, `PhotoViewerQuickToolbar.qml:111` (`Play Slideshow`) | A buborékszöveg a hivatalos forrás szerint. Csak szöveg; a fordítási kapuk (`test_i18n_dictionary_4313.py`) futtatandók. |
+**Lezárva:** az eredeti `editpanel/sbutton` súgója (`editpaneltext.tre:8-9`)
+magyarul `Állítson össze és nézzen diavetítést ezekből a fotókból`
+(`panel-feliratok-hu.tsv:4914`). A jelenlegi `PhotoViewerTopBar.qml:200` és
+`PhotoViewerQuickToolbar.qml:111` ugyanazt az eredeti kulcsot használja; a
+`picasapy_hu.ts:10940-10943,11079-11082` fordítása a hivatalos magyar
+szöveg. Fejlesztői jegy nem indokolt.
 
 A kézi léptetés lista-szélének viselkedése (előre az utolsó képről az elsőre, hátra
-az első képen nem lép) és az automatikus lista-vég eltérése mellé nincs jegytörzs,
-amíg a G1 és a futásmérés nem dönt (`Nyitott`): az automatikus lista-vég
-viselkedése ismeretlen, és a két szél együtt egy kérdés.
+az első képen nem lép) statikusan eltér a PicasaPy-tól, ezért a D7 jegytörzs
+lent szerepel; a felhasználói végállapotot futásmérés erősítse meg. Az
+automatikus lista-vég külön nyitott kérdés (G1, D6).
 
 ### 9. Nyitott
 
+- Futásmérés kell (G1): hurok nélkül, kétképes mappában az utolsó dia után marad-e az utolsó kép, változik-e a lejátszás állapota vagy bezárul-e a vetítő. A `0x0075f430`-ból nincs közvetlen kilépő hívás; az automatikus lépés a `0x005c4ce0` → `0x0075fb20` úton a nézet kijelölését is frissíti.
+- Futásmérés kell (G2): egy Picasában elrejtett kép szereplése `Ctrl+4` vetítéskor. A `+0x5b` szemantikai neve nem blokkoló, mert a vetítő listagyűjtője nem olvassa.
+- Futásmérés kell (G3): normál `Ctrl+4` alatt a szünet, egérmozgás, sáv körüli egér és várakozás hatása a vezérlősávra. A #375 felvételei nem találhatók a helyi `referencia/` alatt.
+- Futásmérés kell (G4, blokkoló): csonka, hiányzó és elérhetetlen hálózati képfájl kezelése; rögzíteni kell, hogy a vetítés átugorja, megállítja vagy jelzi-e a hibát.
+- **NINCS MEG** a Windows képernyőkímélő beállításának változása és a vetítés alatti aktiválódása. Futásmérés: `Ctrl+4` előtt és után beállításrögzítés, majd megfigyelés a rendszer tétlenségi határán túl.
+- Futásmérés kell (G5): nem aktuális mappafejléc `play` gombja után a vetített mappanév és első kép. A hívás sorindex nélkül az alkalmazás aktuális nézetét adja át, de a gombkattintás előtti nézetváltás nem bizonyított.
+- G6 megválaszolva meglévő dekompilációból és a hívóhely disassemblyjéből: az `Enter` és `Ctrl+R` nem jut a főablak műveletágába normál vetítésben; a `0x005696c0` nyers feltétele a 9/a táblában.
+- Futásmérés kell (G7): két különböző nevű zenefájllal a sorrend, ismétlés, szünet/folytatás és kilépés hallható hatása. A `0x0075cdc0` csak az `MP3SlideshowPath` beállítást tölti be.
+- G8 megválaszolva a nyers feltétel szintjén: a `0x005e8a70` indítási kapuja a 9/a táblában szerepel; a mezők pontos neve nem blokkoló.
+
 - Ghidra-kör kell: 0x0075f430 - mi történik az óraütés lista-vég ágán, ha a `[nézet+0x2e0]` `-1` és a `LoopSlideshow` ki: megáll az utolsó képen, szünetbe lép, vagy kilép (a `0x0075f430`-ból és a `0x00569260`-ból nincs közvetlen hívás a kilépő `0x0075de50`-re); és ugyanitt: az automatikus léptetés melyik úton hívja az aktuális elemet váltó `0x005704d0`-et, vagyis a nézet kijelölése valóban a látott képet követi-e. (G1)
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:4871`): a kimenet részben dönt. A `0x0075f430` (`:4871-5092`) **sem a kilépőt (`0x0075de50`), sem a szünet-kapcsolót (`0x00760070`) nem hívja**; hívottjai: `0x00569260`, `0x00569400`, `0x006cfe10`, `0x006cffd0`, `0x0075eac0` (dia betöltés), `0x0075eda0` (fotó ág), `0x0075fac0`, `0x00760190`, `0x00a54b70`, `0x0052e2f0`. A léptetés a `0x0075f58e`-nál a `0x0075fac0(1)`-en át megy, amely az `[ablak+0xea8]` nézetet, az argumentumot és a `LoopSlideshow` jelzőt (`[ablak+0x335c]`) a nézet `0x00717d10` léptetőjének adja, majd `0x00569260`-at hív (`0x0075fac0-0x0075fae4`, disassembly). **Az automatikus léptetés tehát a nézet saját léptetőjén megy, a `0x005704d0`-et (hívói `0x0053ce00`, `0x0056a160`, `0x0056b6f0`, `0x0056bfd0`, `0x005706b0`, `0x005fa020`) sem a `0x0075f430`, sem a `0x0075fac0`, sem a `0x00569260` nem hívja közvetlenül**; a nézet kijelölésének követése a léptető (`0x00717d10` -> `0x00717eb0`) viselkedése. A lista-végi ág (`[nézet+0x2e0] == -1`, `LoopSlideshow` ki) kimenetele a kimenetből nem dönthető el, mert a `0x00717d10` és a `0x006cfe10`/`0x006cffd0` (regiszterargumentumos hívások) törzse nincs benne, a megállás, szünet vagy kilépés tehát a léptetőben vagy a hívókban (`0x00571e50`, `0x005c4ce0`) dől el.
+- Ghidra-kör kell: 0x00717d10 - a léptető: a lista végén `LoopSlideshow` ki esetén mit ad vissza és mit állít (`[nézet+0x2e0]`, `[nézet+0x390]`), és a hívói közül a `0x005c4ce0` és a `0x00571e50` mit tesz a visszatérési értékekkel (megáll az utolsó képen, szünet, kilépés a `0x0075de50`-re) (G1) [nem blokkoló]
 - Ghidra-kör kell: 0x00717560 - az elem `+0x5a` és `+0x5b` bájtjának jelentése és írói (rejtett kép, fejlécsor, hiányzó fájl): a nézet-bejárások (`0x00717560`, `0x00717420`, `0x007166c0`, `0x00717eb0`) ezt a jelzőt hagyják ki. (G2)
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:4595`): a kimenet részben dönt. A `0x00717560` (`:4595-4678`) csak **olvassa** a `+0x5a` bájtot: a nézet elemein (`+0xb4` darabszám, `+0xb8(i)` elem) sorban végigmegy, és csak azok indexét teszi a listába, amelyeknek a `+0x5a` bájtja 0; előtte a `0x0071c8c0`-at hívja, és ha a nézet `+0x2cc` bájtja nem nulla, a nézet `+0xc4` metódusát. A `+0x5a` tehát a bejárásokból **kizárt elem** jelzője; hogy ez rejtett kép, fejlécsor vagy hiányzó fájl, a kimenetből nem dönthető el. A disassembly szerint az elem alaphelyzetbe állítása (`0x00713eb0`) a `+0x5a`-t 0-ra, a `+0x59`-et és a `+0x5b`-t 1-re állítja (`0x00713f82`, `0x00713fb8`, `0x00713fbc`); a `+0x5b`-t 0-ra állítja a `0x0071c8c0` (`0x0071c8dd`, a bejárások eleji hívás) és a `0x00716d70` (`0x00716e25`); a `+0x5a`-t 1-re állítja a `0x00714010` (20 bájt, hívója `0x00781680`) és a `0x00716d70` (`0x00716e53`), további írója a `0x0071dd40` (`0x0071e038`, 0). A `+0x5b` jelentése nem dönthető el.
+- Ghidra-kör kell: 0x00716d70 - a `+0x5a` és `+0x5b` írója (462 bájt, nézet-szűrő?): mikor kerül 1-be a `+0x5a` (rejtett kép, fejlécsor, hiányzó fájl), és mit jelent a `+0x5b`; 0x00714010 és a hívója 0x00781680 (G2) [nem blokkoló]
 - Ghidra-kör kell: 0x005c4ce0 - az `editoneup` vezérlősáv megjelenése: mikor látszik a normál vetítés sávja (szünet, egérmozgás, sáv fölötti tartózkodás); a #6930 szerinti hostcsere (`0x00802c20` → `0x009833a0`) a `OneUpUI`-ra, tehát a `qshow` útra vonatkozik; a normál vetítésben a szünet-kapcsoló a `0x00760070` (`0x0075d570`, `0x0075eac0`), és hogy ez hogyan jeleníti meg a sávot, nincs vizsgálva. (G3)
 - Ghidra-kör kell: 0x006d00c0 - a diaváltás (`0x0075eda0` fotó ág, `0x0075eac0`) betöltési hibája: sérült, hiányzó vagy hálózati úton elérhetetlen fájlnál kihagyja-e a diát, hibát mutat-e, megáll-e. (G4)
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:4482`): **a `0x006d00c0` nem a betöltési hibát kezeli:** (`:4482-4535`) háromparaméteres beállító: a `[objektum+0x80]`, `+0x84`, `+0x88` mezőt írja az `(param_1, param_2, param_3)` értékeire, szálazonosítóval újrabelépő zár alatt, és `0`-t ad vissza; hibaágat, üzenetet vagy kihagyást nem tartalmaz. Hívói a `0x005683a0`, `0x00569260` (a léptetés utáni hívás), `0x0075de50` (a vetítésből kilépő), `0x00774d60`, `0x00775390`. A sérült, hiányzó vagy hálózati úton elérhetetlen fájl kezelése tehát nem itt van; az index szerint a fotó ág (`0x0075eda0`, 1505 bájt) a `moviestart`, `movieend`, `%x-transition` sztringeket használja, a `0x0075eac0` az `editoneup/prev`, `next`, `sscaption`, `captionbutton`, `rotateleft`, `rotateright`, `star` vezérlőket kezeli; a betöltési hibaág egyik függvényben sem látszik.
+- Ghidra-kör kell: 0x0075eda0 - a fotó ág (1505 bájt; hívottai `0x00460180`, `0x00465b20`, `0x004963d0`, `0x0054ba80`, `0x00552120`, `0x00555720`, `0x00906cf0`): sérült, hiányzó vagy hálózati úton elérhetetlen fájl betöltési hibája: kihagyja-e a diát, hibát mutat-e, megáll-e (G4) [nem blokkoló]
 - Ghidra-kör kell: 0x005e0f70 - a fejléc `play` gombja: a `0x005e146f` hívás előtt melyik nézet az aktuális (`0x0056bc10`), tehát nem az aktuális mappa fejlécéről melyik képsorozat indul. (G5)
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:2532`): a kimenet dönt: **a `play` ág nem vált nézetet.** A `0x005e0f70` (`:2532-3589`) az eseményszöveg `3` sorszámú tagját (`0x00988f30(…, 3, 0)`) hasonlítja össze sztringként a kezelt nevekkel, és a `play` egyezésnél (`0x005e1461`) a `0x005e8a70(ablak, 0)`-t hívja (`0x005e146f`); előtte semmi nem állít nézetet, a `0x0056bc10` hívása a teljes függvényben nincs meg. A `2` sorszámú tagból `_atol`-lal kiolvasott számot (`local_1468`) a `play` ág nem használja és nem is adja át. **Ebből következik, hogy a fejléc `play` gombja mindig az ablak éppen aktuális nézetéből indít vetítést, nem a gombot hordozó fejléc mappájából;** hogy ez az aktuális nézet melyik, azt a korábbi vizsgálat szerint a `0x0056bc10` állítja (`[ablak+0xea8]`).
+- Ghidra-kör kell: 0x0056bc10 - a `[ablak+0xea8]` aktuális nézet írója: mikor áll át egy fejlécre kattintáskor (a mappalista fejlécén a kattintás a mappát is aktuálissá teszi-e a `play` előtt) (G5) [nem blokkoló]
 - Ghidra-kör kell: 0x005e60d0 - az `Enter` (`0x0d`) ág, a `Ctrl+R`/`Ctrl+Shift+R` ág és a `Ctrl+4` ág `0x005696c0` kapuja: mit csinál az `Enter` és a forgatás-billentyű normál vetítés közben (a `0x00760970` egyiket sem kezeli), és mikor tiltja a `0x005696c0` a `0x005e8a70` hívását. (G6)
 - Ghidra-kör kell: 0x0075cdc0 - a normál vetítés zenéje: a `MP3SlideshowPath` mappa sávjainak sorrendje (rendezett vagy véletlen), ismétlés, szünetben viselkedés (`0x0075d570`), és a kilépési várakozás (`0x0097b420`, `0x3e8`). (G7)
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:4679`): a kimenet részben dönt. A `0x0075cdc0` (`:4679-4870`, egyetlen hívója a zenei szál `0x0075ca20`, `0x0075ca55`) **csak a zeneforrást állítja be, a sávok sorrendjét, az ismétlést, a szünetbeli viselkedést és a kilépési várakozást nem.** Ha a `[objektum+0x1a8]` útvonal nem üres, a `+0x94`-re másolja, `GetShortPathNameW`-vel rövid útvonalat képez (`0x412` karakteres puffer), azt UTF-8-ra alakítja (`WideCharToMultiByte`, `0xfde9`), és a `+200` mezőbe teszi (sikertelen rövidítésnél az eredeti útvonal marad). Ha a `[objektum+0x1ac]` bájt nem nulla, a `Preferences` `MP3SlideshowPath` értékét olvassa (`0x00407630`, `0x004078e0`), és a `+0x48` mezőbe teszi (`0x009a5f80`); ha az érték üres vagy nulla hosszú, alapértelmezett mappát kér a `0x00980ec0(0)`, `0x009a38a0`, `0x009a3db0` hívásokkal (melyik rendszermappa, a kimenetből nem dönthető el).
+- Ghidra-kör kell: 0x0075ca20 - a zenei szál: a `+0x48` mappa sávjainak sorrendje (rendezett vagy véletlen), ismétlés, szünetben viselkedés (`0x0075d570`), kilépési várakozás (`0x0097b420`, `0x3e8`); és 0x009a3db0 - az alapértelmezett zenemappa (G7) [nem blokkoló]
 - Ghidra-kör kell: 0x005e8a70 - az elején lévő kapuk (`0x005e8a89`-`0x005e8ac8`): a `[this+0x3094]`, `[this+0x30a0]`, `[this+0x332e]` jelentése (képtálca? szerkesztő-állapot?), vagyis mikor nem indul a vetítés. (G8)
 - Futásmérés kell: a `picasa-colab-jobs #375` 17-18. képén (szünetben látható sáv) látszik-e Timeline gomb és hol áll az `Exit` (a D1 előfeltétele); ugyanitt: normál `Ctrl+4` tényleg az `editoneup` vetítő-e.
 - Futásmérés kell: videót is tartalmazó mappán `Ctrl+4`: játszik-e a videó, és mennyi ideig áll a dia (D3 előfeltétele).
 - Futásmérés kell: három nem szomszédos kép kijelölve, `Ctrl+4`, majd `Jobb` nyíl többször: csak a három, vagy a teljes nézet jön-e; az utolsó képen `Jobb` nyíl hurok nélkül: visszafordul-e az elsőre.
 - Futásmérés kell: üres mappán `Ctrl+4`: látszik-e bármi (üzenet, ablakváltás), és a PicasaPy előbb-teljes-képernyőre-vált villanása látszik-e.
 - Futásmérés kell: a vetítés közepére kattintva (a sáv fölött) vált-e lejátszás és szünet között (D4 előfeltétele).
-- Futásmérés kell: `Fel`, `Le`, `5`, `0`, `Pause` a vetítés közben (a D2 igazolása), a sáv láthatóságával együtt.
+- Futásmérés kell: videó, többes kijelölés, üres mappa és `auto2` esetén a táblázatban megadott felhasználói hatás rögzítése; az `Esc`, `Fel`/`Le`, számjegyek, `Pause`/`Play` kódútja statikusan igazolt.
 
-### 10. Módosított fájlok
+### 9/a. Zárókör: a megmaradt kérdések feldolgozása
 
-- `docs/specs/paritas-ellenorzes.md` - új #7060 szakasz: a diavetítés
-  belépési pontjai, a két vetítő szétválasztása, a vetített halmaz, a
-  vezérlők és megőrzött állapot, a kilépés hatása, jegytörzsek és nyitott
-  kérdések. Kódhoz, teszthez nem nyúltam.
+Az alábbi állapotok a fenti nyitott lista zárókörös kiegészítései. A korábbi
+Ghidra-kimeneteket nem törlöm; ahol a korábbi Ghidra-kérésre már van válasz,
+az itt megadott cím szerinti eredmény a mérvadó. A feloldatlan kérdéseknél
+az alábbi mérés a következő döntő lépés, új dekompilációs kérés nem maradt.
+
+| Tétel | Zárókörös válasz és fennmaradó bizonyíték |
+|---|---|
+| G1, időzített léptetés és lista vége | A `0x005c4ce0` hívó csak akkor léptet a `0x0075fb20`-szal, ha a `0x0075f430` nem nulla eredményt ad. A `0x0075fb20` a `0x00717420` listájából választ, majd a `0x00717260`/`0x007172a0` úton frissíti a rács kijelölését és az aktuális elemet; az utasításszintű híváslánc megerősíti, hogy az automatikus lépés ezt a közös léptetőt használja. A `0x00717d10` a `LoopSlideshow` kikapcsolt állapotában a következő index helyére `-1`-et ír. A végső képernyőállapot (marad-e az utolsó kép, változik-e a lejátszás jelzője) **NINCS MEG**; futásmérés kell egy kétképes mappán, a második kép utáni legalább két diaidő megfigyelésével. Fejlesztői jegy csak ennek eredménye után nyitható. |
+| G2, `+0x5a` és `+0x5b` | A `0x00717560` Ghidra-kimenetének hívóhelyei disassembly alapján helyesek: a nézet az `EDI`-n érkezik, a kimeneti listatároló az `ESI`-n; a gyűjtő csak a `+0x5a == 0` elemeket teszi a sorozatba. A `+0x5b` értékét ez az algoritmus nem vizsgálja, így a `+0x5b` szemantikai neve nem befolyásolja a vetített halmazt (**nem blokkoló**). A `+0x5a` a kapcsolódó specifikációkban kizáró/elnyomó jelző, de hogy ez pontosan a rejtett képeket jelenti-e, **NINCS MEG**; döntő mérés: egy normál mappában egyetlen, Picasában elrejtett képpel `Ctrl+4`, majd annak láthatóságát rögzíteni. |
+| G3, az `editoneup` vezérlősáv | A `0x005c4ce0` az időzített képkocka- és egér-eseményeket kezeli; ebből önmagában nem dől el a normál `editoneup` sáv láthatósági szabálya. A jelenlegi PicasaPy szünetkor megmutatja a sávot, lejátszáskor elrejti, majd egérmozgás után időzítve rejti el (`SlideshowView.qml:445-469`, `SlideshowControls.qml:11-53`). Eltérésre futásmérés kell: `Ctrl+4`, egérmozgás a kép közepén és a sáv körül, szünet, majd mozdulatlanság; minden állapotban képernyőképpel. |
+| G4, sérült, hiányzó vagy hálózaton elérhetetlen kép | A `0x0075f430` képkészenléti órát és megjelenítési útvonalat kezel, a `0x006d00c0` pedig erőforrás-/képkocka-frissítő, nem hibaág. A korábbi címhozzárendelést a `0x00569260` és a `0x005683a0` hívóadatainak független összevetése cáfolja. A hiba végső felhasználói hatása **NINCS MEG**. Döntő egyetlen futásmérési menet három külön képpel: csonka képfájl, megszűnt helyi fájl és elérhetetlenné tett hálózati út; rögzítendő, hogy a vetítés átugorja, megállítja vagy jelzi-e a hibát. Ez blokkolja a teljes folyamat lezárását. |
+| Windows képernyőkímélő | A kilépési függvényben nem látható közvetlen beállításírás, de az indirekt rendszerhatás és a tétlenség alatti aktiválás nem állapítható meg indexnegatívból. Döntő mérés: az eredeti `Ctrl+4` előtt és után a Windows képernyőkímélő beállításának rögzítése, majd a vetítést a beállított tétlenségi időn túl figyelni. Felhasználó által látható viselkedés, ezért nem jelölhető nem blokkolónak. |
+| G5, fejléc `play` nem aktuális mappán | A `0x005de8e0` hívóhely a `play` ágban az alkalmazásobjektumot adja a `0x005e0f70`-nek, az ág pedig csak a `FUN_005e8a70(this, 0)` hívást végzi, sorindex nélkül. A vetítésindító az objektum aktuális `[this+0xea8]` nézetét olvassa. Ez megadja a közvetlen forrást a hívás pillanatában, de a nem aktuális mappafejléc kattintása előtte átállítja-e ezt a nézetet, **NINCS MEG**. Döntő mérés: egy másik mappafejléc `play` gombja, előtte és utána a mappa neve és az első vetített kép rögzítésével. |
+| G6, Enter, `Ctrl+R`, `Ctrl+4` kapu | Megválaszolva meglévő dekompilációból és a hívóhely disassemblyjéből. A `0x005e6710` először a `0x00760970` normál vetítési billentyűkezelőt hívja; a `Ctrl+4` közös útját kezelő `0x005e60d0` a `[this+0x332f] != 0` állapotnál visszatér. Emiatt az eredeti normál vetítésben az `Enter` és a `Ctrl+R` nem jut a főablak műveletágába. A `0x005696c0` nyers kapuja: a `previewclip2` elem létezzen és `[elem+0x20c] == 0` legyen, továbbá a `this+0x668` és `this+0x99c` Windows-ablak téglalapjai egyezzenek; csak ekkor igaz. A `0x005e8a70` igaz kapunál az `only_1up_toggle` műveletet próbálja, és a `0xf4242` visszatérés megszakítja az indítást. A mezők beszédes neve **NINCS MEG**, de a tényleges nyers kapu ismert; külön Ghidra-kör nem szükséges. |
+| G7, zene | A `0x0075cdc0` a `Preferences/MP3SlideshowPath` értéket tölti a hangobjektum `+0x48` mezőjébe. A `0x00760070` szünetkapcsoló meghívja a `0x0075d570`-et, amely a hangobjektum állapotmezőjét váltja; a sávlista sorrendje, az ismétlés és a hallható szünet/kilépés eredménye ezekből nem dől el. A jelenlegi PicasaPy a zenefájl-lista aktuális elemét játssza, a végén körbeér (`SlideshowMusic.qml:11-36,46-49`). Döntő mérés: két eltérő nevű sávval ellenőrizni a sorrendet, végigjátszást, szünet/folytatást és kilépést. |
+| G8, vetítésindítási kapuk | A `0x005e8a70` ág disassemblyje rögzíti a feltételt: ha `DAT_00d67914 != 0`, a `preview` elem létezik, `[preview+0x20c] == 0`, továbbá `[this+0x3094] > 0` vagy `[this+0x30a0] > 0`, és `[this+0x332e] != 0`, az indítás `-1`-gyel visszatér. A mezők pontos funkcióneve nem azonosított; a viselkedési feltétel statikusan ismert, a címkézés **nem blokkoló** és új Ghidra-kört nem indokol. |
+| Üres mappa, kijelölés, videó, kattintási terület | A jelenlegi forrás szerint az üres indulás előtt teljes képernyőre vált (`MainSlideshow.qml:60-70`), a sorozat nem függ a kijelöltek számától (`MainSlideshow.qml:60-68`, `SlideshowView.qml:194-218`), a videót kihagyja (`SlideshowView.qml:194-218`), a képközép kattintási sávja 14 képpont (`SlideshowControls.qml:56-70`). Az eredeti oldali üres ablakváltás, többes kijelölés, videólejátszás és `auto2` kattintási terület mért látható hatása külön képernyőképes megfigyelést kér; ezek a már megadott egyetlen Windows-mérési menet további állapotai. |
+| D2 és D5 korábbi eltérés | D2 szűkítve marad az `Enter` és a `Ctrl+R`/`Ctrl+Shift+R` különbségére; a `Fel`/`Le`, számjegyek, `Pause`/`Play` jelenlegi forrásban megvan. D5 lezárva: a jelenlegi fordítás megegyezik a hivatalos magyar súgószöveggel. |
+
+### A jegy „Kész, ha” pontjai
+
+| Feltétel | Állapot |
+|---|---|
+| Belépési pontok: Nézet menü, eszköztár/fejléc, gyorsbillentyű, néző és helyi menü | ✅ A menüparancs, `Ctrl+4`, fejléc `play` és szerkesztő gomb útja megvan. ⛔ Nem aktuális mappafejléc esetén a kattintás előtti nézetváltás futásban nem bizonyított. |
+| Vetített elemek: kijelölt vagy teljes nézet, mappa/album, fotó és videó | ✅ Statikusan igazolt, hogy a kijelölés nem szűri a teljes aktuális nézetet, és üres nézetnél csendes a visszatérés. ⛔ A `+0x5a` pontos UI-jelentése, a többes kijelölés futási képe és a videó lejátszása mérendő. |
+| Vezérlők, alapértékek és megőrzés | ✅ A diaidő, ismétlés, zene jelölő, átmenet és a mostani billentyűforrások összevetve. ⛔ A Timeline normál vetítésbeli eltérése, a sáv láthatóságának futási képe és a zene lista sorrendje még teendő. |
+| Kilépési hatás, visszatérés, kijelölés, képernyőkímélő és tárolás | ✅ A visszatérési nézet, aktuális kép és vetítési kilépési ág statikusan összevetve. ⛔ A lista végi képernyőállapot és a Windows képernyőkímélő hatása mérendő. |
+| Rejtett, sérült, elérhetetlen kép és üres kijelölés | ✅ Az üres kijelölés és üres nézet útja statikusan összevetve. ⛔ A rejtett kép jelzője és a hibás vagy elérhetetlen kép látható kezelése mérendő. |
+
+### A két független út és a cáfoló kísérlet zárókörös kiegészítése
+
+- **A út, utasításszint:** `annot_disasm.py` a `0x005de8e0` → `0x005e0f70` fejléc-hívásnál, a `0x005e6710` → `0x00760970` billentyűútnál, a `0x005e60d0` kapujánál és a `0x005c4ce0` → `0x0075f430` → `0x0075fb20` időzített léptetésnél. A `0x00717eb0` hívója a `0x00717560` paraméter- és kimeneti regisztereit is igazolja.
+- **B út, külön kimenet és másik réteg:** a `referencia/ghidra/2026-11-16-koteg-438-465.txt` `FUN_0075f430`, `FUN_00717560`, `FUN_005e0f70` és `FUN_0075cdc0` dekompilációi, a korábbi `2026-10-17-qshow-2.txt` `FUN_005e60d0` kimenete, valamint a `tre` erőforrások és a jelenlegi forrás. Ahol ugyanarra a viselkedési útra vonatkozik, az utasításszintű olvasattal egyezik. A futásmérés hiányát ez nem pótolja, ezért a teljes következtetés feltételes.
+- **Cáfoló kísérlet:** megpróbáltam a `+0x5b` bájtot a vetített sorozat kizáró feltételének tekinteni, és a `+0x5a` jelzőt automatikusan „rejtett képnek” nevezni. A `FUN_00717560` Ghidra-kimenete a `+0x5a` bájtot vizsgálja; a hívóhely disassemblyje az `EDI` nézetet és `ESI` kimeneti tömböt erősíti meg, és a `+0x5b` nem szerepel a listaképző ágban. Az eredmény cáfolja a `+0x5b` kizáró szerepét, de nem igazolja a `+0x5a` emberi jelentését. Ugyanazzal a bizonyítási mércével ellenőriztem a cáfolatot: a kapcsolódó specifikációk is csak kizáró/elnyomó jelzőnek nevezik; a rejtett képre vonatkozó megfeleltetést a Picasa-futásmérésnek kell eldöntenie.
+
+#### D6. A nem ismétlődő vetítés lista végén maradjon nyitva
+
+**Eredeti:** a `0x00717d10` hurok nélkül `-1` következő indexet állít be; a `0x0075f430` és időzítőhívója (`0x005c4ce0`) nem hívja a vetítést lezáró `0x0075de50` függvényt. A végső képernyőállapot futásmérésig nyitott.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x00717d10`, `0x0075f430`, `0x005c4ce0` | `SlideshowView.qml:278-282` | Ha a mért eredeti a vetítőben marad az utolsó képen, a következő dia hiányánál ne hívjunk `stop()`-ot; tartsuk meg az utolsó képet és a vetítőt. |
+
+**Kész, ha:** a futásmérés igazolja, hogy nem ismétlő beállításnál az eredeti az utolsó képen marad, a PicasaPy sem lép ki, és a bezárás továbbra is az eredeti `Esc`/kilépés műveletre történik.
+
+#### D7. A kézi léptetés lista-végi viselkedése
+
+**Eredeti:** a `0x0075fb20` előre léptetésnél az utolsó elemről a `0x00717bb0`-n át az elsőt választja, a `LoopSlideshow` értékétől függetlenül; a `0x00717eb0` az első elemről hátra nem lép.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x0075fb20`, `0x00717eb0` | `SlideshowView.qml:201-204, 278-286` | Kézi előre lépéskor az utolsó elemről mindig az elsőre lépjen; kézi hátra lépéskor az első elemen maradjon, a `LoopSlideshow` beállításától függetlenül. Az automatikus léptetést külön kezelje. |
+
+**Kész, ha:** futásmérés után kézi előrelépés az utolsó képről az elsőre visz akkor is, ha az ismétlés ki van kapcsolva; kézi hátralépés az első képen nem változtat képet akkor sem, ha az ismétlés be van kapcsolva.
+
+### Zárási döntés
+
+**A teljes #7060 kutatási jegy egyelőre nem zárható le. Egyetlen blokkoló:**
+az eredeti Picasa futásának képernyőképes Windows-mérése a G4 hibaképeivel;
+ugyanebben a menetben rögzíthető a képernyőkímélő, a nem aktuális fejléc
+`play`, a vezérlősáv, a lista vége, az üres mappa, többes kijelölés, a videó,
+az `auto2` kattintás és a zene viselkedése. Ezekből a megadott állapotokból
+hiányzó viselkedés nem dönthető el a statikus binárisból. A nem blokkoló
+mezőnevek és a `+0x5b` szerepe nem kér új kutatási jegyet.
+
+**A mérés után fennmaradó fejlesztői jegytörzsek:** D1 Timeline gomb elrejtése
+a normál vetítésben; D2 `Enter` és `Ctrl+R` műveletének kikapcsolása normál
+vetítésben; D3 videók bevonása a vetítésbe; D4 az `auto2` kattintási terület
+kiterjesztése, ha a futásmérés igazolja; D7 kézi léptetés lista-végi
+viselkedése. D6, feltételes: ha a mérés szerint
+az eredeti a lista végén a vetítőben marad, a PicasaPy
+`SlideshowView.qml:278-282` kilépését igazítsuk ehhez.
 
 ## #7059: A mappa áthelyezésének teljes folyamata az eredeti Picasával összevetve
 
@@ -6430,15 +7125,23 @@ Kész, ha:
 - `Ghidra-kör kell: 0x004DC690: a `0x0043F9A0` pozitív keresőszavainál milyen halmazműveletet végez a bemeneti találati bitmapen, és hogyan működik több pozitív szóval? A meglévő dekompiláció csak a hívásait mutatja, a helper törzsét nem. [blokkoló az E1/E7 eredménylogikájára]
 - `Ghidra-kör kell: 0x004DCB90: a `0x0043F9A0` kizárt szavainál mely találatokat törli a bitmapből, és hogyan viselkedik több kizárt szóval? A meglévő dekompiláció csak a hívást mutatja. [blokkoló az E7 kizárási logikájára]
 - `Ghidra-kör kell: 0x005C3FE0: a mappalistáról és rácsról érkező esemény `+0x10` mezőjének kódtípusa mi; mit jelent a `0x100` feletti ág és miért az alsó bájt kerül a szövegbe? A meglévő Ghidra-fájlok a hívókat tartalmazzák, a célfüggvény törzse nincs meg. [blokkoló az E3 nem-ASCII tartományára]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:2488`): a `0x005c3fe0` (`:2488-2531`, hívói `0x005c40e0` és `0x005c42d0`) a mappalistáról és rácsról érkező billentyű "gépelés a keresőmezőbe" útja. **Feltételei** (disassembly `0x005c3fe4-0x005c401b`): nem igaz, hogy a `[ablak+0x30f4]` és a `[ablak+0x34a4]` is nem nulla; az esemény `+0x64` jelzőbájtjának `0xc` bitjei nullák (nincs Ctrl és Alt); és a `+0x10` mező értéke előjeles összehasonlítással `0x20 < kód < 0x80` VAGY `kód > 0xff`. **A `0x80-0xff` tartomány (Latin-1: `á`, `é`, `í`, `ó`, `ö`, `ú`, `ü` és társaik) és a szóköz nincs elfogadva**, a `0x100` feletti ág igen. Ha a feltétel igaz: megkeresi a `searchcontainer/search` csomópontot (`0x00c80484`, `ytWinTrackNode`-ra átalakítva), fókuszt ad neki (az ablak `+0x7c` metódusa), **a `+0x10` mező alsó bájtjából** (`movzx ecx, byte ptr [edi+0x10]`, `0x005c4059`) egykarakteres sztringet képez (`0x00985c00`) és a `0x0065b7b0`-nak adja (az index szerint `searchcontainer/searchbutton` sztringet használ), és `1000000`-t (`0xf4240`, kezelt) ad vissza; különben `1000001`-et (`0xf4241`, nem kezelt). **Következmény:** ha a `+0x10` UTF-16 kódegység, a `0x100` feletti betűk (`ő` `0x151`, `ű` `0x171`) alsó bájtja (`0x51`, `0x71`, azaz `Q`, `q`) kerül a szövegbe. A mező kódtípusát (karakterkód vagy gombkód) a kimenet nem nevezi meg; a `0x0067eca0` (`CTextEditNode`) ugyanezt a mezőt a `0x56` (`V`) értékkel hasonlítja Ctrl jelzővel, ami gombkódra utal, a `0x20 < kód < 0x80` tartomány viszont karakterkódra.
+- Ghidra-kör kell: 0x005c40e0 - a mappalista billentyűkezelője (457 bájt, `b_down`, `lb_right` sztringek): melyik eseménytípus (karakter vagy gomblenyomás) kerül a `0x005c3fe0`-ba, és ki írja az esemény `+0x10` mezőjét (UTF-16 kódegység vagy Latin-1/ANSI kód); gépelhető-e `ő`, `ű`, `á` a rácson indított keresésbe (E3) [blokkoló az E3 nem-ASCII tartományára]
 - `Ghidra-kör kell: 0x0077D380: a keresőmező saját kezelője vagy bázisosztálya kezeli-e az `Esc`/`Delete` billentyűt, ha nincs nyitva a javaslatlista? A helyi kimenetekben ezt a címet nem találtam. [nem blokkoló]
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:5093`): a `0x0077d380` (`:5093-5147`, a `CSearchEditBox::vftable` `0x00cb43d4` 1. bejegyzése, `0x00cb43d4` 2. helye `0x0077e210`) **nem kezeli az `Esc` (`0x1b`) és a `Delete` (`0x2e`) billentyűt.** Ha a javaslatlista objektum (`[this+0x104]`) nincs, `-1`-gyel tér vissza. `WM_KEYDOWN` (`+4 == 0x100`) esetén: Fel (`0x26`, a lista `+0x20` metódusa) és Le (`0x28`, `+0x24`) mindig, `1000000` (kezelt) visszatéréssel; ha a mező szövege üres (`GetWindowTextLengthA` 0): Bal (`0x25`, `+0x28(0)`) és Jobb (`0x27`, `+0x2c(0)`); a PageUp (`0x21`, `+8(0)`), PageDown (`0x22`, `+0xc(0)`) és Enter (`0x0d`, `+0x48()`) szövegtől függetlenül; ezek és minden más billentyű `1000001`-et (nem kezelt) adnak, tehát **az `Esc` és a `Delete` a mező saját és bázisosztályi üzenetkezelőjéhez jut, nincs elnyelve.** A bázisosztály kezelője nincs a kimenetben; az index szerint a fő vtábla (`0x00cb432c`) számos bejegyzése közös a `TagPanel::AutoComplete` vtáblájával (`0x0060f1b0`, `0x00610040`, `0x0060eeb0`), tehát a bázis az automatikus kiegészítő szerkesztőmező.
+- Ghidra-kör kell: 0x0060f1b0 és 0x00610040 - a `CSearchEditBox` és a `TagPanel::AutoComplete` közös bázisosztályának üzenetkezelője (a `0x00cb432c` vtábla 8. és 9. bejegyzése): mit tesz az `Esc` és a `Delete`, ha a javaslatlista nincs nyitva (mezőtörlés, fókusz elvétele, semmi) [nem blokkoló]
 - **NINCS MEG:** az eredeti szóindex pontos mező-hozzárendelése. A `0x004DA990` dekompiláció már megvan, de a benne hívott helper/getter-láncból nem dőlt el, mely szavak jönnek a fájlnévből, EXIF-ből, feliratból, címkéből, dátumból, helyből vagy kameraadatból. Út: a meglévő `2026-11-16-koteg-426-437.txt` `0x004DA990` és `0x004403C0` kimenetének továbbkövetése, majd kontrollált mintával mezőnkénti mérés; új kört ugyanarra a címre csak a hiányzó helpercímek azonosítása után kérj.
 - **NINCS MEG:** az automatikus kiegészítési javaslatok forrásainak sorrendje és a darabszám jelentése. A `0x0077E2E0` meglévő kimenet kirajzolója, kiemelése és ikonkulcsai rendelkezésre állnak, de a kategóriák forrását nem állapítottam meg. Út: a keresőmező/automatikus kiegészítés létrehozó útjának folytatása a meglévő kimenet alapján, majd eredeti felületi mérés.
 - **NINCS MEG:** a keresés előtti teljes állapot visszaállítása és a navigációs rekord létrehozási pontja. A meglévő `0x00600AC0` kimenet a keresőszöveg és szűrőgombok visszaállítását mutatja, de a képindex, fókusz, kor-csúszka és rekord létrehozása nem dőlt el. Út: a meglévő dekompilációból a mentő/hívó ág követése, kontrollált eredeti mérés a Back to View All, Ctrl+F/F3 és X utakra.
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:3955`): a kimenet részben dönt. A `0x00600ac0` (`:3955-4022`, hívói a `0x005d9cc0` `thumbui/navback` és `thumbui/navfw` ága, `0x005d9ecd`, `0x005d9f45`) egy navigációs rekordból állítja vissza az állapotot. **A rekord mezői a kimenet szerint:** `[0]` (a mappa vagy album kulcsa), `[1]` (a keresőszöveg) és az öt egybájtos jelző (`+0x9`, `+0xd`, `+0xf`, `+0x11`, `+0x13`: az öt szűrőgomb, `0x009cd8f0` állítja). **A visszaállítás sorrendje:** az öt szűrőgomb, `0x009862c0([ablak+0xf48])`, a `0x005c65e0` eredménye még egy `0x009cd8f0` hívással, a keresőszöveg (`0x00575130(szöveg, 1)`), majd **`[ablak+0x2a4]` `+0x44` metódusa a rekord kulcsával és `(1, 1, 0)` argumentumokkal** (ugyanaz a hívás, amelyet a `0x005e9bb0` az új album létrehozása után használ, tehát a mappára vagy albumra lépés a bal oldali nézetben), `0x0065b840(ablak, 0, 0, 1)` frissítés, `0x004bd9e0`, a `[[ablak+0x2c0]+0x2e0]` sztring másolása, `0x00660c80(ablak, ...)` (5524 bájt, `searchoptions/dupesearch`, `searchcontainer/searchbutton`, `webview`, `starsearch`, `facesearch` sztringek), `0x0057ec70(ablak+0x32b0)` és `0x004bda50`. **Képindexet vagy fókuszált elemet a rekord nem hordoz** (a mezői között nincs ilyen), a kor-csúszka (`0x0057ec70` célja) és a rekord létrehozási pontja a kimenetből nem dönthető el.
+- Ghidra-kör kell: 0x00660c80 - a keresősáv állapotának visszaállítása (5524 bájt): mely mezők (kijelölés, fókusz, görgetés) állnak vissza; 0x0057ec70 - a `+0x32b0` objektum (kor-csúszka?) és a navigációs rekord létrehozója (a `thumbui/navback` lista felvétele keresés indításakor, hívói `0x0057f1d0`, `0x00604260`, `0x006042b0`) [nem blokkoló]
 - **NINCS MEG:** a nagyon nagy eredménylista memória- és sebességhatása. Út: eredeti Picasa pontosan rögzített, változó méretű katalógusokon végzett idő- és memória-mérése; határértéket mérés nélkül nem adok meg.
+- Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:1734`, az eredménysáv szövegeihez, a Hatás bekezdés `0x005715d0` hivatkozásához): a `0x005715d0` (`:1734-1787`) az eredménysáv két szövegét állítja, egyetlen hívója a keresést végző `0x00662b20` (`0x00663617`). A `0x009cd080` két csomópontot keres a disassembly szerint: `searchoptions/searchresult` (`0x00c8f5dc`) és `searchoptions/label_search1` (`0x00c8f5f8`); az elsőre a hívótól kapott szöveget teszi (`+0x14` metódus), ha bármelyik csomópont hiányzik, `4`-et ad vissza. **A második címke szövege:** ha a keresőszöveg nem üres, az `il_SetSearchStatus::1` erőforrás (`0x00c8f624`), amely a szövegtárban `Date Range: ` (hu: `Dátumtartomány: `), utána a keresőszöveg (`0x00985af0`); a függvény ellenőrzi, hogy az erőforrásszöveg első karaktere szóköz-e, és ha nem, egy szóközt tesz (`0x00985c00`, `0x20`) a sztringbe, mielőtt a keresőszöveget hozzáfűzi; üres keresőszövegnél a címke üres. **Következtetés:** a `label_search1` az eredetiben "Date Range: <keresőszöveg>" alakú (a név szerint dátumtartomány-kereséshez tartozik), nem a találatszám; a találatszám-szöveg (`searchresult`) összeállítása a hívóban, a `0x00662b20`-ban van.
+- Ghidra-kör kell: 0x00662b20 - az eredménysáv szövegeinek összeállítása a `0x005715d0` hívása előtt (`0x00663601`, `0x00663606`: a formátumsztringek `0x00c89a98`, `0x00c9ca04`, `0x00c954c0`, `0x00ca2c88`): milyen szöveg kerül a `searchresult` címkére (találatszám, dátumtartomány, "nincs találat"), és mikor lesz a `label_search1` szövege a `Date Range: ` alakú [nem blokkoló]
 - **NINCS MEG:** korábban indexelt, majd elérhetetlenné tett hálózati mappa keresési hatása. Út: eredeti Picasa kontrollmérése azonos katalógussal online/offline állapotban; az index virtuális hívásai miatt az importtábla önmagában nem dönt.
 - `Colab-feladat kell: keresés találattal és találat nélkül (mezőszín/sáv), Esc a keresőmezőben és a rácson, gépelés a mappalistán és rácson, majd kilépés X-szel, Back to View All-lal és második Ctrl+F/F3-mal; képernyőkép és előtte/utána mappa-, kijelölés-, görgetés- és fókuszállapot. [a futásidejű felületi hatások lezárására]
 
-Nyitott kérdések: 5 célzott Ghidra-kérdés, 6 `NINCS MEG` tétel, 1 eredeti felületi mérés.
+Nyitott kérdések: 7 célzott Ghidra-kérdés (3 régi és 4 új a 2026-11-16-i kör után), 6 `NINCS MEG` tétel, 1 eredeti felületi mérés.
 
 Lezárva (a bizonyítékkal): a belépési pontok (1. szakasz); az eseményút és a billentyűsor-őr, időzítő nincs (3.); a szövegtisztítás (3.); a szóbontás szabályai (3.); a szóindex mért tartalma (2.); a kilépő utak és az `Esc` a rácson (5.); a mezőszín (4.); a rejtett képek kizárása az eredetiben (6.); a végrehajtó és a szűrő nem használ fájl- és hálózati API-t (6.); a megjegyzett nézethelyzet, a fókusz és az előzménybe mentés (Következtetés).
 
@@ -6796,6 +7499,7 @@ Ghidra-kimenetekből (`referencia/ghidra/`), a bináris-indexből
 ### Nyitott
 
 - `Ghidra-kör kell: 0x008E3160 - a rename.fen newname mezőjének filter="filename" callbackje pontosan milyen karaktereket tilt és milyen hosszkorlátot alkalmaz? [nem blokkoló, a meglévő Windows tiltólista fedezi]`
+  - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:5148`): **a `filter="filename"` szerkesztőmező-callbackje csak a fordított törtvonalat (`\`, `0x5c`) tiltja, hosszkorlátot nem alkalmaz.** A `0x008e3160` (a futás hozta létre a címen) törzse `return param_1 != 0x5c`, vagyis karakterenként minden karaktert elfogad, a `\` kivételével. A hozzárendelés a `0x008e30e0` attribútumbeállítóban látszik (disassembly): ha az attribútum neve `filter` (`0x00c843d8`) és az értéke `digits` (`0x00cd023c`), a `+0x4c` mezőbe a `0x008e2dd0` kerül; ha az érték `filename` (`0x00c80d70`), a `0x008e3160` (`0x008e3140`). **A többi, Windowson tiltott fájlnévkarakter (`/`, `:`, `*`, `?`, `"`, `<`, `>`, `|`) a beírásnál nincs szűrve**; a tiltott karakterek kezelése a mentéskor van (a `0x009946f0` névtisztító és a `0x00849dc0` OK-ág, lásd a #7032 szakasz névnormalizálási sorát). A PicasaPy beíráskor szigorúbb lehet az eredetinél, ha a Windows-tiltólistával szűr; az eredeti paritását a mentéskori normalizálás adja.
 - `Ghidra-kör kell: 0x00490580 és 0x00490C10 - az AdjustTimeThread relatív és abszolút munkaszála JPEG-en kívüli formátumoknál (PNG, TIFF, videó) melyik PMP adatbázis-oszlopba menti a módosított dátumot, ha a fájl nem támogatott? [nem blokkoló]`
 - `Colab-feladat kell: RenameUseDate formátum ellenőrzése futó Windows Picasa 3.9-en - a fájlnévbe generált dátum pontos elválasztói és területi beállítás-függése valódi fájlon. [nem blokkoló]`
 

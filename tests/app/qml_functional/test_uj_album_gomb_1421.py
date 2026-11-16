@@ -84,10 +84,17 @@ class TestKulonEszkozlistasUt:
         toolbar_route = toolbar.split("// #5812:", 1)[1].split("// #1421:", 1)[0]
         assert "openNewAlbumProperties(" in toolbar_route
         assert "openNewAlbum(window.selectedRows())" not in toolbar_route
-        assert "onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(" in fo
+        # #7100: a fotó-helyi menü Add to Album ▸ New Album... sora a kijelölés
+        # első képének dátumát adja át (`openAddToNewAlbum`), a Fájl menü útja
+        # (`MainMenuBar.qml`, az eredetiben más belépő) a régi `openNewAlbum` marad.
         assert (
-            "onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())"
-            in fo
+            "onNewAlbumRequested: fileOpsDialogs.ensure().openAddToNewAlbum("
+            "window.selectedRows())" in fo
+        ), "a fotó-helyi menü New Album... útja megváltozott"
+        fajl_menu = _MAIN_TOOLBAR.with_name("MainMenuBar.qml").read_text(encoding="utf-8")
+        assert (
+            "onNewAlbumRequested: hostFileOpsDialogs.ensure().openNewAlbum("
+            "hostWindow.photoActionRows())" in fajl_menu
         ), "a Fájl menü kijelöléses útja megváltozott"
 
 
