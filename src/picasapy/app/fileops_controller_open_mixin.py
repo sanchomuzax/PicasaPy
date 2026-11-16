@@ -6,12 +6,17 @@ from importlib import import_module
 
 from PySide6.QtCore import Slot
 
-from picasapy.paths import path_key
+from picasapy.paths import is_network_path, path_key
 
 
 def _controller_module():
     """A régi modul fogantyúihoz irányít, monkeypatch-kompatibilisen."""
     return import_module("picasapy.app.fileops_controller")
+
+
+def _is_file_without_network_wait(compat, path: str) -> bool:
+    """Hálózati úton a meglévő fájl ellenőrzése blokkolhat; a megnyitó kezelje."""
+    return is_network_path(path) or compat.Path(path).is_file()
 
 
 class FileOpsControllerOpenMixin:
@@ -138,7 +143,9 @@ class FileOpsControllerOpenMixin:
         `operationFailed`, nem kivétel a QML felé (#112)."""
         _compat = _controller_module()
         local = _compat._to_local_path(path)
-        if not local or not _compat.Path(local).exists():
+        if not local or (
+            not is_network_path(local) and not _compat.Path(local).exists()
+        ):
             self.operationFailed.emit("open", f"nincs ilyen fájl: {path}")
             return
         if not _compat.QDesktopServices.openUrl(_compat.QUrl.fromLocalFile(local)):
@@ -156,7 +163,7 @@ class FileOpsControllerOpenMixin:
         """#4533: a Windows héj „Megnyitás ezzel" párbeszédét nyitja a fájlra."""
         _compat = _controller_module()
         local = _compat._to_local_path(path)
-        if not local or not _compat.Path(local).is_file():
+        if not local or not _is_file_without_network_wait(_compat, local):
             self.operationFailed.emit("open", f"nincs ilyen fájl: {path}")
             return
         try:
@@ -170,7 +177,7 @@ class FileOpsControllerOpenMixin:
         (`id`, `name`). Nem létező fájlnál üres lista."""
         _compat = _controller_module()
         local = _compat._to_local_path(path)
-        if not local or not _compat.Path(local).is_file():
+        if not local or not _is_file_without_network_wait(_compat, local):
             return []
         return [
             {"id": app.app_id, "name": app.name}
@@ -183,7 +190,7 @@ class FileOpsControllerOpenMixin:
         lekérdezi, így a választó nem tart a lemezen kívül állapotot."""
         _compat = _controller_module()
         local = _compat._to_local_path(path)
-        if not local or not _compat.Path(local).is_file():
+        if not local or not _is_file_without_network_wait(_compat, local):
             self.operationFailed.emit("open", f"nincs ilyen fájl: {path}")
             return
         app = next(
@@ -217,7 +224,7 @@ class FileOpsControllerOpenMixin:
         sikertelen = 0
         for path in kijelolt:
             local = _compat._to_local_path(str(path))
-            if not local or not _compat.Path(local).is_file():
+            if not local or not _is_file_without_network_wait(_compat, local):
                 sikertelen += 1
                 continue
             try:
