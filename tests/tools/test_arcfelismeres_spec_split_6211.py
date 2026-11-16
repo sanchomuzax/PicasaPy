@@ -52,8 +52,10 @@ def test_az_index_hivatkozik_mindharom_lapra():
 
 
 def test_a_19_szakasz_kulso_hivatkozasa_a_kutatasi_naplot_nevezi_meg():
-    hivatkozo = (GYOKER / "docs/specs/paritas-ellenorzes.md").read_text(
-        encoding="utf-8"
+    # #7116: a 19. szakaszra hivatkozó paritás-szakasz az archív lapra költözött
+    hivatkozo = "".join(
+        (GYOKER / f"docs/specs/{nev}").read_text(encoding="utf-8")
+        for nev in ("paritas-ellenorzes.md", "paritas-ellenorzes-archiv-1.md")
     )
 
     assert "picasa-arcfelismeres-kutatasi-naplo.md" in hivatkozo
