@@ -507,7 +507,10 @@ Rectangle {
             // 7 (50 − 43)
             y: 7
             radius: 3
-            color: Theme.controlBase
+            // #7079: a háttér jelzi a találatot (`WM_CTLCOLOREDIT`, `0x00662d06`)
+            color: Theme.searchFieldBackground(controller
+                && controller.searchFeedback !== undefined
+                ? controller.searchFeedback : "")
             border.color: Theme.chromeBorder
             RowLayout {
                 anchors.fill: parent
@@ -629,15 +632,9 @@ Rectangle {
                     objectName: "searchresult"
                     Layout.fillWidth: true
                     visible: text.length > 0
-                    text: {
-                        if (!controller)
-                            return ""
-                        if (controller.searchActive)
-                            return qsTr("Search results for \"%1\" (%2)")
-                                .arg(controller.searchQuery)
-                                .arg(controller.searchResultCount)
-                        return controller.filterStatusText
-                    }
+                    // #7079: eredeti szövegtár-kulcsok (`searchBarText`)
+                    text: !controller ? "" : controller.searchBarText !== undefined
+                          ? controller.searchBarText : controller.filterStatusText
                     color: Theme.ink
                     font.pixelSize: Theme.fontSize
                     wrapMode: Text.Wrap
