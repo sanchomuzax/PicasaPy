@@ -167,7 +167,12 @@ megnyitja a **Mappa tulajdonságai** ablakot. A mezői:
   mappát a lemezen, a benne lévő képek, almappák és a `.picasa.ini` vele
   együtt maradnak. Ha a név foglalt, érvénytelen, vagy a mappa egyik képe
   épp szerkesztés alatt áll, **A mappa nem nevezhető át** címmel ablak
-  mondja meg az okot, és semmi nem változik;
+  mondja meg az okot, és semmi nem változik. A beírt nevet a program
+  az eredeti Picasa szabálya szerint megtisztítja: a fájlnévben tiltott
+  jeleket (`< > : " / \ | ? *`) kihagyja, a tabulátort és a sortörést
+  szóközre cseréli, a név elejéről és végéről levágja a szóközt és a
+  pontot, a `con`, `prn`, `aux` és `nul` név végére pedig aláhúzást tesz.
+  A belső szóközöket nem vonja össze;
 - **Dátum:** — a mappa dátuma, a nyelvi beállításod szerinti alakban
   (magyarul például `2026. 01. 01.`); a szabványos ÉÉÉÉ-HH-NN alakot is
   elfogadja. A mező jobb szélén lévő naptár-ikonra (**Dátum
@@ -188,8 +193,10 @@ Az **OK** egyszerre menti a nevet, a dátumot, a zenét és a leírást, és
 bezárja az ablakot. A **Mégse** semmit nem ment.
 
 Az album tulajdonságai ugyanebben az ablakban nyílnak (lásd lentebb). A
-**Felvétel készítésének helye (opcionális):** mező csak albumnál és új
-mappa létrehozásakor szerkeszthető; meglévő mappánál szürke.
+**Felvétel készítésének helye (opcionális):** mező meglévő mappánál is
+szerkeszthető: a beírt hely az **OK** gombra a mappa `.picasa.ini`
+fájljába kerül, és az ablak legközelebb már ezt mutatja. Ha a mentés nem
+sikerül (például írásvédett mappában), az ablak nyitva marad.
 
 ### Mappa felosztása
 
@@ -616,7 +623,8 @@ Ha egy képnek rossz a dátuma — például a gép órája rosszul volt beáll�
 —, javíthatod. Jelöld ki a képeket, majd **Eszközök ▸ Dátum és idő
 beállítása…**. A **Fotó dátumának módosítása - N elem.** ablakban
 (egyetlen képnél csak **Fotó dátumának módosítása**) látod az első
-kép bélyegképét és a **Jelenlegi fotódátum**át: a dátum és az idő két
+kép bélyegképét (több kijelölt képnél a rácsban elsőként álló képét, és
+a mezők is az ő dátumával nyílnak) és a **Jelenlegi fotódátum**át: a dátum és az idő két
 külön, szürke (nem szerkeszthető) mezőben áll, ahogy az eredeti
 Picasában. Megadhatod az **Új
 fotódátum**ot (a dátumra kattintva naptár nyílik) és az **Új fotó
@@ -661,18 +669,20 @@ módja**, az **Exponálási program**, a **Tömörítés**, a **Színtér** és 
 megnevezett emberek, többször szereplő névnél a darabszámmal, például
 „Anna (2)") és a GPS-koordináták.
 
-A panelen jobbgombbal kattintva egyetlen tétel nyílik: a **Szerkesztési
-címkék**, ami a Címkék panelt hozza elő.
+A panel helyi menüje attól függ, **melyik sorra** kattintasz a jobb egérgombbal
+(kijelölt kép mellett):
+
+- a **Fényképezőgép dátuma** során a **Dátum és idő beállítása…** tétel
+  áll, ami a dátumállító ablakot nyitja (lásd fent, **A képek dátumának
+  módosítása**);
+- a címkék során a **Szerkesztési címkék** tétel áll, ami a **Címkék**
+  panelre vált;
+- a többi soron és a panel üres részén nem nyílik menü.
 
 Ha van kijelölés, a panelen egy **Kulcsszavak** gomb is áll, mellette a
-kijelölés címkéivel. A gomb a **Címkék** ablakot nyitja meg: felül a kép
-bélyegképe, neve és dátuma, alatta a **Címkék:** lista. A **Címke
-hozzáadása:** mezőbe írt címkét a **Hozzáadás** gomb teszi fel a
-kijelölésre, a listában kijelölt címkét az **Eltávolítás** veszi le, a
-**Kész** bezárja az ablakot. Ha a kijelölésben írásvédett kép van, az
-ablak ezt kiírja („A címkék nem módosíthatók, mert a kijelölésben
-írásvédett elem van."), és nem enged módosítani. A címkézés a felvételi
-dátum nélküli képek dátumát sem változtatja meg.
+kijelölés címkéivel. A gomb szintén a **Címkék** panelre vált, ahol a
+címkéket hozzáadhatsz és eltávolíthatsz (lásd [Csillagok, feliratok,
+címkék](csillag-felirat-cimke.md)).
 
 A sorrend ugyanaz, mint az eredeti Picasában. Amiről a fájlban nincs adat,
 annak **a sora sem jelenik meg** — a panel tehát képenként rövidebb vagy
@@ -729,7 +739,11 @@ pontot. Visszahozni a **Kép ▸ Megjelenítés** paranccsal tudod: a
 kijelölt képek közül csak a rejtetteket teszi újra láthatóvá, a már
 látható képeket nem rejti el. A tétel csak akkor használható, ha a
 kijelölésben van rejtett kép; különben szürke. A kép helyi menüjében is ott van, ugyanennek
-a tételnek a helyén **Megjelenítés**-re vált.
+a tételnek a helyén **Megjelenítés**-re vált. A helyi menü tétele **a felirata szerint** hat a
+teljes kijelölésre: ha rejtett képre kattintottál a jobb egérgombbal, a
+**Megjelenítés** minden kijelölt képet megjelenít, ha láthatóra, az
+**Elrejtés** mindet elrejti, vegyes kijelölésnél is. A néző helyi
+menüje ugyanígy működik.
 
 Egész mappát is elrejthetsz: jelöld ki, majd **Mappa ▸ Elrejtés**, vagy a
 mappa helyi menüjében **Mappa elrejtése**. Album- és személynézetben nincs

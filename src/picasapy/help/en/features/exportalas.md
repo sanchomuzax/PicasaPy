@@ -23,7 +23,9 @@ the first frame as an image, or **Full movie (no resizing)**.
 
 You can also add a watermark with your name, a web address, or a
 copyright notice. To preserve the order when the destination folder is
-sorted by name, add numbers to the file names.
+sorted by name, add numbers to the file names. The number goes at the
+start of the name and has as many digits as the number of photos: `1-`
+for 9 photos, `01-` for 50, `001-` for 120.
 
 PicasaPy updates the exported image metadata: its modification time
 becomes the export time, its dimensions reflect the output size, and
@@ -34,7 +36,8 @@ large to fit with that preview, EXIF camera data is omitted from the
 exported file, also matching the original Picasa behavior.
 
 If the destination folder already exists, PicasaPy asks before
-overwriting it. At the end it reports how many photos were exported and
+overwriting it. **Yes** exports in place of the folder's previous
+contents; **No** cancels the export and closes the window. At the end it reports how many photos were exported and
 whether any failed. Exported folders remain available in the project
 area of the left pane.
 

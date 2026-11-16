@@ -29,8 +29,10 @@ Beállítható:
   (nincs átméretezés)**.
 - **Vízjel hozzáadása** — a képekre rábélyegezhető a neved, egy webcím
   vagy egy szerzői jogi közlemény.
-- **Számok hozzáadása a fájlnevekhez** — így a sorrend megmarad, ha a
-  célmappát máshol névsorban nyitják meg.
+- **Számok hozzáadása a fájlnevekhez** - így a sorrend megmarad, ha a
+  célmappát máshol névsorban nyitják meg. A sorszám a név elejére kerül,
+  és annyi jegyű, ahány jegyű a képek száma: 9 képnél `1-`, 50 képnél
+  `01-`, 120 képnél `001-`.
 
 Az exportált képbe a program frissíti a metaadatokat: a módosítás
 ideje az export ideje lesz, a kép mérete a kimenet tényleges mérete, a
@@ -41,7 +43,9 @@ metaadatai olyan terjedelmesek, hogy a kis előnézettel együtt sem férnek
 el a JPEG-fájlban, az exportált képből a fényképezőgép adatai (EXIF)
 kimaradnak; az eredeti Picasa is így tesz.
 
-Ha a célmappa már létezik, a program megkérdezi, felülírja-e.
+Ha a célmappa már létezik, a program megkérdezi, felülírja-e. Az
+**Igen** a mappa korábbi tartalma helyére exportál, a **Nem** megszakítja
+az exportálást, és bezárja az ablakot.
 
 A végén kiírja, hány kép ment ki, és ha volt hiba, hány nem sikerült.
 
