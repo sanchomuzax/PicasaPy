@@ -5088,7 +5088,7 @@ dekompiláció, azt a Z1 pont mondja ki.
 
 - **`0x00994400`, a `MoveFileExW`-burkoló szerződése.** A dekompiláció három
   paramétert és egy `in_AL` értéket mutat. A belépés (`sub esp,0x14` és négy
-  mentés) szerint a veremparaméterek: forrás, cél, bájtjelző (másolás
+  mentés) szerint a veremparaméterek: forrás, cél, egybájtos jelző (másolás
   engedélye), időkorlát; az `AL` a felülírási jelző. A `0x004fd28b-0x004fd293`
   hívóhely: `push 5; push 1; push cél; push forrás; xor al,al; call 0x994400`.
   Tehát: **az `AL` nulla, a mappaátnevezés nem ír felül** (a jelzők
@@ -5258,7 +5258,7 @@ vagy becsukódik-e a sor); a nem mért sorok viselkedése változatlan.
 #### 4. (új) Az OK írja a `[Picasa]/name` sort
 
 **Eredeti:** a `0x0055d320` a név beállítóját a Folder Properties minden
-OK-jánál lefuttatja, nem különleges mappánál tartós jelzővel, még változatlan
+OK gombjánál lefuttatja, nem különleges mappánál tartós jelzővel, még változatlan
 névnél is, az átnevezés előtt; a `0x00445460` → `0x004545c0` → `0x0045c0a0` a
 mappa `.picasa.ini` `[Picasa]` szakaszába `name=<tisztított név>` sort ír.
 Korpusz: 733 `[Picasa]` szakaszból 692-ben van `name=`, 684-ben egyezik a
@@ -5268,7 +5268,7 @@ könyvtárnévvel.
 nem ír `[Picasa]/name` kulcsot. A mappa `.picasa.ini` fájlja az átnevezéssel
 együtt költözik, a régi `name=` sor elavultan marad.
 
-**Teendő:** az OK-nál (sikeres átnevezés után, változatlan névnél is) írd a
+**Teendő:** az OK megnyomásakor (sikeres átnevezés után, változatlan névnél is) írd a
 `[Picasa]/name` kulcsot a mappa tényleges nevével az `ini` csomag API-ján át,
 a `ini/folder_location.py` mintájára (új `with_folder_name` jellegű függvény).
 Írási hibát jelezz, de a már megtörtént átnevezést ne vond vissza. A kulcs
