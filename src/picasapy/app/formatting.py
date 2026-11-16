@@ -49,6 +49,10 @@ from .formatting_properties import (
     exif_entries as exif_entries,
     properties_entries as properties_entries,
 )
+from .formatting_search_bar import (
+    group_digits as group_digits,
+    search_bar_text as search_bar_text,
+)
 from .formatting_sizes import (
     _EXIF_LOCALE as _EXIF_LOCALE,
     _SIZE_TIERS as _SIZE_TIERS,

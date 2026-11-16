@@ -7,6 +7,7 @@ import re
 from PySide6.QtCore import QLocale
 
 from .formatting_dates import first_date_text, long_date, photo_dates
+from .formatting_search_bar import group_digits
 from .formatting_sizes import format_size
 
 # Útvonal-vég leválasztása mappa-névhez (per- és backslash-tűrő).
@@ -18,8 +19,8 @@ def filter_status_text(records, elapsed: float, locale: QLocale, tr) -> str:
     total_gb = sum(r.size for r in records) / (1024**3)
     return (
         tr("%1 folders / %2 pictures visible (%3 seconds) %4 GB")
-        .replace("%1", str(folders))
-        .replace("%2", str(len(records)))
+        .replace("%1", group_digits(folders, locale))
+        .replace("%2", group_digits(len(records), locale))
         .replace("%3", locale.toString(elapsed, "f", 3))
         .replace("%4", locale.toString(total_gb, "f", 1))
     )
