@@ -5969,7 +5969,7 @@ nulla (`0x0055c368`).
   `0x005715d0`-en át írja (`Search results for "%s"`, a `%d results: ` sor a
   bekapcsolt gombok szavaival, `Nincs találat`, és a
   `%3$s %4$s / %1$s %2$s látható (%5$0.3f másodperc)` sor), a nézetet
-  újrapozícionálja (`0xa54b70`, `0x006636b6`; feltételes: a tetejére
+  újra elhelyezi (`0xa54b70`, `0x006636b6`; feltételes: a tetejére
   görgetés), és **a keresőmező hátterét színezi**: találatnál
   világoszöld (`0xFFE4F1E5`), találat nélkül halványpiros (`0xFFFFCBCB`), üres
   szövegnél alapszín. A PicasaPy-ban a mezőnek nincs találat-színezése.
