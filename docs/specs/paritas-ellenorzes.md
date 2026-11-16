@@ -6549,7 +6549,7 @@ nélkül kiüríti.
 | E4 | `Import All` és `Import Selected (N)`, kijelöléssel; Enter és Esc | egy `Import` gomb, kijelölés nélkül |
 | E5 | négy tippállapot | csak az 1. |
 | E6 | `LastImport%x` az indításkor, 5 tétel | sikeres másolás után, 8 tétel |
-| E7 | főablak-panel (`panelroot/acquiretab`), nagy előnézettel a kijelölt képről | modális, önálló ablak, bélyegenkénti gombokkal |
+| E7 | főablak-panel (`panelroot/acquiretab`, `0x005e45c0`; `macros.tre:281`), nagy előnézettel a kijelölt képről | modális, önálló ablak, bélyegenkénti gombokkal |
 | F1 | fájlhibánál "Cancelling Import." (feltételes) | folytatás és hibalista |
 | F2 | Windows-forráslista: cserélhető (nem `A:`/`B:`), fix kötet a `FAT`/`FAT32`/`NTFS` és `KODAK` szabállyal, CD-ROM | cserélhető vagy `DCIM`-es kötet (feltételes, alacsony) |
 
