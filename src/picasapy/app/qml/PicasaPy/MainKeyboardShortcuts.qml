@@ -40,7 +40,13 @@ Item {
         id: shortcutSearch
         objectName: "searchShortcut"
         sequence: "Ctrl+F"
-        enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
+        // #7075: aktív keresésnél a mező fókuszából is a második Ctrl+F-fel
+        // lehessen kilépni; másik szövegmezőben a gyorsbillentyű marad tiltva.
+        enabled: !hostWindow.viewerOpen
+                 && (hostWindow._konyvtariGyorsbillentyuEngedelyezve
+                     || (hostController.searchActive
+                         && hostWindow.activeFocusItem
+                         && hostWindow.activeFocusItem.objectName === "searchField"))
         //: `searchcontainer/searchbutton` (`0x005e63bb`) — az eredetiben a
         //: keresőgombot kattintja; nálunk a keresőmező a gomb szerepét is
         //: viszi, ezért oda megy a fókusz.

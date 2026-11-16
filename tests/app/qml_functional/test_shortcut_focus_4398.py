@@ -197,7 +197,7 @@ def test_library_thumbnail_shortcut_is_inactive_in_editor(
 def test_search_caption_and_tag_fields_keep_their_keys(
     qml_app, qt_app, height_delta
 ):
-    window, _controller, _engine = qml_app
+    window, controller, _engine = qml_app
     window.setHeight(window.height() + height_delta)
     window.show()
     window.requestActivate()
@@ -213,12 +213,14 @@ def test_search_caption_and_tag_fields_keep_their_keys(
     shortcut = window.findChild(QObject, "searchShortcut")
     _press_text_keys(window, field, qt_app)
     _press(window, Qt.Key.Key_F, Qt.KeyboardModifier.ControlModifier, qt_app)
-    assert field.property("activeFocus") is True, "a Ctrl+F elvette a fókuszt a keresőmezőtől"
+    assert controller.searchActive is False, "a második Ctrl+F nem lépett ki a keresésből"
+    assert field.property("text") == "", "a második Ctrl+F nem ürítette a keresőmezőt"
     assert shortcut.property("enabled") is False
+    activated.clear()
 
-    # A felirat mező ugyanazt a szöveghelyi billentyűkészletet tartja meg
-    # a nézőben; a Ctrl+F a kereső rövidítése lenne, nem a feliraté.
-    _controller.setCaptionVisible(True)
+    # A keresésből kilépés után a néző feliratmezőjének billentyűi továbbra is
+    # a mezőhöz tartoznak, nem kapcsolják be újra a keresést.
+    controller.setCaptionVisible(True)
     viewer, _panel = _open_editor(window, qt_app)
     caption = window.findChild(QObject, "captionField")
     assert _wait_until(qt_app, lambda: caption is not None and caption.isVisible())

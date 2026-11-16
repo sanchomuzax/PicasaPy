@@ -57,15 +57,21 @@ Rectangle {
             searchOptionsPopup.open()
     }
 
-    //: #2163: a `Ctrl+F` (`searchcontainer/searchbutton`, `0x005e63bb`) a
-    //: mezőre viszi a fókuszt és megnyitja a keresési beállításokat. A
-    //: gazdának NEM kell ismernie az eszköztár belső elemeit — ez a függvény
-    //: a határ.
-    function fokuszAKeresore() {
-        searchField.forceActiveFocus()
-        searchField.selectAll()
-        searchOptionsPopup.open()
+    // #7075: a rács billentyűi a keresés felé (SearchGridKeys.qml)
+    function kilepKeresesbol() { gridKeys.kilep() }
+    function closeSearchOptions() { searchOptionsPopup.close() }
+    function handleLibraryGridKey(event) { return gridKeys.handle(event) }
+
+    SearchGridKeys {
+        id: gridKeys
+        host: toolbar
+        searchField: searchField
+        ownerWindow: toolbar.updateOwnerWindow
     }
+
+    //: #2163: a `Ctrl+F` belépési pontja; a gazda nem ismeri a belső elemeket
+    function fokuszAKeresore() { gridKeys.fokusz() }
+    function openSearchOptions() { searchOptionsPopup.open() }
     objectName: "mainToolbar"
     // #587: a felső sáv magassága a `thumbui.tre` `searchtop` konstansa —
     // 35 képpont. Ez a SÁV magassága (a panelek innen kezdődnek); a
@@ -121,17 +127,8 @@ Rectangle {
         searchField.clear()
     }
 
-    //: #1399: a menüből indított keresés — a szín-menüpontok ezen át írnak a
-    //: keresőmezőbe. MÉRVE (`0x0065b7b0`, hat lépés): az eredeti a mező
-    //: SZÖVEGÉT állítja, a kurzort a szöveg VÉGÉRE viszi kijelölés nélkül
-    //: (`EM_SETSEL 0xFFFF,0xFFFF`), majd lefuttatja a keresést — vagyis
-    //: pontosan az történik, mintha a felhasználó beírta volna.
-    function keresesSzoveggel(szoveg) {
-        searchField.text = szoveg
-        searchField.cursorPosition = searchField.text.length
-        toolbar.searchEdited(searchField.text)
-    }
-
+    //: #1399: a menüből indított keresés (a szín-menüpontok), SearchGridKeys.qml
+    function keresesSzoveggel(szoveg) { gridKeys.beir(szoveg) }
 
     Rectangle {
         anchors.bottom: parent.bottom
@@ -507,7 +504,10 @@ Rectangle {
             // 7 (50 − 43)
             y: 7
             radius: 3
-            color: Theme.controlBase
+            // #7079: a háttér jelzi a találatot (`WM_CTLCOLOREDIT`, `0x00662d06`)
+            color: Theme.searchFieldBackground(controller
+                && controller.searchFeedback !== undefined
+                ? controller.searchFeedback : "")
             border.color: Theme.chromeBorder
             RowLayout {
                 anchors.fill: parent
@@ -629,15 +629,9 @@ Rectangle {
                     objectName: "searchresult"
                     Layout.fillWidth: true
                     visible: text.length > 0
-                    text: {
-                        if (!controller)
-                            return ""
-                        if (controller.searchActive)
-                            return qsTr("Search results for \"%1\" (%2)")
-                                .arg(controller.searchQuery)
-                                .arg(controller.searchResultCount)
-                        return controller.filterStatusText
-                    }
+                    // #7079: eredeti szövegtár-kulcsok (`searchBarText`)
+                    text: !controller ? "" : controller.searchBarText !== undefined
+                          ? controller.searchBarText : controller.filterStatusText
                     color: Theme.ink
                     font.pixelSize: Theme.fontSize
                     wrapMode: Text.Wrap

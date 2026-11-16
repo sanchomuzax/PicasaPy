@@ -372,7 +372,12 @@ ListView {
                        : 120 * Math.max(1, Math.floor(height / cellHeight)))
     }
 
+    Keys.priority: Keys.BeforeItem
     Keys.onPressed: function(ev) {
+        if (grid.appWindow.header
+                && grid.appWindow.header.handleLibraryGridKey
+                && grid.appWindow.header.handleLibraryGridKey(ev))
+            return
         var ctrl = (ev.modifiers & Qt.ControlModifier) !== 0
         var shift = (ev.modifiers & Qt.ShiftModifier) !== 0
         if (ev.key === Qt.Key_Home || ev.key === Qt.Key_End) {

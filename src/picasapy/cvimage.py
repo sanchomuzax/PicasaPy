@@ -143,15 +143,20 @@ def hosszabb_el(source: Path) -> int | None:
 
 
 def read_image_bytes(source: Path) -> np.ndarray | None:
-    """A forrásfájl bájtjai np.fromfile-lal; None, ha a fájl üres vagy
-    nem olvasható (időközben törölt/elérhetetlen NAS-forrás)."""
+    """A forrásfájl bájtjai; None, ha a fájl üres vagy nem olvasható
+    (időközben törölt/elérhetetlen NAS-forrás).
+
+    #7086: sima `open().read()`, mert az olvasás közben elengedi a GIL-t. A
+    korábbi `np.fromfile` fogta: hálózati mappán a bélyegkép-szálak olvasása
+    alatt a fő szál (a felület) nem futhatott, görgetéskor lefagyott."""
     try:
-        payload = np.fromfile(source, dtype=np.uint8)
+        with open(source, "rb") as f:
+            adat = f.read()
     except OSError:
         return None
-    if payload.size == 0:
+    if not adat:
         return None
-    return payload
+    return np.frombuffer(adat, dtype=np.uint8)
 
 
 def dekodolj_forrast(
