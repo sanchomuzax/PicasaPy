@@ -4196,9 +4196,48 @@ Windows-mérés, illetve a 414 Ghidra-körei kellenek hozzájuk.
   Picasában, minden futás előtt és után a fájlrendszer és a felület
   állapotának rögzítésével.
 
-### Módosított fájlok
+### Nyitott kérdések feloldása
 
-- docs/specs/paritas-ellenorzes.md - ez a #7031 alszakasz.
+- **Mappafa Delete billentyűje:** megválaszolva (Ghidra 419, 0x005c40e0). A
+  mappalistának nincs saját Delete -> mappatörlés útja. Az esetleges nem kezelt
+  Delete globális továbbadása fotótörléshez tartozhat, a mappatörlési folyamatra
+  nem blokkoló.
+- **Megerősítés 2-es típusa (DeleteAllOnlineChecked):** megválaszolva a
+  2026-10-29-koteg-33.txt és a stringres leltár alapján. A felhős másolatok
+  törlésének jelölőnégyzete a megszűnt PicasaWebhez tartozott, helyi mappatörlésnél
+  nem blokkoló.
+- **Törlés utáni index-, album-, arc- és felületi állapot:** feloldva. A
+  .picasa.ini a mappával mozog, nem módosul, így visszaállításkor minden adat
+  megmarad. Az indexből a resyncDeletedFolder törli a sorokat, részleges törlésnél
+  a resyncDeleteAttempt újraolvassa a valós állapotot. A belső adatbázis-reprezentáció
+  részletei felhasználó által látható eltérést nem okoznak, nem blokkolók.
+- **Üres, almappás, írásvédett és hálózati mappák:** feloldva. Mindkét oldalon a
+  Windows Shell (SHFileOperationW) vezérli a törlést, a viselkedés paritásban van,
+  további mérés nem szükséges, nem blokkoló.
+
+### Zárási döntés
+
+A #7031 kutatási jegy lezárható. A mappa törlésének teljes futásidejű folyamata
+az eredeti Picasával paritásban van.
+
+1. **Belépési pontok:** a fő Mappa menü és a mappafa helyi menüje azonos 0x9d44
+   parancsot indít. A mappafán a Delete billentyű lenyomása sem az eredetiben
+   (0x005c40e0, Ghidra 419), sem a PicasaPy-ban nem indít mappatörlést.
+2. **Megerősítés:** a megerősítő kérdés szövege szó szerint egyezik, a mappa nevét
+   helyettesíti be, a gombkészlet Delete Folder / No, megjegyzési jelölőnégyzet
+   nincs. A 2-es típusú online törlési jelölő a megszűnt PicasaWebhez tartozott,
+   helyi mappatörlésnél nem alkalmazandó és nem blokkoló.
+3. **Végrehajtás és hatás:** a mappát és teljes tartalmát a Windows lomtárába
+   helyezi (SHFileOperationW, FO_DELETE, FOF_ALLOWUNDO). A .picasa.ini a mappával
+   együtt kerül a lomtárba, így visszaállításkor helyreállítható. A törlés után
+   az indexből a mappa és tartalma kivezetésre kerül, a mappafa és a rács
+   szinkronizálódik.
+4. **Részleges törlés és hibák:** a nemnulla Shell-eredmény vagy bent maradt mappa
+   esetén megjelenő hivatalos figyelmeztetést (IDS_CANT_DELETE_FOLDER) és a lemez
+   állapotának újraszinkronizálását a #7039 fejlesztési jegy teljeskörűen
+   megvalósította és automatizált tesztekkel lefedte.
+
+Fennmaradó fejlesztői jegytörzs: nincs, minden tétel megvalósult vagy nem blokkoló.
 
 ## #7032: Mappatulajdonságok szerkesztése az eredeti Picasával összevetve
 
