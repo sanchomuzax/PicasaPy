@@ -740,7 +740,7 @@ kijelölt képek közül csak a rejtetteket teszi újra láthatóvá, a már
 látható képeket nem rejti el. A tétel csak akkor használható, ha a
 kijelölésben van rejtett kép; különben szürke. A kép helyi menüjében is ott van, ugyanennek
 a tételnek a helyén **Megjelenítés**-re vált. A helyi menü tétele **a felirata szerint** hat a
-teljes kijelölésre: ha rejtett képre kattintottál jobbgombbal, a
+teljes kijelölésre: ha rejtett képre kattintottál a jobb egérgombbal, a
 **Megjelenítés** minden kijelölt képet megjelenít, ha láthatóra, az
 **Elrejtés** mindet elrejti, vegyes kijelölésnél is. A néző helyi
 menüje ugyanígy működik.
