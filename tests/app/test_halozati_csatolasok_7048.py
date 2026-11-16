@@ -30,6 +30,7 @@ def _halozati_allapot_tisztitasa():
     halozati_ut._alaphelyzet()
 
 
+@pytest.mark.skipif(os.name != "posix", reason="Linux-viselkedést mér (POSIX-útvonal, /proc/mounts), Windowson nem érvényes (#7096)")
 @pytest.mark.parametrize(
     ("mountpoint", "fstype", "path"),
     [
