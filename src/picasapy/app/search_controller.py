@@ -12,6 +12,7 @@ import time
 from PySide6.QtCore import Slot
 
 from picasapy.index import open_index, search_photos, search_suggestions
+from picasapy.index.queries import _normalize_search_query
 
 from .search_results import group_by_folder
 
@@ -30,7 +31,7 @@ class SearchMixin:
         elavult darabszámával, miközben a rács már a találatokat mutatta.
         #4531: nem üres keresésnél a sáv újra bekapcsol, de a keresés SAJÁT
         darabszámával — rajta ül a „Back to View All" gomb."""
-        query = text.strip()
+        query = _normalize_search_query(text)
         self._filter_active = False
         self._filter_status = ""
         started = time.perf_counter()
