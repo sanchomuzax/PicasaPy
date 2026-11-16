@@ -3714,140 +3714,170 @@ Nyitott kérdések: 7 nyílt · 25 lezárva · 0 blokkolt · 0 hatókörön kív
 
 ## #7028: A képek másolásának és beillesztésének teljes folyamata az eredeti Picasával összevetve
 
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+A PicasaPy állításait a jelenlegi forrásból ellenőriztem. A meglevő Ghidra-
+kimeneteket célzott diszasszemblálással, a Copy/Cut/Paste útját egy friss,
+kontextus nélküli, független újralevezetéssel ellenőriztem.
+
 ### Következtetés
 
-Az eredeti Picasa 3.9-ben a képek másolása és beillesztése két teljesen eltérő csatornán működik a felhasználói felület kontextusától függően. Könyvtárnézetben a másolás (`ID_COPY`, `0x9d3b`) és kivágás (`ID_CUT`, `0x9d39`) belső alkalmazásmemóriába menti a kijelölt azonosítókat és forrásmappát (`0x005fe9f0` -> `0x00577ba0`), kivágásnál a rácselemeket halványítottra állítja (`0x00716f40`), míg a szerkesztő nézetben (OneUp / EditPanel) a `0x0069b000` -> `0x00a706f0` láncon át a szerkesztett képet képadatként (`CF_BITMAP`, 2) helyezi az operációs rendszer vágólapjára. Beillesztéskor (`ID_PASTE`, `0x9d3c`, `0x005feab0` -> `0x005791d0` -> `0x00784100` -> `0x00478780`) ha a cél azonos a forrással, megerősítő kérdést tesz fel (`0x00c89d1c`), albumnál csak referenciát hoz létre, mappánál pedig átmásolja a fájlt, a `.picasaoriginals` mentett eredetiket és a `.picasa.ini` szekciót (új fejlécet adva névütközésnél). Névütközésnél átnevezés vagy kihagyás kérhető (`0x005350b0`), írási hibánál a köteg megszakad, visszagörgetés nélkül (a korábbi sikeres másolatok megmaradnak).
-
-A PicasaPy jelenlegi megvalósítása (`PicasaEditMenu.qml`, `MainKeyboardShortcuts.qml`, `fileops_controller_clipboard_mixin.py`, `fileops/copy.py`) nagyrészt paritásban van a lemezes másolással és a `.picasa.ini` / `.picasaoriginals` kezeléssel, de négy eltérést mutat:
-1. Szerkesztő nézetben (OneUp) a vágólapra másolás jelenleg fájl-URL-t tesz a vágólapra, nem a renderelt képet (`QImage` / képadat).
-2. Azonos forrás- és célmappa esetén beillesztéskor a PicasaPy azonnal átnevezi a fájlt (`név-1.jpg`), nem kér megerősítést.
-3. Ha nincs cél kijelölve, a PicasaPy nem jeleníti meg a célválasztási figyelmeztetést (`IDS_NEED_SELECTED_ALBUM`).
-4. Kivágáskor (Cut) a PicasaPy-ban nincs vizuális halványítás a rács kijelölt bélyegképein.
+A Picasa könyvtárnézeti Copy/Cut belső kijelöléslistát, forrásazonosítót és műveleti módot tárol; OneUp nézetben a Copy a renderelt képet teszi a rendszer-vágólapra `CF_BITMAP` formában. A Paste útból elérhető a Copy/Move megerősítő párbeszéd, amikor a kijelölt cél egy közönséges mappa, és eltér a forrásmappától; a `0x00579220` viszont csak a cél nélküli hibaág része. A PicasaPy OneUp képmásolása már megvan, de a fájllistás Paste, a célalbum kezelése, a kivágás jelzése és a köteg-hiba folytatása eltér; az eredeti dinamikus engedélyezését és a fájl/adatbázis/rács végállapotát egyetlen kontrollált mérési körnek kell eldöntenie.
 
 ### Bizonyítottsági fok
 
-Megerősített. A folyamat belépési pontjait, parancskódjait, vágólap-kezelését, Win32 API-hívásait és hibakezelését két független út (a bináris gépi kódjának diszasszemblálása + index és Ghidra-dekompilációs leletek) egybehangzóan igazolja, kiegészítve cáfoló vizsgálattal.
+**Feltételes.** A fő belépési és hívási utat két külön bizonyítékút támasztja alá: a hívók utasításszintű olvasata, valamint a függvényhivatkozások, a Ghidra-kimenet és a párbeszéd erőforrás-sztringjeinek útja. A friss, kontextus nélküli újralevezetés megismételhetőségi ellenőrzés, nem külön bináris bizonyíték. A `.picasa.ini` és mentett eredetik másolási útja a meglévő Ghidra-anyagban látszik. Az egyes menüpontok dinamikus tiltása, az azonos mappás ág látható végállapota, a célalbum adatbázis-hatása és a hiba utáni teljes UI/DB3 állapot futásidejű próbája hiányzik.
 
-### 1. Belépési pontok és engedélyezési feltételek
+### Bizonyítékjegyzék
 
-| Belépési pont | Eredeti Picasa (bináris cím) | Engedélyezési feltétel (Eredeti) | PicasaPy (fájl:sor) | Paritás |
-|---|---|---|---|---|
-| Szerkesztés menü Copy (`&Copy`) | `0x005cb990` -> `0x005fe9f0(0)`, parancskód `0x9d3b` (40251) | Könyvtárban legalább 1 kijelölt elem (`[esi + 0xeac] > 0`). Üres kijelölésnél inaktív / no-op (`ret 4`). Szerkesztőben az aktuális kép. | `PicasaEditMenu.qml:53-58` | Egyezik (`bar.hasSelection`) |
-| Gyorsbillentyű Ctrl+C | Accelerator tábla (`0x007823f0`), parancskód `0x9d3b` | Megegyezik a Szerkesztés menü Copy feltételével. | `MainKeyboardShortcuts.qml:244-255` | Egyezik (`shortcutCopyFiles`) |
-| Szerkesztés menü Cut (`Cu&t`) | `0x005cb990` -> `0x005fe9f0(1)`, parancskód `0x9d39` (40249) | Könyvtárban legalább 1 kijelölt elem. A rácson halványított jelölést kap (`0x00716f40`). Szerkesztőben inaktív. | `PicasaEditMenu.qml:46-51` | Eltérés: a PicasaPy nem jelöli halványítottként a rácson a kivágott elemeket. |
-| Gyorsbillentyű Ctrl+X | Accelerator tábla (`0x007823f0`), parancskód `0x9d39` | Megegyezik a Szerkesztés menü Cut feltételével. | `MainKeyboardShortcuts.qml:256-267` | Egyezik a hívásban, hiányzik a vizuális jelölés. |
-| Bélyegkép helyi menü | `0x00730790` | Nincs sima Copy / Cut tétel a helyi menüben (csak `Copy Path`, `Copy Effects`, `Move to New Folder...`). | `PhotoContextMenu.qml` | Egyezik (nincs közvetlen Copy/Cut a helyi menüben). |
-| Szerkesztés menü Paste (`&Paste`) | `0x005cb990` -> `0x005feab0()`, parancskód `0x9d3c` (40252) | Belső vágólap nem üres VAGY külső vágólapon képadat/fájllista van. Szerkesztőben inaktív. Cél hiányában dialógus (`IDS_NEED_SELECTED_ALBUM`). | `PicasaEditMenu.qml:60-67` | Eltérés: cél hiányában a PicasaPy hibasávot mutat, vagy csendben nem tesz semmit. |
-| Gyorsbillentyű Ctrl+V | Accelerator tábla (`0x007823f0`), parancskód `0x9d3c` | Megegyezik a Szerkesztés menü Paste feltételével. | `MainKeyboardShortcuts.qml:268-279` | Egyezik |
-| Copy To Folder | Nincs ilyen önálló parancs | Az eredetiben külön Export (`0x9d3e`), Move Folder (`0x9df4`) és Move to New Folder (`0x9d68`) létezik. | Nincs önálló parancs | Egyezik |
-| Média típusok | Kép és videó támogatott | Legalább 1 érvényes médiaelem kijelölve. | Kép és videó támogatott | Egyezik |
+| Állítás | Forrás | Minősítés |
+|---|---|---|
+| Copy/Cut: `0x005fe9f0` megjegyzi a `[esi+0x318c]` forrásazonosítót, a `0x00577ba0` az elemazonosító-listát állítja össze, a `[esi+0x31a4]` a módot tárolja; a Paste külön fogyasztója ugyanezt a módmezőt olvassa. | `bináris (0x005fe9f0, 0x00577ba0, 0x005feab0, 0x007166c0)` | megerősített: Copy/Cut íróút és Paste külön olvasóút |
+| OneUp Copy: `0x0069b000` → `0x00a706f0`; `0x00a70776` `CF_BITMAP` formátummal hívja a `SetClipboardData` függvényt. | `bináris (0x0069b000, 0x00a706f0, 0x00a70776)` | feltételes: a közvetlen binárisolvasat igazolja; a második bizonyítékút nincs dokumentálva |
+| Paste mód: `0x005feab0` a `[esi+0x31a4]` jelző ellentettjét adja a `0x005791d0`-nak. A Paste a `0x00784100`-ba a forrásazonosítót és a kijelöléslistát is átadja. | `bináris (0x005feab0, 0x005791d0, 0x00784100)` | megerősített: közvetlen hívódisassembly és Ghidra |
+| Copy/Move kérdés: a Paste hívója a `0x005791d0`; a `0x00784100` csak eltérő forrás/cél és közönséges mappacél esetén hívja a `0x00535020`-at. A wrapper `param_5=0` értékkel hívja a `0x005350b0`-at. | `bináris (0x005791d0, 0x00784100, 0x00535020, 0x005350b0)` | megerősített: hívói disassembly és külön függvényhivatkozás/szövegadat út egyezik |
+| Ütközési párbeszéd: `Confirm Copy` / `Confirm Move`, majd névütközésnél `Rename Duplicates`, `Skip Duplicates`, `Cancel`. | `bináris (0x005350b0)`; független adatutat ad a `string_xrefs.csv`: a négy szöveg `0x00c89ea4`, `0x00c89ed4`, `0x00c89efc`, `0x00c89f2c` címen ehhez a függvényhez mutat | megerősített a párbeszéd és választék; az előálló névséma nem |
+| Nincs cél: a `0x005791d0` az `IDS_NEED_SELECTED_ALBUM` üzenetet hívja, majd `0xf4242` értékkel tér vissza; a `0x00579220` e függvény kódja, nem önálló függvény. | `bináris (0x005791fb, 0x00579217, 0x00579220)` | feltételes: közvetlen disassemblyből |
+| `+0x5d`: egybájtos kijelölési állapot, nem kivágásjelző és nem átlátszósági adat. A `0x00716f40` állítja, a `0x007166c0` és más kódutak a kijelölés összegyűjtésére olvassák. | `bináris (0x00716f40, 0x007166c0)`; másik leírás: `picasa-eger-es-kijeloles.md:11.3` | megerősített |
+| Ctrl+X mérési nyom: a Selection Tray jelvény 96 képpontnyi eltérést mutatott; Ctrl+C-nél 0 képpont. A rács-bélyegképek halványítása nem szerepel ebben a megfigyelésben. | `mérés (picasa-gyorsbillentyuk.md:2720-2721; picasa-colab-jobs #456, kb-2)` | feltételes: a napló a tálcajelvényt nevezi meg, a nyers kép nem került elő |
+| A Picasa binárisában megvan az `imagedata` oszlopregisztere; a mért db3-készletben PMP-oszlopfájlok és külön indexfájlok vannak. Ez nem bizonyítja a Paste utáni tartós rekordfrissítést. | `bináris (0x004127c0)`; `mérés (valódi Picasa 3.9 db3-készlet, pmp-database.md:197-205)` | katalógusszerkezet igazolt; a Paste utáni rekord és frissítési idő nincs meg |
+| PicasaPy OneUp Copy a `rendered_image` képet adja a vágólapra; Paste fájllistát és `copy`/`cut` műveletjelzőt olvas. | `src/picasapy/app/qml/PicasaPy/MainLibrarySelectionState.qml:120-142`; `src/picasapy/app/edit_controller_clipboard_mixin.py:32-58`; `src/picasapy/app/fileops_controller_clipboard_mixin.py:16-72,98-121` | a forráskód megerősíti |
+| PicasaPy másolás után a célmappát célzottan újraszinkronizálja; a háttérfigyelő önmagában nem bizonyíték a frissítésre. | `src/picasapy/app/fileops_controller_move_mixin.py:267-281`; `src/picasapy/app/application_services.py:24-61,110-113` | a forráskód megerősíti |
 
-### 2. Vágólapra helyezett adatok és megerősítések
+### Belépési pontok, feltételek
 
-Az eredeti Picasa 3.9 a másolás helyétől függően kétféleképpen kezeli a vágólapot:
-1. **Könyvtárnézet (Library Grid):** A `0x005fe9f0` meghívja a `0x00577ba0` rutint. Ez az alkalmazás belső struktúrájában menti el a kijelölt elemek azonosítóit (`[esi + 0x319c]`), a forrásmappa azonosítóját (`[esi + 0x318c]`), valamint a művelet típusát (`[esi + 0x31a4] = 0` másolás, `1` kivágás). Nem ír az operációs rendszer vágólapjára, nincs párbeszédablak és megerősítéskérés sem.
-2. **Szerkesztő nézet (OneUp / EditPanel):** A `0x0069b000` -> `0x00a706f0` lánc a kép szerkesztett, effektezett változatát kirajzolja egy Win32 Device Context-be, majd a szabványos Win32 vágólap API-val (`OpenClipboard` @ `0x0069b1bb`, `EmptyClipboard` @ `0x00a70715`, `SetClipboardData(CF_BITMAP, hBitmap)` @ `0x00a70776`) bitmap képadatként (`CF_BITMAP`, formátumkód 2) helyezi a vágólapra. Nincs ablak vagy megerősítés.
-3. **Megjegyzett értékek:** Nincsenek perzisztált állapotok; minden másolás felülírja a korábbi vágólap-tartalmat.
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| Szerkesztés menü Copy (`0x9d3b`) és Ctrl+C: `0x005cb990` / `0x005e63f5` → `0x005fe9f0`. Könyvtárban a lista belső azonosítókat gyűjt; OneUp ágon a renderelt kép másolása hívódik. Üres lista után nincs beilleszthető tétel. A menü dinamikus tiltási feltétele nincs teljesen feloldva. | `PicasaEditMenu.qml:53-58`; `MainKeyboardShortcuts.qml:250-255`; OneUp út `MainLibrarySelectionState.qml:120-142` | Az egyes/többes, videó és nézőbeli menüengedélyezést a mérési kör rögzítse. A OneUp képadat-másolása már megvalósult, nincs fejlesztési teendő. |
+| Szerkesztés menü Cut (`0x9d39`) és Ctrl+X: ugyanaz a `0x005fe9f0`, a hívó 0/1 módot ad át. A `+0x5d` kijelölési bájt átállhat; a bizonyíték nem jelent képhalványítást. | `PicasaEditMenu.qml:46-51`; `MainKeyboardShortcuts.qml:256-267`; `fileops_controller_clipboard_mixin.py:75-82` | Eltérés: PicasaPy a `cut` módot a külső vágólap-adatba írja, de nem tart fenn látható kivágási állapotot. Az eredeti látható Selection Tray jelvényét mérés rögzíti, rácshalványítást nem. Lásd a 4. fejlesztőijegy-javaslatot. |
+| Kép-rács helyi menüje: a fénykép-helyi menü teljes listáján nincs szabványos Copy/Cut/Paste. Az `Address` szövegmező helyi menüje külön névtér, szabványos `WM_CUT/COPY/PASTE` üzenetekkel (`0x007331e0`, `0x00851a8f-0x00851ad2`). | `PhotoContextMenu.qml:478-482` (Copy Full Path); szövegmező menüje nem képparancs | Egyezik a képek helyi menüjénél. Ne keverjük az `Address` mező szövegműveleteivel. |
+| Paste (`0x9d3c`): `0x005feab0` → `0x005791d0`. Ha nincs célmappa/album, az `IDS_NEED_SELECTED_ALBUM` üzenet hívódik. Szerkesztő-előnézetben a könyvtári Paste ág nem fut. A dinamikus menüengedélyezés teljes állapottáblája nyitott. | `PicasaEditMenu.qml:60-67`; `MainKeyboardShortcuts.qml:268-279`; `MainWindowCommands.qml:370-376` | Eltérés: cél nélkül nálunk a „There are no files on the clipboard to paste.” felirat jelenik meg, ha a vágólap amúgy nem üres. Lásd a 2. jegyjavaslatot. |
+| Copy To Folder: a helyi parancs neve nem igazolt. A felhasználó által látható, mappába másoló művelet a File menü `Export Picture to Folder` (`0x9c81`) és a tálca `Export` gombja; ez nem Paste. | `PicasaFileMenu.qml:141-145`; `TrayActionArea.qml:407-420`; `ExportDialogs.qml:99-105,121-131`; részletes összevetés a #6970 szakaszban | Külön exportút, nincs új #7028 teendő. |
+| Képek/videók, egy/több kijelölés, album vagy mappanézet: a kijelölési lista és a fájlműveleti út ismert, de az eredeti gombok minden dinamikus tiltási feltétele nem vezethető le ebből a hívásláncból. | `photoActionPaths()` `MainLibrarySelectionState.qml:197-208`; Paste célja `fileops_controller_clipboard_mixin.py:98-121` | NINCS MEG: a támogatott típusok és minden belépő állapotmátrixa. A lent megadott egyetlen mérési kör döntse el. |
+| Albumcél: a `0x00784100` az albumfeltételnél külön `0x00506400` ágat hív; a fizikai fájlcél ága ettől különbözik. | `pasteFilesFromClipboard(dest_folder)` csak célmappa-szöveget fogad: `fileops_controller_clipboard_mixin.py:98-121`; QML hívó `MainWindowCommands.qml:370-376` | Eltérés: nincs albumtagságot kezelő Paste-ág a PicasaPy útban. Lásd a 3. jegyjavaslatot. |
 
-*PicasaPy összevetés:* A `fileops_controller_clipboard_mixin.py:16-56` (`_tegyd_a_vagolapra`) kizárólag fájl-URL-eket (`mime.setUrls(...)`) és `x-special/gnome-copied-files` szöveget helyez a vágólapra. Szerkesztő nézetben sem teszi fel a szerkesztett képet képadatként (`QImage` vagy `QPixmap`), így külső képszerkesztőkbe vagy szövegszerkesztőkbe nem illeszthető be közvetlenül képként.
+### A vágólap és a megjegyzett állapot
 
-### 3. Beillesztés végrehajtása, fájlok, ini, index és rács
+**Könyvtárnézet.** A `0x005fe9f0` a kijelölt sorokat a `0x00577ba0` / `0x007166c0` útján belső azonosítólistába gyűjti, a forrásazonosítót a `[esi+0x318c]` mezőbe és a Copy/Cut módot a `[esi+0x31a4]` mezőbe teszi. A célzott handlerben nem látszik `OpenClipboard` vagy `SetClipboardData` hívás. A shell-féle formátumok globális regisztrációja (`0x005378e0`) a húzás-ejtés útját azonosítja; nem bizonyítja, hogy a könyvtári Copy ezt a fájllistát az operációs rendszer vágólapjára írja. A `picasa-menu-parancsok-viselkedes.md:655-669` e különválasztást rögzíti.
 
-Ha a felhasználó a Beillesztés (Paste) parancsot választja (`0x005feab0` -> `0x005791d0` -> `0x00784100`):
-1. **Cél meghatározása:** Ha a kijelölt cél egy virtuális album, a `0x007842c3` (`FUN_00506400`) album-referenciát ad hozzá, lemezes fájlmásolás nélkül. Ha a cél egy lemezes mappa, a lemezes másolási útvonal indul el. Ha nincs cél kiválasztva, megjelenik az `IDS_NEED_SELECTED_ALBUM` dialógus ("Please select an album...").
-2. **Azonos mappa megerősítése:** Ha a forrásmappa és a célmappa azonos, és a művelet másolás (nem kivágás), a `0x00579220` felugró kérdést jelenít meg: `0x00c89d1c` ("Are you sure you want to copy the file(s) to %s ?", `CThumbUI::MoveFilesConfirmCopy`).
-3. **Fájlok másolása:** A tényleges másolás a `0x00478780` rutinban fut le, a Win32 `CopyFileW(..., bFailIfExists=1)` (`0x00473bd6`) hívással.
-4. **Mentett eredetik (`.picasaoriginals`):** A `0x00478780` sor 509 ellenőrzi a forrásmappa `.picasaoriginals` almappáját. Ha a másolt képhez létezik korábban mentett eredeti fájl, azt is átmásolja a célmappa `.picasaoriginals` almappájába.
-5. **`.picasa.ini` szekció kezelése:** A `ytPicasaINIFile` segítségével a forrás `.picasa.ini`-ből kimásolja a képhez tartozó összes attribútumot (szűrők `filters=...`, forgatás `rotate(...)`, csillag `star=yes`, arcrekordok `faces=...`). Névütközés esetén az új fájlnév fejlécével (`[újnév.jpg]`) írja be a cél `.picasa.ini`-be.
-6. **Index és rács frissítése:** A `CFolderWatcher` (`0x005a76e0`) érzékeli a lemezváltozást, az SQLite index azonnal felveszi az új fájlokat, és a rács automatikusan megjeleníti az új képeket. Kivágás (Cut) esetén a forrásfájl és annak `.picasa.ini` bejegyzése törlődik, és a forrás rácsból eltűnik az elem.
-7. **Visszavonhatóság:** Nem visszavonható (nincs Ctrl+Z művelet).
+**OneUp.** Az `editpanel/preview` ágból a `0x0069b000` / `0x00a706f0` a szerkesztésekkel renderelt képet teszi a rendszer-vágólapra `CF_BITMAP` formában. Másoláskor nincs megerősítő ablak. A Cut OneUp-beli engedélyezése a kimenetekből nem dőlt el.
 
-*PicasaPy összevetés:* A PicasaPy `fileops/copy.py:30-96` (`copy_photo`, `_copy_ini_section`, `copy_preserved_originals`) és `fileops_controller_clipboard_mixin.py:84-121` (`pasteFilesFromClipboard`) pontosan paritásban van a fájlok, `.picasaoriginals` és `.picasa.ini` másolásával. Eltérés: azonos mappába történő beillesztéskor nem kér megerősítést, hanem csendben átnevezi a fájlt (`név-1.jpg`), cél hiányában pedig nem kér célválasztást.
+**PicasaPy.** A `MainLibrarySelectionState.qml:127-142` OneUpban a `copyRenderedImageToClipboard()`-et próbálja, máskülönben fájl-URL-re esik vissza. Könyvtári Copy/Cut a `QMimeData` fájl-URL-jeit és a GNOME `copy`/`cut` fejlécet teszi fel (`fileops_controller_clipboard_mixin.py:16-82`). Ezzel a OneUp Copy-ról szóló korábbi eltérésjegy elavult. A belső eredeti lista ürítési és Cut-mód-visszaállítási útja a `0x005feab0` utáni takarítási ágban látszik (`0x005feaeb-0x005feb22`).
 
-### 4. Hibák, ütközések és részleges végrehajtás
+### Beillesztés, fájlok, ini, katalógus és felületi állapot
 
-1. **Névütközés a célmappában:** Ha a célban már létezik azonos nevű fájl, a `0x005350b0` dialógust nyit meg: Rename Duplicates (`CThumbUI::MoveFilesRename`) vagy Skip Duplicates (`CThumbUI::MoveFilesSkip`). Átnevezéskor számozott utótaggal menti el a fájlt (`név-1.jpg`), és a `.picasa.ini` szekciófejlécet is erre módosítja.
-2. **Írási hiba és lemez megtelése:** A fájlmásolás `CopyFileW` hibája esetén a `0x00473be4` lekéri a `GetLastError` kódot, hibajelző dialógust jelenít meg, és a köteg feldolgozása megszakad (`break`).
-3. **Részleges végrehajtás állapota:** Hiba esetén a Picasa nem hajt végre visszagörgetést (nincs rollback): a korábban sikeresen átmásolt fájlok és azok `.picasa.ini` bejegyzései megmaradnak a célban, a hibás és hátralévő fájlok pedig változatlanul a forrásban maradnak.
+1. **Nincs cél.** A `0x005791d0` az `IDS_NEED_SELECTED_ALBUM` üzenetet hívja (`0x005791fb-0x00579220`), `0xf4242` visszatéréssel. A `0x00579220` utasítás a függvényen belüli takarítás, nem megerősítő rutincím. PicasaPy `currentFolder` hiányánál a fájlműveleti mixin `False`-t ad, amit a QML tévesen üres vágólapnak ír ki.
+2. **Közönséges mappacél.** A Paste `0x00784100`-ba viszi a forrásazonosítót. Ha a cél mappa és forrásazonosítója eltér, a `0x00535020` Copy vagy Move megerősítést indít, majd a `0x005350b0` fájl- és névütközési ágára kerül. A kérdés nem azonos mappánál jelenik meg. Az azonos forrás/cél út `0x00784100`-ban kihagyja a `0x00535020`-at; a fájlmásolás pontos hiánya ebben az ágban statikusan látszik, de a nullás visszatérés utáni látható állapotot mérés kell rögzítse.
+3. **Albumcél.** A `0x00784100` a cél típusát és forrásazonosítót külön vizsgálja, és albumfeltételnél `0x00506400` ágra tér. Ez nem ugyanaz a fizikai fájlmásolási út. A teljes tagsági adatbázis-írás és a felületi végállapot nincs meg a meglevő dekompilációban.
+4. **Fájl és metaadat.** A `0x005350b0` → `0x00479870` → `0x00478780` út a képfájl-másolás, a `.picasaoriginals` és a `ytPicasaINIFile` kezelés útja. A forrás `.picasa.ini` szekciójának attribútumait, így a csillag- és arcadatot, az eredeti másolóág olvassa. A cél fejléc névváltozás esetén módosul. A `CopyFileW` importot a `0x009af0c0` segédút hívja, de a jelenlegi Ghidra-anyag nem köti feloldottan a harmadik argumentumot a #7028 hívójához. A korábbi `0x00473bd6` és `bFailIfExists=1` állítást elhagytam.
+5. **Ütközés.** A `0x005350b0` Copy/Move megerősítő kérdése után azonos célfájlnál `Rename Duplicates`, `Skip Duplicates` vagy `Cancel` választást ad. A generált név pontos utótagja a meglevő dekompilációból nem dőlt el. A PicasaPy `pasteFilesFromClipboard()` közvetlenül `policy="rename"` köteget indít, választóablak nélkül.
+6. **Katalógus, mappafa és rács.** A Picasa PMP-oszlopregisztere a `0x004127c0` címen van; a mért db3-készletben a PMP-oszlopfájlok mellett külön indexfájlok is vannak (`pmp-database.md:61-103,197-205`). A `0x00784100` modellt kezelő függvényeket hív és a nézet állapotát jelöli; a meglevő bizonyíték nem adja meg a tartós db3-írás időpontját és a bal panel/rács képkocka utóállapotát. A `CFolderWatcher` és az „azonnali SQLite” állítás nem bizonyított, ezért eltávolítva. A PicasaPy másolás csak a célra jelez (`photoCopied`), az `application_services.py:24-61,110-113` célzott `resyncFolder()`-t indít; ez a rácsot és indexet frissíti, nem a forrást.
+7. **Visszavonás.** A vizsgált eredeti Paste-hívásláncban Ctrl+Z visszavonó ág nem szerepel. A PicasaPy fájlművelete is külön másolási vagy mozgatási köteg; a kódforrás nem mutat Paste-hez kötött undo-parancsot.
 
-*PicasaPy összevetés:* A PicasaPy `batch.py` és `fileops/copy.py` megvalósítása névütközésnél automatikusan átnevezést alkalmaz (`policy="rename"`), hiba esetén megszakítja a ciklust, és megőrzi a már sikeresen átmásolt fájlokat; ez paritásban van.
+### Hibák, névütközés és részleges végrehajtás
 
-### 5. Paritási összehasonlító táblázat
+A `0x005350b0` fájlonként hívja a `0x00479870` segédet; a különleges `0xf4242` visszatérési értéknél a további elemeket tartalmazó ciklusból kilép. A korábban sikerült fájlok visszaállítására a meglevő hívási gráfban nincs ág. A konkrét `CopyFileW` hibakódot megjelenítő ablak, az adott fájl `.picasa.ini` írásának hibája és a kísérő eredeti hibája közti pontos sorrend nincs teljesen feloldva.
 
-| Funkció / Lépés | Eredeti Picasa (bináris cím) | PicasaPy (fájl:sor) | Teendő |
-|---|---|---|---|
-| Szerkesztés menü Copy | `0x005cb990` -> `0x005fe9f0(0)` | `src/picasapy/app/qml/PicasaPy/PicasaEditMenu.qml:53-58` | Nincs, paritásban van. |
-| Gyorsbillentyű Ctrl+C | Accelerator `0x9d3b` (`0x007823f0`) | `src/picasapy/app/qml/PicasaPy/MainKeyboardShortcuts.qml:244-255` | Nincs, paritásban van. |
-| Szerkesztés menü Cut | `0x005cb990` -> `0x005fe9f0(1)` | `src/picasapy/app/qml/PicasaPy/PicasaEditMenu.qml:46-51` | Nincs, paritásban van. |
-| Rácselemek halványítása Cut esetén | `0x00716f40` (`[item + 0x5d] = 1`) | Nincs vizuális jelölés a rácson | Paritási eltérés javítása: a vágólapra kivágott fájlokat a rácson halványítottan (pl. (fél átlátszósággal) kell megjeleníteni. |
-| Szerkesztő nézet (OneUp) másolás | `0x0069b000` -> `0x00a706f0` (`SetClipboardData(CF_BITMAP)`) | `fileops_controller_clipboard_mixin.py:16-56` (fájl-URL) | Paritási eltérés javítása: Szerkesztő nézetben a renderelt szerkesztett képet képadatként (`QImage`) kell a vágólapra helyezni. |
-| Szerkesztés menü Paste | `0x005cb990` -> `0x005feab0()` | `src/picasapy/app/qml/PicasaPy/PicasaEditMenu.qml:60-67` | Nincs, paritásban van. |
-| Gyorsbillentyű Ctrl+V | Accelerator `0x9d3c` (`0x007823f0`) | `src/picasapy/app/qml/PicasaPy/MainKeyboardShortcuts.qml:268-279` | Nincs, paritásban van. |
-| Célválasztás figyelmeztetés | `0x005791fb` (`IDS_NEED_SELECTED_ALBUM`) | `MainWindowCommands.qml:5-7` (hibasáv) | Paritási eltérés javítása: ha nincs aktív mappa vagy album, figyelmeztető párbeszédablakot kell megjeleníteni. |
-| Azonos mappa másolási megerősítés | `0x00579220`, `0x00c89d1c` (`CThumbUI::MoveFilesConfirmCopy`) | `fileops_controller_clipboard_mixin.py:84` (azonnali másolás) | Paritási eltérés javítása: azonos mappába másoláskor kérdezzen rá a felhasználónál a másolásra. |
-| Fájlok másolása | `0x00473bd6` (`CopyFileW`) | `src/picasapy/fileops/copy.py:53` (`shutil.copy2`) | Nincs, paritásban van. |
-| Mentett eredetik (`.picasaoriginals`) | `0x00478780` sor 509 | `src/picasapy/fileops/copy.py:78` (`copy_preserved_originals`) | Nincs, paritásban van. |
-| `.picasa.ini` szekció másolása | `0x00478780` (`ytPicasaINIFile`) | `src/picasapy/fileops/copy.py:65` (`_copy_ini_section`) | Nincs, paritásban van. |
-| Névütközés átnevezése | `0x005350b0` (`CThumbUI::MoveFilesRename`) | `src/picasapy/fileops/batch.py:159` (`_free_name`) | Nincs, paritásban van. |
-| Részleges hiba lekezelése | Ciklus break, sikeresek megmaradnak | Ciklus break, sikeresek megmaradnak | Nincs, paritásban van. |
+PicasaPy `fileops/batch.py:222-271` fájlonként rögzíti a hibát, majd a következő bemenettel folytatja. A `copy_photo()` (`fileops/copy.py:30-96`) a képfájlt visszavonja, ha a megőrzött eredeti másolása hibázik; a `.picasa.ini` írása a kép és eredeti másolása után történik, ezért annak hibája után a fájlok megmaradhatnak. Ez eltér a Picasa további elemeket leállító ágától, és a per-fájl rollback sem teljesen azonos.
 
-### 6. Két független út és cáfoló vizsgálat
+### Paritási összehasonlító táblázat
 
-- **Út A (gépi kód diszasszemblálása):** A `Picasa3.exe` .text szekciójának közvetlen feltárása a `0x005cb990` (főmenü diszpécser), `0x005fe9f0` (Copy/Cut kezelő), `0x005feab0` (Paste kezelő), `0x00577ba0` (könyvtár vágólap állapot), `0x0069b000` és `0x00a706f0` (OneUp CF_BITMAP vágólap), `0x005791d0` (Paste előkészítés), `0x00784100` (Paste végrehajtó), `0x00478780` (fájl-, ini- és .picasaoriginals másoló), `0x00473bd6` (`CopyFileW`), `0x005350b0` (ütközéskezelő dialógus) és `0x00716f40` (Cut áttetszőség) címeken.
-- **Út B (index és RTTI):** A `picasa3-index.sqlite` adatbázis `string_xrefs` (`CThumbUI::MoveFilesConfirmCopy` @ `0x00c89d1c`, `IDS_NEED_SELECTED_ALBUM` @ `0x005791fb`, `CThumbUI::MoveFilesRename` @ `0x005350b0`), az `imports` tábla (`OpenClipboard`, `EmptyClipboard`, `SetClipboardData`, `CopyFileW`), a dekompilációs archívum (`referencia/ghidra/*.txt`) és a PicasaPy meglévő forráskódja.
-- **Egyezés:** A két független út maradéktalanul megegyezik a hívási hierarchiában, az azonosítókban (`0x9d39`, `0x9d3b`, `0x9d3c`), a formátumkódban (`CF_BITMAP` = 2) és a lemezes/ini hatásokban.
-- **Cáfoló vizsgálat:** Megvizsgáltuk azt a feltevést, hogy könyvtárnézetben több kép kijelölésekor az eredeti Picasa az operációs rendszer vágólapjára is kiteszi-e a fájllistát (`CF_HDROP` formátumban). A `0x005fe9f0` és a `0x00577ba0` kódjában semmilyen Win32 `OpenClipboard` vagy `SetClipboardData` hívás nem szerepel; a kijelölt azonosítók listáját kizárólag belső memóriarekeszekben (`[esi + 0x319c]`, `[esi + 0x318c]`) tárolja. A feltevés ezzel cáfolva: a könyvtárnézeti Copy/Cut tisztán belső állapotot kezel.
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| Könyvtári Copy/Cut azonosítólista; OneUp Copy `CF_BITMAP` (`0x0069b000` → `0x00a706f0`). | Könyvtári fájllista, OneUp renderelt kép (`MainLibrarySelectionState.qml:120-142`; `edit_controller_clipboard_mixin.py:32-58`; `fileops_controller_clipboard_mixin.py:16-82`). | OneUp egyezik. A könyvtári vágólap formátumai és belső állapot-élettartama mérésre marad. |
+| Eltérő forrás/célmappánál `Confirm Copy` / `Confirm Move`, majd ütközésnél Rename / Skip / Cancel (`0x00784100`, `0x00535020`, `0x005350b0`). | Párbeszéd nélkül, automatikus névátrendező `copyPhotos()`/`movePhotos()` (`fileops_controller_clipboard_mixin.py:98-121`; `fileops_controller_move_mixin.py:64-78`). | **Eltérés:** megerősítő és ütközésválasztó hiányzik. Lásd az 1. jegyjavaslatot. |
+| Forrás/cél azonos mappánál a megerősítő/fizikai fájlút őre nem teljesül a `0x00784100`-ban; a látható végállapot nyitott. | `policy="rename"` mellett a `fileops/copy.py:30-96` ugyanoda is fizikai másolatot készíthet. | NINCS MEG: az eredeti utánállapotot a mérési kör rögzítse, mielőtt erre fejlesztési jegy készül. |
+| Cél nélküli Paste figyelmeztetése `IDS_NEED_SELECTED_ALBUM` (`0x005791fb`). | „There are no files on the clipboard to paste.” (`MainWindowCommands.qml:370-376`). | **Eltérés:** a hiba oka és szövege nem egyezik. Lásd a 2. jegyjavaslatot. |
+| Albumcél esetén külön tagsági ág (`0x00784100` → `0x00506400`). | Csak célmappa-útvonalat fogad; fájl másolása vagy mozgatása indul (`fileops_controller_clipboard_mixin.py:98-121`). | **Eltérés:** albumtagsági beillesztés hiányzik. Lásd a 3. jegyjavaslatot. |
+| Kivágás után a Selection Tray jelvénye változott (`picasa-gyorsbillentyuk.md:2721`, 96 px diff); `+0x5d` kiválasztási bájt, nem rács-halványítás. | A `cut` csak a vágólap fejlécében tárolt; QML rácsban nincs kivágási jelzés (`fileops_controller_clipboard_mixin.py:75-82`; `ThumbDelegate.qml:120`). | **Eltérés:** a tálcajelzés hiányzik. Lásd a 4. jegyjavaslatot; ne készítsünk találgatott 0.5 átlátszóságot. |
+| A CopyFile-művelet hibája után az eredeti ciklus `0xf4242`-nél megáll; korábbi kész fájlok megmaradnak (`0x005350b0`). | A `_run()` a hibás képet feljegyzi, de folytatja a köteget (`fileops/batch.py:222-271`). | **Eltérés:** az eredeti leállási szabály hiányzik. Lásd az 5. jegyjavaslatot. |
+| Célmappa katalógus- és rácsfrissítése az eredeti Picasában | Célzott PicasaPy-resync (`application_services.py:24-61,110-113`; `library_controller_sync.py:110-116`). | Az eredeti db3 és rács végállapotát mérni kell; watcher/SQLite paritást nem állítok. |
+| Kép, mentett eredeti és ini-szekció | `copy.py:30-130` (kép, megőrzött eredeti, szekció). | Fő fájl/ini tartalom útja egyezik; hibás írás részleges hatásához lásd a Nyitott mérést. |
+| Copy To Folder / Export | `0x005cb990` `0x9c81`, `0x005312b0`; #6970 teljes összevetés. | Külön művelet, nem clipboard Paste; új #7028 teendő nincs. |
 
-### 7. A jegy „Kész, ha” pontjai
+### A két független út
 
-1. ✅ **Belépési pontok és engedélyezési feltételek:** Szerkesztés menü Copy (`0x9d3b`), Cut (`0x9d39`), Paste (`0x9d3c`), Ctrl+C, Ctrl+X, Ctrl+V, helyi menük és Copy to Folder vizsgálata bináris címekkel és forrássorokkal igazolva.
-2. ✅ **Vágólapra helyezett adatok és megerősítések:** Részletesen feltárva: könyvtárban belső azonosítók, szerkesztőben `CF_BITMAP` (2) képadat, nincs megerősítés másoláskor.
-3. ✅ **Beillesztés hatása a fájlokra, .picasa.ini-re, indexre, névtérre és rácsra:** Fájlok célmappába másolása, `.picasaoriginals` megőrzése, `.picasa.ini` szekció átmásolása és fejléc átnevezése, index-frissítés igazolva.
-4. ✅ **Hibák, névütközés és részleges végrehajtás:** `CopyFileW` hibakezelése, ciklus-megszakítás, meglévő másolatok megőrzése (rollback hiánya) bizonyítva.
-5. ✅ **Paritási táblázat és fejlesztői jegyjavaslatok:** Táblázat és részletes fejlesztői jegytörzsek elkészítve.
+- **A út, hívói utasítások:** a `0x005feab0` és `0x005791d0` disassemblyje követi a Ctrl+V módját, forrásazonosítóját és kijelöléslistáját a `0x00784100` hívásáig; a `0x00784100` hívóhelyének push-sorrendje feloldja a `0x00535020` paramétereit.
+- **B út, hivatkozások és párbeszédadatok:** a függvényhivatkozási lista a Paste `0x005791d0` címet a `0x00784100` hívójaként azonosítja; a `string_xrefs.csv` a `Confirm Copy` és `Confirm Move`, valamint a `Rename Duplicates` és `Skip Duplicates` szövegeket a `0x005350b0` függvényhez rendeli. A Ghidra-út innen visszaköti a párbeszédet a `0x00535020` wrapperhez. A forrás- és hívóoldali eredmény egyezik.
+- **Megismételhetőségi ellenőrzés:** a `ujralevezetes.py brief` kizárólag a kérdést és címlistát adott át egy új, kontextus nélküli ügynöknek, amely a Paste Copy/Move útját és a `+0x5d` kijelölési jelentését önállóan újra levezette; ez nem helyettesíti a független xref/adat-utat.
+- **Másik réteg:** a PicasaPy jelenlegi QML/Python hívási útja és a PMP/db3 formátum-specifikáció megerősíti a helyi oldali állításokat, nem használja az eredeti leletet bizonyítékként.
 
-### 8. Javasolt fejlesztői jegyek
+### Cáfoló kísérlet
 
-#### 1. jegyjavaslat: Szerkesztő nézetben (OneUp) a kép másolása a renderelt képet tegye a vágólapra fájl-URL helyett
-- **Cím:** Szerkesztő előnézet: a Copy parancs képadatot tegyen a rendszer vágólapjára fájl-URL helyett
-- **Törzs:**
-  Eredeti: `0x0069b000` -> `0x00a706f0` (`OpenClipboard`, `EmptyClipboard`, `SetClipboardData(CF_BITMAP, hBitmap)` @ `0x00a70776`). Az eredeti Picasa a szerkesztő nézetben a képszerkesztésekkel együtt kiszámolt képet valódi képadatként (`CF_BITMAP`) teszi a vágólapra, így külső programokba közvetlenül képként beilleszthető.
-  Nálunk: `src/picasapy/app/fileops_controller_clipboard_mixin.py:16-56` (`_tegyd_a_vagolapra`) mindig csak a fájl lemezes URL-jét adja át (`mime.setUrls`), képfájlként.
-  Teendő: A vezérlőben ellenőrizni, hogy a hívás szerkesztő nézetből (OneUp / EditPanel) érkezik-e. Ha igen, a kép aktuális renderelt felületét (`QImage`) kell a vágólapra helyezni a `clipboard.setImage(image)` hívással.
-  Kész, ha: a szerkesztőben megnyitott és effektezett képen a Ctrl+C megnyomása után egy külső programban (pl. képszerkesztő vagy szövegszerkesztő) a Beillesztés közvetlenül a szerkesztett képet illeszti be.
+Azt próbáltam cáfolni, hogy a Copy/Move megerősítő kizárólag a húzás-ejtés parancsából nyílik. A `0x00784100` közvetlen hívólistájában szerepel a Paste `0x005791d0`, és a Paste disassemblyje ezt a `0x00784100`-at hívja a belső vágólap forrásazonosítójával. A hipotézis cáfolódott: a megerősítő elérhető Ctrl+V-ből is, ha az eltérő forrás/célmappás feltétel teljesül. Külön cáfoló körként a `+0x5d` Cut-jelző értelmezését ellenőriztem: a `0x00716f40` setter és a `0x007166c0` kiválasztás-összegyűjtő út ugyanazt a bájtot kijelölési állapotként kezeli, a mérési napló pedig tálcajelvényt, nem bélyegkép-halványítást jegyez fel.
 
-#### 2. jegyjavaslat (ELVETVE, a Ghidra-kör szerint a kérdés nem a beillesztésé): Beillesztéskor azonos mappában megerősítő kérdés megjelenítése
-- **Cím:** Beillesztés: azonos mappába másoláskor megerősítő kérdés megjelenítése
-- **Törzs:**
-  Eredeti: `0x00579220`, `0x00c89d1c` (`CThumbUI::MoveFilesConfirmCopy`: "Are you sure you want to copy the file(s) to %s ?"). Az eredeti Picasa figyelmezteti a felhasználót, ha ugyanabba a mappába illeszt be képeket másolás után.
-  Nálunk: `src/picasapy/app/fileops_controller_clipboard_mixin.py:84-121` kérdés nélkül azonnal másol és automatikusan `név-1.jpg`-re nevezi át a duplikátumot.
-  Teendő: Ha a vágólapon lévő fájlok forrásmappája megegyezik a kiválasztott célmappával és a vágólap módja másolás (nem kivágás), meg kell jeleníteni egy megerősítő modális kérdést a másolás végrehajtása előtt.
-  Kész, ha: egy kép másolása és ugyanabba a mappába beillesztése előtt a felület rákérdez a műveletre, és Elvetés esetén nem hoz létre másolatot.
+### A jegy „Kész, ha” pontjai
 
-#### 3. jegyjavaslat (feltételes, a Nyitott kérdések 2. pontja dönti el): Kivágott képek halványított jelölése a rácson
-- **Cím:** Rács: a vágólapra kivágott (Cut) fotók jelenjenek meg halványítottan a beillesztésig
-- **Törzs:**
-  Eredeti: `0x00716f40` (`[item + 0x5d] = 1`). Az eredeti Picasa kivágáskor a rácson a kijelölt elemeket áttetszőként / halványítottként jeleníti meg, jelezve a leendő áthelyezést.
-  Nálunk: a PicasaPy nem tárol vizuális kivágási állapotot a bélyegképekhez.
-  Teendő: A vezérlőben vezetni kell a kivágott fájlok listáját (`cutFiles`), és a `ThumbDelegate.qml`-ben az érintett elemek áttetszőségét (pl. `opacity: isCut ? 0.5 : 1.0`) módosítani.
-  Kész, ha: a Ctrl+X megnyomásakor a kijelölt képek halványítottan jelennek meg a rácson, majd beillesztéskor vagy újabb másoláskor a halványítás megszűnik.
+1. ⛔ **Belépési pontok:** Copy, Cut, Paste, Ctrl+C/X/V, fénykép-helyi menü és Export / Copy To Folder különválasztva. Az eredeti dinamikus engedélyezési mátrix és a képek/videók feltételei nyitottak; a mérési út szerepel.
+2. ⛔ **Vágólap és megerősítések:** a belső könyvtári állapot, OneUp `CF_BITMAP`, Paste Copy/Move kérdés és ütközési választék dokumentálva. A dinamikus menüengedélyezés és a OneUp Cut feltétele futásidejű mérést igényel.
+3. ⛔ **Fájlok, ini, index, mappafa és rács:** a fájl/ini út megvan; az eredeti PMP/db3 rekord, a bal panel/rács utóállapot és az időzítés nincs mérve.
+4. ⛔ **Ütközés és részleges köteg:** a Rename/Skip/Cancel választék és az első fájlhibánál történő leállás bizonyított; a PicasaPy folytatási eltérése kódból ellenőrzött. A pontos CopyFileW-paraméter és a konkrét írásihiba-ablak nincs meg.
+5. ✅ **Összehasonlító táblázat és fejlesztői jegytörzsek:** lent szerepelnek, mindegyik `Eredeti:` sorral és mérhető „Kész, ha” feltétellel.
 
-### 9. Új kutatási jegyjavaslatok
+### Javasolt fejlesztői jegytörzsek
 
-A két feltételes pont Ghidra-kört igényel (lásd lent).
+#### 1. Paste-nél eredeti megerősítő és névütközési választó
 
-### 10. Nyitott kérdések
+**Eredeti:** `0x00784100` eltérő forrás- és célmappánál `0x00535020`-on át `Confirm Copy` vagy `Confirm Move` kérdést nyit. A `0x005350b0` ütközésnél `Rename Duplicates`, `Skip Duplicates` és `Cancel` választ ad.
 
-A hívó ellenőrző mintavétele (2026-11-15): az 1. jegyjavaslat igazolt (a `0x00a706f0` a `0x00a70776`-nál `push 2` = `CF_BITMAP` után hívja a `SetClipboardData`-t). A másik kettő nem igazolt:
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Eltérő mappánál megerősít; célütközésnél a felhasználó választ más név, kihagyás vagy mégse között. | `fileops_controller_clipboard_mixin.py:98-121` azonnal `copyPhotos`/`movePhotos` köteget indít `rename` házirenddel; nincs Paste-dialógus. | A forrás és cél azonosítóját ellenőrző Paste-réteg kérdezzen rá az eltérő mappás másolásra/mozgatásra, és az ütközésnél kínálja fel az eredeti három választ. |
 
-1. A `CThumbUI::MoveFilesConfirmCopy` szöveget (`0x00c89f0c`) a bináris-index szerint a `0x005350b0` használja, nem a `0x00579220`; a `0x00579220` a szerkesztőpanel elemeit kezeli. Hogy a kérdés pontosan mikor jön (azonos mappa, mindig, vagy csak húzásnál), nincs igazolva.
-   - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7012-7028-colab-decomp.txt`): a `0x005350b0` a fájlok albummappába mozgatásának vagy másolásának közös rutinja; a `param_4` választja a szöveget (1: `MoveFilesConfirmCopy`, 0: `MoveFilesConfirmMove`), a `param_5 == 0` esetén mindig kérdez, 1 esetén csak a `0x00992ed0` fájlonkénti jelzésére. Hívói: `0x00535020` és `0x005e39a0` (ejtés albumra vagy mappára, mozgatás, mindig kérdez), `0x00541fc0` (másolás, csak jelzésnél). **A kérdés a mozgatásé és a húzásé, nem a Ctrl+V beillesztésé**, ezért a 2. jegyjavaslat a mostani formájában elvetve; a húzásos mozgatás kérdése külön összevetés tárgya.
-2. A `0x00716f40` egy elem `+0x5d` bájtját állítja; hogy ez a rácson halványított megjelenítést jelent-e, az értelmezés, nem bizonyíték.
-   - Ghidra-kör kell: 0x00716f40 - Mit jelöl a rácselem `+0x5d` bájtja, és a kivágás után hogyan rajzolja a rács az így jelölt elemet [nem blokkoló]
+**Kész, ha:** eltérő forrás/célmappánál Elvetés után nincs fájlrendszer-változás; Jóváhagyás után konfliktusmentes képek átkerülnek; ütközésnél Átnevezés, Kihagyás és Mégse mérhetően az eredeti szerint működik. Az azonos mappás viselkedést csak a lent kért mérés után implementáljuk.
 
-### 11. Módosított fájlok
+#### 2. Paste cél nélkül a megfelelő figyelmeztetést adja
 
-- `docs/specs/paritas-ellenorzes.md` - ez a #7028 alszakasz.
+**Eredeti:** `0x005791d0` a cél hiányakor az `IDS_NEED_SELECTED_ALBUM` üzenetet hívja (`0x005791fb-0x00579220`).
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A kijelölt mappa vagy album hiányát jelzi. | `MainWindowCommands.qml:370-376` az üres vágólap szövegét mutatja, ha a Paste nem indul el; a célmappa üressége miatt ez is megtörténik. | Különböztesd meg az üres vágólapot a hiányzó Paste-céltól, és az utóbbihoz adj megfelelő, lefordított figyelmeztetést. |
+
+**Kész, ha:** nem üres vágólappal, cél nélküli Paste esetén célhiányt nevez meg a figyelmeztetés; üres vágólapnál megmarad az üres vágólap üzenete; egyik eset sem hoz létre fájlt.
+
+#### 3. Paste külön kezelje a virtuális albumcélt
+
+**Eredeti:** `0x00784100` albumfeltételnél a `0x00506400` ágra tér, külön a közönséges mappacél fájlműveleti útjától. Az albumtagság és a tartós adatbázis-hatás pontos formája még nincs megmérve.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Albumcél esetén külön bináris ág fut; a pontos tagsági és fájlhatás nyitott. | `fileops_controller_clipboard_mixin.py:98-121` csak `dest_folder` útvonalat kap és fájlműveletet indít. | A Paste kezelő különböztesse meg az albumcélt a mappától, majd a mért eredeti hatást a helyi index/API-n át valósítsa meg. |
+
+**Kész, ha:** virtuális album Paste-je a mért eredeti szerint változtatja a tagságot, a fájlokat és a rács/albumlistát; közönséges mappa Paste-je továbbra is a mappacél fájlműveleti útját követi.
+
+#### 4. Kivágás állapota legyen látható a képtálcán
+
+**Eredeti:** a `picasa-gyorsbillentyuk.md:2721` eredeti mérési napló a Ctrl+X utáni Selection Tray állapotjelző jelvény 96 képpontos változását jegyzi. A `0x00716f40` által állított `+0x5d` kijelölési állapot, nem átlátszóság.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Kivágás után látható tálcajelzés változik. | `fileops_controller_clipboard_mixin.py:75-82` a `cut` fejlécet írja ki; nincs tálcaállapot-jelzés. A `ThumbDelegate.qml:120` csak a rejtett képeket halványítja. | A PicasaPy jelezze a tálcán a kivágás/mozgatás állapotát, a felmért eredeti képi jelzést követve; ne a `+0x5d` mezőt utánozza áttetszőségként. |
+
+**Kész, ha:** Ctrl+X után a tálcajelzés a mérési mintával megegyezően megváltozik; Ctrl+C ezt nem teszi; Paste vagy új Copy/Cut után az állapot a felmért eredeti szerint áll vissza.
+
+#### 5. Paste-köteg álljon meg az első fájlhibánál
+
+**Eredeti:** a `0x005350b0` hívási út a `0xf4242` fájlműveleti eredménynél kilép a további elemek ciklusából; a korábbi sikeres másolatokat nem görgeti vissza.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Első fájlhiba után a későbbi képeket nem kezdi el; korábbi sikeres elemek megmaradnak. | `fileops/batch.py:222-271` a hibát rögzíti és folytatja a köteget. | A clipboard Paste köteg jelezze az első végleges fájlhibát és ne indítsa el a következő elemeket; tartsa meg a korábbi sikeres másolatokat. |
+
+**Kész, ha:** három képből a második írási hibájánál az első másolat megmarad, a második hibás állapotú, a harmadik nem keletkezik; egy összegző jelzés nevezi meg a hibát.
+
+### Új kutatási jegyjavaslatok
+
+Most nem javaslok külön kutatási jegyet; az egyetlen nyitott mérési kör ugyanezen #7028 Paste-folyamatot zárja.
+
+### Nyitott
+
+- `NINCS MEG: az eredeti Copy/Cut/Paste menü és gyorsbillentyű dinamikus engedélyezése üres/egy/több elem, videó, könyvtár, OneUp és szövegfókusz esetén; azonos mappás Paste tényleges fájl- és UI-utóállapota; albumcél tagsági hatása; a Paste után írt PMP/db3 rekord és a bal panel/rács/kijelölés végállapota; CopyFileW ütközési/írási hibánál a konkrét fájl- és ini-részállapot. Megszerzés: egy kontrollált Picasa 3.9 Windows-mérési sorozat a fent felsorolt esetekkel. Minden lépés előtt/után rögzíteni kell a rendszer-vágólap formátumait, kijelölést, bal panelt és rácsot; le kell menteni a forrás/cél fájlokat, `.picasa.ini`-ket és db3 mappát, valamint a párbeszédeket és hibaszöveget. [blokkoló]`
+- `Ghidra-kör kell: 0x00478780 - a CopyFileW indirekt hívásának harmadik argumentuma a 0x00479870 Paste-hívási útból. A meglévő dekompiláció a .picasa.ini és a mentett eredetik útját feltárja, de az import harmadik paraméterét nem köti a Paste-híváshoz; a pontos összekötést célzottan kell megmutatni. [nem blokkoló]`
+
+### Zárási döntés
+
+**A #7028 még nem zárható le.** Egyetlen blokkoló marad: a fenti kontrollált Picasa 3.9 mérési sorozat, amely a dinamikus engedélyezést, azonos mappás és albumcélú Paste-et, a db3/rács végállapotot és a részleges írási hibát együtt rögzíti. Az 1., 2. és 5. fejlesztőijegy-javaslat statikus eltérésre épül; a 3. és 4. javaslat pontos viselkedését a mérésnek kell véglegesítenie. A pontos CopyFileW-argumentum külön, nem blokkoló Ghidra-kérdés. Az azonos mappás és albumcélú teendőket a mérés előtt nem szabad végleges specifikációként implementálni.
 
 ## #7031: A mappa törlésének teljes folyamata az eredeti Picasával összevetve
 
