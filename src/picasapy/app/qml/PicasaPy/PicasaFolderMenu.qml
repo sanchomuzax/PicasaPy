@@ -200,8 +200,7 @@ PicasaMenu {
     MenuItem {
         objectName: "menuFolderMove"
         text: qsTr("&Move...")
-        enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
-                 && bar.currentPersonName === ""
+        enabled: bar.folderMoveEnabled
         onTriggered: bar.folderMoveRequested()
     }
     MenuItem {

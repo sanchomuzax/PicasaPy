@@ -370,6 +370,13 @@ Item {
     function beillesztAVagolaprol() {
         if (typeof fileOpsController === "undefined" || !fileOpsController
                 || !hostController) return
+        //: #7113: `IDS_NEED_SELECTED_ALBUM` (`0x005791fb`) - fájl van a
+        //: vágólapon, de nincs célmappa; az üres vágólap külön üzenet.
+        if (fileOpsController.clipboardHasFiles && !hostController.currentFolder) {
+            hostWindow.errorBanner.notice = true
+            hostWindow.errorBannerText.text = qsTr("A Folder or Album must be selected to do this.")
+            return
+        }
         if (fileOpsController.pasteFilesFromClipboard(hostController.currentFolder))
             return
         hostWindow.errorBanner.notice = true
