@@ -6431,7 +6431,7 @@ perzisztálás nem cáfolható. A cáfoló kísérlet tehát szűkítette a lehe
 
 Jelen körben nincs kódfejlesztési jegy, amelyet a teljes paritás állítása
 nélkül pontosan meg lehetne fogalmazni. A bizonyított UI-eltérések a helyi
-figyeltmappa-megerősítés (ADR-005 szerinti szándékos többlet) és a régi online
+megerősítés a figyelt mappákra (ADR-005 szerinti szándékos többlet) és a régi online
 Help helyetti rövid helyi súgó; ezekhez új feladatot nem javaslok.
 
 Ha az eredeti runtime-felvétel később eltérést igazol, a jegytörzsben minden
@@ -6482,7 +6482,7 @@ Ghidra-kimenetekből (`referencia/ghidra/`), a bináris-indexből
    - **Forgatás (Batch Rotate, `0x9ca2`, `0x9ca3`):** a menüből (`0x005eef30`), gyorsbillentyűből (`Ctrl+R`, `Ctrl+Shift+R`), helyi menüből és eszköztárról/tálcáról érhető el. Nincs párbeszédablak. A kijelölésen azonnal, háttérmunkaként fut le; a `.picasa.ini`-be `rotate=rotate(N)` negyedfordulatot és `backuphash` időbélyeget ír, frissíti az index `imagedata_rotate` oszlopát és a bélyegképeket. A kijelölés megmarad. Nem támogatott fájlok (pl. videók) esetén a végén `IDS_ROT_TYPEFAILED` („One or more images could not be rotated because of the file type.”) figyelmeztetést ad.
    - **Automatikus javítások és effektek (Batch Effects, 9 művelet):** az almenüből (`0x00d6e4ac`) érhető el (Auto Contrast `0x9d49`, Auto Color `0x9d48`, I'm Feeling Lucky `0x9d5e`, Sepia `0x9d4a`, Sharpen `0x9d4b`, Warmify `0x9d4d`, Film Grain `0x9d4e`, Black and White `0x9d4c`, Auto Red Eye Correction `0x9df1`). Nincs ablak. Kétágú viselkedés: ha a szerkesztő nyitva van (`0x00579330`), a parancs a szerkesztőpanel megfelelő fülére és vezérlőjére navigál; könyvtárnézetben a kijelölés összes képére meghívja a `0x005fe370` batch motort (illetve az Auto Red Eye esetén a `0x00602100` / `0x005f39d0` delegált keretet). A `.picasa.ini`-ben a `filters=` láncot bővíti, `backuphash`-t frissít, és átugorja a nem támogatott fájlokat (`iStack_98`), a köteg végén `IDS_SOME_EDITS_FAILED_TYPE` figyelmeztetést adva.
    - **Dátum és idő beállítása (Adjust Date and Time, `0x9e0e`, `0x0057d7f0`):** az Eszközök menüből érhető el legalább egy kijelölt képpel. A `runtime/offsettime.fen` párbeszédet nyitja meg. Címe 1 elemnél `Adjust Photo Date`, >1 elemnél `Adjust Photo Date - %d items`. Bélyegkép-előnézetet, jelenlegi dátum/idő és új dátum/idő mezőket ad, valamint két rádiógombot (0: relatív eltolás, 1: abszolút fix idő). Nem jegyez meg állapotot, az első kép idejével és a relatív móddal indul. A lemezen közvetlenül módosítja a fájlok EXIF metaadatait (JPEG esetén) és az index `imagedata_date` oszlopát; ha a rács dátum szerint rendezett, a képek átrendeződnek.
-   - **Szövegfedvény láthatósága (Show Text `0x9deb`, Hide Text `0x9dec`):** a Kép ▸ Csoportos szerkesztés almenüből érhető el. Nincs ablak. A `0x005f6a40` kezeli: a kijelölt képek `.picasa.ini` szakaszában a `textactive` kulcsot `1`-re (Show) vagy `0`-ra (Hide) állítja a `0x00462500` hívással, és frissíti a bélyegképeket. Ha a szerkesztő nyitva van, az `editpanel/showtextcheckbox` állapotát is szinkronizálja.
+   - **A ráírt szöveg láthatósága (Show Text `0x9deb`, Hide Text `0x9dec`):** a Kép ▸ Csoportos szerkesztés almenüből érhető el. Nincs ablak. A `0x005f6a40` kezeli: a kijelölt képek `.picasa.ini` szakaszában a `textactive` kulcsot `1`-re (Show) vagy `0`-ra (Hide) állítja a `0x00462500` hívással, és frissíti a bélyegképeket. Ha a szerkesztő nyitva van, az `editpanel/showtextcheckbox` állapotát is szinkronizálja.
    - **Átnevezés több képen (Batch Rename, `0x9d4f`, `F2`):** a Fájl menüből, a Kép ▸ Csoportos szerkesztés almenüből és F2 gyorsbillentyűvel érhető el. A `runtime/rename.fen` párbeszédablakot nyitja meg (`0x00532ec0`). Névmezőt, darabszámos címkét, dátum és felbontás jelölőnégyzeteket (`RenameUseDate`, `RenameUseSize`), valamint statikus előnézeti mintát (`Example: <név> 08-01-2004 2-30-45 PM 640x480.jpg`) ad. A két jelölő állapota perzisztált (Preferences/rename). A lemezen fizikailag átnevezi a fájlokat; az ütközéseket a `0x00993650` kezeli: az első szabad cél változatlan marad, ütközéskor `-001`-től `-4095`-ig számozza (`%s-%03lu`, `0x00cd8d64`). A `.picasa.ini`-ben a szekciók és a `.picasaoriginals` fájlok/szekciók is átneveződnek.
    - **Visszavonás (Revert / Undo):** Kép ▸ Összes szerkesztés visszavonása (`0x005ef3e0` / `0x005ef520`): megerősítést kér (`IDS_CONFIRMREVERT_MULTIPLE`, gomb: `Remove Edits`), majd képenként törli a `filters`, `crop`, `flipped`, `redo`, `text`, `textactive` kulcsokat. A `rotate` negyedfordulat kulcsot a visszavonás NEM törli!
 
@@ -6521,8 +6521,8 @@ Ghidra-kimenetekből (`referencia/ghidra/`), a bináris-indexből
 
 | Hatás / folyamat | Eredeti Picasa 3.9 | PicasaPy most |
 |---|---|---|
-| **Fájlok a lemezen** | Effektek, forgatás, szövegfedvény esetén a fizikai fájlok NEM változnak (nem-destruktív szerkesztés). Dátummódosításnál a JPEG fájlok EXIF DateTimeOriginal adatai közvetlenül átíródnak a lemezen. Átnevezésnél a fájlok fizikailag átneveződnek (`MoveFile`). | Egyezik: effektek/forgatás nem-destruktív; dátum EXIF-et ír (`piexif`); átnevezés lemezen mozgat. |
-| **`.picasa.ini` módosítás** | Effekteknél a `filters=` kulcs bővül és `backuphash` frissül (`0x005fe370`). Forgatásnál a `rotate=rotate(N)` negyedfordulat és `backuphash` frissül (`0x005eef30`). Szövegfedvénynél a `textactive` kulcs értéke `1` vagy `0` lesz (`0x005f6a40`, `0x00462500`). Átnevezésnél a régi szekció átneveződik az új névre, és a `.picasaoriginals` fájl/szekció is átmozog. Dátummódosítás nem ír ini-t. | Egyezik: `update_document`-tel szekció- és kulcskezelés, `with_backuphash` időbélyeg-frissítéssel. |
+| **Fájlok a lemezen** | Effektek, forgatás, ráírt szöveg esetén a fizikai fájlok NEM változnak (nem-destruktív szerkesztés). Dátummódosításnál a JPEG fájlok EXIF DateTimeOriginal adatai közvetlenül átíródnak a lemezen. Átnevezésnél a fájlok fizikailag átneveződnek (`MoveFile`). | Egyezik: effektek/forgatás nem-destruktív; dátum EXIF-et ír (`piexif`); átnevezés lemezen mozgat. |
+| **`.picasa.ini` módosítás** | Effekteknél a `filters=` kulcs bővül és `backuphash` frissül (`0x005fe370`). Forgatásnál a `rotate=rotate(N)` negyedfordulat és `backuphash` frissül (`0x005eef30`). A ráírt szövegnél a `textactive` kulcs értéke `1` vagy `0` lesz (`0x005f6a40`, `0x00462500`). Átnevezésnél a régi szekció átneveződik az új névre, és a `.picasaoriginals` fájl/szekció is átmozog. Dátummódosítás nem ír ini-t. | Egyezik: `update_document`-tel szekció- és kulcskezelés, `with_backuphash` időbélyeg-frissítéssel. |
 | **Index és adatbázis (`db3`)** | Az adatbázis-oszlopok frissülnek: `imagedata_filters`, `imagedata_rotate`, `imagedata_textactive`, `imagedata_date`, valamint átnevezésnél a fájlnevek. | SQLite index frissül minden ágon. |
 | **Képrács, bal hasáb és kijelölés** | Bélyegképek azonnal újrarenderelődnek. Ha a rács dátum vagy név szerint rendezett, a rendezés újrapozicionálja a képeket. A kijelölés MINDEN kötegelt művelet után az érintett képeken MEGMARAD. | Egyezik: modell frissül, kijelölés megmarad. |
 | **Háttérmunka és kurzor** | A művelet alatt homokóra/várakozó kurzor (`IDC_WAIT`, `_DAT_00d6793c`) jelenik meg; a művelet szálon fut, de felugró folyamatjelző ablak nincs. | Lebegő folyamatjelző sáv (`batchEditActive`), mappánkénti haladás-visszajelzéssel és megszakítási gombbal. |
@@ -6553,7 +6553,7 @@ Ghidra-kimenetekből (`referencia/ghidra/`), a bináris-indexből
 
 ### A két független út
 
-- **A: bináris út:** a főablak diszpécser (`0x005cb990`) switch-ágainak utasításszintű követése, a `0x005eef30` forgatás, a `0x005fe370` kötegelt effektmotor, a `0x005f6a40` szövegfedvény-kezelő, a `0x0057d7f0` dátumkezelő és a `0x00532ec0` átnevező lekövetése; az `imagedata` oszlopírók és ini-kezelők hívási lánca.
+- **A: bináris út:** a főablak diszpécser (`0x005cb990`) switch-ágainak utasításszintű követése, a `0x005eef30` forgatás, a `0x005fe370` kötegelt effektmotor, a `0x005f6a40` szövegkezelő, a `0x0057d7f0` dátumkezelő és a `0x00532ec0` átnevező lekövetése; az `imagedata` oszlopírók és ini-kezelők hívási lánca.
 - **B: független erőforrás-, mérés- és forrásréteg:** a `runtime/rename.fen` és `runtime/offsettime.fen` deklarációi, a `shortcuts.xml` gyorsbillentyűi, a `stringres-en-hu.tsv` hibaüzenet-kulcsai, a Colab felvételek (job-641 rename ablak, job-244 egyképes kitöltés, job-254 revert megerősítés és backuphash), valamint a PicasaPy Python/QML forráskód-auditja.
 - **Egyezés:** a menüsorrend, a parancskészlet, a dialógusmezők, a perzisztált beállításkulcsok, a `.picasa.ini` kulcsstruktúra és a visszavonás kulcsai egyeznek a két bizonyítékcsaládban.
 
@@ -6587,7 +6587,7 @@ Ghidra-kimenetekből (`referencia/ghidra/`), a bináris-indexből
 
 #### 2. A Show Text és Hide Text menütételek engedélyezési kapuja a Kép menüben
 
-**Eredeti:** a menüállapot-építőben (`0x0056e1c0`, `2026-11-15-6970-colab-decomp.txt:840-841`) a Show Text (`0x9deb`) és Hide Text (`0x9dec`) parancsokra feltétel nélkül `EnableMenuItem(local_40, id, 1)` fut le, ha van kijelölés (`photoActionsEnabled`). A Picasa a menü megnyitásakor nem olvassa át az ini-ket szövegfedvények után kutatva; ha a felhasználó rákattint, a `0x005f6a40` kezelő maga állítja át a `textactive` értéket azokon a képeken, amelyeken van szöveg.
+**Eredeti:** a menüállapot-építőben (`0x0056e1c0`, `2026-11-15-6970-colab-decomp.txt:840-841`) a Show Text (`0x9deb`) és Hide Text (`0x9dec`) parancsokra feltétel nélkül `EnableMenuItem(local_40, id, 1)` fut le, ha van kijelölés (`photoActionsEnabled`). A Picasa a menü megnyitásakor nem olvassa át az ini-ket ráírt szövegek után kutatva; ha a felhasználó rákattint, a `0x005f6a40` kezelő maga állítja át a `textactive` értéket azokon a képeken, amelyeken van szöveg.
 
 **Nálunk:** `PicasaPictureMenu.qml:106, 112`, `MainMenuBar.qml:77-83`: a két tétel állapota a kijelölésben lévő képek `.picasa.ini`-jének beolvasásától függ (`textOverlayShowEnabled` / `textOverlayHideEnabled`), ami lassítja a menü megnyitását.
 
@@ -6605,7 +6605,7 @@ Ghidra-kimenetekből (`referencia/ghidra/`), a bináris-indexből
 
 **Kész, ha:** 1 kép kijelölésével megnyitva a cím `Adjust Photo Date`; 3 képnél `Adjust Photo Date - 3 items`.
 
-#### 4. Csoportos átnevezés ütközésvezérelt háromjegyű számozása
+#### 4. Csoportos átnevezés háromjegyű számozása névütközéskor
 
 **Eredeti:** a `0x00532ec0` átnevező a `0x00479870` → `0x00993650` úton végzi a célfájl-névképzést. Ha az alapszövegből (és opcionális dátumból/méretből) képzett célfájl szabad, NEM tesz hozzá sorszámot (az első kép sorszám nélkül marad). Ütközés esetén (ha a célfájl létezik, vagy a kötegben azonos név keletkezne) a `0x00cd8d64` formátum (`"%s-%03lu"`) szerint `-001`-től induló, minimum három számjegyű számozással képez egyedi nevet, legfeljebb `-4095`-ig.
 
@@ -6629,4 +6629,4 @@ Lezárva (a bizonyítékkal): a 14 almenü-parancs és diszpécser-ágai (1. sza
 
 ### Módosított fájlok
 
-- `docs/specs/paritas-ellenorzes.md`: új #7084 szakasz a kötegelt szerkesztés teljes folyamatának (forgatás, automatikus javítások és effektek, dátum és idő beállítása, szövegfedvény láthatósága, csoportos átnevezés, visszavonás) összevetésével, belépési pontjaival, ablakaival, tárolási és felületi hatásaival, hibakezelésével, négy fejlesztői jegyjavaslattal, bizonyítékokkal és nyitott kérdésekkel.
+- `docs/specs/paritas-ellenorzes.md`: új #7084 szakasz a kötegelt szerkesztés teljes folyamatának (forgatás, automatikus javítások és effektek, dátum és idő beállítása, ráírt szöveg láthatósága, csoportos átnevezés, visszavonás) összevetésével, belépési pontjaival, ablakaival, tárolási és felületi hatásaival, hibakezelésével, négy fejlesztői jegyjavaslattal, bizonyítékokkal és nyitott kérdésekkel.
