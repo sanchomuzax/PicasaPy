@@ -2,7 +2,7 @@
 
 **Vizsgálati dátum:** 2026-10-13. **Hatókör:** a 2-4. réteg korábbi statikus QML-ellenőrzése, a 6. réteg tiszta profilos kattintáspróbája és a 7. réteg effektkimenet-mérése. A rétegállapotok a jegy korábbi köreihez és az alábbi bizonyítékokhoz kötődnek.
 
-> **Szétválasztva (#7116, 2026-11-16):** a lap átlépte az 1 MB-os nagyfájl-küszöböt, ezért a lezárt jegyek szakaszai (a rétegenkénti összevetés és a folyamatszintű összevetés a #6845-től a #7024-ig, a még nyitott #7012 és #7022 kivételével) a [`paritas-ellenorzes-archiv-1.md`](paritas-ellenorzes-archiv-1.md) lapra költöztek, változatlan szöveggel. Új szakasz továbbra is ide kerül.
+> **Szétválasztva (#7116, 2026-11-16):** a lap átlépte az 1 MB-os méretkorlátot, ezért a lezárt jegyek szakaszai (a rétegenkénti összevetés és a folyamatszintű összevetés a #6845-től a #7024-ig, a még nyitott #7012 és #7022 kivételével) a [`paritas-ellenorzes-archiv-1.md`](paritas-ellenorzes-archiv-1.md) lapra költöztek, változatlan szöveggel. Új szakasz továbbra is ide kerül.
 >
 > Az archív lapon: #4317, #4339, #5245, #5260, #5265, #5271, #5272, #5277, #5295, #5396, #5398, #6845, #6862, #6963, #6964, #6967, #6970, #6975, #6984, #6988, #6989, #6996, #7000, #7001, #7006, #7008, #7009, #7024.
 
