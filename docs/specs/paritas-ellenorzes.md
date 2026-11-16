@@ -5447,3 +5447,209 @@ viselkedése ismeretlen, és a két szél együtt egy kérdés.
   belépési pontjai, a két vetítő szétválasztása, a vetített halmaz, a
   vezérlők és megőrzött állapot, a kilépés hatása, jegytörzsek és nyitott
   kérdések. Kódhoz, teszthez nem nyúltam.
+
+## #7059: A mappa áthelyezésének teljes folyamata az eredeti Picasával összevetve
+
+Vizsgálati tárgy: Picasa 3.9.141.259, SHA-256:
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Ez a szakasz a #6845 §1 korábbi, menüazonosítókra vonatkozó állítását
+pontosítja: az ottani `0x9df4` / `ID_MOVEFOLDER` párosítás hibás volt.
+
+### Következtetés
+
+A fizikai MoveFolder-kezelő statikusan igazolt útja a `0x9df4` parancs
+(`0x0053f340` → `0x0053f4a0`), de a menüépítők ezt a parancsot `&Delete...` /
+`&Delete Folder...` felirathoz rendelik; a látható `&Move...` /
+`&Move Folder...` tételek `0x9cce` azonosítója másik kezelőhöz jut. A
+HierFolder-fa azonos feliratú menüpontja külön `0x9cba` parancs, amely a
+`0x005d0e90`-re jut. Ez a statikus wiring nincs Picasa 3.9-en futtatva
+ellenőrizve, ezért a címkék tényleges felhasználói hatása és a teljes
+paritás nyitott.
+
+### Bizonyítottsági fok
+
+**Feltételes.** A menürekordok, a parancs-diszpécser, a fizikai mozgató
+útja, a célválasztó, a névütközés és a `+0x208` karakterlánc-mező
+eltérésénél történő korai hibavisszatérés két egymástól
+független statikus úton egyezik. A felirat/kezelő ellentmondás tényleges
+futásidejű hatása, a HierFolder út, a figyelt gyökér feltétele, a hálózati
+út és a részleges/írásvédett hibák nem mértek.
+
+### 1. Belépési pontok és feltételek
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| Fő Mappa menü: `0x00559150` a `eMenuLabelFolder::ID_MOVEFOLDER` / `&Move...` rekordhoz `0x9cce`-t ad (`0x0055b184-0x0055b19b`); a `0x005cb990` ezt `0x005ce590`-re küldi. A sztring-xrefek és a `0x005ce590` handler `Do you want to remove the folder ... and its subfolders?` / `Remove Folder` üzenetet mutatják. A tényleges MoveFolder-út a következő `eMenuLabelFolder::ID_ALBUM_DELETE` / `&Delete...` rekord `0x9df4` azonosítóján (`0x0055b1ec-0x0055b203`) át fut: `0x005cb990` → `0x0053f340` → `0x0053f4a0`. | `src/picasapy/app/qml/PicasaPy/PicasaFolderMenu.qml:199-213`; `src/picasapy/app/qml/PicasaPy/MainMenuBar.qml:166-174` | Statikus eltérés: nálunk a Move címke ténylegesen mozgat, a Delete címke lomtárba tesz. Az eredeti menükattintások mért hatása nélkül ne változtassuk meg a működést; előbb az eredeti bináris címke/kezelő ellentmondását kell futásban tisztázni. |
+| Mappafa helyi menü: `0x007319f0` a `Folder::ID_MOVEFOLDER` / `&Move Folder...` rekordhoz `0x9cce`-t, a `Folder::ID_ALBUM_DELETE` / `&Delete Folder...` rekordhoz `0x9df4`-et rendel. A diszpécserút a főmenüével egyezik: `0x9cce` → `0x005ce590`; `0x9df4` → `0x0053f340` → `0x0053f4a0`. | `src/picasapy/app/qml/PicasaPy/FolderContextMenu.qml:321-336`; `src/picasapy/app/qml/PicasaPy/FolderPaneMenus.qml:305-315` | A PicasaPy Move Folder menüpontja a fizikai mappamozgatót hívja, a Delete Folder a lomtárat. Az eredeti helyi menü statikus párosítása ugyanolyan címke/handler ellentmondást mutat, mint a főmenü; futásmérés kell az egyezés eldöntéséhez. |
+| HierFolder-fa helyi menü: `0x00733a40`, `HierFolder::ID_MOVEHIERFOLDER` / `&Move Folder...`, parancs `0x9cba`; a diszpécser `0x005d0e90`-re küldi. Ez nem a `0x0053f4a0` fizikai MoveFolder-út. A `0x005d0e90` a `0x005c85e0` Open Folders megerősítést is elérheti; a meglévő #419 dekompiláció a Ctrl+Enter listakezelő-útját fejti ki, nem ezt a HierFolder menüágat. | `src/picasapy/app/qml/PicasaPy/FolderHierarchyView.qml:479-482` | Lehetséges eltérés: nálunk a hierarchia Move Folder felirata fizikai mozgatást indít. Az eredeti `0x9cba` hierarchiaág szándékát célzott Ghidra-kör vagy Picasa 3.9 futásmérés nélkül nem szabad azonosítani. |
+| A `0x00733a40` menüstruktúrájának utolsó rekordja `0x9df5`, de a feliratpointere null. Ez a diszpécserben `0x0053f3a0`-ra jut, amely bizonyos visszatérési kódoknál `0x0053f4a0`-t hív. Hogy ez a rekord látható-e vagy milyen esemény váltja ki, NINCS MEG. | Nincs azonosított, feliratozott megfelelő; a PicasaPy explicit mozgatója a fenti QML-út. | Nyitva hagyni; ne számítsuk a feliratozott menübelépések közé. |
+| Gyorsbillentyű: a teljes `.text`-pásztázás a `0x9df4` közvetlen előfordulásait a menüépítés/engedélyezés/diszpécser körében találta; a PE-ben nincs `RT_ACCELERATOR` erőforrás, a meglévő `0x00923110` dekompiláció nullázott ACCEL rekordot ad a `CreateAcceleratorTableA`-nak. A menü `&` mnemonikája önálló billentyűparancsot nem bizonyít. | `src/picasapy/app/qml/PicasaPy/PicasaFolderMenu.qml:199-213`; a Move menüpontnál nincs `Shortcut` hozzárendelés. | Dedikált MoveFolder-gyorsbillentyű nem találtam; ezen a ponton nincs igazolt eltérés. |
+| A fizikai kezelő belépési őre `0x0053f340`: kiválasztott mappaobjektumot és nem `-1` azonosítót vár, majd a `0x004461a0` predikátumot vizsgálja. A `0x0056e1c0` menüállapot-építő a `0x9df4` tételt is letilthatja a `0x00995c90` vagy `0x004ac8f0` predikátum alapján. A `0x00995c90` hét futásidőben feloldott Windows mappaútvonalat vizsgál: My Pictures, Desktop, My Music, My Videos, My Documents, `Application Data`, `Common Application Data` (`0x00994a60` sztring-xrefek). A `0x004ac8f0` és `0x004461a0` pontos jelentése nyitott. | `src/picasapy/fileops/move_folder.py:40-87`; `src/picasapy/app/qml/PicasaPy/PicasaFolderMenu.qml:200-205` | PicasaPy explicit rendszerút-listát és home/gyökér-védelmet használ; a hét feloldott Windows ismert mappa mindegyike nincs benne külön. A Picasa eredeti figyelt gyökér- és hálózati feltételei nem zártak, ezért ezek teljes egyeztetéséhez külön célzott vizsgálat kell. |
+
+### 2. A célmappa kiválasztása
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| A `0x0053f4a0` a `MoveFolderLastPath` értékét a `Preferences` csoportból olvassa és a párbeszéd után visszaírja. A címe `Move Folder to %s` (`0x00c8aca4`). A `0x00998760` shell mappaválasztót hív; a dinamikus callback `0x009b0cb0` utasításai a `SHBrowseForFolderW` importot hívják. Érvényes, létező utolsó cél esetén azt adja át kezdőútnak; hiányzó/érvénytelen értéknél a kód a kiválasztott mappa objektumából kinyert forrásútvonalra esik vissza. A forrásmappa vagy szülője közötti UI-viselkedést külön futásmérés nem igazolta. | `src/picasapy/app/qml/PicasaPy/FolderPaneMenus.qml:276-295` | A Qt párbeszéd címe `Browse for Folder`, kezdőútja a forrásmappa szülője; explicit `MoveFolderLastPath`-megfelelő nincs ezen az úton. Az eredeti cím és a megjegyzett célút PicasaPy-beli egyeztetése fejlesztési feladat lehet, de a nyitóhely első futásos alapértékét előbb mérjük. |
+
+### 3. Fájlok, metaadatok és katalógus
+
+| Hatás | Eredeti Picasa 3.9 | PicasaPy most |
+|---|---|---|
+| Lemez | A `0x0053f4a0` a kiválasztott könyvtárat a cél alá mozgatja a `0x0052e0f0` → `0x004fd1c0` → `0x00994400` útvonalon; a legalacsonyabb szint `MoveFileExW`-re jut. | `src/picasapy/fileops/move_folder.py:90-131` a teljes könyvtárat mozgatja. |
+| `.picasa.ini`, albumok és arcok | A könyvtárat mozgatja, nem válogat fájlokat; a benne levő `.picasa.ini` és a fájlok együtt haladnak. A képek `albums=` hivatkozásai, valamint a `faces` és `albumlist` metaadatkulcsok a specifikáció szerint az ini-adathoz tartoznak (`docs/specs/picasa-ini-format.md:132-136,1305-1308`). A siker utáni memóriabeli arc-/album-cache állapota NINCS MEG. | Ugyanígy a teljes könyvtár megy (`move_folder.py:90-131`); az `application_services.py:114-120` siker után a `library_controller_resync.py:142-189` újraolvassa az új és régi részfát, és kezeli az áthelyezett figyelt gyökeret is. |
+| Index és UI | A `0x004fd1c0` siker után frissíti a katalógus út-prefixeit; a `0x0053f4a0` sikerág további index-/nézetfrissítő rutinokat hív. A végső mappafa, fotórács, görgetési helyzet és kijelölés pontos állapota NINCS MEG. | A sikeres mozgatás `folderMoved` jelzést küld (`src/picasapy/app/fileops_controller_move_mixin.py:288-312`), amely célzott régi/új részfa-resyncet indít (`library_controller_resync.py:142-189`). A kijelölés és a rács végállapotát ez a statikus forrásolvasás nem mérte. |
+
+### 4. Ütközés, írásvédelem, részleges és más kötetes mozgatás
+
+| Eset | Eredeti Picasa 3.9 | PicasaPy most | Teendő |
+|---|---|---|---|
+| Célon azonos nevű mappa | A `0x0053f4a0` célút-ellenőrzése (`0x00992ed0`) ütközéskor leáll, és a `A folder with that name already exists in the destination folder` üzenetet használja (`0x00c8ad10`). | A `move_folder.py:124-128` előre ellenőrzi a `target.exists()` állapotot és emberi hibát ad. | A leálló viselkedés egyezik; a szövegek pontos egyezése nem cél ezen a kutatási jegyen. |
+| Írásvédett cél | A cél kiválasztása után a műveleti hibaág a `MoveFolderError` üzenetet és a visszatérő kódot mutatja (`0x0053f4a0`, `0x00c8ad90`). Nincs igazolt attribútum- vagy írhatósági előellenőrzés, és nincs Picasa 3.9 mérés. | A fájlművelet `OSError` esetén `FolderMoveError`-t ad (`move_folder.py:156-183`). | A pontos eredeti hiba és a lemez végállapota NINCS MEG; kontrollált, írásvédett célon végzett eredeti Picasa-mérés kell. |
+| Részleges mozgatás | A sikeres út utáni állapot statikusan követhető, de a `MoveFileExW` hiba/ részleges eredmény esetére nem állapítható meg biztos rollback vagy maradványállapot. | Más köteten a `move_folder.py:134-192` temp-másolatot, forrástörlést és végső átnevezést használ; egy késői átnevezési hiba után a régi hely üres, az ideiglenes cél megmarad. | Eredeti részleges hibakimenet NINCS MEG; ne állítsunk paritást mérés nélkül. |
+| Másik kötet | A `0x0052e0f0` `param_4=1` értékkel hívja a `0x004fd1c0`-t. Ez a két rekord `+0x208` bájteltolású (dekompilációban `param[0x82]`) karakterlánc-mezőjét kis-nagybetű-függetlenül összeveti; eltéréskor `-1`-gyel visszatér a `0x00994400` hívása előtt. A #422 Ghidra-összefoglaló a mezőt kötetmezőnek nevezi, de a mező pontos jelentését az önálló disassembly nem bizonyítja. | A `move_folder.py:137-160` `os.rename` hiba után `copytree`-s fallbackra tér át, így más fájlrendszerre is megpróbál mozgatni. | A mezőeltérés miatti korai hibavisszatérés igazolt; hogy eltérő kötet esetén ez a mező eltér-e, NINCS MEG. A kötetek közötti mozgatás egyezéséről ezért még nem állítható eltérés. A mező jelentését és az UNC viselkedést külön kell feloldani. |
+
+### Bizonyítékok
+
+| Érték / állítás | Forrás |
+|---|---|
+| A Move Folder menürekord azonosítója `0x9cce`, a Delete rekordé `0x9df4` a fő Mappa menüben és a normál Folder helyi menüben. | bináris (`0x00559150`, `0x007319f0`) |
+| `0x9df4` → `0x0053f340` → `0x0053f4a0`; a `0x9cce` → `0x005ce590`; a HierFolder `0x9cba` → `0x005d0e90`. | bináris (`0x005cb990`) |
+| A fizikai célválasztó címe és a `MoveFolderLastPath` olvasás/írás. | bináris (`0x0053f4a0`, `0x00998760`, `0x009b0cb0`) |
+| A rendszerút-hiba és névütközés pontos angol üzenetei. | bináris (`0x0053f4a0`, string xrefs `0x00c8acd4`, `0x00c8ad10`) |
+| A `+0x208` karakterlánc-mező eltérése `-1`-et ad a fájlművelet előtt; a mező kötet- vagy UNC-jelentése nem igazolt. | bináris (`0x0052e0f0`, `0x004fd1c0`, `0x00994400`); mezőszemantika: NINCS MEG |
+| A PicasaPy célút, mozgatás, fallback és resync. | forrás (`src/picasapy/fileops/move_folder.py:90-192`; `src/picasapy/app/fileops_controller_move_mixin.py:288-312`; `src/picasapy/app/library_controller_resync.py:142-189`) |
+| Írásvédett cél és az eredeti részleges hibák pontos lemezállapota. | NINCS MEG |
+| A HierFolder `0x9cba` menüpont pontos runtime-hatása; a `0x004ac8f0` jelentése a figyelt gyökérre; az UNC reprezentáció. | NINCS MEG |
+| MoveFolder mérőadat vagy Windows Picasa 3.9 előtte/utána mérés. | NINCS MEG |
+
+### A két független út
+
+- **A: utasításszintű olvasás:** az `annot_disasm.py` közvetlenül kiírja a
+  `0x00559150` menürekord felirat-/ID-mezőit, a `0x007319f0` és `0x00733a40`
+  helyi menürekordjait, majd a `0x005cb990` diszpécser és a mozgató segédek
+  utasításait. A `0x9df4` fizikai MoveFolder út; `0x9cce` és `0x9cba` más
+  handlerre jut.
+- **B: index és korábban meglévő Ghidra-kimenet:** az index
+  `string_xrefs` táblája a `MoveFolder`, `Folder::ID_MOVEFOLDER` és
+  `HierFolder::ID_MOVEHIERFOLDER` stringeket a megfelelő menüépítőkhöz köti;
+  a `2026-10-21-idorend-30.txt` `0x005cb990` switch-kimenete és a
+  `2026-11-16-7022-7031-7033-colab-decomp.txt` `0x004fd1c0` dekompilációja
+  ugyanazokat a diszpécser- és korai hibautakat mutatja. A két út egyezik.
+
+### Cáfoló kísérlet
+
+Azt próbáltam cáfolni, hogy a `0x9df4` a Move Folder felirat azonosítója,
+mert a korábbi #6845 jegyzet ezt állította. A teljes `0x00559150`
+rekordblokk utasításszintű olvasásakor `ID_MOVEFOLDER` + `&Move...` mellett
+`0x9cce`, míg `ID_ALBUM_DELETE` + `&Delete...` mellett `0x9df4` található;
+a `0x007319f0` helyi menü azonos sorrendet mutat. A cáfolót külön úton a
+string-xrefekkel és a diszpécser switchével ellenőriztem: a `0x9df4` valóban
+a `0x0053f340` fizikai mozgatóhoz, a `0x9cce` a `0x005ce590` eltávolító
+kezelőhöz jut. A korábbi ID-hozzárendelés megdőlt; a szokatlan címke/handler
+viselkedés futásban továbbra sincs mérve.
+
+Külön próbáltam cáfolni, hogy a `0x004fd1c0` `+0x208` mezője biztosan
+kötetazonosító. A disassembly csak a két mező karakterláncainak
+kis-nagybetű-független összevetését és eltéréskor a `-1` visszatérést
+mutatja; az objektum mezőjének jelentéséhez nem találtam független
+struktúra- vagy mérési bizonyítékot. Ezért a korábbi „másik kötetet
+elutasít” következtetést visszavontam. A cáfoló ellenpróba eredménye
+ugyanazzal a mércével: mezőeltérés igazolt, kötetjelentés és kötetek közötti
+hatás NINCS MEG.
+
+### A jegy „Kész, ha” pontjai
+
+| Pont | Állapot | Bizonyíték |
+|---|---|---|
+| Fő menü, mappafa-helyi menü és gyorsbillentyű | ⛔ | Főmenü és normál Folder menü címke/ID/handler statikusan feltárt, de a futásidejű Move/Delete hatás ellentmondásos; HierFolder út és dedikált billentyűparancs nem zárt. |
+| Figyelt gyökér, különleges mappa és hálózati meghajtó feltétele | ⛔ | Hét Windows ismert mappa és két további predikátum ismert; a `0x004ac8f0`, UNC és Picasa-futásmérés nyitott. |
+| Célválasztó ablaka, alapértéke és megjegyzett állapota | ✅ / ⛔ | `SHBrowseForFolderW`, cím és `MoveFolderLastPath` igazolt; hiányzó/érvénytelen kulcs melletti első futás UI-alaphelye nem mért. |
+| Fájlok, `.picasa.ini`, index, fa, rács, kijelölés, albumtagság és arcok | ✅ / ⛔ | Könyvtár és `.picasa.ini` együtt mozog, az index út-prefix frissül; a cache-ek és látható kijelölés végállapota nincs mérve. |
+| Ütköző név, írásvédett cél, részleges és más kötetes mozgatás | ✅ / ⛔ | Névütközés és a `+0x208` mező eltérésénél adott korai hiba statikusan eldöntött; az eltérő kötetek összefüggése, az írásvédelem és a részleges eredeti végállapot nyitott. |
+
+### Javasolt fejlesztői jegytörzsek
+
+**A célválasztó eredeti címének és utoljára használt céljának megőrzése**
+
+Eredeti: a `0x0053f4a0` a `Move Folder to %s` címet (`0x00c8aca4`) használja,
+és a `Preferences/MoveFolderLastPath` értékét olvassa/írja. Nálunk:
+`FolderPaneMenus.qml:276-295` címe `Browse for Folder`, kezdőútja a forrás
+mappájának szülője; explicit utolsó célút nincs.
+
+Teendő: a célválasztóban jelenjen meg a mozgatott mappa nevét tartalmazó
+cím, és a sikeresen kiválasztott célút maradjon meg következő megnyitásra.
+Az első futásos kezdőhelyet az eredeti Picasa-méréssel kell rögzíteni.
+
+Kész, ha: egymás utáni megnyitáskor a legutóbbi célmappa jelenik meg; a cím
+megnevezi az éppen mozgatott forrásmappát; első futásnál a megmért eredeti
+alaphelyet használja.
+
+**Windows ismert mappák mozgatásának védelme**
+
+Eredeti: a fizikai MoveFolder-út a `0x00995c90` vizsgálattal hét
+futásidőben feloldott Windows mappautat ellenőriz (My Pictures, Desktop,
+My Music, My Videos, My Documents, Application Data, Common Application
+Data), és tiltó ágban a `Unable to Move a System Path` üzenetet használja
+(`0x0053f4a0`, `0x00c8acd4`). Nálunk a
+`src/picasapy/fileops/move_folder.py:40-87` rögzített `_SYSTEM_PATHS`
+listájában a `C:\Users` szerepel, az egyes ismert mappák nincsenek
+feloldva.
+
+Teendő: a hét ismert Windows mappa mozgatására kerüljön paritásvédelem,
+miután az eredeti predikátum pontos egyezési szabályát (mappa vs. alatta
+levő könyvtár) és a további `0x004ac8f0` kaput feloldottuk.
+
+Kész, ha: a hét feloldott mappán a mozgatás a Picasával egyező módon
+megáll; a mappák alatti felhasználói könyvtárak engedélyezése a mért
+Picasa-viselkedéssel egyezik.
+
+**Az eredeti menüparancsok runtime-jelentésének tisztázása**
+
+Eredeti: a `0x00559150` és `0x007319f0` `&Move` felirata `0x9cce`-t kap,
+amely `0x005ce590`-re jut; a `&Delete` felirat `0x9df4`-et kap, amely a
+fizikai `0x0053f4a0` mozgatóhoz jut. Nálunk a Move ténylegesen mozgat, a
+Delete a lomtárba tesz (`PicasaFolderMenu.qml:199-213`,
+`FolderContextMenu.qml:321-336`).
+
+Teendő: előbb Picasa 3.9-en mérjük meg mindkét címke tényleges hatását;
+csak utána nyissunk viselkedést igazító fejlesztői jegyet. A statikus
+bináris-ellentmondás önmagában nem elegendő a feliratok felcseréléséhez.
+
+**Feloldás (hívói kiegészítés, 2026-11-16):** a #7012 helyesbítése szerint a menürekord-építőkben a parancsmező az eggyel **előző** rekordhoz tartozik (saját mintavétellel igazolt szabály, lásd a #7012 szakasz „Helyesbítés” pontját). Ezzel a `&Delete Folder...` rekord mezőjében álló `0x9df4` a `&Move Folder...` tételé, és a `0x0053f4a0` fizikai mozgatóútra jut; a `&Move Folder...` mezőjében álló `0x9cce` az előtte álló tételé, és a `0x005ce590` („Do you want to remove the folder”) kezelőre jut; a `&Delete Folder...` parancsa a következő rekord mezőjében álló `0x9d44`, egyezésben a #7031 szakasszal. A felirat és a kezelő közti ellentmondás így megszűnik; bizonyítottsági fok: erős.
+
+Kész, ha: külön rögzítettük a fő Mappa menü, a Folder helyi menü és a
+HierFolder menü kattintásának lemez-, katalógus- és felületi hatását, majd a
+PicasaPy parancsokat ezekhez rendeltük.
+
+### Új kutatási jegyjavaslatok
+
+- **A HierFolder `Move Folder...` parancs tényleges célja**: a
+  `0x00733a40` / `0x9cba` út `0x005d0e90`-re jut; a mappalista Ctrl+Enter
+  dekompilációja nem dönti el a hierarchiamenü ágát. Keresd a meglévő
+  Ghidra-kimenetekben `0x005d0e90`-et; új körben ezt a hierarchiamenü-hívót
+  és a handler teljes hatását dekompiláld.
+- **A MoveFolder `+0x208` mezőjének jelentése**: a `0x004fd1c0` két
+  rekordból származó karakterláncot hasonlít össze; a korábbi kötetnév
+  önmagában nem bizonyítja, hogy különböző fájlrendszer más értéket ad.
+  Keresd a meglévő `0x004fd1c0` Ghidra-kimenetet, és új körben az objektum
+  mezőjének íróját/olvasóját azonosítsd; ez dönti el a kötetek közötti és UNC
+  viselkedést.
+
+### Nyitott
+
+- `Ghidra-kör kell: 0x005D0E90: a 0x00733a40 HierFolder::ID_MOVEHIERFOLDER (0x9cba) pontosan mappát nyit, katalógusból távolít el, vagy fájlrendszer-mozgatást végez? A meglévő #419 kimenet a Ctrl+Enter mappalista-útját és az Open Folders megerősítést mutatja, de nem ezt a helyi menü-hívót. [blokkoló]`
+- `Ghidra-kör kell: 0x005CE590: a 0x00559150 / 0x007319f0 Move Folder címkéjű 0x9cce handlerének lemez- és katalógushatása mi, és miért a Remove Folder sztringeket használja? A meglévő Ghidra-fájlok csak a handler hívóit/string xrefjeit tartalmazzák, teljes dekompilációt nem. [blokkoló]`
+- `Ghidra-kör kell: 0x004AC8F0: a 0x0056e1c0 menüállapot-építőben használt predikátum figyelt gyökérre vonatkozik-e, és milyen mappát tilt? A meglévő dekompiláció a hívást mutatja, a virtuális/predikátum-szemantika nem dőlt el. [blokkoló]`
+- `Ghidra-kör kell: 0x004FD1C0: a +0x208 bájtoffsetű mező pontosan mit azonosít (kötet, útgyökér vagy más rekordkulcs), ki tölti fel, és mit jelent a különböző érték a kötetek közötti/UNC esetben? A meglévő #422 dekompiláció a mezők összevetését és az eltéréskor adott -1-et mutatja, de az objektum mezőszemantikáját nem oldja fel. [blokkoló]`
+- **NINCS MEG:** az eredeti írásvédett cél és részleges mozgatási hiba pontos kimenete. Út: külön kontrollált Windows Picasa 3.9.141 futás írható, írásvédett és szándékosan hibás célon; minden esetben rögzíteni kell a forrás/cél fájlokat és a felhasználói hibaüzenetet.
+- **NINCS MEG:** a mappafa, rács, kijelölés, albumlista és arcfelismerési cache végállapota sikeres fizikai mozgatás után. Út: Picasa 3.9 előtte/utána mérés egy mappával, albumtagsággal és arcmetaadattal.
+- **NINCS MEG:** a chooser első futásos alaphelye, ha a `MoveFolderLastPath` hiányzik vagy már nem létezik. Út: célzott Windows-mérés tiszta preferenciával, majd a megjegyzett célút törlése után.
+- **NINCS MEG:** UNC/hálózati meghajtó engedélyezése és tényleges fájlhatása; a NAS-t nem jártam be, és hálózati tesztet nem végeztem.
+- **NINCS MEG:** az eltérő fájlrendszer vagy kötet hatása a `+0x208` mezőre; ezért a kötetek közötti elutasítás és a PicasaPy fallback közötti eltérés sem bizonyított.
+
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md`: új #7059 szakasz a menürekordok
+  helyesbítésével, célválasztóval, lemez-/katalógushatással, hibákkal,
+  összevetéssel, javasolt jegytörzsekkel és nyitott pontokkal.

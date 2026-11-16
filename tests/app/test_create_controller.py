@@ -11,7 +11,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QSettings, QThread, Slot
 
 from support.jpeg_factory import make_jpeg
-from support.qt_wait import hangos_hurok
+from support.qt_wait import hangos_hurok, varj_feltetelre
 
 
 @pytest.fixture
@@ -56,6 +56,10 @@ def controller(qt_app, tmp_path, library):
         tmp_path / "index.db", (str(library),), provider, settings=settings
     )
     ctl.selectFolder(str(library / "nyaralas"))
+    # #7063: az indulási háttérmunka rendezett bevárása
+    assert varj_feltetelre(
+        qt_app, lambda: not ctl.backgroundWorkersRunning(), 10.0
+    ), "az indulási háttérmunka nem fejeződött be"
     yield ctl
     # #438: a kollázs/mozgófilm háttérszála bevárva, MÍG a controller még
     # él — a #430 SIGSEGV-osztály elkerülése (BackgroundWorkerMixin).
