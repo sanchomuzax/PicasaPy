@@ -83,6 +83,7 @@ import threading
 from PySide6.QtCore import Signal, Slot
 
 from picasapy.index import backfill_colors, color_index_progress, open_index
+from picasapy.index.queries import _normalize_search_query
 from picasapy.index.search_color import parse_color_terms
 
 from .worker_thread import BackgroundWorkerMixin
@@ -191,7 +192,9 @@ class ColorIndexMixin(BackgroundWorkerMixin):
         mode, param = getattr(self, "_view_mode", ("", ""))
         if mode != "search" or not isinstance(param, str):
             return
-        _, szinek = parse_color_terms(param)
+        # #7081: a nézet a beírt szöveget őrzi, a színtokent viszont az
+        # illesztés szabálya szerint tisztított alakból kell kiolvasni.
+        _, szinek = parse_color_terms(_normalize_search_query(param))
         if not szinek:
             return
         # Az újrafuttatás NEM indít újabb feltöltést: a `_note_color_search`

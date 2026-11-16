@@ -5,8 +5,9 @@ from __future__ import annotations
 import threading
 from time import monotonic
 
+import shiboken6
 from PySide6.QtCore import QEvent, QObject, QTimer
-
+from PySide6.QtGui import QGuiApplication
 
 _USER_INPUT_EVENTS = frozenset(
     {
@@ -45,12 +46,33 @@ class FaceScanActivityMonitor(QObject):
         self._lock = threading.Lock()
         self._last_input = self._clock() - self.IDLE_SECONDS
         self._viewer_open = False
+        # #7086: a szűrő CSAK a felső szintű ablakokon ül, nem az egész
+        # alkalmazáson. Az alkalmazás-szintű Python-szűrő minden Qt-eseménynél
+        # (időzítő, metahívás, képválasz) a GIL-re várt; görgetéskor mérve
+        # másodpercenként 1300-1700 hívás, és amíg a bélyegkép-szálak
+        # dolgoztak, a felület lefagyott. A bevitel mindig az ablakhoz érkezik.
+        self._figyelt_ablakok: list = []
         self._timer = QTimer(self)
         self._timer.setInterval(250)
         self._timer.timeout.connect(self._refresh_viewer_open)
-        application.installEventFilter(self)
+        self._timer.timeout.connect(self._ablakok_figyelese)
+        self._ablakok_figyelese()
         self._refresh_viewer_open()
         self._timer.start()
+
+    def _ablakok_figyelese(self) -> None:
+        """Az új felső szintű ablakokra is felteszi a szűrőt (a párbeszéd-
+        ablakok később nyílnak, ezért az időzítő is hívja)."""
+        try:
+            ablakok = QGuiApplication.topLevelWindows()
+        except RuntimeError:
+            return
+        # a bezárt (C++-oldalon megszűnt) ablakok kikerülnek a listából
+        self._figyelt_ablakok = [a for a in self._figyelt_ablakok if shiboken6.isValid(a)]
+        for ablak in ablakok:
+            if not any(ablak is figyelt for figyelt in self._figyelt_ablakok):
+                ablak.installEventFilter(self)
+                self._figyelt_ablakok.append(ablak)
 
     def eventFilter(self, _watched, event) -> bool:  # noqa: N802 — Qt-név
         if event.type() in _USER_INPUT_EVENTS:
@@ -77,7 +99,9 @@ class FaceScanActivityMonitor(QObject):
 
     def stop(self) -> None:
         self._timer.stop()
-        try:
-            self._application.removeEventFilter(self)
-        except RuntimeError:
-            pass
+        for ablak in self._figyelt_ablakok:
+            try:
+                ablak.removeEventFilter(self)
+            except RuntimeError:
+                pass
+        self._figyelt_ablakok = []
