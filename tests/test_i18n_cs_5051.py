@@ -55,6 +55,9 @@ _EXISTING_SHORTCUT_EXCEPTIONS = frozenset(
         ("PicasaMenuBar", "Sort by recent changes"),
         ("PicasaMenuBar", "Sort by size"),
         ("PicasaToolsMenu", "Adjust &Date and Time..."),
+        # #7037: a Tulajdonságok panel helyi menüje ugyanazt a hivatalos
+        # Picasa-sort használja, mint az Eszközök menü.
+        ("PropertiesPanel", "Adjust &Date and Time..."),
         ("PicasaMenuBar", "Show"),
         ("PicasaFolderMenu", "Print Contact Sheet..."),
         ("PicasaMenuBar", "Reset Faces"),

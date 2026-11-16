@@ -462,6 +462,12 @@ Item {
                 return null
             return controller.renameFolder(path, name)
         }
+        folderLocationHandler: function(path, location) {
+            if (typeof controller === "undefined" || !controller
+                    || typeof controller.setFolderLocationOf !== "function")
+                return false
+            return controller.setFolderLocationOf(path, location)
+        }
         onFolderPropertiesAccepted: function(path, isoDate, description) {
             if (!controller) return
             controller.setFolderDescriptionOf(path, description)

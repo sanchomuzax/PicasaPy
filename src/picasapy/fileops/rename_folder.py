@@ -8,7 +8,6 @@ import uuid
 from pathlib import Path
 
 from .move_folder import is_system_path
-from .new_folder import InvalidFolderNameError, validate_folder_name
 
 # A fájlrendszer-művelet fogantyúja: a tesztek csak ezt cserélik.
 _rename = os.rename
@@ -16,6 +15,8 @@ _rename = os.rename
 _WINDOWS_DEVICE_NAME = re.compile(
     r"^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?$", re.IGNORECASE
 )
+_PICASA_FORBIDDEN = frozenset('<>:"/\\|?*')
+_PICASA_RESERVED_NAMES = frozenset({"aux", "con", "nul", "prn"})
 
 
 class FolderRenameError(RuntimeError):
@@ -34,12 +35,11 @@ def rename_folder(folder: str | Path, new_name: str) -> Path:
     if is_system_path(source):
         raise FolderRenameError("Rendszermappa nem nevezhető át.")
 
-    if new_name == source.name:
+    name = sanitize_folder_rename_name(new_name)
+    if not name:
+        raise FolderRenameError("A mappanév nem lehet üres.")
+    if name == source.name:
         return source
-    try:
-        name = validate_folder_name(new_name)
-    except InvalidFolderNameError as error:
-        raise FolderRenameError(str(error)) from error
     _validate_windows_name(name)
 
     target = source.with_name(name)
@@ -55,6 +55,21 @@ def rename_folder(folder: str | Path, new_name: str) -> Path:
             f"A mappa átnevezése nem sikerült: {error}"
         ) from error
     return target
+
+
+def sanitize_folder_rename_name(name: str) -> str:
+    """A meglévő mappa Picasa-tulajdonságablakának névtisztítása."""
+    characters = []
+    for character in str(name):
+        if character in _PICASA_FORBIDDEN:
+            continue
+        if ord(character) < 32 and not character.isspace():
+            continue
+        characters.append(" " if character.isspace() else character)
+    cleaned = "".join(characters).strip(" .")
+    if cleaned.casefold() in _PICASA_RESERVED_NAMES:
+        cleaned += "_"
+    return cleaned
 
 
 def _rename_folder_case_only(source: Path, target: Path) -> Path:

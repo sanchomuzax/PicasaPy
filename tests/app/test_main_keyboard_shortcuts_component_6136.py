@@ -129,7 +129,13 @@ def test_a_foablak_megtartja_a_neveket_es_a_kotelezo_gazdakapcsolatokat():
             f"a parancskomponens nem adja át a gazdát: {name}"
         )
     assert "readonly property var keyboardShortcutGroups" in component
-    assert "hostFileOpsController.copyFilesToClipboard" in component
+    # #7030: a Ctrl+C a közös másolási úton megy (nézőben a megjelenített kép,
+    # a könyvtárban a fájlok); a fájl-vágólap hívása a kijelölés-állapot
+    # komponensben maradt, ugyanazzal a gazdakapcsolattal
+    assert "hostWindow.copyActionToClipboard()" in component
+    assert "hostFileOpsController.copyFilesToClipboard" in (
+        _QML_DIR / "PicasaPy/MainLibrarySelectionState.qml"
+    ).read_text(encoding="utf-8")
     assert "hostFileOpsController.cutFilesToClipboard" in component
     assert "fileOpsController." not in component
     assert _PUBLIC_OBJECT_NAMES <= set(

@@ -63,12 +63,14 @@ class TestAlbumMod:
         assert _mezo(parbeszed, "folderPropertiesNameField").property("enabled") is True
         assert _mezo(parbeszed, "folderPropertiesLocation").property("enabled") is True
 
-    def test_mappa_modban_a_nev_aktiv_a_helyszin_inaktiv(self, parbeszed, qt_app):
-        """A mappanév átnevezhető; a mappa-helyszín nincs bekötve."""
+    def test_mappa_modban_a_nev_es_a_helyszin_is_szerkesztheto(
+        self, parbeszed, qt_app
+    ):
+        """A meglévő mappa helye az eredeti tulajdonságablakban szerkeszthető."""
         parbeszed.setProperty("mode", "folder")
         qt_app.processEvents()
         assert _mezo(parbeszed, "folderPropertiesNameField").property("enabled") is True
-        assert _mezo(parbeszed, "folderPropertiesLocation").property("enabled") is False
+        assert _mezo(parbeszed, "folderPropertiesLocation").property("enabled") is True
 
     def test_a_zene_MINDKET_modban_aktiv(self, parbeszed, qt_app):
         for mod in ("folder", "album"):

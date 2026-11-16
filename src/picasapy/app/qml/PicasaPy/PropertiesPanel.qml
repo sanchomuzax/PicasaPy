@@ -33,6 +33,23 @@ Rectangle {
 
     signal closeRequested()
     signal editTagsRequested()
+    signal adjustTimestampRequested()
+
+    property string currentContextType: ""
+
+    function isDateEntry(entry) {
+        if (!entry) return false
+        var lbl = entry.label || ""
+        return lbl === "Camera Date" || lbl === qsTranslate("", "Camera Date")
+    }
+
+    function isKeywordsEntry(entry) {
+        if (!entry) return false
+        var lbl = entry.label || ""
+        return lbl === "Keywords" || lbl === "Tags"
+            || lbl === qsTranslate("", "Keywords")
+            || lbl === qsTr("Tags") || lbl === qsTr("Keywords")
+    }
 
     color: Theme.panelBg
     border.color: Theme.chromeBorder
@@ -103,6 +120,7 @@ Rectangle {
         }
 
         RowLayout {
+            id: keywordsPropertyRow
             objectName: "keywordsPropertyRow"
             visible: panel.hasSelection
             Layout.fillWidth: true
@@ -112,8 +130,7 @@ Rectangle {
                 objectName: "editKeywordsButton"
                 text: qsTr("Keywords")
                 enabled: panel.appController !== null && panel.focusRow >= 0
-                onClicked: keywordsDialog.openFor(
-                    panel.selectedRows, panel.focusRow, panel.focusedPhoto)
+                onClicked: panel.editTagsRequested()
             }
             Text {
                 objectName: "keywordsPropertyValue"
@@ -141,7 +158,15 @@ Rectangle {
         MenuItem {
             objectName: "propertiesMenuEditTags"
             text: qsTr("Edit Tags")
+            visible: panel.currentContextType === "keywords"
             onTriggered: panel.editTagsRequested()
+        }
+
+        MenuItem {
+            objectName: "propertiesMenuAdjustTimestamp"
+            text: qsTr("Adjust &Date and Time...")
+            visible: panel.currentContextType === "date"
+            onTriggered: panel.adjustTimestampRequested()
         }
     }
 
@@ -152,6 +177,40 @@ Rectangle {
         z: 10
         visible: panel.visible
         acceptedButtons: Qt.RightButton
-        onClicked: propertiesContextMenu.popup()
+        onClicked: function(mouse) {
+            panel.currentContextType = ""
+            if (!panel.hasSelection) return
+
+            if (keywordsPropertyRow.visible) {
+                var kwPt = mapToItem(keywordsPropertyRow, mouse.x, mouse.y)
+                if (kwPt.x >= 0 && kwPt.x <= keywordsPropertyRow.width &&
+                    kwPt.y >= 0 && kwPt.y <= keywordsPropertyRow.height) {
+                    panel.currentContextType = "keywords"
+                    propertiesContextMenu.popup()
+                    return
+                }
+            }
+
+            if (propertyList.visible) {
+                var pList = mapToItem(propertyList, mouse.x, mouse.y)
+                if (pList.x >= 0 && pList.x <= propertyList.width &&
+                    pList.y >= 0 && pList.y <= propertyList.height) {
+                    var listPt = mapToItem(propertyList.contentItem, mouse.x, mouse.y)
+                    var idx = propertyList.indexAt(listPt.x, listPt.y)
+                    if (idx >= 0 && panel.entries && idx < panel.entries.length) {
+                        var entry = panel.entries[idx]
+                        if (panel.isDateEntry(entry)) {
+                            panel.currentContextType = "date"
+                            propertiesContextMenu.popup()
+                            return
+                        } else if (panel.isKeywordsEntry(entry)) {
+                            panel.currentContextType = "keywords"
+                            propertiesContextMenu.popup()
+                            return
+                        }
+                    }
+                }
+            }
+        }
     }
 }
