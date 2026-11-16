@@ -6038,14 +6038,14 @@ mappa futásidejű hatása nincs teljesen eldöntve. A PicasaPy oldali
 megállapítások forrásszinten ellenőrzöttek; az eredeti Picasa felületi
 hatásairól nem készült új futásmérés.
 
-**Erős, függetlenül újralevezetett rész:** a `0x006c0fc0` a pozitív és a
+**Erős, függetlenül, újra levezetett rész:** a `0x006c0fc0` a pozitív és a
 kizárt (`-`) tagokat külön vektorokba teszi, `0x0043f9a0` pedig külön
 dolgozza fel ezeket. Az `AND`/`OR` összesített logika és a szűrőgombok
 találatokhoz való pontos kapcsolata ettől még `NINCS MEG`.
 
 ### A két független út
 
-- **A: célzott binárisolvasás:** a meglévő Ghidra-kimenet
+- **A: a bináris célzott olvasása:** a meglévő Ghidra-kimenet
   (`referencia/ghidra/2026-11-16-koteg-426-437.txt`, `0x0043f9a0`,
   `0x006c0fc0`) és a helyi célzott diszasszemblálás a parser két kimeneti
   vektorát és a végrehajtó külön bejárásait mutatja.
@@ -6067,7 +6067,7 @@ találatokhoz való pontos kapcsolata ettől még `NINCS MEG`.
   430-431` és `controller_state_mixin.py:148-153` alatt van. Az állítás
   megdőlt; ugyanezen forráslánc azt is mutatja, hogy a mappalista csak
   fel/le nyilat kezel (`FolderPaneContent.qml:304-307`).
-- **Rejtett találat cáfoló ellenőrzése:** a nyers találati tuple közvetlenül
+- **Rejtett találat cáfoló ellenőrzése:** a nyers találati rekord közvetlenül
   kerül a bal hasáb és a számláló építésébe (`search_controller.py:55-76`),
   majd csak `_show`-ban szűrődik a rács számára
   (`controller_photo_list_mixin.py:117-120`). Korábbi szűrésre utaló
@@ -6077,7 +6077,7 @@ találatokhoz való pontos kapcsolata ettől még `NINCS MEG`.
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| **Keresőmező.** A `searchcontainer/search` elem építője `0x0040e7b0` (stílus: `GetWindowLongA(-0x10) \| 0x80`, `0x0040e7fc`-`0x0040e80e`), mellette a `searchautocomplete` lista (`0x0040e81d`). A szöveg olvasása `0x0065b88e` (`0x00986200`). | `MainToolbar.qml:530-551` (`TextInput`, `onTextEdited`, nyíl- és Esc-kezelés a javaslatlistához) | Egyezik a mező megléte. A viselkedés eltérései a 3-5. szakaszban. |
+| **Keresőmező.** A `searchcontainer/search` elem építője `0x0040e7b0` (stílus: `GetWindowLongA(-0x10) \| 0x80`, `0x0040e7fc`-`0x0040e80e`), mellette a `searchautomatikus kiegészítés` lista (`0x0040e81d`). A szöveg olvasása `0x0065b88e` (`0x00986200`). | `MainToolbar.qml:530-551` (`TextInput`, `onTextEdited`, nyíl- és Esc-kezelés a javaslatlistához) | Egyezik a mező megléte. A viselkedés eltérései a 3-5. szakaszban. |
 | **`Ctrl+F`, `F3`.** `0x005e63bb`, `0x005e69a4` kapcsolóként nyitja/zárja a keresést (`0x005d4a20`). | `MainKeyboardShortcuts.qml:39-60`, `SearchGridKeys.qml:22-34` a második billentyűnyomást kilépésként kezeli. | A belépés és kilépés egyezik; csak a keresés előtti nézethelyzet visszaállítása marad E2. |
 | **Nézet ▸ Keresési opciók.** `ID_VIEW_SEARCHVIEW`, parancs `0x9d2b` (`0x0055aa7d` a következő rekord blokkjában, #7012), kezelő `0x005cbb50` → `0x009cd8a0`. | `MainToolbar.qml:53-58` (`toggleSearchOptions`) | Egyezik (korábbi lap: #4641). |
 | **Eszközök ▸ Keresés ▸ hat szín és Fekete-fehér.** `0x005ccc41`-`0x005ccca7`: `color:<szín>` token, `0x0065b7b0` hat lépése (szöveg a mezőbe, sáv megjelenítése, kurzor a végére, újraépítés). A tokeneket a `0x00424c20` adja a szín osztályából (`0x00c8134c`-`0x00c813ac`). | `MainMenuBar.qml:212`, `MainToolbar.qml:129-133` | Egyezik. |
@@ -6092,7 +6092,7 @@ találatokhoz való pontos kapcsolata ettől még `NINCS MEG`.
 
 A keresés nem mezőkben, hanem a `db3\wordhash.dat` szótárában keres
 (`CIndexer`, `0x004dca40`; `album-sorrend.md` 2.1). A fájl formátuma `album-sorrend.md` 2.6 szerinti. A projekt saját
-`Picasa2/db3/wordhash.dat` mintáján egy korábbi parse 140 755 képet és
+`Picasa2/db3/wordhash.dat` mintáján egy korábbi feldolgozás 140 755 képet és
 124 268 különböző, kisbetűs keresőszót adott; a parse 0 bájt maradékot jelzett.
 A mostani próba a fájl SHA-256-át és fejlécét ellenőrizte, a teljes
 szótárszámlálást nem ismételte meg. Az alábbi számok a korábbi mintamérésből
@@ -6295,19 +6295,19 @@ Kész, ha:
 - `ShowHidden` be mellett a találat bekerül a rácsba és a számlálóba;
 - a hasáb, az eredménysáv és a rács ugyanazt a látható találathalmazt jelzi.
 
-**9. Az autocomplete-javaslatok típusainak kiegészítése (E11)**
+**9. Az automatikus kiegészítési javaslatok típusainak kiegészítése (E11)**
 
 Eredeti: a kirajzoló négy ikontípushoz ad sztringet (`0x0077E2E0`, `0x0077EEE0`): címke, album, mappa és képtalálat; a beírt szó kiemelése szóhatárhoz igazodik.
 
 Nálunk: a javaslatok csak album- és mappanevek (`SearchSuggestions.qml:1-60`, `queries.py:551-605`); nincs címke- és képtalálat-sor.
 
-Teendő: vegyük fel a címke- és képtalálat-javaslatokat, valamint az eredetivel egyező kiemelést. A kategóriák sorrendjét és a darabszám jelentését az eredeti autocomplete-adatút feltárása után rögzítsük.
+Teendő: vegyük fel a címke- és képtalálat-javaslatokat, valamint az eredetivel egyező kiemelést. A kategóriák sorrendjét és a darabszám jelentését az eredeti automatikus kiegészítés adatútja feltárása után rögzítsük.
 
 Kész, ha:
 
 - a négy igazolt javaslattípus megjelenik;
 - a kiemelés a szóhatárokat és kisbetű-érzéketlenséget követi;
-- a találatdarabszám és a kategóriasorrend mért eredeti szabályt követ.
+- a találatok darabszáma és a kategóriák sorrendje mért eredeti szabályt követ.
 
 ### Nyitott
 
@@ -6318,7 +6318,7 @@ Kész, ha:
 - `Ghidra-kör kell: 0x005C3FE0: a mappalistáról és rácsról érkező esemény `+0x10` mezőjének kódtípusa mi; mit jelent a `0x100` feletti ág és miért az alsó bájt kerül a szövegbe? A meglévő Ghidra-fájlok a hívókat tartalmazzák, a célfüggvény törzse nincs meg. [blokkoló az E3 nem-ASCII tartományára]
 - `Ghidra-kör kell: 0x0077D380: a keresőmező saját kezelője vagy bázisosztálya kezeli-e az `Esc`/`Delete` billentyűt, ha nincs nyitva a javaslatlista? A helyi kimenetekben ezt a címet nem találtam. [nem blokkoló]
 - **NINCS MEG:** az eredeti szóindex pontos mező-hozzárendelése. A `0x004DA990` dekompiláció már megvan, de a benne hívott helper/getter-láncból nem dőlt el, mely szavak jönnek a fájlnévből, EXIF-ből, feliratból, címkéből, dátumból, helyből vagy kameraadatból. Út: a meglévő `2026-11-16-koteg-426-437.txt` `0x004DA990` és `0x004403C0` kimenetének továbbkövetése, majd kontrollált mintával mezőnkénti mérés; új kört ugyanarra a címre csak a hiányzó helpercímek azonosítása után kérj.
-- **NINCS MEG:** az autocomplete-javaslatok forrásainak sorrendje és a darabszám jelentése. A `0x0077E2E0` meglévő kimenet kirajzolója, kiemelése és ikonkulcsai rendelkezésre állnak, de a kategóriák forrását nem állapítottam meg. Út: a keresőmező/autocomplete létrehozó útjának folytatása a meglévő kimenet alapján, majd eredeti felületi mérés.
+- **NINCS MEG:** az automatikus kiegészítési javaslatok forrásainak sorrendje és a darabszám jelentése. A `0x0077E2E0` meglévő kimenet kirajzolója, kiemelése és ikonkulcsai rendelkezésre állnak, de a kategóriák forrását nem állapítottam meg. Út: a keresőmező/automatikus kiegészítés létrehozó útjának folytatása a meglévő kimenet alapján, majd eredeti felületi mérés.
 - **NINCS MEG:** a keresés előtti teljes állapot visszaállítása és a navigációs rekord létrehozási pontja. A meglévő `0x00600AC0` kimenet a keresőszöveg és szűrőgombok visszaállítását mutatja, de a képindex, fókusz, kor-csúszka és rekord létrehozása nem dőlt el. Út: a meglévő dekompilációból a mentő/hívó ág követése, kontrollált eredeti mérés a Back to View All, Ctrl+F/F3 és X utakra.
 - **NINCS MEG:** a nagyon nagy eredménylista memória- és sebességhatása. Út: eredeti Picasa pontosan rögzített, változó méretű katalógusokon végzett idő- és memória-mérése; határértéket mérés nélkül nem adok meg.
 - **NINCS MEG:** korábban indexelt, majd elérhetetlenné tett hálózati mappa keresési hatása. Út: eredeti Picasa kontrollmérése azonos katalógussal online/offline állapotban; az index virtuális hívásai miatt az importtábla önmagában nem dönt.
