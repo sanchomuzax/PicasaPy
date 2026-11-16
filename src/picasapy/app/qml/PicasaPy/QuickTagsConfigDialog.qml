@@ -164,7 +164,7 @@ Dialog {
                 wrapMode: Text.WordWrap
             }
             enabled: typeof controller !== "undefined" && controller
-                     ? controller.quickTagAutofillAvailable : false
+                     ? controller.quickTagAutofillAvailable === true : false
             onClicked: dialog.autofill()
         }
     }
