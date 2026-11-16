@@ -478,17 +478,11 @@ class TestGyorsCimkeBeallitas:
         )
         zar(qt_app, dialog)
 
-    def test_az_automatikus_kitoltes_jelolo_valodi_kattintassal_bekapcsol(self, qml_app, qt_app):
+    def test_az_autofill_gomb_letiltott_jelolt_nelkul(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         dialog = self._megnyitas(window, qt_app)
-        jelolo = keres(window, "quickTagsAutoFillCheck")
-        assert jelolo.property("checked") is False
-
-        kattint(window, qt_app, "quickTagsAutoFillCheck")
-
-        assert varj(qt_app, lambda: controller.quickTagsAutoFillFrequent is True), (
-            "az automatikus kitöltés jelölő kattintása nem kapcsolta be a beállítást"
-        )
+        gomb = keres(window, "quickTagsAutoFillButton")
+        assert gomb.property("enabled") is False
         zar(qt_app, dialog)
 
 

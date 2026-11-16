@@ -164,14 +164,11 @@ class TestQuickTagsConfigDialog:
         field0 = window.findChild(QObject, "quickTagField0")
         assert field0.property("enabled") is True
 
-    def test_autofill_checkbox_toggle_persists(self, qml_app, qt_app):
+    def test_autofill_button_disabled_without_candidates(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
         window.setProperty("activeDrawerTab", "tags")
         qt_app.processEvents()
         self._open_dialog(window, qt_app)
-        checkbox = window.findChild(QObject, "quickTagsAutoFillCheck")
-        assert checkbox.property("checked") is False
-        checkbox.setProperty("checked", True)
-        _invoke(checkbox, "toggled")
-        qt_app.processEvents()
-        assert controller.quickTagsAutoFillFrequent is True
+        button = window.findChild(QObject, "quickTagsAutoFillButton")
+        assert button is not None
+        assert button.property("enabled") is False

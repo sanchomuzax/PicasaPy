@@ -1,6 +1,6 @@
 """Gyorscímkék (#193) — a Címkék-panel `KeywordsMixin`-hez tartozó
-konfigurációs/perzisztencia-logikája: 8 gomb-szlot, „legutóbb használt"
-felül-írás a felső két gombon, és a gyakori-címke automatikus kitöltés.
+konfigurációs/perzisztencia-logikája: tíz gomb-szlot, „legutóbb használt"
+felülírás a felső két gombon, és egyszeri Autofill-művelet.
 
 A QML-viselkedést (gombrács, fogaskerék-dialógus) a
 `test_qml_quicktags.py` fedi; ez a fájl a Python-oldali `AppController`
@@ -69,6 +69,20 @@ def _new_controller(tmp_path, library, settings):
 SZLOTOK = 10
 
 
+def _set_index_keywords(controller, keywords_by_name):
+    """Tesztadat: a címkekészletet az indexben állítja be, sorrend szerint."""
+    from picasapy.index import open_index
+
+    with open_index(controller._db_path) as conn:
+        for name, keywords in keywords_by_name.items():
+            conn.execute(
+                "UPDATE photos SET keywords_ini = ?, keywords_file = ? "
+                "WHERE name = ?",
+                (keywords, keywords, name),
+            )
+        conn.commit()
+
+
 class TestQuickTagDefaults:
     def test_tiz_hely_van(self):
         """#1788: az eredetiben TÍZ gyorscímke-hely van, nem nyolc."""
@@ -81,9 +95,6 @@ class TestQuickTagDefaults:
 
     def test_default_reserve_recent_is_true(self, controller):
         assert controller.quickTagsReserveRecent is True
-
-    def test_default_autofill_is_false(self, controller):
-        assert controller.quickTagsAutoFillFrequent is False
 
     def test_default_buttons_all_empty(self, controller):
         assert controller.quickTagButtons == [""] * SZLOTOK
@@ -151,13 +162,6 @@ class TestQuickTagToggles:
         controller._get_settings().sync()
         other = _new_controller(tmp_path, library, controller._get_settings())
         assert other.quickTagsReserveRecent is False
-
-    def test_autofill_toggle_persists(self, tmp_path, library, controller):
-        controller.setQuickTagsAutoFillFrequent(True)
-        controller._get_settings().sync()
-        other = _new_controller(tmp_path, library, controller._get_settings())
-        assert other.quickTagsAutoFillFrequent is True
-
 
 class TestQuickTagButtonsReserveRecent:
     def test_top_two_show_recent_when_reserved(self, controller):
@@ -248,40 +252,126 @@ class TestQuickTagButtonsWithoutReserve:
         assert buttons[1] == "második mező"
 
 
-class TestQuickTagAutoFillFrequent:
-    def test_disabled_by_default_leaves_slots_empty(self, controller):
-        controller.addKeywordToRows([0], "gyakori")
-        controller.addKeywordToRows([1], "gyakori")
-        controller.addKeywordToRows([2], "gyakori")
-        assert controller.quickTagButtons[2:] == [""] * (SZLOTOK - 2)
-
-    def test_fills_empty_slots_by_frequency(self, controller):
-        controller.setQuickTagsAutoFillFrequent(True)
+class TestQuickTagAutoFill:
+    def test_candidates_keep_first_occurrence_and_case_sensitive_identity(
+        self, controller
+    ):
+        _set_index_keywords(
+            controller,
+            {
+                "a.jpg": "Nap, Nap, nap, alpha",
+                "b.jpg": "beta, Nap",
+                "c.jpg": "gamma",
+            },
+        )
         controller.setQuickTagsReserveRecent(False)
-        # "gyakori" 3 fotón, "ritka" 1 fotón — a gyakoribb előbb töltendő
-        controller.addKeywordToRows([0], "gyakori")
-        controller.addKeywordToRows([1], "gyakori")
-        controller.addKeywordToRows([2], "gyakori")
-        controller.addKeywordToRows([0], "ritka")
-        buttons = controller.quickTagButtons
-        assert buttons[0] == "gyakori"
-        assert buttons[1] == "ritka"
-        assert buttons[2:] == [""] * (SZLOTOK - 2)
+        controller._get_settings().setValue(
+            "quickTags/recentKeywords", ["beta", "recent-ketto"]
+        )
+        controller.beginQuickTagAutofill()
 
-    def test_does_not_duplicate_a_label_already_shown(self, controller):
-        controller.setQuickTagsAutoFillFrequent(True)
-        controller.setQuickTagsReserveRecent(False)
-        controller.setQuickTagLabel(0, "gyakori")  # már szerepel kézzel
-        controller.addKeywordToRows([0], "gyakori")
-        controller.addKeywordToRows([1], "gyakori")
-        buttons = controller.quickTagButtons
-        assert buttons[0] == "gyakori"
-        assert buttons.count("gyakori") == 1
+        result = controller.autofillQuickTagLabels(
+            ["  kézi  ", "   ", *([""] * (SZLOTOK - 2))]
+        )
 
-    def test_leaves_slot_empty_when_no_more_candidates(self, controller):
-        controller.setQuickTagsAutoFillFrequent(True)
+        assert result == [
+            "  kézi  ", "Nap", "nap", "alpha", "gamma",
+            "", "", "", "", "",
+        ]
+        assert controller.quickTagConfigLabels[1:5] == [
+            "Nap", "nap", "alpha", "gamma"
+        ]
+
+    def test_reserved_recent_slots_are_never_written(self, controller):
+        _set_index_keywords(
+            controller,
+            {"a.jpg": "recent-egy, Nap, nap", "b.jpg": "alpha"},
+        )
+        controller._get_settings().setValue(
+            "quickTags/recentKeywords", ["recent-egy"]
+        )
+        controller.setQuickTagLabel(0, "kézi nulla")
+        controller.setQuickTagLabel(1, "kézi egy")
+        controller.beginQuickTagAutofill()
+
+        result = controller.autofillQuickTagLabels(
+            ["kézi nulla", "kézi egy", *([""] * (SZLOTOK - 2))]
+        )
+
+        assert result[:5] == ["kézi nulla", "kézi egy", "Nap", "nap", "alpha"]
+        assert controller.quickTagConfigLabels[:2] == ["kézi nulla", "kézi egy"]
+
+    def test_repeated_fill_uses_next_candidate_then_stays_exhausted(self, controller):
+        names = ["a.jpg", "b.jpg", "c.jpg"]
+        candidates = [f"cimke-{i}" for i in range(12)]
+        _set_index_keywords(
+            controller,
+            {name: ", ".join(candidates[index * 4 : index * 4 + 4])
+             for index, name in enumerate(names)},
+        )
         controller.setQuickTagsReserveRecent(False)
-        controller.addKeywordToRows([0], "egyetlen")
+        controller.beginQuickTagAutofill()
+
+        filled = controller.autofillQuickTagLabels([""] * SZLOTOK)
+        assert filled == candidates[:10]
+        cleared = ["", *filled[1:]]
+        refilled = controller.autofillQuickTagLabels(cleared)
+        assert refilled[0] == candidates[10]
+        assert refilled[1:] == candidates[1:10]
+        second_clear = ["", *refilled[1:]]
+        second_refill = controller.autofillQuickTagLabels(second_clear)
+        assert second_refill[0] == candidates[11]
+        exhausted = ["", *second_refill[1:]]
+        assert controller.autofillQuickTagLabels(exhausted) == exhausted
+
+    def test_button_availability_requires_a_candidate(self, controller):
+        assert controller.quickTagAutofillAvailable is False
+
+        _set_index_keywords(controller, {"a.jpg": "Nap"})
+        controller.beginQuickTagAutofill()
+
+        assert controller.quickTagAutofillAvailable is True
+
+    def test_candidate_list_excludes_recent_values_and_stops_at_100(self, controller):
+        candidates = [f"cimke-{index}" for index in range(110)]
+        _set_index_keywords(controller, {"a.jpg": ", ".join(candidates)})
+        controller._get_settings().setValue(
+            "quickTags/recentKeywords", candidates[:2]
+        )
+
+        result = controller._quick_tag_autofill_candidates()
+
+        assert result == candidates[2:102]
+        assert len(result) == 100
+
+
+class TestLegacyQuickTagAutoFillMigration:
+    def test_persists_the_old_displayed_labels_and_removes_old_setting(
+        self, controller
+    ):
+        from picasapy.app.keywords_controller import _KEY_QUICK_AUTOFILL
+
+        _set_index_keywords(
+            controller,
+            {
+                "a.jpg": "ritka, gyakori",
+                "b.jpg": "gyakori, masik",
+                "c.jpg": "gyakori",
+            },
+        )
+        settings = controller._get_settings()
+        settings.setValue(_KEY_QUICK_AUTOFILL, True)
+        settings.setValue("quickTags/recentKeywords", ["legutobbi"])
+
         buttons = controller.quickTagButtons
-        assert buttons[0] == "egyetlen"
-        assert buttons[1:] == [""] * (SZLOTOK - 1)
+
+        assert buttons[:4] == ["legutobbi", "gyakori", "masik", "ritka"]
+        assert settings.contains(_KEY_QUICK_AUTOFILL) is False
+        assert controller.quickTagConfigLabels[:4] == buttons[:4]
+
+        _set_index_keywords(controller, {"a.jpg": "uj-cimke"})
+        assert _new_controller(
+            controller._db_path.parent,
+            controller._photos.photos[0].folder_path,
+            settings,
+        ).quickTagButtons[:4] == buttons[:4]
