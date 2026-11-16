@@ -4794,3 +4794,271 @@ ad, a `photoRows[0]` használata új eltérés-jelölt lesz.
 - `docs/specs/paritas-ellenorzes.md` - új #7033 alszakasz a belépési
   pontokról, az ablakról, hatásokról, hibákról, bizonyítékokról és nyitott
   kérdésekről.
+
+## #7060: A diavetítés teljes folyamata az eredeti Picasával összevetve
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+Az eredeti oldalt a binárisból (statikus olvasás `capstone`-nal, a programot
+nem futtattam), a `.tre` erőforrásokból és a hivatalos magyar feliratokból, a
+PicasaPy oldalt a jelenlegi forrásból olvastam. A korábbi lapok igazolt
+részeire hivatkozom (`picasa-diavetito-sav.md`, `picasa-diavetito-sav-5550.md`,
+`picasa-gyorsbillentyuk.md` 12. szakasz, `picasa-idorend-bemutato-kutatas.md`,
+`picasa-idorend-viselkedes.md`), nem kutatom újra; ahol ellentmondok nekik,
+külön jelzem.
+
+### Következtetés
+
+- **Belépés.** A Nézet ▸ Diavetítés (`0x9c9f`), a Mappa/Album ▸ Diavetítés
+  megtekintése (`0x9c6d`), a `Ctrl+4`, a mappa- és albumfejléc `play` gombja és
+  a szerkesztő `Play` gombja (a `thumbui/sbutton` álneve) mind ugyanabba a
+  függvénybe fut: `0x005e8a70(this, 0)`. Az Időrend (`0x9ccc`, `Ctrl+5`,
+  `thumbui/timelinebutton`) ugyanide fut, `1` móddal. A PicasaPy-ban is egyetlen
+  indító van (`MainSlideshow.qml:60`), a belépések egyeznek.
+- **Fő lelet: két vetítő van, és a normál nem az, amelyikre a korábbi
+  összevetések épültek.** A `0x005e8a70` `0` módban, `Shift` nélkül
+  (`0x005e8b00`, `0x005e8b0a`) nem a `qshow`/`OneUpUI` vetítőt indítja
+  (`0x008037e0`, `oneup.tre`), hanem a főablakba ágyazott szerkesztő-egyképes
+  vetítést (`0x0075de50`, `editoneup.tre`). A `qshow` csak az Időrendnél
+  (`1` mód) vagy lenyomott `Shift` mellett indul. Ebből következik, hogy a
+  `picasa-diavetito-sav.md` és a `picasa-diavetito-sav-5550.md` `oneup.tre`
+  szerinti sáv-összevetése, a Timeline gomb láthatósága (#5653) és a
+  `picasa-gyorsbillentyuk.md` 12.5-12.9 szakasza a **normál** vetítésre nem
+  érvényes. Ugyanez megadja a `+0x332f` bájt által jelölt billentyűmód nevét,
+  amely a `paritas-ellenorzes.md:420` szerint eddig `NINCS MEG` volt: a
+  normál diavetítés. A #6930 helyesbítése (a szünetbeli sáv a `OneUpUI`
+  hostcseréje) ezért csak a `qshow` útra igaz; a normál vetítés
+  szünetbeli sávjának forrása nyitott (G3).
+- **Mit vetít.** Az aktuális nézet (`[this+0xea8]`: mappa, album, keresés
+  eredménye) minden olyan elemét, amelynek `+0x5a` jelzője nulla, az aktuális
+  képtől indulva; a kijelölés nem szűri a listát, és kijelölés nélkül az
+  első elem lesz kijelölve (`0x00717bb0`). Üres nézetnél hang és üzenet nélkül
+  nem történik semmi. A PicasaPy ugyanezt teszi (a teljes `controller.photos`
+  listát vetíti), a **videó** kivételével: az eredeti a videót is
+  lejátssza, a vágási pontok (`moviestart`, `movieend`) átadásával, és a dia
+  ideje a film hossza; a PicasaPy kihagyja őket.
+- **Vezérlők és alapértékek.** A dia ideje `SlideshowEffectTime` (alapérték
+  `3`, `+`/`-` után `1` és `20` közé szorul), az ismétlés `LoopSlideshow`
+  (alapérték ki), a zene `PlayMP3Tracks` (alapérték be), az átmenet
+  `ThumbUISlideShow::transition` (hét elem, alapérték Dissolve). Ezek és a
+  megőrzésük a PicasaPy-val egyeznek. Eltérések: (1) az eredeti normál
+  vetítésben nincs Timeline gomb, a PicasaPy-ban van; (2) az eredetiben a
+  `Fel`/`Le` nyíl, az `1`-`9` számjegyek (a dia ideje) és a `Pause`/`Play`
+  billentyű is működik, a PicasaPy-ban nem; (3) a kézi léptetés a lista
+  szélén: az eredetiben előre az utolsó képről az elsőre fordul (a
+  `LoopSlideshow`-tól függetlenül), hátra az első képen nem lép
+  (`0x00717eb0`, utasításszint), nálunk hurok nélkül előre kilép, hurokkal
+  hátra az elsőről az utolsóra fordul; (4) az `auto2` kattintási terület a
+  `.tre` szerint a kép szinte egésze, nálunk 14 képpontos sáv (feltételes).
+- **Kilépés.** `Esc` vagy a `Kilépés` gomb: a kurzor visszatér, a zene leáll,
+  és a program oda tér vissza, ahonnan indult (szerkesztő, ha ott volt, különben
+  a könyvtár). Mivel az aktuális elem és a nézet kijelölése együtt mozog (`0x005704d0` →
+  `0x00717c50`; a kézi léptetésnél `0x00717eb0`), az utoljára látott kép marad
+  kijelölt és aktuális (az automatikus léptetés útja feltételes, G1). Tárolt adatot a kilépés nem ír.
+  A PicasaPy ezzel egyezik (`MainSlideshow.qml:92-114`).
+- **Rejtett, sérült, elérhetetlen kép.** A `+0x5a` jelzőjű elemet a lista
+  kihagyja; hogy ez a jelző a rejtett képet jelenti-e, és mi történik betölthetetlen
+  vagy hálózati úton elérhetetlen fájllal, a binárisból még nem dőlt el
+  (9. szakasz).
+
+### Bizonyítottsági fok
+
+**Feltételes.** A belépési hívások, az elágazás és a két vetítő szétválasztása
+két független útból igazolt (a 7. szakasz), de futásmérés nincs: a #375 Colab-
+felvétel a `Ctrl+4`-et és a `Space`-t mérte, a vezérlősáv alakját nem
+különítette el. Megerősített: a belépési táblázat és a `Shift`-elágazás
+utasításai. Feltételes: a `0x0075de50` ág "normál vetítés" azonosítása, a
+videó lejátszása, a nézet-bejárás szabályai. `NINCS MEG`: a 9. szakasz tételei.
+
+### 1. Belépési pontok
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Nézet ▸ Diavetítés és Mappa/Album ▸ Diavetítés megtekintése.** `0x00559150` rekordjai: `0x9c9f` és `0x9c6d` (`picasa-menu-parancsok.csv:181`, `:74`). A `0x005cb990` a parancsazonosítót a `word [msg+8]` mezőből veszi (`0x005cb9a1`), az `edi` nulla (`0x005cb9a6`), az ugrótábla `0x9c42`-bázisú (`0x005cba5d`-`0x005cba75`): mindkét azonosító a `11`-es bájtra, a `0x005cbbd1` ágra jut: `push edi`, `push ebx`, `call 0x005e8a70` (`0x005cbbd3`). | `PicasaViewMenu.qml:174-178`, `PicasaFolderMenu.qml:30-34`, `MainMenuBar.qml:373`, `MainWindowCommands.qml:443-445`, `MainSlideshow.qml:60-71` | Egyezik: a két menü ugyanazt a műveletet indítja, mint az eredetiben. |
+| **`Ctrl+4`.** A `0x005e60d0` `0x005e625e`-`0x005e626f` ága: `call 0x005696c0` (kapu), `push 0`, `push ebp`, `call 0x005e8a70`. A `Ctrl+5` ugyanitt `push 1` (`0x005e6287`). | `MainKeyboardShortcuts.qml:312-317` | Egyezik. A `0x005696c0` kapu jelentése nyitott (G6). |
+| **Mappa/album fejléc `play` gombja.** A `0x005e0f70` a `play` nevet (`0xc96f44`) hasonlítja (`0x005e143c`-`0x005e1461`), majd `push 0`, `call 0x005e8a70` (`0x005e146c`-`0x005e146f`). Súgó: `Diavetítés teljes képernyőn` (`headerpaneltext.tre:38-39`, hivatalos magyar: `panel-feliratok-hu.tsv:474`). | `LightboxHeaderButtons.qml:30-47`, `LightboxFeedGroup.qml:69-71`, `MainLibraryCanvas.qml:267-269` | A belépés és a súgószöveg egyezik. Hogy a nem aktuális mappa fejlécéről melyik nézet és melyik kép kerül sorra, nyitott (G5). |
+| **Szerkesztő `Play` gombja.** `editpanel/sbutton` (felirat `Lejátszás`, `panel-feliratok-hu.tsv:4913`), `Property alias thumbui/sbutton` (`editpanel.tre:1124-1127`); a `thumbui/sbutton` ág (`0x005d9cc0`: `cmp ecx, 0xc900e0` `0x005da733`, `push 0` `0x005da740`) szintén `0x005e8a70(this, 0)`. A könyvtár alsó `Slideshow` gombja (`thumbui/sbutton`) alapból `m_hidden` (`konyvtar-ablak-meretek.md:419-422`). | `PhotoViewerTopBar.qml:196-203`, `PhotoViewerQuickToolbar.qml:104-114`, `MainSlideshow.qml:62-65` (a néző aktuális képétől indul) | A belépés egyezik. Kis eltérés a súgószövegben: az eredeti hivatalos magyar szöveg `Állítson össze és nézzen diavetítést ezekből a fotókból` (`panel-feliratok-hu.tsv:4914`), a PicasaPy `Diavetítés lejátszása`. |
+| **Időrend.** `0x9ccc` → `0x005cbbdd` (`push 1`), `Ctrl+5` `0x005e6287`, `thumbui/timelinebutton` `0x005da7ab` (`push 1`): `0x005e8a70(this, 1)`, a `qshow` útja. | `PicasaViewMenu.qml:180-185`, `TimelinePanel.qml:539` | Nem tárgya ennek a szakasznak (`picasa-idorend-viselkedes.md` 38.2.8). |
+| **`Shift` lenyomva.** `0x005e8ae5`-`0x005e8b00`: ha az alkalmazás aktív (`[0xd67849]`), `GetAsyncKeyState(0x10)` felső bitje `jne 0x005e8d5d`, vagyis a `qshow` ágra ugrik, `0` módban is. A `[0xd67849]` írói: `0x00576419` (`1`) és a `WM_ACTIVATEAPP` (`0x1c`) ág `0x00a52e55`-`0x00a52e66`. | nincs | Rejtett, dokumentálatlan változat (a `oneup.tre` sávval). Nem teendő; a PicasaPy-ban nem kell megvalósítani, amíg látható célja nincs igazolva. |
+| **Nem ide tartozik.** A `Include Slideshow` az Ajándék CD-n (`CDSlideshow`, `0x0066f470`) és a képernyővédő előnézete (`startScreensaverPreview`) más funkció. | `PublishPanel.qml:180-186`, `MainSlideshow.qml:74-90` | Nem vizsgálva. |
+
+### 2. A két vetítő: az elágazás
+
+A `0x005e8a70` elején két kapu van, mindkettő `-1`-et ad vissza: (a) látható
+`editpanel/preview` elem, és `[this+0x3094]` vagy `[this+0x30a0]` nagyobb
+nullánál, és `[this+0x332e]` nem nulla (`0x005e8a89`-`0x005e8ac8`); (b) a
+`0x005696c0` igaz és az `editpanel/only_1up_toggle` visszatérése `0xf4242`
+(`0x005e8aca`-`0x005e8ae3`). A mezők jelentése nyitott (G6, G8). Utána:
+
+| hívás | ágkezdet | vetítő | erőforrás | kezelők |
+|---|---|---|---|---|
+| `0` mód, nincs `Shift` | `0x005e8b10`-`0x005e8d5a`, belép: `0x0075de50` | a főablakba ágyazott szerkesztő-egyképes (`[this+0x332f]` = 1) | `editoneup.tre` (a `panelroot.tre:2-3` építi be) | gombok `0x00760240`, billentyűk `0x00760970`, óraütés `0x0075f430`, szünet `0x00760070` |
+| `0` mód, `Shift` lenyomva | `0x005e8d5d`-`0x005e9787` → `0x008037e0` | `qshow`/`OneUpUI` | `oneup.tre` | gombok `0x008032e0`, billentyűk `0x00801270`, szünet `0x00801130` |
+| `1` mód (Időrend) | ugyanaz | `qshow` | `oneup.tre` | ugyanaz |
+
+Az `0x005e8d5d` szakaszba a függvényen belül csak két ugrás vezet, mindkettő a
+`0x005e8b00` és a `0x005e8b0a` címen (szkript a függvény összes ugrására, a
+munkafa `.bt/` mappájában, a kör végén törölve). A `0x0075de50` közvetlen hívottjai
+között nincs `0x008037e0`, `0x007fa7f0`, `0x007fda00` vagy `0x00802c60`; vtáblán
+át történő hívást ez nem zár ki.
+
+A `0x0075de50` normál vetítésként azonosítása (feltételes) ezen áll: belépéskor
+beolvassa a `LoopSlideshow` és a `PlayMP3Tracks` beállítást a `[this+0x335c]`
+és `[this+0x335d]` mezőbe (`0x0075e5d9`, `0x0075e620`), a dia idejét a
+`SlideshowEffectTime` kulcsból (`[this+0x3340]`, alapérték `3`:
+`0x00564a41`), hivatkozik az `editoneup/sszoomsliderclip` és `editpanel/sscaption`
+elemekre, a `OneUpUI::second`/`seconds`/`Format` szövegeket a `0x0075f960`
+használja, és az átmenet-választó (`editoneup/transtype`, `0x0075d810`) a
+`ThumbUISlideShow::transition` kulcsot írja (`0x00760b00`).
+
+A két erőforrás különbsége (`diff oneup.tre editoneup.tre`, csak az érdemi):
+
+| elem | `oneup.tre` (`Shift`/Időrend) | `editoneup.tre` (normál) |
+|---|---|---|
+| `exit` | `stripback` közvetlen gyermeke, bal sarok (`:40`) | a `centergroup` bal széle (`:40`) |
+| `timeline` | látható (`:59`) | `m_hidden` és `m_disabled` (`:62-66`); az `editoneup/timeline` névre a kódban egyetlen hivatkozás sincs (string-xref), tehát soha nem lesz látható |
+| `stripback` | `YConstraint 1, 1, -20` (`:165`) | `YConstraint 1, 1, -5` (`:172`) |
+| `sszoomsliderclip` | nincs | van (`:68-70`) |
+| hivatalos magyar `bcklabel` | `Kilépés a diavetítőből` (`panel-feliratok-hu.tsv:641`) | `Kilépés` (`:4911`) |
+
+A PicasaPy felirata `Kilépés` (`picasapy_hu.ts`, `Exit`), tehát a `editoneup`
+felirattal egyezik; a sávja viszont a `oneup.tre` szerinti (Timeline gomb a
+`SlideshowControls.qml:183-188` és `SlideshowView.qml:55-57` szerint).
+
+### 3. Mit vetít, honnan indul
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Lista.** A `[this+0xea8]` az aktuális nézet objektuma (írója `0x0056bc10`: `0x0056bc73`; `vt+0xb4` darabszám, `vt+0xb8(i)` elem). A léptető (`0x00717d10`, hívja `0x0075fac0`) a `0x00717560` listáját járja: a nézet minden eleme, amelynek `+0x5a` bájtja nulla (`0x007175c6`), a nézet sorrendjében. A kijelölt elemek (`+0x5d` nem nulla) csak a kiinduló helyzethez (`0x00717420` a `0x00717d10`-ben) és a „van-e kijelölés" kapuhoz kellenek (`0x005c6710` → `0x007166c0`). Hivatalos súgó: `Diavetítés megtekintése a kijelölt mappa vagy album fotóiból` (`panel-feliratok-hu.tsv:5154`). | `MainSlideshow.qml:131-134` (`controller.photos`, a teljes nézet), `SlideshowView.qml:190-209` | Egyezik. Több kép kijelölésénél az eredeti is a teljes nézetet járja (feltételes; futásmérés javasolt, 9. szakasz). |
+| **Kezdőkép.** `[this+0xe64]`, az aktuális elem (`0x005e8bc3`-`0x005e8c33`, `0x0075e77e`: `[this+0x3370] = [this+0xe64]`). Ha a nézetben nincs kijelölt elem (`0x005c6710` visszatérése 0, `0x005e8bcf`-`0x005e8bd6`), a `0x00717bb0` az első `+0x5a == 0` elemet jelöli ki és teszi aktuálissá. Szerkesztőből indítva (`[this+0x3331]`, `0x00579330`) a szerkesztett kép az aktuális. Könyvtárból indítva a `0x005e8c42`-`0x005e8c51` ág előbb a `searchcontainer/search` elemet kezeli (`0x009cd730`) és a `thumbui/fullview` módra kapcsol (`0x009cd8a0`), csak azután lép be a vetítésbe (`0x005e8d36`). | `MainSlideshow.qml:60-65`: nézőből a néző aktuális képe, különben `max(0, selectedIndex)` | Egyezik. |
+| **Üres nézet.** `0x005e8b4b`-`0x005e8b55`: `vt+0xb4` darabszám nulla → `0x0052e8a0`, `or eax, -1` (`0x005e8b3d`), kilép. Üzenet nincs (az Időrend `IDS_MUST_SELECT` üzenete a másik ág, `0x005e983e`). | `MainSlideshow.qml:66-70`: nincs vetíthető fotó → `exitSlideshow()`, üzenet nincs | Hatásában egyezik (néma). Mellékhatás: nálunk az ablak előbb teljes képernyőre vált, aztán visszaáll (`:66-70`); az eredetiben ilyen nincs. Nincs mérve, hogy látszik-e (kis ellenőrzés a 9. szakaszban). |
+| **Videó.** A rekordtípus `8`, `9`, `0xa`, `0xb`, `0xc`, `0x17` vagy `0x1d` (`0x005e8b93`-`0x005e8bb4`, `0x0075ee2c`-`0x0075ee4d`) → film ág (`0x0075eda0`): a tétel `moviestart` és `movieend` nevű tulajdonságát olvassa (`0x0075f006`, `0x0075f0bb`), a `[film+0xc8]` és `[film+0xd0]` mezőbe írja, a lejátszó készenlétét legfeljebb húsz próbálkozással kivárja (`0x0075ee73`-`0x0075ee9d`, a várakozó import neve nincs feloldva), a dia idejét a film hosszára állítja: `(hossz - kezdőeltolás) / 10 000 000` másodperc (`0x0075f1bb`-`0x0075f2e2`, `[this+0x3334]`; hogy a hossz a vágott hossz-e, nincs eldöntve), és `[this+0x3332] = 1` (`0x0075f32f`). A mért videótípusok: `8`, `10`, `11` (`paritas-ellenorzes.md` 7033, 3. szakasz). | `SlideshowView.qml:194-209` (`isVideoAt` → kihagyja), `:211-218` | **Igazolt eltérés (statikus):** az eredeti a videót is vetíti, a vágási pontok szerint; mi kihagyjuk. Jegytörzs lent (D3). |
+| **Rejtett kép.** A `+0x5a` jelzőjű elemet a lista és a kijelölés-választás is kihagyja (`0x007175c6`, `0x00717485`, `0x00717c01`, és a kijelölés-gyűjtő `0x007166c0` is: `referencia/ghidra/2026-11-16-7022-7031-7033-colab-decomp.txt:2070-2196`, ahol az elemeket index szerint, vagyis rácssorrendben járja). A jelző jelentése (rejtett kép, fejlécsor, hiányzó fájl) a kimenetből nem olvasható ki, csak a bájt vizsgálata; a #7033 fejléc-olvasata „rejtett"-nek veszi, mérés nincs. | a PicasaPy modellből kerül a vetítésbe | Nyitott (G2). |
+| **Sérült vagy hálózati úton elérhetetlen kép.** A fotó ág (`0x0075f33f`, `[this+0x3332] = 0`) a diaváltást a `0x006d00c0` / `0x0075eac0` útján végzi; a betöltési hiba kezelése nincs azonosítva. | `SlideshowView.qml:361-390` (`_diaUrl`, `_betolt`) | Nyitott (G4). |
+
+### 4. Vezérlők, alapértékek, megjegyzett állapot
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Gombok.** `editoneup.tre`: `exit`, `prev`, `auto`, `next`, `plusone`/`minusone` és a `tps`/`tpslabel` időblokk (`centergroup`), `transtype`, `rotateleft`, `rotateright`, `star`, `captionbutton`; a `timeline` rejtett. `auto2` (`:20-23`): `m_scaleX`, `YConstraint 0, 0, 0` és `YConstraint 1, 1, -97`, vagyis a felső széltől a sáv fölötti `97` képpontig nyúlik (`macros.tre:21-27` szerint két `YConstraint` nyújt), az `auto` művelete. Parancsnév-lánc: `0x00760240` (`exit` → `0x0075de50`; `plusone`/`minusone` → `0x0075f960`; `auto`/`auto2` → léptetés-indítás). | `SlideshowControls.qml:55-70` (`auto2` sáv, 14 képpont), `:170-345` | A felsorolás egyezik, a `Timeline` gomb kivételével (D1). **Az `auto2` területe eltér** (feltételes, erőforrás-szemantika): nálunk 14 képpontos felső sáv (#5649, a `respack.yt` `800 x 14` adatából), a `.tre` szerint a kép szinte egésze. Ez megválaszolja a `picasa-diavetito-sav-5550.md` N3 kérdését. D4. |
+| **Dia ideje.** `SlideshowEffectTime`, alapérték `3` (`0x00564a41`, `0x007facd3`). `+`/`-`: `0x0075f960` a kulcs értékéhez adja a `±1`-et, `1,0` és `[0x00cf4974]` = `20,0` közé szorítja, kiírja (`0x00401900`) és a `N másodperc` szöveget (`OneUpUI::Format` `%d %s`, `second`/`seconds`) a `editoneup/tps` elemre teszi. Minden dia elején újra beolvassa (`0x0075edb2`-`0x0075edbd`). | `controller_slideshow_mixin.py:106-135` (`1`-`20`, alapérték `3`, hibás érték `3`), `SlideshowControls.qml:284-345` | Egyezik. |
+| **Számjegyek `0`-`9`.** `0x00760970`: a számjegy értékét kiírja a `SlideshowEffectTime` kulcsba, és ha az olvasás nullát ad, `1`-et ír (`0x00760a19`-`0x00760a49`); szünetben a címkét is frissíti (`0x00760a4e`-`0x00760a5e`). | nincs (`SlideshowView.qml:687-700` csak `Ctrl+R`-t kezel) | **Igazolt eltérés (statikus).** D2. |
+| **Léptetés billentyűvel.** `0x00760970`: `Bal` (`0x25`) és `Fel` (`0x26`) hátra, `Jobb` (`0x27`) és `Le` (`0x28`) előre (`0x00760a6c`-`0x00760a78`), `Esc` (`0x1b`) kilép (`0x00760990`), `Space` (`0x20`) kapcsolja az `editoneup/auto` elemet (`0x007609d0`), `Pause` (`0x13`) csak lejátszás közben, `Play` (`0xfa`) csak szünetben. `Enter` (`0x0d`) nincs a kezelőben. | `SlideshowView.qml:663-686`: `Esc`, `Space`, `Jobb`, `Enter`, `Bal` | **Igazolt eltérés (statikus):** `Fel`/`Le`, `Pause`/`Play` hiányzik (D2). Az `Enter`-t a PicasaPy lépteti; az eredeti láncban (`0x005e6710` → `0x005e60d0`) mit csinál, nyitott (G6). |
+| **Kézi léptetés a lista szélén.** `0x0075fb20`: ha az első kijelölt elem a nézet utolsó indexén áll és előre lép, `0x00717bb0` az első elemet jelöli ki, a `LoopSlideshow` értékétől függetlenül (`0x0075fba2`-`0x0075fbd5`); egyébként `0x00717260` / `0x007172a0` (a rács nyíl-léptetője, `0x00717eb0`), amely a lista szélén nem fordul körbe és nem lép (`0x00718031`-`0x0071804a`: a `pos + delta` kívül esik, a visszatérés `0xf4240` kijelölésváltás nélkül), tehát hátra az első képen az eredeti áll. Az automatikus léptetés (`0x00717d10`, `loop` = `[this+0x335c]`) a lista végén hurok nélkül `[nézet+0x2e0] = -1`-et ad (`0x00717e76`). | `SlideshowView.qml:278-282`: hurok nélkül az utolsó képről előre lépve `stop()`, vagyis kilép | **Eltérés (a léptető függvények utasításszinten igazoltak, a teljes hatás futásmérésre vár):** az eredetiben a kézi előre lépés az utolsó képről visszafordul az elsőre, hátra az első képről nem lép; nálunk hurok nélkül az előre lépés kilép, hurokkal a hátra lépés az elsőről az utolsóra fordul. Az automatikus lista-vég viselkedése nyitott: a `0x0075f430` óraütés és a `0x00569260` útján nincs közvetlen hívás a kilépésre (`0x0075de50`), tehát az eredeti nem biztos, hogy kilép (G1). |
+| **Ismétlés.** `LoopSlideshow`, alapérték `0` (`0x007fad0a`), belépéskor `[this+0x335c]`-be másolva, kilépéskor nullázva (`0x0075e5d9`, `0x0075debb`). | `controller_slideshow_mixin.py:137-149` (alapérték ki) | Egyezik. A másolás miatt a vetítés közbeni beállításváltás az eredetiben nem hat; nálunk a kötés élő, de a Beállítások ablak közben nem érhető el. |
+| **Zene.** `PlayMP3Tracks`, alapérték `1` (`0x007fadbb`), belépéskor `[this+0x335d]`; a zeneforrás `MP3SlideshowPath` (`0x0075cdc0`, zenei szál: `0x0075ca20`, a példány `[this+0x33a4]`); szünetben `0x00760070` hívja a `0x0075d570`-et. | `controller_slideshow_mixin.py:151-212`, `SlideshowMusic.qml:1-50` | Az alapérték egyezik; a sávsorrend, a szünetben viselkedés és a hangerő nincs vizsgálva (G7). |
+| **Átmenet.** `ThumbUISlideShow::transition` DWORD `0`-`6`, alapérték `2` (Dissolve), a választó írja (`0x00760ca5`, `picasa-diavetito-sav-5550.md` 1.3.3); hét elem (`0xd342e8`). | `controller_slideshow_mixin.py:14-57`, `SlideshowControls.qml:226-245` | Egyezik (a tárolási forma eltérése dokumentált, nem teendő). |
+| **Felirat.** `captionmode`, alapérték `0` (`0x00564b51`-`0x00564b90`, `[this+0xdd8]`), írója `0x005749e0`; az `editoneup/captionbutton` két állapotú (`showtarget`/`hidetarget`). | `controller_slideshow_mixin.py:213-222` (három mód) | A három állapot eltérése már ismert (`picasa-diavetito-sav.md` 6. jegyjavaslat); az `editoneup` sem ad harmadik állapotot. Nincs új lelet. |
+| **Mit jegyez meg.** Kizárólag `Preferences` kulcsot ír: `SlideshowEffectTime` (minden `+`/`-` és számjegy után), `ThumbUISlideShow::transition`, `captionmode`; `LoopSlideshow`, `PlayMP3Tracks`, `MP3SlideshowPath` a Beállítások ablakból jön. Utolsó pozíciót, nézetet nem jegyez. | `controller_slideshow_mixin.py` (`view/slideshow*`) | Egyezik. |
+
+### 5. Kilépés és hatás
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Kilépés indítása.** `Esc` → `0x00760990` → `0x0075de50`; `exit` gomb → `0x00760240` → `0x0075de50` (`picasa-idorend-viselkedes.md:2866`). A `0x0075de50` a `[this+0x332f]` szerint kapcsol: nulla → belép (`0x0075e4bd`), nem nulla → kilép. | `SlideshowView.qml:663-666`, `SlideshowControls.qml:174-179` | Egyezik. |
+| **Kilépéskor.** A kurzor visszajön (`push 1`, `call 0x0097e510`, `0x0075dea3`-`0x0075deab`), `[this+0x335c]`, `[this+0x335d]` nulla (`0x0075debb`, `0x0075dec1`), a zenei objektum leáll (`0x0075ccb0`) és a program várakozik a szálára (`0x0097b420`, `0x3e8` időkorlát; a szál-értelmezés feltételes), `[this+0x332f]` és `[this+0x3330]` nulla (`0x0075e0a8`, `0x0075e0ae`), az `editpanel/fullscreenswitcher` elem a panel-váltón (`0x009cd8a0`) át visszakapcsol (`0x0075e0b4`; ugyanez a hívás a belépő ágon is áll, `0x0075e520`, tehát a teljes képernyőre váltás oda-vissza ezen megy, feltételes). | `MainSlideshow.qml:92-97` (ablakállapot vissza) | Egyezik. |
+| **Hova tér vissza.** Ha a vetítés előtt a szerkesztő látszott (`[this+0x3331]`, `0x005e8c3a`), a `0x00566a70`, különben a könyvtár (`0x00566270`, a `searchcontainer/search` elem kezelése): `0x0075e205`-`0x0075e237`. | `MainSlideshow.qml:105-113`: nyitott néző esetén a néző az utolsó képre áll, különben a rács | Egyezik. |
+| **Mi lesz kijelölve.** A léptetés a nézet kijelölését viszi magával: `0x00717260`/`0x007172a0` → `0x00717eb0`, amely az aktuális elem (`[nézet+0x390]`) helyzetéhez ±1-et ad a nem jelzett (`+0x5a == 0`) elemek listájában, `Shift` nélkül a többi elem kijelölését törli (`+0x5d = 0`), a célt kijelöli és aktuálissá teszi, és frissít (`0x00717ed0`-`0x00717f04`, `0x00717fe2`-`0x00718016`, `0x00718058`-`0x007180ef`). Az aktuális elem (`[this+0xe64]`) írói közül (`tagkereso.py`: közvetlen írás csak a betöltőben `0x00564cc7` és a `0x005e8a70`-ben `0x005e8c2d`, `lea` alakban a `0x005704d0`-ban, `0x005704eb`-`0x005704fe`) a `0x005704d0` az elemváltó, és ez a nézetben is kijelöli az elemet (`0x00717c50`, `0x0057066e`), tehát az aktuális elem és a kijelölés együtt mozog. Hogy az óraütés (automatikus léptetés) melyik úton jut a `0x005704d0`-ig, nincs végigkövetve (G1). Kilépéskor az első kijelölt elem `+0x5d` jelzője 1, `[nézet+0x390]` az azonosítója, és `0x0071b810` frissít (`0x0075e3c1`-`0x0075e487`). | `MainSlideshow.qml:109-112`: `selectedIndexes = [currentIndex]` | Egyezik. |
+| **Tárolt adat.** A kilépés ága nem hív `.picasa.ini`- vagy indexírót. A vetítés alatti forgatás és csillagozás a közös útra megy (`0x00760240` → `0x005eef30`, `0x005e81e0`), ez nem a vetítés sajátja. | `MainSlideshow.qml:191-199` (`toggleStar`, `rotateLeft`/`rotateRight`) | Egyezik. A negatív állítás a kilépés hívási ágára korlátozott. |
+
+### 6. Üres kijelölés, üres nézet
+
+Az eredeti normál vetítésben nincs `IDS_MUST_SELECT` üzenet (az az Időrend
+`0x005e983e` ága); nulla elemnél csendben visszatér (`0x005e8b34`-`0x005e8b46`).
+Kijelölés nélkül az első nem jelzett elemet kijelöli és onnan indul
+(`0x005e8bcf`-`0x005e8bde`). A PicasaPy ugyanígy hallgat és az első képtől
+indul (`MainSlideshow.qml:60-71`).
+
+### 7. A két független út és a cáfoló kísérlet
+
+- **A út, utasítások.** A `0x005cb990` ugrótábla (`0x005cbbd1`), a `0x005e60d0`, `0x005e0f70`, `0x005d9cc0` hívóhelyek `push 0`-val, a `0x005e8a70` elágazása (`0x005e8ae5`-`0x005e8b0a`) és a `0x0075de50` belépő/kilépő ága, `capstone`-nal, a `pe_dis.py` olvasóján át.
+- **B út, független forrás.** A `FUN_005e8a70` Ghidra-dekompilátuma
+  (`referencia/ghidra/2026-10-17-qshow-diavetites.txt:125-126` a feltétel, `:189` a `FUN_0075de50()` hívás, `:604` a `FUN_008037e0()` hívás) ugyanazt mutatja:
+  `if ((DAT_00d67849 == '\0' || !(GetAsyncKeyState(0x10) & 0x8000)) && param_2 == '\0') { ... iVar6 = FUN_0075de50(); ... return iVar6; }`,
+  a `qshow` ág (`FUN_008037e0`) csak utána jön. A `0x0075de50` sztring-hivatkozásai (`LoopSlideshow`, `PlayMP3Tracks`, `editoneup/sszoomsliderclip`, `editpanel/sscaption`, `editpanel/fullscreenswitcher`) a bináris-indexből, az `editoneup.tre` beépítése a `panelroot.tre:2-3`-ból.
+- **Cáfoló kísérlet.** (1) Van-e más út a `qshow` szakaszba `0` módban `Shift` nélkül? A függvény összes ugrásának átnézése (a munkafa `.bt/` mappájában készült szkripttel, a kör végén törölve): az `0x005e8d5d`-`0x005e9a8e` tartományba csak a `0x005e8b00` és a `0x005e8b0a` ugrik. (2) A `[0xd67849]` valóban az aktív ablak jelzője-e, vagy állandó? Két írója van, az egyik a `WM_ACTIVATEAPP` ágon az üzenet `wParam` értékét írja (`0x00a52e55`-`0x00a52e66`), tehát a `Shift` vizsgálata valódi. (3) A `0x0075de50` csak a szerkesztő sima egyképes nézete lehet-e, nem vetítés? Nem: a `LoopSlideshow`/`PlayMP3Tracks` beolvasás, a `ss`-előtagú elemek és az átmenet-választó ezt cáfolják. **Határ:** az index és az ugrás-pásztázás a vtáblán át történő hívást nem látja; a `0x0075de50` közvetett hívója a `qshow` felé nem zárható ki, de a normál `0` módú útra nincs ilyen jel.
+
+### 8. Javasolt fejlesztői jegytörzsek
+
+#### D1. A normál diavetítés vezérlősávjában ne legyen Timeline gomb
+
+**Előfeltétel:** ellenőrizni a `picasa-colab-jobs #375` 17-18. képén (a szünetben látható sáv), hogy van-e rajta Timeline gomb. Ha van, ez a jegytörzs elvetendő, és a 2. szakasz következtetését helyesbíteni kell.
+
+**Eredeti:** a `0x005e8a70` `0` módban, `Shift` nélkül az `editoneup` vetítőt indítja (`0x0075de50`); ennek erőforrása az `editoneup.tre`, ahol a `timeline` `m_hidden` és `m_disabled` (`:62-66`), és a kódban az `editoneup/timeline` névre egyetlen hivatkozás sincs. Az átmenet-választó (`editoneup/transtype`) nem rejtett.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `editoneup.tre:62-66` | `SlideshowView.qml:55-57` (`timelineButtonVisible`), `SlideshowControls.qml:183-188, 227-231` | A normál diavetítésben a Timeline gomb ne látszódjon, az átmenet-választó mindig. Az Időrend-bemutató saját vetítése (`timelineSlideshow`) változatlan. |
+
+**Kész, ha:** normál vetítésben (`Ctrl+4`, menü) a `slideshowTimelineButton` nem látszik, a `slideshowTransitionBox` mindig; a #5653 tesztjeit ennek megfelelően kell átírni. A sáv elrendezése (az `exit` a középső csoportban, `5` képpont) csak a csoporton belüli sorrend megmérése után módosítható (`NINCS MEG`, `picasa-diavetito-sav.md` 7. jegyjavaslat).
+
+#### D2. Billentyűk a diavetítésben: `Fel`/`Le`, `1`-`9`, `Pause`/`Play`
+
+**Eredeti:** `0x00760970` (az `editoneup` billentyűkezelő): `Fel` (`0x26`) hátra, `Le` (`0x28`) előre (`0x00760a6c`-`0x00760a78`); számjegy: a `SlideshowEffectTime` értéke a számjegy, nulla helyett `1` (`0x00760a19`-`0x00760a49`), szünetben a címke frissül; `Pause` (`0x13`) lejátszás közben, `Play` (`0xfa`) szünetben kapcsolja az `auto`-t (`0x007609c3`-`0x00760a07`).
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x00760970` | `SlideshowView.qml:663-700` | `Fel`/`Le` a `goBack()`/`advance()`; `1`-`9` a `controller.setSlideshowSeconds(n)`; `Pause`/`Play` a `togglePause()` megfelelő feltétellel. |
+
+**Kész, ha:** valódi billentyűleütéses teszt (`QTest.keyClick`) igazolja mindhármat; a `Fel`/`Le` a `Bal`/`Jobb` iránya szerint lép; a `0` nem ír `0`-t. Az `Enter` a jegyben marad változatlan, amíg a G6 nem dől el.
+
+#### D3. A videó a diavetítésben (vágási pontok szerint)
+
+**Előfeltétel:** futásmérés (Colab): videót is tartalmazó mappa `Ctrl+4`-gyel; a videó játszik-e, mennyi ideig áll a dia. Ha az eredeti kihagyja, a jegytörzs elvetendő.
+
+**Eredeti:** `0x0075eda0` a `8`, `9`, `0xa`, `0xb`, `0xc`, `0x17`, `0x1d` rekordtípusnál film ágra lép: a `moviestart` és `movieend` tulajdonságot a lejátszó `+0xc8` és `+0xd0` mezőjébe írja (`0x0075f006`-`0x0075f135`), a dia ideje a film hossza másodpercben, `(hossz - kezdőeltolás) / 10 000 000` (`0x0075f1bb`-`0x0075f2e2`).
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x0075eda0`, `0x0075f15a`-`0x0075f2e2` | `SlideshowView.qml:194-218` (`isVideoAt` kihagyás) | A vetítés vegye be a videót, adja át a vágási pontokat a lejátszónak, és a következő diára a film hossza után lépjen. |
+
+**Kész, ha:** egy videót is tartalmazó mappán a vetítés a videót játssza (a vágási pontokat átadva a lejátszónak), a dia ideje a film hossza, és utána lép; a többi dia ideje változatlan. Hogy a hossz a vágott hossz-e, a futásmérés dönti el.
+
+#### D4. Az `auto2` kattintási terület: a kép szinte egésze, nem 14 képpontos sáv
+
+**Előfeltétel:** futásmérés (Colab): a vetítés közepére kattintva (a sáv fölött) vált-e lejátszás és szünet között. Ha nem, a jegytörzs elvetendő, és az erőforrás-szemantika olvasatát helyesbíteni kell.
+
+**Eredeti:** `editoneup.tre:20-23` és `oneup.tre:20-23`: `auto2: root`, `m_scaleX`, `YConstraint 0, 0, 0`, `YConstraint 1, 1, -97`. A `macros.tre:21-33` szerint két ugyanazon tengelyű megszorítás nyújt (`m_scaleY`, `m_scaleXY`, a `back` elem így tölti ki a szülőt), tehát a terület a felső széltől a szülő aljánál `97` képponttal feljebbi vonalig ér. A kezelő az `auto` kezelőjével azonos (`0x00803486` és `0x008034c5` ugyanazt a függvényt hívja; az `editoneup` oldalon a `0x00760240` `auto`/`auto2` ága).
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `editoneup.tre:20-23`, `macros.tre:21-27` | `SlideshowControls.qml:56-70` (14 képpont magas `MouseArea`) | A `slideshowAuto2Area` magassága a szülő magassága mínusz `97` képpont legyen, a sáv és a felirat helye nélkül. |
+
+**Kész, ha:** a vetítés közepére kattintva a lejátszás/szünet vált, és a sáv gombjai (a `97` képpontos alsó zóna) érintetlenül működnek; a `PressFeedbackOverlay` ne takarja a képet.
+
+#### D5. A szerkesztő `Play` gombjának súgószövege
+
+**Eredeti:** `editpanel/sbutton` súgó (`editpaneltext.tre:8-9`), hivatalos magyar: `Állítson össze és nézzen diavetítést ezekből a fotókból` (`panel-feliratok-hu.tsv:4914`).
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `editpaneltext.tre:8-9` | `PhotoViewerTopBar.qml:200`, `PhotoViewerQuickToolbar.qml:111` (`Play Slideshow`) | A buborékszöveg a hivatalos forrás szerint. Csak szöveg; a fordítási kapuk (`test_i18n_dictionary_4313.py`) futtatandók. |
+
+A kézi léptetés lista-szélének viselkedése (előre az utolsó képről az elsőre, hátra
+az első képen nem lép) és az automatikus lista-vég eltérése mellé nincs jegytörzs,
+amíg a G1 és a futásmérés nem dönt (`Nyitott`): az automatikus lista-vég
+viselkedése ismeretlen, és a két szél együtt egy kérdés.
+
+### 9. Nyitott
+
+- Ghidra-kör kell: 0x0075f430 - mi történik az óraütés lista-vég ágán, ha a `[nézet+0x2e0]` `-1` és a `LoopSlideshow` ki: megáll az utolsó képen, szünetbe lép, vagy kilép (a `0x0075f430`-ból és a `0x00569260`-ból nincs közvetlen hívás a kilépő `0x0075de50`-re); és ugyanitt: az automatikus léptetés melyik úton hívja az aktuális elemet váltó `0x005704d0`-et, vagyis a nézet kijelölése valóban a látott képet követi-e. (G1)
+- Ghidra-kör kell: 0x00717560 - az elem `+0x5a` és `+0x5b` bájtjának jelentése és írói (rejtett kép, fejlécsor, hiányzó fájl): a nézet-bejárások (`0x00717560`, `0x00717420`, `0x007166c0`, `0x00717eb0`) ezt a jelzőt hagyják ki. (G2)
+- Ghidra-kör kell: 0x005c4ce0 - az `editoneup` vezérlősáv megjelenése: mikor látszik a normál vetítés sávja (szünet, egérmozgás, sáv fölötti tartózkodás); a #6930 szerinti hostcsere (`0x00802c20` → `0x009833a0`) a `OneUpUI`-ra, tehát a `qshow` útra vonatkozik; a normál vetítésben a szünet-kapcsoló a `0x00760070` (`0x0075d570`, `0x0075eac0`), és hogy ez hogyan jeleníti meg a sávot, nincs vizsgálva. (G3)
+- Ghidra-kör kell: 0x006d00c0 - a diaváltás (`0x0075eda0` fotó ág, `0x0075eac0`) betöltési hibája: sérült, hiányzó vagy hálózati úton elérhetetlen fájlnál kihagyja-e a diát, hibát mutat-e, megáll-e. (G4)
+- Ghidra-kör kell: 0x005e0f70 - a fejléc `play` gombja: a `0x005e146f` hívás előtt melyik nézet az aktuális (`0x0056bc10`), tehát nem az aktuális mappa fejlécéről melyik képsorozat indul. (G5)
+- Ghidra-kör kell: 0x005e60d0 - az `Enter` (`0x0d`) ág, a `Ctrl+R`/`Ctrl+Shift+R` ág és a `Ctrl+4` ág `0x005696c0` kapuja: mit csinál az `Enter` és a forgatás-billentyű normál vetítés közben (a `0x00760970` egyiket sem kezeli), és mikor tiltja a `0x005696c0` a `0x005e8a70` hívását. (G6)
+- Ghidra-kör kell: 0x0075cdc0 - a normál vetítés zenéje: a `MP3SlideshowPath` mappa sávjainak sorrendje (rendezett vagy véletlen), ismétlés, szünetben viselkedés (`0x0075d570`), és a kilépési várakozás (`0x0097b420`, `0x3e8`). (G7)
+- Ghidra-kör kell: 0x005e8a70 - az elején lévő kapuk (`0x005e8a89`-`0x005e8ac8`): a `[this+0x3094]`, `[this+0x30a0]`, `[this+0x332e]` jelentése (képtálca? szerkesztő-állapot?), vagyis mikor nem indul a vetítés. (G8)
+- Futásmérés kell: a `picasa-colab-jobs #375` 17-18. képén (szünetben látható sáv) látszik-e Timeline gomb és hol áll az `Exit` (a D1 előfeltétele); ugyanitt: normál `Ctrl+4` tényleg az `editoneup` vetítő-e.
+- Futásmérés kell: videót is tartalmazó mappán `Ctrl+4`: játszik-e a videó, és mennyi ideig áll a dia (D3 előfeltétele).
+- Futásmérés kell: három nem szomszédos kép kijelölve, `Ctrl+4`, majd `Jobb` nyíl többször: csak a három, vagy a teljes nézet jön-e; az utolsó képen `Jobb` nyíl hurok nélkül: visszafordul-e az elsőre.
+- Futásmérés kell: üres mappán `Ctrl+4`: látszik-e bármi (üzenet, ablakváltás), és a PicasaPy előbb-teljes-képernyőre-vált villanása látszik-e.
+- Futásmérés kell: a vetítés közepére kattintva (a sáv fölött) vált-e lejátszás és szünet között (D4 előfeltétele).
+- Futásmérés kell: `Fel`, `Le`, `5`, `0`, `Pause` a vetítés közben (a D2 igazolása), a sáv láthatóságával együtt.
+
+### 10. Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md` - új #7060 szakasz: a diavetítés
+  belépési pontjai, a két vetítő szétválasztása, a vetített halmaz, a
+  vezérlők és megőrzött állapot, a kilépés hatása, jegytörzsek és nyitott
+  kérdések. Kódhoz, teszthez nem nyúltam.
