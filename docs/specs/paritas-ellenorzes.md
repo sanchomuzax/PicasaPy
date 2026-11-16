@@ -5653,3 +5653,224 @@ PicasaPy parancsokat ezekhez rendeltük.
 - `docs/specs/paritas-ellenorzes.md`: új #7059 szakasz a menürekordok
   helyesbítésével, célválasztóval, lemez-/katalógushatással, hibákkal,
   összevetéssel, javasolt jegytörzsekkel és nyitott pontokkal.
+
+## #7069: Album létrehozása, tulajdonságainak szerkesztése és törlése az eredeti Picasában
+
+Vizsgálati tárgy: Picasa 3.9.141.259, SHA-256:
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+A bináris nem futott; a leletek cím szerinti diszasszemblálásból, meglévő
+Ghidra-kimenetekből, erőforrásokból és a PicasaPy-forrásból származnak.
+
+### Következtetés
+
+Az eredeti Fájl-menü `New Album...` (`Ctrl+N`) útja külön az Add-to-album
+almenü útjától: elfogadáskor létrehozza az albumot, frissít, majd az új
+azonosítót az aktuális albummezőbe írja. A tulajdonságszerkesztés és törlés
+kezelője is azonosítható, és a Starred Photos, Screensaver, illetve found
+people albumokra külön védelem van. A dinamikus Folder/Album főmenü `Delete...`
+parancsot is épít, de az albumok engedélyezési kapuinak teljes jelentése nyitott.
+A háttértár-írás tényleges sorrendje,
+névütközés, albumtörlés utáni állapot, írási hiba és visszavonás nem zárult
+le; az Add-to/tálcás újalbum-út külön nyitott marad.
+
+**Bizonyítottsági fok: nyitott.** A menük, a párbeszéd mezői, az új album
+siker utáni kijelölése és a törlés kezelője bináris és független erőforrás-
+adatokkal egyezik. A teljes működési paritás nem állítható, mert az eredeti
+ini-szinkron időzítése/hibája és a törlő metódus adattárolási végpontja nem
+ismert.
+
+### Belépési pontok és feltételek
+
+| Eredeti (bináris cím vagy mérés) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Fájl menü / új album:** `0x00559150` felirata `&New Album...`; az utána épített rekord parancsmezője `0x9d67`, amely a korábban igazolt előző-rekord szabály szerint a New Album tételé. A `0x005cb990` `0x9d67` ága `0x009cd8a0`-ra jut; a `thumbui/newalbum` esemény a `0x005d9cc0`-ban `0x005eb810`-at hívja. | `PicasaFileMenu.qml:23-27`; `MainMenuBar.qml:307-311`; `FileOpsDialogs.qml:82-88` | A jelenlegi Fájl-út kijelölés nélkül visszatér. Az eredeti menüpont üres kijelölés melletti engedélyezése a menüállapot-forrásból nem dőlt el; ne tekintsük egyezőnek vagy eltérőnek külön mérés/Ghidra-ellenőrzés nélkül. |
+| **Gyorsbillentyű:** a bináris angol gyorsbillentyű-erőforrásban `New Album` = `Ctrl+N` (`shortcuts.xml:115-117`). A `0x005eb810` törzsében nincs kijelölésvizsgálat, de a menütétel állapotfeltétele önmagában nem következik ebből. | `PicasaMenuBar.qml:708-714`; `PicasaFileMenu.qml:23-27` | A mai Ctrl+N csak fotóműveletre alkalmas kijelöléssel aktív. Az eredeti üres kijelölésű engedélyezés nyitott. Album-tulajdonság és törlés gyorsbillentyűje: `NINCS MEG`. |
+| **Fájlmenü útja és Add-to `New Album...` különbsége:** az Add-to almenü `0xa09c` ága a `0x005e9890` → `0x005e9bb0(this,1)` útra megy; az eredeti tálca `thumbui/albumbutton` ága is a `0x005e9bb0`-at hívja. Ez nem azonos a Fájlmenü `0x005eb810` útjával (lásd #7012 „Nyitott”). | `PhotoContextMenu.qml:171-197`; `MainPhotoContextMenu.qml:153`; `TrayScratchPanel.qml:542-577`; `MainTrayBar.qml:82-85` | A mai kép-helyi menü és a tálca a kijelölt/tartott képekkel az Album Properties párbeszédet nyitja. Az eredeti Add-to/tálcás párbeszédérték és végállapot a már létező #7012 Ghidra-kérésig nyitott. |
+| **Album / Folder főmenü - tulajdonságok:** a `0x00559150` `eMenuLabelFolder::ID_ALBUM_EDITCAPTIONS` felirata a `0x9c69` parancsot kapja; a `0x005cb990` ezt a `0x006db580`-ra irányítja. A meglévő album-helyi menü `0x00732160` ugyanezt a `&Edit Album Description...` műveletet kínálja. | `PicasaFolderMenu.qml:9,16-28`; `MainMenuBar.qml:373-382`; `AlbumContextMenu.qml:60-65`; `FolderPane.qml:298-319` | A mai Album főmenü és bal hasáb helyi menüje is megnyitja az albumadatokkal előtöltött tulajdonságablakot. A mezők mentési és hibaútját lent rögzítem. |
+| **Album / Folder főmenü - törlés:** a `0x00559150` menü felépíti az `eMenuLabelFolder::ID_ALBUM_DELETE` (`Delete...`) tételt `0x9d44` paranccsal; a `0x005cb990` a `0x005ed240` törlőútra irányítja. A `0x0056e1c0` állapotfrissítő szabályozza a parancs engedélyezését, de a különleges/üres albumok feltételének teljes jelentése nyitott. | `PicasaFolderMenu.qml:198-213` - a Delete elem csak mappamódban aktív; `AlbumContextMenu.qml:55-58` albumtörlés; `FolderPane.qml:362-368` | A PicasaPy Album főmenü jelenleg nem engedi az album törlését; a bal hasáb album-helyi menüje igen. Az eredeti főmenü parancsa és kezelője bizonyított, de a rendes albumra vonatkozó engedélyező ág pontos szemantikája nyitott; a különbség feltételes fejlesztői jelölt. |
+| **Bal hasáb album-helyi menü:** `0x00732160`: `&Edit Album Description...` (`0x00cae3a8`) és `&Delete Album` (`0x00cae450`); a parancsmezők a megelőző-rekord szabállyal `0x9c69` és `0x9d44`. A törlés a `0x005ed240`-be, a szerkesztés a `0x006db580`-ba jut. | `AlbumContextMenu.qml:55-65`; `FolderPane.qml:351-368`; `FolderPaneMenus.qml:120-135` | A jelenlegi helyi menü mindkét parancsot kínálja. A törlés-visszaigazoló ablak gombjai eltérnek; lásd „Ablakok”. |
+| **Emberek-album helyi menü:** `0x007359e0` `&Edit People Album...` és `&Delete People Album` tételeket épít; a törlés kezelője a `0x005ed240` specializált ágát is használja. A found-people, `]star` és `]screensaver` belső albumnevek külön védelmi ágon figyelmeztetést adnak (`0x00c97d44`, `0x00c97cb0`, `0x00c97cfc`). | `PeopleAlbumContextMenu.qml:26-65`; `FolderPaneMenus.qml:138-163,165-238` | A mai Emberek-album szerkesztése a személykezelő útja; törlése külön ablakban kérdez rá, és opcionális online-arc jelölőt ad. Az eredeti feliratokból önmagukban nem következtetek a szerkesztő végső hatására. |
+| **Újalbum UI-esemény / toolbar:** a `thumbui/newalbum` esemény a `0x005d9cc0`-ban a `0x005eb810`-at hívja; a konkrét vizuális elem helyét ez a kimenet nem nevezi meg. A tálca `thumbui/albumbutton` külön Add-to út (`0x005e9bb0`). | `MainWindowToolbar.qml:73-78` üres album tulajdonságablakot is nyit. | A PicasaPy toolbar útjának eredeti UI-megfelelője nyitott; a `thumbui/newalbum` eseményt nem azonosítom bizonyíték nélkül a toolbar gombjával. |
+
+### Ablakok, alapértékek és megjegyzett állapot
+
+- Az eredeti `album.fen` Name, Date, Automatic date, Music jelölő/fájlkereső,
+  Place taken, Description, OK és Cancel mezőket deklarál
+  (`picasa-fen-dialogs.md:255-273`). A `0x005eb810` a
+  `0x0055cf70`-en át kéri az új album alapnevét; a string-xref
+  `IDS_DEFAULT_ALBUM_NAME` értéke `Untitled` (`0x00e0382e`). Ez az új
+  album névmezőjét bizonyítja. Az új dialógus dátum/hely/leírás/zene mezőinek
+  tényleges kezdőértéke és megjegyzése: `NINCS MEG`.
+- A meglévő album szerkesztésénél a `0x006db580` előbb a `0x0055d070`
+  mezőbetöltőt, majd a `0x006dc030` ablakutat hívja. A meglévő Ghidra-lelet
+  a név, caption/leírás, dátum, hely és zene betöltő/setter mezőit azonosítja
+  (`0x0055d070`, `0x0055d320`; #7032 kiegészítés). Az eredeti ablak mezőit
+  és induló adatát az aktuális album tulajdonságai adják, nem minden profilra
+  egységesen üres mezők.
+- A törlés normál album esetén a `0x005fdc30` szerint `Delete Album` címet,
+  `Are you sure you want to delete the album "%s"?` kérdést és `Delete Album`
+  igen-gombot használja; az Emberek-album kérdése külön `DeletePeopleAlbum`.
+  A `0x005ed240` a `0x005c9930` dialógusépítőt, majd a `0x005fd670`
+  megerősítőt hívja. A generikus `confirm.fen` Yes / No / Cancel gombokat
+  és `Don't ask again` jelölőt deklarál; a közös építő választóértéke `2`,
+  amelyet egy korábbi fájltörlési mérés Cancel-fókuszként azonosított. Az
+  albumág fókusza ezért a közös sablon és kód alapján erős következtetés,
+  nem külön albumképernyős mérés. Az albumág jelölőjének
+  láthatósága és tartós beállításkulcsa: `NINCS MEG`.
+- PicasaPy új album párbeszédnyitáskor `Untitled`, üres dátum/hely/leírás/
+  zeneútvonal és kikapcsolt zene értéket ad, majd a névmezőre fókuszál és
+  kijelöli a nevet (`FileOpsDialogs.qml:100-111`; `FolderPropertiesDialog.qml:189-199`).
+  Meglévő album nyitásakor a controller aktuális név/dátum/hely/leírás/zene
+  adataival tölti fel (`FolderPane.qml:298-319`).
+- PicasaPy normál albumtörlés dialógusa `Delete Album` címmel/gombbal
+  kérdez, de Cancel és emlékeztető jelölő nélkül, No fókuszon
+  (`FolderPaneMenus.qml:120-135`). A People album dialógusa külön
+  `Remove People`, Delete Album / Cancel gombokkal, Cancel-fókusszal, és
+  alapból kikapcsolt, szinkronizált arcok törléséről szóló jelölővel él
+  (`FolderPaneMenus.qml:165-238`).
+
+### Tárolás, műveleti hatás és hibák
+
+| Hatás | Eredeti Picasa 3.9 | PicasaPy most |
+|---|---|---|
+| Új album rekordja | A `0x005eb810` elfogadáskor `0x0055d120(0,0,0)`-t hív; a `0x0055d120` az `0x004ada80` létrehozó útján katalógus-gyűjtemény rekordot hoz létre (`0x00443c00`), majd a mezőíróhoz jut. A tartós album-adatbázis fájlneve és az üres album tartóssága ebből nem dőlt el. | Kijelölt fotóknál új, véletlen token és `[.album:<token>]`/`albums=` definíció kerül az érintett `.picasa.ini`-kbe (`photo_ops_album_membership_mixin.py:137-175,235-253`). Üres album metaadata a profil-index SQLite táblájába kerül, mappa ini-írás nélkül (`:177-233`). |
+| Albumtagság és ini-szinkron | A `0x00536a90` a gyűjtemény memóriabeli képlistáját módosítja. A #7012-ben feltárt `AlbumSync` → `PicasaIniManager` (`0x00556ff0`/`0x00557760` → `0x0052c350`) út `.picasa.ini`-be írja az `albums` és `token` kulcsokat; az `AlbumIniSync` beállítás ezt befolyásolja. A pontos trigger, sorrend és hibaág még nyitott; lásd #7012 „Nyitott”. | Kijelölt képek írása kötegelt ini API-n fut, az albumlista siker után újratöltődik (`photo_ops_album_membership_mixin.py:255-268`). |
+| Album tulajdonságok / átnevezés | `0x006db580` az OK után `0x0055d320`-at hív; ez mező-settereket futtat. Setterhibánál korábban sikerült mezőket nem gördít vissza, és saját üzenetablakot nem épít (#7032 Ghidra-kiegészítés). A tényleges ini-író és az album-névütközés kezelése nyitott. | `editAlbumProperties` módosítja a nevet, dátumot, helyet és leírást minden érintett ini-ben; üres függő albumnál profil-indexet frissít; siker után újratölti a listát/nézetet (`photo_ops_album_properties_mixin.py:72-132`). A zene külön út. Ismert írási hibát `albumWriteFailed` jelzi (`:127-129`). |
+| Törlés és képfájlok | Elfogadott törlés után a `0x005ed240` katalógus-vtable `+0xec` metódust hív és nézetfrissítést végez (`0x0065b840`). A virtuális törlőcél, az ini-szinkron pontos lefutása és a képfájlok bájtjainak végállapota: `NINCS MEG`. | A `[.album:<token>]` definíciót és minden érintett `albums=` hivatkozást eltávolítja; az üres albumot a profil-indexből veszi ki. Képfájlokat nem töröl (`photo_ops_album_membership_mixin.py:93-125`). |
+| Albumlista, rács és kijelölés | Új album sikerén a `0x005eb810` frissít (`0x0065b840`) és az `0x004af790` által visszaadott új azonosítót az aktuális album mezőjébe írja. Törlés után frissít, de a bal hasáb/rács/kijelölés pontos végállapota nyitott. | Új album létrehozásakor a callback eldobja a visszaadott tokent (`FileOpsDialogs.qml:123-137`); nem hív `showAlbum`-ot. Siker után a lista frissül. Törlés után `_refresh_view()` fut (`photo_ops_album_membership_mixin.py:119-125`), de a jelenlegi album-/kijelölési végállapot külön nem igazolt. |
+| Névütközés, írási hiba, részleges állapot, visszavonás | Névütközés: `NINCS MEG`. A `0x0055d320` setter-hibánál visszatér; korábbi sikeres setterek maradnak. A `.picasa.ini` írási hiba, törlési hiba, rollback és undo: `NINCS MEG`. | Az üres album `local_empty_albums` sora tokennel kulcsolt, a `name` mezőn nincs unique constraint (`index/schema.py:238-249`); a létrehozó tokenalapú (`photo_ops_album_membership_mixin.py:207-208`). A vizsgált útban névütközés-ellenőrzést nem találtam. A kezelt írási hibák hibajelzést adnak; több mappás írás teljes rollbackje ebből a forrásból nem állítható. Közvetlen undo-út: `NINCS MEG`. |
+
+### Bizonyíték és bizonyítottság
+
+| Érték/állítás | Forrás |
+|---|---|
+| Fájl `New Album...` parancs `0x9d67`, Ctrl+N | bináris (`0x00559150`, `0x005cb990`, `0x005d9cc0`, `0x005eb810`); erőforrás (`shortcuts.xml:115-117`) |
+| Album főmenü szerkesztés/törlés parancsok | bináris (`0x00559150`, `0x0056e1c0`, `0x005cb990`, `0x006db580`, `0x005ed240`) |
+| Bal oldali album és People menü feliratai/parancsai | bináris (`0x00732160`, `0x007359e0`); a parancsmező/felirat párosítása az eggyel előző rekord szabályával |
+| Album Properties mezői | bináris/erőforrás: `album.fen:1-29`; `0x006db580`, `0x0055d070`, `0x0055d320`; mérés: `paritas-ellenorzes.md:971`, `ki00/kepernyo__11.png` |
+| Új album alapneve `Untitled` | bináris (`0x0055cf70`, `IDS_DEFAULT_ALBUM_NAME`, `0x00e0382e`); a `shortcuts.xml`/Album Properties erőforrás ettől független UI-adat |
+| Törlés szövege és védett albumok | bináris (`0x005fdc30`, `0x005ed240`, `0x00c97cb0`, `0x00c97cfc`, `0x00c97d44`); független `confirm.fen` sablon (`picasa-fen-dialogs.md:273-282`) |
+| AlbumSync `albums`/`token` író | bináris (`0x00556ff0`, `0x00557760`, `0x0052c350`); részletesen a #7012 Tároló táblázatában, trigger/időzítés nyitott |
+| PicasaPy mai műveleti utak | fájl:sor: a fenti összehasonlító táblák; közvetlen QML/Python-forrásolvasás |
+| Album DB fájlneve, empty-album eredeti tartóssága, delete vtable cél, collision, album-ág confirm jelölő, undo és pontos UI-végállapot | `NINCS MEG` |
+
+### A két független út
+
+- **A: bináris út:** a menüépítők felirat/rekord/command-mezőit a korábbi
+  rekord szabályával párosítottam; a `0x005cb990` dispatchert, a
+  `0x005eb810` létrehozót, a `0x0055d120` mentőt, a `0x006db580`
+  tulajdonságútját, valamint a `0x005ed240` törlőútját követtem. A már meglévő
+  Ghidra-kimenet külön feloldja a `0x0055d070`/`0x0055d320` mezőbetöltőket és
+  -írókat.
+- **B: független erőforrás/mérés/forrásréteg:** az `album.fen` és
+  `confirm.fen` meződeklarációi, az `enUS/shortcuts.xml` Ctrl+N bejegyzése,
+  az `Untitled`/Delete prompt string-xrefek, valamint a korábbi
+  `ki00/kepernyo__11.png` Album Properties mérés ellenőrizte az A út
+  látható ablakait és parancsát. A PicasaPy QML/Python forrását külön olvastam
+  az összevetéshez.
+- **Egyezés:** az újalbum-parancs, a Ctrl+N, az Album Properties mezők és a
+  Delete Album prompt egyezik a két bizonyítékcsaládban. A teljes lemez-/index-
+  és hibavégállapot nem, ezért a jegy eredménye nem megerősített.
+
+### Cáfoló kísérlet
+
+Megpróbáltam cáfolni a korábban felmerült `0x9caa = New Album` párosítást.
+A `0x00559150` utasításszintű rekordblokkjában az `&New Album...` után
+felépített rekord `0x9d67` parancsmezője az előző New Album rekordhoz
+tartozik. A következő `0x9caa` mezőt a `Add Folder to Picasa...` előtti
+rekordhoz kell rendelni; a diszpécser azt a `0x005ce590` útba küldi, így nem
+New Album. A cáfoló eredmény független ellenőrzése: az
+`enUS/shortcuts.xml:115-117` a `New Album`-hoz Ctrl+N-et ad, a
+`0x00559150` string-xref pedig az `&New Album...` feliratot azonosítja.
+A korábbi rossz párosítást visszavontam; a `0x9d67`-et használom.
+
+### A jegy „Kész, ha” pontjai
+
+| Pont | Állapot | Bizonyíték |
+|---|---|---|
+| Új album, tulajdonságszerkesztés, törlés minden belépési ponttal és feltétellel | ⛔ | Fájl/Ctrl+N, Album főmenü, bal oldali album/People menü és tálca út feltárt. A tálca `0x005e9bb0`, az eredeti File üres kijelölés-engedélyezése, illetve a különleges albumok teljes menüfeltétele nyitott. |
+| Ablakmezők, alapértékek és megjegyzett állapot | ⛔ | Mezők és `Untitled` alapnév ismertek; új Album Properties többi mezőjének kezdőértéke, emlékeztetett állapota és a törlő-jelölő albumági láthatósága nyitott. |
+| Tárolás, képek, index, bal hasáb, rács és kijelölés | ⛔ | Eredeti katalógusrekord, AlbumSync ini-író és UI-refresh hívások ismertek; sync timing, delete vtable/végállapot és eredeti képfájl-hatás nyitott. A PicasaPy út ini/SQLite kezelését a forrás pontosítja. |
+| Névütközés, íráshiba, részleges végrehajtás és visszavonás | ⛔ | A `0x0055d320` setterek hibára visszatérnek, de az album-névütközés, háttértár-hiba, rollback és undo nincs lezárva. |
+
+### Javasolt fejlesztői jegytörzsek
+
+#### 1. Feltételes jelölt: az Album főmenüből is lehessen albumot törölni
+
+**Eredeti:** a `0x00559150` `eMenuLabelFolder::ID_ALBUM_DELETE` (`Delete...`)
+tételt épít `0x9d44` kóddal; a `0x005cb990` ezt a `0x005ed240` albumtörlő
+kezelőre küldi. A `0x0056e1c0` engedélyezési állapotot állít.
+
+**Nálunk:** `PicasaFolderMenu.qml:200-213` a Delete elemet csak mappamódban
+engedélyezi; albumnál törlés csak az `AlbumContextMenu.qml:55-58`
+baloldali helyi menüből érhető el.
+
+**Teendő:** a `0x0056e1c0` állapotfrissítő rendes és különleges albumokra
+vonatkozó feltételeinek feloldása után jelenjen meg a dinamikus Album menüben
+az eredetivel egyező esetekben az albumtörlő parancs; ez a jelenlegi
+megerősítés/`controller.deleteAlbum(token)` útba fusson. Különleges albumok
+engedélyezése ne következzen a normál album útból.
+
+**Kész, ha:** a normál és különleges albumok főmenü-engedélyezése a
+feloldott `0x0056e1c0`-ággal egyezik; engedélyezett törlésnél a jelenlegi
+albumtörlő út fut. A PicasaPy albumtörlője ne változtassa meg a képfájlokat
+(ez a jelenlegi controller viselkedése; az eredeti bájtvégállapot külön
+nyitott mérési pont).
+
+#### 2. Az új album létrehozása után nyíljon meg az új album
+
+**Eredeti:** a `0x005eb810` siker után a `0x004af790`-ből kapott új album-
+azonosítót az aktuális album mezőbe írja, és frissít (`0x0065b840`).
+
+**Nálunk:** `FileOpsDialogs.qml:123-137` meghívja a `createAlbumWithProperties`
+vagy `createEmptyAlbum` függvényt, de eldobja a visszakapott tokent; ez a
+létrehozási callback nem hív `showAlbum`-ot.
+
+**Teendő:** vedd át a sikeresen visszakapott tokent és navigálj az új albumra;
+üres token/írási hiba esetén maradjon az előző nézet.
+
+**Kész, ha:** Fájl ▸ New Album… és az eszköztár párbeszéde után a létrejött
+album aktív, annak rácsa nyílik meg; Cancel vagy íráshiba után a jelenlegi
+album és kijelölés marad.
+
+#### 3. A normál albumtörlés párbeszédében legyen Mégse gomb, az kapjon fókuszt
+
+**Eredeti:** a `0x005ed240` a `0x005c9930` → `0x005fd670` közös
+megerősítő-utat hívja; a `0x005fdc30` `Delete Album` címet/kérdést/igen-gombot
+választ. A `confirm.fen` Yes / No / Cancel gombokat deklarálja; a közös
+választóérték `2`, amelyet egy korábbi fájltörlési mérés Cancel-fókuszként
+azonosított. Az albumág saját képernyőképe nincs meg.
+
+**Nálunk:** `FolderPaneMenus.qml:120-135` elrejti a Cancel gombot, kikapcsolja
+az emlékeztető jelölőt és a No gombra teszi a fókuszt.
+
+**Teendő:** jelenítsd meg a Mégse gombot, és megnyitáskor arra tedd a
+fókuszt. Az albumtörlés emlékeztető jelölőjét csak a Picasa albumági
+beállításkulcsának igazolása után vedd fel.
+
+**Kész, ha:** megnyitáskor Mégse a fókusz; Mégse/No bezárás nem változtatja
+az albumot; csak a Delete Album jóváhagyása hívja a törlőt. Az albumági
+„Don't ask again” beállítás a külön igazolásig nem változik.
+
+### Új kutatási jegyjavaslatok
+
+Új külön jegyet nem javaslok: a nyitott ini-szinkron és Add-to `New Album`
+út már a #7012-ben szerepel; a többi nyitott kérdés ehhez a #7069
+folyamathoz tartozik.
+
+### Nyitott
+
+- `Ghidra-kör kell: 0x0056E1C0: oldd fel a 0x9d44 Delete... menüelem 0x00995c90, 0x004ac8f0 és 0x004aca00 feltételeit: normál/üres albumon, ]star, ]screensaver és found-people célon melyik ág engedélyez vagy tilt. A meglévő 2026-11-15-6970 kimenet a hívásokat és EnableMenuItem ágakat mutatja, a predikátumok albumtípus-szemantikáját nem; a korábbi 0x0056e1c0 Ghidra-kérések más állapotbitekre és menütípusokra vonatkoznak. [blokkoló]`
+- `Ghidra-kör kell: 0x005ED240: oldd fel a katalógus-vtable +0xec törlőmetódus konkrét célját, és kövesd le, az album-definíciót/tagságot melyik háttértárból veszi ki, ír-e képfájlt, és milyen a hibás/törlési hibaág. A meglévő 2026-11-15-6963 dekompilálás a közvetett hívást és a nézetfrissítést mutatja, a vtable-célt nem. [blokkoló]`
+- `Ghidra-kör kell: 0x006DC030: az új Album Properties párbeszéd dátum/hely/leírás/zene mezőinek kezdeti értéke profilból vagy állandó alapértékből jön-e, mi marad meg bezárás/újranyitás után, és Cancel esetén történik-e mellékhatás. A meglévő `album.fen` és hívó a mezőket mutatja, de az induló állapotot nem. [blokkoló]`
+- `Ghidra-kör kell: 0x0055D320: az albumobjektum név-setterének konkrét virtuális célja, és az elutasítja-e a másik album megjelenített nevével ütköző értéket. A meglévő #7032 dekompiláció a setterhívást és részleges hibát mutatja, de az albumnév egyediségét nem. [blokkoló]`
+- A `0x00556ff0` AlbumSync trigger/időzítés és `0x0052c350` ini-író hibasorrend Ghidra-kérése már szerepel a #7012 „Nyitott” részében; nem kérek rájuk új kört. Ugyanott szerepel a `0x005e9bb0` Add-to/tálcás új album dialóguskérdése.
+- **NINCS MEG:** File ▸ New Album menüpont/`Ctrl+N` engedélyezése kijelölés nélkül. Út: célzott menüállapot-követés vagy külön Picasa 3.9 mérés üres kijelöléssel; a `0x005eb810` rutin guardjának hiánya önmagában nem bizonyítja a menüpont állapotát.
+- **NINCS MEG:** törlés után a bal hasáb, rács, aktív album és fotókijelölés pontos végállapota; create/delete/rename undo-viselkedése; `.picasa.ini`/album-adatbázis részleges hibája és rollbackje. Út: célzott Ghidra-kör után kontrollált, előtte/utána Picasa 3.9 mérés.
+- **NINCS MEG:** az új Album Properties nem név jellegű mezőinek értéke/megőrzése és az eredeti albumági „Don't ask again” jelölő beállításkulcsa. Út: a fenti `0x006dc030` és `0x005fd670` célzott feloldása, majd mérés.
+
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md`: új #7069 szakasz a belépési
+  pontokról, párbeszédekről, tárolásról, UI-végállapotról, hibákról,
+  fejlesztői jegyjavaslatokról és nyitott kérdésekről.
