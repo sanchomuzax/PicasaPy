@@ -4821,7 +4821,7 @@ tekinti bizonyítéknak a korábbi, részleges dátummódosító-leírást.
 
 Az eredeti Eszközök menü és a Tulajdonságok panel `DateTimeOriginal` sorának
 helyi menüje ugyanahhoz a `0x9e0e` parancshoz vezet; külön gyorsbillentyűt vagy
-rács-helyimenü parancsot nem találtam. Egy kép közvetlen dátumot kap, több kép
+a rács helyi menüjében parancsot nem találtam. Egy kép közvetlen dátumot kap, több kép
 alapértelmezés szerint eltolást; a 22 képes Picasa 3.9-es képernyőkép az
 eltolás rádió kijelölését méri, a Ghidra-kimenet pedig nem talál megjegyzett
 beállítást. A párbeszéd kezdeti dátummezői egy `CThumbUI` által visszaadott
@@ -4838,7 +4838,7 @@ Windows-mérési sorozat dönti el, ezért a jegy még nem zárható.
 alapmódot külön meglévő képernyőmérés igazolja, a megjegyzés hiányát a
 Ghidra-kimenet. A kijelölési lista rácssorrendje ismert, de nincs bizonyíték,
 hogy ez adja a párbeszéd kezdő dátumát. A néző/tálca elérhetőségét, a látható
-utóállapotot, az írásvédelmi kimenetet és a kezdő dátum képforrását még nem
+végállapotot, az írásvédelmi kimenetet és a kezdő dátum képforrását még nem
 mérte meg senki.
 
 ### 1. Belépési pontok, kijelölés és gyorsbillentyű
@@ -4968,7 +4968,7 @@ attribútumot előre.
 
 ### 5. A két független út
 
-- **A út, utasításszintű binárisolvasás:** a `0x00559150` rekordbázis és
+- **A út, a bináris utasításszintű olvasása:** a `0x00559150` rekordbázis és
   `0x005cb990` diszpécser után `0x0057d7f0` nyitja meg a műveletet;
   `0x0077c670` és `0x0077cee0` adja a kezdő rádió értékét, a `0x0077cfd0`
   választja a két háttérfeldolgozót. Az írók a `0x37` mezőt,
