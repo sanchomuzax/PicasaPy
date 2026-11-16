@@ -163,7 +163,8 @@ Dialog {
                 verticalAlignment: Text.AlignVCenter
                 wrapMode: Text.WordWrap
             }
-            enabled: controller.quickTagAutofillAvailable
+            enabled: typeof controller !== "undefined" && controller
+                     ? controller.quickTagAutofillAvailable : false
             onClicked: dialog.autofill()
         }
     }
