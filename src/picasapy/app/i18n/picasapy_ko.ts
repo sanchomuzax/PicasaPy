@@ -19169,6 +19169,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>회전시킬 이미지를 선택하셔야 합니다.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>파일 형식 때문에 일부 이미지를 수정하지 못했습니다. 동영상에 효과를 적용할 수 없습니다.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>

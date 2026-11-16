@@ -19184,6 +19184,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>Sie müssen Bilder ausgewählt haben, die gedreht werden sollen.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>Einige Bilder konnten aufgrund ihres Dateityps nicht geändert werden. Beachten Sie, dass Effekte nicht bei Filmen angewandt werden können.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>

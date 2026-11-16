@@ -19184,6 +19184,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>Para girar imágenes debes haber seleccionado alguna.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>No se han podido modificar algunas imágenes debido al tipo de archivo. Ten en cuenta que no es posible aplicar efectos a los vídeos.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>

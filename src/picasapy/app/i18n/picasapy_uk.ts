@@ -19200,6 +19200,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>Потрібно вибрати зображення для повороту.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>Не вдається змінити деякі зображення: неправильний тип файлу.  Зауважте, що неможливо застосувати ефекти до фільмів.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>

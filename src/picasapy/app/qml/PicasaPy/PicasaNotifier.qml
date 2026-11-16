@@ -441,6 +441,23 @@ Window {
                 qsTr("Must have selected images to rotate."), "", "")
         }
 
+        //: #7090: a kötegelt effekt (Kép menü, Csoportos szerkesztés,
+        //: Ctrl+Shift+B/E) figyelmeztetése, ha a kijelölésben videó volt.
+        //: HIVATALOS Picasa-erőforrás (`IDS_SOME_EDITS_FAILED_TYPE`,
+        //: `0x005fe370`), a magyar is a szövegtárból való. A két szóköz a
+        //: két mondat között az eredetié.
+        //:
+        //: A vezérlő a köteg LEFUTÁSA után jelez, a kihagyottak számával; a
+        //: képek addigra módosultak, a videók érintetlenek.
+        function onBatchEditTypeFailed(skipped) {
+            if (skipped <= 0)
+                return
+            notifier.notify(
+                "batch-edit-failed",
+                qsTr("Some images were not modified because of the file type.  Note that effects cannot be applied to movies."),
+                "", "")
+        }
+
         function onSaveCopyReady(saved, targetPath) {
             //: Egyetlen sikeres mentés sem volt: a művelet vagy meg lett
             //: szakítva, vagy elbukott — az utóbbit a `SaveDialogs.qml`
