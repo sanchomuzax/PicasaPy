@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.132] - 2026-11-16
+
+- Hálózati mappák képei és bélyegképei lassú SMB/GVFS csatoláson is megnyithatók, a felület közben használható marad (#7048).
+- A dátumállító ablak több kijelölt képnél a rácsban legelöl álló kép dátumával nyílik meg (#7054).
+
 ## [1.0.131] - 2026-11-16
 
 - A nézőben (az eredeti Picasa szerkesztőjének megfelelőjében) a Másolás (Ctrl+C és a Szerkesztés menü) a megjelenített, szerkesztésekkel együtt kiszámolt képet teszi a vágólapra képadatként, így más programba közvetlenül képként beilleszthető; a könyvtárban a Másolás továbbra is a kijelölt képek fájljait adja (#7030).
