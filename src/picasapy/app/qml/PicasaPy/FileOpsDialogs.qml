@@ -87,11 +87,22 @@ Item {
         dialogs.openNewAlbumProperties(controller.currentFolder, rows)
     }
 
-    //: #2911: a képek albumlistára ejtése az eredetiben névbekérő nélkül,
-    //: azonnal „Untitled” albumot készít (mérve); ez az út NEM a menüké.
+    // #7102: a helyőrző sorra ejtés az Album Properties párbeszédet nyitja;
+    // a menüs New Album út külön marad, továbbra is üres alapdátummal.
     function createAlbumFromDrop(rows) {
         if (!controller || !rows || rows.length === 0) return
-        controller.createAlbum(dialogs.ujAlbumNeve, rows)
+        var dialog = toolbarAlbumPropertiesDialog
+        dialogs.newAlbumPhotoRows = rows.slice()
+        dialog.albumFolderPath = controller.currentFolder
+        dialog.albumToken = ""
+        dialog.albumName = dialog.untitledFolderName
+        dialog.currentDate = Qt.formatDate(
+            new Date(Date.now() - 1000), "yyyy-MM-dd")
+        dialog.albumLocation = ""
+        dialog.currentDescription = ""
+        dialog.currentMusicEnabled = false
+        dialog.currentMusicFile = ""
+        dialog.open()
     }
 
     // #5812: az eszköztár új album gombja az Album Properties párbeszédet
