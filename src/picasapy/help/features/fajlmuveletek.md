@@ -34,11 +34,13 @@ a képek valódi dátuma és felbontása kerül. A kiterjesztést nem kell
 beírnod, a fájl megtartja a sajátját.
 
 Az **Átnevezés** gomb szürke, amíg a névmező üres, vagy amíg a benne
-álló név megegyezik azzal, amivel az ablak megnyílt; ilyenkor az
-**Enter** sem csinál semmit. A névmezőben az **Enter** elfogadja az új
+álló név megegyezik azzal, amivel az ablak megnyílt, és a **Dátum** meg a
+**Képfelbontás** jelölő sincs bekapcsolva; ilyenkor az **Enter** sem
+csinál semmit. Ha a két jelölő közül legalább az egyik be van kapcsolva,
+a változatlan névvel is átnevezhetsz. A névmezőben az **Enter** elfogadja az új
 nevet (ugyanaz, mint az **Átnevezés** gomb), a **Mégse** és az **Esc** megszakítja az
-átnevezést. Egyetlen kép átnevezése után a kép **kijelölve marad**, így
-rögtön folytathatod vele a munkát.
+átnevezést. Átnevezés után a képek **kijelölve maradnak** (egy és több képnél is),
+így rögtön folytathatod velük a munkát.
 
 - A **Dátum** a felvétel **dátumát és idejét** (másodpercre) teszi a
   névbe, a számítógéped területi beállítása szerinti formában. A
@@ -60,20 +62,25 @@ név foglalt, a keresés a következő számmal folytatódik (`Nyaralás-006`). 
 és a képek más-más időpontban készültek, a nevek amúgy is különböznek,
 ezért sorszám sem kerül rájuk.
 
-Ha a művelet **menet közben** akad el (például az egyik fájl zárolt), a már
-átnevezett fájlok **a helyükön maradnak**, és a hibaüzenet **megnevezi az
-elkészült fájlokat**, valamint azt, amelyiknél leállt — ennek és a kívánt
-új nevének az állapotát érdemes ellenőrizni. A nézet ilyenkor is
-frissül, tehát azt látod, ami a lemezen van.
+Ha **több kép** átnevezésénél valamelyik fájlt nem lehet átnevezni
+(például zárolt), a program **átugorja**, és a többit átnevezi. A
+felület tetején megjelenő sor felsorolja a kimaradt fájlokat:
+„Átugorva: …". Az átnevezett képek kijelölve maradnak, a kimaradtak a
+régi nevükön maradnak. A nézet ilyenkor is frissül, tehát azt látod, ami
+a lemezen van.
 
 ## Áthelyezés
 
 - **Fájl ▸ Áthelyezés új mappába…** — a kijelölt képek új mappába
   kerülnek. Ugyanez a parancs a kép helyi menüjében is ott van. A parancs a **Mappa tulajdonságai** ablakot nyitja, ahogy az
-  eredeti Picasa: a név mezőben **Névtelen** áll, a dátum a mai nap, és
+  eredeti Picasa: a név mezőben **Névtelen** áll, a dátum a kijelölt
+  (kiemelt) kép felvételi napja, és
   itt adhatod meg a helyszínt, a leírást és a zenét is. Az **OK** után
   készül el a mappa, és kerülnek bele a képek; a **Mégse** semmit nem
-  változtat. Ha a név üres, tiltott jelet tartalmaz, vagy már van ilyen
+  változtat. Ha a képnek nincs dátuma, a mai nap áll a mezőben. (Az
+  eredetihez hűen a program a kép idejéhez egy másodpercet ad, ezért egy
+  éjfél előtti utolsó másodpercben készült képnél a következő nap áll
+  ott.) Ha a név üres, tiltott jelet tartalmaz, vagy már van ilyen
   nevű mappa, a program szól, és nem mozgat semmit. Sikeres áthelyezés
   után, amint a program beolvasta az új mappát, a bal hasábon ki is
   jelöli, a képtálcán pedig egyetlen borítókép áll a
@@ -128,6 +135,12 @@ program a művelet után a lemezről újraolvassa mindkét mappát.
 **Szerkesztés ▸ Másolás** (Ctrl+C) és **Kivágás** (Ctrl+X) a
 fájlkezelőbe adja át a fájlokat, így máshova beillesztheted őket.
 
+A **nézőben** a **Másolás** (Ctrl+C vagy a **Szerkesztés** menü) mást
+csinál: nem a fájlt, hanem a **látott képet** teszi a vágólapra, minden
+szerkesztéssel együtt, képként. Így egy képszerkesztőbe vagy
+dokumentumba közvetlenül beillesztheted. Videónál, és amíg a kép még nem
+jelent meg, a fájl kerül a vágólapra.
+
 A **Szerkesztés ▸ Beillesztés** (Ctrl+V) a másik irány: a vágólapra tett
 fájlokat az **éppen kiválasztott mappába** másolja. Mindegy, honnan
 kerültek oda — a fájlkezelőből vagy a PicasaPy fenti két parancsából.
@@ -178,12 +191,38 @@ rákérdezzen. Ugyanezt a **Beállítások ▸ Általános** lapon is
 megteheted („Törlés a lemezről megerősítés nélkül"), és ott vissza is
 kapcsolhatod.
 
+### Végleges törlés: Shift+Delete
+
+A **Shift+Delete** a Kukát kihagyva, **véglegesen** törli a kijelölt
+képeket, a rácsban és a nézőben is. Előtte mindig megerősítést kér, a
+fenti „Biztosan végleg törli a kijelölt fájlt? (A művelet nem vonható
+vissza.)" kérdéssel; több képnél a kérdés a képek számát mondja. A gomb
+**Fájl törlése**, illetve **Fájlok törlése**.
+
+Albumban és Emberek albumban a **Shift+Delete** ugyanazt teszi, mint a
+**Delete**: csak kiveszi a képet az összeállításból, fájlt **nem** töröl.
+
+### Ha a fájl nem tehető a Kukába (Windows)
+
+Előfordul, hogy Windowson a rendszer egy fájlt nem tud a Lomtárba tenni,
+mert ott nincs neki hely. Ilyenkor a program képenként külön rákérdez:
+„A fájl nem helyezhető át a Kukába, a program azonnal törölni fogja.
+Biztosan folytatja a műveletet?" A **Törlés** véglegesen törli a képet,
+a **Mégse** (ezen áll a fókusz) és az **Esc** meghagyja. Ha a Lomtár
+más okból utasítja el a fájlt, a program hibát jelez, és **nem** töröl
+véglegesen.
+
 ## Keresés a lemezen
 
 **Fájl ▸ Keresés a lemezen** (Ctrl+Enter) megnyitja a fájlkezelőben azt
 a mappát, ahol a kép van. Ha **nincs kijelölt kép**, a Ctrl+Enter a
 megnyitott mappát mutatja meg a fájlkezelőben (albumban és személyalbumban
 ilyenkor nem csinál semmit).
+
+Ha több kijelölt kép **több mappában** van, a program **mappánként egy**
+fájlkezelő-ablakot nyit, és mindegyikben az adott mappa első kijelölt
+képére áll. Ez a **Fájl** menüből, a Ctrl+Enterrel, a kép helyi
+menüjéből és a képtálcáról indítva is így működik.
 
 A kép helyi menüjében ugyanez a **Keresés a lemezen** (Ctrl+Enter). Ha
 **egyetlen** képet jelöltél ki, és annak a program megőrizte a szerkesztés
@@ -225,8 +264,12 @@ A helyi menüben ezen kívül:
   helyén marad, és a célban **nem marad félkész másolat**. Egyetlen olyan
   pillanat van, ami már nem fordítható vissza — ott a hibaüzenet megmondja,
   hol találod a tartalmat.
-- **Mappa ▸ Törlés…** — a mappa törlése a lemezről. A program külön
-  rákérdez, mert az almappákat is elviszi.
+- **Mappa ▸ Törlés…** - a mappa törlése a lemezről. A program külön
+  rákérdez, mert az almappákat is elviszi. Ha a képek törlése után a
+  mappában más fájl vagy almappa marad, maga a mappa megmarad, és a
+  program ezt írja: „A program a mappában lévő képeket törölte, de magát
+  a mappát nem, mert más fájlok és/vagy mappák is vannak benne." A
+  mappalista ilyenkor azt mutatja, ami a lemezen ténylegesen megmaradt.
 - **Mappa ▸ Eltávolítás a Picasából…** — a mappa csak a nézetből kerül
   ki, a fájlok maradnak. A program **Jóváhagyás** címmel rákérdez; a
   kérdés előtt a színes Picasa-logó áll, a kérdésben pedig a mappa

@@ -61,7 +61,11 @@ gombra." Csak a legutóbbi mentésre hat.
   kiemelt (fókuszban lévő) képről készül másolat.
 
 Ha a választott név foglalt, a program szól: „A fájl mentése nem
-lehetséges. Már van ilyen nevű fájl."
+lehetséges. Már van ilyen nevű fájl." Ha a másolatot lemezhiba miatt nem
+lehet kiírni, ezt írja: „Lemezhiba miatt nem lehetséges a fájlok
+mentése. Lehet, hogy a lemez megtelt vagy írásvédett."
+
+Videónál, és amíg nincs kijelölt kép, mindkét menüpont szürke.
 
 ## Visszaállítás
 
@@ -71,10 +75,23 @@ kapcsolható be, ha van ilyen másolat. Mentés után a
 tétel azonnal használható, nem kell hozzá a kijelölést megváltoztatni.
 
 A program rákérdez. Egyetlen képnél a kérdés: „Visszatér a fájl eredeti
-változatához?", több képnél: „Visszaállítja ezeket a fájlokat az eredeti
-változatra?". A két gomb **Visszaállítás** és **Mégse**. Megnyitáskor a
-**Mégse** kapja a fókuszt, így egy véletlen **Enter** nem állít vissza
-semmit.
+változatához?", a gombok **Visszaállítás**, **Mentés visszavonása** és
+**Mégse**. A **Mentés visszavonása** itt is csak az utolsó mentést vonja
+vissza, a szerkesztéseket megtartva (lásd fent). Több képnél a kérdés:
+„Visszatér a fájlok eredeti változatához?", és csak a **Visszaállítás**
+és a **Mégse** gomb van. Megnyitáskor a **Mégse** kapja a fókuszt, így
+egy véletlen **Enter** nem állít vissza semmit.
+
+Ha egy fájlt a mentés óta **egy másik program módosított**, a program
+még egyszer figyelmeztet, mert a visszaállítás ezt a változást is
+eldobja: „Ez a fájl a PicasaPy programon kívül módosult. Ha a
+visszaállítást választja, a módosítások elvesznek." (több fájlnál
+„Ezek a fájlok…"), alatta „Vissza szeretne térni?". A gombok
+**Visszaállítás ennek ellenére** és **Mégse**; a fókusz a **Mégse**
+gombon áll.
+
+A visszaállított kép elforgatása, tükrözése és a képre írt szövege is
+törlődik, tehát a kép tényleg az eredeti állapotában jelenik meg.
 
 Visszaállítás közben ugyanaz a lebegő folyamatjelző látszik, mint
 mentéskor (ott „Fájl mentése: …%" áll), itt **Fájlok visszaállítása**
@@ -88,7 +105,14 @@ egyszerűen az eredeti képet mutatja.
 
 **Kép ▸ Összes szerkesztés visszavonása** nem a fájlt, hanem a
 szerkesztések listáját törli. A fájl érintetlen marad; a kép egyszerűen
-újra úgy néz ki, mint eredetileg.
+újra úgy néz ki, mint eredetileg. A szerkesztések mellett a **tükrözést**,
+a képre írt **szöveget** és a szerkesztési előzményeket is törli; az
+**elforgatás** viszont megmarad.
+
+A menüpont csak akkor választható, ha a kijelölésben az első szerkesztett
+kép nem csupán el van forgatva. Szürke, ha nincs kijelölt kép, ha egyik
+kijelölt kép sincs szerkesztve, vagy ha az első szerkesztett kép csak
+elforgatott.
 
 A program rákérdez egy **Jóváhagyás** című ablakban: „Ezzel a művelettel
 eltávolít minden módosítást, amelyet az ÖSSZES kijelölt képre

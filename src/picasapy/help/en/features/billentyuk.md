@@ -29,6 +29,7 @@ Two general rules from the original Picasa apply:
 | `F2` | **Rename...**; in the open viewer it renames the photo you are looking at, but not during a slideshow or while typing |
 | `Delete` | **Delete from Disk** in the grid; in an album or People album, it removes the photo from the collection instead |
 | `Ctrl+Delete` | **Delete from Disk** in the viewer; for a photo opened from an album or People album, it removes it from the collection instead |
+| `Shift+Delete` | Permanent delete from disk, skipping the Trash, after confirmation, in the grid and in the viewer; in an album or People album, it removes the photo from the collection instead |
 
 ## Editing and selection
 
@@ -40,8 +41,8 @@ Two general rules from the original Picasa apply:
 | `Ctrl+C` | **Copy** |
 | `Ctrl+X` | **Cut** |
 | `Ctrl+V` | **Paste** into the selected folder |
-| `Ctrl+R` | **Rotate Clockwise** |
-| `Ctrl+Shift+R` | **Rotate Counterclockwise** |
+| `Ctrl+R` | **Rotate Clockwise**; in the grid it rotates the whole selection, and without a selection it says: "Must have selected images to rotate." |
+| `Ctrl+Shift+R` | **Rotate Counterclockwise**; in the grid it rotates the whole selection |
 | `Ctrl+Shift+H` | Mirror the selected photos horizontally |
 | `Ctrl+Shift+V` | Mirror the selected photos vertically |
 | `Ctrl+Shift+B` | Convert the selected photos to black and white |

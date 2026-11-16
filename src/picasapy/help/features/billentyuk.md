@@ -29,6 +29,7 @@ látható, de szürke tételek billentyűi nem élnek.
 | F2 | Átnevezés; a nyitott nézőben a látott képet nevezi át, diavetítés alatt és gépelés közben nem |
 | Delete | Törlés lemezről a rácsban — albumban és Emberek albumban ehelyett kiveszi a képet az összeállításból |
 | Ctrl+Delete | Törlés lemezről (a nézőben) — albumból vagy Emberek albumból megnyitott képen ehelyett kiveszi a képet az összeállításból |
+| Shift+Delete | Végleges törlés a lemezről a Kuka kihagyásával, megerősítés után, a rácsban és a nézőben is - albumban és Emberek albumban ehelyett kiveszi a képet az összeállításból |
 
 ## Szerkesztés és kijelölés
 
@@ -40,8 +41,8 @@ látható, de szürke tételek billentyűi nem élnek.
 | Ctrl+C | Másolás |
 | Ctrl+X | Kivágás |
 | Ctrl+V | Beillesztés a kiválasztott mappába |
-| Ctrl+R | Forgatás jobbra |
-| Ctrl+Shift+R | Forgatás balra |
+| Ctrl+R | Forgatás jobbra - a rácsban a teljes kijelölést; kijelölés nélkül szól: „Ki kell jelölnie képeket a forgatáshoz." |
+| Ctrl+Shift+R | Forgatás balra - a rácsban a teljes kijelölést |
 | Ctrl+Shift+H | Tükrözés vízszintesen (balról jobbra) |
 | Ctrl+Shift+V | Tükrözés függőlegesen (fentről le) |
 | Ctrl+Shift+B | A kijelölt képek fekete-fehérré alakítása |

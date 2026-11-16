@@ -19,7 +19,8 @@ A star is a quick way to mark a photo. You can add or remove one in these
 ways:
 
 - Click **Add/Remove Star** in the photo tray. It applies to every photo
-  in the selection.
+  in the selection, photo by photo: a starred photo loses its star, an
+  unstarred one gets it.
 - Press `F4` to do the same thing, either in the library or in the
   viewer. If the tray button is disabled, F4 will do nothing too.
 - In the library, `Ctrl+8` does the same (it does not work in the
@@ -38,7 +39,10 @@ once.
 A caption is a short line of text displayed beneath a photo. In the
 viewer, click the band along the bottom of the image to enter one. If
 there is no caption yet, the band prompts you to add one.
-Press Enter to save or Esc to discard your changes.
+Press Enter to save or Esc to discard your changes. If you click outside
+the band, or move to another photo meanwhile, the caption is still saved,
+to the photo you wrote it for. If you did not change the text, the photo
+is not rewritten.
 
 There is a small control at each end of the band:
 
@@ -46,8 +50,10 @@ There is a small control at each end of the band:
   square with two lines when the band is visible, and an empty square
   when it is hidden. The control stays in place while the band is
   hidden, so you can use it to bring the band back.
-- The control on the right clears the caption without asking for
-  confirmation. It is disabled when the caption is empty.
+- The control on the right clears the caption. It asks first in a
+  **Confirm** window: "Are you sure you want to delete the caption for
+  this image?" **Delete Caption** clears it; **No** (which has focus)
+  keeps it. The control is disabled when the caption is empty.
 
 In the grid, use **View** ▸ **Thumbnail Caption** ▸ **Caption** to display
 captions below the thumbnails.
@@ -61,20 +67,26 @@ command for applying a caption to several photos at once; enter it for
 each photo separately.
 
 PicasaPy also writes captions to the JPEG file's IPTC field, so other
-programs can read them.
+programs can read them. If the image file is read-only, the caption is
+still kept in PicasaPy; it just is not written into the file.
 
 ## Tags
 
 Tags are shown in the **Tags** panel on the right. Open or close it from **View**,
-press `Ctrl+T`, or use the Tags control in the photo tray. Ctrl+T also
-closes the panel. When you open it with `Ctrl+T`, the cursor goes straight
+press `Ctrl+T` or `Ctrl+K`, or use the Tags control in the photo tray.
+All of these work as a toggle: if the Tags panel is already open,
+choosing it again closes it. When you open it with `Ctrl+T`, the cursor goes straight
 to the tag entry field so you can type at once. While the cursor is in
 the field, a second `Ctrl+T` does not close the panel; click the pictures
 first, then `Ctrl+T` toggles it again.
 
 - Select one or more photos, type a tag in the entry field, then press
   Enter or click the adjacent **+** control. The tag is applied to every
-  selected photo.
+  selected photo. Separate several tags with commas to add them at
+  once (for example `summer, sea, family`); empty parts are skipped. If
+  one of them cannot be added, the others are still applied, and a line
+  below the field says: "Some of the text you entered could not be added
+  as a tag."
 - The panel shows which tags belong to the selection. A heading above
   the list explains its scope: for one selected photo it shows that
   photo's name and its tags; for several photos it lists the tags in the
@@ -83,9 +95,9 @@ first, then `Ctrl+T` toggles it again.
 - Tag order follows the original Picasa behavior: the tag used on the
   most photos in the selection appears first. Tags used equally often
   are listed in reverse alphabetical order (Z to A).
-- Right-click a tag to open a menu with **Remove this tag**, **Search
-  for items with this tag**, and **Add this tag to entire selection**,
-  in that order. The search puts the tag in the search field and
+- Right-click a tag to open a menu with **Add this tag to entire
+  selection**, **Search for items with this tag**, and **Remove this
+  tag**, in the original Picasa order. The search puts the tag in the search field and
   immediately shows matching photos. Clear the search field to return
   to the full view.
 
@@ -138,7 +150,7 @@ the gear control beside the Quick Tags heading; its hint has the same
 name. You can reserve the top two buttons for recently used tags. A new
 tag moves to the first button, the previous first moves to the second,
 and the previous second is removed. If you use a tag already on either
-button, their order stays the same. A button in the dialog can also
+button, their order stays the same. Letter case matters here: `Summer` and `summer` count as two different tags. A button in the dialog can also
 fill empty slots with your frequently used tags. When tracking recent
 tags is turned off, quick-tag use is not recorded; tags used while it is
 off will not appear in those slots if you turn it on later.
