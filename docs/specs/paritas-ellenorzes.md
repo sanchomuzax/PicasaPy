@@ -6273,3 +6273,169 @@ Lezárva (a bizonyítékkal): a belépési pontok (1. szakasz); az eseményút �
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md`: új #7072 szakasz a keresés belépő- és kilépőútjaival, a szóindex mért tartalmával, a gépelés és az eredménysáv viselkedésével, tíz eltéréssel (E1-E10, ebből az E10 feltételes), hat javasolt jegyleírással, nyolc nevesített Ghidra-körrel és egy Colab-feladattal.
+
+## #7084: A kötegelt szerkesztés teljes folyamata az eredeti Picasával összevetve: belépési pontok, viselkedés, hatás
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+A bináris nem futott; a leletek cím szerinti diszasszemblálásból, meglévő
+Ghidra-kimenetekből (`referencia/ghidra/`), a bináris-indexből
+(`referencia/binary-index/picasa3-index.sqlite`), a program-erőforrásokból
+(`shortcuts.xml`, `rename.fen`, `offsettime.fen`), a magyar szövegtárból
+(`stringres-en-hu.tsv`), az ini-korpuszból, a meglévő futtatott felvételekből
+(job-641, job-244, job-254) és a PicasaPy-forrásból származnak.
+
+### Következtetés
+
+1. **A kötegelt szerkesztés folyamata és ágai:**
+   - **Forgatás (Batch Rotate, `0x9ca2`, `0x9ca3`):** a menüből (`0x005eef30`), gyorsbillentyűből (`Ctrl+R`, `Ctrl+Shift+R`), helyi menüből és eszköztárról/tálcáról érhető el. Nincs párbeszédablak. A kijelölésen azonnal, háttérmunkaként fut le; a `.picasa.ini`-be `rotate=rotate(N)` negyedfordulatot és `backuphash` időbélyeget ír, frissíti az index `imagedata_rotate` oszlopát és a bélyegképeket. A kijelölés megmarad. Nem támogatott fájlok (pl. videók) esetén a végén `IDS_ROT_TYPEFAILED` („One or more images could not be rotated because of the file type.”) figyelmeztetést ad.
+   - **Automatikus javítások és effektek (Batch Effects, 9 művelet):** az almenüből (`0x00d6e4ac`) érhető el (Auto Contrast `0x9d49`, Auto Color `0x9d48`, I'm Feeling Lucky `0x9d5e`, Sepia `0x9d4a`, Sharpen `0x9d4b`, Warmify `0x9d4d`, Film Grain `0x9d4e`, Black and White `0x9d4c`, Auto Red Eye Correction `0x9df1`). Nincs ablak. Kétágú viselkedés: ha a szerkesztő nyitva van (`0x00579330`), a parancs a szerkesztőpanel megfelelő fülére és vezérlőjére navigál; könyvtárnézetben a kijelölés összes képére meghívja a `0x005fe370` batch motort (illetve az Auto Red Eye esetén a `0x00602100` / `0x005f39d0` delegált keretet). A `.picasa.ini`-ben a `filters=` láncot bővíti, `backuphash`-t frissít, és átugorja a nem támogatott fájlokat (`iStack_98`), a köteg végén `IDS_SOME_EDITS_FAILED_TYPE` figyelmeztetést adva.
+   - **Dátum és idő beállítása (Adjust Date and Time, `0x9e0e`, `0x0057d7f0`):** az Eszközök menüből érhető el legalább egy kijelölt képpel. A `runtime/offsettime.fen` párbeszédet nyitja meg. Címe 1 elemnél `Adjust Photo Date`, >1 elemnél `Adjust Photo Date - %d items`. Bélyegkép-előnézetet, jelenlegi dátum/idő és új dátum/idő mezőket ad, valamint két rádiógombot (0: relatív eltolás, 1: abszolút fix idő). Nem jegyez meg állapotot, az első kép idejével és a relatív móddal indul. A lemezen közvetlenül módosítja a fájlok EXIF metaadatait (JPEG esetén) és az index `imagedata_date` oszlopát; ha a rács dátum szerint rendezett, a képek átrendeződnek.
+   - **Szövegfedvény láthatósága (Show Text `0x9deb`, Hide Text `0x9dec`):** a Kép ▸ Csoportos szerkesztés almenüből érhető el. Nincs ablak. A `0x005f6a40` kezeli: a kijelölt képek `.picasa.ini` szakaszában a `textactive` kulcsot `1`-re (Show) vagy `0`-ra (Hide) állítja a `0x00462500` hívással, és frissíti a bélyegképeket. Ha a szerkesztő nyitva van, az `editpanel/showtextcheckbox` állapotát is szinkronizálja.
+   - **Átnevezés több képen (Batch Rename, `0x9d4f`, `F2`):** a Fájl menüből, a Kép ▸ Csoportos szerkesztés almenüből és F2 gyorsbillentyűvel érhető el. A `runtime/rename.fen` párbeszédablakot nyitja meg (`0x00532ec0`). Névmezőt, darabszámos címkét, dátum és felbontás jelölőnégyzeteket (`RenameUseDate`, `RenameUseSize`), valamint statikus előnézeti mintát (`Example: <név> 08-01-2004 2-30-45 PM 640x480.jpg`) ad. A két jelölő állapota perzisztált (Preferences/rename). A lemezen fizikailag átnevezi a fájlokat; az ütközéseket a `0x00993650` kezeli: az első szabad cél változatlan marad, ütközéskor `-001`-től `-4095`-ig számozza (`%s-%03lu`, `0x00cd8d64`). A `.picasa.ini`-ben a szekciók és a `.picasaoriginals` fájlok/szekciók is átneveződnek.
+   - **Visszavonás (Revert / Undo):** Kép ▸ Összes szerkesztés visszavonása (`0x005ef3e0` / `0x005ef520`): megerősítést kér (`IDS_CONFIRMREVERT_MULTIPLE`, gomb: `Remove Edits`), majd képenként törli a `filters`, `crop`, `flipped`, `redo`, `text`, `textactive` kulcsokat. A `rotate` negyedfordulat kulcsot a visszavonás NEM törli!
+
+2. **Bizonyítottsági fok: erős.** A menürekordok, parancsazonosítók, diszpécser-ágak (`0x005cb990`), a dialógusleírók (`.fen`), az ini-kulcsok és a futásidejű viselkedések utasításszintű dekompilációval és meglévő futtatott felvételekkel (job-641, job-244, job-254) egybevágnak.
+
+### Belépési pontok és feltételek
+
+| Eredeti (bináris cím vagy mérés) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| **Kép ▸ Csoportos szerkesztés almenü:** `0x00d6e4ac` rekord, `0x00d6e318` gyerektábla 19 rekorddal (14 parancs + 5 elválasztó). Menüpontok: Rename (`0x9d4f`, `F2`), Rotate Clockwise (`0x9ca2`), Rotate Counterclockwise (`0x9ca3`), Auto Contrast (`0x9d49`), Auto Color (`0x9d48`), I'm Feeling Lucky (`0x9d5e`), Sepia (`0x9d4a`), Sharpen (`0x9d4b`), Warmify (`0x9d4d`), Film Grain (`0x9d4e`), Black and White (`0x9d4c`), Auto Red Eye Correction (`0x9df1`), Show Text (`0x9deb`), Hide Text (`0x9dec`). | `PicasaPictureMenu.qml:20-115` (`menuPictureBatchEdit`) | A 14 parancs és 5 elválasztó sorrendje és felirata egyezik. |
+| **Fájl ▸ Rename:** `0x00559150`, parancs `0x9d4f`, `F2` gyorsbillentyű; a diszpécserben a `0x00532ec0`-ra jut (ugyanaz a kezelő, mint a Batch Edit ▸ Rename). | `PicasaFileMenu.qml:92-97`, `Main.qml:1191-1194` | Egyezik: mindkét menüpont és az F2 ugyanazt a dialógust hívja (`openRenameMany`). |
+| **Eszközök ▸ Adjust Date and Time:** `0x00559150`, parancs `0x9e0e`, kezelő `0x0057d7f0`; nincs gyorsbillentyűje és nincs helyi menüben. | `PicasaToolsMenu.qml:80-84`, `PropertiesPanel.qml:168-170` | Egyezik: az Eszközök menüből érhető el. |
+| **Gyorsbillentyűk:** `F2` (Rename), `Ctrl+R` (Rotate CW, `0x9ca2`), `Ctrl+Shift+R` (Rotate CCW, `0x9ca3`), `Ctrl+Shift+B` (Black and White, `0x9d4c`). Az effektekhez és a dátumhoz nincs más közvetlen shortcut. | `Main.qml:1072-1081, 1191-1194`; `shortcuts.xml:133-138` | Egyezik. |
+| **Helyi menük és eszköztár:** A képrács helyi menüjében (`PhotoContextMenu`) a Forgatás (jobbra/balra) és az Összes szerkesztés visszavonása szerepel; a kötegelt effektek és az Átnevezés nincsenek a helyi menüben. A képtálcán Forgatás gombok találhatók (`thumbui/rotateright`, `thumbui/rotateleft`). | `PhotoContextMenu.qml:150-164`, `MainTrayBar.qml:128-142` | Egyezik. |
+| **Szerkesztőnézetbeli navigáció (kétágú minta):** `0x00579330` vizsgálja, hogy a szerkesztő nyitva és szabad-e (`DAT_00d67914 != 0`, `editpanel/preview`). Ha nyitva van, az Auto Contrast/Color/Enhance/Sharpen stb. a szerkesztőpanel megfelelő fülére navigál (`editpanel/tab1`, `editpanel/autolighting`), nem kötegelt batch-et futtat. | `MainMenuBar.qml:420-427` | Eltérés: a PicasaPy megpróbálja kiválasztani az effektet a nézőben (`viewer.selectMenuEffect`), de ha nem kezeli, egyképes `applyEffectMany([row], name)` köteget indít ahelyett, hogy fókuszálná a vezérlőt (1. jegytörzs). |
+| **Menüengedélyezési feltételek:** Az eredetiben a Csoportos szerkesztés és tételei legalább egy kijelölt képet követelnek (`0x0056e1c0`, `photoActionsEnabled`). A Show Text (`0x9deb`) és Hide Text (`0x9dec`) az eredetiben MINDIG engedélyezett, ha van kijelölés (`EnableMenuItem(local_40, 0x9deb, 1)`). | `PicasaPictureMenu.qml:106, 112`, `MainMenuBar.qml:77-83` | Eltérés: a PicasaPy a Show/Hide Text engedélyezését a kijelölés képeinek tényleges `textactive` állapota szerint szűri (`textOverlayShowEnabled` / `textOverlayHideEnabled`), amihez minden menünyitáskor beolvassa az ini-ket (2. jegytörzs). |
+
+### Ablakok, alapértékek és megjegyzett állapot
+
+- **Forgatás, kötegelt effektek, szöveg láthatóság:**
+  - Az eredeti Picasa 3.9-ben **NINCS ABLAK**. A parancs kiválasztásakor semmilyen ablak, kérdés vagy megerősítés nem jelenik meg; a művelet azonnal lefut a kijelölésre.
+  - PicasaPy: szintén nincs ablak; a háttérmunka alatt a lebegő folyamatjelző panel (`batchEditActive`) jelenik meg.
+- **Dátum és idő beállítása (`runtime/offsettime.fen`, `0x0077c670`, `0x0077c7c0`):**
+  - **Ablakcím:** 1 kijelölt kép esetén `Adjust Photo Date` (`0x0077c803` átugorja a formázást); 2 vagy több kép esetén `Adjust Photo Date - %d items` (`0x00cb40ac`).
+  - **Mezők:** bélyegkép-előnézet (`thumb`), csak olvasható jelenlegi dátum és idő (`currentdate`, `currenttime`, `Current photo date`), szerkeszthető új dátum és idő (`newdate`, `newtime`, `New photo date`), két rádiógomb (`adjust_type`: 0 = relatív időkülönbség minden képre, 1 = abszolút fix idő minden képre), valamint `OK` (`accept`) és `Cancel` gomb. Ablakszélesség: `fit`.
+  - **Alapértékek:** mind a jelenlegi, mind az új dátum/idő mezők a kijelölés első képének `FILETIME` idejével indulnak (`0x0077c6a0`-`0x0077c6c6`). A rádió kezdő állása a relatív mód (rádió 0).
+  - **Megjegyzett állapot:** az ablak nem jegyez meg beállítást; minden megnyitáskor a fotó saját idejével és a 0. rádióval indul.
+  - **PicasaPy:** `AdjustTimestampDialog.qml`. Eltérés: 1 kijelölt kép esetén is kiírja a darabszámot (`Adjust Photo Date - 1 items`) (3. jegytörzs).
+- **Csoportos átnevezés (`runtime/rename.fen`, `0x00532ec0`, `0x00532070`):**
+  - **Mezők:** darabszámos tájékoztató felirat (`"%s file(s) selected for rename."`, `job-641`: „2 file(s) selected for rename.”), szövegmező (`newname`, `filter="filename"`), dátum jelölőnégyzet (`RenameUseDate`, `0x00c899e0`), felbontás jelölőnégyzet (`RenameUseSize`, `0x00c899f0`), statikus minta-előnézet (`Example: ` + név + ` 08-01-2004 2-30-45 PM` + ` 640x480` + `.jpg`), `Rename` (alapértelmezett gomb) és `Cancel` gomb.
+  - **Alapértékek:** egy kép kijelölése esetén az aktuális fájlnév kiterjesztés nélküli része jelenik meg a mezőben és kijelölődik (`job-244`); több képnél a mező üres.
+  - **Megjegyzett állapot:** a két jelölőnégyzet állapota a Windows Registry / Preferences-ben tárolódik (`RenameUseDate`, `RenameUseSize`, `0x00532070`), megváltoztatásuk megőrződik következő futásra.
+  - **PicasaPy:** `FileOpsDialogs.qml` (`openRenameMany`). Eltérés: az előnézet az első kép valós metaadatait mutatja, nem a statikus mintát; a jelölők állapota QSettings-ben megőrződik.
+
+### Tárolás, műveleti hatás és hibák
+
+| Hatás / folyamat | Eredeti Picasa 3.9 | PicasaPy most |
+|---|---|---|
+| **Fájlok a lemezen** | Effektek, forgatás, szövegfedvény esetén a fizikai fájlok NEM változnak (nem-destruktív szerkesztés). Dátummódosításnál a JPEG fájlok EXIF DateTimeOriginal adatai közvetlenül átíródnak a lemezen. Átnevezésnél a fájlok fizikailag átneveződnek (`MoveFile`). | Egyezik: effektek/forgatás nem-destruktív; dátum EXIF-et ír (`piexif`); átnevezés lemezen mozgat. |
+| **`.picasa.ini` módosítás** | Effekteknél a `filters=` kulcs bővül és `backuphash` frissül (`0x005fe370`). Forgatásnál a `rotate=rotate(N)` negyedfordulat és `backuphash` frissül (`0x005eef30`). Szövegfedvénynél a `textactive` kulcs értéke `1` vagy `0` lesz (`0x005f6a40`, `0x00462500`). Átnevezésnél a régi szekció átneveződik az új névre, és a `.picasaoriginals` fájl/szekció is átmozog. Dátummódosítás nem ír ini-t. | Egyezik: `update_document`-tel szekció- és kulcskezelés, `with_backuphash` időbélyeg-frissítéssel. |
+| **Index és adatbázis (`db3`)** | Az adatbázis-oszlopok frissülnek: `imagedata_filters`, `imagedata_rotate`, `imagedata_textactive`, `imagedata_date`, valamint átnevezésnél a fájlnevek. | SQLite index frissül minden ágon. |
+| **Képrács, bal hasáb és kijelölés** | Bélyegképek azonnal újrarenderelődnek. Ha a rács dátum vagy név szerint rendezett, a rendezés újrapozicionálja a képeket. A kijelölés MINDEN kötegelt művelet után az érintett képeken MEGMARAD. | Egyezik: modell frissül, kijelölés megmarad. |
+| **Háttérmunka és kurzor** | A művelet alatt homokóra/várakozó kurzor (`IDC_WAIT`, `_DAT_00d6793c`) jelenik meg; a művelet szálon fut, de felugró folyamatjelző ablak nincs. | Lebegő folyamatjelző sáv (`batchEditActive`), mappánkénti haladás-visszajelzéssel és megszakítási gombbal. |
+| **Nem támogatott fájlok (videók)** | Vegyes kijelölésnél a videókat átugorja, és a művelet végén felugró figyelmeztetést ad: kötegelt effektnél `IDS_SOME_EDITS_FAILED_TYPE` („Some edits could not be applied because of the file type.”), forgatásnál `IDS_ROT_TYPEFAILED`. | Eltérés: a PicasaPy csendben átugorja a videókat (`if photo.kind == "video": continue`), és nem ad figyelmeztető ablakot a felhasználónak (4. jegytörzs). |
+| **Átnevezési ütközés és sorszám** | Ha az első célfájl szabad, sorszám nélkül marad (`alapnév.jpg`). Ütközéskor (foglalt cél vagy azonos kötegbeli név) a `0x00993650` `-001`-től induló háromjegyű nullázott utótaggal számozza felül (`%s-%03lu`, `0x00cd8d64`) egészen `-4095`-ig. | Eltérés: PicasaPy listaindex szerint számoz (`név`, `név-1`, `név-2`), és a meglévő célfájl ütközését előre elutasítja. |
+| **Írásvédelem és hálózat** | Írásvédett lemezen (pl. CD-ROM) az ini- és fájlírás elutasításra kerül (`AllowReadOnlyEdits` kapu `0x00602100`-ban). | `PermissionError`/`OSError` elkapva, `photoOpFailed` hibajelzés jelenik meg a felületen. |
+| **Visszavonás (Revert / Undo)** | Kép ▸ Összes szerkesztés visszavonása (`0x005ef3e0` / `0x005ef520`): megerősítést kér (`IDS_CONFIRMREVERT_MULTIPLE`, gombok: `Remove Edits` és `No`, nincs "ne kérdezd újra" jelölő, `job-254`), majd törli a `filters`, `crop`, `flipped`, `redo`, `text`, `textactive` kulcsokat. A `rotate` negyedfordulat kulcsot NEM törli. Az átnevezésre nincs visszavonás. | Egyezik: `clearAllEffectsMany` pontosan ugyanezt a kulcskészletet törli megerősítéssel és meghagyja a `rotate`-et (#7017). PicasaPy ezen felül külön Szerkesztés ▸ Csoportos szerkesztés visszavonása (`undoBatchEdit`) lépést is kínál. |
+
+### Bizonyíték és bizonyítottság
+
+| Érték/állítás | Forrás |
+|---|---|
+| Batch Edit almenü 14 parancsa és 5 elválasztója | bináris: `0x00d6e4ac` rekord, `0x00d6e318` gyerektábla (`picasa-menu-leltar.md` §10.1/a); `0x00559150` menüépítő |
+| Diszpécser parancskód-kezelő megfeleltetések | bináris: `0x005cb990` switch (`2026-10-21-idorend-30.txt:1405-2520`) |
+| Forgatás kezelője (`0x005eef30`), 90° és 270° | bináris: `0x005eef30(param_1, 0x5a)` és `0x005eef30(param_1, 0x10e)` (`2026-11-11-6532-colab-10-iro-es-hivok.txt:47699`) |
+| Batch effekt motor (`0x005fe370`), filters= lánc | bináris: `0x005fe370` (`2026-11-11-6532-colab-10-iro-es-hivok.txt:56325`); CFilterStack |
+| Szerkesztő-navigáció kapu (`0x00579330`) | bináris: `0x00579330`, `editpanel/tab1`, `editpanel/autolighting` |
+| Auto Red Eye külön keretútja (`0x00602100` / `0x005f39d0`) | bináris: `0x005ccb36` → `FUN_00602100(FUN_005f39d0, 0)` |
+| Show/Hide Text kezelője (`0x005f6a40`, `textactive`) | bináris: `0x005f6a40(param_1, 1/0)` → `0x00462500("textactive")`; `editpanel/showtextcheckbox` |
+| Menüengedélyezés: Show/Hide Text mindig aktív ha van kijelölés | bináris: `EnableMenuItem(local_40, 0x9deb, 1)` és `0x9dec` (`2026-11-15-6970-colab-decomp.txt:840-841`) |
+| Adjust Date and Time ablak (`offsettime.fen`, `0x0057d7f0`) | bináris: `0x0057d7f0` (`2026-11-15-7031-7032-7033-colab-decomp.txt:248`), `0x0077c670`, `0x0077c7c0`; erőforrás: `offsettime.fen` |
+| Adjust Date ablakcím: 1 elemnél nincs darabszám | bináris: `0x0077c803` ugrás, `0x00cb40ac` formázás kihagyása |
+| Rename ablak (`rename.fen`, `0x00532ec0`) és perzisztált jelölők | bináris: `0x00532ec0` (`2026-11-11-6532-colab-10-iro-es-hivok.txt:55595`), `0x00532070`; `RenameUseDate`, `RenameUseSize` |
+| Rename futásidejű ablak felvétele és egyképes kitöltés | mérés: job-641 („2 file(s) selected for rename.”), job-244 (egy képnél a név kitöltve és kijelölve) |
+| Rename ütközés számozás (`%s-%03lu`, `-001`) | bináris: `0x00993650`, `0x00cd8d64` (`%s-%03lu`) |
+| Nem támogatott fájl figyelmeztetések | bináris: `IDS_SOME_EDITS_FAILED_TYPE` (`0x005fe524`), `IDS_ROT_TYPEFAILED` (`0x005ee6e0`, `0x00c97e84`) |
+| Revert (Undo All Edits) kulcsok és megerősítés | bináris: `0x005ef3e0`, `0x005ef520`, `0x005ef6b0`; mérés: job-254 (`backuphash=37968`, többes szöveg egy képnél is, `Remove Edits` / `No`) |
+
+### A két független út
+
+- **A: bináris út:** a főablak diszpécser (`0x005cb990`) switch-ágainak utasításszintű követése, a `0x005eef30` forgatás, a `0x005fe370` kötegelt effektmotor, a `0x005f6a40` szövegfedvény-kezelő, a `0x0057d7f0` dátumkezelő és a `0x00532ec0` átnevező lekövetése; az `imagedata` oszlopírók és ini-kezelők hívási lánca.
+- **B: független erőforrás-, mérés- és forrásréteg:** a `runtime/rename.fen` és `runtime/offsettime.fen` deklarációi, a `shortcuts.xml` gyorsbillentyűi, a `stringres-en-hu.tsv` hibaüzenet-kulcsai, a Colab felvételek (job-641 rename ablak, job-244 egyképes kitöltés, job-254 revert megerősítés és backuphash), valamint a PicasaPy Python/QML forráskód-auditja.
+- **Egyezés:** a menüsorrend, a parancskészlet, a dialógusmezők, a perzisztált beállításkulcsok, a `.picasa.ini` kulcsstruktúra és a visszavonás kulcsai egyeznek a két bizonyítékcsaládban.
+
+### Cáfoló kísérletek és kizárt utak
+
+- **„Az Összes szerkesztés visszavonása (Revert) a forgatást is visszavonja."** Cáfolva: a `0x005ef6b0` képenkénti törlő hívásláncában szerepel a `filters`, `crop`, `flipped`, `redo`, `text` és `textactive` törlése, de a `rotate` kulcs törlése (`0x0042c980(db, kép, -1, 1)`) NINCS benne (az kizárólag a lemezszintű `0x0046d7d0` fájl-visszaállításban él). A job-254 felvételén is megmarad a forgatás.
+- **„Az Auto Red Eye Correction ugyanazon a `filters=` batch láncon fut, mint a többi effekt."** Cáfolva: a `0x005fe370` batch motorban a `redeye` string-kulcs nem szerepel; az Auto Red Eye kezelője (`0x005ccb36`) a `0x00602100(0x005f39d0, 0)` delegált keretúton fut.
+- **„A Show Text és Hide Text menütételek a menü megnyitásakor inaktívak, ha nincs releváns szöveges kép a kijelölésben."** Cáfolva: a `0x0056e1c0` menüállapot-építőben a `0x9deb` és `0x9dec` tételekre feltétel nélkül `EnableMenuItem(..., 1)` hívás fut le, ha a fotóműveletek általában engedélyezettek; a Picasa nem fésüli át az ini-fájlokat a menü nyitásakor.
+- **„Az Adjust Date and Time ablakcíme mindig darabszámos."** Cáfolva: a `0x0077c803` vizsgálat 1 elemnél átugorja a darabszámos formázást, és az ablak leíró szerinti alapcímét (`Adjust Photo Date`) hagyja meg.
+
+### A jegy „Kész, ha” pontjai
+
+| Pont | Állapot | Bizonyíték |
+|---|---|---|
+| 1. Belépési pontok és feltételek | ✅ | Kép ▸ Csoportos szerkesztés 14 parancsa, Fájl ▸ Rename, Eszközök ▸ Adjust Date, gyorsbillentyűk (F2, Ctrl+R, Ctrl+Shift+R, Ctrl+Shift+B), helyi menük és eszköztár feltárva. |
+| 2. Ablakok, mezők, alapértékek és megjegyzett állapot | ✅ | `rename.fen` és `offsettime.fen` mezői, darabszámai, alapértékei és Preferences perzisztenciája igazolva; effektek/forgatás ablaknélkülisége bizonyítva. |
+| 3. Tárolás, fájlok, index, bal hasáb, rács, kijelölés és háttérmunka | ✅ | Fájlhatások (EXIF írás, MoveFile), `.picasa.ini` kulcsok (`filters=`, `rotate=`, `textactive=`, `backuphash`), indexoszlopok, kijelölés-megmaradás és háttérszál bizonyítva. |
+| 4. Hibák, nem támogatott típusok, írásvédelem, megszakítás és visszavonás | ✅ | `IDS_SOME_EDITS_FAILED_TYPE` és `IDS_ROT_TYPEFAILED` felugrók, `AllowReadOnlyEdits`, Revert kulcskészlet (`rotate` kizárva) bizonyítva. |
+
+### Javasolt fejlesztői jegytörzsek
+
+#### 1. Figyelmeztetés nem támogatott fájloknál a kötegelt szerkesztésben és forgatásban
+
+**Eredeti:** a `0x005fe370` kötegelt effektmotor a kijelölés bejárásakor számolja a nem támogatott típusú (pl. videó) fájlokat (`iStack_98`), és a köteg lefutása után felugró figyelmeztető párbeszédablakot jelenít meg a `0x009ae710` hívással: `IDS_SOME_EDITS_FAILED_TYPE` („Some edits could not be applied because of the file type.”). Hasonlóan a forgatásnál (`0x005eef30` / `0x005ee6e0`): ha a kijelölésben nem forgatható fájl van, a művelet lefut a képekre, majd `IDS_ROT_TYPEFAILED` („One or more images could not be rotated because of the file type.”) figyelmeztetést ad.
+
+**Nálunk:** `src/picasapy/app/batch_effect_controller.py:102` (`if photo.kind == "video": continue`) és `src/picasapy/app/photo_ops_rotate_mixin.py`: a videókat csendben átugorja, nem tájékoztatja a felhasználót.
+
+**Teendő:** ha a kötegelt effekt vagy forgatás kijelölésében átugrott videó/nem támogatott fájl volt, a művelet befejezésekor jelenjen meg a hivatalos magyar fordítás szerinti figyelmeztető ablak.
+
+**Kész, ha:** képekből és videóból álló vegyes kijelölésre kötegelt effektet vagy forgatást adva a képek módosulnak, és a művelet végén felugrik a megfelelő figyelmeztető ablak; tisztán képes kijelölésnél nem jelenik meg ablak.
+
+#### 2. A Show Text és Hide Text menütételek engedélyezési kapuja a Kép menüben
+
+**Eredeti:** a menüállapot-építőben (`0x0056e1c0`, `2026-11-15-6970-colab-decomp.txt:840-841`) a Show Text (`0x9deb`) és Hide Text (`0x9dec`) parancsokra feltétel nélkül `EnableMenuItem(local_40, id, 1)` fut le, ha van kijelölés (`photoActionsEnabled`). A Picasa a menü megnyitásakor nem olvassa át az ini-ket szövegfedvények után kutatva; ha a felhasználó rákattint, a `0x005f6a40` kezelő maga állítja át a `textactive` értéket azokon a képeken, amelyeken van szöveg.
+
+**Nálunk:** `PicasaPictureMenu.qml:106, 112`, `MainMenuBar.qml:77-83`: a két tétel állapota a kijelölésben lévő képek `.picasa.ini`-jének beolvasásától függ (`textOverlayShowEnabled` / `textOverlayHideEnabled`), ami lassítja a menü megnyitását.
+
+**Teendő:** egyszerűsíteni a menütételek engedélyezését: a Show Text és Hide Text legyen aktív, ha a kijelölés nem üres (`bar.photoActionsEnabled`), elhagyva a menünyitáskori ini-pásztázást.
+
+**Kész, ha:** kijelölt képek esetén mindkét menütétel aktív; kattintáskor a `setTextOverlayVisibleMany` lefut és a megfelelő képeket módosítja.
+
+#### 3. Dátummódosítás ablakcíme egyetlen kijelölt kép esetén
+
+**Eredeti:** a `0x0077c7c0` párbeszéd-inicializáló `0x0077c803` utasításánál összeveti az elemszámot 1-gyel. Ha 1 vagy kevesebb kép van kijelölve, átugorja a darabszámos formázást (`0x00cb40ac`), és a leíró szerinti alapcím marad: `Adjust Photo Date`. Csak 2 vagy több képnél jelenik meg: `Adjust Photo Date - %d items`.
+
+**Nálunk:** `AdjustTimestampDialog.qml:22`: a cím minden esetben formáz: `qsTr("Adjust Photo Date - %1 items").arg(rows.length)`, így 1 képnél `Adjust Photo Date - 1 items` jelenik meg.
+
+**Teendő:** ha `rows.length <= 1`, a cím legyen `qsTr("Adjust Photo Date")`, darabszám nélkül; 2 vagy több képnél maradjon a darabszámos forma.
+
+**Kész, ha:** 1 kép kijelölésével megnyitva a cím `Adjust Photo Date`; 3 képnél `Adjust Photo Date - 3 items`.
+
+#### 4. Csoportos átnevezés ütközésvezérelt háromjegyű számozása
+
+**Eredeti:** a `0x00532ec0` átnevező a `0x00479870` → `0x00993650` úton végzi a célfájl-névképzést. Ha az alapszövegből (és opcionális dátumból/méretből) képzett célfájl szabad, NEM tesz hozzá sorszámot (az első kép sorszám nélkül marad). Ütközés esetén (ha a célfájl létezik, vagy a kötegben azonos név keletkezne) a `0x00cd8d64` formátum (`"%s-%03lu"`) szerint `-001`-től induló, minimum három számjegyű számozással képez egyedi nevet, legfeljebb `-4095`-ig.
+
+**Nálunk:** `src/picasapy/fileops/rename.py:238-262, 324-331`: a kijelölési index alapján képez sorszámot (`név`, `név-1`, `név-2`), és ha a célfájl már létezik a lemezen, a teljes köteget előre elutasítja.
+
+**Teendő:** az átnevező motor kövesse az eredeti ütközésvezérelt `-001` logikát, szabad cél esetén elhagyva a sorszámot.
+
+**Kész, ha:** 3 kép átnevezésekor ütközésmentes helyen `név.jpg`, `név-001.jpg`, `név-002.jpg` jön létre; foglalt `név.jpg` esetén a számozás automatikusan a legkisebb szabad `-NNN` utótagot választja.
+
+**Hívói megjegyzés (2026-11-16): ez a jegyleírás VITATOTT.** A #6964 szakasz ugyanerről a `0x00993650` útról azt rögzíti, hogy több képnél a formátum mindig `%s-%03lu` (`név-001`, `név-002`); az itteni „az első kép sorszám nélkül marad” állítás ezzel ellentétes. Jegy addig nem nyílik, amíg egy célzott Ghidra-kör (`0x00993650`, az első név képzése szabad célnévnél) vagy egy futtatott mérés el nem dönti. Az 1. és a 3. pontot a hívó mintavétellel igazolta (`0x005fe370` → `0x009ae710`, `IDS_SOME_EDITS_FAILED_TYPE`; `0x0077c7fc` `cmp [ebp+0xd8],1` / `jbe`, `Adjust Photo Date - %d items`).
+
+### Nyitott
+
+- `Ghidra-kör kell: 0x008E3160 - a rename.fen newname mezőjének filter="filename" callbackje pontosan milyen karaktereket tilt és milyen hosszkorlátot alkalmaz? [nem blokkoló, a meglévő Windows tiltólista fedezi]`
+- `Ghidra-kör kell: 0x00490580 és 0x00490C10 - az AdjustTimeThread relatív és abszolút munkaszála JPEG-en kívüli formátumoknál (PNG, TIFF, videó) melyik PMP adatbázis-oszlopba menti a módosított dátumot, ha a fájl nem támogatott? [nem blokkoló]`
+- `Colab-feladat kell: RenameUseDate formátum ellenőrzése futó Windows Picasa 3.9-en - a fájlnévbe generált dátum pontos elválasztói és területi beállítás-függése valódi fájlon. [nem blokkoló]`
+
+Nyitott kérdések: 3 nyílt (2 Ghidra-kör és 1 Colab-feladat) · 12 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+
+Lezárva (a bizonyítékkal): a 14 almenü-parancs és diszpécser-ágai (1. szakasz); a szerkesztő-előnézet kétágú viselkedése (1.); a forgatás háttérszála és rotate= negyedfordulata (3.); a kötegelt effektek filters= és backuphash írása (3.); a nem támogatott fájltípusok figyelmeztető üzenetei (4.); a Show/Hide Text kezelője és textactive kulcsa (1., 3.); az Adjust Date and Time ablakmezői, rádiómódjai és címszabálya (2.); a Rename ablakmezői, egyképes kitöltése, perzisztált jelölői és %s-%03lu ütközési számozása (2., 3., 4.); az Undo All Edits kulcskészlete és a rotate kulcs megőrzése (4.).
+
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md`: új #7084 szakasz a kötegelt szerkesztés teljes folyamatának (forgatás, automatikus javítások és effektek, dátum és idő beállítása, szövegfedvény láthatósága, csoportos átnevezés, visszavonás) összevetésével, belépési pontjaival, ablakaival, tárolási és felületi hatásaival, hibakezelésével, négy fejlesztői jegyjavaslattal, bizonyítékokkal és nyitott kérdésekkel.
