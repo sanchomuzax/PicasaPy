@@ -197,7 +197,7 @@ import QtQuick.Layouts
                     visible: !viewer.quickViewerMode
                     text: "▶ " + qsTr("Play")
                     font.pixelSize: Theme.fontSize
-                    ToolTip.text: qsTr("Play Slideshow")
+                    ToolTip.text: qsTr("Watch a slideshow of these photos")
                     ToolTip.visible: hovered
                     ToolTip.delay: Theme.tooltipDelay
                     onClicked: viewer.playRequested()
