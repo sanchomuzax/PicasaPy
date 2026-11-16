@@ -18,7 +18,8 @@ adataival, tehát ezeknél sem vesznek el.
 A csillag a gyors megjelölésre való. Csillagot adni és elvenni így tudsz:
 
 - a képtálca **Csillag hozzáadása/eltávolítása** gombjával (a kijelölés
-  minden képére hat),
+  minden képére hat, képenként: a csillagos kép elveszti a csillagát, a
+  csillag nélküli megkapja),
 - az **F4** billentyűvel, ami ugyanazt teszi, mint a tálca gombja (a
   könyvtárban és a nézőben is; ha a gomb szürke, az F4 sem csinál semmit),
 - a könyvtárban a **Ctrl+8** billentyűvel is, ami ugyanezt teszi (a
@@ -35,17 +36,22 @@ A **Szerkesztés ▸ Csillagozottak kijelölése** egy lépésben kijelöli az
 ## Képfelirat
 
 A felirat a kép alá írt rövid szöveg. A nézőben a kép alján
-végigfutó sávba kattintva írhatod be — ha még nincs felirat, a
-„Készítsen képfeliratot!" hívogat a sáv közepén. Enterrel mented, Esc-cel
-eldobod, amit beírtál.
+végigfutó sávba kattintva írhatod be; ha még nincs felirat, a
+„Készítsen képaláírást!" hívogat a sáv közepén. Enterrel mented, Esc-cel
+eldobod, amit beírtál. Ha a sávon kívül kattintasz, vagy közben másik
+képre lépsz, a beírt felirat akkor is elmentődik, mégpedig ahhoz a
+képhez, amelyikhez írtad. Ha a szöveget nem változtattad meg, a program
+nem írja újra a képet.
 
 A sáv két végén egy-egy kis gomb áll:
 
-- **balra** a **Felirat megjelenítése/elrejtése** kapcsoló — egy
+- **balra** a **Képfelirat megjelenítése/elrejtése** kapcsoló: egy
   világos négyzet, benne két vonal, ha a sáv látszik, és üres, ha nem.
   Kikapcsolt sávnál is a helyén marad, tehát ezzel hozod vissza;
-- **jobbra** a **Felirat törlése** gomb, ami rákérdezés nélkül üríti a
-  feliratot. Üres felirat mellett szürke.
+- **jobbra** a **Képfelirat törlése** gomb. Előbb rákérdez egy
+  **Jóváhagyás** ablakban: „Biztosan törli a kép feliratát?" A
+  **Képfelirat törlése** gomb törli a feliratot, a **Nem** (ezen áll a
+  fókusz) meghagyja. Üres felirat mellett a gomb szürke.
 
 A rácsban a **Nézet ▸ Indexkép felirata ▸ Képfelirat** beállítással
 hozhatod elő az indexképek alá.
@@ -59,22 +65,28 @@ A képfeliratot menüből ma nem lehet egyszerre több képre átvinni: képenk�
 kell beírnod.
 
 A feliratot a PicasaPy a JPEG-fájl IPTC-mezőjébe is beírja, így más
-programok is látják.
+programok is látják. Ha a képfájl írásvédett, a felirat akkor is
+megmarad a PicasaPy-ban, csak a fájlba nem kerül bele.
 
 ## Címkék
 
 A címkék a jobb oldali **Címkék** panelen élnek. Megnyitás: **Nézet ▸
-Címkék** vagy **Ctrl+T**, illetve a képtálca Címkék gombja. A Ctrl+T
-nyitja és zárja is a panelt. Ha Ctrl+T-vel nyitod meg, a kurzor rögtön
-a címke beíró mezőjébe kerül, így azonnal gépelhetsz. Amíg a kurzor a
-mezőben áll, a második Ctrl+T nem zárja be a panelt; kattints előbb a
-képekre, utána a Ctrl+T ismét nyitja és zárja.
+Címkék** vagy **Ctrl+T**, illetve a képtálca Címkék gombja. A **Nézet ▸
+Címkék**, a Ctrl+T, a Ctrl+K és a tálca gombja is kapcsolóként működik:
+ha a Címkék panel már nyitva van, újra választva bezárja. Ha Ctrl+T-vel
+nyitod meg, a kurzor rögtön a címke beíró mezőjébe kerül, így azonnal
+gépelhetsz. Amíg a kurzor a mezőben áll, a második Ctrl+T nem zárja be a
+panelt; kattints előbb a képekre, utána a Ctrl+T ismét nyitja és zárja.
 
 - Jelölj ki egy vagy több képet, majd a beíró mezőbe („Írjon be egy
   hozzáadandó címkét:") írd be a címkét, és nyomj Entert, vagy kattints
   a mező melletti **+** gombra (buboréksúgója: „Címke hozzáadása az
   aktuálisan kijelölt elemekhez"). A címke a kijelölés minden képére
-  felkerül.
+  felkerül. **Vesszővel elválasztva** egyszerre több címkét is
+  beírhatsz (például `nyár, tenger, család`); az üres részeket a program
+  kihagyja. Ha valamelyik címkét nem sikerült felvenni, a többi akkor is
+  felkerül, és a mező alatt ez a sor jelenik meg: „A beírt szöveg egy
+  része nem adható hozzá címkeként."
 - A panelen látszik, mely címkék vannak a kijelölésen. A lista fölötti
   fejléc megmondja, mire vonatkozik: egyetlen kijelölt képnél a kép
   nevét írja (*kép.jpg címkéi:*), több képnél *Címkék az aktuális
@@ -83,9 +95,10 @@ képekre, utána a Ctrl+T ismét nyitja és zárja.
 - A lista sorrendje az eredeti Picasáét követi: elöl az a címke áll,
   amelyik a kijelölésben a **legtöbb képen** szerepel. Az egyformán
   gyakori címkék **fordított névsorban** követik egymást (Z-től A felé).
-- Egy címkére jobb gombbal kattintva három tételt kapsz, ebben a
-  sorrendben: **A címke eltávolítása**, **Az ilyen címkével ellátott
-  elemek keresése** és **A címke hozzáadása a teljes kijelölt részhez**.
+- Egy címkére jobb gombbal kattintva három tételt kapsz, az eredeti
+  Picasa sorrendjében: **A címke hozzáadása a teljes kijelölt részhez**,
+  **Az ilyen címkével ellátott elemek keresése** és **A címke
+  eltávolítása**.
   A keresés a címkét beírja a felső keresőmezőbe, és rögtön a találatokat
   mutatja; a keresőmezőt törölve visszakapod a teljes nézetet.
 
@@ -140,7 +153,8 @@ be; ezt a felirat melletti fogaskerék-gomb nyitja meg (buboréksúgója is
 legutóbb használt címkéknek: az új címke az első gombra kerül, az addigi
 első a másodikra csúszik, az addigi második pedig kiesik. Ha olyan
 címkét használsz, amely már a két gomb egyikén áll, a sorrend nem
-változik. Egy gombbal fel is töltheted az üres
+változik. Itt a kis- és nagybetű számít: a `Nyár` és a `nyár` két
+különböző címkének látszik. Egy gombbal fel is töltheted az üres
 mezőket a gyakran használt címkéiddel. Ha a legutóbbiak fenntartása ki
 van kapcsolva, a program a gyorscímkézést nem is jegyzi fel a
 legutóbbiak közé: ha később bekapcsolod, a közben használt címkék nem

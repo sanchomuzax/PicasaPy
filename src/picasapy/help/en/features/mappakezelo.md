@@ -68,6 +68,22 @@ the cache.
 You can browse these photos, but cannot open or edit them. Everything
 works again automatically after the drive is reconnected.
 
+## Network (NAS) folders
+
+A folder on a network share can be added and browsed like a local one.
+A slow network does not freeze the window:
+
+- at startup and when you click the folder, PicasaPy does not wait for
+  the network: photos already scanned appear at once, and the refresh
+  runs in the background;
+- checking the folder when you add it, opening a photo, and folder
+  operations (such as rename, move, and delete) also wait for the
+  network in the background.
+
+A network folder appears once in the folder list. If an earlier
+version added it twice, PicasaPy merges the two rows automatically,
+without losing any photo data.
+
 ## Folder commands in the pane
 
 Right-click a folder for commands to select all its photos, invert or

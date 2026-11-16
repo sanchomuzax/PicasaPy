@@ -62,7 +62,8 @@ the center while the strip moves; empty positions appear at the folder's
 ends. A two-color frame marks the current thumbnail. You cannot drag
 the strip; click a thumbnail to open that picture.
 
-Ctrl+Delete deletes the current picture from disk, after confirmation.
+Ctrl+Delete deletes the current picture from disk, after confirmation. Shift+Delete deletes it permanently, skipping the Trash, also after
+confirmation (see [File operations](fajlmuveletek.md)).
 When you opened it from an album or People album, this removes it from
 that album instead and leaves the file in place. The context-menu
 command then reads **Remove from Album**.

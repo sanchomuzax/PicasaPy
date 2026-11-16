@@ -30,10 +30,12 @@ the selected photo's own data. The completed names use each photo's
 actual date and resolution. Do not enter a file extension; each file
 keeps its own.
 
-The **Rename** button is disabled if the field is empty or unchanged.
+The **Rename** button is disabled if the field is empty, or if the name
+is unchanged and neither **Date** nor **Image resolution** is checked.
+With either checkbox on, you can rename with the unchanged name.
 Press `Enter` in the field to accept the new name, or choose **Cancel**
-or press `Esc` to stop. After renaming one photo, it stays selected so
-you can continue working with it.
+or press `Esc` to stop. After renaming, the photos stay selected, for
+one photo or several, so you can continue working with them.
 
 - **Date** adds the photo's capture date and time, down to the second,
   formatted according to your system's locale. Characters that cannot
@@ -56,18 +58,21 @@ continues from it when that name is taken (`Vacation-006`). If you
 include the **Date** and photos were taken at different times, their
 names will already differ and no number is needed.
 
-If renaming stops partway through, for example because a file is locked,
-the files already renamed stay as they are. The error identifies the
-completed files and the file where the operation stopped. Check that
-file and its intended new name. The view refreshes to show what is on
-disk.
+When renaming several photos, if a file cannot be renamed (for example
+because it is locked), PicasaPy skips it and renames the rest. A line at
+the top of the window lists the skipped files: "Skipped: ...". The
+renamed photos stay selected; the skipped ones keep their old names. The
+view refreshes to show what is on disk.
 
 ## Move
 
 You can move selected photos into a new folder or drag them onto a
 folder in the left pane. To create a folder, open its **Folder
 Properties** window. Its name initially reads **Untitled** and its date
-is set to today. You can also enter a place, description, and music.
+is the capture day of the selected (focused) photo; if the photo has no
+date, today's date is used. Like the original, PicasaPy adds one second
+to the photo's time, so a photo taken in the last second before midnight
+gives the next day. You can also enter a place, description, and music.
 The folder and move are created after you choose **OK**; **Cancel**
 leaves everything unchanged. An empty name, an invalid character, or an
 existing folder name prevents the move. The command is in the
@@ -131,6 +136,12 @@ currently selected folder. The files may come from the file manager or
 from either PicasaPy command above. A cut file is moved; a copied file
 is copied.
 
+In the viewer, **Copy** (`Ctrl+C` or the **Edit** menu) works
+differently: it puts the displayed picture, with all edits, on the
+clipboard as an image instead of the file, so you can paste it directly
+into an image editor or a document. For a video, or before the picture
+has appeared, the file is copied instead.
+
 If a file with the same name already exists in the destination folder,
 the pasted photo gets a new name. Nothing is overwritten. Paste is
 disabled when the clipboard is empty. If it becomes empty before the
@@ -164,12 +175,38 @@ can continue in the grid. The option **Don't ask
 again, always remove** turns off future confirmations. The same
 preference can be changed under **Tools** ▸ **Options** ▸ **General**.
 
+### Permanent delete: Shift+Delete
+
+`Shift+Delete` skips the Trash and deletes the selected photos
+permanently, in the grid and in the viewer. It always asks first,
+with the permanent-delete question; for several photos the question
+gives their number. The button is **Delete File** or **Delete Files**.
+
+In an album or a People album, `Shift+Delete` does the same as
+`Delete`: it only removes the photo from that album and never deletes a
+file.
+
+### If a file cannot go to the Trash (Windows)
+
+On Windows the system sometimes cannot move a file to the Recycle Bin.
+PicasaPy then asks separately for each photo: "This file cannot be moved
+to the Trash and will be deleted immediately. Are you sure you want to
+continue?" **Delete** deletes the photo permanently; **Cancel** (which
+has focus) and `Esc` keep it. If the Recycle Bin rejects the file for
+any other reason, PicasaPy reports an error and does not delete it
+permanently.
+
 ## Locate a file on disk
 
 Choose **File** ▸ **Locate on Disk** (`Ctrl+Enter`) to open the photo's
 folder in the file manager. If no photo is selected, `Ctrl+Enter` opens
 the current folder instead; it has no effect in an album or People
 view.
+
+If the selected photos are in several folders, PicasaPy opens one
+file manager window per folder, each pointing at the first selected
+photo in that folder. This works the same from the **File** menu,
+`Ctrl+Enter`, the photo's context menu, and the Picture Tray.
 
 The photo's context menu has the same **Locate on Disk** command. If
 one photo is selected and PicasaPy has kept its pre-edit original, the
@@ -204,7 +241,12 @@ copy remains at the destination. For one step that cannot be rolled
 back, the error explains where the contents are.
 
 The delete-folder command removes the folder from disk and asks for
-confirmation because it also deletes subfolders. The remove-from-library
+confirmation because it also deletes subfolders. If other files or
+subfolders remain after the pictures are deleted, the folder itself
+stays, and PicasaPy says: "The images in the folder have been deleted,
+but the folder itself will not be deleted due to the presence of
+additional files and/or folders." The folder list then shows what
+actually remains on disk. The remove-from-library
 command hides the folder from PicasaPy while leaving its files in place.
 It asks first in a **Confirm** window with the colorful Picasa logo
 before the question, which shows the folder's full path. The same

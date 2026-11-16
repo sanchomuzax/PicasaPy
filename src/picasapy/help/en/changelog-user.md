@@ -2,6 +2,75 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-16
+
+### Deleting
+
+- New: `Shift+Delete` deletes the selected photos permanently,
+  skipping the Trash, in the grid and in the viewer, and always asks
+  first. In an album or People album it only removes the photo from that
+  album. See [File operations](features/fajlmuveletek.md).
+- On Windows, if a file cannot go to the Recycle Bin, PicasaPy asks for
+  each photo whether to delete it permanently.
+- If other files remain after deleting a folder, PicasaPy says so, and
+  the folder list shows what is left on disk.
+
+### Rename, move, Locate on Disk
+
+- When renaming several photos, a failing file is skipped, the rest are
+  renamed, and the renamed photos stay selected. With **Date** or
+  **Image resolution** on, you can rename with the unchanged name.
+- **Move to New Folder...** suggests the selected photo's date.
+- **Locate on Disk** opens one file manager window per folder for photos
+  in several folders.
+- In **Folder Properties** you can set the place for an existing folder
+  too, and renaming follows the original Picasa name cleanup. See
+  [Library](features/konyvtar.md).
+
+### Viewing, copying, rotating, stars
+
+- In the viewer, **Copy** puts the displayed, edited picture on the
+  clipboard as an image.
+- `Ctrl+R` and `Ctrl+Shift+R` rotate the whole selection in the grid.
+- With several photos selected, the star toggles photo by photo.
+- The context menu's **Hide** and **Unhide** act as their label says on
+  the whole selection.
+
+### Captions and tags
+
+- Deleting a caption asks first, and the caption is saved when you
+  click elsewhere. See [Stars, captions, and tags](features/csillag-felirat-cimke.md).
+- You can add several tags at once, separated by commas; **View** ▸
+  **Tags**, `Ctrl+T`, and `Ctrl+K` close the Tags panel when it is open;
+  the tag context menu uses the original order.
+- The Properties panel's date row context menu opens the date
+  adjustment window, and the **Keywords** button switches to the Tags
+  panel. With several photos, the date adjustment opens with the date of
+  the photo that comes first in the grid.
+
+### Save and revert
+
+- **Revert** warns if another program changed the file since it was
+  saved, and also clears rotation, mirroring, and text. See
+  [Save](features/mentes.md).
+- **Undo all Edits** also clears mirroring and text, keeps the rotation,
+  and is disabled for a photo that is only rotated.
+- **Save As...** and **Save a Copy** are disabled for videos.
+
+### Email and export
+
+- Sending more than 20 photos asks first. Your own email program opens
+  directly, with the subject and text filled in by the number of photos.
+  See [Email](features/email.md).
+- In the folder export overwrite question, **No** cancels the export;
+  the sequence number has as many digits as the number of photos.
+
+### Network folders
+
+- A network (NAS) folder appears once in the list, and startup and
+  clicking the folder do not wait for the network. See
+  [Folder manager](features/mappakezelo.md).
+
 ## 2026-11-15
 
 ### Slideshow

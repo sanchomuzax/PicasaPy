@@ -1,9 +1,9 @@
 # Küldés e-mailben
 
 A kijelölt képeket a számítógép saját levelezőprogramjával küldheted
-el: a PicasaPy előkészíti a mellékleteket, te a saját ablakában megírod
-a levelet, a **Küldés** után pedig megnyílik a levelezőprogramod egy új
-levéllel, amiben már ott vannak a képek.
+el: a PicasaPy előkészíti a mellékleteket, aztán megnyitja a
+levelezőprogramodat egy új levéllel, amiben már ott vannak a képek. A
+levelet ott írod meg és ott küldöd el.
 
 Háromféleképpen indíthatod: a képtálca **E-mail** gombjával, a
 **Fájl ▸ E-mail…** paranccsal, vagy a **Ctrl+E** billentyűvel. Az
@@ -13,16 +13,24 @@ utóbbi nem sül el, amíg egy szövegmezőbe gépelsz.
 
 1. Jelöld ki a képeket.
 2. Indítsd az e-mailezést (gomb, menü vagy Ctrl+E).
-3. A program előkészíti a mellékleteket („Mellékletek előkészítése…"),
+3. Ha **20-nál több** képet jelöltél ki, a program előbb rákérdez egy
+   **Jóváhagyás** ablakban: „*N* fájlt elküld e-mailben?". A **Mégse**
+   után semmi nem készül el, az **OK** után a kérdés pillanatában
+   kijelölt képekkel folytatja.
+4. A program előkészíti a mellékleteket („Mellékletek előkészítése…"),
    és szükség esetén átméretezi a képeket.
-4. Megnyílik a **Képek küldése e-mailben** ablak (lásd lent).
-5. A **Küldés** gombra a levelezőprogramod új levéllel nyílik meg, a
-   képek csatolva.
+5. Megnyílik a levelezőprogramod egy új levéllel, a képek csatolva.
+
+A PicasaPy-ban nincs külön levélíró ablak: a címzettet, a tárgyat és a
+szöveget a levelezőprogramodban adod meg. A program a tárgyat és a
+szöveget előre kitölti a képek száma szerint: egy képnél a tárgy
+„Küldök egy képet", a szöveg „Ön 1 képet kapott.", több képnél „Küldök
+*N* képet" és „Ön *N* képet kapott.". Ezeket a levelezőprogramban
+átírhatod.
 
 Windowson a program a levelezőprogram szabványos csatolási felületén át
-adja át a képeket, így azok **mellékletként** érkeznek meg. A levél a
-levelezőprogram szerkesztőjében nyílik meg, és onnan te küldöd el — a
-PicasaPy magától nem küld levelet.
+adja át a képeket, így azok **mellékletként** érkeznek meg. A PicasaPy
+magától nem küld levelet: az elküldés a te döntésed a levelezőprogramban.
 
 Linuxon a mellékletek átadásához a rendszeren az `xdg-utils` csomagnak
 kell lennie (asztali rendszereken általában fent van).
@@ -39,37 +47,20 @@ törli** a korábbi küldések másolatait, így nem halmozódnak a lemezen. Az
 egy óránál frissebb másolathoz nem nyúl, mert egy másik PicasaPy-ablakban
 éppen küldés lehet folyamatban.
 
-## A levélszerkesztő ablak
-
-Itt állítod össze a levelet:
-
-- **Címzett:** és **Tárgy:** mező, alattuk a levél szövege;
-- a mellékletek **kis képei** egy sávban — rákattintva kijelölsz egyet,
-  a **×** gomb a kijelöltet **kiveszi a mellékletből** (a kép a
-  lemezen marad);
-- **Elvetés** — bezárja az ablakot, nem küld semmit;
-- **Küldés** — átadja a levelet a levelezőprogramnak.
-
-A címzettet nem kötelező kitölteni: a levelezőprogramban is megadhatod.
-
-A **Címzett:** mezőre jobbgombbal kattintva a helyi menüben ott az
-**Automatikus kitöltés** pipás kapcsoló, ahogy az eredeti Picasában. Alapból
-be van kapcsolva, és a program megjegyzi, hogyan hagytad.
-
 ## Levelezőprogram-választó
 
-Amíg nem döntöttél másképp, az **első küldésnél** a program előbb a
-**Válasszon levelezőprogramot** lapot mutatja. Az első tétel a
-számítógéped alapértelmezett levelezőprogramjának nevét mutatja
-(például Thunderbird vagy Outlook); ha a program nem tudja kiolvasni,
-**Beépített levelezőprogram** áll ott. Ezt hagyod jóvá: a képek ebben a
-levelezőprogramban nyílnak meg új levélként. A **Google Mail**
+Amíg nem döntöttél másképp, a program küldés előtt a **Válasszon
+levelezőprogramot** lapot mutatja. Az első tétel a számítógéped
+alapértelmezett levelezőprogramjának nevét mutatja (például Thunderbird
+vagy Outlook); ha a program nem tudja kiolvasni, **Beépített
+levelezőprogram** áll ott. Erre kattintva a választó bezárul, és a képek
+ebben a levelezőprogramban nyílnak meg új levélként. A **Google Mail**
 tétel szürke, nem választható: a PicasaPy-nak nincs Google-fiók-kapcsolata.
 
 Ha bejelölöd a **Jegyezze meg ezt a beállítást, ne jelenítse meg a
-párbeszédpanelt újra** pipát, legközelebb a program egyből a
-levélszerkesztőt nyitja. (Ez ugyanaz a kapcsoló, mint a Beállítások
-E-mail fülén — bármikor visszaállíthatod.)
+párbeszédpanelt újra** pipát, legközelebb a program kérdés nélkül, egyből
+a levelezőprogramot nyitja. (Ez ugyanaz a kapcsoló, mint a Beállítások
+E-mail fülén, bármikor visszaállíthatod.)
 
 ## Beállítások ▸ E-mail
 
@@ -97,7 +88,12 @@ elveti őket (lásd [Beállítások](beallitasok.md)).
 ## Ha nem indul el a küldés
 
 Ha a rendszereden nincs levelezőprogram beállítva, a program szól:
-**Nem található levelezőprogram.** Ha van ugyan, de nem tud mellékletet
+**Nem található levelezőprogram.** Windowson a levelezőprogram hibáját is
+megnevezi: „Túl sok mellékletet tartalmaz, ezért nem lehet elküldeni.",
+„Nem található a melléklet", „A mellékletet nem sikerült megnyitni.",
+„Ismeretlen címzett.", minden más esetben „Az e-mailt nem lehetett
+elküldeni.". Ha a levelezőprogramban magad szakítod meg a küldést, a
+PicasaPy nem ír ki hibát. Ha van ugyan, de nem tud mellékletet
 fogadni, üres levél nyílik a képek nélkül, és ezt a program külön
 jelzi. A mellékletek előkészítésének hibája is megjelenik a felület
 tetején, nem vész el némán.

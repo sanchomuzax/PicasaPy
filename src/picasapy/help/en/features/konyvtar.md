@@ -77,14 +77,14 @@ Buttons sit on the right side of the folder header. Which ones appear is set wit
 
 Right-click a folder row and choose **Edit Folder Description...**, or open the folder and choose **Folder** ▸ **Edit Folder Description...**, to open **Folder Properties**. Its fields are:
 
-- **Name:** Change the folder name here. The **OK** button renames the folder on disk; its pictures, subfolders, and <code>.picasa.ini</code> move with it. If the name is already in use or invalid, or one of the folder's pictures is being edited, a window titled **Cannot Rename Folder** explains why, and nothing changes.
+- **Name:** Change the folder name here. The **OK** button renames the folder on disk; its pictures, subfolders, and <code>.picasa.ini</code> move with it. If the name is already in use or invalid, or one of the folder's pictures is being edited, a window titled **Cannot Rename Folder** explains why, and nothing changes. PicasaPy cleans the name you type the way the original Picasa does: it drops characters that are not allowed in file names (`< > : " / \ | ? *`), turns tabs and line breaks into spaces, trims spaces and dots from both ends, and adds an underscore to the names `con`, `prn`, `aux`, and `nul`. It does not merge spaces inside the name.
 - **Date:** The folder date, formatted according to your language settings (for example, 2026-01-01 in English). The standard YYYY-MM-DD format is accepted too. Click the calendar icon at the right edge of the field (**Choose date**) to open a calendar underneath. Use the **Previous month** and **Next month** arrows to move between months, then click a day to put it in the field. **OK** saves the date. **Automatic date** clears the date you entered and restores the date of the earliest picture in the folder. If the date is invalid, **OK** is disabled and a line shows the expected format.
 - **Music:** Use **Use music for Slideshow and Movie presentation:** and the **Browse...** button to choose an audio file (.mp3 or .wma on Windows; .mp3 or .m4a elsewhere). The music plays during a slideshow of the folder and in a movie made from the folder. The file field and button are enabled only when the check box is selected.
 - **Description (optional):** The folder description.
 
 **OK** saves the name, date, music, and description together, then closes the window. **Cancel** saves nothing.
 
-Album Properties opens in the same window (see below). The **Place taken (optional):** field can only be edited for an album or when creating a folder; it is disabled for an existing folder.
+Album Properties opens in the same window (see below). The **Place taken (optional):** field can be edited for an existing folder too: when you click **OK**, the place is saved in the folder's <code>.picasa.ini</code> file, and the window shows it next time. If saving fails (for example in a read-only folder), the window stays open.
 
 ### Split a folder
 
@@ -274,7 +274,7 @@ Right-click the output buttons and choose **Configure Buttons...** to open the s
 
 ## Changing picture dates
 
-If a picture has the wrong date - for example, the camera clock was set incorrectly - you can fix it. Select the pictures, then choose **Tools** ▸ **Adjust Date and Time...**. The **Adjust Photo Date - %1 items** window (or **Adjust Photo Date** for one picture) shows the first picture's thumbnail and its **Current photo date**. The date and time appear in two separate gray, read-only fields, as in the original Picasa. You can enter a **New photo date** (click the date to open a calendar) and a **New photo time**. Choose one of two modes:
+If a picture has the wrong date - for example, the camera clock was set incorrectly - you can fix it. Select the pictures, then choose **Tools** ▸ **Adjust Date and Time...**. The **Adjust Photo Date - %1 items** window (or **Adjust Photo Date** for one picture) shows the first picture's thumbnail and its **Current photo date** (with several pictures selected, the one that comes first in the grid, and the fields open with its date). The date and time appear in two separate gray, read-only fields, as in the original Picasa. You can enter a **New photo date** (click the date to open a calendar) and a **New photo time**. Choose one of two modes:
 
 - **Adjust all photo dates by the amount** adds the difference between the first picture's old and new dates to the time of every selected picture. The time differences between pictures are preserved.
 - **Set all photos to the same date and time** gives every picture the same date and time.
@@ -287,9 +287,13 @@ Writing the EXIF date works for JPEG pictures. For files that cannot store a dat
 
 The right-hand drawer opens and closes with Ctrl+0 or by clicking its narrow, normally invisible edge. Its **Properties** panel (also available with Alt+Enter or from the Picture Tray panel switch) shows details for the selected picture. The panel title names the picture, for example “Properties of kep.jpg:”. At the top are **Location** (the file path), **File Size**, and **Dimensions**. Below are capture details: **Camera Make**, model, capture and digitized dates, **File Date**, orientation, **Flash**, the **Lens** name, **Focal length**, **CCD Width**, **Exposure Time**, **Aperture**, **F Number**, ISO, **White balance**, **Metering Mode**, **Exposure Program**, **Compression**, **Color Space**, and **JPEG Quality**. The panel ends with **Tags**, **People Tags** (the people named in the picture, with a count when a name appears more than once, such as “Anna (2)”), and GPS coordinates.
 
-Right-click the panel to open its only command, **Edit Tags**, which opens the Tags panel.
+The panel's context menu depends on which row you right-click (with a picture selected):
 
-When there is a selection, the panel also has a **Keywords** button beside the selection's tags. It opens the **Tags** window, with the picture's thumbnail, name, and date at the top and the **Tags:** list below. Enter a tag in **Add Tag:** and click **Add** to apply it to the selection. Select a tag in the list and click **Remove** to remove it. **Done** closes the window. If a selected picture is write-protected, the window says “Tags cannot be changed because the selection contains a read-only item.” and editing is disabled. Adding tags does not change the date of a picture without a capture date.
+- on the **Camera Date** row it offers **Adjust Date and Time...**, which opens the date adjustment window (see "Changing picture dates" above);
+- on the tags row it offers **Edit Tags**, which switches to the **Tags** panel;
+- on other rows and on the empty part of the panel no menu opens.
+
+When there is a selection, the panel also has a **Keywords** button beside the selection's tags. It also switches to the **Tags** panel, where you can add and remove tags (see [Stars, captions, and tags](csillag-felirat-cimke.md)).
 
 The order matches the original Picasa. If a value is not in the file, its row is not shown, so the panel is shorter or longer for each picture. For a movie, the three rows at the top are followed by movie details: **Movie Info** shows the format, **Movie Rate** shows frames per second (for example, 25 fps), and **Movie Length** shows the duration as minutes:seconds or, for longer movies, hours:minutes:seconds.
 
@@ -311,7 +315,7 @@ The same applies to **White balance**: it shows **Auto** or **Manual**, and disp
 
 Hide a picture with **Picture** ▸ **Hide** or **Hide** in its context menu. The file stays on disk. **Picture** ▸ **Hide** hides only visible pictures in the selection; if the selection already contains a hidden picture, it does not reveal it. The count next to a folder in the left pane includes only visible pictures, so it goes down after you hide pictures (with **View** ▸ **Hidden Pictures** turned on, it includes hidden ones too). A folder that contains only hidden pictures stays in the pane with a count of 0.
 
-To show hidden pictures, turn on **View** ▸ **Hidden Pictures**. Use **Picture** ▸ **Unhide** to reveal them. This reveals only hidden pictures in the selection; pictures that are already visible are not hidden. This command is available only if the selection contains a hidden picture; otherwise it is disabled. The picture's context menu has the same command, which changes to **Unhide** in place of **Hide**.
+To show hidden pictures, turn on **View** ▸ **Hidden Pictures**. Use **Picture** ▸ **Unhide** to reveal them. This reveals only hidden pictures in the selection; pictures that are already visible are not hidden. This command is available only if the selection contains a hidden picture; otherwise it is disabled. The picture's context menu has the same command, which changes to **Unhide** in place of **Hide**. The context-menu command acts as its label says on the whole selection: if you right-click a hidden picture, **Unhide** shows every selected picture; if you right-click a visible one, **Hide** hides them all, even in a mixed selection. The viewer's context menu works the same way.
 
 You can hide an entire folder too: select it, then choose **Folder** ▸ **Hide** or **Hide Folder** from the folder's context menu. In Album and People views there is no selected folder, so **Folder** ▸ **Hide** and **Folder** ▸ **Unhide** are disabled. The folder disappears from the left pane. Turn on **View** ▸ **Hidden Pictures** to find it under Hidden Folders. Restore it with **Folder** ▸ **Unhide** (available only for a hidden folder; disabled for a visible one) or with **Unhide Folder** in its context menu. To use the context menu, first turn on **View** ▸ **Hidden Pictures** and select the folder under Hidden Folders. The folder remains on disk.
 

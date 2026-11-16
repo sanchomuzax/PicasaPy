@@ -53,6 +53,10 @@ PicasaPy. This affects only the most recent save.
 
 If the chosen name is already in use, PicasaPy reports that it cannot
 save another file with that name.
+If the copy cannot be written because of a disk error, it says: "Unable
+to save files due to a disk error. The disk may be full or read-only."
+
+Both commands are disabled for a video and when no photo is selected.
 
 ## Restore
 
@@ -62,9 +66,21 @@ such a backup exists. It is available immediately after saving; you do
 not need to change the selection.
 
 PicasaPy asks for confirmation. For one photo it asks whether to
-restore the original; for several photos it asks the same for all of
-them. Choose **Restore** or **Cancel**. Cancel has focus when the
-dialog opens, so an accidental `Enter` does not restore anything.
+restore the original, with an extra **Undo Save** button that only
+undoes the last save and keeps your edits (see above). For several photos
+it asks "Revert to original version of these files?" and there is no
+**Undo Save** button. Cancel has focus when the dialog opens, so an
+accidental `Enter` does not restore anything.
+
+If another program has changed a file since it was saved, PicasaPy warns
+once more, because reverting also discards that change: "This file has
+been changed outside of PicasaPy. Reverting will lose those changes."
+(for several files "These files have changed..."), followed by "Do you
+want to revert?". The buttons are **Revert Anyway** and **Cancel**;
+**Cancel** has focus.
+
+Reverting also clears the photo's rotation, mirroring, and text, so it
+really appears in its original state.
 
 A floating progress indicator appears while files are restored. If the
 disk is full or read-only, PicasaPy reports that it could not restore
@@ -74,7 +90,13 @@ original photo.
 ## Undo all Edits
 
 Choose **Picture** ▸ **Undo all Edits** to clear the edit list without
-changing the file. The photo returns to its original appearance.
+changing the file. The photo returns to its original appearance. Besides
+the edits, it also clears mirroring, text written on the photo, and the
+edit history; the rotation stays.
+
+The command is available only if the first edited photo in the selection
+is not merely rotated. It is disabled when nothing is selected, when no
+selected photo is edited, or when the first edited photo is only rotated.
 
 PicasaPy asks for confirmation in a **Confirm** dialog. Choose
 **Remove Edits** to continue or **No** to cancel. In the viewer, the
