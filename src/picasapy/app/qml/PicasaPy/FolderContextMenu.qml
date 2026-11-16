@@ -53,6 +53,16 @@ PicasaMenu {
     // mappa réteg elkészültekor a hívó feltölt — a felirat-váltás magától
     // helyes lesz.
     property bool folderHidden: false
+    // #7108: a mozgatás védelmét eldöntő objektum (a `FileOpsController`: az
+    // `isMoveProtectedFolder(path)` hívást várja). Az eredeti a hét ismert
+    // mappán (Képek, Asztal, Zene, Videók, Dokumentumok, felhasználói és
+    // közös alkalmazásadat) és a rendszerutakon szürkíti a Mappa
+    // áthelyezése tételt (`0x0056c5a0`, `0xa6`). Védő nélkül (null) a tétel
+    // él, mint eddig.
+    property var moveGuard: null
+    readonly property bool folderMoveProtected:
+        menu.moveGuard !== null && menu.folderPath !== ""
+        && menu.moveGuard.isMoveProtectedFolder(menu.folderPath) === true
 
     //: #1637 — a mappa elrejtése/megjelenítése
     signal hideFolderRequested(string path)
@@ -324,6 +334,7 @@ PicasaMenu {
     MenuItem {
         objectName: "folderMenuMoveFolder"
         text: qsTr("&Move Folder...")
+        enabled: !menu.folderMoveProtected
         onTriggered: menu.moveFolderRequested()
     }
     MenuItem {

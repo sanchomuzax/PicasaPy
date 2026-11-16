@@ -99,7 +99,8 @@ class FileOpsControllerClipboardMixin:
         """A vágólapon lévő fájlok beillesztése a megadott mappába (#1526).
 
         A `cut` jelzésű tartalom ÁTHELYEZ, a `copy` MÁSOL. A meglévő
-        köteg-utakat hívja (`copyPhotos`/`movePhotos`), tehát az
+        köteg-utakat hívja (`_copy_batch`/`_move_batch`, a `copyPhotos`/
+        `movePhotos` slotok közös magját), tehát az
         ütközéskezelés, a haladásjelzés és az összegző jelzés ugyanaz, mint a
         fogd-és-vidd műveleteknél — nem külön ág, amit külön kellene őrizni.
 
@@ -114,8 +115,15 @@ class FileOpsControllerClipboardMixin:
         # párbeszédet nyit (ugyanazt a rename/skip kérdést, mint az
         # áthelyezésnél); a párbeszéd bekötése önálló lépés, de a
         # felülírás-mentesség nem várhat rá.
+        #
+        # #7114: a Beillesztés köteg az ELSŐ végleges fájlhibánál megáll
+        # (az eredeti `0x005350b0` ciklusa a `0xf4242` eredménynél kilép):
+        # a korábbi másolatok megmaradnak, a későbbi képeket el sem kezdi, és
+        # EGY összegző jelzés (`batchFinished`) nevezi meg a hibát. A
+        # fogd-és-vidd és a menüs köteg (#301/#459) ettől függetlenül
+        # folytatja a hibás kép után.
         if muvelet == "cut":
-            self.movePhotos(fajlok, dest_folder, "rename")
+            self._move_batch(fajlok, dest_folder, "rename", stop_on_failure=True)
         else:
-            self.copyPhotos(fajlok, dest_folder, "rename")
+            self._copy_batch(fajlok, dest_folder, "rename", stop_on_failure=True)
         return True

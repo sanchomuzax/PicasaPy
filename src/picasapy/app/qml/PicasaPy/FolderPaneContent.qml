@@ -371,6 +371,9 @@ Flickable {
             // ugyanaz volt.
             Layout.preferredHeight: folderHierarchyView.rowCount * folderPane.rowHeight
             hierarchy: folderHierarchyController
+            // #7108: a Move Folder tétel szürke az ismert mappákon
+            moveGuard: typeof fileOpsController !== "undefined"
+                       ? fileOpsController : null
             selectedPath: folderPane.selectedPath
             rowHeight: folderPane.rowHeight
             // #3681: közös szerződés a lapos listával — a mentés-panel
