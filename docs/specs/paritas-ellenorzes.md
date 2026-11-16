@@ -6297,12 +6297,10 @@ Ideiglenes szkriptjeim és nyers kimeneteim a munkafa `.bt/` mappájában vannak
 (a `.gitignore` kizárja).
 
 **A menürekord-szabály (#7012) alkalmazása.** A menüépítő rekordjaiban a
-parancsmező az eggyel előző rekordhoz tartozik. A Fájl menüben az `&Import
-From...` (`ID_FILE_IMPORTPICTURE`, felirat `0x00c8c718`) után épített
+parancsmező az eggyel előző rekordhoz tartozik. A Fájl menüben az `&Import From...` (`ID_FILE_IMPORTPICTURE`, felirat `0x00c8c718`) után épített
 `Import from Picasa Web Albums...` blokk írja a `0x9c91` parancsot
 (`0x005592d7`); ez az `&Import From...` rekord parancsa. Független
-ellenőrzés: a gyorsbillentyű-tábla `0x00d6d9b0 | 0x9c91 | &Import From... |
-Ctrl+M` (`picasa-menu-leltar.md:434`), és az `&Import From...` blokk a
+ellenőrzés: a gyorsbillentyű-tábla `0x00d6d9b0 | 0x9c91 | &Import From... | Ctrl+M` (`picasa-menu-leltar.md:434`), és az `&Import From...` blokk a
 megelőző `Add &File to Picasa...` rekord `0xe101` (MFC `ID_FILE_OPEN`)
 parancsát írja. A bélyegkép helyi menüjében (`0x00733c70`, 20 bájtos
 rekordok, a parancsszó a rekord `+0xa` mezője) ugyanígy: `Include File` =
@@ -6390,8 +6388,7 @@ kezelés, valamint a végállapot (rács, bal hasáb, kijelölés) nem zárult l
   "Folder on Disk" tétel az `Import Files/Folder` tallózót nyitja
   (`0x00520fa0`), ami a `Preferences\FilesFromImport` mappát jegyzi meg.
   PicasaPy: Linuxon `/media` és `/run/media` alatti csatolások, Windowson
-  cserélhető meghajtó vagy `DCIM` mappás kötet (`import_source_controller_
-  sources.py:77-165`); ez az eredeti szabálytól eltér (CD-ROM nincs, a
+  cserélhető meghajtó vagy `DCIM` mappás kötet (`import_source_controller_ sources.py:77-165`); ez az eredeti szabálytól eltér (CD-ROM nincs, a
   `KODAK` szabály nincs, a `DCIM` vizsgálat a felsorolóban nincs).
 - **A tippsor négy állapota (`0x0051ae90`).** Az állapotot a `[panel+0x7b0]`
   almappa-mód és a `[panel+0x480]` jelző adja: kézi mód és jelző nulla = 1.
@@ -6401,18 +6398,15 @@ kezelés, valamint a végállapot (rács, bal hasáb, kijelölés) nem zárult l
   4. ("Import into folder with today's date"). PicasaPy csak az 1. állapotot
   mutatja (`ImportSourceDestinationPanel.qml:129-140`).
 - **Mikor engedélyezett az Import.** Az `AcquireImportAllEnable` (`0x005276f0`)
-  és `AcquireImportSelectedEnable` (`0x00527730`) állítmány a `0x005238b0
-  (panel, csakKijelölt)`-et hívja: akkor engedélyez (a visszaadott 1 =
+  és `AcquireImportSelectedEnable` (`0x00527730`) állítmány a `0x005238b0 (panel, csakKijelölt)`-et hívja: akkor engedélyez (a visszaadott 1 =
   engedélyezett, 2 = letiltott; a kódolás az `AcquireHasImages` és az
   `AcquireDeleteMenuEnable` párhuzamából következik), ha a `[panel+0x480]` nem
-  nulla, és van legalább egy nem kizárt (`[elem+0xbc]==0`), `Import
-  Selected`-nél kijelölt (`[elem+0x5d]`) elem. Az alapgomb-kezelő
+  nulla, és van legalább egy nem kizárt (`[elem+0xbc]==0`), `Import Selected`-nél kijelölt (`[elem+0x5d]`) elem. Az alapgomb-kezelő
   (`0x0051b620`, feltehetően az Enter; a kód a `+0x228` célra és egy
   "mégse" jelzőre ágazik) az `anowbutton`-t nyomja, ha legfeljebb egy kép
   van kijelölve, különben az `import_selected`-et; a jelzős ág az
   `acancelbutton`-t (Esc). PicasaPy: egyetlen
-  `Import` gomb, engedélye `includedCount > 0 && destFolder && !importing &&
-  (nem kézi || manualNameValid)` (`ImportSourceDestinationPanel.qml:251-261`),
+  `Import` gomb, engedélye `includedCount > 0 && destFolder && !importing && (nem kézi || manualNameValid)` (`ImportSourceDestinationPanel.qml:251-261`),
   kijelölés nincs; a #4595 óta a címhiány letiltja a gombot (a régi lap
   "a gomb engedélyezett" megjegyzése elavult).
 - **Megjegyzett állapot és alapértékek.**
@@ -6432,8 +6426,7 @@ eredeti:** a `LastImport%x`, a `-seperator-before-LastImports-` és az
 `Acquire::ChooseFolder` a `0x00516180`-ban, az `import_folder_menu`
 építőjében áll (a `0x005254c3` hívás az `acquirepanel/import_folder_menu`
 elemmel). A forráslistának megjegyzett előzménye az eredetiben nincs. Ez egy
-tudatos, működő többlet, nem teendő; a komment (`ImportSourcePickerPanel.qml:
-42-43`) téves állítását pontosítani érdemes.
+tudatos, működő többlet, nem teendő; a komment (`ImportSourcePickerPanel.qml: 42-43`) téves állítását pontosítani érdemes.
 
 ### Tárolás, hatás és állapotsor
 
@@ -6565,8 +6558,7 @@ nélkül kiüríti.
 #### 1. Az importálás megjegyzett állapota és alapértékei (E1, E2, E6)
 
 **Eredeti:** a `0x00514180` az `acquireUseSubFolder` kulcsot alapérték 0-val
-olvassa (`[panel+0x7b0]`); a menü sorrendje `0x005181b0`: 0 = `Enter Folder
-Title`, 1 = `Date Taken (YYYY-MM-DD)`, 2 = `%s (Today)`; a `0x00525400` az
+olvassa (`[panel+0x7b0]`); a menü sorrendje `0x005181b0`: 0 = `Enter Folder Title`, 1 = `Date Taken (YYYY-MM-DD)`, 2 = `%s (Today)`; a `0x00525400` az
 import indításakor visszaírja. A `0x00519560` az `acquireCleanCard` kulcsot
 alap 0-val olvassa, a 2 értéket 1-re cserélve; a `0x0051a0c2` indításkor
 írja, ha a forrás törölhető. A `0x00525352` indításkor legfeljebb 5
