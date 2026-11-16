@@ -173,8 +173,8 @@ A user-focused changelog: only changes you can see on screen. The detailed, deve
   Path** appears only when a single picture is selected.
 - The confirmation for removing a folder from PicasaPy names the folder
   even when started from the menu, with the Picasa logo before it. When
-  moving a folder, you choose the destination in the **Browse for
-  Folder** window. See [File operations](features/fajlmuveletek.md).
+  moving a folder, you choose the destination in a folder chooser
+  window. See [File operations](features/fajlmuveletek.md).
 - **File** ▸ **Save a Copy** copies only the highlighted picture when
   several are selected. See [Saving](features/mentes.md).
 
