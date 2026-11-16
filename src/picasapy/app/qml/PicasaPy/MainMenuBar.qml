@@ -137,9 +137,10 @@ PicasaMenuBar {
         hostCollectionPasswordDialog.ensure().openForHiddenCollection()
     onRescanRequested: hostController.rescan()
     // #1526: a fájl-vágólap — a kijelölt képek fájljai kerülnek fel,
-    // így egy fájlkezelőbe közvetlenül beilleszthetők
-    onCopyFilesRequested: hostFileOpsController.copyFilesToClipboard(
-        hostWindow.photoActionPaths())
+    // így egy fájlkezelőbe közvetlenül beilleszthetők. #7030: a nézőben a
+    // Másolás a megjelenített, szerkesztett KÉPET teszi fel (ld.
+    // `copyActionToClipboard`).
+    onCopyFilesRequested: hostWindow.copyActionToClipboard()
     onCutFilesRequested: hostFileOpsController.cutFilesToClipboard(
         hostWindow.photoActionPaths())
     //: #1526: a Beillesztés célmappája a KIVÁLASZTOTT mappa. Ha a

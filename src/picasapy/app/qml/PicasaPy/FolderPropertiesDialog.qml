@@ -54,6 +54,7 @@ Dialog {
     property bool currentMusicEnabled: false
     property string currentMusicFile: ""
     property var renameFolderHandler: null
+    property var folderLocationHandler: null
     property string renameError: ""
 
     // a szerkesztett mappa — a hívó állítja be open() előtt
@@ -189,7 +190,7 @@ Dialog {
         nameField.text = root.albumMode ? root.albumName : root.folderName
         dateField.text = root._isoToField(root.currentDate)
         locationField.text = root.albumMode ? root.albumLocation
-            : (root.newFolderCreation ? root.folderLocation : "")
+            : root.folderLocation
         descriptionField.text = root.currentDescription
         musicCheck.checked = root.currentMusicEnabled
         musicPathField.text = root.currentMusicFile
@@ -249,6 +250,17 @@ Dialog {
             root.folderPath = result.path
             root.folderName = result.name
             nameField.text = result.name
+        }
+        if (!root.albumMode && !root.newFolderCreation
+                && locationField.text !== root.folderLocation) {
+            if (typeof root.folderLocationHandler !== "function")
+                return
+            var locationSaved = root.folderLocationHandler(
+                root.folderPath, locationField.text)
+            if (locationSaved !== true)
+                return
+            root.folderLocation = locationField.text.trim()
+            locationField.text = root.folderLocation
         }
         root.accept()
     }
@@ -603,9 +615,7 @@ Dialog {
                 Layout.maximumHeight: 26
                 font.pixelSize: Theme.fontSize
                 onAccepted: root._saveProperties()
-                //: #4534: mappa létrehozásakor a hely a célmappa `[Picasa]`
-                //: szekciójába kerül; meglévő mappánál az eredeti mód marad.
-                enabled: root.albumMode || root.newFolderCreation
+                enabled: true
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
             }

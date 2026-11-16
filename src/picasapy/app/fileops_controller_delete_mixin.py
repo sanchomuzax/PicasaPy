@@ -8,6 +8,12 @@ from pathlib import Path
 from PySide6.QtCore import Slot
 
 
+_PARTIAL_FOLDER_DELETE_MESSAGE = (
+    "The images in the folder have been deleted, but the folder itself will not\n"
+    "be deleted due to the presence of additional files and/or folders."
+)
+
+
 def _controller_module():
     """A régi modul fogantyúihoz irányít, monkeypatch-kompatibilisen."""
     return import_module("picasapy.app.fileops_controller")
@@ -36,7 +42,23 @@ class FileOpsControllerDeleteMixin:
         try:
             _compat.delete_to_trash(source, trash_dir=trash_dir)
         except OSError as error:
-            self.operationFailed.emit("delete_folder", str(error))
+            # A Shell hiba után lehet, hogy a képek már eltűntek, miközben
+            # más fájlok miatt maga a mappa megmaradt. A lemez állapotát
+            # minden hibánál újraolvassuk; a részleges eredményt a Picasa
+            # hivatalos IDS_CANT_DELETE_FOLDER szövege nevezi meg.
+            self.folderDeleteFailed.emit(str(source))
+            if source.is_dir():
+                message = self.tr(_PARTIAL_FOLDER_DELETE_MESSAGE)
+            else:
+                message = str(error)
+            self.operationFailed.emit("delete_folder", message)
+            return
+        if source.is_dir():
+            # A Shell sikeres kód mellett is maradhatott vissza könyvtár.
+            self.folderDeleteFailed.emit(str(source))
+            self.operationFailed.emit(
+                "delete_folder", self.tr(_PARTIAL_FOLDER_DELETE_MESSAGE)
+            )
             return
         self.folderDeleted.emit(str(source))
 
