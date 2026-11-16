@@ -4809,6 +4809,237 @@ típusleképezés nélkül.
 
 - docs/specs/paritas-ellenorzes.md - a #7032 alfejezet kiegészült a CAlbumList `lb_predouble` típuskapujával, független rekordúttal, cáfoló próbával és a név szerinti sorleképezés nyitott kérdésével.
 
+### Zárókör (2026-11-16)
+
+Vizsgálati mód: az eredeti `Picasa3.exe` (3.9.141.259, SHA-256
+644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96) helyi
+diszasszemblálása (`eszkozok/pe_dis.py`, capstone, címtartományonként), a
+meglévő Ghidra-kimenetek (`2026-10-29-koteg-33.txt`,
+`2026-11-11-6532-colab-004a0720-hivok.txt`,
+`2026-11-15-6963-colab-decomp-2.txt`, `2026-11-16-koteg-438-465.txt`), az
+`.picasa.ini` korpusz helyi másolata (859 fájl, NAS-bejárás nélkül) és a
+tulajdonosi képernyőképekre épülő `ui-audit-context-menus.md`. A „Nálunk”
+állítások a mai forráskódon, grep-pel ellenőrizve. Korábbi következtetést ez a
+kör nem von vissza: ahol a hívóhely diszasszemblálása mást mutat, mint a
+dekompiláció, azt a Z1 pont mondja ki.
+
+#### Z1. A hívóhelyek diszasszemblálása: amit a dekompiláció veremolvasata nem adott
+
+- **`0x00994400`, a `MoveFileExW`-burkoló szerződése.** A dekompiláció három
+  paramétert és egy `in_AL` értéket mutat. A belépés (`sub esp,0x14` és négy
+  mentés) szerint a veremparaméterek: forrás, cél, bájtjelző (másolás
+  engedélye), időkorlát; az `AL` a felülírási jelző. A `0x004fd28b-0x004fd293`
+  hívóhely: `push 5; push 1; push cél; push forrás; xor al,al; call 0x994400`.
+  Tehát: **az `AL` nulla, a mappaátnevezés nem ír felül** (a jelzők
+  `WRITE_THROUGH|COPY_ALLOWED`, `REPLACE_EXISTING` nincs, és a cél csak olvasható
+  attribútumát sem veszi le, mert az az ág az `AL` vizsgálata mögött van). Az
+  `5` a negyedik paraméter: a `fild` duplapontossá alakítja, a `fcomp` ezzel
+  veti össze a `0x009a51b0` eredményét. A `0x009a51b0` (`2026-10-29-koteg-33.txt`)
+  a `QueryPerformanceCounter` indulás óta eltelt különbségét osztja a
+  `QueryPerformanceFrequency` értékével, tehát **másodpercet** ad. Az
+  újrapróbálás időkorlátja így **5 másodperc**; a várakozás
+  `WaitForSingleObject(megszakító esemény, 0x1f4)`, azaz 500 ezredmásodperc,
+  és a ciklus az első hiba után **minden** nem nulla hibakódra folytatódik az
+  időkorlátig (nem csak az 5-ösre). Az első újrapróbálás feltétele: hibakód 5
+  és a `0x00992ed0` igaz az **első paraméterre, a forrásra** (`mov eax,edi`).
+  A 422 jelű Ghidra-kérdés „erős jelölt, nem igazolt” szavai ezzel igazolttá
+  válnak; a 423 jelű kérdés nyitva hagyott útválasztása (melyik útra
+  vonatkozik) is eldőlt.
+- **`0x0055d320`, a mentő sorrendje és kapui.** A `0x006db580` hívóhelye
+  (`0x006db688`: `push 0; call 0x55d320`) a csendes jelzőt nullával adja át, a
+  figyelmeztetés tehát engedélyezett. A mentő (`0x0055d340-0x0055d371`) a
+  `0x004461a0(sor)` eredményét negálja (`sete bl`): nem különleges mappánál
+  `bl = 1`. A név (vtábla `+4`), felirat (`+8`), hely (`+0x10`), zene
+  (`0x004448d0`) és dátum (`+0xc`) beállítója **feltétel nélkül, ebben a
+  sorrendben** fut, a `bl` tartós jelzővel; bármelyik nem nulla visszatérésnél a
+  mentő üzenet nélkül kilép. A név beállítója **akkor is lefut, ha a név nem
+  változott.** Az átnevezési ág csak nem különleges mappánál indul
+  (`0x0055d433`). Menete: a jelenlegi név lekérése (vtábla `+0x14`), bájtonkénti,
+  kis- és nagybetűt megkülönböztető összevetés az újjal (egyenlő: nincs
+  átnevezés, `0x0055d54c`); a jelenlegi mappaút építése (`0x0049fef0`); a
+  `0x00992ed0` létezés-ellenőrzés **ugyanezen a jelenlegi (forrás) úton** (hamis:
+  nincs átnevezés és nincs üzenet, `0x0055d57e`); célút: a forrás szülője
+  (`0x009a3b50`), a `0x009946f0` tisztított neve és az összefűzés
+  (`0x00993bb0`); ha a tisztítás hibát ad, közvetlenül a figyelmeztető ág fut
+  (`0x0055d5ec`), különben a `0x0052e0f0` (forrás, cél). A `0x0052e0f0` és a
+  `0x004fd1c0` paraméterátadása a diszasszemblálás szerint a forrás-cél
+  sorrendet tartja. **Siker után nincs megerősítő üzenet**: a mentő a
+  `[objektum+0x48]` vtábla nulladik metódusát hívja (sor, új út), majd
+  kilép (`0x0055d606-0x0055d628`). Hibánál, ha a csendes jelző nulla, a
+  `0x0055d62a` ág a `0x00980700` figyelmeztetést nyitja.
+- **`0x006db580`, a mentő előtt és után.** A párbeszéd (`0x006dc030`) a mentés
+  ELŐTT lezárul: az OK-kezelő (`0x00849dc0`) csak a leíróba másol, a mentő a
+  párbeszéd bezárása után fut. Siker után a `0x0055d6e0`, egy vtábla-hívás,
+  a `[edi+0x2c0]` objektum `+0x166` jelzőjének beállítása és a
+  `0x0065b840(this,0,0,1)` nézetfrissítés következik; hiba esetén csak a `0x0052e420` és a `0x004ad150`
+  frissítés. A Mégse ág (`0x006db71a`) nem ment.
+- **`0x009946f0` névtisztító, második ábrázolás.** A diszasszemblálás egyezik a
+  dekompilációval: a vezető szóközök átugrása (`_iswspace`); karakterenként a
+  szóköznek számító karakter és az `U+3000` pontosan egy `0x20`-at ad (**nincs
+  összevonás**), a `0x20` alatti vezérlőkarakter kimarad, a tiltott karakterek
+  a `0x00cd8d24` literálból: `\ / : * ? " < > |` (közvetlenül kiolvasva a
+  binárisból); utána a vezető és záró pont vagy szóköz levágása; üres
+  eredményre `-1`; a `0x00cd8d80-0x00cd8d8c` literálok: `aux`, `con`, `nul`,
+  `prn` (ASCII kis- és nagybetűtől független, teljes egyezés), a végére `_`. A
+  `0x00849f75` hívóhelyen az OK-kezelő **nem vizsgálja a visszatérést**: sikertelen
+  tisztításnál a leíróba null név kerül (`0x00849f81-0x00849f88`: `edx = 0`).
+  Hogy a mentő ezután eljut-e a `0x0055d5ec` ághoz, az előtte álló
+  névösszevetés (`0x0055d4f1-0x0055d53a`) miatt nincs végigkövetve.
+
+#### Z2. Minden megmaradt tétel: döntés
+
+A jelölés: (a) a meglévő bizonyítékból eldőlt; (b) egyetlen megnevezett
+mérés vagy Ghidra-kör dönti el; (c) a felhasználó által látható viselkedést
+nem érinti, vagy a #7032 hatókörén kívül esik.
+
+| # | Tétel | Döntés | Válasz és bizonyíték | Nálunk (fájl:sor) |
+|---|---|---|---|---|
+| 1 | A menüparancs kijelölésfüggő feltétele (`0x0056e1c0`, `0x006b1e80`) | (a) | A kapu nem a képszámot nézi (Ghidra 406): üres, egy és több kijelölt képnél ugyanaz. A `0x006db580` az aktuális mappát kapja. | `PicasaFolderMenu.qml:16-28` mappa alapú; egyezik. |
+| 2 | A mappafa helyi menüjének kibocsátója | (a) | A mappa-menü építőjének (`0x007319f0`) egyetlen közvetlen hívóhelye `0x005e7731` a `0x005e7650`-ben (a `0x005e76d3` `0x004461a0` hívás hamis ágán; a `ui-audit-context-menus.md` táblája ugyanezt `0x005e77b2`-nek írja, a diszasszemblálás `0x005e7731`-et ad). A menü forrását a tulajdonosi képernyőkép igazolja: a bal panel mappasorának menüje bájtra azonos a rács üres területének menüjével, első tétele „Mappaleírás szerkesztése”, gyorsbillentyű nélkül (`ui-audit-context-menus.md`, 1. szakasz). | `FolderPaneTreeRow.qml:310`, `FolderHierarchyView.qml:362`, `FolderPaneMenus.qml:363`, `FolderContextMenu.qml:82`; egyezik. |
+| 3 | A rács üres területe és mappa-fejléce | (a) a látható eredményre, (c) a belső hívóláncra | A két képernyőkép (üres terület, mappa-fejléc) ugyanazt a 15 tételes menüt adja. A belső hívólánc a felhasználónak nem látszik, ezért a korábbi „két rács-hívó külön feltárandó” sor megszűnik. | `LightboxFeed.qml:717-724`, `LightboxFeedGroup.qml:190-192` mindkettő `Main.qml:561-564` → `FolderPane.qml:320`; egyezik. |
+| 4 | Gyorsbillentyű | (a) | Nincs. Három független jel: (i) a `CreateAcceleratorTableA` egyetlen hívója, a `0x00923110`, üres OLE-táblát hoz létre (`picasa-gyorsbillentyuk.md`, kizárt irány); (ii) a `0x005e60d0` ugrótáblás kezelőjében nincs `0x9c69` (Ghidra 412); (iii) a mért menütétel gyorsbillentyű-oszlopa üres. A korábbi „erőforrásbeli gyorsbillentyű-tábla nincs átnézve” sor ezzel lezárt. | Nincs külön billentyű; egyezik. |
+| 5 | A néző | (a) | A korábbi „Néző” sor a bal lista dupla kattintása volt (Ghidra 410-411). A néző menüjének teljes tételsora (17 tétel, `ui-audit-context-menus.md`, 3. szakasz) nem tartalmaz mappaműveletet („mappa-műveletek: nincs”); az egyetlen „Tulajdonságok” tétele a kép tulajdonságait nyitja (`Alt+Enter`, `ID_PICTURE_PROPERTIES`). A mappa-menü egyetlen hívóhelye (2. tétel) sem a nézőé. | Nincs nézőbeli belépő; egyezik. |
+| 6 | A képtálca | (a) | A tálca helyi menüje két tételes: „Kijelölés megtartása”, „Kijelölés eltávolítása” (`ui-audit-context-menus.md`, `Tray`); a tálcán nincs mappatulajdonság-parancs. | Nincs tálcabeli belépő; egyezik. |
+| 7 | Mappalista dupla kattintása, sorfeltétel (`+0x30`, `+0x18`) | (b) mérés, **blokkoló a 3. fejlesztői törzsre** | Lásd a Z3 pontot. | `FolderHierarchyView.qml:386`: minden sorra kinyit/becsuk. |
+| 8 | A beépített sorok (Starred Photos, Screensaver, Recently Updated, Exported, People) típusa (`0x004b8470`) | (c) | A korábbi „[blokkoló]” jelölés a #7032-re megszűnik: a beépített és albumsorok tulajdonságablaka az album-folyamat (#7069) tárgya; a #7032 fejlesztői törzsei csak fizikai mappasorra szólnak, és a nem mért sorok viselkedését kifejezetten nem változtatják. Aki az albumsorokat felveszi, a korábbi `0x004b8470` Ghidra-sort használja. | A #7069 hatóköre. |
+| 9 | Rácsfejléc leírásmezője: elfogadás kiváltója és kulcsa (`CAlbumVarString` vtábla, `0x00789c00`) | (b) mérés, nem blokkoló | A mező, a helyőrző és az Enter-mentés a `description` kulcsra megvan (a beállító `0x00443c90`, kulcs `"description"`, Ghidra 417 és 421). Nyitott csak az, hogy az eredetinél a fókuszvesztés és az Esc ment-e. Mérés (Colab, eredeti Picasa): a fejléc „Add a description” mezőjébe írt szöveg megmarad-e Enter, mezőn kívüli kattintás (fókuszvesztés), illetve Esc után, és mit mutat az újranyitott Folder Properties Description mezője. Egyik fejlesztői törzs sem függ tőle. | `LightboxHeaderDescription.qml:32-41`: Enter ment, Esc visszaállít, fókuszvesztésre nincs mentés. |
+| 10 | Siker után megerősítő üzenet | (a) | Nincs (Z1, `0x0055d606-0x0055d628`). | Nincs; egyezik. |
+| 11 | Forrás- és célút összeállítása (`0x0052e0f0`, `0x004fd1c0`) | (a) | Forrás: a jelenlegi mappaút; cél: a forrás szülője és a tisztított név; azonos köteten belül; a név összevetése kis- és nagybetűre érzékeny (Z1). | `rename_folder.py:46-52`: `source.with_name(name)`, `name == source.name` összevetés; egyezik. |
+| 12 | Az újrapróbálás időkorlátja (`0x009a51b0`) | (a) | 5 másodperc, 500 ezredmásodperces lépésekkel (Z1). | `rename_folder.py:52`: egyetlen `os.rename`, újrapróbálás nélkül. **Eltérés, 5. fejlesztői törzs.** |
+| 13 | `[Picasa]/name` | (a) | Az eredeti a `name=` sort az OK minden lefutásánál írja, nem különleges mappánál, az átnevezés előtt, változatlan névnél is. A út: a diszasszemblálás (`0x0055d33d-0x0055d371`) és a Ghidra 417 és 421 (`0x00445460` → `0x004545c0` → `0x0045c0a0` → `[Picasa]` szakasz). B út, korpusz: a 733 `[Picasa]` szakaszból 692-ben van `name=`, 684-ben egyezik a könyvtárnévvel; a 8 eltérés mintázata (például `gyerekek_2` könyvtár, `gyerekek` név) a Picasán kívüli átnevezésre utal. A `name=` olvasói hatása (az eredeti ebből jeleníti-e meg a nevet) nem bizonyított. | `library_controller_resync.py:35-137`, `rename_folder.py:26-57`: nem ír `[Picasa]/name` kulcsot (a mappanévnek nincs írója a repóban). **Eltérés, 4. fejlesztői törzs.** |
+| 14 | `[Picasa]/date` automatikus dátumnál (`0.000000`) | (a), a hatás (c) | Az eredeti `date=0.000000` sort ír: A út: a beállító a `"0.000000"` szöveget adja a `0x0045c0a0`-nak, a korai kilépés csak null vagy üres értékre áll (Ghidra 417 és 421); B út, korpusz: az 558 `date=` sorból 185 pontosan `date=0.000000`, 175 `[Picasa]` szakaszban nincs `date` sor. A teljes-ini-író `0x00710080` 0.0-t kihagyó kapuja (`0x0071031e`) másik író. A PicasaPy a kulcsot törli, és a `0.000000` értéket nem tekinti felülírásnak (`_VARIANT_MIN = 1.0`), így a két alak működésben azonos; csak a fájltartalom tér el. Nem blokkoló, jegy nem kell. | `ini/folder_date.py:97-117` (olvasás), `:137-152` (törlés). A `:145` megjegyzése a `0x0071031e` kapura hivatkozik, ami nem a Folder Properties beállítója; a megjegyzés pontosítása javasolt. |
+| 15 | `.picasa.ini` írási hiba | (a) a felhasználó felé, (c) a lemezes hatásra | A `0x005ab210` zárolt burkoló: a `0x005aa260` összeállítja a (szakasz, kulcs, érték) kérést, a `0x005a8d60` a globális kezelő (`DAT_00d6769c`) sorába teszi és `SetEvent`-et jelez, majd a függvény **mindig nullát ad vissza**. A beállító tehát sikert lát, a Properties útról nem jut hiba a felhasználóhoz, és nincs részleges mentés üzenet. A háttérszál lemezes hibakezelése nem bizonyított, de a felhasználó felé nem látszik. A PicasaPy hibát jelez és a nézetet nem frissíti: szigorúbb, kárt nem okoz, jegy nem kell. | `controller_folder_description_mixin.py:42-63`, `folder_date_controller.py:130-153`. |
+| 16 | Index és mappafa átnevezés után | (a) a sorrendre, (c) a rendezésre | A katalógus (`0x004fd1c0`) a rekordok útelőtagját rekordonként cseréli (olvasat: a rekordazonosítók megmaradnak, rekordonként `0x004ed450` fut), utána a figyelőket értesíti; előbb a lemez, utána a katalógus, hibánál a katalógus érintetlen. A fa rendezett helye ebből a nézetfrissítésből adódik, eltérésre nincs jel. | `library_controller_resync.py:35-137`: lemez, majd `move_folder_tree`, indexhibánál visszagörgetés; egyezik, szigorúbb. |
+| 17 | Rács és kijelölés az átnevezés után | (b) mérés, nem blokkoló | A mentő után a `0x0065b840(this,0,0,1)` frissít; hogy a kijelölés és a görgetési hely megmarad-e, ebből nem dönthető el. Mérés (Colab, eredeti Picasa): egy mappa három képének kijelölése, majd átnevezés a Folder Properties-ből; marad-e a kijelölés és a görgetési hely. Egyetlen fejlesztői törzs sem függ tőle. | `library_controller_resync.py:~135`: `_reload(preserve_scroll=True)`. |
+| 18 | Mentési sorrend, részleges mentés | (a) | Az eredetinél a mezők előbb íródnak, az átnevezés utolsó, és hibánál nincs visszagörgetés; a párbeszéd addigra már bezárult. A PicasaPy előbb nevez át, hibánál a párbeszéd nyitva marad, és semmi nem mentődik: barátságosabb és adatot nem veszít, tudatos eltérés, jegy nem kell. | `FolderPropertiesDialog.qml:231-269`. |
+| 19 | A névtisztítás `A  B` és `con` mérése | (a) | A mérés nem szükséges: a dekompiláció, a diszasszemblálás és a közvetlenül kiolvasott literálok egyeznek (Z1). A #7047 javítása (`907291af1`) követi: `A\t  B` → `A   B`, `con` → `con_`. Egyetlen apró eltérés maradt: az `iswspace` és a Python `isspace` készlete a ritka `U+001C-U+001F` vezérlőkaraktereknél eltérhet; ezt nem tekintem jegyre érdemesnek. | `rename_folder.py:60-72`, `tests/fileops/test_rename_folder_4482.py:64-75`. |
+| 20 | A sor és szöveg feloldó (`0x004543e0`) | (c) | A dátum tartós szövegének építéséhez kell; a felhasználó nem látja. | Nem érinti. |
+| 21 | Üres névnél az OK | (a) | Az eredeti párbeszéd nem ellenőriz, a leíróba null név kerül; a mentő a tisztítás hibáját az átnevezési figyelmeztetéssel jelzi (a null névvel hívott beállító és az összevetés ága nincs végigkövetve, Z1). A PicasaPy hibaüzenetet ad, mentés nélkül. Szigorúbb, kárt nem okozó eltérés, jegy nem kell. | `rename_folder.py:39-42`. |
+
+#### Z3. A mappalista dupla kattintása: a `+0x18` bájt olvasata (a 7. tétel alapja)
+
+A `0x004b1c80` (a `Folders` fa sorépítője, a `0x004a0720` hívója ötös típussal;
+a hívást a #6532 kör diszasszemblálása igazolta) a sor `+0x18` bájtjába a
+`!bVar14` értéket írja. Az elejének diszasszemblálása (`0x004b1c97-0x004b1d19`):
+
+1. `test [sor+0x48], 0xfffffffe` / `sete al`: a `+0x48` mező a gyermeklista
+   fejléce (a `0x004b6190` ciklusa ugyanazt a mezőt `>> 1`-gyel számlálóként
+   használja). Az `al` tehát „nincs gyermek”.
+2. Ha a `+0x38` bájt nulla és nincs gyermek, a keresés kimarad, `bVar14 = 1`.
+3. Egyébként (van gyermek, vagy a `+0x38` nem nulla) a sor kulcsára (`+0x40`,
+   üresnél `+0x3c`) a `0x004a4710` keresést végez; nem találatnál
+   `bVar14 = 1`, találatnál 0 marad.
+4. A `0x004a4710` a `repository.dat` perzisztens táblájában keres; a
+   `picasa-idorend-bemutato-kutatas.md` „A `+0x1d` jelző” szakasza szerint a
+   találat az „igaz”, és a tábla a fanézet kibontott csomópontjait is tárolja
+   (fordított perjelre végződő útvonalak, érték 1).
+
+**Olvasat:** a `+0x18` akkor 1, ha a sornak van gyermeke és a kulcsa a kibontott
+halmazban van, vagyis **kibontott almappás soron**; almappa nélküli és
+becsukott almappás soron 0. A `0x00765d30` kapuja (`+0x30` típus 1 vagy 5 és
+`+0x18 == 0`) szerint a tulajdonságablak tehát almappa nélküli és becsukott
+sorra nyílna, kibontott almappás sorra nem. **Bizonyítottsági fok:
+feltételes.** A kódszerkezetet két ábrázolás (dekompiláció és diszasszemblálás)
+egyezően adja; a „találat = kibontott” jelentést élő felvétel nem igazolja, és
+a `+0x38` bájt jelentése ismeretlen. A fizikai mappasorok típusa `5`
+(`picasa-idorend-bemutato-kutatas.md`: a `0x004b1c80` rekordja a `Folders`
+útban), a korábbi 3. törzs „a type 5 viselkedését csak a sorleképezés után
+kösd be” mondata ezért úgy értendő, hogy a mérés után kell bekötni.
+
+**Mérés (Colab, eredeti Picasa), ez az egyetlen blokkoló:** Folders nézetben
+dupla kattintás (1) almappa nélküli mappasoron, (2) becsukott almappás soron,
+(3) kibontott almappás soron. Soronként megfigyelendő: megnyílik-e a Folder
+Properties, és a sor kinyílik vagy becsukódik-e. Kimenet: soronként egy
+képkocka a dupla kattintás előtt és után.
+
+### Zárási döntés
+
+**A jegy még nem zárható; az egyetlen blokkoló a Z3 pont mérése** (a
+mappalista dupla kattintása három sortípuson). Ez csak a 3. fejlesztői
+törzset tartja vissza. Minden más nyitott tétel eldőlt (a), a #7032 hatókörén
+kívül esik (c), vagy olyan kis mérés (9. és 17. tétel), amelytől egyik
+fejlesztői törzs sem függ. A 7., 9. és 17. tétel mérése egyetlen Colab-menetben
+elvégezhető. A mérés után a jegy lezárható; a 4. és az 5. törzs attól
+függetlenül felvehető.
+
+Fejlesztői jegytörzsek:
+
+- **1. A Hely mező szerkeszthető meglévő mappánál: KÉSZ** (`e88e4ee3f`,
+  `907291af1`; `FolderPropertiesDialog.qml:617-618` `enabled: true`,
+  `controller_folder_description_mixin.py:14-22`, `ini/folder_location.py`;
+  tesztek: `tests/ini/test_folder_location_7038.py`,
+  `tests/app/test_folder_location_controller_7038.py`,
+  `tests/app/qml_functional/test_folder_location_qml_7038.py`).
+- **2. Az eredeti névtisztítás követése: KÉSZ** (`rename_folder.py:60-72`,
+  `tests/fileops/test_rename_folder_4482.py:64-75`, beleértve a szóközök
+  összevonásának hiányát).
+
+#### 3. (marad, a méréstől függ) A mappalista dupla kattintása a mért sortípusokon nyissa a tulajdonságablakot
+
+**Eredeti:** a `0x00765d30` az `lb_predouble` eseményre, `+0x30` típus 1 vagy 5
+és `+0x18 == 0` esetén a `0x006db580` útját indítja. A fizikai mappasor a
+`Folders` fa 5-ös típusú rekordja; a `+0x18` olvasat szerint 1 a kibontott
+almappás soron, különben 0 (Z3).
+
+**Nálunk:** `FolderHierarchyView.qml:386`: `onDoubleClicked:
+root.toggle(row.modelData.path)`, minden mappasoron kinyit vagy becsuk,
+tulajdonságablakot nem nyit.
+
+**Teendő:** a mérés után, a mért sortípusokon a dupla kattintás nyissa a
+tulajdonságablakot az adott mappa adataival (a `FolderPane.qml:252`
+`openFolderDescription` útján); a kinyitás és becsukás azokon a sortípusokon
+maradjon, ahol az eredeti nem nyit ablakot. A beépített és albumsorokra nem
+terjed ki (#7069).
+
+**Kész, ha:** soronként egyezik a mért viselkedés (nyílik-e az ablak, kinyílik
+vagy becsukódik-e a sor); a nem mért sorok viselkedése változatlan.
+
+#### 4. (új) Az OK írja a `[Picasa]/name` sort
+
+**Eredeti:** a `0x0055d320` a név beállítóját a Folder Properties minden
+OK-jánál lefuttatja, nem különleges mappánál tartós jelzővel, még változatlan
+névnél is, az átnevezés előtt; a `0x00445460` → `0x004545c0` → `0x0045c0a0` a
+mappa `.picasa.ini` `[Picasa]` szakaszába `name=<tisztított név>` sort ír.
+Korpusz: 733 `[Picasa]` szakaszból 692-ben van `name=`, 684-ben egyezik a
+könyvtárnévvel.
+
+**Nálunk:** `library_controller_resync.py:35-137` és `rename_folder.py:26-57`
+nem ír `[Picasa]/name` kulcsot. A mappa `.picasa.ini` fájlja az átnevezéssel
+együtt költözik, a régi `name=` sor elavultan marad.
+
+**Teendő:** az OK-nál (sikeres átnevezés után, változatlan névnél is) írd a
+`[Picasa]/name` kulcsot a mappa tényleges nevével az `ini` csomag API-ján át,
+a `ini/folder_location.py` mintájára (új `with_folder_name` jellegű függvény).
+Írási hibát jelezz, de a már megtörtént átnevezést ne vond vissza. A kulcs
+olvasói hatása (az eredeti ebből jeleníti-e meg a mappa nevét) nem bizonyított:
+a cél a fájltartalom egyezése.
+
+**Kész, ha:** átnevezés után a `[Picasa]` szakasz `name=` sora az új nevet
+tartalmazza (meglévőt felülír, hiányzót létrehoz); változatlan névvel OK után
+a sor a mappa nevével egyezik; a többi `[Picasa]` kulcs és a képszakaszok
+érintetlenek.
+
+#### 5. (új, kicsi, csak Windows) Az átnevezés újrapróbálása hozzáférési hibánál
+
+**Eredeti:** `0x00994400`, hívás `0x004fd28b-0x004fd293`: ha a `MoveFileExW`
+hibakódja 5, és a forrásmappa létezik (`0x00992ed0`), 500 ezredmásodpercenként
+újrapróbálja, legfeljebb 5 másodpercig; az időkorlát után a hiba az átnevezési
+figyelmeztetéshez vezet.
+
+**Nálunk:** `rename_folder.py:52`: egyetlen `os.rename`, hiba esetén azonnal
+`FolderRenameError`.
+
+**Teendő:** Windowson, `PermissionError` (winerror 5) esetén, ha a forrásmappa
+létezik, 0,5 másodpercenként újrapróbálás legfeljebb 5 másodpercig; az időkorlát
+után a mostani hibaüzenet. Más platformon nincs változás. A várakozás a
+felületi szálat ne fagyassza le tovább az eredetinél (az is a felületi szálon
+vár): ha a hívás szintje ezt nem tűri, kerüljön háttérbe.
+
+**Kész, ha:** a `_rename` fogantyúval, a hibák és az idő szimulálásával: két
+hozzáférési hiba után a harmadik próbálkozás sikeres átnevezést ad; folyamatos
+hibánál 5 másodperc után a régi hibaüzenet; nem létező forrásnál nincs
+újrapróbálás; Linuxon a viselkedés változatlan.
+
 ## #7033: A dátum és idő beállításának teljes folyamata
 
 Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
