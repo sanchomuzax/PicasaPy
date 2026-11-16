@@ -106,6 +106,27 @@ class PhotoOpsTransformMixin:
         self._apply_batch(valid, mutate)
 
     @Slot(list)
+    def addStarMany(self, rows) -> None:
+        """Csillagot ad a kijelölésre, de SOSEM vesz le (#7100): az Add to
+        Album almenü `Starred Photos` sora az eredetiben (`0x00536a90`) a
+        `]star` gyűjteményhez ad hozzá; a már tag (csillagos) képet kihagyja,
+        nem fordítja meg. Minden kép csillagos, mire visszatér. Mappánként
+        EGY ini-írás + sync, és csak a még csillagtalan képekre."""
+        photos = self._photos.photos
+        valid = [
+            photos[int(r)]
+            for r in rows or ()
+            if 0 <= int(r) < len(photos) and not photos[int(r)].star
+        ]
+        if not valid:
+            return
+
+        def mutate(document, photo):
+            return document.with_value(photo.name, "star", "yes")
+
+        self._apply_batch(valid, mutate)
+
+    @Slot(list)
     def rotateRightMany(self, rows) -> None:
         self._rotate_many(rows, 1)
 
