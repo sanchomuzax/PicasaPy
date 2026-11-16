@@ -1,6 +1,6 @@
 """Az E-mail parancs küldési folyamatának eredeti Picasa szerinti részei (#6987).
 
-Az eredeti (`docs/specs/paritas-ellenorzes.md`, #6984) sorrendje:
+Az eredeti (`docs/specs/paritas-ellenorzes-archiv-1.md`, #6984) sorrendje:
 
 1. 20-nál több képnél megerősítő kérdés (`CThumbUI::OutputBottleneck`,
    `0x00531550`); Mégse esetén semmi sem készül elő;
