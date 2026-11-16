@@ -11,8 +11,10 @@ elveszítenék a feliratukat, a címkéiket és az arc-hozzárendeléseiket.
 
 from __future__ import annotations
 
+import importlib
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -21,6 +23,8 @@ from picasapy.fileops.move_folder import (
     is_system_path,
     move_folder,
 )
+
+_MOVE_FOLDER_MODULE = importlib.import_module("picasapy.fileops.move_folder")
 
 
 def _folder_with_photo(root, name="kepek"):
@@ -90,6 +94,25 @@ class TestRefusals:
 
         with pytest.raises(FolderMoveError, match="önmagába"):
             move_folder(source, inner)
+
+        assert (source / "a.jpg").exists()
+
+    def test_a_hidden_windows_destination_is_refused(self, tmp_path, monkeypatch):
+        source = _folder_with_photo(tmp_path / "innen")
+        dest = tmp_path / "rejtett_cel"
+        dest.mkdir()
+        real_stat = _MOVE_FOLDER_MODULE._stat
+
+        def stat_with_hidden_attribute(path):
+            result = real_stat(path)
+            if Path(path) == dest:
+                return SimpleNamespace(st_file_attributes=0x2)
+            return result
+
+        monkeypatch.setattr(_MOVE_FOLDER_MODULE, "_stat", stat_with_hidden_attribute)
+
+        with pytest.raises(FolderMoveError, match="[Rr]ejtett"):
+            move_folder(source, dest)
 
         assert (source / "a.jpg").exists()
 

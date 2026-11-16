@@ -26,9 +26,11 @@ from pathlib import Path
 
 #: A fájlrendszer-műveletek MODULSZINTŰ fogantyúi (#1375) — a teszt EZEKET
 #: cserélje, ne a globális `os`/`shutil` tagjait.
+_stat = os.stat
 _rename = os.rename
 _copytree = shutil.copytree
 _rmtree = shutil.rmtree
+_FILE_ATTRIBUTE_HIDDEN = 0x2
 
 #: A rendszer-könyvtárak, amiket sosem mozgatunk. Az eredeti is külön
 #: hibaüzenetet adott rá („Unable to Move a System Path") — nem hagyta,
@@ -87,6 +89,18 @@ def is_system_path(folder: Path) -> bool:
     return resolved == Path.home().resolve()
 
 
+def _is_hidden_folder(folder: Path) -> bool:
+    """A Windows `FILE_ATTRIBUTE_HIDDEN` célmappáját felismeri.
+
+    Más platformon a `stat` eredménye nem hordozza ezt az attribútumot.
+    """
+    try:
+        attributes = getattr(_stat(str(folder)), "st_file_attributes", 0)
+    except OSError:
+        return False
+    return bool(attributes & _FILE_ATTRIBUTE_HIDDEN)
+
+
 def move_folder(folder: str | Path, dest_parent: str | Path) -> Path:
     """A mappa áthelyezése a `dest_parent` alá, a teljes tartalmával.
 
@@ -100,6 +114,7 @@ def move_folder(folder: str | Path, dest_parent: str | Path) -> Path:
     * a forrás rendszer-könyvtár;
     * a célban már van ilyen nevű mappa;
     * a cél a forráson BELÜL van (magába nem mozgatható);
+    * a célmappa rejtett Windows-mappa;
     * bármilyen egyéb fájlrendszer-hiba.
     """
     source = Path(folder)
@@ -120,6 +135,8 @@ def move_folder(folder: str | Path, dest_parent: str | Path) -> Path:
         # magába (vagy a saját alkönyvtárába) mozgatás — a shutil ilyenkor
         # végtelen másolásba futna
         raise FolderMoveError("A mappa nem helyezhető át önmagába.")
+    if _is_hidden_folder(target_parent):
+        raise FolderMoveError("Rejtett mappába nem lehet áthelyezni.")
 
     target = target_parent / source.name
     if target.exists():
