@@ -9,9 +9,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [1.0.130] - 2026-11-16
 
-- A hálózati mappa egyszer szerepel, és az indulás nem vár a hálózatra (#7045, #7044) (#7044).
 - A képaláírás szerkesztése az eredeti Picasa szerint működik: a törlés megerősítést kér, a felirat máshova kattintva is mentődik, a változatlan szöveg nem írja újra a képet, írásvédett képnél a felirat mégis megmarad, és a szövegek a hivatalos fordítást használják (#7027).
-- A hálózati (NAS) mappa nem szerepel többé kétszer a mappalistában (a már kettőzött sorok adatvesztés nélkül egyesülnek), és az indulás meg a mappára kattintás nem vár a hálózatra: az indexelt képek azonnal megjelennek, a frissítés a háttérben fut, a lassúságot is javítva (#7044) (#7045).
+- A hálózati (NAS) mappa nem szerepel többé kétszer a mappalistában (a már kettőzött sorok adatvesztés nélkül egyesülnek), és az indulás meg a mappára kattintás nem vár a hálózatra: az indexelt képek azonnal megjelennek, a frissítés a háttérben fut, a lassúságot is javítva (#7044, #7045).
 
 ## [1.0.129] - 2026-11-15
 
