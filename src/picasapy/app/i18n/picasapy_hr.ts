@@ -19200,6 +19200,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>Morate odabrati slike za zakretanje.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>Neke slike nisu izmijenjene zbog vrste datoteka. Imajte na umu da se efekti ne mogu primijeniti na filmove.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>

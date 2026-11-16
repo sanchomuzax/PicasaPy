@@ -19169,6 +19169,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>Πρέπει να έχετε επιλέξει εικόνες για να εφαρμόσετε περιστροφή.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>Ορισμένες εικόνες δεν τροποποιήθηκαν λόγω του τύπου του αρχείου.  Σημειώνεται ότι δεν είναι δυνατή η εφαρμογή εφέ σε ταινίες.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>
