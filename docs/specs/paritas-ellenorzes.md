@@ -4233,14 +4233,14 @@ kutatási tár).
 - **`0x005de8e0` és `0x00765d30`, ki küldi az eseményt.** Az `lb_predouble`
   küldője a bal oldali **CAlbumList** (mappa- és albumlista), ezt az
   `alist_indent` és a `CAlbumList::newalbumprompt` sztring igazolja. Az
-  `albumdouble` eseményt a főablak kapja, és a mappatulajdonság-ablakot nyitja
-  az albumlista aktuális mappájára (`this+0xeac+0x3c0`), a kijelölt képek
-  számától függetlenül. A korábbi „Néző” sor tehát valójában a **mappalista
-  dupla kattintása**, nem a néző. **PicasaPy:** a mappalista dupla kattintása a
-  fát nyitja és csukja (`FolderHierarchyView.qml:386`), tulajdonságablakot nem
-  nyit. **Erős eltérés-jelölt**; a dupla kattintás pontos célsora (mappa vagy
-  album) a következő lépésben ellenőrizendő, mielőtt fejlesztői jegy lesz
-  belőle.
+  `albumdouble` eseményt a főablak kapja, és a Folder/Album Properties
+  megnyitójára jut; a módot a betöltött rekord választja ki
+  (`this+0xeac+0x3c0`), a kijelölt képek számától függetlenül. A korábbi
+  „Néző” sor tehát valójában a **mappalista dupla kattintása**, nem a néző.
+  **PicasaPy:** a mappalista dupla kattintása a fát nyitja és csukja
+  (`FolderHierarchyView.qml:386`), tulajdonságablakot nem nyit. A handler
+  pontos `+0x30`/`+0x18` kapuja lejjebb bizonyított; a név szerinti különleges
+  sorok leképezése még nyitott.
 - **`0x005e60d0`, gyorsbillentyű.** A főablak beégetett Ctrl-billentyű
   kezelőjében nincs mappatulajdonság-ág: a `0x9c69` nem szerepel, és a nyolc
   névvel küldött parancs egyike sem mappatulajdonság. Ebben a kezelőben tehát
@@ -4385,7 +4385,7 @@ olvastam, a fájl nevét kiírtam.
 
 | Pont | Állapot a 413-418 után | Miért |
 |---|---|---|
-| Minden belépési pont és feltétel | ⛔ | A rácsfejléc elfogadási címzettje a `0x00749ba0` útján áll be, de a címzett konstruktora (`0x00746640`) és a negyedik hívó (`0x00789c00`) nincs bontva; az erőforrásbeli gyorsbillentyű-tábla és a mappalista dupla kattintásának célsora (mappa vagy album) nyitott. |
+| Minden belépési pont és feltétel | ⛔ | A mappalista `lb_predouble` típuskódja (`1`/`5`) és a `+0x18` kapu megvan; a típusok név szerinti sorokhoz, különösen a speciális albumokhoz rendelése nyitott. A rácsfejléc elfogadási címzettje (`0x00746640`, `0x00789c00`) és az erőforrásbeli gyorsbillentyű-tábla sincs lezárva. |
 | Ablak, mezők, alapértékek, átnevezés | ✅ részben | A névtisztító és a `MoveFileExW`-burkoló teljes; a forrás- és célút összeállítása (`0x0052e0f0`, `0x004fd1c0`) nincs meg. |
 | Fájlrendszer, `.picasa.ini`, index, mappafa, rács, kijelölés | ⛔ | A kulcsnevek megvannak, de az író (`0x004545c0`, `0x0045c0a0`) nincs bontva, az index és a kijelölés végállapota sincs meg. |
 | Ütköző név, írásvédett hely, írási hiba | ✅ részben | Az átnevezési hiba és az újrapróbálás (500 ms) bizonyított; az ini-írási hiba eredménye mérés nélkül NINCS MEG. |
@@ -4396,6 +4396,74 @@ sorozatos szóközöket (kis javítás a PR-ben vagy utána). Javasolt kiegész�
 újrapróbálására jegyet addig nem javaslok, amíg a `FUN_00992ed0` jelentése nincs
 meg.
 
+### CAlbumList-dupla kattintás: soronkénti feltétel (2026-11-16)
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x00765d30`: `lb_predouble` esetén a sor `+0x30` típusa `1` vagy `5`, és a sor `+0x18` bájtja nulla → `0x006db580` Folder/Album Properties. Ha a `+0x18` nem nulla, a sor ág visszatér tulajdonságnyitás nélkül. A `+0x30 == 4` sor a `CAlbumList::newalbumprompt` ágban tér vissza; a `2` típus szintén korán visszatér. | `FolderHierarchyView.qml:386`: a sor dupla kattintása `root.toggle(row.modelData.path)`; a mappafa ágát nyitja/csukja. | A binárisban igazolt a `1`/`5` típuskapu, nem minden sor nyit tulajdonságot. PicasaPy oldalon a mappafa dupla kattintása eltér. A név szerinti különleges sorok megfeleltetése nyitott; ne terjesszük ki rájuk a változtatást bizonyíték nélkül. |
+
+**A típusérték független ellenőrzése.** A `0x004a0720` rekordépítő a kapott
+első paramétert a rekord `+0x30` mezőjébe írja. A meglévő Ghidra-kimenetben a
+`0x004b29d0` ezt `1` értékkel, a `0x004b1c80` `5` értékkel hívja. Ez a
+rekord-előállítási út megerősíti a handlerben vizsgált számokat, de önmagában
+nem azonosítja a felületen a Starred Photos, Screensaver, Emberek, Exported
+Pictures és Recently Updated sorokat. A `+0x18` kapu szemantikai neve sincs
+meg.
+
+**Bizonyítottsági fok: feltételes.** Két független út egyezik a pontos
+rekordtípus-feltételen: (A) `0x00765d30` eseménykezelője közvetlenül teszteli a
+`+0x30` értékét és meghívja a `0x006db580`-at; (B) a `0x004a0720` rekordépítő
+és a `0x004b29d0`/`0x004b1c80` hívók előállítják az `1`/`5` típusokat. Az
+összkérdés azért feltételes, mert a látható sorok teljes típusleképezése, a
+`+0x18` jelző jelentése és a többi sor dupla kattintás utáni végállapota nem
+igazolt.
+
+**Cáfoló kísérlet.** Megpróbáltam cáfolni azt az állítást, hogy a
+`CAlbumList` minden dupla kattintása tulajdonságot nyit. A `0x00765d30` a
+`+0x30 == 4` esetén a `CAlbumList::newalbumprompt` felirat-ágán tér vissza,
+és a `2` típusnál is korán visszatér; emellett az `1`/`5` út a nem nulla
+`+0x18` bájt esetén sem nyit. A cáfolatot ugyanazzal a mércével ellenőriztem:
+a `0x00763150` rajzolófüggvény külön `4`-es sort kezel, a korábbi #5121
+vizsgálat pedig a `newalbumprompt` sort a `liststicky5` / “Albums” fejlécsortól
+elkülönítette. A cáfoló lelet tehát nem az index negatív találatán alapul.
+
+**Javasolt fejlesztői jegytörzs**
+
+#### 3. A mappalista dupla kattintása nyissa meg a megfelelő tulajdonságablakot
+
+**Eredeti:** a `CAlbumList` sor `+0x30 == 1` vagy `5` típusánál, ha a
+`+0x18` bájt nulla és az esemény `lb_predouble`, a `0x00765d30` meghívja a
+`0x006db580` Folder/Album Properties útját.
+
+**Nálunk:** `src/picasapy/app/qml/PicasaPy/FolderHierarchyView.qml:386` a
+dupla kattintásra a `root.toggle(row.modelData.path)` hívással nyitja vagy
+csukja a mappafát.
+
+**Teendő:** a megfelelő, választható fizikai mappasor dupla kattintásakor
+nyisd meg a Folder Properties ablakot az adott mappa adataival. A fa
+kinyitását/csukását tartsd a sor külön fa-kezelő elemén. A type 5 és a
+névvel azonosított speciális albumok viselkedését csak a sorleképezés
+lezárása után kösd be.
+
+**Kész, ha:** dupla kattintásra a fizikai mappasor tulajdonságablaka nyílik
+meg a megfelelő mappaértékekkel; a fa-kezelő elem továbbra is csak
+kinyit/csuk; egyéb sorok viselkedése nem változik a bizonyított
+típusleképezés nélkül.
+
+### Nyitott: a 2026-11-16-os kérdés
+
+- A `+0x18` sorbájt jelentése, valamint a `+0x30` típusok név szerinti
+  hozzárendelése nyitott; különösen a Starred Photos, Screensaver, Emberek,
+  Exported Pictures és Recently Updated beépített soroké. A nem `1`/`5`
+  sorok teljes dupla kattintás utáni viselkedése is nyitott: a
+  `0x00765d30` tulajdonságnyitást nem hív rájuk, de a generikus aktiválási
+  útból nem következtetek „kinyit/becsuk” vagy „semmi” eredményre.
+- Ghidra-kör kell: 0x004b8470: a meglévő kimenet iterálja a builder
+  `in_EAX[0x52]` rekordjait és hívja a `0x004b29d0`-t, de nem köti a beépített
+  Starred Photos/Screensaver/Recently Updated/Exported/People tokeneket a
+  `CAlbumList` sorrekordjaihoz. Kérdés: melyik `+0x30` típus és `+0x18`
+  érték jut ezeknél a `0x00765d30` handlerhez? [blokkoló]
+
 ### Nyitott
 
 - Megválaszolva (Ghidra 406): a kapu nem a képszámot nézi, csak egy nem üres sztringet; a kijelölés nem számít.
@@ -4404,13 +4472,13 @@ meg.
 - Részben megválaszolva (Ghidra 415): a `0x00717810` csak a csomópontot építi; a címzett a csomópont `+0x28c` mezője, amelyet a hívók közül csak a `0x00749ba0` állít be (a `0x0074ad40` és a `0x0074c200` null címzettet ad). Ghidra-kör kell: 0x00746640 - a `0x00749ba0` által épített `0x1c` bájtos címzett-objektum konstruktora és vtáblája (melyik metódus fut elfogadáskor, melyik kulcsot írja); 0x00789c00 - a negyedik hívó. [blokkoló]
 - Mérés (Colab, eredeti Picasa, a névtisztítás második útja): a Folder Properties névmezőjébe írt `A  B` (két szóköz) és `con` név mentés után mi lesz a lemezen (`A  B` vagy `A B`, illetve `con_`); a #7047 szóköz-összevonásának eldöntéséhez.
 - Megválaszolva (Ghidra 410-411): a küldő a bal oldali CAlbumList dupla kattintása, a hatókör az aktuális mappa.
-- Ellenőrizendő: a CAlbumList dupla kattintása mappasoron és albumsoron is a mappatulajdonságot nyitja-e (a `0x006db580` csak a meglévő mappa útja).
+- Megválaszolva részben (Ghidra 410-411, 2026-11-16): a CAlbumList `lb_predouble` eseménye a `+0x30 == 1` vagy `5` sorrekordnál, ha a `+0x18` bájt nulla, a `0x006db580` Folder/Album Properties útjára jut. A név szerinti sorosztályok és a `+0x18` kapu jelentése nyitott; lásd az alábbi CAlbumList-alfejezetet.
 - Részben megválaszolva (Ghidra 412): a Ctrl-kezelőben nincs gyorsbillentyű. Nyitott: az erőforrásbeli gyorsbillentyű-tábla.
 - NINCS MEG (mérés): eredeti .picasa.ini írási hiba után mi marad lemezen és a felületen. Megszerzés: Windowsos Picasa 3.9 mérés külön másolaton, külön írásvédett mappával és ini-írási hibával; NAS-bejárás nélkül.
 
 ### Módosított fájlok
 
-- docs/specs/paritas-ellenorzes.md - új #7032 alfejezet a belépési pontokról, a tulajdonságablakról, a névátnevezésről és a nyitott hatásokról.
+- docs/specs/paritas-ellenorzes.md - a #7032 alfejezet kiegészült a CAlbumList `lb_predouble` típuskapujával, független rekordúttal, cáfoló próbával és a név szerinti sorleképezés nyitott kérdésével.
 
 ## #7033: A dátum és idő beállításának teljes folyamata
 
