@@ -178,6 +178,7 @@ def test_cancel_utan_marad_a_jelenlegi_nezet_es_kijeloles(
     assert _kijeloles(window) == [0, 1], "a Mégse elvette a kijelölést"
 
 
+@pytest.mark.skipif(os.name != "posix", reason="a chmod írásvédelme csak POSIX-on érvényesül (#1864)")
 @pytest.mark.parametrize("height_offset", _MAGASSAG_ELTERESEK)
 def test_irashiba_utan_marad_a_jelenlegi_nezet_es_kijeloles(
     qml_app, qt_app, tmp_path, height_offset
