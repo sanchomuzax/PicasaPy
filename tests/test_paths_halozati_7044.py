@@ -18,6 +18,7 @@ névrészletet tartalmazó útvonalon a feloldás vár és nyilvántartja a szá
 
 from __future__ import annotations
 
+import os
 import threading
 import time
 
@@ -79,11 +80,13 @@ def test_a_kulcs_a_ket_elvalasztot_is_egynek_veszi_windowson(windows):
     assert paths.path_key(EREDETI) == paths.path_key("//ds215j/photo/2026/2026-11-14")
 
 
+@pytest.mark.skipif(os.name != "posix", reason="Linux-viselkedést mér (POSIX-útvonal, /proc/mounts), Windowson nem érvényes (#7096)")
 def test_posixon_a_kis_nagybetu_valodi_kulonbseg(monkeypatch):
     monkeypatch.setattr(paths, "_platform", lambda: "linux")
     assert paths.path_key("/mnt/nas/Photo") != paths.path_key("/mnt/nas/photo")
 
 
+@pytest.mark.skipif(os.name != "posix", reason="Linux-viselkedést mér (POSIX-útvonal, /proc/mounts), Windowson nem érvényes (#7096)")
 def test_posixon_a_dupla_perjeles_ut_nem_lesz_halozati_ut(monkeypatch):
     """Linuxon a `//mnt/nas` a `/mnt/nas`: a hálózati ág nem nyúlhat hozzá."""
     monkeypatch.setattr(paths, "_platform", lambda: "linux")

@@ -270,6 +270,7 @@ class TestOpenPhoto:
         controller.openPhoto(str(tmp_path / "nincs.jpg"))
         assert failures[0][0] == "open"
 
+    @pytest.mark.skipif(os.name != "posix", reason="Linux-viselkedést mér (POSIX-útvonal, /proc/mounts), Windowson nem érvényes (#7096)")
     def test_halozati_fajl_megnyitasa_nem_var_a_fajl_exists_hivasara(
         self, controller, monkeypatch
     ):

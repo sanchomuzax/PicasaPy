@@ -21,6 +21,7 @@ helyettesítettek."""
 
 from __future__ import annotations
 
+import os
 import threading
 import time
 from pathlib import PureWindowsPath
@@ -361,6 +362,7 @@ def test_az_egymappas_szinkron_is_az_ismert_alakon_ir(conn, hamis_halozat):
 # -- a takarítás nem törli a másik alakú sort ----------------------------------
 
 
+@pytest.mark.skipif(os.name != "posix", reason="Linux-viselkedést mér (POSIX-útvonal, /proc/mounts), Windowson nem érvényes (#7096)")
 def test_a_takaritas_a_csak_kis_nagybetuben_eltero_sort_nem_torli(windows, conn):
     from picasapy.index import sync_cleanup
 
