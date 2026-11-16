@@ -142,9 +142,12 @@ def _olvasd_be(utvonal: Path):
         kep = dekodol_nyerset(utvonal, IKON_MERET)
     else:
         # #1991: ékezetes néven a `cv2.imread(str(...))` Windowson némán
-        # `None`-t ad — a bájtokat magunk olvassuk be.
-        nyers = np.fromfile(str(utvonal), dtype=np.uint8)
-        if nyers.size == 0:
+        # `None`-t ad, ezért a bájtokat magunk olvassuk be; #7086: a GIL-t
+        # elengedő olvasóval, hogy hálózati borítónál ne álljon a felület.
+        from picasapy.cvimage import read_image_bytes
+
+        nyers = read_image_bytes(Path(utvonal))
+        if nyers is None:
             return None
         kep = cv2.imdecode(nyers, cv2.IMREAD_COLOR)
     if kep is None:
