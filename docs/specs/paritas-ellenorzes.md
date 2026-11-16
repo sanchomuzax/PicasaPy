@@ -4219,17 +4219,151 @@ Ghidra-kimenetekből (`referencia/ghidra/`), a bináris-indexből
 
 **Hívói megjegyzés (2026-11-16): ez a jegyleírás VITATOTT.** A #6964 szakasz ugyanerről a `0x00993650` útról azt rögzíti, hogy több képnél a formátum mindig `%s-%03lu` (`név-001`, `név-002`); az itteni „az első kép sorszám nélkül marad” állítás ezzel ellentétes. Jegy addig nem nyílik, amíg egy célzott Ghidra-kör (`0x00993650`, az első név képzése szabad célnévnél) vagy egy futtatott mérés el nem dönti. Az 1. és a 3. pontot a hívó mintavétellel igazolta (`0x005fe370` → `0x009ae710`, `IDS_SOME_EDITS_FAILED_TYPE`; `0x0077c7fc` `cmp [ebp+0xd8],1` / `jbe`, `Adjust Photo Date - %d items`).
 
+**Zárókör (2026-11-17): a vita eldőlt, a #7084 állítása áll.** Szabad célnál a név sorszám nélkül marad, foglalt célnál `-001`-től számoz; a bizonyíték a Zárókör 1. pontjában van. A 4. jegytörzs ráadásul már megvalósult a forrásban (Zárási döntés).
+
 ### Nyitott
 
 - `Ghidra-kör kell: 0x008E3160 - a rename.fen newname mezőjének filter="filename" callbackje pontosan milyen karaktereket tilt és milyen hosszkorlátot alkalmaz? [nem blokkoló, a meglévő Windows tiltólista fedezi]`
   - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:5148`): **a `filter="filename"` szerkesztőmező-callbackje csak a fordított törtvonalat (`\`, `0x5c`) tiltja, hosszkorlátot nem alkalmaz.** A `0x008e3160` (a futás hozta létre a címen) törzse `return param_1 != 0x5c`, vagyis karakterenként minden karaktert elfogad, a `\` kivételével. A hozzárendelés a `0x008e30e0` attribútumbeállítóban látszik (disassembly): ha az attribútum neve `filter` (`0x00c843d8`) és az értéke `digits` (`0x00cd023c`), a `+0x4c` mezőbe a `0x008e2dd0` kerül; ha az érték `filename` (`0x00c80d70`), a `0x008e3160` (`0x008e3140`). **A többi, Windowson tiltott fájlnévkarakter (`/`, `:`, `*`, `?`, `"`, `<`, `>`, `|`) a beírásnál nincs szűrve**; a tiltott karakterek kezelése a mentéskor van (a `0x009946f0` névtisztító és a `0x00849dc0` OK-ág, lásd a #7032 szakasz névnormalizálási sorát). A PicasaPy beíráskor szigorúbb lehet az eredetinél, ha a Windows-tiltólistával szűr; az eredeti paritását a mentéskori normalizálás adja.
+  - Zárókör (2026-11-17): LEZÁRVA, a Ghidra-válasz utasításszinten is igazolva (Zárókör 5. pont).
 - `Ghidra-kör kell: 0x00490580 és 0x00490C10 - az AdjustTimeThread relatív és abszolút munkaszála JPEG-en kívüli formátumoknál (PNG, TIFF, videó) melyik PMP adatbázis-oszlopba menti a módosított dátumot, ha a fájl nem támogatott? [nem blokkoló]`
+  - Zárókör (2026-11-17): LEZÁRVA a meglévő bizonyítékból és a két valódi katalóg mérésével, nincs szükség új Ghidra-körre (Zárókör 6. pont).
 - `Colab-feladat kell: RenameUseDate formátum ellenőrzése futó Windows Picasa 3.9-en - a fájlnévbe generált dátum pontos elválasztói és területi beállítás-függése valódi fájlon. [nem blokkoló]`
+  - Zárókör (2026-11-17): LEZÁRVA a binárisból, Colab-mérés nem dönt többet (Zárókör 7. pont).
 
 Nyitott kérdések: 3 nyílt (2 Ghidra-kör és 1 Colab-feladat) · 12 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+
+A zárókör után: Nyitott kérdések: 0 nyílt · 17 lezárva (12 korábbi és 5 e körben) · 0 blokkolt · 0 hatókörön kívül · 0 csak-nyitva; örökölt, nem blokkoló, már nyilvántartott: 1 (a `0x005f8520` eszközmódja, `paritas-ellenorzes-archiv-1.md` 3345. sor).
 
 Lezárva (a bizonyítékkal): a 14 almenü-parancs és diszpécser-ágai (1. szakasz); a szerkesztő-előnézet kétágú viselkedése (1.); a forgatás háttérszála és rotate= negyedfordulata (3.); a kötegelt effektek filters= és backuphash írása (3.); a nem támogatott fájltípusok figyelmeztető üzenetei (4.); a Show/Hide Text kezelője és textactive kulcsa (1., 3.); az Adjust Date and Time ablakmezői, rádiómódjai és címszabálya (2.); a Rename ablakmezői, egyképes kitöltése, perzisztált jelölői és %s-%03lu ütközési számozása (2., 3., 4.); az Undo All Edits kulcskészlete és a rotate kulcs megőrzése (4.).
 
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md`: új #7084 szakasz a kötegelt szerkesztés teljes folyamatának (forgatás, automatikus javítások és effektek, dátum és idő beállítása, ráírt szöveg láthatósága, csoportos átnevezés, visszavonás) összevetésével, belépési pontjaival, ablakaival, tárolási és felületi hatásaival, hibakezelésével, négy fejlesztői jegyjavaslattal, bizonyítékokkal és nyitott kérdésekkel.
+
+### Zárókör (2026-11-17): a megmaradt tételek döntése
+
+Módszer: minden tételt a meglévő bizonyítékból döntöttem el (bináris index, a helyi `Picasa3.exe` utasításszintű olvasása, a `referencia/ghidra/` kimenetei, a két valódi katalóg mérése). A „Nálunk” oszlopot a mai forráson ellenőriztem; a sorszámok a 2026-11-17-i állapotra vonatkoznak. A dekompiláció veremértelmezését (a `param_` sorrendet és a `1` értékű hívásparamétereket) ott, ahol állítás múlt rajta (a számozó hívása, az `EnableMenuItem` jelzője, a `0x009807f0` paraméterei, a dátum-karakterek cseréje), a hívóhely utasításaival vetettem össze.
+
+#### 1. Az átnevezési sorszámozás: a #6964 és a #7084 vitája eldőlt
+
+**Döntés: szabad célnál a név sorszám nélkül marad; foglalt célnál `-001`-től számoz.** A #7084 állítása áll. A #6964 „Sorszámozás több képnél” sora rövidítés: a formátum (`%s-%03lu`), a kezdőérték és a határ benne is helyes, de a „több képnél mindig `név-001`, `név-002`” olvasat nincs a binárisban.
+
+Bizonyíték (két független út: a hívóhely és a számozó belseje; bizonyítottsági fok: megerősített):
+
+- **A számozó csak létező célnál fut.** A `0x00479870` belsejében: `0x00479a00 cmp byte [esp+0x1538], bl; jne 0x00479a8c` (a `param_5` nullának kell lennie), majd `0x00479a3d call 0x00992ed0; test al, al; je 0x00479a8c`: ha a cél NEM létezik, a `0x00993650` meg sem hívódik. Létező célnál `0x00479a5e push 1; push edi; push eax; call 0x00993650` (a harmadik paraméter 1, a veremsorrend a hívóhelyen ellenőrizve).
+- **A `0x00992ed0` létezésvizsgálat:** `GetFileAttributesA` (`call [0x00d694bc]`, `binaris-regeszet-modszertan.md` IAT-táblája), `cmp eax, -1; setne bl` (`0x00992f03`-`0x00992f11`): igaz, ha a fájl létezik.
+- **Önmagára átnevezés nem csinál semmit:** ha a régi és az új név bájtról bájtra egyezik (`0x00479a16 cmp ecx, eax; sete al`), a `0x00479a1f`-`0x00479a36` ág takarít és 0-val tér vissza.
+- **A `0x00993650` belseje:** a számláló a `0x00993900` címen nullázódik (`xor esi, esi`). A `0x00993a30 test esi, esi; je 0x00993b38` ág 0-nál az EREDETI jelöltet vizsgálja (`0x00993b45 call 0x00992ed0`). Ha foglalt, a `0x00993b52`-`0x00993b63` növeli a számlálót (`add esi, 1`), és 1-től a `0x00993b07` címen a `0x00cd8d64` formátummal (`%s-%03lu`) képez nevet, majd ugyanúgy újra vizsgálja (`0x00993b38`). Szabad névnél a `0x00993b4a test al, al; je 0x009938db` ág 0-val tér vissza (siker); a `0x1000` elérése (`0x00993a1a`, `0x00993b59`) `-1`-et ad (`0x00993b87`). Ha a név már `-szám` végű és a szám kisebb `0x1000`-nél (`sscanf`, `0x00993982`, `0x00993993`), a számlálás attól folytatódik.
+- **A mozgatás fájlonként, azonnal megtörténik:** a `0x00532ec0` ciklus fájlonként hívja a `0x00479870`-et (`0x00533517`), az a végén a `0x00998a40`-et, ez pedig `MoveFileWithProgressA`-t (`0x00998b4e call [0x00d694e0]`, jelző 2, vagyis `MOVEFILE_COPY_ALLOWED`, felülírás nélkül). A következő fájl vizsgálata tehát már látja az előzőt, így három képnél szabad mappában `név.jpg`, `név-001.jpg`, `név-002.jpg` jön létre.
+
+Nálunk (ellenőrizve): `src/picasapy/fileops/rename.py:265-303` (`_available_name`): a sorszám nélküli cél az első jelölt, csak foglaltságnál keres `-001`...`-4095` között, meglévő `-szám` végződésnél a következővel folytat, önmagára átnevezés nem csinál semmit; `rename_photos_many` (`:306`) fájlonként sorban hív, a korábbi elemek már a lemezen vannak. Megvalósította a #5941 (commit `f827076c5`); tesztek: `tests/fileops/test_rename_many.py`. **A 4. jegytörzs és a „Tárolás, műveleti hatás és hibák” tábla „Átnevezési ütközés és sorszám” sorának „Eltérés” állítása ezért elavult: a viselkedés kész.** (Csak a `photo_ops_rename_mixin.py` `renamePhotosMany` docstringje említi még a régi `név-1` alakot; ez szöveg, nem viselkedés.)
+
+#### 2. A nem támogatott fájl figyelmeztetése: a szöveg megvan, a forma eltér
+
+A 1. jegytörzs „Nálunk” állítása (a PicasaPy csendben átugorja a videót) elavult: a jelzés létezik. A helyes kép:
+
+- **Eredeti, a megjelenítés módja eddig NINCS MEG volt (`paritas-ellenorzes-archiv-1.md` 2496. sor), most megvan.** A kötegelt effekt végén (`0x005fe897 cmp dword [esp+0x24], 0; je 0x005fe8ca`, vagyis a kihagyottak száma nem nulla): `0x005fe89e push 0xc98918; push 0xe8; call 0x009ae710` (a `IDS_SOME_EDITS_FAILED_TYPE` szöveg betöltése), `push 0; push eax; xor eax, eax; call 0x009807f0` (`0x005fe8bd`-`0x005fe8c2`). A forgatás kötegelt ágában ugyanígy: a `0x005ee6e0` végén (`0x005eee98 cmp dword [esp+0x14], 0; je 0x005eeefa`) `IDS_ROT_TYPEFAILED` (`0x00c97e84`) → `call 0x009807f0` (`0x005eeee9`), vagyis a forgatás előbb lefut az összes képre, és csak utána szól. A `0x005eef30` forgatókezelő egyképes ága (`0x005ef1e1`) ugyanezt a függvényt hívja.
+- **A `0x009ae710` csak szöveget tölt be** (`LoadStringA`-alapú); a megjelenítő a **`0x009807f0`**: a jelző `0x40`, és egy globális jelzőbájt (`0x00d678d4`) esetén `MB_RTLREADING` (`0x100000`) is (`0x009808a9 or eax, 0x40`; `0x00980891`-`0x00980895`), a cím a `ytApp::InfoTitle` szövegtár-kulcs (`0x00cd85d8` „Info”, `0x00cd85e0`; `stringres-en-hu.tsv:3360`: magyarul „Információ”), a szülőablakot a `0x0097de80` adja, a hívás pedig `call [0x00d69594]` = `MessageBoxA` (`binaris-regeszet-modszertan.md:1400`). **Tehát modális, egyetlen OK gombos, információ ikonos üzenetablak** (`MB_ICONINFORMATION`), nem értesítősáv. Ugyanezt az utat használja az üres kijelölés két üzenete is: `IDS_MUST_SELECT_TO_ROT` (`0x005ef327`-`0x005ef348`) és `IDS_NEEDS_SELECTION` (`0x005fe943`-`0x005fe966`).
+- **Helyesbítés a szövegre:** az `IDS_SOME_EDITS_FAILED_TYPE` pontos angol szövege a szövegtár szerint „Some images were not modified because of the file type.  Note that effects cannot be applied to movies.” (`stringres-en-hu.tsv:1692`; két szóköz a mondatok között). A fenti szakasz korábbi idézete („Some edits could not be applied because of the file type.”) téves volt. Az `IDS_ROT_TYPEFAILED` szövege („One or more images could not be rotated because of the file type.”, `:1675`) helyes volt. A `0x005fe524` cím sem a hívás helye, hanem egy utasítás a ciklus előtt; a tényleges hívás a `0x005fe8c2`.
+- **Nálunk (ellenőrizve):** a kötegelt effekt a videót kihagyja és a végén jelez (`batch_effect_controller.py:224-225`, `:298-305`, `:547`, jelzés: `batchEditTypeFailed`; megvalósította a #7090, commit `84cf94138`); a forgatás ugyanígy (`photo_ops_transform_mixin.py:67-68`, `:143-153`, `:191-201`; #1755). A felületen mindkettő értesítősáv (`PicasaNotifier.qml:429-461`, `notifier.notify(...)`). A szövegek egyeznek a szövegtárral. **Az egyetlen eltérés a forma:** értesítősáv a modális Információ-ablak helyett. A PicasaPy-ban a modális Információ-ablaknak már van mintája: `copyAllEffectsInfoDialog` (`MainWindowDialogStack.qml:110-140`, kék „i” ikon, #6864).
+
+#### 3. A Show Text és Hide Text engedélyezése: helyesbítés
+
+A fenti szakasz „Menüengedélyezési feltételek” sora, a 2. jegytörzs és a harmadik cáfoló kísérlet az `EnableMenuItem(local_40, 0x9deb, 1)` hívást úgy olvasta, hogy a tétel „feltétel nélkül engedélyezett”. **Ez a harmadik paraméter félreolvasása:** az `EnableMenuItem` jelzője `0` = engedélyezett, `1` = szürkített (`MF_GRAYED`), `2` = letiltott.
+
+- Utasításszint: `0x0056f2cf push 1; push 0x9deb; push esi; call edi` és `0x0056f2d9 push 1; push 0x9dec; ...`, ahol `edi` a `0x0056f17d mov edi, [0x00c40818]` = `EnableMenuItem` (`picasa-menu-parancsok-viselkedes.md:2123`), `esi` a menüfogantyú.
+- Ez a két hívás CSAK abban az ágban van, amelyet a `0x0056f29a cmp byte [esp+0x15], 0; je 0x0056f30b` nyit, ahol a kijelölés-állapotszó `0x4000` bitje be van állítva (`0x0056e2e8 test eax, 0x4000; seta [esp+0x15]`; az állapotszót a `0x005cb1a0` adja, a `0x4013` állapotot a `0x005cb365` ág). Ebben az ágban a csoport TÖBBI tétele is szürke (`0x9ca2`, `0x9ca3`, `0x9d4f`, `0x9df1`, `0x9d2d`, `0x9ca4`, `0x9ca5`, `0x9e11`).
+- A nyolc effekt (`0x9d49`, `0x9d48`, `0x9d5e`, `0x9d4a`, `0x9d4b`, `0x9d4d`, `0x9d4e`, `0x9d4c`) külön hívást kap a `(bl == 0)` jelzővel (`0x0056f30b`-`0x0056f367`). A Show Text és a Hide Text a `0x0056e1c0`-ban sehol nem kap engedélyező hívást, és a függvény sehol nem olvassa a `.picasa.ini`-t.
+- **Következtetés (erős):** a két tétel engedélyezése NEM függ a képek `textactive` állapotától; a menüépítő a csoport közös szürkítésén kívül nem nyúl hozzájuk. A 2. jegytörzs iránya tehát helyes, de az „Eredeti” szövege pontatlan volt; a pontos szöveg lent van. A `0x4000` bit jelentése nincs meg, de ez nem blokkoló: a bit az egész csoportot egyszerre szürkíti, nem a Show/Hide Text külön kapuja.
+- **Nálunk (ellenőrizve, a hivatkozás nem változott):** `PicasaPictureMenu.qml:9` (`onAboutToShow: bar.textOverlayStatesRefreshRequested()`), `:105-113` (`enabled: bar.photoActionsEnabled && bar.textOverlayShowEnabled` / `...HideEnabled`), `MainMenuBar.qml:77-83` (`hasTextOverlayStateInSelection`, `batch_effect_controller.py:410`).
+
+#### 4. Elavult „Nálunk” állítások a #7084 szakasz táblázataiban
+
+| A szakasz állítása | A mai forrás | Következmény |
+|---|---|---|
+| „Adjust Photo Date - 1 items” egy kijelölt képnél (3. jegytörzs, „Ablakok…” rész) | `AdjustTimestampDialog.qml:22-24`: `title: photoRows.length > 1 ? qsTr("Adjust Photo Date - %1 items").arg(photoRows.length) : qsTr("Adjust Photo Date")` (#5703, commit `61d52d613`); tesztek: `tests/app/qml_functional/test_timestamp_progress_5703.py`, `test_adjust_timestamp_4332.py` | **A 3. jegytörzs kész**, jegy nem kell. |
+| A rename előnézete „az első kép valós metaadatait mutatja” | `FileOpsDialogs.qml:285-293` a látható Example sort a `renameSamplePreview` adja, rögzített dátum-, méret- és `.jpg` mintával (#5702); a `renamePreview` csak a kijelölés követéséhez kell (`:316-320`) | Az „Eltérés” elavult, a viselkedés egyezik. |
+| A videót csendben átugorja | 2. pont | A jelzés megvan, csak a forma tér el. |
+| `név`, `név-1`, `név-2` számozás | 1. pont | Kész. |
+| Hivatkozások: `Main.qml:1191-1194`, `Main.qml:1072-1081`, `PicasaToolsMenu.qml:80-84`, `PropertiesPanel.qml:168-170`, `PhotoContextMenu.qml:150-164`, `MainTrayBar.qml:128-142` | Mai helyük: `MainMenuBar.qml:272` és `MainKeyboardShortcuts.qml:413` (F2); `MainKeyboardShortcuts.qml:158` (Ctrl+Shift+B), `:288` (Ctrl+R), `:295` (Ctrl+Shift+R); `PicasaToolsMenu.qml:78-83`; `PropertiesPanel.qml:166`; `PhotoContextMenu.qml:324-331` (forgatás) és `:342-344` (Undo all Edits); `MainTrayBar.qml:47-50` | Csak a sorszámok csúsztak, a tartalom egyezik. |
+
+A többi „Nálunk” állítást is ellenőriztem és igaz: `PicasaPictureMenu.qml:21` (`menuPictureBatchEdit`, 14 parancs), `batch_effect_controller.py:162` (`_UNDO_ALL_KEYS`: `filters`, `crop`, `flipped`, `redo`, `text`, `textactive`, a `rotate` nem), `:449` (`clearAllEffectsMany`), `:559` (`undoBatchEdit`), `:256` (`batchEditActive`), `:420` (`setTextOverlayVisibleMany`), a `with_backuphash` használata (`batch_effect_controller.py:156, 198, 495`; `photo_ops_transform_mixin.py:159, 263`), a hibajelzés (`photoOpFailed`, `batch_effect_controller.py:364, 502, 593`; `photo_ops_rename_mixin.py:64`).
+
+#### 5. Lezárva: a `rename.fen` `newname` mezőjének szűrője (`0x008E3160`)
+
+A Ghidra-válasz (fent) áll, és utasításszinten is igazolt: `0x008e3160 cmp dword [esp+4], 0x5c; setne al; ret`. A paraméter karakterkód: a `digits` párja, a `0x008e2dd0` (`add eax, -0x30; cmp eax, 9; setbe al`) ugyanilyen szerkezetű. A `.fen` sora hosszkorlátot nem ad (`edit width="25em" name="newname" filter="filename"`, `picasa-fen-dialogs.md:458`).
+
+- **Eredeti:** beíráskor csak a `\` tiltott; hosszkorlát nincs. A gombállapot-függvény (`0x00532c70`) azon az ágon, ahol sem a dátum, sem a felbontás jelölője nincs bejelölve (`0x00532cdd`, `0x00532cf0`), a `0x00532710` által képzett mintanévre lefuttatja a `0x009946f0` névtisztítót (`0x00532d1f`), és a Rename gombot letiltja, ha a tisztítás hibát ad, üres eredményt ad, vagy a név nem változik (`0x00532d94`).
+- **Nálunk:** `FileOpsDialogs.qml:347-353`: a `\ / : * ? " < > |` karakter nem gépelhető be, a hossz legfeljebb 200.
+- **Döntés: nem blokkoló.** A PicasaPy mezője szigorúbb, de olyan nevet nem tud előállítani, amelyet az eredeti fájlrendszeri szinten el tudna fogadni; a felhasználó legfeljebb annyit lát, hogy egy tiltott karakter nem írható be.
+
+#### 6. Lezárva: az AdjustTimeThread JPEG-en kívüli formátumoknál (`0x00490580`, `0x00490C10`)
+
+A kérdésre a meglévő bizonyíték (`pmp-database.md` 15.1) és az alábbi mérés válaszol, új Ghidra-kör nem kell. **Nem PMP-oszlopba ír, hanem a `thumbindex.db` rekord első FILETIME mezőjébe (`creation_filetime`) és a fájl létrehozási idejébe.**
+
+- Az ág típus szerint dönt: `cmp [puffer+0x18], 2` (`0x0049070a`, `0x00490d4f`); csak a 2-es típus megy az EXIF-ágra (`0x009ed330`). Minden más típus a nem-EXIF ágra: létrehozási idő (`0x00490900`/`0x00490f40` → `0x00992780`) és rekordmódosítás (`0x004ef3c0` eltolás, `0x004ef5a0` abszolút), amelyek a `2, 3, 6-18, 21-24, 26, 27-29, 31, 1001` típusokra írnak (`0x004ef436`-`0x004ef46d`, `0x004ef618`-`0x004ef64f`).
+- **Mérés (2026-11-17, a `read_thumb_index` olvasóval a két valódi katalóg `thumbindex.db`-jén; típus = rekord `+0x18`):** nagy katalóg (140 758 rekord): `.png` 14-es típus 7 663 db, 2-es típus 33 db, 31-es 1 db; `.bmp` 6-os 707 db; `.gif` 3-as 394 db; `.webp` 31-es 4 db; `.avi` 8-as 37 db; `.mp4` és `.mpg` és `.mts` 10-es 2 645 db; `.wmv` 11-es 13 db; `.jpg` és `.jpeg` főként 2-es. Kisebb katalóg (3 338 rekord): `.png` 14-es 125 db, `.tif` 13-as 3 db, `.bmp` 6-os 206 db, `.webp` 31-es 1 db, `.mp4` 10-es 17 db.
+- **Válasz:** a PNG (14), a TIFF (13), a BMP (6), a GIF (3), a WebP (31) és a videók (8, 10, 11) mind a nem-EXIF ágra mennek és mind benne vannak a rekordíró típuskészletében; módosított dátumuk a `thumbindex.db` első FILETIME mezőjébe kerül. Az a 33 `.png`, amelynek típusa 2, EXIF-ágra menne; a fájl tartalmát nem vizsgáltam.
+- **Nálunk:** a nem JPEG fájlnál az EXIF-írás hibára fut, és a dátum a SQLite `photos.taken_at_override` mezőbe kerül (a fenti #7033 szakasz, 3. rész; `timestamp_controller.py:283-305`). A tárolás helye eltér (a PicasaPy saját indexe, nem a `db3`), a látható hatás (új dátum a rácsban és a rendezésben) azonos. **Döntés: nem blokkoló.**
+
+#### 7. Lezárva: a `RenameUseDate` dátumszövege
+
+A kérdést a bináris eldönti, Colab-mérés nem adna többet (a Wine nem a valódi Windows területi beállítását futtatná).
+
+- **A dátum előállítása:** a `0x0098b650` a FILETIME-ot helyi időre, majd `DATE` értékre alakítja (`SystemTimeToVariantTime`, OLEAUT32 #184; `picasa-metaadat-tulajdonsagok.md:2403`). A `0x0098c470` ebből szöveget készít: `push eax(&BSTR); push 0; push 0x400; <dupla>; call [0x00c405c4]` (`0x0098c481`-`0x0098c49c`) = **`VarBstrFromDate(dátum, LOCALE_USER_DEFAULT, 0)`** (OLEAUT32 #114), majd UTF-8 átalakítás (`WideCharToMultiByte`, `0xfde9`).
+- **Ami a névbe kerül:** a `0x00532ec0` ciklusában az alapnév után egy szóköz (`0x00c89a98`) és a dátumszöveg következik, ahol minden `:` (`0x3a`) és `/` (`0x2f`) karakter `-`-re cserélődik; más elválasztó (pont, szóköz, vessző) változatlan marad. A méret ezután ` %dx%d` alakban jön (`0x00c89a9c`, `0x00533358`). Az előnézet ` 08-01-2004 2-30-45 PM` mintája csak a párbeszédé (`0x00c89a18`).
+- **Ami a Windows területi beállításán múlik:** a konkrét dátum- és időforma a `VarBstrFromDate` szerződése (rövid dátum és hosszú idő a felhasználó beállításával, éjfélkor csak a dátum; `picasa-metaadat-tulajdonsagok.md:2409`). Ezt nem a bináris adja, és mi nem mértük valódi Windowson.
+- **Nálunk (`rename.py:198-215`, `format_taken_at`):** a `QLocale` rövid dátuma és rövid ideje másodperccel, a tiltott karakterek `-`-re cserélve; a kétjegyű évet négyjegyűre bővíti (`_TWO_DIGIT_YEAR_RE`). Két apró eltérés lehetséges: a `VarBstrFromDate` a felhasználó rövid dátumformáját változtatás nélkül adja (kétjegyű év is lehet), és pontosan éjféli időnél csak a dátumot írja ki.
+- **Döntés: nem blokkoló** (csak ritka területi beállításnál és pontosan 00:00:00 időnél látszik). Külön jegy nincs.
+
+#### 8. A szerkesztőben nyitott kép és a Sepia, a Fekete-fehér
+
+A „Belépési pontok és feltételek” tábla „Szerkesztőnézetbeli navigáció” sora „Eltérés” jelzésű, de a „(1. jegytörzs)” hivatkozása téves (az 1. jegytörzs a figyelmeztetésről szól), és jegytörzse nem volt. Most van (5. jegytörzs).
+
+- **Eredeti:** a `0x00579330` igaz, ha az `editpanel/preview` elem létezik és látható (`[0x00d67914] != 0`, `0x009c2fc0`, `[eax+0x20c] == 0`). A `0x005cb990` kezelő `0x9d4d` (`"warm"`), `0x9d4b` (`"unsharp"` / `"unsharp2"`), `0x9d4e` (`"grain"` / `"grain2"`), **`0x9d4a` (`"sepia"`) és `0x9d4c` (`"bw"`)** ágán ilyenkor ugyanaz a két hívás fut: `0x005f8520(név)` és `0x00a54b70(...)` (`2026-10-21-idorend-30.txt:2056-2112`). Az `0x9d48` és `0x9d49` ilyenkor nevet nem ad át, hanem kétszer a közös továbbító függvényt hívja (`0x009cd8a0`: dinamikus típusátalakítás a megnyitott felület objektumára, majd virtuális hívás a `+0x78` rekeszen); ennek a hatását ez a kör nem követte.
+- **Nálunk:** `PhotoViewerGeometryActions.qml:357-369` (`selectMenuEffect`) csak az `autolight`, `autocolor`, `enhance` (0. fül) és az `unsharp`, `warm`, `grain2` (2. fül) nevet kezeli; a `sepia` és a `bw` `false`-t ad, és a `MainMenuBar.qml:427` egyképes `applyEffectMany([row], name)` kötegre esik vissza.
+- **Megmaradó, örökölt, nem blokkoló kérdés:** hogy a `0x005f8520` (a név szerinti eszközválasztó, `editpanel/puck`) pontosan mit csinál (csak kijelöl, vagy alkalmaz is), az a `paritas-ellenorzes-archiv-1.md` 3345. sorában már nyilvántartott `Ghidra-kör kell: 0x005f8520` tétel. Az 5. jegytörzs ezt nem dönti el, csak a `sepia` és a `bw` ágat igazítja a három testvéréhez.
+
+### Zárási döntés
+
+**A #7084 kutatási jegy lezárható.** Nincs blokkoló. Az összes nyitott kérdés lezárult (17 lezárva, 0 nyílt, 0 blokkolt); az egyetlen örökölt kérdés (`0x005f8520` eszközmódja) nem blokkoló és már nyilvántartott. Az átnevezési sorszámozás vitája eldőlt (Zárókör 1. pont). A zárókör helyesbítette az `IDS_SOME_EDITS_FAILED_TYPE` szövegét és megjelenítési módját (2. pont), a Show Text és Hide Text kapujának leírását (3. pont), valamint a 4. pontban felsorolt elavult „Nálunk” állításokat; a korábbi szöveg érintetlen, a helyesbítések a Zárókörben vannak.
+
+**Készre ítélt jegytörzsek (jegy nem kell):**
+
+- **3. Dátummódosítás ablakcíme egy képnél:** kész, `AdjustTimestampDialog.qml:22-24` (#5703, `61d52d613`).
+- **4. Csoportos átnevezés háromjegyű számozása:** kész, `rename.py:265-303` (#5941, `f827076c5`); a Zárókör 1. pontja az eredeti viselkedést bizonyítja.
+
+**Megmaradó fejlesztői jegytörzsek (három):**
+
+#### 1. (módosítva) A nem támogatott fájl és az üres kijelölés figyelmeztetése modális Információ-ablakban
+
+**Eredeti:** a kötegelt effekt (`IDS_SOME_EDITS_FAILED_TYPE`, `0x005fe8bd`-`0x005fe8c2`), a kötegelt forgatás (`IDS_ROT_TYPEFAILED`, `0x005eeee9`), a forgatás üres kijelölése (`IDS_MUST_SELECT_TO_ROT`, `0x005ef348`) és az effekt üres kijelölése (`IDS_NEEDS_SELECTION`, `0x005fe966`) egyaránt a `0x009807f0`-on át jelenik meg: `MessageBoxA`, `MB_ICONINFORMATION` (`0x40`), egyetlen OK gomb, cím `ytApp::InfoTitle` („Információ”), szülőablak az aktív ablak. A forgatás és az effekt előbb lefut a támogatott képekre, a figyelmeztetés a végén jön.
+
+**Nálunk:** a jelzés megvan (`batchEditTypeFailed`, `rotationTypeFailed`, `rotationNeedsSelection`), a szöveg helyes, de a forma értesítősáv (`PicasaNotifier.qml:429-461`), nem modális ablak.
+
+**Teendő:** a három meglévő jelzést (`onRotationTypeFailed`, `onRotationNeedsSelection`, `onBatchEditTypeFailed`) a `copyAllEffectsInfoDialog` mintájára (`MainWindowDialogStack.qml:110-140`) modális, egy OK gombos, kék „i” ikonos Információ-ablakkal kell megjeleníteni; a cím az „Info” szövegtár-kulcs (`ytApp::InfoTitle`) fordítása. A szövegek változatlanok. Az effekt üres kijelölésénél (`IDS_NEEDS_SELECTION`, „This operation requires selected images.”) a menü szürke, így csak billentyűparancsnál érhető el; ott is ugyanez az ablak jön.
+
+**Kész, ha:** vegyes (kép és videó) kijelölésre kötegelt effektet vagy forgatást adva a képek módosulnak, és a végén modális Információ-ablak jelenik meg a szövegtár szerinti szöveggel; tisztán képes kijelölésnél nem jelenik meg ablak; a három jelzéshez van ablakos teszt (a megjelenített szöveg és az OK gomb ellenőrzésével).
+
+#### 2. (helyesbítve) A Show Text és Hide Text engedélyezése nem függhet a képek ini-állapotától
+
+**Eredeti:** a `0x0056e1c0` menüépítő a Show Text (`0x9deb`) és Hide Text (`0x9dec`) tételhez csak a `0x4000` állapotbites ágban nyúl (`EnableMenuItem(..., 1)` = szürkítés, `0x0056f2d1`, `0x0056f2db`), ahol a csoport összes tétele szürke; külön engedélyező hívás nincs, a `.picasa.ini`-t a függvény nem olvassa. A Zárókör 3. pontja a bizonyíték. A `0x005f6a40` kezelő kattintáskor maga állítja át a `textactive` értéket.
+
+**Nálunk:** `PicasaPictureMenu.qml:9` (`onAboutToShow: bar.textOverlayStatesRefreshRequested()`), `:105-113` (`enabled: bar.photoActionsEnabled && bar.textOverlayShowEnabled` és `...HideEnabled`), `MainMenuBar.qml:77-83`, `batch_effect_controller.py:410` (`hasTextOverlayStateInSelection`): a két tétel a kijelölt képek ini-állapotától függ, és minden menünyitáskor ini-t olvas.
+
+**Teendő:** a két tétel kapuja legyen azonos a csoport többi tételével (`enabled: bar.photoActionsEnabled`); a `textOverlayStatesRefreshRequested` menünyitáskori ini-olvasás és a `hasTextOverlayStateInSelection` kikerül, ha máshol nincs használata.
+
+**Kész, ha:** kijelölt képeknél mindkét tétel aktív, akkor is, ha egyik képen sincs ráírt szöveg; üres kijelölésnél a Csoportos szerkesztés almenü szürke marad; a Show Text és a Hide Text kattintásra a `setTextOverlayVisibleMany`-t hívja; a menü megnyitása nem olvas `.picasa.ini`-t.
+
+#### 5. (új) Sepia és Fekete-fehér, ha a szerkesztőben nyitott kép van
+
+**Eredeti:** a `0x00579330` igaz állapotában a `0x9d4a` (`"sepia"`) és a `0x9d4c` (`"bw"`) a `0x9d4d` (`"warm"`), a `0x9d4b` (`"unsharp"`) és a `0x9d4e` (`"grain2"`) ágával azonos hívásokat futtatja: `0x005f8520(név)` és `0x00a54b70(...)` (Zárókör 8. pont).
+
+**Nálunk:** `PhotoViewerGeometryActions.qml:357-369`: a `sepia` és a `bw` nincs a `selectMenuEffect` listájában, ezért a `MainMenuBar.qml:427` egyképes `applyEffectMany([row], name)` kötegre esik vissza, miközben a `warm`, `unsharp`, `grain2` a 2. fület választja ki.
+
+**Teendő:** a `selectMenuEffect` a `sepia` és a `bw` nevet is a 2. fülre (`editorPanel.selectTab(2)`) irányítsa, azaz a három testvérével azonosan viselkedjen.
+
+**Kész, ha:** szerkesztőben nyitott képnél a Kép ▸ Csoportos szerkesztés ▸ Sepia és ▸ Black and White ugyanúgy az Effektek fület választja ki, mint a Warmify; nem módosítja a `filters=` láncot és nem indít kötegelt műveletet; könyvtárnézetben a kijelölt képekre továbbra is lefut. A `0x005f8520` pontos hatása (kijelöl vagy alkalmaz is) a fent említett örökölt kérdés, ezért ez a jegytörzs csak az ágak egységességét kéri.
+
+**Nem a #7084 hatóköre, de a zárókör közben kiderült:** a `paritas-ellenorzes-archiv-1.md` 2496. sorának „NINCS MEG” jelölése (a figyelmeztetés ablaktípusa) e körben megválaszolódott (modális Információ-ablak, Zárókör 2. pont); a `picasa-fen-dialogs.md` 501. sora még a régi `renamePreview` előnézetre hivatkozik, pedig a látható sort már a `renameSamplePreview` adja (#5702). Mindkét lapot a hívó vezesse át.
