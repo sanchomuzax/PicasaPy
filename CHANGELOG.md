@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.134] - 2026-11-16
+
+- A Mappa áthelyezése célválasztójának címe most „Mappa áthelyezése ide:” és a mozgatott mappa neve, és a választó a legutóbb választott célmappából indul (#7067).
+- A szerkesztő diavetítés-gombjának súgója az eredeti Picasa hivatalos szövegét mutatja (#7068).
+- A keresés az Esc billentyűvel és a második Ctrl+F-fel is bezárható, a rácson gépelt betű pedig a keresőmezőbe kerül (#7075).
+- Az új album létrehozása után (Fájl ▸ New Album... és az eszköztár gombja) az új album nyílik meg; Mégse vagy íráshiba esetén marad a jelenlegi nézet és kijelölés (#7076).
+- A keresőmező háttere jelzi a találatot (világoszöld, ha van, halványpiros, ha nincs), a keresési sáv az eredeti Picasa szövegeit mutatja („Találatok a(z) „…” kifejezésre”, „Nincs találat”, „N találat: arc”), és 1000 fölött a darabszámok ezres tagolással íródnak (#7079).
+- A kereső gépelés közben összevonja a kereséseket, és az eredeti szóhatárok szerint kezeli a kifejezést (#7081).
+- Hálózati mappán görgetéskor a bélyegképek betöltése kevésbé akasztja meg a felületet: a képfájlok olvasása és az arcfelismerés aktivitásfigyelője nem tartja fel a felületet kiszolgáló szálat (#7086).
+- A Kép ▸ Csoportos szerkesztés a kijelölt videókat kihagyja (nem kapnak szűrőláncot), és a végén az eredeti Picasa figyelmeztetését mutatja; tisztán képes kijelölésnél nincs figyelmeztetés (#7090).
+
 ## [1.0.133] - 2026-11-16
 
 - A Gyorscímkék Autofill most egyszeri műveletként tölti ki a konfigurált üres mezőket (#7053).
