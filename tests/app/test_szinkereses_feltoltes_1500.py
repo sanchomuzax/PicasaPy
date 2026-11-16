@@ -137,6 +137,23 @@ class TestMagatolFrissul:
             "gépelnie ugyanazt a keresést"
         )
 
+    def test_a_beirt_szoveg_szelei_nem_gatoljak_a_magatol_frissulest(
+        self, controller, qt_app
+    ):
+        """#7081: a nézet a BEÍRT szöveget őrzi, de a színtokent az eredeti
+        tisztítás (` ,./\\` a széleken, kisbetűsítés) szerint kell kiolvasni,
+        különben a kész feltöltés után a találatok nem frissülnének."""
+        controller.search(",Color:Red./")
+        assert controller.searchQuery == ",Color:Red./"
+        assert controller.waitForBackgroundWorkers(60.0)
+        hatarido = time.monotonic() + 10.0
+        while time.monotonic() < hatarido and _talalat_nevek(controller) != {
+            "piros.jpg"
+        }:
+            qt_app.processEvents()
+            time.sleep(0.02)
+        assert _talalat_nevek(controller) == {"piros.jpg"}
+
     def test_mas_nezetbe_lepve_nem_ir_bele_a_racsba(self, controller, qt_app):
         """Ha a felhasználó közben továbblépett, a kész feltöltés NEM
         rántja vissza a régi keresés találatait."""
