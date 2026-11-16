@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from importlib import import_module
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QUrl, Slot
+
+#: #7067: az eredeti `Preferences/MoveFolderLastPath` kulcsa (`0x0053f4a0`).
+MOVE_FOLDER_LAST_PATH_KEY = "Preferences/MoveFolderLastPath"
 
 
 def _controller_module():
@@ -307,6 +310,31 @@ class FileOpsControllerMoveMixin:
         except _compat.FolderMoveError as error:
             self.operationFailed.emit("move_folder", str(error))
             return
+        self._remember_move_folder_target(target_text)
         # #1538: a NORMALIZÁLT forrás megy ki, nem a kapott nyers szöveg —
         # az `file://` URL-t a fogadó oldal nem tudná megtalálni.
         self.folderMoved.emit(str(source), str(moved))
+
+    def _remember_move_folder_target(self, target_text: str) -> None:
+        """A sikeres áthelyezés célmappájának megőrzése (#7067).
+
+        Az eredeti `0x0053f4a0` a `Preferences/MoveFolderLastPath` kulcsba
+        írja vissza az utolsó célt; hibás áthelyezésnél ide nem jutunk el."""
+        self._get_settings().setValue(MOVE_FOLDER_LAST_PATH_KEY, target_text)
+
+    @Slot(str, result=QUrl)
+    def moveFolderStartUrl(self, folder: str) -> QUrl:  # noqa: N802
+        """A célválasztó kezdőhelye a `folder` áthelyezésekor (#7067).
+
+        Az eredeti a megjegyzett utolsó célt adja át, ha az létező mappa.
+        Első futáskor (nincs megjegyzett út) a mai viselkedés marad: a
+        forrásmappa szülője, amíg az eredeti első futásos alaphelyét nem
+        mérjük."""
+        _compat = _controller_module()
+        tarolt = self._get_settings().value(MOVE_FOLDER_LAST_PATH_KEY)
+        if isinstance(tarolt, str) and tarolt.strip():
+            utolso = _compat._to_local_path(tarolt)
+            if utolso and _compat.Path(utolso).is_dir():
+                return _compat.to_file_url(utolso)
+        # Nincs (érvényes) megjegyzett út: a mai alaphely, a forrás szülője, marad.
+        return self.parentFolderUrl(folder)

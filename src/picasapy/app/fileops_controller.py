@@ -15,7 +15,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
+from PySide6.QtCore import Property, QObject, QSettings, QUrl, Signal, Slot
 from PySide6.QtCore import QByteArray, QMimeData
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 
@@ -111,9 +111,11 @@ class FileOpsController(
 ):
     """A QML fájlművelet-kontextusmenüjéhez tervezett híd."""
 
-    @Slot(str, result=QUrl)
     def parentFolderUrl(self, path: str) -> QUrl:  # noqa: N802
-        """A mappa szülőjének `file:` URL-je a mappaválasztó kezdőhelyéhez."""
+        """A mappa szülőjének `file:` URL-je a mappaválasztó kezdőhelyéhez.
+
+        #7067: csak a `moveFolderStartUrl` hívja (az első futás alaphelye),
+        a QML a `moveFolderStartUrl`-t kéri."""
         local_path = to_local_path(path)
         return to_file_url(str(Path(local_path).parent)) if local_path else QUrl()
 
@@ -172,9 +174,10 @@ class FileOpsController(
 
     _vagolap_adat = None
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent=None, settings: QSettings | None = None) -> None:
         super().__init__(parent)
         self._vagolap_adat = None
+        self._settings = settings
         # A Menü Beillesztés tétele a jelzésből tudja, hogy a vágólap
         # tartalma megváltozott. Külső program másolását is követjük, a
         # fej nélküli tesztplatformon viszont nem kérdezzük le a Qt-vágólapot.
@@ -185,6 +188,13 @@ class FileOpsController(
             clipboard = QGuiApplication.clipboard()
             if clipboard is not None:
                 clipboard.dataChanged.connect(self._clipboard_data_changed)
+
+    def _get_settings(self) -> QSettings:
+        """Lusta alapérték: `QSettings("PicasaPy", "PicasaPy")`, hacsak a
+        konstruktor nem kapott sajátot (tesztekhez)."""
+        if self._settings is None:
+            self._settings = QSettings("PicasaPy", "PicasaPy")
+        return self._settings
 
     @Slot()
     def _clipboard_data_changed(self) -> None:

@@ -273,19 +273,34 @@ Item {
 
     // #457: melyik mappát mozgatjuk épp (a dialógus elfogadásakor kell)
 
+    // #7067: a mozgatott mappa neve a célválasztó címéhez (`%s` az eredetiben)
+    function _folderName(path) {
+        const vago = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"))
+        return path.substring(vago + 1)
+    }
+
+    // #7067: a célválasztó egyetlen nyitási útja (helyi menü és menüsor). A
+    // kezdőhelyet minden nyitáskor újra kérjük: a megjegyzett cél két nyitás
+    // között változik, a `_movingFolder` pedig lehet ugyanaz.
+    function openMoveFolder(path) {
+        if (!path) return
+        folderPane._movingFolder = path
+        if (typeof fileOpsController !== "undefined" && fileOpsController)
+            moveFolderDialog.currentFolder = fileOpsController.moveFolderStartUrl(path)
+        moveFolderDialog.open()
+    }
+
     FolderDialog {
         id: moveFolderDialog
         objectName: "moveFolderDialog"
-        //: picasapy-origin: picasapy; a rendszer mappaválasztó eredeti címe.
-        title: qsTr("Browse for Folder")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:CThumbUI::MoveFolderFormat
+        title: qsTr("Move Folder to %1").arg(menus._folderName(folderPane._movingFolder))
         // A natív mappaböngésző adja a fastruktúrát és a Make New Folder műveletet.
         //: picasapy-origin: picasa
         //: picasapy-origin-key: stringres:il_OKButton
         acceptLabel: qsTr("OK")
         rejectLabel: qsTr("Cancel")
-        currentFolder: typeof fileOpsController !== "undefined"
-            && fileOpsController && folderPane._movingFolder.length > 0
-            ? fileOpsController.parentFolderUrl(folderPane._movingFolder) : ""
         onAccepted: {
             if (folderPane._movingFolder.length > 0
                     && typeof fileOpsController !== "undefined"
@@ -305,10 +320,7 @@ Item {
         // #457: „Mappa áthelyezése…” — a célmappát a rendszer
         // mappaválasztójával kérjük be, a mozgatás a kísérőfájlokkal
         // együtt megy (a `.picasa.ini` nálunk az igazságforrás)
-        onMoveFolderRequested: {
-            folderPane._movingFolder = folderContextMenu.folderPath
-            moveFolderDialog.open()
-        }
+        onMoveFolderRequested: openMoveFolder(folderContextMenu.folderPath)
 
         // #1638: „Mappa törlése…" — a mappa a LOMTÁRBA kerül a
         // tartalmával együtt. A megerősítés az eredeti szövegével megy, és

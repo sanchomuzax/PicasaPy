@@ -228,9 +228,7 @@ Rectangle {
     // művelet, egy út (különben két helyen kellene ugyanazt a
     // megerősítés-szöveget karbantartani).
     function mozgatasMappara(path) {
-        if (!path) return
-        pane._movingFolder = path
-        paneMenus.moveFolderDialog.open()
+        paneMenus.openMoveFolder(path)
     }
 
     function torlesLomtarba(path) {
