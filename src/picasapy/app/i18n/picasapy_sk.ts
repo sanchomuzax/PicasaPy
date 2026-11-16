@@ -3922,6 +3922,55 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 MB na disku</translation>
         </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="51" />
+            <source>faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::sfaces</extracomment>
+            <translation>tváre</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="53" />
+            <source>starred</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::sstarred</extracomment>
+            <translation>Hviezdičkové</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="55" />
+            <source>movies</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::smovies</extracomment>
+            <translation>filmy</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="57" />
+            <source>geotagged</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::sgeotag</extracomment>
+            <translation>označené geografickými značkami</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="82" />
+            <source>No matches</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::nomatch</extracomment>
+            <translation>Žiadne zhody</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="82" />
+            <source>Search results for "%1"</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::searchmatchstr</extracomment>
+            <translation>Výsledky vyhľadávania pre „%1“</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="85" />
+            <source>%1 results: </source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::sresults</extracomment>
+            <translation>Výsledky %1: </translation>
+        </message>
     </context>
     <context>
         <name>AboutDialog</name>
@@ -10103,12 +10152,6 @@ picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attache
             <source>Search</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Hľadať</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MainToolbar.qml" line="865" />
-            <source>Search results for "%1" (%2)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Výsledky vyhľadávania pre „%1“ (%2)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="259" />

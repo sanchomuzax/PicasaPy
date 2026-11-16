@@ -163,6 +163,16 @@ HIVATALOS = {
         "Arcok adatainak rendezése, %1%", "PeoplePanel::SortingData"),
     ", %1 files unchecked.": (
         ", %1 ellenőrizetlen fájl.", "PeoplePanel::Unchecked"),
+    # #7079: a keresősáv szövegei (Python-forrásból, `formatting_search_bar.py`;
+    # a `%d`/`%s` helyén %1; a `sresults` záró szóköze az eredetié)
+    'Search results for "%1"': (
+        'Találatok a(z) "%1" kifejezésre', "CThumbUI::searchmatchstr"),
+    "No matches": ("Nincs találat", "CThumbUI::nomatch"),
+    "%1 results: ": ("%1 találat: ", "CThumbUI::sresults"),
+    "faces": ("arc", "CThumbUI::sfaces"),
+    "starred": ("csillagozott", "CThumbUI::sstarred"),
+    "movies": ("mozgófilm", "CThumbUI::smovies"),
+    "geotagged": ("geocímkével ellátva", "CThumbUI::sgeotag"),
 }
 
 #: a Gyorscímkék-útmutató (a két szóköz a mondatok között az eredetié)

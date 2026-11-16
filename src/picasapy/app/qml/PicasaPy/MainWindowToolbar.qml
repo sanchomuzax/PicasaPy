@@ -64,8 +64,14 @@ MainToolbar {
     }
     onSearchCleared: {
         hostWindow.clearSelection()
-        if (typeof controller !== "undefined" && controller)
-            controller.search("")
+        if (typeof controller !== "undefined" && controller) {
+            if (typeof controller.clearFilter === "function")
+                controller.clearFilter()
+            else
+                controller.search("")
+        }
+        if (hostRefs.suggestionsTimer)
+            hostRefs.suggestionsTimer.stop()
         hostRefs.searchSuggestionsBox.suggestions = []
     }
     // #23: az "Import" gomb az Import forrásból ablakot nyitja

@@ -3920,6 +3920,55 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Diskte %1 MB</translation>
         </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="51" />
+            <source>faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::sfaces</extracomment>
+            <translation>yüzler</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="53" />
+            <source>starred</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::sstarred</extracomment>
+            <translation>yıldızlı</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="55" />
+            <source>movies</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::smovies</extracomment>
+            <translation>filmler</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="57" />
+            <source>geotagged</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::sgeotag</extracomment>
+            <translation>coğrafi etiket eklendi</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="82" />
+            <source>No matches</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::nomatch</extracomment>
+            <translation>Eşleşme yok</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="82" />
+            <source>Search results for "%1"</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::searchmatchstr</extracomment>
+            <translation>"%1" için arama sonuçları</translation>
+        </message>
+        <message>
+            <location filename="../formatting_search_bar.py" line="85" />
+            <source>%1 results: </source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::sresults</extracomment>
+            <translation>%1 sonuç: </translation>
+        </message>
     </context>
     <context>
         <name>AboutDialog</name>
@@ -10073,12 +10122,6 @@ picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attache
             <source>Search</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ara</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MainToolbar.qml" line="865" />
-            <source>Search results for "%1" (%2)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>“%1” için arama sonuçları (%2)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="259" />

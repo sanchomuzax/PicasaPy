@@ -40,6 +40,16 @@ QtObject {
         return nyersSzin;
     }
 
+    /*! #7079: a keresőmező háttere a találat szerint (`found` · `notfound`),
+        különben (nincs keresés) az alapszín. */
+    function searchFieldBackground(feedback) {
+        if (feedback === "found")
+            return searchFieldFoundBg;
+        if (feedback === "notfound")
+            return searchFieldNotFoundBg;
+        return controlBase;
+    }
+
     // ------- a NYERS tokenek -------
     //
     // Itt élnek a MÉRT és a származtatott értékek; a származtatás mindig
@@ -412,6 +422,13 @@ QtObject {
         // krómértékek; a fotóra rajzolt rétegek nem ezeket használják.
         readonly property color inputBorder: tema.dark ? "#555555" : "#8a8a8a"
         readonly property color searchClearBg: tema.dark ? "#555555" : "#b0b0b0"
+        // #7079: a keresőmező háttere a találat szerint. A világos értékek MÉRTEK
+        // (a keresősáv-építő hívója `0x00662d0b`: `0xFFE4F1E5` van találat,
+        // `0xFFFFCBCB` nincs). A sötét pár a mi hozzáadásunk (az eredetiben nincs
+        // sötét téma): a `ink` szöveg ezeken is olvasható, ezért külön
+        // szövegszín-token nem kell.
+        readonly property color searchFieldFoundBg: tema.dark ? "#2f4f35" : "#e4f1e5"
+        readonly property color searchFieldNotFoundBg: tema.dark ? "#5a3030" : "#ffcbcb"
         readonly property color unnamedGroupLabel: tema.dark ? "#c6b9b4" : "#68564f"
         readonly property color unnamedWelcomeBg: tema.dark ? "#303030" : "#606060"
         readonly property color unnamedWelcomeBorder: tema.dark ? "#5a5a5a" : "#999999"
@@ -677,6 +694,8 @@ QtObject {
     readonly property color captionToggleBorder: tema._szin("captionToggleBorder", nyersTokenek.captionToggleBorder)
     readonly property color inputBorder: tema._szin("inputBorder", nyersTokenek.inputBorder)
     readonly property color searchClearBg: tema._szin("searchClearBg", nyersTokenek.searchClearBg)
+    readonly property color searchFieldFoundBg: tema._szin("searchFieldFoundBg", nyersTokenek.searchFieldFoundBg)
+    readonly property color searchFieldNotFoundBg: tema._szin("searchFieldNotFoundBg", nyersTokenek.searchFieldNotFoundBg)
     readonly property color unnamedGroupLabel: tema._szin("unnamedGroupLabel", nyersTokenek.unnamedGroupLabel)
     readonly property color unnamedWelcomeBg: tema._szin("unnamedWelcomeBg", nyersTokenek.unnamedWelcomeBg)
     readonly property color unnamedWelcomeBorder: tema._szin("unnamedWelcomeBorder", nyersTokenek.unnamedWelcomeBorder)
