@@ -45,6 +45,23 @@ MainToolbar {
     // `importbutton`/`sbutton`/`timelinebutton`/`globalmode`) - a
     // projekt-lapon a panellel EGYÜTT tűnik el, nem külön szabályból.
     visible: !hostWindow.viewerOpen && hostWindow.libraryFrameVisible
+    Timer {
+        id: searchDebounceTimer
+        objectName: "searchDebounceTimer"
+        property string pendingSearchText: ""
+        property string lastSearchText: ""
+        // #7081: a javaslatlista már létező, 150 ms-os gépelési üteme.
+        interval: 150
+        repeat: false
+        onTriggered: {
+            if (pendingSearchText === lastSearchText)
+                return
+            if (typeof controller !== "undefined" && controller) {
+                lastSearchText = pendingSearchText
+                controller.search(pendingSearchText)
+            }
+        }
+    }
     searchSuggestionsVisible: hostRefs.searchSuggestionsBox.visible
     onSearchSuggestionKeyPressed: function(key) {
         if (key === Qt.Key_Down)
@@ -58,11 +75,14 @@ MainToolbar {
     }
     onSearchEdited: function(text) {
         hostWindow.clearSelection()
-        if (typeof controller !== "undefined" && controller)
-            controller.search(text)
+        searchDebounceTimer.pendingSearchText = text
+        searchDebounceTimer.restart()
         hostRefs.suggestionsTimer.restart()
     }
     onSearchCleared: {
+        searchDebounceTimer.stop()
+        searchDebounceTimer.pendingSearchText = ""
+        searchDebounceTimer.lastSearchText = ""
         hostWindow.clearSelection()
         if (typeof controller !== "undefined" && controller)
             controller.search("")
