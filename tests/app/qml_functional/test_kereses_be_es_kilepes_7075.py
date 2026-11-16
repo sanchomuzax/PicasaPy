@@ -150,4 +150,7 @@ def test_racson_gepelt_ascii_betu_a_keresobe_kerul(qml_app, qt_app):
     assert mezo.property("activeFocus") is True, (
         "a rácson gépelés után a keresőmezőnek kell fókuszt kapnia"
     )
-    assert controller.searchQuery == "a"
+    # #7081: a keresés a gépelési szünet (150 ms) után indul
+    assert _varj(qt_app, lambda: controller.searchQuery == "a"), (
+        "a rácson gépelt 'a' nem indított keresést"
+    )
