@@ -90,10 +90,7 @@ FolderPane {
     }
     onAlbumChosen: function(token) {
         if (!hostController) return
-        hostToolbar.clearSearch()
-        hostWindow.clearSelection()
-        hostWindow.unnamedFacesOpen = false
-        hostController.showAlbum(token)
+        hostWindow.openAlbum(token)
     }
     onPersonChosen: function(name) {
         if (!hostController) return

@@ -728,6 +728,7 @@ Item {
     }
     Timer {
         id: suggestionsTimer
+        objectName: "suggestionsTimer"
         interval: 150
         onTriggered: hostWindow.refreshSuggestions()
     }

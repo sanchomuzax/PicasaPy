@@ -442,6 +442,16 @@ ApplicationWindow {
     function _folderOfRow(row) { return mainLibrarySelectionState._folderOfRow(row) }
     function _selectionInFolder(path) { return mainLibrarySelectionState._selectionInFolder(path) }
     function clearSelection() { mainLibrarySelectionState.clearSelection() }
+    // #7076: egy album megnyitása. A bal hasáb albumsora és az új album
+    // létrehozása UGYANEZT az utat használja: keresés és kijelölés törlése,
+    // majd a vezérlő album-nézete.
+    function openAlbum(token) {
+        if (!token || typeof controller === "undefined" || !controller) return
+        toolbar.clearSearch()
+        clearSelection()
+        unnamedFacesOpen = false
+        controller.showAlbum(token)
+    }
     function _currentGroup() { return mainLibrarySelectionState._currentGroup() }
     function _groupRows() { return mainLibrarySelectionState._groupRows() }
     function selectAll() { mainLibrarySelectionState.selectAll() }

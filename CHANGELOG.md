@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.133] - 2026-11-16
+
+- A Gyorscímkék Autofill most egyszeri műveletként tölti ki a konfigurált üres mezőket (#7053).
+- A normál diavetítésben a Fel és a Le billentyű a Bal és a Jobb nyíl irányában lép, az 1-9 számjegy a diaidőt állítja másodpercben (a 0 az 1 másodpercet adja), a Pause lejátszás közben szünetet, a Play szünetben folytatást kapcsol, ahogy az eredeti Picasában (#7065).
+
 ## [1.0.132] - 2026-11-16
 
 - Hálózati mappák képei és bélyegképei lassú SMB/GVFS csatoláson is megnyithatók, a felület közben használható marad (#7048).

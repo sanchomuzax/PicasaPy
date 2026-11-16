@@ -215,8 +215,9 @@ def test_az_athelyezes_mappavalasztasa_a_forras_szulojeben_nyilik(
     _nyisd_meg_menuvel(mappa_app, qt_app, "folderMenuMoveFolder")
 
     dialog = gyerek(window, "moveFolderDialog")
-    assert varj(qt_app, lambda: nyitott(dialog)), "a Browse for Folder ablak nem nyílt meg"
-    assert dialog.property("title") == "Browse for Folder"
+    assert varj(qt_app, lambda: nyitott(dialog)), "a Move Folder to ablak nem nyílt meg"
+    # #7067: az eredeti címe `Move Folder to %s`, a mozgatott mappa nevével
+    assert dialog.property("title") == f"Move Folder to {Path(folder).name}"
     _, native_probe = _mappavalaszto_nativ_proba(_engine, dialog)
     assert native_probe.property("nativePicker"), (
         "a mappaböngészőt nem natív módban kényszerítettük, így hiányozhat a "

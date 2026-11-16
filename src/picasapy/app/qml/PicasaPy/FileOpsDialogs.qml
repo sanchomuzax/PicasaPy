@@ -126,15 +126,21 @@ Item {
             if (!controller) return
             var rows = dialogs.newAlbumPhotoRows
             dialogs.newAlbumPhotoRows = []
+            var token = ""
             if (rows.length > 0 && controller.createAlbumWithProperties) {
-                controller.createAlbumWithProperties(
+                token = controller.createAlbumWithProperties(
                     name, rows, isoDate, location, description,
                     useMusic, musicFile)
             } else if (controller.createEmptyAlbum) {
-                controller.createEmptyAlbum(
+                token = controller.createEmptyAlbum(
                     name, folderPath, isoDate, location, description,
                     useMusic, musicFile)
             }
+            // #7076: siker után az új album nyílik meg (az eredetiben az
+            // újonnan kapott azonosító lesz az aktuális album); üres token
+            // (írási hiba) esetén marad a jelenlegi nézet és a kijelölés.
+            if (token && dialogs.appWindow && dialogs.appWindow.openAlbum)
+                dialogs.appWindow.openAlbum(token)
         }
     }
 

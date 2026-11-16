@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Property, Slot
+from PySide6.QtCore import Property, QLocale, Slot
 from picasapy.ini import RECENT_ALBUM_TOKEN, STAR_ALBUM_TOKEN
+from . import formatting
 from .search_results import groups_to_qml
 from .controller_signals import AppControllerSignalsMixin as _Signals
 
@@ -142,6 +143,34 @@ class AppControllerStateMixin:
     def filterStatusText(self):
         """A zöld eredménysáv szövege (Picasa-minta)."""
         return self._filter_status
+
+    @Property(str, notify=_Signals.statusChanged)
+    def searchFeedback(self):
+        """A keresőmező háttérszínének jelzése (#7079): `found` (van találat),
+        `notfound` (nincs), `none` (nincs keresés: alapszín). Az eredeti
+        `WM_CTLCOLOREDIT` ága szerint a szín a nem üres kifejezéshez tartozik,
+        és az aktív keresésnek mindig van kifejezése."""
+        if not self.searchActive:
+            return "none"
+        return "found" if self._search_result_count > 0 else "notfound"
+
+    @Property(str, notify=_Signals.statusChanged)
+    def searchBarText(self):
+        """A keresési beállítások `searchresult` elemének szövege (#7079).
+
+        Kifejezéses keresésnél az eredeti `searchmatchstr`/`nomatch`, gombos
+        szűrőnél a `sresults` és a gomb szava; minden más nézetben a zöld sáv
+        szövege marad. Olvasáskor számolódik, nem tárolt állapot, így nem
+        avulhat el a nézetváltás után."""
+        return formatting.search_bar_text(
+            view_mode=self._view_mode[0],
+            query=self.searchQuery,
+            search_count=self._search_result_count,
+            shown_count=self._photos.rowCount(),
+            status=self._filter_status,
+            locale=QLocale(),
+            tr=formatting.fordit,
+        )
 
     @Property("QVariantList", notify=_Signals.feedChanged)
     def feedGroups(self):

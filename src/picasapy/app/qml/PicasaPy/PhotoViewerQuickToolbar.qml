@@ -108,7 +108,7 @@ import QtQuick.Layouts
             }
             text: "▶"
             Accessible.name: qsTr("Play Slideshow")
-            ToolTip.text: qsTr("Play Slideshow")
+            ToolTip.text: qsTr("Watch a slideshow of these photos")
             ToolTip.visible: hovered
             ToolTip.delay: Theme.tooltipDelay
             onClicked: viewer.playRequested()

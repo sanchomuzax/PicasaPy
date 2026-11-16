@@ -10,7 +10,7 @@ from PySide6.QtCore import QLocale
 from picasapy.fileops.rename import format_taken_at
 
 from support.jpeg_factory import make_jpeg
-from support.qt_wait import wait_for_photo_op
+from support.qt_wait import varj_feltetelre, wait_for_photo_op
 
 
 @pytest.fixture
@@ -54,6 +54,12 @@ def controller(qt_app, tmp_path, library):
     )
     ctl._reload()
     ctl.selectFolder(str(library))
+    # #7063: a hideg indexből induló _reload() háttérben tölti az oldalpanel-
+    # gyorstárat (picasapy-side-pane-cache), ezért megvárjuk az indulási munkát,
+    # hogy a nulla időkorlátú teszt ne fusson versenyhelyzetre.
+    assert varj_feltetelre(
+        qt_app, lambda: not ctl.backgroundWorkersRunning(), 10.0
+    ), "az indulási háttérmunka nem fejeződött be"
     yield ctl
     assert ctl._wait_for_rename_workers(30.0), "az átnevező szál nem állt le"
     assert ctl.waitForBackgroundWorkers(30.0), "az átnevezés háttérszála nem állt le"

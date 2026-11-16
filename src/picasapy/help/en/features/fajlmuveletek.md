@@ -234,8 +234,10 @@ Other context-menu commands include:
 ## Folders
 
 The folder context menu lets you move an entire folder. You choose the
-destination in the **Browse for Folder** window, which starts in the
-folder's current parent folder and has **OK** and **Cancel** buttons. If the move
+destination in the window titled "Move Folder to" followed by the
+folder's name. It starts in the destination you chose last time (the
+first time, in the folder's current parent folder) and has **OK** and
+**Cancel** buttons. If the move
 stops, the folder remains in its original location and no incomplete
 copy remains at the destination. For one step that cannot be rolled
 back, the error explains where the contents are.

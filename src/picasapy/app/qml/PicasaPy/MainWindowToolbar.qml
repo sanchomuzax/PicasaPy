@@ -45,6 +45,29 @@ MainToolbar {
     // `importbutton`/`sbutton`/`timelinebutton`/`globalmode`) - a
     // projekt-lapon a panellel EGYÜTT tűnik el, nem külön szabályból.
     visible: !hostWindow.viewerOpen && hostWindow.libraryFrameVisible
+    // #7081: a keresés gépelés közben NULLA késleltetéssel fut, de a
+    // közbülső lenyomásokat összevonja. Eredeti (`0x0097fb90`,
+    // `0x005e4e0d`): az `EN_CHANGE` azonnal keres, és csak akkor hagyja ki,
+    // ha a billentyűsorban még vár egy `WM_KEYDOWN`; időzítő nincs. A Qt
+    // megfelelője a `Qt.callLater`: az egy eseményhurok-körön belül érkező
+    // leütések EGY keresést adnak, a gépelés szünetében pedig azonnal fut.
+    property string pendingSearchText: ""
+    property bool searchPending: false
+    function runPendingSearch() {
+        if (!searchPending)
+            return
+        searchPending = false
+        if (typeof controller === "undefined" || !controller)
+            return
+        var text = pendingSearchText
+        // Azonos szövegre nem keres újra (`0x0065b906`-`0x0065b988`). A
+        // legutóbbi keresést a vezérlő nézetállapotából olvassuk, így a
+        // kihagyás nem marad meg olyan nézetben, ahol a keresés már nem él
+        // (mappaválasztás, szűrő): ott ugyanaz a szöveg újra keres.
+        if (controller.searchActive && controller.searchQuery === text.trim())
+            return
+        controller.search(text)
+    }
     searchSuggestionsVisible: hostRefs.searchSuggestionsBox.visible
     onSearchSuggestionKeyPressed: function(key) {
         if (key === Qt.Key_Down)
@@ -58,14 +81,23 @@ MainToolbar {
     }
     onSearchEdited: function(text) {
         hostWindow.clearSelection()
-        if (typeof controller !== "undefined" && controller)
-            controller.search(text)
+        pendingSearchText = text
+        searchPending = true
+        Qt.callLater(runPendingSearch)
         hostRefs.suggestionsTimer.restart()
     }
     onSearchCleared: {
+        searchPending = false
+        pendingSearchText = ""
         hostWindow.clearSelection()
-        if (typeof controller !== "undefined" && controller)
-            controller.search("")
+        if (typeof controller !== "undefined" && controller) {
+            if (typeof controller.clearFilter === "function")
+                controller.clearFilter()
+            else
+                controller.search("")
+        }
+        if (hostRefs.suggestionsTimer)
+            hostRefs.suggestionsTimer.stop()
         hostRefs.searchSuggestionsBox.suggestions = []
     }
     // #23: az "Import" gomb az Import forrásból ablakot nyitja
