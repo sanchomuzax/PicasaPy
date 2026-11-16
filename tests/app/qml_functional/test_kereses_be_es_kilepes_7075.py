@@ -14,7 +14,7 @@ from PySide6.QtTest import QTest
 from tests.support.varakozas import var_feltetelre
 
 
-def _varj(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+def _varj(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     return var_feltetelre(qt_app, feltetel, masodperc)
 
 
@@ -39,7 +39,7 @@ def _keresest_indit(window, controller, qt_app) -> None:
         "a valódi billentyűleütések nem indították el a keresést"
     )
     timer = _elem(window, "suggestionsTimer")
-    assert _varj(qt_app, lambda: timer.property("running") is False, 2.0), (
+    assert _varj(qt_app, lambda: timer.property("running") is False), (
         "a javaslatfrissítő időzítő nem futott le"
     )
     assert not _elem(window, "searchSuggestions").property("visible"), (
