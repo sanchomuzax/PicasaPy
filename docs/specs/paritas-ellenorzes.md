@@ -6611,7 +6611,7 @@ Ghidra-kimenetekből (`referencia/ghidra/`), a bináris-indexből
 
 **Nálunk:** `src/picasapy/fileops/rename.py:238-262, 324-331`: a kijelölési index alapján képez sorszámot (`név`, `név-1`, `név-2`), és ha a célfájl már létezik a lemezen, a teljes köteget előre elutasítja.
 
-**Teendő:** az átnevező motor kövesse az eredeti ütközésvezérelt `-001` logikát, szabad cél esetén elhagyva a sorszámot.
+**Teendő:** az átnevező motor kövesse az eredeti, névütközéskor sorszámozó `-001` logikát, szabad cél esetén elhagyva a sorszámot.
 
 **Kész, ha:** 3 kép átnevezésekor ütközésmentes helyen `név.jpg`, `név-001.jpg`, `név-002.jpg` jön létre; foglalt `név.jpg` esetén a számozás automatikusan a legkisebb szabad `-NNN` utótagot választja.
 
