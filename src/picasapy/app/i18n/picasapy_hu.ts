@@ -9827,6 +9827,13 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
             <translation>Folytatás</translation>
         </message>
         <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="377" />
+            <source>A Folder or Album must be selected to do this.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_NEED_SELECTED_ALBUM</extracomment>
+            <translation>Ennek a műveletnek az elvégzéséhez ki kell jelölnie egy mappát vagy egy albumot.</translation>
+        </message>
+        <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="341" />
             <source>There are no files on the clipboard to paste.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>

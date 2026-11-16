@@ -313,6 +313,9 @@ Item {
 
     FolderContextMenu {
         id: folderContextMenu
+        // #7108: a Move Folder tétel szürke az ismert mappákon
+        moveGuard: typeof fileOpsController !== "undefined"
+                   ? fileOpsController : null
         onAddNameTagsRequested: function(path) {
             if (typeof faceScanController !== "undefined" && faceScanController)
                 faceScanController.scanFolder(path)
