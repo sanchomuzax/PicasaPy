@@ -136,14 +136,20 @@ class TestAGombdontes:
         blokk = blokk_horgony_utan(_DIALOG, "onRejected:")
         assert "setQuickTagLabel" in blokk
         assert "setQuickTagsReserveRecent" in blokk
-        assert "setQuickTagsAutoFillFrequent" in blokk
+        assert "setQuickTagsAutoFillFrequent" not in blokk
 
     def test_a_megnyitas_PILLANATFELVETELT_vesz(self):
         """Visszaállítani csak abból lehet, amit megnyitáskor eltettünk."""
         blokk = blokk_horgony_utan(_DIALOG, "onOpened:")
         assert "kiindulasiCimkek" in blokk
         assert "kiindulasiReserve" in blokk
-        assert "kiindulasiAutoFill" in blokk
+        assert "kiindulasiAutoFill" not in blokk
+
+    def test_az_autofill_egyszeri_gomb(self):
+        assert 'objectName: "quickTagsAutoFillButton"' in _DIALOG
+        assert "controller.autofillQuickTagLabels" in _DIALOG
+        assert "controller.quickTagAutofillAvailable" in _DIALOG
+        assert "quickTagsAutoFillCheck" not in _DIALOG
 
     def test_a_dontes_INDOKA_le_van_irva(self):
         """A #416/#422 tanulsága: a kimondatlan eltérésből egy későbbi kör

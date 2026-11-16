@@ -4,7 +4,7 @@ import QtQuick.Layouts
 
 // Gyorscímkék konfigurálása (#193, #1788) — a Címkék-panel
 // fogaskerék-dialógusa: TÍZ szerkeszthető szövegmező (a 2×5 gombrács
-// szlotjai) + két kapcsoló.
+// szlotjai), a recent-helyek kapcsolója és az egyszeri Autofill-gomb.
 //
 // ## Miért tíz, és miért OK/Mégse (#1788)
 //
@@ -46,7 +46,16 @@ Dialog {
     //: #1788: a megnyitáskori állapot — ebbe tér vissza a Mégse.
     property var kiindulasiCimkek: []
     property bool kiindulasiReserve: false
-    property bool kiindulasiAutoFill: false
+
+    function autofill() {
+        var fields = dialog.mezok()
+        var current = []
+        for (var i = 0; i < fields.length; i++)
+            current.push(String(fields[i].text))
+        var labels = controller.autofillQuickTagLabels(current)
+        for (var j = 0; j < fields.length; j++)
+            fields[j].text = labels[j]
+    }
 
     function refresh() {
         var fields = dialog.mezok()
@@ -54,16 +63,15 @@ Dialog {
         for (var i = 0; i < fields.length; i++)
             fields[i].text = labels[i] !== undefined ? labels[i] : ""
         reserveCheck.checked = controller.quickTagsReserveRecent
-        autoFillCheck.checked = controller.quickTagsAutoFillFrequent
     }
 
     onOpened: {
         dialog.refresh()
+        controller.beginQuickTagAutofill()
         //: A pillanatfelvétel MÁSOLAT: a `quickTagConfigLabels` minden
         //: olvasáskor új listát ad, de a `slice()` kimondja a szándékot.
         dialog.kiindulasiCimkek = controller.quickTagConfigLabels.slice()
         dialog.kiindulasiReserve = controller.quickTagsReserveRecent
-        dialog.kiindulasiAutoFill = controller.quickTagsAutoFillFrequent
     }
 
     //: #1788: a Mégse VISSZAÁLLÍT. A mezők gépelés közben már írtak a
@@ -72,7 +80,6 @@ Dialog {
         for (var i = 0; i < dialog.kiindulasiCimkek.length; i++)
             controller.setQuickTagLabel(i, dialog.kiindulasiCimkek[i])
         controller.setQuickTagsReserveRecent(dialog.kiindulasiReserve)
-        controller.setQuickTagsAutoFillFrequent(dialog.kiindulasiAutoFill)
     }
 
     // a tíz szövegmező közös viselkedése — EXPLICIT tíz példány (nem Repeater):
@@ -141,21 +148,24 @@ Dialog {
             onToggled: controller.setQuickTagsReserveRecent(checked)
         }
 
-        CheckBox {
-            id: autoFillCheck
-            objectName: "quickTagsAutoFillCheck"
+        Button {
+            id: autoFillButton
+            objectName: "quickTagsAutoFillButton"
             Layout.fillWidth: true
             text: qsTr("Autofill empty boxes above with commonly used tags")
-            //: #3575: a hosszú felirat tördelődik, nem vágódik le
             contentItem: Text {
-                leftPadding: parent.indicator.width + parent.spacing
-                text: parent.text
-                font: parent.font
-                color: parent.palette.windowText
-                wrapMode: Text.WordWrap
+                text: autoFillButton.text
+                font: autoFillButton.font
+                color: autoFillButton.enabled
+                       ? autoFillButton.palette.buttonText
+                       : autoFillButton.palette.mid
+                horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.WordWrap
             }
-            onToggled: controller.setQuickTagsAutoFillFrequent(checked)
+            enabled: typeof controller !== "undefined" && controller
+                     ? controller.quickTagAutofillAvailable === true : false
+            onClicked: dialog.autofill()
         }
     }
 }

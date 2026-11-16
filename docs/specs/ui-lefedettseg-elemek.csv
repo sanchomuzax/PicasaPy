@@ -38,7 +38,7 @@ collagepanel/portrait,megvan,PicasaPy/CollageSettingsTab.qml,"Álló tájolás g
 collagepanel/landscape,megvan,PicasaPy/CollageSettingsTab.qml,"Fekvő tájolás gomb: collageLandscapeButton (344. sor), collageOrientation == landscape (352. sor)"
 quicktagconfig/recent_checkbox,megvan,PicasaPy/QuickTagsConfigDialog.qml,"quickTagsReserveRecentCheck (84. sor); a felirat nálunk „Reserve the top two buttons…”, az eredetiben „Reserve top two buttons…” — egy szó eltérés miatt nem párosult"
 quicktagconfig/recent_checkbox_label,megvan,PicasaPy/QuickTagsConfigDialog.qml,"ua., a jelölőnégyzet felirata (86. sor)"
-quicktagconfig/autofill,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagsAutoFillCheck (92. sor): „Fill the empty boxes above with frequently used tags”
+quicktagconfig/autofill,megvan,PicasaPy/QuickTagsConfigDialog.qml,quickTagsAutoFillButton (153. sor): egyszeri Autofill gomb (#7053)
 thumbui/smallthumbs,megvan,PicasaPy/PicasaMenuBar.qml,"Kis indexkép: a Nézet menü thumbSizePreset(96) tétele (301. sor) — nálunk menütétel, az eredetiben eszköztárgomb"
 thumbui/largethumbs,megvan,PicasaPy/PicasaMenuBar.qml,"Nagy indexkép: thumbSizePreset(144) (306. sor) — ua., menütételként"
 thumbui/hide,megvan,PicasaPy/PicasaMenuBar.qml;Main.qml;tests/app/qml_functional/test_felsomenupontok_kep_4329.py,A Kép ▸ Hide valódi kattintással hidden=yes értéket ír a kijelölt kép .picasa.ini fájljába (#4409)
