@@ -669,7 +669,7 @@ módja**, az **Exponálási program**, a **Tömörítés**, a **Színtér** és 
 megnevezett emberek, többször szereplő névnél a darabszámmal, például
 „Anna (2)") és a GPS-koordináták.
 
-A panel helyi menüje attól függ, **melyik sorra** kattintasz jobbgombbal
+A panel helyi menüje attól függ, **melyik sorra** kattintasz a jobb egérgombbal
 (kijelölt kép mellett):
 
 - a **Fényképezőgép dátuma** során a **Dátum és idő beállítása…** tétel
@@ -681,7 +681,7 @@ A panel helyi menüje attól függ, **melyik sorra** kattintasz jobbgombbal
 
 Ha van kijelölés, a panelen egy **Kulcsszavak** gomb is áll, mellette a
 kijelölés címkéivel. A gomb szintén a **Címkék** panelre vált, ahol a
-címkéket felveheted és levehetheted (lásd [Csillagok, feliratok,
+címkéket hozzáadhatsz és eltávolíthatsz (lásd [Csillagok, feliratok,
 címkék](csillag-felirat-cimke.md)).
 
 A sorrend ugyanaz, mint az eredeti Picasában. Amiről a fájlban nincs adat,
