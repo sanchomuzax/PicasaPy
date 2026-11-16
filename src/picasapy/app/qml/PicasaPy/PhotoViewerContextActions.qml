@@ -126,6 +126,26 @@ Item {
             if (typeof controller !== "undefined" && controller)
                 controller.addRowsToAlbum([viewer.aktivSor], token)
         }
+        //: #7100: az almenü további három sora a NÉZETT (aktív oldali) képre
+        //: hat, ahogy a `0x00536a90` az aktuális egy képet kapja (`+0xe64`).
+        //: A főablak `photoActionRows()`-a nézőben ugyanezt a sort adja
+        //: (`_kijeloltSort()`), ezért a három sor UGYANARRA a képre hat.
+        onStarredPhotosRequested: {
+            var sor = viewer._kijeloltSort()
+            if (typeof controller !== "undefined" && controller && sor >= 0)
+                controller.addStarMany([sor])
+        }
+        onScreensaverRequested: {
+            if (viewer.appWindow
+                && viewer.appWindow.requestAddToScreensaver !== undefined)
+                viewer.appWindow.requestAddToScreensaver()
+        }
+        onNewAlbumRequested: {
+            if (viewer.appWindow && viewer.appWindow.fileOpsDialogs !== undefined
+                && viewer.appWindow.photoActionRows !== undefined)
+                viewer.appWindow.fileOpsDialogs.ensure().openAddToNewAlbum(
+                    viewer.appWindow.photoActionRows())
+        }
         onRotateRightRequested: {
             if (typeof controller !== "undefined" && controller
                 && viewer.currentIndex >= 0)

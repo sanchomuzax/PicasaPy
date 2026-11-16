@@ -68,6 +68,10 @@ PicasaMenu {
 
     signal backToLibraryRequested()
     signal addToAlbumRequested(string token)
+    //: #7100: a fotómenü almenüjének további három sora a nézőben is
+    signal newAlbumRequested()
+    signal starredPhotosRequested()
+    signal screensaverRequested()
     signal rotateRightRequested()
     signal rotateLeftRequested()
     signal hideToggleRequested()
@@ -132,12 +136,18 @@ PicasaMenu {
     // -- 2. blokk: albumtagság --------------------------------------------
 
     PicasaMenu {
+        id: addToAlbumMenu
         objectName: "viewerMenuAddToAlbum"
         title: qsTr("Add to Album")
-        // album nélkül a Picasa is szürkén hagyja az almenüt
-        enabled: menu.albums.length > 0
+        // #7100: az almenü album nélkül is elérhető (a Starred Photos,
+        // Screensaver és New Album... sor akkor is ott van), és ugyanazt a
+        // sorlistát adja, mint a fotómenü (`0x0056c5a0`, a `0x8a` néző-
+        // menükontextus is azonos sorrenddel építi)
 
-        Repeater {
+        // `Instantiator` + `insertItem`, nem `Repeater`: a `Menu`-beli
+        // `Repeater` a felépítés utáni modellváltozáskor rossz helyre szúrja a
+        // delegáltakat (ld. a `PhotoContextMenu.qml` indoklását, #7100)
+        Instantiator {
             model: menu.albums
             delegate: MenuItem {
                 required property var modelData
@@ -145,6 +155,32 @@ PicasaMenu {
                 text: modelData.name
                 onTriggered: helyiMenu.addToAlbumRequested(modelData.token)
             }
+            onObjectAdded: function (index, object) {
+                addToAlbumMenu.insertItem(index, object)
+            }
+            onObjectRemoved: function (index, object) {
+                addToAlbumMenu.removeItem(object)
+            }
+        }
+        MenuSeparator {
+            visible: menu.albums.length > 0
+            height: visible ? implicitHeight : 0
+        }
+        MenuItem {
+            objectName: "viewerMenuAddToStarredPhotos"
+            text: qsTr("Starred Photos", "stringres:CThumbDB::starredphotos")
+            onTriggered: menu.starredPhotosRequested()
+        }
+        MenuItem {
+            objectName: "viewerMenuAddToScreensaver"
+            text: qsTr("Screensaver", "stringres:CThumbDB::ScreensaverAlbumName")
+            onTriggered: menu.screensaverRequested()
+        }
+        MenuSeparator {}
+        MenuItem {
+            objectName: "viewerMenuNewAlbum"
+            text: qsTr("New Album...")
+            onTriggered: menu.newAlbumRequested()
         }
     }
     MenuSeparator {}

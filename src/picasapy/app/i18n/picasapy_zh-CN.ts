@@ -10750,6 +10750,20 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ctrl+Delete</translation>
         </message>
+        <message>
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>加星标的照片</translation>
+        </message>
+        <message>
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>屏幕保护程序</translation>
+        </message>
     </context>
     <context>
         <name>ZoomNavigator</name>
@@ -15117,6 +15131,25 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>属性</translation>
+        </message>
+        <message>
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>加星标的照片</translation>
+        </message>
+        <message>
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>屏幕保护程序</translation>
+        </message>
+        <message>
+            <source>New Album...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>新建相册...</translation>
         </message>
     </context>
     <context>
