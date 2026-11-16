@@ -5893,9 +5893,7 @@ részeire hivatkozom (`picasa-kereses-modok.md` 2-3. és idő-csúszka szakasz,
 `picasa-gyorsbillentyuk.md` Ctrl+F/F3 sorai, `racs-ures-allapot.md`,
 `album-sorrend.md` 2.1 és 2.6, `picasa-beviteli-mezok.md`,
 `picasa-idorend-bemutato-kutatas.md` a `+0x162` keresési jelzőről), nem
-kutatom újra; ahol ellentmondok nekik, külön jelzem. Ideiglenes szkriptjeim és nyers
-kimeneteim a munkafa `.bt/` mappájában vannak (a `.gitignore` kizárja, nem kerül
-be a repóba).
+kutatom újra; ahol ellentmondok nekik, külön jelzem. A mintafájlt csak olvastam; az eredeti EXE-t nem másoltam a munkafába.
 
 **A menürekord-szabály (#7012) alkalmazása.** A menüépítő `0x00559150`
 rekordjaiban a parancsmező az eggyel előző rekordhoz tartozik. A keresés
@@ -5923,15 +5921,18 @@ nulla (`0x0055c368`).
   (`search_controller.py:23-60`, `controller_filter_mixin.py:20-67`), ezért a
   kombinált szűrés (szöveg + csillag + arc + kor együtt) nálunk nem létezik.
 - **Belépési pontok.** A keresőmező; `Ctrl+F` és `F3` (a `searchbutton`
-  kattintása); Nézet ▸ Keresési opciók (`0x9d2b`); Eszközök ▸ Keresés hat
-  színe és a Fekete-fehér (`color:<szín>` token a mezőbe, `0x0065b7b0`);
+  kattintása); aktív keresésnél a második megnyomás kilép (PicasaPy-ban is);
+  Nézet ▸ Keresési opciók (`0x9d2b`); Eszközök ▸ Keresés hat színe és a
+  Fekete-fehér (`color:<szín>` token a mezőbe, `0x0065b7b0`);
   Címke megjelenítése albumként (`0x9de3`); Ctrl+F6 (`dupesearch`); a
   szűrőgombok és az idő-csúszka; az Emberek-felület (`]unknownface`,
   személy: `0x005439e0`, `0x0063d7b0` szintén a `0x0065b7b0`-en át írnak a
   mezőbe). **Új, eddig dokumentálatlan belépő: gépelés a mappalistán vagy a
   képrácson** (`0x005c3fe0` ← `0x005c40e0`, `0x005c42d0`): egy nyomtatható
   karakter a keresőmezőbe kerül és a fókusz oda ugrik. A PicasaPy-ban
-  ez nincs.
+  már kezeli ezt a rácson a módosító nélküli 0x21-0x7f karakterekre
+  (SearchGridKeys.qml:72-90), a mappalistán viszont
+  csak a fel/le navigáció van bekötve (FolderPaneContent.qml:304-307).
 - **Gépelés közben.** Nincs időzítő és nincs késleltetés. A mező
   `EN_CHANGE` értesítése (`0x005e4e0d`) azonnal `0x0065b840(this, 0, 1, 1)`-et
   hív, **kivéve** ha a billentyűzet-sorban már vár egy `WM_KEYDOWN`
@@ -5956,9 +5957,9 @@ nulla (`0x0055c368`).
   azonos sorrendű egyezést jelent, és a `-` jelnek nincs szerepe.
 - **Mire keres (mért).** Az eredeti keresőindex (`db3\wordhash.dat`) szavakat
   tárol, nem mezőket. A 140 755 képes mintán (124 268 szó, mind kisbetűs) szó
-  a fájlnév szavaiból (`img`, `dsc`, `dsc09117`), a kiterjesztésből (`jpg` 119 512
-  képen, `png`, `mp4`), a gyártóból és típusból (`sony`, `canon`, `huawei`,
-  `samsung`, `i9300`), az EXIF-jellemzőkből (`exif`, `iptc`, `iso:`, `fókusz:`,
+  fájlnévnek, kiterjesztésnek, gyártónak/modellnek és EXIF-adatnak tűnő
+  tokenalakokból (`img`, `dsc`, `dsc09117`, `jpg` 119 512 képen, `png`, `mp4`,
+  `sony`, `canon`, `huawei`, `samsung`, `i9300`, `exif`, `iptc`, `iso:`, `fókusz:`,
   `vaku`, felbontások), a dátumból és időből (`2010:06:07`, `13:36:29`), a
   színekből (`color:orange` 59 632 képen, `color:blue`, `color:green`,
   `color:red`), a helyből (`geo:lat=...*`, helynevek), a feliratból és a
@@ -5968,15 +5969,16 @@ nulla (`0x0055c368`).
   PicasaPy FTS-indexe csak a fájlnevet, a feliratot és a kulcsszót tartalmazza
   (`index/schema.py:122-125`), a mappanév-egyezés külön ág
   (`index/queries.py:502-514`).
-- **Hatás.** A keresés a `]search` virtuális albumot és a `CAlbumState+0x162`
-  keresési jelzőt állítja (`0x00662c53`), az eredménysáv szövegét a
-  `0x005715d0`-en át írja (`Search results for "%s"`, a `%d results: ` sor a
-  bekapcsolt gombok szavaival, `Nincs találat`, és a
-  `%3$s %4$s / %1$s %2$s látható (%5$0.3f másodperc)` sor), a nézetet
-  újra elhelyezi (`0xa54b70`, `0x006636b6`; feltételes: a tetejére
-  görgetés), és **a keresőmező hátterét színezi**: találatnál
-  világoszöld (`0xFFE4F1E5`), találat nélkül halványpiros (`0xFFFFCBCB`), üres
-  szövegnél alapszín. A PicasaPy-ban a mezőnek nincs találat-színezése.
+- **Hatás.** A keresés a `]search` virtuális albumot és a
+  `CAlbumState+0x162` keresési jelzőt állítja (`0x00662c53`). Az eredménysáv
+  szövegeit a `0x005715d0` útvonal kezeli; a visszakeresett erőforráskulcsok
+  `searchoptions/searchresult` és `searchoptions/label_search1`. Az eredeti
+  pontos megjelenési állapotot nem mértem. A PicasaPy keresőmezője találatnál
+  zöld, találat nélkül piros, üresen alapszínű
+  (`MainToolbar.qml:508-510`, `Theme.qml:45-50,430-431`,
+  `controller_state_mixin.py:148-153`); az eredményszöveg és a számformázás
+  is jelen van (`formatting_search_bar.py:17-83`,
+  `formatting_status.py:15-26`).
 - **Kilépés.** Négy út van, mind a `0x005d47e0` törlő rutinra fut: (1) a
   `searchclr` (X) gomb `(1, 0)` argumentummal: töröl és újraépít, a korábbi
   pozíciót NEM állítja vissza; (2) a „Back to View All" gomb (`viewallbutton`)
@@ -5988,21 +5990,31 @@ nulla (`0x0055c368`).
   (`0x005c42d0`, `0x005c42f8`-`0x005c4342`) `(1, 0)`-val, ha a
   `0x0057c430(4)` feltétel hamis (igaz esetén a `publish/cancel` elemet
   kattintja; a feltétel jelentését a `publish/cancel` elemből
-  következtetem). A PicasaPy-ban az `Esc` csak a javaslatlistát és a
-  beállítás-popupot zárja (`MainWindowToolbar.qml:49-58`,
-  `MainToolbar.qml:619`); a második `Ctrl+F` nem kapcsol ki és nem töröl.
+  következtetem). A PicasaPy rácsbeli `Esc`-je is törli a keresést és a
+  szűrőt, majd bezárja a keresési beállításokat (`SearchGridKeys.qml:16-20,
+  54-69`); ha a javaslatlista nyitva van, az első `Esc` csak azt zárja.
+  Aktív keresésnél a második `Ctrl+F`/`F3` ugyancsak kilép
+  (`MainKeyboardShortcuts.qml:39-60`, `SearchGridKeys.qml:22-34`).
+  A keresés előtti kijelölés/helyzet visszaállítása nálunk nincs.
 - **Rejtett képek.** Alapból kizárja őket: ha a `Preferences\ShowHidden`
   (`[this+0x3188]`) hamis, a szűrő a `]hidden` tokent a kizárt listába teszi
   (`0x00660ca2`). A PicasaPy rácsa ugyanezt adja (`_show` szűr,
-  `controller_photo_list_mixin.py:117-120`), de a bal hasáb és az eredménysáv
-  darabszáma a szűretlen listából készül (feltételes eltérés, 6. szakasz).
+  `controller_photo_list_mixin.py:117-120`), de a bal hasáb, a `searchResultCount`,
+  a mező-visszajelzés és az eredménysáv a szűrés előtti listából készül
+  (`search_controller.py:55-76`, `controller_photo_list_mixin.py:117-120`).
+  Ez igazolt eltérés: rejtett találat beleszámít a bal hasábba és a sávba,
+  miközben a rácson nem jelenik meg (6. szakasz).
 - **Sok találat, hálózat.** A végrehajtó és a szűrő függvényei (`0x00662b20`,
   `0x00662220`, `0x00660c80`, `0x0043f9a0`, `0x0043c410`, `0x00422ce0`,
-  `0x006c0fc0`) egyetlen fájl- vagy hálózati API-t sem hívnak (importjaik:
-  kritikus szakasz, szálazonosító, időmérő, `StrTrimA`), vagyis a keresés
-  csak az indexből dolgozik; elérhetetlen hálózati mappa a keresést nem
-  befolyásolja. Találatszám-korlátot nem találtam; a darabszámokat 1000-től
-  ezres tagolással írja ki (`0x0066324c`, `0x00663278`).
+  `0x006c0fc0`) közvetlen API-importjai között nincs fájl- és hálózati
+  művelet; a keresés index-hozzáférő virtuális hívásokat is végez, ezért az
+  elérhetetlen hálózati mappa hatását ez önmagában nem dönti el.
+  **NINCS MEG**: ezt csak eredeti Picasán, elérhetetlen, de korábban indexelt
+  hálózati mappával végzett kontrollmérés dönti el. Rögzített találatszám-
+  korlátot a végrehajtóban nem azonosítottam; a 1000 fölötti darabszámot
+  ezres csoportokkal formázza (`0x0066324c`, `0x00663278`). A PicasaPy
+  ugyancsak csoportosítja a számokat (`formatting_search_bar.py:17-35`); a
+  nagyon nagy találathalmaz futásidejű memória- és sebességhatása NINCS MEG.
 - **Mit jegyez meg.** A keresés első szövegváltozásakor megjegyzi a nézet
   helyzetét: a bal hasáb aktuális elemét (`[this+0xe94]`) és az aktuális vagy
   kijelölt kép sorszámát (`[this+0xe98]`) (`0x0065ba5c`-`0x0065bb0c`); ezt csak
@@ -6013,66 +6025,97 @@ nulla (`0x0055c368`).
   (`0x005d9cc0`, `0x005d9ec7`-`0x005d9ecd`, `0x005d9f3f`-`0x005d9f45`) a
   `0x00600ac0`-val visszaállítja a szöveget, az öt szűrőgombot és a
   keresősáv állapotát. Tartós (indítások közötti) tárolást nem találtam.
-  A PicasaPy könyvtárnézetében nincs Vissza/Előre előzmény.
+  A PicasaPy könyvtárnézetében nincs Vissza/Előre előzmény; gépeléskor
+  törli a kijelölést (`src/picasapy/app/qml/PicasaPy/MainWindowToolbar.qml:59-64`),
+  és nincs keresés előtti nézethelyzetet visszaállító állapota.
 
 ### Bizonyítottsági fok
 
-**Erős** (utasításszintű olvasás egy menetben; független újralevezetés és
-futásmérés nem készült): a belépési táblázat; az `EN_CHANGE` út és a billentyűsor-őr; a
-szövegtisztítás; a szóbontó szabályai; a négy kilépő út és az `Esc` a rácson; a
-mezőszínek; a rejtett képek kizárása; az, hogy a végrehajtó nem használ
-fájl- vagy hálózati API-t; a szóindex tartalma (mért: a `research/testdata`
-mintafájl `0` bájt maradékkal parszolva).
-**Feltételes:** a szűrőgombok és a szöveg logikai ÉS kapcsolata (az
-egyszeri végrehajtás erős, a kapcsolat jellege a `0x0043f9a0` mélyén van); a
-kizárt szó (`-`) és a `tag:` előtag pontos hatása; a gépelés-belépő
-karaktertartománya és a bájtra vágás; az `Esc` hatása magában a
-keresőmezőben. **NINCS MEG:** részszó/előtag-egyezés (a „nyar" megtalálja-e
-a „nyaralás"-t), ékezet-hajtás a keresési oldalon, a javaslatlista
-forrása és sorrendje, az indexépítő mezőválasztása, a `*` végű szavak
-jelentése. Futásmérés (Colab) nem készült: a mezőszín, az `Esc` a rácson és a
-gépelés-belépő látható hatását az eredeti Picasán kell majd megmérni.
+**Feltételes** az összkép: a statikus bináris és a mai forrás több kérdésre
+pontos választ ad, de a szűrési AND/OR-szemantika, a mappalista gépelése,
+a Unicode/ékezet-viselkedés, a nagyon nagy találathalmaz és a hálózati
+mappa futásidejű hatása nincs teljesen eldöntve. A PicasaPy oldali
+megállapítások forrásszinten ellenőrzöttek; az eredeti Picasa felületi
+hatásairól nem készült új futásmérés.
+
+**Erős, függetlenül újralevezetett rész:** a `0x006c0fc0` a pozitív és a
+kizárt (`-`) tagokat külön vektorokba teszi, `0x0043f9a0` pedig külön
+dolgozza fel ezeket. Az `AND`/`OR` összesített logika és a szűrőgombok
+találatokhoz való pontos kapcsolata ettől még `NINCS MEG`.
+
+### A két független út
+
+- **A: célzott binárisolvasás:** a meglévő Ghidra-kimenet
+  (`referencia/ghidra/2026-11-16-koteg-426-437.txt`, `0x0043f9a0`,
+  `0x006c0fc0`) és a helyi célzott diszasszemblálás a parser két kimeneti
+  vektorát és a végrehajtó külön bejárásait mutatja.
+- **B: vak, friss kontextusú újralevezetés:** a külön bíráló a
+  `0x006c0fc0` `-`-ágát (`0x006c10a3`-`0x006c10fe`,
+  `0x006c1201`-`0x006c13a7`) és a `0x0043f9a0` két bejárását
+  (`0x0043fd04`-`0x0043fdbd`, `0x0043ff7f`-`0x00440058`) önállóan
+  olvasta. Az út A-val egyezik a pozitív/kizárt listák elkülönítésében;
+  a kompozíciót egyik út sem dönti el.
+
+### Cáfoló kísérlet
+
+- **Cáfolandó állítás:** a PicasaPy rácsból gépelt karakter nem indít
+  keresést, és a találati háttérjelzés hiányzik. A cáfoló ellenőrzés a
+  forráslánc volt: a `MainLibraryCanvas.qml` a rács billentyűeseményét
+  továbbítja (`:288-314`), a `SearchGridKeys.qml` a bevitelt a mezőbe
+  illeszti és keresést indít (`:72-90`); a mező háttérkötése
+  `MainToolbar.qml:508-510`, a színek és visszajelzés `Theme.qml:45-50,
+  430-431` és `controller_state_mixin.py:148-153` alatt van. Az állítás
+  megdőlt; ugyanezen forráslánc azt is mutatja, hogy a mappalista csak
+  fel/le nyilat kezel (`FolderPaneContent.qml:304-307`).
+- **Rejtett találat cáfoló ellenőrzése:** a nyers találati tuple közvetlenül
+  kerül a bal hasáb és a számláló építésébe (`search_controller.py:55-76`),
+  majd csak `_show`-ban szűrődik a rács számára
+  (`controller_photo_list_mixin.py:117-120`). Korábbi szűrésre utaló
+  külön út nincs a hívási láncban, így a darabszám-eltérés megmarad.
 
 ### 1. Belépési pontok
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
 | **Keresőmező.** A `searchcontainer/search` elem építője `0x0040e7b0` (stílus: `GetWindowLongA(-0x10) \| 0x80`, `0x0040e7fc`-`0x0040e80e`), mellette a `searchautocomplete` lista (`0x0040e81d`). A szöveg olvasása `0x0065b88e` (`0x00986200`). | `MainToolbar.qml:530-551` (`TextInput`, `onTextEdited`, nyíl- és Esc-kezelés a javaslatlistához) | Egyezik a mező megléte. A viselkedés eltérései a 3-5. szakaszban. |
-| **`Ctrl+F`, `F3`.** `0x005e63bb`, `0x005e69a4` a `searchcontainer/searchbutton` kattintása (`0x009cd8a0`). A gomb kapcsolóállapota (`+0x359`) dönt: bekapcsolva a sáv nyílik (`0x005d4a90`), kikapcsolva `0x005d47e0(this, 1, 1)` töröl és visszaállít (`0x005d4a6e`-`0x005d4a7c`). Colab-mérés: `F3` zöld szűrősávot nyitott, fókusz a keresőben (`picasa-gyorsbillentyuk.md` kb-5). | `MainKeyboardShortcuts.qml:39-60`, `MainToolbar.qml:64-68` (`fokuszAKeresore`: fókusz és popup nyitás, soha nem zár és nem töröl) | Részben egyezik. Hiányzik a második `Ctrl+F`/`F3` (kikapcsolás) törlő és visszaállító hatása (feltételes: a Colab-mérés a második megnyomást nem tartalmazza). |
+| **`Ctrl+F`, `F3`.** `0x005e63bb`, `0x005e69a4` kapcsolóként nyitja/zárja a keresést (`0x005d4a20`). | `MainKeyboardShortcuts.qml:39-60`, `SearchGridKeys.qml:22-34` a második billentyűnyomást kilépésként kezeli. | A belépés és kilépés egyezik; csak a keresés előtti nézethelyzet visszaállítása marad E2. |
 | **Nézet ▸ Keresési opciók.** `ID_VIEW_SEARCHVIEW`, parancs `0x9d2b` (`0x0055aa7d` a következő rekord blokkjában, #7012), kezelő `0x005cbb50` → `0x009cd8a0`. | `MainToolbar.qml:53-58` (`toggleSearchOptions`) | Egyezik (korábbi lap: #4641). |
 | **Eszközök ▸ Keresés ▸ hat szín és Fekete-fehér.** `0x005ccc41`-`0x005ccca7`: `color:<szín>` token, `0x0065b7b0` hat lépése (szöveg a mezőbe, sáv megjelenítése, kurzor a végére, újraépítés). A tokeneket a `0x00424c20` adja a szín osztályából (`0x00c8134c`-`0x00c813ac`). | `MainMenuBar.qml:212`, `MainToolbar.qml:129-133` | Egyezik. |
-| **Címke megjelenítése albumként.** `ID_SEARCHTOKEN`, parancs `0x9de3` (`0x0055c402`, #7012), kezelő `0x005d8330`. | nem vizsgált (korábbi lap: #1406) | Nem tárgya ennek a körnek. |
+| **Címke megjelenítése albumként.** `ID_SEARCHTOKEN`, `0x9de3`, kezelő `0x005d8330`. | `MainWindowCommands.qml:234-249`, `photo_ops_album_actions_mixin.py:57-` | Egyezik: a címkéből rendes albumot készít; ez nem közvetlen keresőmező-mód. |
 | **Keresési eredmények mentése.** `ID_SAVESEARCH`, parancs `0x9d52` (`0x0055c3b8`), kezelő `0x005d86a0` (1000-es küszöb, `Create Album`). | nem vizsgált (korábbi lap: #1405) | Nem tárgya ennek a körnek. |
 | **Szűrőgombok és idő-csúszka.** A `0x005d8810` kezelő minden gombot a `0x0065b840` hívásával zár (`0x005d95af`-`0x005d95b4`); a szűrőobjektum `0x00660c80` mind a hatot és a csúszkát (`timeslider/scaleslider`, `0x00660eab`) egyszerre olvassa. | `ToolbarFilterControls.qml:87-381`, `controller_filter_mixin.py:20-67` (külön nézetmódok) | **Eltér** (E1): a szűrők nem kombinálhatók a szöveggel és egymással. |
-| **Gépelés a mappalistán és a képrácson.** A `0x005c40e0` (`KeyHandler::AlbumList`) és a `0x005c42d0` (rács) karakter-eseményt (`[esemény+0x64]` 1-es bitje) a `0x005c3fe0`-nak adja. Nem kezeli, ha a `[+0x64]` bájt `0x0c` maszkjából bármelyik bit be van állítva; kezeli a `0x21`-`0x7f` és a `0x100` fölötti kódot, nem kezeli a `0x20` alatti és a `0x80`-`0xff` kódot; megkeresi a `searchcontainer/search` elemet, a `[vtábla+0x7c]` hívással (ugyanaz, amellyel a `0x005d47e0` a fókuszt állítja vissza) neki adja a fókuszt (`0x005c4057`), a karaktert egyetlen betűs szövegként a `0x0065b7b0`-nak adja (`0x005c407f`), és elnyeli az eseményt (`0xf4240`). | nincs (a QML-ben az egyetlen `event.text` felhasználás a `PicasaSlider.qml:104-107`) | **Új** (E3). A tartomány és a bájtra vágás (`movzx ecx, byte [edi+0x10]`, `0x005c4059`) feltételes, ld. Nyitott. |
+| **Gépelés a mappalistán és a képrácson.** A mappalista (`0x005c40e0`) és a rács (`0x005c42d0`) módosító nélküli karaktereseményt ad a `0x005c3fe0` kezelőnek. Az elemzett ág a `0x21`-`0x7f` és a `0x100` fölötti kódot engedi át, a `0x20` alatti és a `0x80`-`0xff` értékeket nem; a karakter alsó bájtját adja tovább. A mezőre fókuszál, beírja a karaktert, és elnyeli az eseményt. A magas kódág karaktereseményhez való viszonya külön nyitott. | Rács: `SearchGridKeys.qml:72-90`, csak `0x21`-`0x7f`; mappalista: `FolderPaneContent.qml:304-307`, csak fel/le nyilat kezel. | **Részben egyezik (E3):** a mappalistából hiányzik; a PicasaPy rácsának gépelési útja csak a binárisan egyértelmű ASCII tartományban van igazolva. |
 | **Ismeretlen arcok és személy.** `0x005439e0` (`]unknownface`), `0x0063d7b0` a `0x0065b7b0`-en át a mezőbe írja a tokent. | nem vizsgált | Nem tárgya ennek a körnek. |
 | **Másodpéldány-kereső.** `Ctrl+F6`, Eszközök ▸ Kísérleti: `searchoptions/dupesearch` (`picasa-kereses-modok.md`). | `MainToolbar.qml` `dupesearch` gomb | Egyezik (korábbi lap: #2169). |
 
 ### 2. Mire keres: a szóindex mért tartalma
 
 A keresés nem mezőkben, hanem a `db3\wordhash.dat` szótárában keres
-(`CIndexer`, `0x004dca40`; `album-sorrend.md` 2.1). A fájl formátuma
-`album-sorrend.md` 2.6 szerinti; a `Picasa2/db3/wordhash.dat` (140 755
-bejegyzés) 124 268 szót tartalmaz, `0` bájt maradékkal parszolva. Mért
-tények (a szkript a munkafa `.bt/` mappájában van, nem a repóban):
+(`CIndexer`, `0x004dca40`; `album-sorrend.md` 2.1). A fájl formátuma `album-sorrend.md` 2.6 szerinti. A projekt saját
+`Picasa2/db3/wordhash.dat` mintáján egy korábbi parse 140 755 képet és
+124 268 különböző, kisbetűs keresőszót adott; a parse 0 bájt maradékot jelzett.
+A mostani próba a fájl SHA-256-át és fejlécét ellenőrizte, a teljes
+szótárszámlálást nem ismételte meg. Az alábbi számok a korábbi mintamérésből
+valók. A csoportcímek a tokenek alakját írják le; önmagukban nem bizonyítják,
+hogy az adott token melyik fotómezőből származik. A mező-hozzárendelés nyitott.
 
-| Szócsoport | Példa és darabszám (képek, ahol a szó szerepel) | Megjegyzés |
+| Megfigyelt tokenalak | Példa és darabszám (képek, ahol a szó szerepel) | Megjegyzés |
 |---|---|---|
-| fájlnév-szavak | `img` 49 263, `dsc` 30 342, `dsc09117` 1 | a `_` és `.` elválasztó, a név darabjai külön szavak |
-| kiterjesztés | `jpg` 119 512, `png` 7 702, `mp4` 1 770, `jpeg` 2 678 | a kiterjesztés is szó |
-| gyártó, típus | `sony` 35 263, `samsung` 19 171, `huawei` 23 086, `canon` 5 537, `i9300` 11 975 | az EXIF gyártó és modell szavai |
-| EXIF-jellemzők | `exif` 107 561, `iptc` 107 368, `iso:` 95 883, `fókusz:` 96 990, `vaku` 56 943 | az `iso:` és a `fókusz:` a `:` miatt egy szó |
+| fájlnévnek tűnő tokenek | `img` 49 263, `dsc` 30 342, `dsc09117` 1 | a `_` és `.` elválasztó, a név darabjai külön szavak |
+| kiterjesztésnek tűnő tokenek | `jpg` 119 512, `png` 7 702, `mp4` 1 770, `jpeg` 2 678 | a kiterjesztésnek látszó alak is token |
+| gyártó-/modellnévnek tűnő tokenek | `sony` 35 263, `samsung` 19 171, `huawei` 23 086, `canon` 5 537, `i9300` 11 975 | a minta ilyen alakú szavai; a mezőeredet nincs bizonyítva |
+| EXIF-adatnak tűnő tokenek | `exif` 107 561, `iptc` 107 368, `iso:` 95 883, `fókusz:` 96 990, `vaku` 56 943 | az `iso:` és a `fókusz:` a `:` miatt egy szó; a forrásmező nincs bizonyítva |
 | felbontás, számok | `1280` 21 828, `960` 21 607, `2048` 21 305 | csupa számjegyű szó 47 472 van |
 | dátum és idő | `2010:06:07`, `13:36:29` | a `:` szókarakter, a dátum `ÉÉÉÉ:HH:NN` alakban egy szó |
 | szín | `color:orange` 59 632, `color:blue` 33 339, `color:green` 23 167, `color:red` 11 186 | a színkeresés is szóegyezés (a PicasaPy külön `photo_colors` táblát használ) |
 | hely | `geo:lat=...*` és `geo:lon=...*` (234 szó), helynevek és `.. km to <hely> in <megye> <ország>*` | a `*` végű szó 307, ebből 56 szóközt tartalmaz |
 | belső tokenek | `]album:<azonosító>`, `]star`, `]geo` 36 261, `]face`, `]edited` 30 496, `]hidden`, `]unknownface`, `]history`, `]revertable`, `]screensaver`, `]search`, `]snapshot`, `]suppress`, `]updated`, `]web`, `]web_<fiók>` | |
-| felirat, kulcsszó | ékezetes magyar szavak, ékezettel, kisbetűsen (`és` 49, `fák`, `térképen`) | az index nem ékezet-hajtott |
+| feliratnak/címkének tűnő tokenek | ékezetes magyar szavak, kisbetűsen (`és` 49, `fák`, `térképen`) | a mintában az ékezet megmaradt; a lekérdezés oldali ékezetkezelés NINCS MEG |
 
 További mért tények: a 124 268 szó közül **nulla** tartalmaz nagybetűt (az
 indexelés kisbetűsít); kötőjeles szó nincs, aláhúzás csak a `]web_<fiók>`
 tokenben van (a `-` és `_` elválasztó); a mappanév szavainak jelenlétét a
-szótárból nem lehet kimutatni (a mappát a `]album:<azonosító>` token hordozza),
+szótárból nem lehet kimutatni; a `]album:<azonosító>` token előfordulása önmagában nem bizonyít mappanév-keresést,
 ezért a mappanévre keresés mechanizmusa NINCS MEG. A PicasaPy FTS-indexe
 (`name`, `caption_ini`, `keywords_ini`, `caption_file`, `keywords_file`) a
 gyártót, EXIF-szavakat, kiterjesztést, dátumot és helyet nem keresi.
@@ -6097,11 +6140,11 @@ gyártót, EXIF-szavakat, kiterjesztést, dátumot és helyet nem keresi.
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
 | **Végrehajtás.** `0x00662b20` zárat vesz (`0x00662b36`, szálazonosító és kritikus szakasz), időt mér (`QueryPerformanceCounter`), szűrőt épít (`0x00662b94`), végrehajt (`0x00662bcd` → `0x00662220`), majd a keresési jelzőt írja: `[CAlbumState+0x162]` = a szűrő fajtája (`0x00662c53`; 0 nincs szűrő, 1 csak gombok, 2 szöveg, kor vagy másodpéldány: `0x0065aa80`). Üres szöveg és nincs gomb: minden látható kép (`0x00422ce0`). | `search_controller.py:23-60` (üres szöveg: a mappa-feed) | Egyezik a fő út (üres szöveg a normál nézet). A nézetpozíció megjegyzése hiányzik (E2). |
-| **A bal hasáb.** Keresési módban a lista a találatos sorokra szűkül, a kategória-állapot nem számít (`+0x162`, `picasa-idorend-bemutato-kutatas.md`; a `]search` sor `0x004ad430`, `Search results`). | `search_controller.py:71-76` (`load_matches`), `FolderPane.qml:26-31` | Egyezik (korábbi lap alapján, nem mértem újra). A sor szövege eltér (E9). |
-| **Eredménysáv szövege.** `searchmatchstr` `0x00662d7d` (`Search results for "%s"`), `searchmatchnum` `0x00662dba` (`Search results`), `sresults` `0x00662dee` (`%d results: `), a gombok szavai `0x00662e71`-`0x00662fc9` (`faces`, `starred`, `online`, `movies`, `geotagged`; magyarul `arc`, `csillagozott`, `online elemek`, `mozgófilm`, `geocímkével ellátva`), `nomatch` `0x0066300b`, a kép- és albumszó egyes és többes alakja `0x0066317b`-`0x006631d2`, `searchdisplay` `0x0066328b` (`%3$s %4$s / %1$s %2$s látható (%5$0.3f másodperc)`), a kor-mondat `0x006634c1`. A darabszám 1000-től ezres tagolású (`0x0066324c`). Az elhelyező `0x005715d0` (`searchoptions/searchresult`, `label_search1`). | `MainToolbar.qml:629-640` (`Search results for "%1" (%2)`), `formatting_status.py:15-26` (`searchdisplay` mintája, tagolás nélkül), `MainLibraryCanvas.qml:35-75` | **Eltér** (E9). A `CThumbUI::searchmatch` (` (%d matches)`) kulcsra az EXE-ben nincs hivatkozó literál (nyers bájtkeresés), tehát a PicasaPy `(%2)` utótagjának nincs eredeti párja. |
-| **A mező háttérszíne.** `0x00662d06`-`0x00662d34`: nem üres szövegnél `0xFFE4F1E5` (van találat: `[this+0x3104]` és ~1 nem nulla) vagy `0xFFFFCBCB` (nincs); üresnél `-1`; a szín a `[this+0xf68]`-ban, a `WM_CTLCOLOREDIT` (`0x133`) ága `SetBkColor`-ral és `CreateSolidBrush`-sel alkalmazza (`0x005e4b1c`-`0x005e4b9c`), a szövegszín fekete. | nincs (`MainToolbar.qml:530-551`: nincs találat-szín) | **Új** (E4). |
+| **A bal hasáb.** Keresési módban a lista a találatos sorokra szűkül, a kategória-állapot nem számít (`+0x162`, `picasa-idorend-bemutato-kutatas.md`; a `]search` sor `0x004ad430`, `Search results`). | `search_controller.py:71-76` (`load_matches`), `FolderPane.qml:26-31` | **E9:** a bal hasáb címe eltér; a PicasaPy a kifejezést és darabszámot is kiírja. |
+| **Eredménysáv szövege.** Az eredeti `searchmatchstr`, `nomatch`, `sresults` és `searchdisplay` szövegei, az ezres csoportosítással (`0x00662d7d`-`0x006634c1`, `0x0066324c`). | `formatting_search_bar.py:60-83` az eredeti `Search results for …`/`No matches` szöveget adja; `formatting_status.py:15-26` tagolja a darabszámot. | A keresősáv eredményszövegének és számformázásának eltérése a #7079 óta lezárt. A bal hasáb felirata külön E9; a rejtett találatok számlálása E10. |
+| **A mező háttérszíne.** Találatnál `#E4F1E5`, találat nélkül `#FFCBCB`, üres keresésnél alapszín (`0x00662d06`-`0x00662d34`). | `MainToolbar.qml:508-510`, `Theme.qml:45-50,430-431`, `controller_state_mixin.py:148-153` | Egyezik (#7079); nincs új fejlesztési teendő. |
 | **Találat nélkül.** A rács-háttérszöveg (`thumbui/lightbox_bgtext`, `0x00662c73`/`0x00662c93`) a találatlista méretétől függ; a „Keresés mindenhol" gomb halott. | `racs-ures-allapot.md`, `LightboxFeed.qml` `gridEmptyText` | Egyezik (korábbi lap: #1945). |
-| **Rács és kijelölés.** Új keresés után a nézetet a `0x00a54b70` hívás pozicionálja újra (`0x006636a6`-`0x006636b6`, `0.0` lebegőpontos argumentummal, csak ha a negyedik argumentum 1; a tetejére görgetés feltételes). A keresés kezdete előtti nézethelyzetet (`[this+0xe94]`, `[this+0xe98]`) a sáv bezárása állítja vissza (`0x005d49f8`-`0x005d4a01` → `0x005fa430`); az X nem. | `MainWindowToolbar.qml:59-64` (`clearSelection()` minden gépeléskor) | **Eltér** (E2): nálunk a kijelölés minden gépelésre törlődik, és nincs visszaállítás. A visszaállítás pontos tárgya (kijelölés, görgetés vagy mappa) feltételes. |
+| **Rács és kijelölés.** Új keresésnél újrapozicionálja a rácsot; a bezáró út visszaállítja az elmentett helyzetet (`0x006636a6`-`0x006636b6`, `0x005d49f8`-`0x005fa430`). | `MainWindowToolbar.qml:59-64` gépelésenként törli a kijelölést; helyzetet nem ment. | **E2:** a keresés előtti nézethelyzet visszaállítása maradt; pontosan melyik UI-állapot tér vissza, eredeti futásméréssel kell eldönteni. |
 
 ### 5. Kilépés a keresésből
 
@@ -6109,8 +6152,8 @@ gyártót, EXIF-szavakat, kiterjesztést, dátumot és helyet nem keresi.
 |---|---|---|
 | **X gomb (`searchclr`).** `0x005d8810` → `0x005d47e0(this, 1, 0)` (`0x005d891c`-`0x005d8920`). Törli a szöveget (`0x005d4965`-`0x005d4974`), mind a hat gombot (`0x005d48aa`-`0x005d48f6`), az idő-csúszkát (`0x005d4906`-`0x005d491e`), a két belső listát (`0x005d4927`-`0x005d494e`), a hasonlósági mintát (`0x005d8280`), a fókuszt a mezőre teszi (`0x005d4989`), majd az előző fókuszelemre (`0x005d498f`-`0x005d49c9`), és `0x0065b840(this,0,0,1)`-gyel újraépít (`0x005d49eb`). | `MainToolbar.qml:583-606`, `MainWindowToolbar.qml:65-69` | Részben egyezik: a gombok és a kor-csúszka törlése hiányzik, mert nálunk külön nézetmódok (E1). |
 | **Back to View All.** `viewallbutton` (`0x005d9564`): `0x005d47e0(this, 0, 0)` (nem épít újra), majd a keresősáv gombját kikapcsolja (`0x005d957c`-`0x005d959a`), ami `(1, 1)` útra visz: újraépítés és pozíció-visszaállítás. Súgója: `Exit Search Mode`. | `MainLibraryCanvas.qml:35-75`, `controller_filter_mixin.py:153-164` | Egyezik a gomb és a felirat; a pozíció-visszaállítás hiányzik (E2). |
-| **`Ctrl+F`/`F3` még egyszer; a sáv gombja.** `0x005d4a20` → `0x005d47e0(this, 1, 1)`. | `MainToolbar.qml:64-68` | E2: a kikapcsolás nálunk nincs. |
-| **`Esc` a rácson.** `0x005c42d0`: nem karakter-esemény (`+0x64` 1-es bit nulla), `[esemény+0x10] == 0x1b`; ha a `0x0057c430(4)` hamis, `0x005d47e0([esi+8], 1, 0)` (`0x005c433a`-`0x005c4342`), különben a `publish/cancel` kattintása (`0x005c430c`-`0x005c432e`). A rutin keresés nélkül is lefut (újraépít). | nincs (`MainKeyboardShortcuts.qml`-ben nincs `Esc` a könyvtárnézethez; a mező `Esc`-je csak a javaslatlistát zárja, `MainToolbar.qml:540-551`) | **Új** (E2). |
+| **`Ctrl+F`/`F3` még egyszer; a sáv gombja.** `0x005d4a20` → `0x005d47e0(this, 1, 1)`. | `MainKeyboardShortcuts.qml:39-60`, `SearchGridKeys.qml:22-34` | Egyezik a kilépés; E2-ben csak a keresés előtti nézethelyzet visszaállítása marad. |
+| **`Esc` a rácson.** A `0x005c42d0` keresés nélkül is a törlő rutinra jut; a `publish/cancel` ág feltételes (`0x005c42f8`-`0x005c4342`). | `SearchGridKeys.qml:46-69`; ha a javaslatlista látszik, az első `Esc` azt zárja. | A keresés törlése egyezik; a javaslatlista első `Esc`-es bezárása PicasaPy-specifikus. |
 | **`Esc` a keresőmezőben.** A `CSearchEditBox` kezelője (`0x0077d380`) nem tartalmaz `0x1b` összevetést (csak nyilak, PageUp/Down, Enter). A mező saját üzenet-feldolgozása NINCS MEG. | `MainToolbar.qml:540-551` | NINCS MEG (Nyitott: `0x0077D380`). |
 | **Üresre törlés billentyűvel.** A szöveg üresre törlése után a `0x0065b840` `[this+0xe94] = -1`-et ír (`0x0065ba4d`), a szűrő fajtája 0 lesz, a keresési jelző kikapcsol, a nézet a normál nézethez tér vissza (`0x0065aa80`, `0x00662c53`); a megjegyzett pozíció elvész. | `search_controller.py:38-44` (üres szöveg: mappa-feed) | Egyezik a fő hatás. |
 
@@ -6118,147 +6161,170 @@ gyártót, EXIF-szavakat, kiterjesztést, dátumot és helyet nem keresi.
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| **Rejtett képek.** `0x00660c84`: `[this+0x3188]` (a `Preferences\ShowHidden` értéke: írók `0x00564ed4` a `0x005643e0`-ban és `0x005c934f` a `0x005c9300`-ban, mindkettő `ShowHidden` sztringű) bájtja `[szűrő+3]`-ba kerül; hamis értéknél a `]hidden` token a kizárt listára kerül (`0x00660ca2`-`0x00660e25`). Üres szövegnél a bájt a `0x00422ce0` harmadik argumentuma (`0x006622a0`). | `controller_photo_list_mixin.py:117-120` (rács: `if not self.showHidden`), `search_controller.py:71-76`, `controller_sync_mixin.py:50-63` | A rács egyezik. **Feltételes eltérés** (E10): a `_show_search_pane` és a `_show_filtered` a `_show` szűrése ELŐTT, a szűretlen listából számol (bal hasáb darabszám, `searchResultCount`, eredménysáv). Futásban nem mértem. |
-| **Nagyon sok találat.** Korlátot a végrehajtóban nem találtam. A kép- és albumszám 1000-től ezres tagolású (`cmp 0x3e8`, `0x0066324c`, `0x00663278`; a `0x0098f670` jelentése, hogy tagolást szúr be, olvasatból következik). A mentés 1000 fölött megerősítést kér (`picasa-menu-parancsok-viselkedes.md` 35.5). | `formatting_status.py:15-26` (`str(len(records))`, tagolás nélkül), `queries.py:446-488` (korlát nincs) | Ezres tagolás hiányzik (E9). A korlát hiánya egyezik. |
-| **Elérhetetlen hálózati mappa.** A keresés végrehajtó és szűrő útja nem hív fájl- és hálózati API-t (lásd a Következtetést); a DB-réteg virtuális hívásait (`[db+0x48]`) nem követtem. | `queries.py:446-523` (csak SQLite) | Egyezik (feltételes: a virtuális hívások nincsenek átnézve). |
+| **Rejtett képek.** A `ShowHidden` hamis állapotában a `]hidden` token a kizárt listába kerül (`0x00660c84`-`0x00660e25`). | `search_controller.py:55-76` a nyers találatokból számol; `controller_photo_list_mixin.py:117-120` csak a rács előtt szűri a rejtetteket. | **Biztos eltérés (E10):** a hasáb, a mezőjelzés és az eredménysáv beleszámolja a rácsról kizárt képeket. |
+| **Nagyon sok találat.** Az átnézett végrehajtóban nincs rögzített találatszám-korlát; a darabszám 1000 fölött tagolt (`0x0066324c`, `0x00663278`). | `queries.py:446-523` minden találatot visszaad; `formatting_search_bar.py:17-35` tagolja a darabszámot. | A megjelenítési tagolás egyezik; a nagyon nagy készlet futásidejű memória-/sebességhatása `NINCS MEG`, eredeti kontrollmérés szükséges. |
+| **Elérhetetlen hálózati mappa.** Az index-hozzáférés virtuális hívásainak hálózati hatása nem dőlt el; a közvetlen fájl-/hálózati API-import hiánya nem elég bizonyíték. | `queries.py:446-523` az SQLite-indexből keres. | **NINCS MEG:** eredeti Picasán, korábban indexelt de lekapcsolt hálózati mappával végzett mérés kell. |
 
-### 7. Összevetés egy táblázatban (igazolt eltérések)
+### 7. Összevetés egy táblázatban (a jelenlegi HEAD szerint)
+
+**A #7079 óta lezárt különbségek:** a mező találat szerinti háttérszíne, a keresősáv eredményszövege és az ezres tagolás a főágon már megvan (`MainToolbar.qml:508-510,629-640`, `formatting_search_bar.py:17-83`, `formatting_status.py:15-26`). Ezekre nem javaslok új fejlesztői jegyet.
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| `0x00660c80` + `0x00662220` egy szűrő, `0x0065b840` egy kapu | `search_controller.py:23-60`, `controller_filter_mixin.py:20-67` | E1: egyesített szűrőállapot (szöveg, gombok, kor). |
-| `0x005c42d0` Esc, `0x005d47e0`, `0x005d4a20`, `[this+0xe94]` | `MainKeyboardShortcuts.qml`, `MainToolbar.qml:64-68`, `MainWindowToolbar.qml:59-69` | E2: Esc és a sáv bezárása lépjen ki, a pozíció álljon vissza. |
-| `0x005c3fe0` ← `0x005c40e0`, `0x005c42d0` | nincs | E3: gépelés a mappalistán és a rácson a keresőmezőbe visz. |
-| `0x00662d06`-`0x00662d34`, `0x005e4b1c`-`0x005e4b9c` | `MainToolbar.qml:530-551` | E4: a mező háttérszíne találat szerint. |
-| `0x005e4e0d`, `0x0097fb90`, `0x0065b906`-`0x0065b988` | `MainWindowToolbar.qml:59-64`, `search_controller.py:23-60` | E5: billentyűsor-őr és azonos-szöveg kihagyás. |
-| `0x00660e8e` (`StrTrimA`), `0x006622aa` (`tag:`) | `search_controller.py:33` | E6: a tisztítás karakterkészlete és a `tag:`/`címke:` előtag. |
-| `0x006c0fc0`, `0x009871f0`, `0x00d30bd0` | `queries.py:490-523` | E7: szavakra bontás és kisbetűsítés az eredeti szabályával. |
-| `0x0077e2e0`, `0x0077eee0`, `0x0077d380` | `SearchSuggestions.qml`, `queries.py:551-` | E8: javaslatsorok fajtái és szóhatáros kiemelés (a forrás nyitott). |
-| `0x00662d7d`-`0x006634c1`, `0x0066324c`, `0x005715d0` | `MainToolbar.qml:629-640`, `formatting_status.py:15-26`, `FolderPane.qml:26-31` | E9: az eredménysáv szövegei és az ezres tagolás. |
-| `0x00660ca2`, `0x00660c84` | `search_controller.py:71-76`, `controller_sync_mixin.py:50-63` | E10: a rejtett képek ne számítsanak a hasáb és a sáv darabszámába (feltételes). |
-| `0x005d9cc0` (`navback`, `navfw`), `0x00600ac0` | nincs Vissza/Előre | A keresés állapota legyen az előzmény része (külön, nagyobb jegy: navigációs előzmény). |
+| `0x00660c80` + `0x00662220` egy szűrőobjektumba gyűjti a szöveget, szűrőgombokat és kor-csúszkát; a találat-összevonás pontos AND/OR szabálya nyitott. | `src/picasapy/app/search_controller.py:23-60`, `controller_filter_mixin.py:20-67`: a szöveges keresés külön nézetmód, felülírja az aktív szűrőt. | **E1:** közös szűrőállapot; az eredményhalmaz pontos logikáját a `0x004dc690`/`0x004dcb90` vizsgálata után rögzíteni. |
+| A `]search` bal oldali sor neve `Search results` (`0x004ad430`). | `FolderPane.qml:26-31` a `Search results for "%1" (%2)` alakot mutatja. | **E9:** a bal hasáb saját kereséssor-feliratát az eredeti `Search results` alakhoz kell igazítani; a számláló eredeti helyét méréssel rögzíteni. |
+| A keresés elején a bal hasáb, a képindex és a fókusz mentése (`0x0065ba5c`-`0x0065bb0c`); a sávbezárás visszaállító útja (`0x005fa430`). | `MainWindowToolbar.qml:59-64` minden gépelésre törli a kijelölést; nincs keresés előtti állapotot visszaállító állapot. | **E2:** a pontosan megmért nézethelyzet/fókusz visszaállítása Back to View All és második `Ctrl+F`/`F3` esetén; X esetén ne álljon vissza. |
+| Mappalistán és rácson gépelt karakter a keresőmezőbe kerül (`0x005c3fe0`, hívók `0x005c40e0`, `0x005c42d0`). | Rács: `SearchGridKeys.qml:72-90`; mappalista: `FolderPaneContent.qml:304-307` csak fel/le nyilat kezel. | **E3:** a mappalistán is induljon a keresés; a `0x80` fölötti karakterek eredeti kezelése maradjon méréshez kötött. |
+| `EN_CHANGE` közvetlen keresés, várakozó `WM_KEYDOWN` kihagyása (`0x005e4e0d`, `0x0097fb90`), azonos szöveg ismételt lekérdezésének elhagyása (`0x0065b906`-`0x0065b988`). | `MainWindowToolbar.qml:59-64` minden `onTextEdited` eseménynél keres; a 150 ms-os timer csak a javaslatlistát frissíti (`MainWindowCommands.qml:730-733`). | **E5:** a fölös köztes keresések elhagyása és az azonos szövegű újrahívás kihagyása. |
+| Trim-karakterek ` ,./\\` (`0x00660e8e`), lokalizált `tag:`/`címke:` előtag (`0x006622aa`), több pozitív és kizárt tag vektora (`0x006c0fc0`, `0x0043f9a0`). | `search_controller.py:33` `strip()`; `index/queries.py:490-523` a teljes bemenetet idézett FTS-kifejezésként kezeli; `color:`/`szín:` külön kerül feldolgozásra. | **E6/E7:** a tisztítás, előtag és tokenizálás az eredeti szabályára; a pontos AND/OR összefésülés előbb bináris-körrel zárandó. |
+| A mintabeli `wordhash.dat` kereshető szavai közt van fájlnévnek, kiterjesztésnek, kamerának/EXIF-nek, dátumnak/időnek, színnek, helynek, feliratnak, kulcsszónak és belső tokennek tűnő alak (mérés a mintafájlon; a mezőépítő út nyitott). | `index/schema.py:122-125`, `index/queries.py:446-523`: név, felirat, kulcsszó, mappanév-ág és színindex. | **E8:** a bizonyított mezőcsoportokat fokozatosan indexelni; pontos mező-hozzárendelés nélkül ne állítsunk teljes paritást. A javaslatlista eredeti forrása/sorrendje külön nyitott kérdés. |
+| A javaslatlistában címke-, album-, mappa- és képtalálat-típus jelenik meg, ikonnal és szóhatáros kiemeléssel (`0x0077E2E0`, `0x0077EEE0`). | `SearchSuggestions.qml:1-60`, `search_controller.py:112-122`, `queries.py:551-605`: jelenleg csak album- és mappajavaslat. | **E11:** egészítsük ki címke- és képtalálattal; a forrás sorrendje és számlálási szabálya eredeti mérést igényel. |
+| Rejtett képek kizárása `Preferences\\ShowHidden` alapján (`0x00660c84`-`0x00660e25`). | `search_controller.py:55-76` a nyers találatokból készít bal hasábot és számlálót; `controller_photo_list_mixin.py:117-120` csak utána szűri a rácsot. | **E10:** a hasáb, számláló, mező-visszajelzés és sáv a látható találatok számát használja. |
 
 ### Javasolt fejlesztői jegytörzsek
 
-**1. A szűrők egyesítése: szöveg, gombok és kor egy keresésben (E1)**
+**1. Keresés és szűrők egy közös állapotban (E1)**
 
-Eredeti: a `0x0065b840` minden belépőtől a `0x00660c80` EGYETLEN szűrőobjektumát
-építi (szöveg `[szűrő+0x2c]`, gombok `+1`/`+5`/`+7`/`+8`/`+9`/`+0xb`, kor
-`+0x24`, belső tokenek `]star`, `]face`, `]geo`, `exif` a `+0x30` listán,
-`]hidden` a `+0x48` kizárt listán), és a `0x00662220` egyszer hajtja végre; a
-`0x00662b20` a gombok szavait az eredménysáv szövegébe is beírja (`faces`,
-`starred`, `online`, `movies`, `geotagged`). Nálunk a keresés
-(`search_controller.py:23-60`) a szűrőt leváltja, és a csillag, film, arc,
-geo szűrők külön nézetmódok (`controller_filter_mixin.py:20-67`).
-Teendő: egyetlen szűrőállapot (szöveg, öt gomb, kor), amelyből a nézet
-és a sáv szövege épül; a gombok bármelyik szöveges keresés fölött
-kombinálhatók. Az ÉS kapcsolat jellegét előbb a `0x0043f9a0` Ghidra-körrel
-(Nyitott: `0x0043F9A0`) vagy Colab-méréssel kell megerősíteni.
-Kész, ha: szöveg és csillag-gomb együtt a kettő metszetét mutatja; a gomb
-kikapcsolása a szöveges eredményt adja vissza; az eredménysáv a bekapcsolt
-szűrők szavait sorolja; a kor-csúszka a szöveggel együtt működik.
+Eredeti: a `0x0065b840` a szöveget, a csillag-/arc-/film-/online-/geocímke-/másodpéldány-szűrőket és a kor-csúszkát egy `0x00660c80` szűrőobjektumba gyűjti, majd a `0x00662220` futtatja. A pontos AND/OR összevonás `NINCS MEG`.
 
-**2. Kilépés a keresésből: `Esc` a könyvtárban, a sáv bezárása és a pozíció visszaállítása (E2, E3)**
+Nálunk: `search()` és a szűrőnézetek külön állapotok; szöveges keresés felülírja az aktív szűrőt.
 
-Eredeti: `Esc` a képrácson (ha a `0x0057c430(4)` feltétel hamis) `0x005d47e0(this,1,0)`:
-töröl és újraépít (`0x005c42f8`-`0x005c4342`); a keresősáv gombjának
-kikapcsolása (`0x005d4a20`) és a „Back to View All" `(1,1)` úton a keresés
-kezdete előtti nézethelyzetet és fókuszt állítja vissza (`0x005d47e0`,
-`0x005fa430`); az X nem állít vissza. A gépelés a mappalistán és a rácson a
-keresőmezőbe visz (`0x005c3fe0`: karakter `0x21`-`0x7f` és `0x100` fölött,
-módosító nélkül, a mezőre fókusz, a karakter a szöveg).
-Nálunk: az `Esc` csak a javaslatlistát és a popupot zárja
-(`MainWindowToolbar.qml:49-58`), a második `Ctrl+F` nem kapcsol ki
-(`MainToolbar.qml:64-68`), a kijelölés minden gépelésre törlődik
-(`MainWindowToolbar.qml:59-64`), a rácson gépelés nem indít keresést.
-Teendő: a fenti négy belépő/kilépő út. A `0x80`-`0xff` karakterek kezelése és a
-bájtra vágás előbb Colab-mérést igényel (az ékezetes betűk viselkedése), addig
-a `0x21`-`0x7f` tartomány a kötelező; a visszaállítás tárgyát (kijelölés,
-görgetés, mappa) előbb Colab-mérés dönti el.
-Kész, ha: `Esc` a rácson törli a keresést és a szűrőket; a második `Ctrl+F`
-töröl és visszaállítja a pozíciót; az X nem állít vissza; a rácson beírt `a`
-betű a mezőbe kerül és a fókusz ott van.
+Teendő: tegyük közös állapotba a keresőkifejezést, a szűrőkapcsolókat és a korértéket. Az eredmény-összevonás pontos logikáját csak a bináris segédfüggvények ellenőrzése után implementáljuk.
 
-**3. A keresőmező visszajelzése: háttérszín és eredménysáv-szövegek (E4, E9)**
+Kész, ha:
 
-Eredeti: a mező háttere nem üres szövegnél `#E4F1E5` (van találat) vagy
-`#FFCBCB` (nincs), üresnél alapszín (`0x00662d06`-`0x00662d34`); a sáv szövege
-`Search results for "%s"` (`Találatok a(z) "%s" kifejezésre`), `%d results:`
-(`%d találat:`) és a gombok szavai, `Nincs találat`, a kép- és albumszám
-ezres tagolással, és a `searchdisplay` sor. Nálunk: a mező színtelen; a popup
-`Search results for "%1" (%2)` mintájának nincs eredeti párja
-(`MainToolbar.qml:629-640`); a darabszám tagolás nélküli
-(`formatting_status.py:15-26`).
-Teendő: a mező színezése; a sávszövegek az eredeti kulcsok szerint
-(`CThumbUI::searchmatchstr`, `sresults`, `sfaces`, `sstarred`, `sonline`,
-`smovies`, `sgeotag`, `nomatch`); ezres tagolás. Az elem, amelyben a szöveg
-megjelenik (`searchresult` és `label_search1`), előbb Colab-képpel
-ellenőrizendő (Nyitott: `0x005715D0`).
-Kész, ha: találatnál világoszöld, találat nélkül halványpiros a mező, üresnél
-alapszín; a nincs-találat és a találat sávszöveg az eredeti szövegtár szerinti;
-1000 fölött a darabszám tagolt.
+- a keresőszöveg és egy szűrő egyszerre maradhat aktív;
+- egyetlen szűrő kikapcsolása nem törli a keresőkifejezést;
+- az eredményhalmaz az igazolt eredeti szabályt követi, becsült AND/OR nincs.
 
-**4. A gépelés kezelése: billentyűsor-őr, tisztítás, bontás (E5, E6, E7)**
+**2. A keresés előtti nézethelyzet visszaállítása (E2)**
 
-Eredeti: `EN_CHANGE` azonnal keres, de átugorja, ha vár `WM_KEYDOWN`
-(`0x0097fb90`), és azonos szövegnél nem keres újra (`0x0065b906`-`0x0065b988`);
-a szöveg elejéről és végéről ` ,./\` le van vágva (`0x00660e8e`); a lokalizált
-`tag:`/`címke:` előtagot levágja (`0x006622aa`); a szót kisbetűsíti
-(`0x009871f0`), szókarakter az ASCII betű és számjegy, `:`, Latin-1 betű és
-minden nem-ASCII karakter, minden más elválasztó (`0x006c0fc0`,
-`0x00d30bd0`). Nálunk: minden szövegváltozás szinkron keres
-(`MainWindowToolbar.qml:59-64`), `strip()` a tisztítás
-(`search_controller.py:33`), az egész szöveg egy FTS5-frázis
-(`queries.py:501`).
-Teendő: a billentyűsor-őr megfelelője (a keresés elhalasztása, ha további
-bevitel vár) és az azonos szöveg kihagyása; a tisztítás és a bontás az eredeti
-szabálya szerint. A szavak kapcsolata (ÉS/VAGY), a `-` kizárás és a `tag:`
-hatása addig kimarad a „Kész, ha"-ból, amíg a `0x0043F9A0` és a `0x0043C410` Nyitott tétele nincs lezárva.
-Kész, ha: gyors gépeléskor a keresések száma kisebb a billentyűkénti számnál,
-a végállapot a teljes szöveg keresése; ` ,./\` a szöveg szélén nem változtatja a
-találatot; az `_` és `.` szóelválasztó.
+Eredeti: a keresés kezdetén elmenti a bal hasáb kiválasztását, a képindexet és a fókuszelemet (`0x0065ba5c`-`0x0065bb0c`); a sáv bezárásának egyik útja visszaállít (`0x005fa430`). Az X útja nem állít vissza.
 
-**5. A szóindex kibővítése és a javaslatlista fajtái (E8)**
+Nálunk: gépeléskor a kijelölés törlődik (`MainWindowToolbar.qml:59-64`), az előző nézethelyzetet nem menti.
 
-Eredeti: a szóindex gyártót és típust, EXIF-jellemzőket, kiterjesztést,
-dátumot (`ÉÉÉÉ:HH:NN`), időt, színt, helyet is tartalmaz (2. szakasz, mért); a
-javaslatlista soraiban négy ikon van (`icons/label`, `icons/album`,
-`icons/folder`, `icons/imageresult`), darabszámmal, a kiemelés szóhatáros és
-kisbetű-érzéketlen (`0x0077e360`-`0x0077e3e7`). Nálunk: FTS csak fájlnév,
-felirat, kulcsszó (`index/schema.py:122-125`); a javaslat csak mappa és album
-(`queries.py:551-`), a kiemelés bárhol a névben.
-Teendő: előfeltétele a `0x0077E2E0` és a `0x004DA990` Ghidra-köre (Nyitott): az
-indexépítő pontos mezőválasztása és a javaslat forrása nélkül a jegy nem
-építhető. A mért szócsoportok
-(2. szakasz) és a négy ikon már rögzített, de a mezőválasztást nem szabad
-tippelni.
-Kész, ha: a `0x0077E2E0` és a `0x004DA990` Nyitott tétele lezárva, és a mezőlistát a jegy törzse tartalmazza.
+Teendő: a visszaállítás pontos hatását az eredeti mappalistán/rácson mérjük meg, majd Back to View All és a második `Ctrl+F`/`F3` útján állítsuk vissza; az X maradjon törlő út.
 
-**6. A rejtett képek a bal hasáb és a sáv darabszámában (E10, feltételes)**
+Kész, ha:
 
-Eredeti: a keresés a rejtett képeket kizárja, ha a `Preferences\ShowHidden`
-hamis (`0x00660ca2`). Nálunk a rács szűr (`controller_photo_list_mixin.py:117-120`),
-a bal hasáb darabszáma és a sáv a szűretlen listából számol
-(`search_controller.py:71-76`, `controller_sync_mixin.py:50-63`).
-Teendő: előbb próbával igazolni (rejtett képet tartalmazó mappa, keresés,
-rács és hasáb darabszám összevetése); csak ha eltér, a számlálás a szűrt
-listából készüljön.
-Kész, ha: egy rejtett képet tartalmazó találatnál a rács, a hasáb és a sáv
-ugyanazt a darabszámot adja, a Nézet ▸ Rejtett képek kapcsolóval és nélküle.
+- a mérésben igazolt mappa, képkijelölés, görgetés és fókusz kerül vissza;
+- az X nem állítja vissza a keresés előtti állapotot;
+- keresés nélkül egyik kilépő út sem változtatja a kijelölést.
+
+**3. Gépelés a mappalistán is indítsa a keresést (E3)**
+
+Eredeti: a `0x005c40e0` albumlista- és a `0x005c42d0` rácsút a `0x005c3fe0` karakterkezelőbe vezet; az igazolt `0x21`-`0x7f` tartományban a mezőre fókuszál és továbbítja a karaktert. A magasabb kódág még nem tisztázott.
+
+Nálunk: a rácsban működik (`SearchGridKeys.qml:72-90`); a mappalistában csak fel/le léptetés van (`FolderPaneContent.qml:304-307`).
+
+Teendő: a mappalista billentyűútját kapcsoljuk a közös kereső-kezelőhöz. A `0x80`-`0xff` és `0x100` fölötti kódok pontos viselkedése csak mérés után kerüljön be.
+
+Kész, ha:
+
+- módosító nélküli, eredetivel igazolt karakterre a keresőmező kap fókuszt;
+- a karakter egyetlen alkalommal kerül a mezőbe és elindítja a keresést;
+- a vezérlőgombok és módosított billentyűk nem váltanak keresésre.
+
+**4. Felesleges köztes keresések kihagyása (E5)**
+
+Eredeti: az `EN_CHANGE` azonnal keres, de kihagyja a váró `WM_KEYDOWN` idején érkező köztes futást (`0x0097fb90`), és azonos szövegnél nem kérdez újra (`0x0065b906`-`0x0065b988`).
+
+Nálunk: minden szövegváltozás szinkron lekérdezés; a késleltetés kizárólag a javaslatlistára vonatkozik.
+
+Teendő: a gépelés közben összevonható futásokat és az azonos szövegű ismétlést hagyjuk ki úgy, hogy a végső szövegre biztosan lefusson egy keresés.
+
+Kész, ha:
+
+- a végső szöveg minden billentyűsorozat végén megjelenik;
+- a köztes, már elavult keresés nem fut le;
+- azonos kifejezés újabb hívása nem indít új indexlekérdezést.
+
+**5. Keresőkifejezés-feldolgozás az eredeti szabályai szerint (E6/E7)**
+
+Eredeti: a szélső ` ,./\\` karaktereket levágja (`0x00660e8e`), a `tag:`/`címke:` előtagot kezeli (`0x006622aa`), majd a pozitív és `-`-os tagokat külön adja át (`0x006c0fc0`, `0x0043f9a0`). A pozitív/kizárt listák pontos AND/OR összevonása még nyitott.
+
+Nálunk: `strip()` és egyetlen idézett FTS-kifejezés; a `tag:` nincs külön kezelve.
+
+Teendő: a szöveg tisztítását és tagokra bontását az eredetihez igazítani; a találati logikát a függvénysegédek elemzése előtt ne találgassuk.
+
+Kész, ha:
+
+- a szélső tisztítókarakterek, `_`, `.` és idézőjelek a bináris szerint viselkednek;
+- a lokalizált `tag:` előtag ugyanazt az utat használja;
+- pozitív és kizárt tagok a mért összevonási szabályt követik.
+
+**6. A kereshető képmezők bővítése (E8)**
+
+Eredeti: a helyi `wordhash.dat` mintában fájlnév- és kiterjesztés-szavak, kamera/EXIF-nek megfelelő szavak, dátum/idő-, hely-, szín-, felirat- és kulcsszavak is vannak; a mezőépítő pontos hozzárendelése még nyitott.
+
+Nálunk: a FTS-oszlopok a fájlnevet, feliratot és kulcsszavakat fedik (`index/schema.py:122-125`); a szín és a mappanév külön lekérdezési ágon van (`index/queries.py:446-523`).
+
+Teendő: a már igazoltan hiányzó mezőcsoportokra készüljön bővítés, de csak az eredeti builder-lánc mező-hozzárendelésének és kontrollmérésének lezárása után.
+
+Kész, ha:
+
+- a fájlnév, felirat, címke, szín és mappanév jelenlegi útjának paritását külön mérés igazolja;
+- az eredetivel igazolt kamera/EXIF-, kiterjesztés-, dátum- és helymezők kereshetők;
+- egyetlen mező forrását sem becsülték a minta puszta szavai alapján.
+
+**7. A bal hasáb kereséssor-felirata (E9)**
+
+Eredeti: a `]search` sor felirata `Search results` (`0x004ad430`).
+
+Nálunk: a `FolderPane.qml:26-31` a `Search results for "%1" (%2)` szöveget írja ki; a kifejezést és a találatszámot is belefoglalja.
+
+Teendő: a sor feliratát igazítsuk az eredetihez, a számláló helyét pedig az eredeti felületi mérés szerint döntsük el.
+
+Kész, ha:
+
+- a bal hasáb sora az eredeti feliratot használja;
+- a számláló csak akkor jelenik meg ott, ha az eredeti mérés ezt igazolja;
+- a keresősáv eredményszövege külön marad, mert annak paritását a #7079 óta igazoltuk.
+
+**8. Rejtett találatok ne torzítsák a darabszámot (E10)**
+
+Eredeti: a rejtett képek alapból kiesnek a találati halmazból (`0x00660c84`-`0x00660e25`).
+
+Nálunk: a bal hasáb, a keresési darabszám és a sáv a rejtett szűrés előtt készül, míg a rács utána szűr.
+
+Teendő: a megjelenő rács-listából számoljuk a találatszámot, a keresőmező visszajelzését és a bal hasáb elemeit.
+
+Kész, ha:
+
+- `ShowHidden` ki mellett rejtett találat nem növeli a látható darabszámot;
+- `ShowHidden` be mellett a találat bekerül a rácsba és a számlálóba;
+- a hasáb, az eredménysáv és a rács ugyanazt a látható találathalmazt jelzi.
+
+**9. Az autocomplete-javaslatok típusainak kiegészítése (E11)**
+
+Eredeti: a kirajzoló négy ikontípushoz ad sztringet (`0x0077E2E0`, `0x0077EEE0`): címke, album, mappa és képtalálat; a beírt szó kiemelése szóhatárhoz igazodik.
+
+Nálunk: a javaslatok csak album- és mappanevek (`SearchSuggestions.qml:1-60`, `queries.py:551-605`); nincs címke- és képtalálat-sor.
+
+Teendő: vegyük fel a címke- és képtalálat-javaslatokat, valamint az eredetivel egyező kiemelést. A kategóriák sorrendjét és a darabszám jelentését az eredeti autocomplete-adatút feltárása után rögzítsük.
+
+Kész, ha:
+
+- a négy igazolt javaslattípus megjelenik;
+- a kiemelés a szóhatárokat és kisbetű-érzéketlenséget követi;
+- a találatdarabszám és a kategóriasorrend mért eredeti szabályt követ.
 
 ### Nyitott
 
-- `Ghidra-kör kell: 0x0043C410 - a szóindex-lekérdezés (8904 bájt) teljes szóra, szóelőtagra vagy részszóra egyezik-e (a "nyar" megtalálja-e a "nyaralás"-t), és a 0x0098C780 hívás (0x0043D7B3) ékezet- vagy egyéb hajtást végez-e a keresési oldalon? [blokkoló a részszó- és ékezet-paritásra]`
-- `Ghidra-kör kell: 0x0043F9A0 - hogyan kombinálja a pozitív szólistát, a kizárt szólistát (a - előtag, a 0x006C0FC0 második kimenete) és a ]star, ]face, ]geo, exif tokeneket (ÉS, VAGY, kivonás), és mit jelent a [szűrő+0x40] lista és a [szűrő+0xc] jelző (0x00662356-0x00662365)? [blokkoló az 1. és 4. jegytörzsre]`
-- `Ghidra-kör kell: 0x005C3FE0 - a [esemény+0x10] mező karakterkód vagy billentyűkód; miért engedi át a 0x100 fölötti értéket, ha a beírt szöveg csak az alsó bájtból épül (0x005C4059), és mi történik a 0x80-0xFF (magyar ékezetes) karakterekkel? [blokkoló a 2. jegytörzs ékezetes részére]`
-- `Ghidra-kör kell: 0x0077E2E0 - a javaslatlista elemeinek forrása és sorrendje (címke, album, mappa, képtalálat), a darabszám mit számol, és melyik sor jár melyik ikonnal (0x0077EEE0)? [blokkoló az 5. jegytörzsre]`
-- `Ghidra-kör kell: 0x004DA990 - melyik fotómezők (fájlnév, kiterjesztés, mappanév, felirat, kulcsszó, EXIF, hely, szín) szavai kerülnek a szóindexbe (a 0x004403C0 hívja), mi viszi a mappanév szavait (a mintaszótárban nincs kimutatható mappanév-szó), és mit jelent a * végű szó (307 a mintán, köztük geo:lat=...*)? [blokkoló az 5. jegytörzsre]`
-- `Ghidra-kör kell: 0x0077D380 - hova jut az Esc és a Delete billentyű, amikor a fókusz magában a keresőmezőben van? A CSearchEditBox kezelője (0x0077D380) csak a nyilakat, a PageUp/PageDown és az Enter billentyűt kezeli, 0x1b összevetést nem tartalmaz; a bázisosztály (CAutoCompleteEditBox) kezelői (0x0060F1B0, 0x00610040) jöhetnek szóba. [nem blokkoló, de hiányzik az Esc mezőn belüli viselkedése]`
-- `Ghidra-kör kell: 0x005715D0 - az eredménysáv összeállított szövege melyik elembe kerül (searchoptions/searchresult vagy label_search1), és a 0x004AD430 ]search sor szövege (Search results) mit mutat a bal hasábban; a PicasaPy sora Search results for "q" (N). [nem blokkoló, Colab-képpel is eldönthető]`
-- `Ghidra-kör kell: 0x00600AC0 - a Vissza/Előre előzménybe mentett keresés pontos tartalma (szöveg, öt gomb, kor-csúszka, sávállapot), és mikor jön létre új előzményrekord (minden gépelésre, vagy csak a keresés elhagyásakor)? [nem blokkoló; külön navigációs jegy előfeltétele]`
-- `Colab-feladat kell: a mezőszín, az Esc a rácson és a gépelés-belépő látható hatása - keresőmezőbe gépelés találattal és találat nélkül (képernyőkép a mező hátteréről), Esc a rácson aktív kereséssel, betű lenyomása a mappalistán és a rácson, másodszori Ctrl+F. [nem blokkoló, a végrehajtó felvehető feladata]`
+- **NINCS MEG:** a teljes szó, előtag vagy részszó egyezés. A meglévő `2026-11-16-koteg-426-437.txt` `0x0043C410` dekompiláció a `0x0043D7B3` címen indirekt vtable-hívást mutat, nem a célmetódust. Út: az adott vtable-slot célját előbb oldd fel az index/data xref és a meglévő diszasszemblálás alapján; utána a célmetódus összehasonlító ciklusát kövesd, és csak azonosított címhez kérj célzott Ghidra-kört.
+- `Ghidra-kör kell: 0x0098C780: a `0x0043C410` hívása a query kulcs karaktereit milyen kódolásban alakítja át; végez-e ékezet- vagy kisbetű-hajtást? A meglévő `0x0043C410` kimenet csak a hívást tartalmazza, a célfüggvényt nem. [blokkoló az ékezet-paritásra]
+- `Ghidra-kör kell: 0x004DC690: a `0x0043F9A0` pozitív keresőszavainál milyen halmazműveletet végez a bemeneti találati bitmapen, és hogyan működik több pozitív szóval? A meglévő dekompiláció csak a hívásait mutatja, a helper törzsét nem. [blokkoló az E1/E7 eredménylogikájára]
+- `Ghidra-kör kell: 0x004DCB90: a `0x0043F9A0` kizárt szavainál mely találatokat törli a bitmapből, és hogyan viselkedik több kizárt szóval? A meglévő dekompiláció csak a hívást mutatja. [blokkoló az E7 kizárási logikájára]
+- `Ghidra-kör kell: 0x005C3FE0: a mappalistáról és rácsról érkező esemény `+0x10` mezőjének kódtípusa mi; mit jelent a `0x100` feletti ág és miért az alsó bájt kerül a szövegbe? A meglévő Ghidra-fájlok a hívókat tartalmazzák, a célfüggvény törzse nincs meg. [blokkoló az E3 nem-ASCII tartományára]
+- `Ghidra-kör kell: 0x0077D380: a keresőmező saját kezelője vagy bázisosztálya kezeli-e az `Esc`/`Delete` billentyűt, ha nincs nyitva a javaslatlista? A helyi kimenetekben ezt a címet nem találtam. [nem blokkoló]
+- **NINCS MEG:** az eredeti szóindex pontos mező-hozzárendelése. A `0x004DA990` dekompiláció már megvan, de a benne hívott helper/getter-láncból nem dőlt el, mely szavak jönnek a fájlnévből, EXIF-ből, feliratból, címkéből, dátumból, helyből vagy kameraadatból. Út: a meglévő `2026-11-16-koteg-426-437.txt` `0x004DA990` és `0x004403C0` kimenetének továbbkövetése, majd kontrollált mintával mezőnkénti mérés; új kört ugyanarra a címre csak a hiányzó helpercímek azonosítása után kérj.
+- **NINCS MEG:** az autocomplete-javaslatok forrásainak sorrendje és a darabszám jelentése. A `0x0077E2E0` meglévő kimenet kirajzolója, kiemelése és ikonkulcsai rendelkezésre állnak, de a kategóriák forrását nem állapítottam meg. Út: a keresőmező/autocomplete létrehozó útjának folytatása a meglévő kimenet alapján, majd eredeti felületi mérés.
+- **NINCS MEG:** a keresés előtti teljes állapot visszaállítása és a navigációs rekord létrehozási pontja. A meglévő `0x00600AC0` kimenet a keresőszöveg és szűrőgombok visszaállítását mutatja, de a képindex, fókusz, kor-csúszka és rekord létrehozása nem dőlt el. Út: a meglévő dekompilációból a mentő/hívó ág követése, kontrollált eredeti mérés a Back to View All, Ctrl+F/F3 és X utakra.
+- **NINCS MEG:** a nagyon nagy eredménylista memória- és sebességhatása. Út: eredeti Picasa pontosan rögzített, változó méretű katalógusokon végzett idő- és memória-mérése; határértéket mérés nélkül nem adok meg.
+- **NINCS MEG:** korábban indexelt, majd elérhetetlenné tett hálózati mappa keresési hatása. Út: eredeti Picasa kontrollmérése azonos katalógussal online/offline állapotban; az index virtuális hívásai miatt az importtábla önmagában nem dönt.
+- `Colab-feladat kell: keresés találattal és találat nélkül (mezőszín/sáv), Esc a keresőmezőben és a rácson, gépelés a mappalistán és rácson, majd kilépés X-szel, Back to View All-lal és második Ctrl+F/F3-mal; képernyőkép és előtte/utána mappa-, kijelölés-, görgetés- és fókuszállapot. [a futásidejű felületi hatások lezárására]
 
-Nyitott kérdések: 9 nyílt (8 Ghidra-kör és 1 Colab-feladat, mind nevesített és felvehető) · 10 lezárva · 0 blokkolt (külső akadály) · 0 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 5 célzott Ghidra-kérdés, 6 `NINCS MEG` tétel, 1 eredeti felületi mérés.
 
 Lezárva (a bizonyítékkal): a belépési pontok (1. szakasz); az eseményút és a billentyűsor-őr, időzítő nincs (3.); a szövegtisztítás (3.); a szóbontás szabályai (3.); a szóindex mért tartalma (2.); a kilépő utak és az `Esc` a rácson (5.); a mezőszín (4.); a rejtett képek kizárása az eredetiben (6.); a végrehajtó és a szűrő nem használ fájl- és hálózati API-t (6.); a megjegyzett nézethelyzet, a fókusz és az előzménybe mentés (Következtetés).
 
@@ -6272,4 +6338,4 @@ Lezárva (a bizonyítékkal): a belépési pontok (1. szakasz); az eseményút �
 
 ### Módosított fájlok
 
-- `docs/specs/paritas-ellenorzes.md`: új #7072 szakasz a keresés belépő- és kilépőútjaival, a szóindex mért tartalmával, a gépelés és az eredménysáv viselkedésével, tíz eltéréssel (E1-E10, ebből az E10 feltételes), hat javasolt jegyleírással, nyolc nevesített Ghidra-körrel és egy Colab-feladattal.
+- `docs/specs/paritas-ellenorzes.md`: a meglévő #7072 szakasz frissítése, tíz nyitott eltéréssel (E1-E3, E5-E11), kilenc fejlesztői jegytörzzsel, öt célzott Ghidra-kérdéssel és a futásidejű mérések nyitott listájával.
