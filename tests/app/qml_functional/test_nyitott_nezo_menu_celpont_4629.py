@@ -32,12 +32,11 @@ def _list_property(obj, name: str) -> list:
 def test_a_fajl_szerkesztes_es_kep_menu_a_nezett_keppel_dolgozik(
     qml_app, qt_app
 ):
-    from pathlib import Path
-
     window, controller, engine = qml_app
     window.show()
     viewer = _elem(window, "photoViewer")
     file_ops = engine.rootContext().contextProperty("fileOpsController")
+    szerkeszto = engine.rootContext().contextProperty("editController")
     file_ops._vagolap_adat = None
     wait_for_photo_op(
         controller,
@@ -110,12 +109,30 @@ def test_a_fajl_szerkesztes_es_kep_menu_a_nezett_keppel_dolgozik(
         )
         _elem(window, "saveConfirmDialog").setProperty("visible", False)
 
+        # #7030: a nézőben a Másolás a MEGJELENÍTETT, szerkesztett képet teszi
+        # a vágólapra képadatként (nem fájl-hivatkozást). A célpont mérése
+        # ezért a szerkesztési munkamenet fotója: a megnyitott (1.) kép, nem
+        # a rács kijelölése (0.), és a vágólap-kép az ő előnézete.
+        file_ops._vagolap_adat = None
+        szerkeszto._vagolap_kep = None
         _elsut(window, qt_app, "menuEditCopy")
-        copied = file_ops._vagolap_adat
-        assert copied is not None, "a Szerkesztés ▸ Másolás nem írt vágólapot"
-        paths = [Path(url.toLocalFile()) for url in copied.urls()]
-        assert paths == [Path(controller.photos.filePathAt(1))], (
-            f"a vágólap tartalma nem a megnyitott kép: {paths}"
+        assert file_ops._vagolap_adat is None, (
+            "a nézőben a Szerkesztés ▸ Másolás fájl-hivatkozást tett a vágólapra"
+        )
+        copied = szerkeszto._vagolap_kepe()
+        assert copied is not None and not copied.isNull(), (
+            "a Szerkesztés ▸ Másolás nem írt vágólapot"
+        )
+        assert controller.photos.idAt(0) != controller.photos.idAt(1)
+        assert szerkeszto._photo_id == controller.photos.idAt(1), (
+            "a vágólap-kép nem a megnyitott kép munkamenetéből jött: "
+            f"{szerkeszto._photo_id!r}"
+        )
+        megjelenitett = szerkeszto._provider.requestImage(
+            szerkeszto._kulcs, None, None
+        )
+        assert copied == megjelenitett, (
+            "a vágólap-kép nem a megnyitott kép megjelenített előnézete"
         )
 
         _elsut(window, qt_app, "menuFileExport")

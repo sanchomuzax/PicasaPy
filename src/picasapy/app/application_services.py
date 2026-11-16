@@ -122,6 +122,11 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
     # részfa-logika, mint az áthelyezés RÉGI oldalán (a lemezen már nincs
     # meg, tehát az indexet kell megkérdezni).
     fileops.folderDeleted.connect(lambda path: controller.resyncDeletedFolder(path))
+    # #7039: hiba után a Shell már módosíthatta a képeket. A megmaradt
+    # mappát és az indexből hiányzó/eltűnt részfát együtt olvassuk újra.
+    fileops.folderDeleteFailed.connect(
+        lambda path: controller.resyncDeleteAttempt(path)
+    )
 
 def wire_dedup(dedup: DedupController, controller: AppController) -> None:
     """A duplikátum-kezelő utáni index-frissítés (#1539).

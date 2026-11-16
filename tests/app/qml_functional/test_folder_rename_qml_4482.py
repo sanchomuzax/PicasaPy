@@ -274,3 +274,50 @@ def test_enter_a_nev_mezoben_ugyanugy_atnevez_mint_az_ok_gomb(
             folder = target
     finally:
         window.resize(window.width(), original_height)
+
+
+def test_mappatulajdonsag_atnevezes_picasa_nevtisztitassal_harom_magassagon(
+    qml_app, qt_app, tmp_path
+):
+    window, controller, _engine = qml_app
+    library = tmp_path / "kepek"
+    folder = library / "old-name"
+    folder.mkdir(parents=True)
+    make_jpeg(folder / "photo.jpg")
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, library)
+    controller._reload(preserve_scroll=True)
+    controller.selectFolder(str(folder))
+
+    original_height = window.height()
+    try:
+        for delta, entered_name, cleaned_name in (
+            (-5, "A/B", "AB"),
+            (0, "..Balaton..", "Balaton"),
+            (5, "con", "con_"),
+        ):
+            window.resize(window.width(), original_height + delta)
+            assert _wait(
+                qt_app,
+                lambda target=original_height + delta: window.height() == target,
+            )
+            dialog, name_field = _open_properties(window, controller, folder, qt_app)
+            _type_text(window, name_field, entered_name)
+            ok = window.findChild(QObject, "folderPropertiesOkButton")
+            assert ok is not None
+            _click(window, ok)
+
+            target = folder.with_name(cleaned_name)
+            assert _wait(
+                qt_app,
+                lambda current_dialog=dialog, new_path=target: (
+                    not current_dialog.property("opened")
+                    and controller._current_folder == str(new_path)
+                ),
+            ), f"a(z) {entered_name!r} névből nem lett {cleaned_name!r}"
+            assert target.is_dir() and not folder.exists()
+            assert (target / "photo.jpg").is_file()
+            folder = target
+            _wait_idle(controller, qt_app)
+    finally:
+        window.resize(window.width(), original_height)

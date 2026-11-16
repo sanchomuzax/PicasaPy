@@ -252,8 +252,7 @@ Item {
         sequence: "Ctrl+C"
         enabled: !hostWindow._szovegmezoneVanFokusz
                  && hostWindow.photoActionRows().length > 0
-        onActivated: hostFileOpsController.copyFilesToClipboard(
-            hostWindow.photoActionPaths())
+        onActivated: hostWindow.copyActionToClipboard()
     }
 
     Shortcut {

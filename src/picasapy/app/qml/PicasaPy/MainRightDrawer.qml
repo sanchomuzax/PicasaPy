@@ -147,6 +147,12 @@ PropertiesPanel {
         : []
     onCloseRequested: drawerRoot.hostWindow.ureseidAFiokot()
     onEditTagsRequested: drawerRoot.hostWindow.valtsFiokLapot("tags")
+    onAdjustTimestampRequested: {
+        var row = focusRow >= 0 ? focusRow : drawerRoot.hostWindow.selectedIndex
+        if (row >= 0 && drawerRoot.hostWindow.createDialogs) {
+            drawerRoot.hostWindow.createDialogs.ensure().openTimestamp([row])
+        }
+    }
 }
 
 // Emberek-panel (#26): a jobb fiók negyedik panelje. EGY fejléc és
