@@ -684,6 +684,19 @@ Rectangle {
             if (show.screensaverInputArmed) show.stop()
         } else show.goBack()
     }
+    //: #7065: az eredeti billentyűkezelő (`0x00760970`) a `Fel` (`0x26`)
+    //: billentyűre hátra, a `Le` (`0x28`) billentyűre előre lép, ugyanúgy,
+    //: mint a `Bal`/`Jobb`.
+    Keys.onUpPressed: {
+        if (show.screensaverMode) {
+            if (show.screensaverInputArmed) show.stop()
+        } else show.goBack()
+    }
+    Keys.onDownPressed: {
+        if (show.screensaverMode) {
+            if (show.screensaverInputArmed) show.stop()
+        } else show.advance()
+    }
     Keys.onPressed: (event) => {
         if (show.screensaverMode) {
             if (show.screensaverInputArmed) show.stop()
@@ -695,7 +708,37 @@ Rectangle {
             show.rotateCurrent(
                 (event.modifiers & Qt.ShiftModifier) ? -1 : 1)
             event.accepted = true
+            return
         }
+        var masodperc = show._szamjegyMasodperc(event)
+        if (masodperc > 0) {
+            show.secondsChosen(masodperc)
+            event.accepted = true
+        } else if (!event.isAutoRepeat && show._pauseVagyPlay(event.key)) {
+            show.togglePause()
+            event.accepted = true
+        }
+    }
+
+    //: #7065: a számjegy a diaidő (`SlideshowEffectTime`) új értéke, a nulla
+    //: helyett 1 (`0x00760a19`-`0x00760a49`). A Ctrl/Alt/Meta-val kombinált
+    //: leütés nem számjegy; a számbillentyűzet leütése is `Key_0`-`Key_9`.
+    //: Visszatérés: 0, ha a billentyű nem számjegy.
+    function _szamjegyMasodperc(event) {
+        var tiltott = Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier
+        if (event.modifiers & tiltott) return 0
+        if (event.key < Qt.Key_0 || event.key > Qt.Key_9) return 0
+        return Math.max(1, event.key - Qt.Key_0)
+    }
+
+    //: #7065: `Pause` (`0x13`) csak lejátszás közben, `Play` (`0xfa`) csak
+    //: szünetben kapcsol (`0x007609c3`-`0x00760a07`). Linuxon a Play
+    //: billentyű `Key_MediaPlay`.
+    function _pauseVagyPlay(key) {
+        if (key === Qt.Key_Pause) return show.playing
+        if (key === Qt.Key_Play || key === Qt.Key_MediaPlay)
+            return !show.playing
+        return false
     }
 
     SlideshowPreviousImage {
