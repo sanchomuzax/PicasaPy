@@ -4,6 +4,75 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-16
+
+**Törlés**
+
+- Új: a **Shift+Delete** a Kukát kihagyva, véglegesen törli a kijelölt
+  képeket a rácsban és a nézőben, előtte mindig rákérdez. Albumban és
+  Emberek albumban csak kiveszi a képet az összeállításból. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+- Windowson, ha egy fájl nem tehető a Lomtárba, a program képenként
+  külön megkérdezi, törölje-e véglegesen.
+- Ha egy mappa törlése után más fájlok maradnak benne, a program ezt
+  megmondja, és a mappalista a lemezen maradt állapotot mutatja.
+
+**Átnevezés, áthelyezés, Keresés a lemezen**
+
+- Több kép átnevezésénél a hibás fájl kimarad, a többi átneveződik, és
+  az átnevezett képek kijelölve maradnak. A **Dátum** vagy a
+  **Képfelbontás** bekapcsolásával változatlan névvel is átnevezhetsz.
+- Az **Áthelyezés új mappába** ablak a kijelölt kép dátumát ajánlja fel.
+- A **Keresés a lemezen** több mappában lévő képeknél mappánként egy
+  fájlkezelő-ablakot nyit.
+- A **Mappa tulajdonságai** ablakban meglévő mappánál is megadhatod a
+  felvétel helyét, és az átnevezés az eredeti Picasa névtisztítását
+  követi. Lásd [A könyvtár](features/konyvtar.md).
+
+**Nézés, másolás, forgatás, csillag**
+
+- A nézőben a **Másolás** a látott, szerkesztett képet teszi a
+  vágólapra, képként.
+- A **Ctrl+R** és a **Ctrl+Shift+R** a rács teljes kijelölését forgatja.
+- Több kijelölt képnél a csillagozás képenként fordít.
+- A helyi menü **Elrejtés** és **Megjelenítés** tétele a felirata
+  szerint hat a teljes kijelölésre.
+
+**Feliratok és címkék**
+
+- A képfelirat törlése megerősítést kér, és a felirat akkor is
+  elmentődik, ha máshova kattintasz. Lásd
+  [Csillagok, feliratok, címkék](features/csillag-felirat-cimke.md).
+- Vesszővel egyszerre több címkét is felvehetsz; a **Nézet ▸ Címkék**,
+  a Ctrl+T és a Ctrl+K nyitott panelnél bezárja a Címkék panelt; a
+  címke helyi menüjének sorrendje az eredeti.
+- A Tulajdonságok panel dátumsorának helyi menüje a dátumállítót nyitja,
+  a **Kulcsszavak** gomb a Címkék panelre vált. A dátumállító több képnél
+  a rácsban első kép dátumával nyílik.
+
+**Mentés és visszaállítás**
+
+- A **Visszaállítás** figyelmeztet, ha a fájlt a mentés óta más program
+  módosította, és a forgatást, a tükrözést és a szöveget is törli. Lásd
+  [Mentés](features/mentes.md).
+- Az **Összes szerkesztés visszavonása** a tükrözést és a szöveget is
+  törli, az elforgatást megtartja, és csak elforgatott képnél szürke.
+- A **Mentés másként** és a **Másolat mentése** videónál szürke.
+
+**E-mail és exportálás**
+
+- 20-nál több kép elküldése előtt a program rákérdez. A saját
+  levelezőprogram közvetlenül nyílik meg, a tárgyat és a szöveget a
+  képek száma szerint kitöltve. Lásd [E-mail](features/email.md).
+- A mappaexport felülírási kérdésénél a **Nem** megszakítja az
+  exportálást; a sorszám annyi jegyű, ahány jegyű a képek száma.
+
+**Hálózati mappák**
+
+- A hálózati (NAS) mappa egyszer szerepel a listában, és az indulás meg
+  a mappára kattintás nem vár a hálózatra. Lásd
+  [Mappakezelő](features/mappakezelo.md).
+
 ## 2026-11-15
 
 **Diavetítés**

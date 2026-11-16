@@ -68,7 +68,8 @@ helyen** marad: léptetéskor a szalag mozdul, nem a kiemelés. A mappa elején
 keret** (kék, benne világosszürke) jelöli. A szalagot nem húzhatod; egy
 bélyegképre kattintva az a kép nyílik meg.
 
-A **Ctrl+Delete** a lemezről törli az éppen látott képet (rákérdezéssel).
+A **Ctrl+Delete** a lemezről törli az éppen látott képet (rákérdezéssel). A **Shift+Delete** a Kukát kihagyva, véglegesen törli, szintén
+rákérdezés után (lásd [Fájlműveletek](fajlmuveletek.md)).
 Ha a képet egy **albumból** vagy **Emberek albumból** nyitottad meg,
 akkor nem töröl a lemezről, hanem csak az albumból veszi ki a képet — a
 fájl megmarad. A nagy kép helyi menüjében ilyenkor a tétel felirata is

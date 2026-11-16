@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.132] - 2026-11-16
+
+- Hálózati mappák képei és bélyegképei lassú SMB/GVFS csatoláson is megnyithatók, a felület közben használható marad (#7048).
+- A dátumállító ablak több kijelölt képnél a rácsban legelöl álló kép dátumával nyílik meg (#7054).
+
 ## [1.0.131] - 2026-11-16
 
 - A nézőben (az eredeti Picasa szerkesztőjének megfelelőjében) a Másolás (Ctrl+C és a Szerkesztés menü) a megjelenített, szerkesztésekkel együtt kiszámolt képet teszi a vágólapra képadatként, így más programba közvetlenül képként beilleszthető; a könyvtárban a Másolás továbbra is a kijelölt képek fájljait adja (#7030).
@@ -16,9 +21,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [1.0.130] - 2026-11-16
 
-- A hálózati mappa egyszer szerepel, és az indulás nem vár a hálózatra (#7045, #7044) (#7044).
 - A képaláírás szerkesztése az eredeti Picasa szerint működik: a törlés megerősítést kér, a felirat máshova kattintva is mentődik, a változatlan szöveg nem írja újra a képet, írásvédett képnél a felirat mégis megmarad, és a szövegek a hivatalos fordítást használják (#7027).
-- A hálózati (NAS) mappa nem szerepel többé kétszer a mappalistában (a már kettőzött sorok adatvesztés nélkül egyesülnek), és az indulás meg a mappára kattintás nem vár a hálózatra: az indexelt képek azonnal megjelennek, a frissítés a háttérben fut, a lassúságot is javítva (#7044) (#7045).
+- A hálózati (NAS) mappa nem szerepel többé kétszer a mappalistában (a már kettőzött sorok adatvesztés nélkül egyesülnek), és az indulás meg a mappára kattintás nem vár a hálózatra: az indexelt képek azonnal megjelennek, a frissítés a háttérben fut, a lassúságot is javítva (#7044, #7045).
 
 ## [1.0.129] - 2026-11-15
 

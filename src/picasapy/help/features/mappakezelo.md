@@ -77,6 +77,21 @@ a mappa az adatbázisban marad, a bélyegképek a gyorsítótárból látszanak.
 Ilyenkor a képek böngészhetők, de nem nyithatók meg és nem
 szerkeszthetők. Amint a lemez visszakerül, minden magától működik tovább.
 
+## Hálózati (NAS) mappák
+
+Egy hálózati megosztáson lévő mappa ugyanúgy felvehető és böngészhető,
+mint egy helyi. A lassú hálózat nem fogja meg a felületet:
+
+- indításkor és a mappára kattintva a program nem vár a hálózatra: a már
+  beolvasott képek azonnal megjelennek, a frissítés a háttérben fut;
+- a mappa felvételekor az ellenőrzés, a kép megnyitása és a
+  mappaműveletek (például átnevezés, áthelyezés, törlés) is a háttérben
+  várják ki a hálózatot.
+
+Egy hálózati mappa a mappalistában **egyszer** szerepel. Ha egy korábbi
+változatban kétszer került fel, a program a két sort magától egyesíti,
+a képek adatai nem vesznek el.
+
 ## Mappa-parancsok a hasábon
 
 A mappára jobbgombbal kattintva:

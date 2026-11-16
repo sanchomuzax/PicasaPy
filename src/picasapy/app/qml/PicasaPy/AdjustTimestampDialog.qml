@@ -62,7 +62,9 @@ Dialog {
     function openForRows(rows) {
         if (!timestampController || !rows || rows.length === 0)
             return
-        photoRows = rows.slice()
+        var rendezett = rows.slice()
+        rendezett.sort(function(a, b) { return Number(a) - Number(b) })
+        photoRows = rendezett
         previewInfo = timestampController.adjustTimestampPreview(photoRows[0])
         currentDateTime = previewInfo.dateTime
         var reszek = currentDateTime.split(" ")
