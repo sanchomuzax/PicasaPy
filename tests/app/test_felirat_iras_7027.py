@@ -1,6 +1,6 @@
 """#7027 - a képfelirat írási szabályai az eredeti Picasa szerint.
 
-Az eredeti (`docs/specs/paritas-ellenorzes.md`, #7024):
+Az eredeti (`docs/specs/paritas-ellenorzes-archiv-1.md`, #7024):
 
 - J5: a setter az egyező szöveget eldobja (`0x00437df5-0x00437e69`), tehát
   változatlan szövegnél a fájl és az ini érintetlen marad;
