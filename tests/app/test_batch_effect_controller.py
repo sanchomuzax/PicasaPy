@@ -10,7 +10,7 @@ szintű fixture-rel maradnak izolálva."""
 from __future__ import annotations
 
 import pytest
-from support.qt_wait import wait_for_photo_op
+from support.qt_wait import varj_feltetelre, wait_for_photo_op
 
 from support.jpeg_factory import make_jpeg
 from picasapy.ini import load_document
@@ -59,6 +59,12 @@ def controller(qt_app, tmp_path, library):
     )
     ctl._reload()
     ctl.selectFolder(str(library))
+    # #7063: a hideg indexből induló _reload() háttérben tölti az oldalpanel-
+    # gyorstárat (picasapy-side-pane-cache), ezért megvárjuk az indulási munkát,
+    # hogy a nulla időkorlátú teszt ne fusson versenyhelyzetre.
+    assert varj_feltetelre(
+        qt_app, lambda: not ctl.backgroundWorkersRunning(), 10.0
+    ), "az indulási háttérmunka nem fejeződött be"
     yield ctl
     # #438: a kötegelt effekt háttérszála bevárva, MÍG a controller még él
     # — a #430 SIGSEGV-osztály elkerülése (BackgroundWorkerMixin).
