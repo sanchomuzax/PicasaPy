@@ -315,6 +315,28 @@ class FileOpsControllerMoveMixin:
         # az `file://` URL-t a fogadó oldal nem tudná megtalálni.
         self.folderMoved.emit(str(source), str(moved))
 
+    @Slot(str, result=bool)
+    def isMoveProtectedFolder(self, folder: str) -> bool:  # noqa: N802
+        """Igaz, ha a mappa nem mozgatható: a menütétel ilyenkor szürke (#7108).
+
+        Az eredeti a Mappa menüben, a mappafa helyi menüjében és a HierFolder
+        menüben is szürkíti a mozgatást a rendszerutakon és a hét ismert
+        mappán (`0x0056e1c0`, `0x0056c5a0`, `0x9df5`). A válasz UGYANAZ a
+        predikátum, amelyet a végrehajtás is használ (`is_system_path`),
+        tehát a szürke tétel és a megálló végrehajtás nem térhet el."""
+        _compat = _controller_module()
+        local = _compat._to_local_path(folder) if folder else ""
+        if not local:
+            return False
+        # A kötés minden mappaváltáskor lefut: hálózati úton a `resolve()` a
+        # fő szálat megakaszthatná (#7086), és rendszerút vagy ismert mappa
+        # hálózati megosztáson amúgy sem lehet.
+        from picasapy.halozati_ut import is_network_path
+
+        if is_network_path(local):
+            return False
+        return _compat.is_system_path(_compat.Path(local))
+
     def _remember_move_folder_target(self, target_text: str) -> None:
         """A sikeres áthelyezés célmappájának megőrzése (#7067).
 
