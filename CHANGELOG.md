@@ -9,7 +9,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [1.0.133] - 2026-11-16
 
-- Diavetítés billentyűi (#7065), ingadozó háttérmunka-tesztek (#7063), a mappa áthelyezésének összevetése (#7063, #7059).
 - A Gyorscímkék Autofill most egyszeri műveletként tölti ki a konfigurált üres mezőket (#7053).
 - A normál diavetítésben a Fel és a Le billentyű a Bal és a Jobb nyíl irányában lép, az 1-9 számjegy a diaidőt állítja másodpercben (a 0 az 1 másodpercet adja), a Pause lejátszás közben szünetet, a Play szünetben folytatást kapcsol, ahogy az eredeti Picasában (#7065).
 
