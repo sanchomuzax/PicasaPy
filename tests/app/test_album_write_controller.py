@@ -114,6 +114,107 @@ class TestAddRowsToAlbum:
         by_token = {a["token"]: a for a in controller.albums}
         assert by_token[_TOKEN]["count"] == 3
 
+    def test_materializes_known_definition_in_other_folder_and_is_idempotent(
+        self, controller, library, monkeypatch
+    ):
+        from collections import Counter
+
+        from picasapy.app import photo_ops_write_text_mixin
+
+        source_ini = library / "nyaralas" / ".picasa.ini"
+        source_ini.write_text(
+            f"[.album:{_TOKEN}]\n"
+            "name=Közös album\n"
+            f"token={_TOKEN}\n"
+            "date=2024-07-15T10:30:00+02:00\n"
+            "location=Budapest\n"
+            "description=Nyári képek\n"
+            "[a.jpg]\n"
+            f"albums={_TOKEN}\n"
+            "[b.jpg]\n"
+            "albums=korabbi,masik\n",
+            encoding="utf-8",
+        )
+        source_before = load_document(source_ini).section(f".album:{_TOKEN}").items()
+        calls = []
+        eredeti_iras = photo_ops_write_text_mixin.update_document
+
+        def nyomkovetett_iras(path, mutate, **kwargs):
+            calls.append(str(path))
+            return eredeti_iras(path, mutate, **kwargs)
+
+        monkeypatch.setattr(
+            photo_ops_write_text_mixin, "update_document", nyomkovetett_iras
+        )
+        rows = _rows_of(controller, ["b.jpg", "c.jpg"])
+        assert len(rows) == 2
+
+        controller.addRowsToAlbum(rows, _TOKEN)
+
+        destination_ini = library / "varos" / ".picasa.ini"
+        destination = load_document(destination_ini)
+        album = destination.section(f".album:{_TOKEN}")
+        assert album is not None
+        assert album.get("name") == "Közös album"
+        assert album.get("date") == "2024-07-15T10:30:00+02:00"
+        assert album.get("location") == "Budapest"
+        assert album.get("description") == "Nyári képek"
+        assert destination.section("c.jpg").get("albums") == _TOKEN
+
+        source = load_document(source_ini)
+        assert source.section(f".album:{_TOKEN}").items() == source_before
+        assert source.section("b.jpg").get("albums") == f"korabbi,masik,{_TOKEN}"
+        assert Counter(calls) == Counter(
+            {
+                str(source_ini): 1,
+                str(destination_ini): 1,
+            }
+        )
+
+        source_after = source_ini.read_bytes()
+        destination_after = destination_ini.read_bytes()
+        controller.addRowsToAlbum(rows, _TOKEN)
+        assert source_ini.read_bytes() == source_after
+        assert destination_ini.read_bytes() == destination_after
+
+    def test_completes_unnamed_definition_from_known_album_fields(
+        self, controller, library
+    ):
+        source_ini = library / "nyaralas" / ".picasa.ini"
+        source_ini.write_text(
+            f"[.album:{_TOKEN}]\n"
+            "name=Közös album\n"
+            f"token={_TOKEN}\n"
+            "date=2024-07-15T10:30:00+02:00\n"
+            "location=Budapest\n"
+            "description=Nyári képek\n"
+            "[a.jpg]\n"
+            f"albums={_TOKEN}\n",
+            encoding="utf-8",
+        )
+        destination_ini = library / "varos" / ".picasa.ini"
+        destination_ini.write_text(
+            f"[.album:{_TOKEN}]\n"
+            "name=\n"
+            "date=régi dátum\n"
+            "location=Régi hely\n"
+            "description=Régi leírás\n"
+            "[c.jpg]\n"
+            "albums=korabbi\n",
+            encoding="utf-8",
+        )
+
+        controller.addRowsToAlbum([_row_of(controller, "c.jpg")], _TOKEN)
+
+        destination = load_document(destination_ini)
+        album = destination.section(f".album:{_TOKEN}")
+        assert album.get("token") == _TOKEN
+        assert album.get("name") == "Közös album"
+        assert album.get("date") == "2024-07-15T10:30:00+02:00"
+        assert album.get("location") == "Budapest"
+        assert album.get("description") == "Nyári képek"
+        assert destination.section("c.jpg").get("albums") == f"korabbi,{_TOKEN}"
+
     def test_empty_token_is_a_no_op(self, controller, library):
         row = _row_of(controller, "b.jpg")
         controller.addRowsToAlbum([row], "")
