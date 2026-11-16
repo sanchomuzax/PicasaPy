@@ -6269,3 +6269,448 @@ Lezárva (a bizonyítékkal): a belépési pontok (1. szakasz); az eseményút �
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md`: új #7072 szakasz a keresés belépő- és kilépőútjaival, a szóindex mért tartalmával, a gépelés és az eredménysáv viselkedésével, tíz eltéréssel (E1-E10, ebből az E10 feltételes), hat javasolt jegyleírással, nyolc nevesített Ghidra-körrel és egy Colab-feladattal.
+
+## #7083: Az importálás teljes folyamata az eredeti Picasával összevetve
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+A bináris nem futott; az eredeti oldalt statikus olvasásból (`capstone`,
+cím szerinti diszasszemblálás), az index `string_xrefs`/`xrefs`/`rtti`
+tábláiból, az `acquirepanel.tre` és `acquirepanel_text.tre` erőforrásból, a
+`stringres-en-hu.tsv` szövegtárból és a gyorsbillentyű-táblából olvastam. A
+PicasaPy oldalt a jelenlegi forrásból. Korábbi, igazolt részekre hivatkozom,
+újra nem kutattam őket: `picasa-importalas.md` (panelelemek, tippsor, törlési
+figyelmeztetés, hibaszövegek), `picasa-menu-parancsok-viselkedes.md` 41.
+tétel (`AcquirePath`, `LastImport%x`, `acquireUseSubFolder`, almappa-módok),
+`picasa-kereses-modok.md` (a másodpéldány-ellenőrző `originfast` kulcsa),
+`picasa-fo-ablak-elrendezes.md` (`autoexclude`, `importdest`),
+`picasa-gyorsbillentyuk.md` (Ctrl+M), `picasa-lebego-ertesito.md`.
+**Futtatott felvételt az importálási panelről nem találtam:** a #6845 lapon a
+`ki00/kepernyo__29.png` ("importálási ablak") csak a PicasaPy-sor szövegében
+szerepel, a kép a helyi mérőadat-archívumban nincs meg. Ezért minden
+működés-állítás statikus; a futtatott mérést a Nyitott résznél kérem.
+Ideiglenes szkriptjeim és nyers kimeneteim a munkafa `.bt/` mappájában vannak
+(a `.gitignore` kizárja).
+
+**A menürekord-szabály (#7012) alkalmazása.** A menüépítő rekordjaiban a
+parancsmező az eggyel előző rekordhoz tartozik. A Fájl menüben az `&Import
+From...` (`ID_FILE_IMPORTPICTURE`, felirat `0x00c8c718`) után épített
+`Import from Picasa Web Albums...` blokk írja a `0x9c91` parancsot
+(`0x005592d7`); ez az `&Import From...` rekord parancsa. Független
+ellenőrzés: a gyorsbillentyű-tábla `0x00d6d9b0 | 0x9c91 | &Import From... |
+Ctrl+M` (`picasa-menu-leltar.md:434`), és az `&Import From...` blokk a
+megelőző `Add &File to Picasa...` rekord `0xe101` (MFC `ID_FILE_OPEN`)
+parancsát írja. A bélyegkép helyi menüjében (`0x00733c70`, 20 bájtos
+rekordok, a parancsszó a rekord `+0xa` mezője) ugyanígy: `Include File` =
+`0x9dc4`, `Exclude File` = `0x9dc5`, `Include All` = `0x9dc2`, `Exclude All` =
+`0x9dc3`.
+
+### Következtetés
+
+Az eredeti importálás nem külön ablak, hanem a főablak `panelroot/acquiretab`
+panelje (`acquirepanel`), amely a könyvtár helyére lép (`m_acquire_enable`,
+`macros.tre:281`). **Három belépési út fut ugyanarra a kezelőre
+(`0x005d3010`):** az eszköztár `Import` gombja, a Fájl ▸ `&Import From...`
+menüpont és a `Ctrl+M`. A `picasa-konyvtar-eszkoztar-viselkedes.md` 1.
+szakaszának "menüegyenérték nincs" állítása ezzel megdőlt: a `0x005cb990`
+parancs-diszpécser ugrótáblája a `0x9c91` parancsot a `0x005cba7c` címre
+viszi, ami közvetlenül a `0x005d3010`-et hívja. A PicasaPy mindhárom belépést
+tartalmazza, ezekben nincs eltérés. Az eltérések a panel tartalmában vannak.
+
+Az eredeti folyamat: forrásválasztás ("Loading N files", "Acquired N files")
+▸ bélyegképek és előnézet ▸ választások (cél, almappa-mód, "After Copying")
+▸ `Import All` vagy `Import Selected (N)` ▸ egyetlen megerősítés, ha törlés
+jár vele ▸ indításkor a beállítások mentése ▸ háttérszál: "Reading", "Copying
+at speed", "Finishing" (az átmeneti `PhotoLabTemp` átnevezése), "Cleaning Up"
+▸ `scandir` a célmappákra ▸ "Completed Importing" vagy "Error Importing".
+
+**Igazolt eltérések (a részletek lent): hét.** (E1) a célmappa-elnevezési
+mód alapértéke és megjegyzése, (E2) az "After Copying" megjegyzése és a
+"minden törlése" visszalépése, (E3) a kártyatörlés megerősítése: az eredeti
+egyetlen ablak, a hívás jelölő-szöveget nem ad át (az elrendezést nem
+mértük); nálunk kétlépcsős ablak, amelyen a "Do not ask again" jelölő a
+figyelmeztetést véglegesen eltüntetheti, (E4) az
+`Import Selected (N)` gomb és az Enter/Esc kezelés hiánya, (E5) a tippsor
+három hiányzó állapota, (E6) a korábbi célok mentésének ideje és darabszáma, (E7) panel helyett
+modális ablak, egyetlen nagy előnézet nélkül.
+Feltételes jelölt még a fájlhiba utáni viselkedés (az eredeti az egész
+importot leállítja) és a Windows-forráslista szabálya.
+
+**Bizonyítottsági fok: részben megerősített.** A belépési utak, a panel
+eseménykezelői, a megjegyzett kulcsok és alapértékeik, a törlés-megerősítés
+szerkezete és a szövegek két független úton egyeznek (diszasszemblátum és
+erőforrás). A másolás belső sorrendje, az ütközés-, hiba- és megszakítás-
+kezelés, valamint a végállapot (rács, bal hasáb, kijelölés) nem zárult le.
+
+### Belépési pontok és feltételek
+
+| Eredeti bináris cím | Nálunk fájl:sor | Teendő |
+|---|---|---|
+| **Eszköztár `thumbui/importbutton`:** `0x005d3010` (223 b); hívói `0x005d9cc0` (név-diszpécser), `0x005cb990` (parancs-diszpécser), `0x005e60d0`. Növeli a fő objektum `+0x24c` számlálóját, majd `0x005218e0`-on át megkeresi a `thumbui/acquirebutton` elemet és virtuálisan hívja. A panel `acquirebutton` eseményének kezelője a `0x0051d4c0` (az `iCAcquireController` vtable-ben, `0x0051e9a0`): `[panel+0x3c2]=1`, `[panel+0x3b0]=1`, majd `0x0051c010`, amely a `/StiDevice:` argumentumot vagy a `0x0051b990(panel,1)` forrásválasztást futtatja. A két lánc összekötése statikusan nem teljes. `.tre`: `m_acquire_enable` makró. | `MainToolbar.qml:185-203`; `MainWindowToolbar.qml:72`; `MainWindowCommands.qml:704` (`importSourceDialog`) | A belépés egyezik. A cél más: modális, önálló `Window` (`ImportSourceDialog.qml:16-31`) panel helyett; lásd E7. |
+| **Fájl ▸ `&Import From...`:** `0x00559150`, parancs `0x9c91` (előző-rekord szabály, `0x005592d7`); ugrótábla `0x005cd9fc`/`0x005cdb34` a `0x9c91`-hez `0x005cba7c` → `call 0x005d3010`. A `.text`-ben a `0x9c91` utasítás-azonnali értéke csak a menüépítőben fordul elő; a `0x0056e1c0` állapotfrissítő nem hivatkozza, tehát külön tiltásra nincs bizonyíték. | `PicasaFileMenu.qml:57-61`; `MainMenuBar.qml:314` | Egyezik, feltétel nélkül aktív. A menüpont engedélyezése más állapotforrásból nyitott (lásd Nyitott). Helyesbítés a régi lapra: a menüegyenérték létezik. |
+| **`Ctrl+M`:** gyorsbillentyű-tábla `0x00d6d9b0`, parancs `0x9c91` (`picasa-gyorsbillentyuk.md:166,291,458`). | `PicasaMenuBar.qml:686-690` (`enabled: !bar.editorActive && !bar.textEntryHasFocus`) | Egyezik. A tábla "könyvtár" nézethez köti; a szerkesztő és a szövegmező tiltása a mi döntésünk, ellenpróba nincs. |
+| **Helyi menü a bélyegképeken:** `0x00733c70`: `Include File`, `Exclude File`, `Include All`, `Exclude All`; a parancsok (`0x9dc4`, `0x9dc5`, `0x9dc2`, `0x9dc3`) a `0x005cb990` kezelőiben az `acquirepanel/include`, `includeall`, `exclude`, `excludeall` eseményt küldik (`0x005ccea8`...), a panel `0x0051f070` kezelője `0x0051f7f0(panel, include, all)`-t hív. | Nincs helyi menü. `ImportSourcePreview.qml:100-145`: csak szöveglink (`Exclude`/`Include`); `ImportSourcePickerPanel.qml:251-260`: `Exclude All`/`Include All` gomb | Kis jelölt: a négy tétel mint helyi menü. A funkció megvan, csak a belépés hiányzik. |
+| **Parancssor `/StiDevice:`** (Windows WIA kamera csatlakozás): `0x004bc0c0` (`/StiDevice`, `0x00c839e8`), `0x0051c010` (`/StiDevice:`, `Runtime\StiDevice`), forrás kijelölése `0x0051b990`. | Nincs. A PTP/MTP kamera szándékosan kimarad (`import_source_controller_sources.py:156-165`). | Nincs teendő: Windows-specifikus eszközút, a kamera külön termékdöntés tárgya. |
+| **Behúzott hordozó (AutoRun):** az `iCDriveDetectorThread`, `...Response`, `...IsImport`, `...AR` nevű kernel-események (`0x00512cf0`, `0x00514180`); `Runtime\AutoRun` olvasása `0x00522570`, `0x00513d70`, `0x00514040`, `0x0051ee50`; törlése `0x00525630` (az import indítás végén, `0x005254fc`), a `Runtime\StiDevice`-szel együtt. A `PicasaMediaDetector.exe` név a `0x00704be0` folyamatnév-listában áll; az `AutoRun` írója nem azonosított. | Nincs. A forráslista az ablak megnyitásakor frissül (`ImportSourceDialog.qml:151-157`). | Nincs teendő: külső folyamat és Windows-specifikus; Linuxon a csatolás-figyelés külön termékdöntés. |
+| **Bezárás-figyelmeztetés:** `0x005e45c0` (1271 b; hívók `0x0057c4e0` ← `0x005e4ac0`, `0x005d3290` ← `0x005de8e0`): ha a `panelroot/acquiretab` aktív és az `anowbutton` engedélyezett, kérdés: "Import images before closing Picasa?" (`IDS_WARNCLOSEACQUIRE`), gombok `Import Images` és `Quit`; a másik ág az `acquirepanel/acancelbutton`-t nyomja (`0x005e4761`). A `0x005e4ac0` a keresés függvényei közt is szerepel (#7072). | Nincs. Az ablak modális, a főablak vele nem zárható. | Nincs teendő, amíg az importálás modális ablak. Ha a panel-átalakítás megtörténik, ez a kérdés hozzá tartozik. |
+| **Import from Google Photos...:** parancs `0x9dfa` → `0x005cc4b4` → `0x005d2ca0` ("Import in Progress...", "Disk Space Warning"). | `PicasaFileMenu.qml:62-68` (nyugdíjazott) | Nincs teendő; megszűnt szolgáltatás (#6845: nincs látható hatás). Itt fontos: a "not enough free disk space" szöveg innen való, lásd a hibák szakaszát. |
+
+### Ablak (panel), mezők, alapértékek és megjegyzett állapot
+
+- **Elrendezés (`acquirepanel.tre`).** Felül `import_from_menu` és az
+  `excludedupesbutton`; balra a bélyegképek (`selcontainer`, üres állapotban
+  "No photos available"); jobbra az előnézet (`thumbpreview`), alatta a
+  forgatás (`rotate1button`, `rotate2button`), lapozás (`previousbutton`,
+  `nextbutton`), csillag (`startoggle`) és kizárás (`excludetoggle`) gomb és a
+  `fileinfo`; alul `import_to_label`, `import_folder_menu`, `subfolder_menu`,
+  `subfolder_label`, `delete_menu`, a (megszűnt) megosztás blokk, a tippsor és
+  a gombok: `acancelbutton` (`Property escapekey 1`, azaz Esc), `anowbutton`
+  (felirata `Import All`), `import_selected` (`Import Selected (%d)`). A
+  `excludetoggle` letiltja a `startoggle`-t (`Property disabletarget`): kizárt
+  képre nem lehet csillagot tenni. Az `acquirepanel/timesegment` elem rejtett
+  (`m_hidden`). PicasaPy: egy 640 × 680-as modális `Window`, forrás-,
+  szűrő-, másodpéldány-, rács-, cél- és "After Copying" sorokkal
+  (`ImportSourceDialog.qml:297-316`).
+- **Forrás-menü.** `0x00510500` a meghajtókat `GetLogicalDriveStringsA` +
+  `GetDriveTypeA` + `GetVolumeInformationA` szerint sorolja: a 2-es típusú
+  (cserélhető) meghajtó mind, kivéve az `A:` és `B:` betűjelet; a 3-as típusú
+  (fix) kötetnél, ha a fájlrendszer `FAT`, `FAT32` vagy `NTFS`, csak akkor,
+  ha a címke `KODAK`-kal kezdődik (`0x005107c8`-`0x00510824`), más
+  fájlrendszernél megkötés nélkül; az 5-ös típusú (CD-ROM) olvasható kötetnél
+  mind. A
+  felirat `Removable Drive(%s)` (`%s` a gyökér, nem a címke). Nincs `DCIM`
+  vizsgálat a felsorolóban; a `\dcim\` szöveget a `0x0050f6a0` használja
+  (hívói `0x0050f590` és `0x0070d520`; az utóbbit a szál főrutinja,
+  `0x0070ccb0`, korán hívja).
+  `iCAcquireWIAScanner`/`iCAcquireTWAINScanner` (RTTI) az eszközútról. A
+  "Folder on Disk" tétel az `Import Files/Folder` tallózót nyitja
+  (`0x00520fa0`), ami a `Preferences\FilesFromImport` mappát jegyzi meg.
+  PicasaPy: Linuxon `/media` és `/run/media` alatti csatolások, Windowson
+  cserélhető meghajtó vagy `DCIM` mappás kötet (`import_source_controller_
+  sources.py:77-165`); ez az eredeti szabálytól eltér (CD-ROM nincs, a
+  `KODAK` szabály nincs, a `DCIM` vizsgálat a felsorolóban nincs).
+- **A tippsor négy állapota (`0x0051ae90`).** Az állapotot a `[panel+0x7b0]`
+  almappa-mód és a `[panel+0x480]` jelző adja: kézi mód és jelző nulla = 1.
+  ("Enter new folder title or choose existing folder to continue"), kézi mód
+  és jelző nem nulla = 2. ("Click Import All or Import Selected"), dátum mód
+  = 3. ("Import into separate folders for each date taken"), mai dátum mód =
+  4. ("Import into folder with today's date"). PicasaPy csak az 1. állapotot
+  mutatja (`ImportSourceDestinationPanel.qml:129-140`).
+- **Mikor engedélyezett az Import.** Az `AcquireImportAllEnable` (`0x005276f0`)
+  és `AcquireImportSelectedEnable` (`0x00527730`) állítmány a `0x005238b0
+  (panel, csakKijelölt)`-et hívja: akkor engedélyez (a visszaadott 1 =
+  engedélyezett, 2 = letiltott; a kódolás az `AcquireHasImages` és az
+  `AcquireDeleteMenuEnable` párhuzamából következik), ha a `[panel+0x480]` nem
+  nulla, és van legalább egy nem kizárt (`[elem+0xbc]==0`), `Import
+  Selected`-nél kijelölt (`[elem+0x5d]`) elem. Az alapgomb-kezelő
+  (`0x0051b620`, feltehetően az Enter; a kód a `+0x228` célra és egy
+  "mégse" jelzőre ágazik) az `anowbutton`-t nyomja, ha legfeljebb egy kép
+  van kijelölve, különben az `import_selected`-et; a jelzős ág az
+  `acancelbutton`-t (Esc). PicasaPy: egyetlen
+  `Import` gomb, engedélye `includedCount > 0 && destFolder && !importing &&
+  (nem kézi || manualNameValid)` (`ImportSourceDestinationPanel.qml:251-261`),
+  kijelölés nincs; a #4595 óta a címhiány letiltja a gombot (a régi lap
+  "a gomb engedélyezett" megjegyzése elavult).
+- **Megjegyzett állapot és alapértékek.**
+
+| Kulcs (`Preferences\`) | Eredeti | PicasaPy |
+|---|---|---|
+| `AcquirePath` | cél-gyökér; olvasás `0x00513830`: üres vagy nem létező út esetén a `0x009966a0` hívás eredményére esik vissza (egy ismertmappa-lekérdezés, jelentése nem ellenőrzött), és azt feltehetően visszaírja (`0x00407760`, ugyanaz a hívás, mint a `LastImport%x` írásánál) | `import/defaultdestination`, alap a képek rendszermappája (`import_source_controller_state.py:162-199`); egyezik |
+| `acquireUseSubFolder` | egész; **alapérték 0** (`0x00514180`: `xor esi,esi` → olvasás `0x005148ac`-`0x00514936`, `[panel+0x7b0]`); a menü sorrendje `0x005181b0`: 0 = `Enter Folder Title`, 1 = `Date Taken (YYYY-MM-DD)`, 2 = `%s (Today)`; **írás az import indításakor** `0x00525400` | alap `"date"`, **nem tárolt** (`ImportSourceDialog.qml:94`) |
+| `acquireCleanCard` | egész; alap 0 (`Leave card alone`); olvasás `0x00519560`: a **2 (összes törlése) 1-re esik vissza**; írás `0x0051a0c2`, csak ha a forrás törölhető (`[panel+0x2a6] != 0`) | alap `"leave"`, **nem tárolt** (`ImportSourceDialog.qml:105`) |
+| `LastImport%x` | korábbi célok; **írás az import indításakor** (`0x00525352`), legfeljebb 5 tétel (`0x0052532c`-`0x00525347`: a darabszám 5-re vágva); menü `0x00516180` | **sikeres másolás után**, legfeljebb 8 (`import_source_controller_state.py:55,210-223`; `import_source_controller.py:440-444`) |
+| `autoexclude` | alap 1; `0x0051f600` | `import/autoexclude`, alap igaz (#5473); egyezik |
+| `ImportSegmentMinutes` | alap 0, ekkor 90 perc (`0x005219c5`-`0x00521a10`); perc × 60 / 86400 nap, a bélyegkép-lista `+0x310` mezőjébe | nincs; a rács nem szegmentál |
+| `FilesFromImport` | a fájltallózó utolsó mappája (`0x00521050`) | nincs (Qt `FileDialog`) |
+
+A "Recent sources" legördülő (`ImportSourcePickerPanel.qml:44-57`) **nem
+eredeti:** a `LastImport%x`, a `-seperator-before-LastImports-` és az
+`Acquire::ChooseFolder` a `0x00516180`-ban, az `import_folder_menu`
+építőjében áll (a `0x005254c3` hívás az `acquirepanel/import_folder_menu`
+elemmel). A forráslistának megjegyzett előzménye az eredetiben nincs. Ez egy
+tudatos, működő többlet, nem teendő; a komment (`ImportSourcePickerPanel.qml:
+42-43`) téves állítását pontosítani érdemes.
+
+### Tárolás, hatás és állapotsor
+
+| Hatás | Eredeti Picasa 3.9 | PicasaPy most |
+|---|---|---|
+| Fájlok másolása | A `0x0070ccb0` (az `iCAcquireScanner` fő rutinja) háttérszálon dolgozik. A `0x0070bdd0` befejező lépése az átmeneti `PhotoLabTemp`-et átnevezi (a hibaszöveg: "An error has occurred while renaming PhotoLabTemp. Cancelling Import."), majd egy elérési útra `GetFileAttributes`, a `2` bit törlése, `SetFileAttributes` (`0x0070c424`-`0x0070c446`; a hívott `[0x00d694bc]` és `[0x00d69514]` mutató célja nincs feloldva, a mintázat attribútum-lekérdezés és -beállítás, feltehetően a rejtett jelző levétele). Az átmeneti név létrehozási helye nincs meg (a `PhotoLabTemp` csak a hibaszövegben szerepel). A dátumos ág `0x0070b1e0`. Az ütköző nevek kezelése nyitott. | Közvetlenül a végleges almappába másol (`import_source_controller.py:415-435`), `fileops.copy_photo` ütközésnél új nevet ad (`név-1.jpg`). Átmeneti mappa nincs. |
+| Almappa neve | `Date Taken (YYYY-MM-DD)`: a `%d-%02d-%02d` formátum (`0x00c875c4`, `0x00514980`); `%s (Today)`; kézi cím. Ismeretlen dátumú képek mappája nincs meg. | `ÉÉÉÉ-HH-NN`, kézi név, mai dátum (`importsource.py:351-389`); ismeretlen dátumnál `Ismeretlen dátum` (`importsource.py:48`), eredeti nincs |
+| `.picasa.ini` | A csillag és a forgatás helye az eredetiben nincs meg (nyitott). A forrás-ini szekciójának sorsa törléskor nyitott. | `_mark_imported_ini`: `rotate=rotate(n)` és `backuphash`, `star=yes` a másolat ini-jébe; törléskor a forrás-ini szekció és a kísérők mennek (`import_source_controller_import.py:26-86`) |
+| Index és bal hasáb | A célmappák egy `scandir` feladattal a beolvasó rendszerbe kerülnek (`0x0070c4ce`-`0x0070c55a`, `0x0070baa8`-`0x0070bb85`; `0x0052db70` feladat-rekordot épít a mappa útjával, `0x00709460` és `0x007096f0` egy mappa-halmazba szúr, a halmaz szerepe nem ellenőrzött). | `addWatchedFolder` a sikeres másolás után (`import_source_controller.py:440-444`) |
+| Rács és kijelölés | A panel bezárása és a megjelenő mappa nincs meg (nyitott). | A főablak nem navigál; az ablak nyitva marad. Az értesítő "click to view" feliratot mutat, de üres célponttal: kattintásra semmi nem történik (`PicasaNotifier.qml:360-368`, `:318-338`). |
+| Állapotsor és háttérmunka | A fázisszövegek egy `ytProgress` elembe kerülnek (RTTI `0x00c81db4`; létrehozás `0x0070ebf0`, frissítés `0x00415610(elem, szöveg, tört)`): "Reading %1$d of %2$d files", "Copying %1$d of %2$d files" + " at %s/sec" (tört = kész/összes), "Finishing", "Cleaning Up", "Completed Importing" vagy "Error Importing" (`[+0x2c8]==6`, tört 1,0). A panel státuszsorába: "Loading %d files", "Loading %1$d of %2$d files", "Acquired %d files" (`0x0051e5c0`). Melyik felület mutatja a `ytProgress`-t (lebegő ablak vagy alsó sáv): nyitott. A `picasa-lebego-ertesito.md` "közbenső fázisok" nyitott kérdése ezzel részben lezárul: a közbenső fázisok nem a panelben, hanem a `ytProgress`-ben vannak. | A párbeszédben sáv és "%1 / %2 imported at %3/sec" (`ImportSourceDestinationPanel.qml:195-234`), a végén "Done: %1 imported, %2 failed" (saját szöveg), a végén értesítő "Completed Importing" vagy "Error Importing". Az eredeti fázisszövegek (Loading, Reading, Finishing, Cleaning Up) nincsenek. |
+
+### Hibák, ütközés, megszakítás, hálózat, írásvédett hely és visszavonás
+
+| Eset | Eredeti | PicasaPy most |
+|---|---|---|
+| Fájlhiba másolás közben | "A file error has occurred while importing files. Cancelling Import." (`iCAcquireScanner::error`, `0x0070b1e0`, `0x0070bdd0`), üzenetablak (`0x00980700`), az import leáll. Hogy a már átmásolt fájlok maradnak-e: nyitott. | Az import folytatódik; az első 5 hibát listázza (`import_source_controller.py:431-439`, `_IMPORT_FAILED_DETAILS_LIMIT`), a végén `Done: N imported, M failed`. |
+| Átnevezési hiba | "...renaming PhotoLabTemp. Cancelling Import." és "...renaming '%s'. Cancelling Import." (`iCAcquireScanner::error2`) | Nincs ilyen lépés. |
+| Eszköz hibakódok | `0x0051e4c0` (hívó `0x00527470`): 6 = "Unable to connect to the device..."; 7 = "The selected device is busy..."; minden más = `eFileErr` ("...the source is unavailable or the destination is full or read only."), szöveg nélkül `\n(%d)` kóddal; üzenetablakban. | Nincs; `sourceScanFailed` az üres forrásra, `importFailedDetails` a fájlokra. |
+| Eszköz eltűnése import közben | `iCAcquireController::NotifyDeviceGone`: "The device '%s' has unexpectedly disappeared while attempting to import from it." (`0x0051d9c0`, vtable `0x00c892dc`) | Nincs külön ág; a fájlhibák jelzik. |
+| Elfogyott hely, írásvédett cél | Az `eFileErr` szövege nevezi meg (utólagos jelzés). **Előzetes szabad-hely ellenőrzés az importáló sávban nincs bizonyítva:** a "Disk Space Warning" és "Sorry, there is not enough free disk space to safely download pictures." egyetlen hivatkozója a `0x005d2ca0`, amit a `0x9dfa` (Google Fotók import) hív. A `GetDiskFreeSpaceExA` burkolóinak hívóit nem követtem. | Előzetes ellenőrzés a másolás előtt (`import_source_controller.py:399-408`), a webes letöltés szövegével. Biztonsági többlet; a szöveg eredete a Google Fotók letöltés. |
+| Megszakítás | Az `acancelbutton` (`0x0051f070` → `0x00523ac0(panel,1)` és `0x00523a00`) a panelt zárja és a listát üríti; Esc ugyanez. Hogy import közben a másolást állítja-e le: nyitott. | Nincs megszakítás: a `Close` csak elrejti az ablakot, a háttérszál fut tovább (`ImportSourceDestinationPanel.qml:262-266`, `import_source_controller.py:392-465`). |
+| Hálózati forrás | A meghajtó-felsorolás a 4-es (hálózati) típust nem veszi fel; a `Folder on Disk` tallózóval bármely út megadható. | Linuxon a lista csak `/media`, `/run/media`; tallózással bármi (`ImportSourcePickerPanel.qml:73-96`). Egyezik. |
+| Visszavonás | Az importnak nincs bizonyított visszavonási útja; a kártyatörlés kifejezetten "nem vonható vissza" (`confirmRemoveCopied::message`). Az Edit ▸ Undo verem tartalmát nem vizsgáltam. | Nincs visszavonás. |
+
+**A kártyatörlés megerősítése (`0x00519720`, 2559 b).** A `0x0051b3c0`
+adja a törlés-menü állapotát (0 = `DeleteNothing`, 1 = `DeleteCopied`, 2 =
+`DeleteAll`). A 0 állapotban nincs kérdés. Az 1 állapotban az általános
+`confirmRemoveCopied::message` ("Are you sure you want to remove the
+imported files from your card? This cannot be undone."), a 2 állapotban a
+`WipeCard...` darabokból összeállított figyelmeztetés kerül **egyetlen**
+ablakra (`0x0051a01c`, az egyetlen `0x009ba4d0` hívás); a cím "Confirm
+Remove" (`confirmRemove::title`), az igen gomb "Remove Imported Files"
+vagy "Remove All Files", a másik gomb "Cancel" (`il_Cancel`). A
+`0x009ba4d0` hívás hét argumentuma: cím, üzenet, igen-szöveg, `0`,
+mégse-szöveg, `0`, `0`; jelölő-szöveg nincs köztük (az ablak elrendezését
+nem mértük). A "Don't warn me about this in the future"
+(`CAcquireUI::dontwarn`, kulcs
+`DoNotConfirmPublicUpload`) a `0x0051b710`-ban, a nyilvános feltöltés
+kérdésén van, **nem** a törlés kérdésén. A `0x005277e0`
+(`AcquireDeleteMenuEnable`) szerint a törlés-menü csak akkor aktív, ha a
+kiválasztott forrás törlést enged (`[panel+0x2a6]`, a forrás-elem `+0x18`
+virtuális metódusából, `0x00519630`); különben a menü 0-ra áll. PicasaPy:
+mindig mindhárom választás elérhető, forrástípustól függetlenül
+(`ImportSourceDestinationPanel.qml:161-192`); `delete_all` esetén két
+egymás utáni, általános `ConfirmDialog`: előbb a "...THIS CANNOT BE UNDONE."
+nagybetűs mondat (az eredetiben ez csak a `WipeCardFinalWarning` vége; a
+`confirmRemoveCopied` szövege kisbetűs), utána az összeállított
+figyelmeztetés (`ImportSourceDialog.qml:239-254`, `:376-401`). A
+`ConfirmDialog` "Do not ask again" jelölője itt látható marad
+(`rememberVisible` alapértéke igaz, `ConfirmDialog.qml:59`; az `ask` a
+kulcs elnyomása esetén megkérdezés nélkül `confirmed()`-et ad,
+`ConfirmDialog.qml:100-110`), így egyetlen bejelölés után a "minden törlése"
+figyelmeztetés véglegesen eltűnhet, és az import a kártyát megkérdezés
+nélkül kiüríti.
+
+### Bizonyíték és bizonyítottság
+
+| Érték/állítás | Forrás |
+|---|---|
+| Három belépési út ugyanarra a kezelőre | bináris (`0x00559150`, `0x005592d7`, `0x005cb990` ugrótábla, `0x005cba7c`, `0x005d3010`); erőforrás (`picasa-menu-leltar.md:434`, gyorsbillentyű-tábla) |
+| Panel, nem ablak | erőforrás (`acquirepanel.tre`, `macros.tre:281` `m_acquire_enable`); bináris (`0x0051d4c0`, `0x005e45c0` `panelroot/acquiretab`) |
+| Panelgombok kezelői | bináris (`0x0051f070`, `0x0051b620`); erőforrás (`acquirepanel.tre`: `escapekey 1`, `disabletarget`) |
+| Import engedélyezési feltétel | bináris (`0x005238b0`, `0x005276f0`, `0x00527730`, RTTI `AcquireImportAllEnable`, `AcquireImportSelectedEnable`) |
+| Tippsor négy állapota | bináris (`0x0051ae90`); erőforrás (`acquirepanel_text.tre` négy szövege) |
+| `acquireUseSubFolder` alap 0, sorrend | bináris (`0x00514180`, `0x005181b0`, `0x0051ae90`, `0x00524730`); két független fogyasztó egyezik |
+| `acquireCleanCard` 2 → 1 | bináris (`0x00519560`, `0x0051a0c2`) |
+| `LastImport%x` 5 tétel, indításkor | bináris (`0x0052532c`-`0x00525400`); a menü `0x00516180` |
+| Törlés-megerősítés szerkezete, `dontwarn` máshol | bináris (`0x00519720`, `0x0051b710`); szöveg (`stringres-en-hu.tsv:144-162,166,180`) |
+| Meghajtó-felsorolás szabálya | bináris (`0x00510500`: 2-es, 3-as és 5-ös típus, `FAT`, `FAT32`, `NTFS`, `KODAK`, `A:`/`B:`) |
+| Fázisszövegek `ytProgress`-ben | bináris (`0x0070e990`, `0x0070bdd0`, `0x00710700`, `0x00415610`, `0x00562420`); RTTI `ytProgress` |
+| Hibakód-leképezés | bináris (`0x0051e4c0`); szöveg (`stringres-en-hu.tsv:167-170,3000,3004`) |
+| `ImportSegmentMinutes` alap 90 perc | bináris (`0x005219c5`-`0x00521a4e`, konstansok `60,0` és `86400,0`) |
+| Szabad-hely szöveg a Google Fotók ágból | bináris (`0x005d2ca0` egyetlen hívója `0x005cb990`, `0x9dfa`) |
+| PicasaPy mai viselkedése | fájl:sor, közvetlen QML/Python-olvasás |
+| PicasaPy `.picasa.ini`-hatás eredeti megfelelője, átmeneti mappa neve, ütközés, megszakítás, végállapot | `NINCS MEG` |
+
+### A két független út
+
+- **A: bináris út.** Az eseményt a `0x005cb990` ugrótáblájától a
+  `0x005d3010`-ig, a panel parancsait a `0x0051f070` kezelőn át az
+  `0x00522ad0`/`0x00524730` indításig, a beállítás-kulcsokat az olvasóktól
+  az íróikig, a törlés-megerősítőt és a másolószál fázisait követtem.
+- **B: erőforrás és szöveg.** Az `acquirepanel.tre` elrendezése és az
+  `acquirepanel_text.tre` szövegei, a `stringres-en-hu.tsv` angol és magyar
+  szövegei, az RTTI-nevek (`AcquireImportSelectedEnable` stb.), a
+  gyorsbillentyű-tábla és a #6845 felvételi sora. A PicasaPy QML/Python
+  forrását külön olvastam.
+- **Egyezés.** A gombok, a tippsor, a hibaszövegek és a menüparancs a két
+  úton megegyeznek. A hatás és a hibák végállapota csak statikusan
+  adott, ezért nem megerősített.
+
+### Cáfoló kísérletek
+
+- **"A Fájl menüben nincs importálás-egyenérték"** (régi lap): cáfolva, a
+  `0x9c91` ugrótábla-bejegyzése a gomb kezelőjére fut. Cáfoló próba a
+  párosításra: a `0x9c91` a gyorsbillentyű-táblában is az `&Import From...`
+  felirathoz tartozik.
+- **"A közbenső fázisok a lebegő értesítőben vannak"** (feltevés): cáfolva,
+  a szövegek egy `ytProgress` objektumba mennek, nem a `CNotifierPopup`-ba.
+- **"A korábbi importok a forráslistát bővítik"** (a #441 megjegyzése):
+  cáfolva, a `LastImport%x` a célmappa-menüé.
+- **"A törlés kérdésén van `dontwarn`"**: cáfolva, a `dontwarn` a
+  `0x0051b710` nyilvános feltöltési kérdésén áll.
+- **"Az alapértelmezett mód a dátum szerinti"** (a #441 szövege: "a Picasa
+  import-munkafolyamatának lelke"): a bináris alapértéke 0, azaz kézi cím;
+  a dátumos mód a megjegyzett választás lehet, de nem az alapérték.
+- **Kizárt út:** az `AcquireDupeCheckThread` és az `originfast` kulcs a
+  `picasa-kereses-modok.md` 127. sora szerint már lezárt; a PicasaPy
+  gyorskulcsos egyezése (`import_source_controller_sources.py:210-242`)
+  ezzel egyezik, nem kutattam újra.
+
+### Igazolt eltérések egy táblázatban
+
+| Jel | Eredeti | PicasaPy |
+|---|---|---|
+| E1 | `acquireUseSubFolder` alap 0 = kézi cím; az utolsó választás megmarad (írás az indításkor) | alap dátum; a választás nem marad meg |
+| E2 | `acquireCleanCard` alap 0; megmarad, a 2 visszalép 1-re; letiltva, ha a forrás nem törölhető | alap "leave"; nem marad meg; mindig mindhárom választás |
+| E3 | egyetlen megerősítő ablak, Cancel gombbal, "ne kérdezd újra" nélkül | kétlépcsős `ConfirmDialog`, "Do not ask again" jelölővel, ami elnyomhatja a figyelmeztetést |
+| E4 | `Import All` és `Import Selected (N)`, kijelöléssel; Enter és Esc | egy `Import` gomb, kijelölés nélkül |
+| E5 | négy tippállapot | csak az 1. |
+| E6 | `LastImport%x` az indításkor, 5 tétel | sikeres másolás után, 8 tétel |
+| E7 | főablak-panel (`panelroot/acquiretab`), nagy előnézettel a kijelölt képről | modális, önálló ablak, bélyegenkénti gombokkal |
+| F1 | fájlhibánál "Cancelling Import." (feltételes) | folytatás és hibalista |
+| F2 | Windows-forráslista: cserélhető (nem `A:`/`B:`), fix kötet a `FAT`/`FAT32`/`NTFS` és `KODAK` szabállyal, CD-ROM | cserélhető vagy `DCIM`-es kötet (feltételes, alacsony) |
+
+### Javasolt fejlesztői jegytörzsek
+
+#### 1. Az importálás megjegyzett állapota és alapértékei (E1, E2, E6)
+
+**Eredeti:** a `0x00514180` az `acquireUseSubFolder` kulcsot alapérték 0-val
+olvassa (`[panel+0x7b0]`); a menü sorrendje `0x005181b0`: 0 = `Enter Folder
+Title`, 1 = `Date Taken (YYYY-MM-DD)`, 2 = `%s (Today)`; a `0x00525400` az
+import indításakor visszaírja. A `0x00519560` az `acquireCleanCard` kulcsot
+alap 0-val olvassa, a 2 értéket 1-re cserélve; a `0x0051a0c2` indításkor
+írja, ha a forrás törölhető. A `0x00525352` indításkor legfeljebb 5
+`LastImport%x` bejegyzést ír (`0x0052532c`). A `0x005277e0` és a `0x00519630`
+a törlés-menüt 0-ra állítja, ha a forrás nem törölhető.
+
+**Nálunk:** `ImportSourceDialog.qml:94` (`namingMode: "date"`, nem tárolt),
+`:105` (`afterCopying: "leave"`, nem tárolt);
+`import_source_controller_state.py:55,210-223` (célok sikeres másolás után,
+8 tétel); `ImportSourceDestinationPanel.qml:161-192` (mindig mindhárom
+törlés-választás).
+
+**Teendő:** tárold az utolsó almappa-módot és az "After Copying" választást
+(a "minden törlése" tárolva a "csak a másoltak" legyen), olvasd vissza az
+ablak megnyitásakor; az alapérték első használatnál a kézi cím. Az
+`After Copying` sor csak olyan forrásnál legyen aktív, amelyről törölni lehet
+(a forrás-típus szabálya az első Ghidra-kör, `0x00519630`, eredményére vár; addig a
+mappa-forrás viselkedése változatlan). A korábbi célokat az import
+indításakor mentsd, legfeljebb 5 tétellel.
+
+**Kész, ha:** friss profilban a mód "Enter Folder Title" és a tippsor az 1.
+állapotot mutatja; egy dátumos import után újranyitva a dátum mód van
+kiválasztva; "Delete everything on card" választás után újranyitva "Delete
+only copied photos" áll; a célok listája 5 tételnél nem hosszabb, és a cél az import
+indításakor, a másolás előtt mentődik.
+
+#### 2. A kártyatörlés megerősítése egyetlen ablak legyen, elnyomható jelölő nélkül (E3)
+
+**Eredeti:** a `0x00519720` mindkét törléses állapotra egyetlen ablakot
+nyit (`0x0051a01c`): cím "Confirm Remove", igen gomb "Remove Imported Files"
+(`DeleteCopied`, üzenet `confirmRemoveCopied::message`) vagy "Remove All
+Files" (`DeleteAll`, üzenet a `WipeCard...` darabokból), másik gomb "Cancel".
+A "Don't warn me" jelölő (`dontwarn`, `DoNotConfirmPublicUpload`) a
+`0x0051b710` nyilvános feltöltési kérdésén van, a törlésén nincs.
+
+**Nálunk:** `ImportSourceDialog.qml:239-254` és `:376-401`: két
+`ConfirmDialog`, mindkettőn alapból látható "Do not ask again"
+(`ConfirmDialog.qml:59,100-110`); az első kérdés szövege nagybetűs ("THIS
+CANNOT BE UNDONE"), az eredeti `confirmRemoveCopied::message` kisbetűs.
+
+**Teendő:** "Delete only copied photos" esetén egy ablak a `confirmRemoveCopied`
+szöveggel; "Delete everything on card" esetén egy ablak az összeállított
+`WipeCard` figyelmeztetéssel; a gombok "Remove Imported Files"/"Remove All
+Files" és "Cancel"; a "Do not ask again" jelölő ne jelenjen meg
+(`rememberVisible: false`), és az `importSourceRemoveImported`, `importSourceDeleteAllWarning` kulcsra
+már mentett elnyomás (`confirmSettings.isSuppressed`) ne járjon hatással; a
+két kulcsot a mentett beállításokból töröld is.
+
+**Kész, ha:** mindkét törléses választásnál pontosan egy ablak nyílik,
+benne a fenti szöveg és gombok; a jelölő nincs; egy korábban elnyomott kulcs
+mellett is megjelenik a kérdés; "Leave card alone"-nál nincs ablak.
+*(Az ablak elrendezését (gombsorrend, fókusz) az eredetiben nem mértük; ezt
+a Nyitott Colab-feladata dönti el. Ezt a jegyet a gombok számára és a
+jelölő hiányára kell érteni.)*
+
+#### 3. `Import Selected (N)`, kijelölés és Enter/Esc (E4)
+
+**Eredeti:** a `0x0051f070` kezelő az `anowbutton`-t `0x00522ad0(panel, 0)`-ra,
+az `import_selected`-et `0x00522ad0(panel, 1)`-re köti (az 1 a
+`0x00524730`-ban csak a kijelöltekre szűkít). Az `Import Selected (%d)`
+felirat `iAcquireUI::importselected`, az `Import All` felirat
+`CAcquireUI::importallbutton`. Az engedélyezést a `0x005238b0` adja (van nem
+kizárt, `Import Selected`-nél kijelölt elem, és a `[panel+0x480]` jelző). Az
+alapgomb-kezelő (`0x0051b620`, feltehetően az Enter) legfeljebb egy kijelölt
+képnél az `Import All`-t, többnél az `Import Selected`-et nyomja; az Esc az
+`acancelbutton`-t (`escapekey 1`).
+
+**Nálunk:** `ImportSourceDestinationPanel.qml:251-261` (egyetlen `Import`
+gomb); `ImportSourcePreview.qml` (kijelölés nincs; a bélyegre kattintás nem
+tesz semmit); `ImportSourceDialog.qml` (Esc és Enter nincs bekötve).
+
+**Teendő:** a bélyegképrácson legyen kijelölés (egyszerű kattintás; a
+többes kijelölés módját az eredetiben nem mértük, ezért csak egyszerű és
+Ctrl-kattintásos kijelölést építs, a Shift-et csak ha mérés igazolja); az
+`Import All` az összes nem kizárt képet, az `Import Selected (N)` csak a
+kijelölt, nem kizárt képeket importálja, a felirat a darabszámot mutatja; az
+Enter az eredeti szabály szerint választ, az Esc a `Close`-t nyomja.
+
+**Kész, ha:** két kép kijelölésekor a második gomb `Import Selected (2)`-t
+mutat és csak ezt a kettőt másolja; kijelölés nélkül vagy egy kijelölt képnél
+az Enter az `Import All`-t indítja; az Esc bezárja az ablakot. A
+`Import All`/`Import Selected` mindkettő tiltva, ha az eredeti `0x005238b0`
+feltételei nem teljesülnek (nincs nem kizárt elem, vagy kézi módban nincs
+cím).
+
+#### 4. A tippsor négy állapota (E5)
+
+**Eredeti:** `0x0051ae90`: kézi mód és üres cím = "Enter new folder title or
+choose existing folder to continue"; kézi mód kitöltött címmel = "Click
+Import All or Import Selected"; dátum mód = "Import into separate folders for
+each date taken"; mai dátum mód = "Import into folder with today's date"
+(`acquirepanel_text.tre`).
+
+**Nálunk:** `ImportSourceDestinationPanel.qml:129-140` csak az első
+állapotot mutatja (kézi mód, üres cím).
+
+**Teendő:** mutasd mind a négyet az eredeti feltételekkel, ugyanabban a
+sorban, ahol az elsőt most.
+
+**Kész, ha:** a négy feltételre mindegyik szöveg megjelenik; a 4 szöveg a
+`qsTr` fordítókulcsokban benne van, minden nyelven.
+
+#### 5. Feltételes jelölt: a fájlhiba az egész importot leállítja
+
+**Eredeti:** `0x0070b1e0` és `0x0070bdd0`: "A file error has occurred while
+importing files. Cancelling Import." (`iCAcquireScanner::error`), üzenetablak
+(`0x00980700`) és az import leáll; a kimenet "Error Importing" (`[+0x2c8]==6`,
+`0x00710700`). A már átmásolt fájlok sorsa és az átmeneti `PhotoLabTemp`
+kezelése nem ismert.
+
+**Nálunk:** `import_source_controller.py:431-439`: a hibás fájl után a
+többi másolása folytatódik, a végén `Done: N imported, M failed`.
+
+**Teendő:** a 3. és 4. Ghidra-kör eredménye után (a leállítás pontos hatása
+és a félkész mappa sorsa). Addig a jelenlegi, adatot védő viselkedés
+marad; ne alakítsd át az eredeti szándéka nélkül.
+
+**Kész, ha:** a feloldott viselkedés (leállás, a már másoltak sorsa, a
+mappák állapota) az eredetivel egyezik.
+
+### Új kutatási jegyjavaslatok
+
+Új külön jegyet nem javaslok: a nyitott kérdések a Ghidra-körök és a
+Colab-feladat sorai a #7083 folyamatához tartoznak; felvehetők a végrehajtóra
+és a kutatói körre.
+
+### Nyitott
+
+- `Ghidra-kör kell: 0x00519630 - a forrás-elem +0x18 virtuális metódusa (a [panel+0x2a6] jelző forrása) cserélhető meghajtón, KODAK fix lemezen, CD-ROM-on és "Folder on Disk" mappán mit ad vissza; azaz melyik forrásnál tiltja a törlés-menüt. A 0x005277e0 predikátum és a 0x00519630 hívás ismert, a forrás-típusok szemantikája nem. [blokkoló az 1. jegytörzs törlés-sorára]`
+- `Ghidra-kör kell: 0x0070BDD0 - az átmeneti mappa létrehozása és neve (a PhotoLabTemp csak a hibaszövegben szerepel), az átnevezés sorrendje, az ütköző célnevek kezelése (átugrás, felülírás vagy új név), és a 0x0070C424-0x0070C446 attribútumlépés célja; valamint a 0x00994580 és 0x00992780 szerepe a dátumos ágban (0x0070B1E0). [blokkoló az ütközés és a fájlhiba pontokra]`
+- `Ghidra-kör kell: 0x0070CCB0 - a [szál+0x2c8] állapotkódok jelentése (2, 3, 5, 6), mi állítja a 6-ot, és a fájlhiba után törlődnek-e a már átmásolt fájlok vagy a PhotoLabTemp; valamint a [panel+0x758] és a 0x00523AC0 megszakítás import közben a szálra hat-e. [blokkoló az 5. jegytörzsre és a megszakításra]`
+- `Ghidra-kör kell: 0x00524730 - az indítás előfeltételei (a 0x0051E0D0 és 0x0051E000 hívások, a -1 visszatérés), és a [panel+0x480] jelzőt dátum és mai-dátum módban mi állítja (kézi módban a cím, a többiben?); azaz engedélyezett-e az Import cím nélkül dátum módban. [nem blokkoló, a 4. jegytörzs feltételét pontosítja]`
+- `Ghidra-kör kell: 0x0071A4D0 - az import indítása után a panel mit csinál (letiltás, bezárás), és a befejezés után melyik mappa és nézet marad aktív (a 0x00513FC0, 0x0052DB70 és 0x00709460 hatása a bal hasábra és a rácsra). [blokkoló a végállapotra]`
+- `Ghidra-kör kell: 0x0070E990 - a [szál+0x2b4] ytProgress elemet melyik felület mutatja (lebegő ablak, a 0x00657300 értesítő, vagy az alsó tevékenységsáv), és a "Completed Importing" kattintásra visz-e valahová. [nem blokkoló, Colab-képpel is eldönthető]`
+- `Ghidra-kör kell: 0x0050F6A0 - a \dcim\ és GetDriveType==2 vizsgálat hívási helyei (0x0050F590, 0x0070D520): a beolvasást a DCIM mappára szűkíti-e, vagy a dátumos névadást/törlési engedélyt dönti el. [nem blokkoló, a forráslista szabályát pontosítja]`
+- `Ghidra-kör kell: 0x00522570 - a Runtime\AutoRun és Runtime\StiDevice írója és a 0x00513D70, 0x00514040, 0x0051EE50 szerepe (a behúzott hordozó utáni automatikus panelnyitás). [nem blokkoló, Windows-specifikus]`
+- `Ghidra-kör kell: 0x005154F0 - az ImportSegmentMinutes (alap 90 perc) hatása a bélyegkép-listára ([lista+0x310]): rajzol-e csoporthatárt, és a 0x005219A0 mikor állítja be. [nem blokkoló]`
+- `Colab-feladat kell: az importálási panel futtatott felvétele: (1) friss profil, kártya nélkül, a panel nyitó állapota (melyik almappa-mód áll, melyik tippszöveg); (2) mappa a "Folder on Disk"-ből, három kép, az almappa-mező természete (szerkeszthető legördülő-e, felkínálja-e a meglévő almappákat: a tippsor 1. szövege "choose existing folder"-t is említ), "Enter Folder Title" mód, az `Import All` után a panel, a haladás, a végállapot, a bal hasáb és a rács; (3) ugyanaz egy már meglévő nevű képpel a célban (ütközés); (4) csillag és forgatás az importban, majd a cél `.picasa.ini`; (5) "Delete only copied photos" választás és a megerősítő ablak (gombok, jelölő, fókusz), majd a panel újranyitása (megmaradt-e a mód és a törlés-választás); (6) Esc és Cancel import közben. [nem blokkoló, a végrehajtó felvehető feladata]`
+- **NINCS MEG:** a `Fájl ▸ Import From...` menüpont engedélyezése más állapotforrásból (a `0x0056e1c0` nem hivatkozza). Út: a Colab-feladat (1) pontja, menü nyitva különböző módokban.
+- **NINCS MEG:** a csillag és a forgatás tárolása az eredeti importban (`.picasa.ini` vagy az index) és az átmeneti mappa neve. Út: a Colab-feladat (4) pontja és a 2. Ghidra-kör.
+- **NINCS MEG:** `Ctrl+M` letiltása a szerkesztőben és a szövegmezőben az eredeti gyorsítótáblán. Út: célzott Colab-próba szerkesztő módban.
+
+Nyitott kérdések: 9 nyílt Ghidra-kör · 1 Colab-feladat · 3 NINCS MEG · 0 blokkolt (külső akadály) · 0 hatókörön kívül · 0 csak-nyitva. Lezárva (a bizonyítékkal): a belépési utak és a közös kezelő; a panelgombok kezelői; az Import engedélyezési feltétele; a megjegyzett kulcsok és alapértékeik; a törlés-megerősítés szerkezete; a hibakód-leképezés; a fázisszövegek hordozója (`ytProgress`).
+
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md`: új #7083 szakasz a belépési pontokról
+  (a menüegyenérték helyesbítésével), a panel mezőiről, a megjegyzett
+  állapotról, a hatásról, a hibákról és a kártyatörlés megerősítéséről, hét
+  igazolt és két feltételes eltéréssel, öt fejlesztői jegytörzzsel, kilenc
+  nevesített Ghidra-körrel és egy Colab-feladattal.
