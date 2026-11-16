@@ -284,6 +284,13 @@ Rectangle {
                         ? (hostController.searchActive && !hostWindow.unnamedFacesOpen) : false
                     model: hostController ? hostController.searchGroups : []
                     spacing: 0
+                    Keys.priority: Keys.BeforeItem
+                    Keys.onPressed: function(event) {
+                        if (hostWindow.header
+                                && hostWindow.header.handleLibraryGridKey
+                                && hostWindow.header.handleLibraryGridKey(event))
+                            return
+                    }
 
                     delegate: ColumnLayout {
                         id: groupDelegate
@@ -300,6 +307,13 @@ Rectangle {
                             id: subgrid
                             Layout.fillWidth: true
                             interactive: false
+                            Keys.priority: Keys.BeforeItem
+                            Keys.onPressed: function(event) {
+                                if (hostWindow.header
+                                        && hostWindow.header.handleLibraryGridKey
+                                        && hostWindow.header.handleLibraryGridKey(event))
+                                    return
+                            }
                             // #85: itt is kiegyenlített sor — az
                             // oszlopszám névleges méretből, a tényleges
                             // cellaWidth a szélességet tölti ki.

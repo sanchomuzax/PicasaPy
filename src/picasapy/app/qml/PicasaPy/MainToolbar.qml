@@ -57,11 +57,66 @@ Rectangle {
             searchOptionsPopup.open()
     }
 
+    // #7075: a keresési javaslatok Esc-útja a mezőn marad; a rács Esc-je
+    // csak ezután lép ki. A Colab-mérésig nem mentjük és nem állítjuk vissza
+    // a keresés előtti kijelölést, görgetést, mappát vagy fókuszt.
+    function kilepKeresesbol() {
+        searchField.clear()
+        toolbar.searchCleared()
+        searchOptionsPopup.close()
+    }
+
+    function handleLibraryGridKey(event) {
+        if (event.key === Qt.Key_Escape) {
+            var suggestions = updateOwnerWindow
+                ? updateOwnerWindow.searchSuggestionsBox : null
+            if (suggestions && suggestions.visible) {
+                suggestions.dismiss()
+                event.accepted = true
+                return true
+            }
+            var searchIsActive = typeof controller !== "undefined"
+                && controller
+                && (controller.searchActive || controller.filterActive)
+            if (searchIsActive || searchField.text.length > 0) {
+                toolbar.kilepKeresesbol()
+                event.accepted = true
+                return true
+            }
+            return false
+        }
+
+        var character = event.text
+        if (event.modifiers === Qt.NoModifier && character.length === 1) {
+            var code = character.charCodeAt(0)
+            if (code >= 0x21 && code <= 0x7f) {
+                searchField.forceActiveFocus()
+                var start = searchField.selectionStart
+                var end = searchField.selectionEnd
+                if (start !== end) {
+                    searchField.remove(start, end)
+                    searchField.cursorPosition = start
+                }
+                searchField.insert(searchField.cursorPosition, character)
+                searchField.cursorPosition = searchField.text.length
+                toolbar.searchEdited(searchField.text)
+                event.accepted = true
+                return true
+            }
+        }
+        return false
+    }
+
     //: #2163: a `Ctrl+F` (`searchcontainer/searchbutton`, `0x005e63bb`) a
     //: mezőre viszi a fókuszt és megnyitja a keresési beállításokat. A
     //: gazdának NEM kell ismernie az eszköztár belső elemeit — ez a függvény
     //: a határ.
     function fokuszAKeresore() {
+        if (typeof controller !== "undefined" && controller
+                && controller.searchActive) {
+            toolbar.kilepKeresesbol()
+            return
+        }
         searchField.forceActiveFocus()
         searchField.selectAll()
         searchOptionsPopup.open()
