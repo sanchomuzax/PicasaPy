@@ -30,6 +30,7 @@ def _halozati_allapot_tisztitasa():
     halozati_ut._alaphelyzet()
 
 
+@pytest.mark.skipif(os.name != "posix", reason="Linux-viselkedést mér (POSIX-útvonal, /proc/mounts), Windowson nem érvényes (#7096)")
 @pytest.mark.parametrize(
     ("mountpoint", "fstype", "path"),
     [
@@ -196,6 +197,7 @@ def test_linuxos_halozati_mappaleiras_hatterben_olvasodik(
     assert app_controller.folderDescriptionOf(path) == "NAS leírás"
 
 
+@pytest.mark.skipif(os.name != "posix", reason="Linux-viselkedést mér (POSIX-útvonal, /proc/mounts), Windowson nem érvényes (#7096)")
 def test_halozati_mappak_felvetele_es_egyszeri_keresese_hatterben_validalodik(
     qt_app, app_controller, monkeypatch
 ):
