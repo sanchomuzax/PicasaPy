@@ -57,70 +57,21 @@ Rectangle {
             searchOptionsPopup.open()
     }
 
-    // #7075: a keresési javaslatok Esc-útja a mezőn marad; a rács Esc-je
-    // csak ezután lép ki. A Colab-mérésig nem mentjük és nem állítjuk vissza
-    // a keresés előtti kijelölést, görgetést, mappát vagy fókuszt.
-    function kilepKeresesbol() {
-        searchField.clear()
-        toolbar.searchCleared()
-        searchOptionsPopup.close()
+    // #7075: a rács billentyűi a keresés felé (SearchGridKeys.qml)
+    function kilepKeresesbol() { gridKeys.kilep() }
+    function closeSearchOptions() { searchOptionsPopup.close() }
+    function handleLibraryGridKey(event) { return gridKeys.handle(event) }
+
+    SearchGridKeys {
+        id: gridKeys
+        host: toolbar
+        searchField: searchField
+        ownerWindow: toolbar.updateOwnerWindow
     }
 
-    function handleLibraryGridKey(event) {
-        if (event.key === Qt.Key_Escape) {
-            var suggestions = updateOwnerWindow
-                ? updateOwnerWindow.searchSuggestionsBox : null
-            if (suggestions && suggestions.visible) {
-                suggestions.dismiss()
-                event.accepted = true
-                return true
-            }
-            var searchIsActive = typeof controller !== "undefined"
-                && controller
-                && (controller.searchActive || controller.filterActive)
-            if (searchIsActive || searchField.text.length > 0) {
-                toolbar.kilepKeresesbol()
-                event.accepted = true
-                return true
-            }
-            return false
-        }
-
-        var character = event.text
-        if (event.modifiers === Qt.NoModifier && character.length === 1) {
-            var code = character.charCodeAt(0)
-            if (code >= 0x21 && code <= 0x7f) {
-                searchField.forceActiveFocus()
-                var start = searchField.selectionStart
-                var end = searchField.selectionEnd
-                if (start !== end) {
-                    searchField.remove(start, end)
-                    searchField.cursorPosition = start
-                }
-                searchField.insert(searchField.cursorPosition, character)
-                searchField.cursorPosition = searchField.text.length
-                toolbar.searchEdited(searchField.text)
-                event.accepted = true
-                return true
-            }
-        }
-        return false
-    }
-
-    //: #2163: a `Ctrl+F` (`searchcontainer/searchbutton`, `0x005e63bb`) a
-    //: mezőre viszi a fókuszt és megnyitja a keresési beállításokat. A
-    //: gazdának NEM kell ismernie az eszköztár belső elemeit — ez a függvény
-    //: a határ.
-    function fokuszAKeresore() {
-        if (typeof controller !== "undefined" && controller
-                && controller.searchActive) {
-            toolbar.kilepKeresesbol()
-            return
-        }
-        searchField.forceActiveFocus()
-        searchField.selectAll()
-        searchOptionsPopup.open()
-    }
+    //: #2163: a `Ctrl+F` belépési pontja; a gazda nem ismeri a belső elemeket
+    function fokuszAKeresore() { gridKeys.fokusz() }
+    function openSearchOptions() { searchOptionsPopup.open() }
     objectName: "mainToolbar"
     // #587: a felső sáv magassága a `thumbui.tre` `searchtop` konstansa —
     // 35 képpont. Ez a SÁV magassága (a panelek innen kezdődnek); a
@@ -176,17 +127,8 @@ Rectangle {
         searchField.clear()
     }
 
-    //: #1399: a menüből indított keresés — a szín-menüpontok ezen át írnak a
-    //: keresőmezőbe. MÉRVE (`0x0065b7b0`, hat lépés): az eredeti a mező
-    //: SZÖVEGÉT állítja, a kurzort a szöveg VÉGÉRE viszi kijelölés nélkül
-    //: (`EM_SETSEL 0xFFFF,0xFFFF`), majd lefuttatja a keresést — vagyis
-    //: pontosan az történik, mintha a felhasználó beírta volna.
-    function keresesSzoveggel(szoveg) {
-        searchField.text = szoveg
-        searchField.cursorPosition = searchField.text.length
-        toolbar.searchEdited(searchField.text)
-    }
-
+    //: #1399: a menüből indított keresés (a szín-menüpontok), SearchGridKeys.qml
+    function keresesSzoveggel(szoveg) { gridKeys.beir(szoveg) }
 
     Rectangle {
         anchors.bottom: parent.bottom
