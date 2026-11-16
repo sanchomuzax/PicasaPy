@@ -5555,7 +5555,7 @@ kis-nagybetű-független összevetését és eltéréskor a `-1` visszatérést
 mutatja; az objektum mezőjének jelentéséhez nem találtam független
 struktúra- vagy mérési bizonyítékot. Ezért a korábbi „másik kötetet
 elutasít” következtetést visszavontam. A cáfoló ellenpróba eredménye
-ugyanazzal a mércével: mezőeltérés igazolt, kötetjelentés és cross-volume
+ugyanazzal a mércével: mezőeltérés igazolt, kötetjelentés és kötetek közötti
 hatás NINCS MEG.
 
 ### A jegy „Kész, ha” pontjai
@@ -5633,7 +5633,7 @@ PicasaPy parancsokat ezekhez rendeltük.
   rekordból származó karakterláncot hasonlít össze; a korábbi kötetnév
   önmagában nem bizonyítja, hogy különböző fájlrendszer más értéket ad.
   Keresd a meglévő `0x004fd1c0` Ghidra-kimenetet, és új körben az objektum
-  mezőjének íróját/olvasóját azonosítsd; ez dönti el a cross-volume és UNC
+  mezőjének íróját/olvasóját azonosítsd; ez dönti el a kötetek közötti és UNC
   viselkedést.
 
 ### Nyitott
@@ -5641,12 +5641,12 @@ PicasaPy parancsokat ezekhez rendeltük.
 - `Ghidra-kör kell: 0x005D0E90: a 0x00733a40 HierFolder::ID_MOVEHIERFOLDER (0x9cba) pontosan mappát nyit, katalógusból távolít el, vagy fájlrendszer-mozgatást végez? A meglévő #419 kimenet a Ctrl+Enter mappalista-útját és az Open Folders megerősítést mutatja, de nem ezt a helyi menü-hívót. [blokkoló]`
 - `Ghidra-kör kell: 0x005CE590: a 0x00559150 / 0x007319f0 Move Folder címkéjű 0x9cce handlerének lemez- és katalógushatása mi, és miért a Remove Folder sztringeket használja? A meglévő Ghidra-fájlok csak a handler hívóit/string xrefjeit tartalmazzák, teljes dekompilációt nem. [blokkoló]`
 - `Ghidra-kör kell: 0x004AC8F0: a 0x0056e1c0 menüállapot-építőben használt predikátum figyelt gyökérre vonatkozik-e, és milyen mappát tilt? A meglévő dekompiláció a hívást mutatja, a virtuális/predikátum-szemantika nem dőlt el. [blokkoló]`
-- `Ghidra-kör kell: 0x004FD1C0: a +0x208 bájtoffsetű mező pontosan mit azonosít (kötet, útgyökér vagy más rekordkulcs), ki tölti fel, és mit jelent a különböző érték a cross-volume/UNC esetben? A meglévő #422 dekompiláció a mezők összevetését és az eltéréskor adott -1-et mutatja, de az objektum mezőszemantikáját nem oldja fel. [blokkoló]`
+- `Ghidra-kör kell: 0x004FD1C0: a +0x208 bájtoffsetű mező pontosan mit azonosít (kötet, útgyökér vagy más rekordkulcs), ki tölti fel, és mit jelent a különböző érték a kötetek közötti/UNC esetben? A meglévő #422 dekompiláció a mezők összevetését és az eltéréskor adott -1-et mutatja, de az objektum mezőszemantikáját nem oldja fel. [blokkoló]`
 - **NINCS MEG:** az eredeti írásvédett cél és részleges mozgatási hiba pontos kimenete. Út: külön kontrollált Windows Picasa 3.9.141 futás írható, írásvédett és szándékosan hibás célon; minden esetben rögzíteni kell a forrás/cél fájlokat és a felhasználói hibaüzenetet.
 - **NINCS MEG:** a mappafa, rács, kijelölés, albumlista és arcfelismerési cache végállapota sikeres fizikai mozgatás után. Út: Picasa 3.9 előtte/utána mérés egy mappával, albumtagsággal és arcmetaadattal.
-- **NINCS MEG:** a chooser első futásos alaphelye, ha a `MoveFolderLastPath` hiányzik vagy már nem létezik. Út: célzott Windows-mérés tiszta preferenciával, majd törölt célútú beállítással.
+- **NINCS MEG:** a chooser első futásos alaphelye, ha a `MoveFolderLastPath` hiányzik vagy már nem létezik. Út: célzott Windows-mérés tiszta preferenciával, majd a megjegyzett célút törlése után.
 - **NINCS MEG:** UNC/hálózati meghajtó engedélyezése és tényleges fájlhatása; a NAS-t nem jártam be, és hálózati tesztet nem végeztem.
-- **NINCS MEG:** az eltérő fájlrendszer vagy kötet hatása a `+0x208` mezőre; ezért a cross-volume elutasítás és a PicasaPy fallback közötti eltérés sem bizonyított.
+- **NINCS MEG:** az eltérő fájlrendszer vagy kötet hatása a `+0x208` mezőre; ezért a kötetek közötti elutasítás és a PicasaPy fallback közötti eltérés sem bizonyított.
 
 ### Módosított fájlok
 
