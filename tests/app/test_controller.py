@@ -110,6 +110,7 @@ def controller(qt_app, tmp_path, library):
     with open_index(ctl._db_path) as conn:
         ctl._precompute_side_pane(conn)
     ctl._reload()
+    assert _wait_until(qt_app, lambda: not ctl.backgroundWorkersRunning())
     yield ctl
     # #3042: a teardown a PROGRAM kilépési útját követi — előbb `shutdown()`,
     # utána a szálak bevárása. A lezárás eddig kimaradt, és a figyelő-szál
