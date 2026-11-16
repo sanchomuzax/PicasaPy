@@ -6324,18 +6324,18 @@ runtime-adatok miatt ezekből nem következik teljes viselkedési paritás.
 |---|---|---|
 | Fájl ▸ „Add Folder to Picasa…” és Eszközök ▸ „Folder Manager…”: mindkettő `0x9caa`, mód=0 → `0x005ce590`; szerkesztő-előnézetben tiltva (`0x0056e1c0`). | `PicasaFileMenu.qml:38-45`; `PicasaToolsMenu.qml:12-18`; `MainMenuBar.qml:121-126,196` | Egyezik. A `picasa-mappakezelo.md:1112` régi állítása, miszerint a Fájl-tétel helyfoglaló, a jelenlegi forrás szerint elavult; ezen a lapon korrigálva. |
 | További eredeti eszköztár-, helyimenü- vagy Mappakezelőt nyitó billentyűút hiánya nem bizonyított. A hasonló `0x9cce`/„Remove from Picasa…” parancs külön eltávolító művelet. | A jelenlegi forrásban a két menü nyitja közvetlenül a dialógust; a `FolderManagerDialog.qml:327-336` Escape-je bezárás/Mégse, nem belépő; a mappa-kontextusmenü külön eltávolítást kínál (`FolderContextMenu.qml:312-316`). A Picasa-adatok átvétele külön dialógus (`MainWindowCommands.qml:688-701`). | Ne állítsunk teljes belépő-paritást. Colab-felvételen járd végig az eredeti menüket, helyi menüket, eszköztárat és billentyűket; a `0x9cce` ne kerüljön Mappakezelő-belépőként a listába. |
-| `foldermgr.tre` mezői: bal oldali mappafa; útmutató; aktuális mappára 3 állapot; ettől külön arcfelismerés-kapcsoló; figyeltmappák-lista; OK/Mégse/Súgó. Kezdő méret 550×450; kezdeti opció `scan_once`, a per-mappa állapot a könyvtári listákból frissül (`0x007c60d0`). | `FolderManagerDialog.qml:19-59,181-204,349-439`; `FolderStatePanel.qml:24-34`; ablakméret `FolderManagerDialog.qml:27-31` | Az alapelrendezés egyezik. Az eredeti ablak pozíciójának/méretének újranyitás utáni megőrzése és az aktuális rádióállapot teljes futásidejű paritása nincs mérve. |
+| `foldermgr.tre` mezői: bal oldali mappafa; útmutató; aktuális mappára 3 állapot; ettől külön arcfelismerés-kapcsoló; a figyelt mappák listája; OK/Mégse/Súgó. Kezdő méret 550×450; kezdeti opció `scan_once`, a per-mappa állapot a könyvtári listákból frissül (`0x007c60d0`). | `FolderManagerDialog.qml:19-59,181-204,349-439`; `FolderStatePanel.qml:24-34`; ablakméret `FolderManagerDialog.qml:27-31` | Az alapelrendezés egyezik. Az eredeti ablak pozíciójának/méretének újranyitás utáni megőrzése és az aktuális rádióállapot teljes futásidejű paritása nincs mérve. |
 | OK előtt a dialógus deltákat gyűjt; Mégse és Escape nem alkalmazza őket (`0x007c285f-0x007c2866`, `0x007c28c6`, `0x007c6430`). | `FolderManagerDialog.qml:49-80,100-145,327-336` | Egyezik a felhasználó által látott Cancel/OK határ. A helyi `setFolderManagerState` a scanlistet közvetlenül írja (`library_controller_folders.py:103-133`), ezért az OK belső írási sorrendje nem egyetlen közös fájlmentés. |
 | Teljes meghajtó „Scan Always” kérdés: „No” a `watch` állapotot kikapcsolja és az `remove` rádiót benyomja (`0x007c294b-0x007c29d5`). | `FolderManagerDialog.qml:264-300,531-538` | Egyezik: a helyi „No” `none` állapotot léptet. |
-| Figyelt mappa eltávolításának `IDS_HOTFOLDER_CONFIRM` szövege ebben a buildben nem töltődik be; az OK-kori arcadat-törlésről külön kérdés van (`0x007c54d6`, `CFolderMgrDialog::confirmfrexclude`). | `FolderManagerDialog.qml:131-145,289-298,540-555` | A helyi figyeltmappa-megerősítés többlet az eredetihez képest; a már rögzített ADR-005 szándékos biztonsági eltérésként tartja meg. Nincs új fejlesztői jegy. Az arctörlési kérdés időzítése egyezik; az eredeti `.picasa.ini`-hatása nyitott. |
+| Figyelt mappa eltávolításának `IDS_HOTFOLDER_CONFIRM` szövege ebben a buildben nem töltődik be; az OK-kori arcadat-törlésről külön kérdés van (`0x007c54d6`, `CFolderMgrDialog::confirmfrexclude`). | `FolderManagerDialog.qml:131-145,289-298,540-555` | A helyi megerősítés a figyelt mappákra többlet az eredetihez képest; a már rögzített ADR-005 szándékos biztonsági eltérésként tartja meg. Nincs új fejlesztői jegy. Az arctörlési kérdés időzítése egyezik; az eredeti `.picasa.ini`-hatása nyitott. |
 | Az eredeti Help böngészőben a régi Google support URL-t nyitja (`0x007c4d23`, `0x007c4d77`). | `FolderManagerDialog.qml:485-491,558-588` | A helyi rövid súgó szándékos helyettesítés, mert a régi súgócikk nem érhető el; új paritásjegy nem javasolt. |
 | Eltávolításkor `0x004b9200` `]album:removed` tokent tesz az indexbe; képfájl-törlés nincs a leírt műveletben. Az arckizárás a `0x00491210` és `0x004f5d90` útján megy. A scanlist-persistálás ellentmondásos dokumentációjú. | `library_controller_folders.py:472-531,552-620`; `folder_manager_save_controller.py:75-119`; a scanlist írója `library_controller_folders.py:103-133` | Az index-token és a fájlírás közvetlen sorrendje dokumentált. `scanlist.txt` OK utáni írási időpontját/útját és az `.ini`-diffet ne tekintsük lezártnak; lásd Nyitott. |
-| Eredeti záró művelet `0x0065b840`; bal hasáb, rács, kijelölés és státuszsor pontos utóállapota nincs mérve. | Eltávolítás az aktuális gyökér alatt üríti az aktív mappanézetet és újratölt (`library_controller_folders.py:518-531`); a scanOnce indexbe dolgozik háttérsorban (`:430-469`). | Nincs igazolt paritás vagy fejlesztési eltérés. Mérj képernyő- és indexállapotot a művelet előtti/utáni képkockákon. |
+| Eredeti záró művelet `0x0065b840`; bal hasáb, rács, kijelölés és státuszsor pontos végállapota nincs mérve. | Eltávolítás az aktuális gyökér alatt üríti az aktív mappanézetet és újratölt (`library_controller_folders.py:518-531`); a scanOnce indexbe dolgozik háttérsorban (`:430-469`). | Nincs igazolt paritás vagy fejlesztési eltérés. Mérj képernyő- és indexállapotot a művelet előtti/utáni képkockákon. |
 | Írásvédett profil, elérhetetlen megosztás, párhuzamos módosítás, félbeszakítás és utólagos visszavonás: NINCS MEG futásidejű lelet. | A helyi mentő a `syncFailed` jelzést adja és bezárhat (`folder_manager_save_controller.py:75-90`; `MainErrorBanner.qml:79-84`); a korábban sikerült lépéseket nem görgeti vissza (`save_folder_manager.py:148-159`). A scanOnce sorba áll és nem szakítható meg (`library_controller_folders.py:430-469`). | Ne következtessünk paritásra. Eredeti Windows-felvétel kell külön írásvédett profil, hibás/leválasztott út, ütköző OK, Cancel/folyamatmegszakítás és művelet utáni visszavonás esettel. |
 
 ### A mentési út részlete
 
-Az eredeti `0x005cef20` OK-alkalmazó közvetlen sorrendjében a figyeltmappa-fájl
+Az eredeti `0x005cef20` OK-alkalmazó közvetlen sorrendjében a figyelt mappák fájlja
 írása (`0x005cf49b → 0x004f5960`) megelőzi a törlési sírkövet
 (`0x005cf500 → 0x004b9200`). Ezután csak nem üres arckizárási deltánál hívja a
 `0x00491210`-et, amely az `imagedata_facerect` értékeit is átállítja és a
@@ -6355,7 +6355,7 @@ nem kötött vtable `+8` fogadót hív. Így a vizsgált részben nincs közvetl
 scanlist-fájlíró, de az értesítési fogadó lehetséges tartós mellékhatása nincs
 feloldva; a `scanlist.txt` OK-kori írása továbbra is nyitott. Helyi programban a
 `setFolderManagerState` minden állapotnál közvetlenül meghívja a
-`write_scan_list`-et, még a figyeltmappa- és arckizárás-mentés előtt.
+`write_scan_list`-et, még a figyelt mappák és az arckizárás mentése előtt.
 
 A meglévő bináris lelet a felületen látható „Watched Folders” lista tárolását
 a `Preferences\HotFolders` beállításhoz is köti (`0x00418ad0`). A registry-érték
@@ -6402,8 +6402,7 @@ slotja fut le. A DBLoader vtable táblája ennek a típusnak a slotját
 `0x0055ff50`-ként azonosítja, de a lista minden elemének típusa nincs
 igazolva. A lokális disassembly szerint a `0x0055ff50` thunk `0x006d4710`-hez
 hív; a meglévő Ghidra-dekompiláció a vektor-módosítás és a `0x006a2a60`
-értesítése után egy másik, virtuális megfigyelőhívást mutat. A `grep -il
-'0055ff50' ~/picasapy-agent/referencia/ghidra/*.txt` nem talált erre a thunkra
+értesítése után egy másik, virtuális megfigyelőhívást mutat. A `grep -il '0055ff50' ~/picasapy-agent/referencia/ghidra/*.txt` nem talált erre a thunkra
 dekompilációt, de a `0x006d4710` és `0x006a2a60` címet tartalmazó meglévő
 kimeneteket külön ellenőriztem. A közvetlen file-írás hipotézisét a
 `0x006d4710` törzse nem támasztja alá; a megfigyelőhívás miatt a közvetett
@@ -6422,9 +6421,9 @@ perzisztálás nem cáfolható. A cáfoló kísérlet tehát szűkítette a lehe
 3. ⛔ **Hatás fájlokra, `.picasa.ini`-re, indexre, bal hasábra, rácsra,
    kijelölésre, háttérre és állapotsorra:** a közvetlen írók, sírkő és
    `imagedata_facerect` út bizonyított; scanlist-tartósítás, `.ini`-diff és a
-   teljes UI-utóállapot nincs bizonyítva.
+   a felület teljes végállapota nincs bizonyítva.
 4. ⛔ **Hiba, ütközés, megszakítás, hálózat/írásvédelem és visszavonás:** nincs
-   eredeti futtatott felvétel; PicasaPy-oldalon a hibasáv, a sorbaállítás és
+   eredeti futtatott felvétel; PicasaPy-oldalon a hibasáv, a sorba állítás és
    az egyszeri keresés megszakíthatatlansága forrásból olvasható, ez nem
    igazolja az eredeti viselkedést.
 
