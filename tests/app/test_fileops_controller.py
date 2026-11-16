@@ -270,6 +270,50 @@ class TestOpenPhoto:
         controller.openPhoto(str(tmp_path / "nincs.jpg"))
         assert failures[0][0] == "open"
 
+    def test_halozati_fajl_megnyitasa_nem_var_a_fajl_exists_hivasara(
+        self, controller, monkeypatch
+    ):
+        import threading
+        import time
+
+        import picasapy.app.fileops_controller as fileops_module
+        from picasapy import halozati_ut
+
+        monkeypatch.setattr(
+            halozati_ut,
+            "_mount_records",
+            lambda: (("/mnt/picasapy-slow", "cifs"),),
+            raising=False,
+        )
+        path = "/mnt/picasapy-slow/album/a.jpg"
+        exists_threads = []
+        opened = []
+
+        class SlowNetworkPath:
+            def __init__(self, value):
+                self.value = value
+
+            def exists(self):
+                exists_threads.append(threading.get_ident())
+                threading.Event().wait(0.3)
+                return True
+
+        monkeypatch.setattr(fileops_module, "Path", SlowNetworkPath)
+        monkeypatch.setattr(fileops_module, "_to_local_path", lambda value: value)
+        monkeypatch.setattr(
+            fileops_module.QDesktopServices,
+            "openUrl",
+            lambda url: opened.append(url.toLocalFile()) or True,
+        )
+
+        started = time.monotonic()
+        controller.openPhoto(path)
+        elapsed = time.monotonic() - started
+
+        assert elapsed < 0.15, f"a fájlmegnyitás {elapsed:.3f} s-ig várt"
+        assert exists_threads == [], "a megnyitás a fő szálon ellenőrizte a fájlt"
+        assert opened == [path]
+
     def test_emits_operation_failed_when_the_desktop_refuses(
         self, controller, tmp_path, monkeypatch
     ):

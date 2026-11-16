@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.131] - 2026-11-16
+
+- A nézőben (az eredeti Picasa szerkesztőjének megfelelőjében) a Másolás (Ctrl+C és a Szerkesztés menü) a megjelenített, szerkesztésekkel együtt kiszámolt képet teszi a vágólapra képadatként, így más programba közvetlenül képként beilleszthető; a könyvtárban a Másolás továbbra is a kijelölt képek fájljait adja (#7030).
+- A Tulajdonságok panel dátumsorának helyi menüje megnyitja a dátumállítót, a kulcsszósor a Címkék panelt kapcsolja (#7037).
+- A meglévő mappa helye szerkeszthető, az átnevezés pedig a Picasa névtisztítását követi (#7038).
+- Részleges mappatörléskor a hivatalos Picasa-figyelmeztetés jelenik meg, és a mappafa a lemezen maradt állapotot mutatja (#7039).
+
 ## [1.0.130] - 2026-11-16
 
 - A hálózati mappa egyszer szerepel, és az indulás nem vár a hálózatra (#7045, #7044) (#7044).

@@ -24,6 +24,8 @@ TOBB_MUNKA = QT_TRANSLATE_NOOP(KONTEXTUS, "%1 (+%2 more)")
 #: Szálnév (vagy a közvetlen hívóhelyek kulcsa) -> emberi munkanév.
 MUNKANEVEK: dict[str, str] = {
     "picasapy-sync-rescan": QT_TRANSLATE_NOOP(KONTEXTUS, "Scanning folders"),
+    # #7048: a hálózati mappa elérhetőségének háttérpróbája a figyelt mappa felvételekor
+    "picasapy-network-folder-validation": QT_TRANSLATE_NOOP(KONTEXTUS, "Scanning folders"),
     "picasapy-sync-dirty": QT_TRANSLATE_NOOP(KONTEXTUS, "Syncing changed folders"),
     "picasapy-indulasi-koltozes": QT_TRANSLATE_NOOP(KONTEXTUS, "Moving the library"),
     "picasapy-index-iro": QT_TRANSLATE_NOOP(KONTEXTUS, "Saving the index"),

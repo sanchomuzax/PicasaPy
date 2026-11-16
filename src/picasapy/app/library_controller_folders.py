@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import importlib
 import sys
+import threading
 
 import sqlite3
 from pathlib import Path
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QMetaObject, Qt, Slot
 from picasapy.index import (
     clear_removed_folders_under,
     delete_faces_in_folder,
@@ -16,7 +17,7 @@ from picasapy.index import (
     open_index,
     remove_root,
 )
-from picasapy.paths import normalize_path, path_key
+from picasapy.paths import is_network_path, normalize_path, path_key
 from picasapy.scanner import (
     LibraryWatcher,
     read_scan_list,
@@ -42,6 +43,11 @@ from .initial_scan import (
     migration_detected,
 )
 from .library_controller_activity import _FILETYPE_SNAPSHOT_UNSET
+
+
+def _is_directory(path: str | Path) -> bool:
+    """A mappalétezés lekérdezésének saját tesztfogantyúja."""
+    return Path(path).is_dir()
 
 
 def _legacy():
@@ -143,6 +149,53 @@ class _LibraryFoldersMixin:
             path_obj == Path(item) or path_obj.is_relative_to(item)
             for item in self._folder_manager_excludes_for_root(root)
         )
+
+    def _queue_network_folder_validation(self, path: str, action: str) -> None:
+        """A hálózati `is_dir()` háttérben fusson; a módosítás a GUI-szálra kerül."""
+        results = getattr(self, "_folder_validation_results", None)
+        if results is None:
+            results = []
+            self._folder_validation_results = results
+            self._folder_validation_lock = threading.Lock()
+
+        def worker() -> None:
+            try:
+                valid = _is_directory(path)
+            except OSError:
+                valid = False
+            with self._folder_validation_lock:
+                results.append((path, action, valid))
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_network_folder_validations",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        self._start_background(worker, name="picasapy-network-folder-validation")
+
+    @Slot()
+    def _apply_network_folder_validations(self) -> None:
+        """A hálózati ellenőrzések eredményeit a GUI-szálon átveszi."""
+        with self._folder_validation_lock:
+            results = tuple(self._folder_validation_results)
+            self._folder_validation_results.clear()
+        for path, action, valid in results:
+            self._finish_network_folder_validation(path, action, valid)
+
+    def _finish_network_folder_validation(
+        self, path: str, action: str, valid: bool
+    ) -> None:
+        """A lassú ellenőrzés eredményét és a hozzá tartozó műveletet átveszi."""
+        if not valid:
+            self.watchedFolderRejected.emit(path, "nem-mappa")
+            return
+        if action == "watch":
+            if self._find_root(path) is not None:
+                self.watchedFolderRejected.emit(path, "mar-figyelt")
+                return
+            self._accept_watched_folder(path)
+        elif action == "once" and self._find_root(path) is None:
+            self._scan_folder_once(path)
 
     @Slot(str, result=bool)
     def fileTypeEnabled(self, group: str) -> bool:  # noqa: N802 — QML-slot
@@ -281,9 +334,16 @@ class _LibraryFoldersMixin:
         if self._find_root(path) is not None:
             self.watchedFolderRejected.emit(path, "mar-figyelt")
             return
-        if not Path(path).is_dir():
+        if is_network_path(path):
+            self._queue_network_folder_validation(path, "watch")
+            return
+        if not _is_directory(path):
             self.watchedFolderRejected.emit(path, "nem-mappa")
             return
+        self._accept_watched_folder(path)
+
+    def _accept_watched_folder(self, path: str) -> None:
+        """Egy már validált mappa figyelése és háttér-indexelése."""
         # #1249: az újra felvett mappa (és alfái) sírkövei feloldódnak —
         # különben a beolvasás némán hagyná ki, és senki nem tudná, miért
         with open_index(self._db_path) as conn:
@@ -359,9 +419,16 @@ class _LibraryFoldersMixin:
             return
         if self._find_root(path) is not None:
             return  # értelmes no-op: a folyamatos figyelés lefedi
-        if not Path(path).is_dir():
+        if is_network_path(path):
+            self._queue_network_folder_validation(path, "once")
+            return
+        if not _is_directory(path):
             self.watchedFolderRejected.emit(path, "nem-mappa")
             return
+        self._scan_folder_once(path)
+
+    def _scan_folder_once(self, path: str) -> None:
+        """Egy már validált mappa egyszeri háttér-beolvasása."""
         # #1249: az egyszeri keresés is feloldja a sírkövet — a felhasználó
         # kifejezetten ezt a mappát kérte
         with open_index(self._db_path) as conn:

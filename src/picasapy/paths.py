@@ -53,9 +53,11 @@ from __future__ import annotations
 
 import ntpath
 import os
+import posixpath
 import sys
 from pathlib import Path, PureWindowsPath
 
+from picasapy import halozati_ut
 from picasapy.halozati_ut import halozati_gyoker
 
 
@@ -75,6 +77,12 @@ def normalize_path(path: str | Path) -> str:
     if windowsos_halozati_ut(text):
         # #7044/#7045: hálózati hívás nélkül, a megadott kis-nagybetűvel
         return str(PureWindowsPath(ntpath.normpath(text)))
+    if is_network_path(text):
+        # #7048: a leképezett meghajtó és a Linuxos SMB/GVFS mount sem érhet
+        # `resolve()`-hoz; a hálózati csatolást a helyi mount-tábla azonosítja.
+        if _platform().startswith("win"):
+            return str(PureWindowsPath(ntpath.normpath(text)))
+        return posixpath.normpath(os.path.abspath(text))
     return _feloldas(text)
 
 
@@ -116,6 +124,11 @@ def windowsos_halozati_ut(text: str) -> bool:
     Csak Windowson igaz: POSIX-on a `//mnt/nas` a `/mnt/nas`, nem hálózati
     útvonal, és a feloldásához nem szabad hozzányúlni."""
     return _platform().startswith("win") and halozati_gyoker(text) is not None
+
+
+def is_network_path(text: str | Path) -> bool:
+    """Hálózati útvonal-e UNC, leképezett meghajtó vagy Linuxos mount alapján."""
+    return halozati_ut.fajlrendszer_gyoker(str(text), platform=_platform()) is not None
 
 
 def _normcase(text: str) -> str:

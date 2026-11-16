@@ -7,9 +7,10 @@ import threading
 
 from PySide6.QtCore import QLocale, QMetaObject, Qt, Slot
 from pathlib import Path
-from picasapy.halozati_ut import halozati_gyoker
+from picasapy.halozati_ut import fajlrendszer_gyoker, halozati_gyoker
 from picasapy.ini import load_or_empty
 from picasapy.metadata import EMPTY_EXIF_DETAILS
+from picasapy.paths import _platform
 from picasapy.metadata.reader import _cache_exif_details, _cached_exif_details
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, formatting_properties
@@ -18,6 +19,18 @@ from .contact_names import central_contacts_path
 _log = logging.getLogger(__name__)
 _DESCRIPTION_RESULT_LOCK = threading.Lock()
 _EXIF_WORK_LOCK = threading.Lock()
+
+
+def _halozati_utvonal(path: str) -> bool:
+    """UNC, leképezett meghajtó vagy Linuxos hálózati mount alá esik-e."""
+    if fajlrendszer_gyoker(path) is not None:
+        return True
+    # POSIX-on a dupla kezdő perjel is helyi elérési út; a régi UNC-fogantyút
+    # csak azért tartjuk itt, hogy a meglévő Windows-hálózati tesztek cseréljék.
+    if _platform().startswith("linux") and path.startswith("//"):
+        return False
+    return halozati_gyoker(path) is not None
+
 
 class ContentInfoMixin:
     """Mappaleírások és a kijelölt képek QML-információi."""
@@ -34,7 +47,7 @@ class ContentInfoMixin:
         """Mappa-leírás a feed-fejlécnek (#64) — ini-olvasás kis cache-sel,
         hogy NAS-on se olvassunk fejléc-megjelenésenként fájlt."""
         if folder_path not in self._descriptions:
-            if halozati_gyoker(folder_path) is None:
+            if not _halozati_utvonal(folder_path):
                 self._descriptions[folder_path] = self._read_folder_description(
                     folder_path
                 )
@@ -45,7 +58,7 @@ class ContentInfoMixin:
 
     def _folder_description_for_open(self, folder_path: str) -> str:
         """Mappanyitáskor a helyi régi útvonalat, UNC-n az aszinkron cache-t használja."""
-        if halozati_gyoker(folder_path) is None:
+        if not _halozati_utvonal(folder_path):
             return self._read_folder_description(folder_path)
         return self.folderDescriptionOf(folder_path)
 
