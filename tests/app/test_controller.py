@@ -1762,6 +1762,17 @@ class TestSearchFiltersFolderPane:
         assert controller.searchQuery == "IMG"
         assert controller.searchResultCount == 3
 
+    def test_search_keeps_typed_text_and_matches_with_original_rules(
+        self, controller, two_folders
+    ):
+        # #7081: a nézet a BEÍRT szöveget őrzi (kisbetűsítés, szóhatár-bontás
+        # és a szélek tisztítása nélkül); az eredeti szabály csak az
+        # illesztéshez kell: ` ,./\` a széleken nem számít, a `_` elválasztó.
+        controller.search(" ,IMG_0100./ ")
+        assert controller.searchActive is True
+        assert controller.searchQuery == ",IMG_0100./"
+        assert controller.searchResultCount == 1
+
     def test_search_folder_keeps_total_count_not_subset(
         self, controller, two_folders
     ):

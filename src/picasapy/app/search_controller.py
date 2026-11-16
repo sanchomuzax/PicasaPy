@@ -30,8 +30,13 @@ class SearchMixin:
         Csillagozottakból a keresőmezőbe gépelve a sáv OTTMARADT a szűrő
         elavult darabszámával, miközben a rács már a találatokat mutatta.
         #4531: nem üres keresésnél a sáv újra bekapcsol, de a keresés SAJÁT
-        darabszámával — rajta ül a „Back to View All" gomb."""
-        query = _normalize_search_query(text)
+        darabszámával - rajta ül a „Back to View All" gomb.
+        #7081: a nézetállapot (`searchQuery`, a mentett album neve) a
+        BEÍRT szöveget őrzi; az eredeti tisztítás és szóhatár-bontás csak az
+        illesztéshez (`matching`) kell, és a `search_photos` maga is ezt
+        végzi."""
+        query = text.strip()
+        matching = _normalize_search_query(query)
         self._filter_active = False
         self._filter_status = ""
         started = time.perf_counter()
@@ -51,7 +56,7 @@ class SearchMixin:
                 # változatlan. A SORREND fontos: előbb a jelzés, hogy a
                 # felhasználó akkor is tájékoztatást kapjon, ha a keresés
                 # amúgy nulla találatot ad.
-                self._note_color_search(conn, query)
+                self._note_color_search(conn, matching)
                 records = search_photos(conn, query)
         if query:
             self._show_search_pane(records)
