@@ -4626,7 +4626,7 @@ kimenetből olvastam, a fájl nevét kiírtam.
   paramétereinek sorrendje a törzsből nem egészen egyértelmű (a `FUN_005ab210`
   harmadik argumentuma az `-1` állapotú ágban felülíródik); a hívóhelyek
   olvasata (417) szerint kulcs, majd érték. Korai kilépés: ha az ini-objektum
-  állapotbájtja `0`, és az érték null vagy üres, nem ír.
+  állapotjelző bájtja `0`, és az érték null vagy üres, nem ír.
   **A #7038 `[Picasa]/location` választása igazolt:** a hely-setter
   (`0x0044fa80`) a `0x004545c0`-n át ugyanezt a szakasz-írót hívja `location`
   kulccsal (417), a szakasz neve és a fájlnév literálként szerepel a `0x0045c0a0`
@@ -4743,7 +4743,7 @@ meg.
 rekordtípus-feltételen: (A) `0x00765d30` eseménykezelője közvetlenül teszteli a
 `+0x30` értékét és meghívja a `0x006db580`-at; (B) a `0x004a0720` rekordépítő
 és a `0x004b29d0`/`0x004b1c80` hívók előállítják az `1`/`5` típusokat. Az
-összkérdés azért feltételes, mert a látható sorok teljes típusleképezése, a
+teljes kérdés azért feltételes, mert a látható sorok teljes típusleképezése, a
 `+0x18` jelző jelentése és a többi sor dupla kattintás utáni végállapota nem
 igazolt.
 
@@ -5110,7 +5110,7 @@ olvasta.
   bejárás az összes olyan elemet gyűjti, amelynek a `+0x5a` bájtja nulla (a
   `+0x5d` ekkor nem számít). Visszatérés: `0`, memóriahibánál `4`. A `+0x5d`
   (kijelölt) és a `+0x5a` (rejtett) jelentés a fejléc olvasata, a kimenet csak
-  a bájtvizsgálatot mutatja. A kimenetben a kattintások sorrendjét tároló lista,
+  a bájt vizsgálatát mutatja. A kimenetben a kattintások sorrendjét tároló lista,
   időbélyeg vagy sorszám sehol nem szerepel: **a kattintási sorrend ebből az
   útból nem származtatható.**
 
