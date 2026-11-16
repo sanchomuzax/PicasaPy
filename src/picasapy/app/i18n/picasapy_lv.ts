@@ -19200,6 +19200,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>Ir jāatlasa attēli, kas jāpagriež.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>Daži attēli netika pārveidoti faila veida dēļ. Ņemiet vērā, ka šos efektus nevar lietot filmās.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>

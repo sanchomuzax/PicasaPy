@@ -19248,6 +19248,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>يجب أن توجد صور محددة للتدوير.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>لم يتم تعديل بعض الصور بسبب نوع الملف.  لاحظ أنه لا يمكن تطبيق التأثيرات على الأفلام.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>

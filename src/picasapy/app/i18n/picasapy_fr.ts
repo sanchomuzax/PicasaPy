@@ -19169,6 +19169,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>Vous devez sélectionner les images à faire pivoter.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>Certaines images n'ont pas été modifiées en raison de leur type de fichier. Notez que les effets ne peuvent pas être appliqués aux vidéos.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>

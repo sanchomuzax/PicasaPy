@@ -19169,6 +19169,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>De billeder, der skal roteres, skal være markerede.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>Nogle billeder blev ikke ændret på grund af filtypen. Bemærk, at effekter ikke kan anvendes til film.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>

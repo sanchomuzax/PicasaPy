@@ -19184,6 +19184,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>Per eseguire la rotazione devono essere selezionate delle immagini.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>Impossibile modificare una o più immagini a causa del tipo di file. Tieni presente che gli effetti non possono essere applicati ai filmati.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>

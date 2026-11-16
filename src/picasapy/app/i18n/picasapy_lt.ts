@@ -19200,6 +19200,12 @@ picasapy-origin-key: stringres:IDS_ROT_TYPEFAILED</extracomment>
 picasapy-origin-key: stringres:IDS_MUST_SELECT_TO_ROT</extracomment>
             <translation>Pasirinkite nuotraukas, kurias norite pasukti.</translation>
         </message>
+        <message>
+            <source>Some images were not modified because of the file type.  Note that effects cannot be applied to movies.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SOME_EDITS_FAILED_TYPE</extracomment>
+            <translation>Kai kurie vaizdai nebuvo pakeisti dėl failo tipo. Atminkite, kad filmams negalite taikyti efektų.</translation>
+        </message>
     </context>
     <context>
         <name>ScreenCapture</name>
