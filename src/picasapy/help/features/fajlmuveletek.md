@@ -257,9 +257,11 @@ A helyi menüben ezen kívül:
 
 ## Mappák
 
-- **Mappa ▸ Áthelyezés…** — az egész mappa átköltöztetése. A célt a
-  **Mappa tallózása** ablakban választod ki; ez a mappa jelenlegi
-  szülőmappájából indul, a gombjai **OK** és **Mégse**. Ha az áthelyezés menet
+- **Mappa ▸ Áthelyezés…** - az egész mappa átköltöztetése. A célt az
+  ablakban választod ki, amelynek a címe „Mappa áthelyezése ide:”, utána a
+  mappa neve; ez a legutóbb választott célmappából indul (első alkalommal
+  a mappa jelenlegi szülőmappájából), a gombjai **OK** és **Mégse**. Ha az
+  áthelyezés menet
   közben elakad (például egy olvashatatlan almappánál), a mappa a régi
   helyén marad, és a célban **nem marad félkész másolat**. Egyetlen olyan
   pillanat van, ami már nem fordítható vissza — ott a hibaüzenet megmondja,

@@ -171,7 +171,7 @@ fájljában van.
   elérési út másolása** csak egyetlen kijelölt képnél látszik.
 - A **Mappa ▸ Eltávolítás a Picasából…** kérdése a menüből indítva is
   megnevezi a mappát, és Picasa-logó áll előtte. A mappa áthelyezésekor
-  a cél a **Mappa tallózása** ablakban választható. Lásd
+  a cél egy mappaválasztó ablakban választható. Lásd
   [Fájlműveletek](features/fajlmuveletek.md).
 - A **Fájl ▸ Másolat mentése** több kijelölt képnél csak a kiemelt
   képről készít másolatot. Lásd [Mentés](features/mentes.md).
