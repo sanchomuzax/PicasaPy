@@ -14,6 +14,41 @@ from .hidden_scope import visible_folder_sql
 from .search_color import parse_color_terms
 
 _PATH_SEP = re.compile(r"[/\\]")
+_SEARCH_EDGE_CHARS = " ,./\\"
+_SEARCH_TAG_PREFIXES = ("tag:", "címke:")
+
+
+def _normalize_search_query(query: str) -> str:
+    """A Picasa keresőszövegének tisztítása és szóhatárokra bontása (#7081).
+
+    Az ASCII betűk és számjegyek, a kettőspont, illetve minden nem-ASCII
+    karakter egy szó része. A többi ASCII karakter, így a pont és az
+    aláhúzás is, szóelválasztó. Az eredmény egy szóközökkel összefűzött
+    szólista, amelyet a keresés továbbra is egyetlen FTS5-frázisként használ.
+    """
+    cleaned = (query or "").strip(_SEARCH_EDGE_CHARS).lower()
+    prefix = next(
+        (item for item in _SEARCH_TAG_PREFIXES if cleaned.startswith(item)),
+        None,
+    )
+    if prefix is not None:
+        cleaned = cleaned[len(prefix) :].strip(_SEARCH_EDGE_CHARS)
+
+    words: list[str] = []
+    current: list[str] = []
+    for character in cleaned:
+        if (
+            character == ":"
+            or ord(character) > 0x7F
+            or (character.isascii() and character.isalnum())
+        ):
+            current.append(character)
+        elif current:
+            words.append("".join(current))
+            current.clear()
+    if current:
+        words.append("".join(current))
+    return " ".join(words)
 
 # A hatásos caption/keywords: JPEG-nél az IPTC (caption_file) az elsődleges,
 # egyébként a .picasa.ini értéke (Picasa-viselkedés).
@@ -468,8 +503,8 @@ def search_photos(
     színtokenek és az idézőjel-védés is duplikálódna, és ha elcsúsznának, a
     nézet NÉMÁN hibás tagságot mutatna.
     """
-    remainder, color_tokens = parse_color_terms(query)
-    remainder = remainder.strip()
+    normalized_query = _normalize_search_query(query)
+    remainder, color_tokens = parse_color_terms(normalized_query)
     if not remainder and not color_tokens:
         return ()
     if remainder:
@@ -498,12 +533,16 @@ def _text_search(
     is EGY egységként áll, a szűkítés pedig ÉS-sel jön rá. Zárójel nélkül a
     mappanév-ág kibújna a szűkítés alól.
     """
+    # #7081: a szóhatárokat normalizáljuk, de a meglévő keresést egyetlen
+    # idézett frázisként tartjuk meg. Az AND/OR, a mínuszos kizárás és a
+    # címke szerinti mezőszűrés a nyitott 0x0043F9A0/0x0043C410 mérésig nem
+    # része ennek a lekérdezésnek.
     phrase = '"' + query.replace('"', '""') + '"'
-    folded = query.casefold()
+    folded = query.lower()
     folder_ids = [
         row["id"]
         for row in conn.execute("SELECT id, path FROM folders")
-        if folded in _PATH_SEP.split(row["path"])[-1].casefold()
+        if folded in _normalize_search_query(_PATH_SEP.split(row["path"])[-1])
     ]
     placeholders = ",".join("?" * len(folder_ids))
     folder_clause = f" OR p.folder_id IN ({placeholders})" if folder_ids else ""

@@ -64,7 +64,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
 
-from support.qt_wait import wait_for_photo_op
+from support.qt_wait import varj_feltetelre, wait_for_photo_op
 
 KULCS = "zzzkulcs"
 CIMKE = "zzzcimke"
@@ -88,7 +88,10 @@ def _keress(window, qt_app, szoveg: str) -> None:
     QMetaObject.invokeMethod(
         field, "textEdited", Qt.ConnectionType.DirectConnection
     )
-    qt_app.processEvents()
+    timer = _child(window, "searchDebounceTimer")
+    assert varj_feltetelre(
+        qt_app, lambda: timer.property("running") is False, 3.0
+    ), "a késleltetett keresés időzítője nem zárult le"
 
 
 def _torold_a_keresest(window, qt_app) -> None:
