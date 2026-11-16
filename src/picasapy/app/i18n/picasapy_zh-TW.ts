@@ -10868,11 +10868,17 @@ picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/previousbutton)</ext
             <translation>上一張相片</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="100" />
-            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="101" />
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="110" />
             <source>Play Slideshow</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>播放投影片</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="111" />
+            <source>Watch a slideshow of these photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/sbutton)</extracomment>
+            <translation>使用投影播放來觀賞這些相片</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="116" />
@@ -11009,7 +11015,13 @@ picasapy-origin-key: tooltips:Label(editpanel/sbutton)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="200" />
-            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="247" />
+            <source>Watch a slideshow of these photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/sbutton)</extracomment>
+            <translation>使用投影播放來觀賞這些相片</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="252" />
             <source>Play Slideshow</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>播放投影片</translation>
