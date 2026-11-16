@@ -5833,6 +5833,8 @@ létrehozási callback nem hív `showAlbum`-ot.
 album aktív, annak rácsa nyílik meg; Cancel vagy íráshiba után a jelenlegi
 album és kijelölés marad.
 
+**Hívói kiegészítés a 2. ponthoz (2026-11-16):** a `0x005eb8d1 call 0x004af790` visszatérését (ha nem `-1`) a `0x005eb8e1` a bal hasáb nézetmodelljének célsorába írja (`[+0xeb0]+0x30c`; ugyanezt a mezőt állítja a „következő album” léptetés, `0x00578a24`), a job-250 felvételen pedig a 0 tagú új album látszik. Bizonyítottsági fok: erős (#7076).
+
 #### 3. A normál albumtörlés párbeszédében legyen Mégse gomb, az kapjon fókuszt
 
 **Eredeti:** a `0x005ed240` a `0x005c9930` → `0x005fd670` közös
@@ -5851,6 +5853,8 @@ beállításkulcsának igazolása után vedd fel.
 **Kész, ha:** megnyitáskor Mégse a fókusz; Mégse/No bezárás nem változtatja
 az albumot; csak a Delete Album jóváhagyása hívja a törlőt. Az albumági
 „Don't ask again” beállítás a külön igazolásig nem változik.
+
+**Helyesbítés (hívói, 2026-11-16): ez a jegyleírás ELVETVE.** Az eredeti Picasa 3.9 futtatott felvételén (picasa-colab-jobs job-329, 18. és 20. képkocka; #6283) az album törlésének ablakában pontosan két gomb van, `Delete Album` és `No`, a fókusz a `No`-n, Enterre az album megmarad, jelölőnégyzet nincs. A közös `confirm.fen` három gombjából tett statikus következtetés erre az ágra nem áll; a mai viselkedés egyezik az eredetivel (#7077 lezárva, nem valósítjuk meg).
 
 ### Új kutatási jegyjavaslatok
 
