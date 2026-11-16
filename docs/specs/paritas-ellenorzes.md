@@ -6336,12 +6336,6 @@ Lezárva (a bizonyítékkal): a belépési pontok (1. szakasz); az eseményút �
 - **A `CThumbUI::searchmatch` (` (%d matches)`) és a `CThumUI::searchsizekey` (`size<`, magyarul `méret<`) kulcsok** a szövegtárban vannak, de az EXE-ben hivatkozó literál nincs (nyers bájtkeresés a teljes PE-n, a prefixszel egyező találatok a `searchmatchstr` és `searchmatchnum` voltak): az eredeti ezeket nem használja. Egy `méret<` típusú keresés tehát nem bizonyított.
 - **Elvetett értelmezés:** a `searchoptions/moviesearch` (`0x005d4a90`, `Preferences\SupportMovies`) és a `searchcontainer/moviesearch` két külön elem; a kapcsolat köztük nincs bizonyítva, ezért a filmszűrő láthatóságát ez a lap nem állítja a `SupportMovies`-hoz.
 
-### Módosított fájlok
-
-- `docs/specs/paritas-ellenorzes.md`: a meglévő #7072 szakasz frissítése, tíz nyitott eltéréssel (E1-E3, E5-E11), kilenc fejlesztői jegytörzzsel, öt célzott Ghidra-kérdéssel és a futásidejű mérések nyitott listájával.
-
-- `docs/specs/paritas-ellenorzes.md`: új #7072 szakasz a keresés belépő- és kilépőútjaival, a szóindex mért tartalmával, a gépelés és az eredménysáv viselkedésével, tíz eltéréssel (E1-E10, ebből az E10 feltételes), hat javasolt jegyleírással, nyolc nevesített Ghidra-körrel és egy Colab-feladattal.
-
 ## #7082: A Mappakezelő teljes folyamata az eredeti Picasával összevetve
 
 Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
