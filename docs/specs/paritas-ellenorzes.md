@@ -4820,8 +4820,8 @@ tudatos, működő többlet, nem teendő; a komment (`ImportSourcePickerPanel.qm
 | Átnevezési hiba | `...renaming PhotoLabTemp. Cancelling Import.` és `...renaming '%s'. Cancelling Import.` (`iCAcquireScanner::error2`) | Nincs ilyen lépés. |
 | Eszköz hibakódok | `0x0051e4c0` (hívó `0x00527470`): 6 = "Unable to connect to the device..."; 7 = "The selected device is busy..."; minden más = `eFileErr` ("...the source is unavailable or the destination is full or read only."), szöveg nélkül `\n(%d)` kóddal; üzenetablakban. | Nincs; `sourceScanFailed` az üres forrásra, `importFailedDetails` a fájlokra. |
 | Eszköz eltűnése import közben | `iCAcquireController::NotifyDeviceGone`: `The device '%s' has unexpectedly disappeared while attempting to import from it.` (`0x0051d9c0`, vtable `0x00c892dc`) | Nincs külön ág; a fájlhibák jelzik. |
-| Elfogyott hely, írásvédett cél | Az `eFileErr` szövege nevezi meg (utólagos jelzés). **Előzetes szabad-hely ellenőrzés az importáló sávban nincs bizonyítva:** a `Disk Space Warning` és `Sorry, there is not enough free disk space to safely download pictures.` egyetlen hivatkozója a `0x005d2ca0`, amit a `0x9dfa` (Google Fotók import) hív. A `GetDiskFreeSpaceExA` burkolóinak hívóit nem követtem. | A források stat méretét összeadja, és a cél eszköz `disk_usage().free` értékével veti össze (`fileops/diskspace.py:30-55`; `import_source_controller.py:392-408`). Másolási írási hiba fájlonként fogódik meg és a köteg folytatódik. |
-| Forrásfájl törlési OSError (pl. írásvédett vagy kieső megosztás) | A Picasa eredeti futásidejű kimenete nyitott. | A másolás utáni `_remove_source_file` közvetlen `unlink`-ot hív, erre nincs helyi `OSError`-kezelő (`import_source_controller_import.py:41-86`, `import_source_controller.py:441-460`). A háttérworker eltárolja és naplózza a kivételt, de nem küld `importFinished`-et (`worker_thread.py:318-361`); a QML csak e jelzésre állítja vissza az `importing` állapotot (`ImportSourceDialog.qml:274-297`). Az ablak így „dolgozik” állapotban maradhat. |
+| Elfogyott hely, írásvédett cél | Az `eFileErr` szövege nevezi meg (utólagos jelzés). **Előzetes szabad-hely ellenőrzés az importáló sávban nincs bizonyítva:** a `Disk Space Warning` és `Sorry, there is not enough free disk space to safely download pictures.` egyetlen hivatkozója a `0x005d2ca0`, amit a `0x9dfa` (Google Fotók import) hív. A `GetDiskFreeSpaceExA` burkolóinak hívóit nem követtem. | A források fájlméretét összeadja, és a cél eszköz `disk_usage().free` értékével veti össze (`fileops/diskspace.py:30-55`; `import_source_controller.py:392-408`). Másolási írási hiba fájlonként fogódik meg és a köteg folytatódik. |
+| Forrásfájl törlési OSError (pl. írásvédett vagy kieső megosztás) | A Picasa eredeti futásidejű kimenete nyitott. | A másolás utáni `_remove_source_file` közvetlen `unlink`-ot hív, erre nincs helyi `OSError`-kezelő (`import_source_controller_import.py:41-86`, `import_source_controller.py:441-460`). A háttérszál eltárolja és naplózza a kivételt, de nem küld `importFinished`-et (`worker_thread.py:318-361`); a QML csak e jelzésre állítja vissza az `importing` állapotot (`ImportSourceDialog.qml:274-297`). Az ablak így „dolgozik” állapotban maradhat. |
 | Megszakítás | Az `acancelbutton` (`0x0051f070` → `0x00523ac0(panel,1)` és `0x00523a00`) a panelt zárja és a listát üríti; Esc ugyanez. Hogy import közben a másolást állítja-e le: nyitott. | Nincs megszakítás: a `Close` csak elrejti az ablakot, a háttérszál fut tovább (`ImportSourceDestinationPanel.qml:262-266`, `import_source_controller.py:392-465`). |
 | Hálózati forrás | A meghajtó-felsorolás a 4-es (hálózati) típust nem veszi fel; a `Folder on Disk` tallózóval bármely út megadható. A hálózati másolás tényleges futásidejű eredménye nincs mérve. | A tallózó tetszőleges útvonalat elfogad; a forráslista platformonként szűrt (`import_source_controller_sources.py:77-165`; `ImportSourcePickerPanel.qml:73-96`). A hálózati I/O eredményéről nincs mérés, paritást nem állítok. |
 | Visszavonás | Az importnak nincs bizonyított visszavonási útja; a kártyatörlés kifejezetten "nem vonható vissza" (`confirmRemoveCopied::message`). Az Edit ▸ Undo verem tartalmát nem vizsgáltam. | Nincs visszavonás. |
@@ -4857,7 +4857,7 @@ kulcs elnyomása esetén megkérdezés nélkül `confirmed()`-et ad,
 figyelmeztetés véglegesen eltűnhet, és az import a kártyát megkérdezés
 nélkül kiüríti.
 
-### 2026-11-17-i utánellenőrzés
+### 2026-11-17-i ellenőrző kör
 
 **Mérési kapu.** A kért `grep -rn "job-[0-9]" docs/specs/` és a
 `~/.local/share/picasapy-meroadat/meroadat.tar` tartalomjegyzékének ellenőrzése
@@ -5009,7 +5009,7 @@ hívását külön, fájl:sor szinten ellenőriztem.
   megerősítő ablak; fájlhiba, megtelt/írásvédett cél, eltűnő vagy hálózati
   forrás; Esc/Cancel futás közben; befejezés utáni bal hasáb, rács,
   kijelölés és Undo. Fényképezd a kezdő/köztes/végállapotot, és minden
-  lemez/index-diffet külön ments. A helyi meroadatban ilyen futás nincs.
+  lemez/index-diffet külön ments. A helyi mérési adatokban ilyen futás nincs.
 - **NINCS MEG:** a `Fájl ▸ Import From...` menüpont pontos tiltási/engedélyezési
   szabálya minden főablak-állapotban; a `0x0056e1c0` nem igazolja és nem is
   cáfolja a feltétel nélküli engedélyezést. Út: célzott futtatott menüpróba.
