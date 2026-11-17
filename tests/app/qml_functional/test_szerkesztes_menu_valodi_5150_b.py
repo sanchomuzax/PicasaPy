@@ -26,6 +26,10 @@ import pytest
 from conftest import _build_qml_app
 from picasapy.app.fileops_controller import vagolap_fajlok
 from support.qt_wait import wait_for_photo_op
+from tests.app.qml_functional._paste_megerosites_7112 import (
+    jovahagy_a_beillesztest,
+    megerosito_ablak,
+)
 from tests.app.qml_functional._felsomenupontok_helpers_4329 import _kattints
 from tests.app.qml_functional._fomenu_4420_menu import _megnyit, _menupont
 from tests.app.qml_functional.test_fajl_szerkesztes_menu_valodi_5150 import (
@@ -167,6 +171,14 @@ class TestFajlVagolap:
         ), "a célmappa nem lett aktív"
 
         _szerkesztes_tetelt_kattint(window, qt_app, "menuEditPaste")
+
+        # #7112: másik mappába a Beillesztés előbb megerősítést kér, és
+        # jóváhagyásig semmi nem másolódik.
+        megerosito_ablak(window, qt_app)
+        assert not (cel / _KEPEK[0]).exists(), (
+            "a megerősítés előtt már másolt a Beillesztés"
+        )
+        jovahagy_a_beillesztest(window, qt_app, "copy")
 
         assert _varj(qt_app, lambda: (cel / _KEPEK[0]).exists()), (
             "a Beillesztés nem másolta a képet a kiválasztott mappába"
