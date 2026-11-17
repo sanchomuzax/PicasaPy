@@ -14875,6 +14875,27 @@ picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extrac
             <translation>Introduza o nome da nova pasta ou escolha uma pasta existente para continuar</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="141" />
+            <source>Click Import All or Import Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text2(acquirepanel/importtiptext)</extracomment>
+            <translation>Clique em Importar tudo ou em Importar selecção</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="145" />
+            <source>Import into folder with today's date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text4(acquirepanel/importtiptext)</extracomment>
+            <translation>Importar para pasta com a data de hoje</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="146" />
+            <source>Import into separate folders for each date taken</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text3(acquirepanel/importtiptext)</extracomment>
+            <translation>Importar para pastas separadas consoante as datas em que foram tiradas</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="111" />
             <source>Enter Folder Title</source>
             <extracomment>picasapy-origin: picasa
@@ -14937,6 +14958,20 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
             <translation>Importar</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="262" />
+            <source>Import All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/anowbutton)</extracomment>
+            <translation>Importar tudo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="270" />
+            <source>Import Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/import_selected)</extracomment>
+            <translation>Importação selecionada</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="264" />

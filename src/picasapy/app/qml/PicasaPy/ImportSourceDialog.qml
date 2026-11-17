@@ -113,6 +113,8 @@ Window {
     // Az eredeti previous/next gombok az előnézeti képet léptetik. A
     // bélyegkép-rács megmarad; a kijelölt kép kiemelése és görgetése követi.
     property int selectedPreviewIndex: 0
+    // A rácsbeli importkijelölés külön él az előnézeti képtől.
+    property var selectedPreviewPaths: []
     readonly property int duplicateCount: {
         var count = 0
         for (var i = 0; i < importSourceWindow.previewItems.length; i++) {
@@ -127,8 +129,33 @@ Window {
         }
         return count
     }
+    readonly property int selectedPreviewCount: {
+        var count = 0
+        for (var i = 0; i < importSourceWindow.previewItems.length; i++) {
+            if (importSourceWindow.isPreviewSelected(
+                    importSourceWindow.previewItems[i].path)) count++
+        }
+        return count
+    }
+    readonly property int selectedIncludedCount: {
+        var count = 0
+        for (var j = 0; j < importSourceWindow.previewItems.length; j++) {
+            var item = importSourceWindow.previewItems[j]
+            if (!item.excluded
+                    && importSourceWindow.isPreviewSelected(item.path)) count++
+        }
+        return count
+    }
+    readonly property bool canStartImport:
+        destFolder.length > 0
+        && !importing
+        && (namingMode !== "manual" || manualNameValid)
+    readonly property bool canImportAll: includedCount > 0 && canStartImport
+    readonly property bool canImportSelected:
+        selectedIncludedCount > 0 && canStartImport
 
     property bool importing: false
+    property bool pendingSelectedOnly: false
     property int importDone: 0
     property int importTotal: 0
     // #441: a másolás sebessége bájt/mp-ben (0 = még nem mérhető)
@@ -194,6 +221,31 @@ Window {
         previewPanel.positionAt(nextIndex)
     }
 
+    function isPreviewSelected(path) {
+        return importSourceWindow.selectedPreviewPaths.indexOf(path) >= 0
+    }
+
+    function togglePreviewSelection(path, index) {
+        var selected = importSourceWindow.selectedPreviewPaths.slice()
+        var current = selected.indexOf(path)
+        if (current >= 0) selected.splice(current, 1)
+        else selected.push(path)
+        importSourceWindow.selectedPreviewPaths = selected
+        importSourceWindow.selectedPreviewIndex = index
+        previewPanel.positionAt(index)
+    }
+
+    function selectedImportPaths() {
+        var selected = []
+        for (var i = 0; i < importSourceWindow.previewItems.length; i++) {
+            var item = importSourceWindow.previewItems[i]
+            if (!item.excluded
+                    && importSourceWindow.isPreviewSelected(item.path))
+                selected.push(item.path)
+        }
+        return selected
+    }
+
     // a forrás (rekurzív) beolvasása háttérszálon — a FolderDialog
     // elfogadásakor és tesztből is hívható (a DedupDialog `scan()` mintája)
     function scanCurrentSource() {
@@ -227,21 +279,37 @@ Window {
     // lent, `requestImport`) UTÁN hívódik.
     function runImportNow() {
         importSourceWindow.lastError = ""
-        importSourceController.runImport(
-            importSourceWindow.destFolder,
-            importSourceWindow.namingMode,
-            importSourceWindow.manualFolderName,
-            importSourceWindow.afterCopying)
+        if (importSourceWindow.pendingSelectedOnly) {
+            importSourceController.runSelectedImport(
+                importSourceWindow.destFolder,
+                importSourceWindow.namingMode,
+                importSourceWindow.manualFolderName,
+                importSourceWindow.afterCopying,
+                importSourceWindow.selectedImportPaths())
+        } else {
+            importSourceController.runImport(
+                importSourceWindow.destFolder,
+                importSourceWindow.namingMode,
+                importSourceWindow.manualFolderName,
+                importSourceWindow.afterCopying)
+        }
     }
 
     // #441: "After Copying:" — kétlépcsős, egyre erősebb megerősítés a
     // törléssel járó két állapotnál; "Leave card alone"-nál nincs kérdés.
     function requestImport() {
-        if (importSourceWindow.destFolder.length === 0) return
-        if (importSourceWindow.includedCount === 0) return
-        // #4595: kézi módban cím nélkül nincs import (és nincs megerősítés sem)
-        if (importSourceWindow.namingMode === "manual"
-                && !importSourceWindow.manualNameValid) return
+        importSourceWindow.requestImportMode(false)
+    }
+
+    function requestSelectedImport() {
+        importSourceWindow.requestImportMode(true)
+    }
+
+    function requestImportMode(selectedOnly) {
+        var onlySelected = selectedOnly === true
+        if (onlySelected && !importSourceWindow.canImportSelected) return
+        if (!onlySelected && !importSourceWindow.canImportAll) return
+        importSourceWindow.pendingSelectedOnly = onlySelected
         if (importSourceWindow.afterCopying === "leave") {
             importSourceWindow.runImportNow()
             return
@@ -253,6 +321,13 @@ Window {
             + "card? THIS CANNOT BE UNDONE."))
     }
 
+    function activateDefaultImport() {
+        if (importSourceWindow.selectedPreviewCount <= 1)
+            importSourceWindow.requestImport()
+        else
+            importSourceWindow.requestSelectedImport()
+    }
+
     Connections {
         target: typeof importSourceController !== "undefined"
                 ? importSourceController : null
@@ -260,6 +335,7 @@ Window {
             importSourceWindow.previewItems = items
             importSourceWindow.previewCount = count
             importSourceWindow.selectedPreviewIndex = 0
+            importSourceWindow.selectedPreviewPaths = []
             importSourceWindow.scanning = false
         }
         function onSourceScanFailed(message) {
@@ -289,9 +365,32 @@ Window {
         }
         function onImportFinished(copied, failed) {
             importSourceWindow.importing = false
+            importSourceWindow.pendingSelectedOnly = false
             importSourceWindow.lastCopiedCount = copied
             importSourceWindow.lastFailedCount = failed
         }
+    }
+
+    Shortcut {
+        objectName: "importSourceReturnShortcut"
+        sequence: "Return"
+        context: Qt.WindowShortcut
+        enabled: importSourceWindow.visible
+        onActivated: importSourceWindow.activateDefaultImport()
+    }
+    Shortcut {
+        objectName: "importSourceEnterShortcut"
+        sequence: "Enter"
+        context: Qt.WindowShortcut
+        enabled: importSourceWindow.visible
+        onActivated: importSourceWindow.activateDefaultImport()
+    }
+    Shortcut {
+        objectName: "importSourceEscapeShortcut"
+        sequence: "Escape"
+        context: Qt.WindowShortcut
+        enabled: importSourceWindow.visible
+        onActivated: importSourceWindow.visible = false
     }
 
     ColumnLayout {

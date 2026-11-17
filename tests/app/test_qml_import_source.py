@@ -418,7 +418,9 @@ class TestRunImport:
         assert field.property("text") == "Nyaralas"
         start_button = _child(window, "importSourceStartButton")
         assert start_button.property("enabled") is True
-        assert _child(window, "importSourceManualTipText").property("visible") is False
+        tip = _child(window, "importSourceManualTipText")
+        assert tip.property("visible") is True
+        assert tip.property("text") == "Click Import All or Import Selected"
 
         loop = _quit_on(_import_source_controller(engine).importFinished)
         _click_center(dialog, start_button, qt_app)

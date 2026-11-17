@@ -31,15 +31,24 @@ Rectangle {
             width: 72
             height: 72
             color: Theme.thumbCard
-            border.color: thumbFrame.index
-                          === hostWindow.selectedPreviewIndex
+            border.color: hostWindow.isPreviewSelected(
+                              thumbFrame.modelData.path)
+                          || thumbFrame.index === hostWindow.selectedPreviewIndex
                           ? Theme.selectionBlue
                           : (thumbFrame.modelData.duplicate
                              ? Theme.brandRed : Theme.thumbBorder)
-            border.width: thumbFrame.index
-                          === hostWindow.selectedPreviewIndex
+            border.width: hostWindow.isPreviewSelected(
+                              thumbFrame.modelData.path)
+                          || thumbFrame.index === hostWindow.selectedPreviewIndex
                           || thumbFrame.modelData.duplicate ? 2 : 1
             opacity: thumbFrame.modelData.excluded ? 0.4 : 1.0
+
+            MouseArea {
+                objectName: "importSourceSelect:" + thumbFrame.index
+                anchors.fill: parent
+                onClicked: hostWindow.togglePreviewSelection(
+                    thumbFrame.modelData.path, thumbFrame.index)
+            }
 
             Image {
                 anchors.fill: parent
@@ -57,6 +66,19 @@ Rectangle {
                 // #441: az előnézet a beállított forgatással mutat —
                 // az eredetiben is a MÁR kiegyenesített kép látszott
                 rotation: 90 * (thumbFrame.modelData.rotation || 0)
+            }
+
+            Text {
+                objectName: "importSourceSelectedMark:" + thumbFrame.index
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.margins: 3
+                visible: hostWindow.isPreviewSelected(
+                             thumbFrame.modelData.path)
+                text: "✓"
+                color: Theme.picasaGreen
+                font.pixelSize: Theme.fontSize
+                font.bold: true
             }
 
             // #441: forgatás és csillagozás MÁR AZ IMPORT ELŐTT — az

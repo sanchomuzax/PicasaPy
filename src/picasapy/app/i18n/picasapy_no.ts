@@ -14875,6 +14875,27 @@ picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extrac
             <translation>Angi en ny mappetittel eller velg en eksisterende mappe for å fortsette</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="141" />
+            <source>Click Import All or Import Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text2(acquirepanel/importtiptext)</extracomment>
+            <translation>Klikk på Importér alle eller Importer valgte</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="145" />
+            <source>Import into folder with today's date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text4(acquirepanel/importtiptext)</extracomment>
+            <translation>Importer til mappe med dagens dato</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="146" />
+            <source>Import into separate folders for each date taken</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text3(acquirepanel/importtiptext)</extracomment>
+            <translation>Importér til separate mapper for datoen da de ble tatt</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="111" />
             <source>Enter Folder Title</source>
             <extracomment>picasapy-origin: picasa
@@ -14937,6 +14958,20 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
             <translation>Importer</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="262" />
+            <source>Import All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/anowbutton)</extracomment>
+            <translation>Importer alle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="270" />
+            <source>Import Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/import_selected)</extracomment>
+            <translation>Importer markerte</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="264" />

@@ -18,9 +18,9 @@ _COMPONENTS = (
     "ImportSourcePreview",
     "ImportSourceDestinationPanel",
 )
-_BASELINE_QSTR_COUNT = 52
+_BASELINE_QSTR_COUNT = 56
 _BASELINE_QSTR_SHA256 = (
-    "5212e2af231a128f36745603810696b8cffc8e775cfe7e55004f15ec6f8096a4"
+    "abd104426f5847ddbbe7b38f93aa1c51504201e4a470411d64c5ffd4c6bb980e"
 )
 _BASELINE_OBJECT_NAMES = {
     "importRotateLeft:",

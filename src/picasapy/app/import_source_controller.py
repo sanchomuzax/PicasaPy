@@ -351,6 +351,33 @@ class ImportSourceController(
         manual_name: str,
         after_copying: str,
     ) -> None:
+        """Az összes beválogatott, nem kizárt jelölt importálása."""
+        self._run_import(
+            dest_folder, naming_mode, manual_name, after_copying, None
+        )
+
+    @Slot(str, str, str, str, "QVariantList")
+    def runSelectedImport(
+        self,
+        dest_folder: str,
+        naming_mode: str,
+        manual_name: str,
+        after_copying: str,
+        selected_paths: list[str],
+    ) -> None:  # noqa: N802 — QML-stílus
+        """A kijelölt, beválogatott és nem kizárt jelöltek importálása."""
+        self._run_import(
+            dest_folder, naming_mode, manual_name, after_copying, selected_paths
+        )
+
+    def _run_import(
+        self,
+        dest_folder: str,
+        naming_mode: str,
+        manual_name: str,
+        after_copying: str,
+        selected_paths: list[str] | None,
+    ) -> None:
         """A legutóbb szkennelt, BEVÁLOGATOTT (nem kizárt) jelöltek importja
         `dest_folder` alá, a `naming_mode` (#441 HÁROM módja: `NAMING_MANUAL`
         / `NAMING_BY_DATE` / `NAMING_TODAY`) szerint. `after_copying` (#441
@@ -373,10 +400,15 @@ class ImportSourceController(
         if naming_mode == NAMING_MANUAL and not is_valid_folder_name(manual_name):
             return
         all_candidates = self._candidates
+        selected = (
+            None if selected_paths is None
+            else {str(path) for path in selected_paths}
+        )
         included = tuple(
             candidate
             for candidate in all_candidates
             if str(candidate.path) not in self._excluded_paths
+            and (selected is None or str(candidate.path) in selected)
         )
         dest_text = to_local_path(dest_folder)
         total = len(included)

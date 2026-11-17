@@ -133,10 +133,18 @@ ColumnLayout {
             wrapMode: Text.WordWrap
             font.pixelSize: Theme.fontSize
             color: Theme.ink
-            visible: hostWindow.namingMode === "manual"
-                     && hostWindow.manualFolderName.trim().length === 0
-            //: #4595: `acquirepanel/importtiptext` (Text1)
-            text: qsTr("Enter new folder title or choose existing folder to continue")
+            visible: true
+            text: {
+                if (hostWindow.namingMode === "manual") {
+                    //: #7177: `acquirepanel_text` Text1 és Text2
+                    return hostWindow.canImportAll
+                        ? qsTr("Click Import All or Import Selected")
+                        : qsTr("Enter new folder title or choose existing folder to continue")
+                }
+                if (hostWindow.namingMode === "today")
+                    return qsTr("Import into folder with today's date")
+                return qsTr("Import into separate folders for each date taken")
+            }
         }
         RadioButton {
             objectName: "importSourceNamingByDateRadio"
@@ -250,14 +258,20 @@ ColumnLayout {
         Item { Layout.fillWidth: true }
         PicasaButton {
             objectName: "importSourceStartButton"
-            text: qsTr("Import")
+            //: #7177: `acquirepanel_text` Label(acquirepanel/anowbutton)
+            text: qsTr("Import All")
             accent: Theme.picasaGreen
-            enabled: hostWindow.includedCount > 0
-                     && hostWindow.destFolder.length > 0
-                     && !hostWindow.importing
-                     && (hostWindow.namingMode !== "manual"
-                         || hostWindow.manualNameValid)
+            enabled: hostWindow.canImportAll
             onClicked: hostWindow.requestImport()
+        }
+        PicasaButton {
+            objectName: "importSourceSelectedButton"
+            //: #7177: `acquirepanel_text` Label(acquirepanel/import_selected)
+            text: qsTr("Import Selected") + " ("
+                  + hostWindow.selectedIncludedCount + ")"
+            accent: Theme.picasaGreen
+            enabled: hostWindow.canImportSelected
+            onClicked: hostWindow.requestSelectedImport()
         }
         PicasaButton {
             objectName: "importSourceCloseButton"

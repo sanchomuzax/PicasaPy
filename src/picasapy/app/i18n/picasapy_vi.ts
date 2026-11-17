@@ -14874,6 +14874,27 @@ picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extrac
             <translation>Nhập tiêu đề thư mục mới hoặc chọn thư mục hiện có để tiếp tục</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="141" />
+            <source>Click Import All or Import Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text2(acquirepanel/importtiptext)</extracomment>
+            <translation>Nhấp vào Nhập Tất cả hoặc Nhập Ảnh được Chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="145" />
+            <source>Import into folder with today's date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text4(acquirepanel/importtiptext)</extracomment>
+            <translation>Nhập vào thư mục với ngày của ngày hôm nay</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="146" />
+            <source>Import into separate folders for each date taken</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text3(acquirepanel/importtiptext)</extracomment>
+            <translation>Nhập vào các thư mục riêng cho từng ngày chụp</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="111" />
             <source>Enter Folder Title</source>
             <extracomment>picasapy-origin: picasa
@@ -14936,6 +14957,20 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
             <translation>Nhập</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="262" />
+            <source>Import All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/anowbutton)</extracomment>
+            <translation>Nhập tất cả</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="270" />
+            <source>Import Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/import_selected)</extracomment>
+            <translation>Nhập Ảnh đã chọn</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="264" />

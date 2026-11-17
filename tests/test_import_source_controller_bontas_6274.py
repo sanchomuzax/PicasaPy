@@ -109,7 +109,7 @@ _MOZGATOTT_FORRASOK = {
     ("import_source_controller_sources.py", None, "_duplikatumok"):
         "96a23ad277faf88c9cc18c81b5b7214a73b8ab0b40ef085affd6c9a486f020d7",
     ("import_source_controller.py", "ImportSourceController", "runImport"):
-        "82d5b6adf2ed4621227bc7a45a2df40c4138e29de2d02a89d433b8867e253cb0",
+        "04b14a34eda7df3c80473bd814f3d8cc33f331b54d9acc998da14224b07397eb",
     ("import_source_controller_import.py", None, "_size_of"):
         "0f47e44e0fa4ebf543afb784d96deff0affcdde3b956de3794ce0311d3a76cb3",
     ("import_source_controller_import.py", None, "_mark_imported_ini"):
@@ -138,6 +138,7 @@ _QML_METODUSOK = [
     (2, "scanSource", 1),
     (2, "scanFiles", 1),
     (2, "runImport", 4),
+    (2, "runSelectedImport", 5),
     (2, "refreshMountedSources", 0),
     (2, "setDefaultDestination", 1),
     (2, "setResizeLimit", 1),
