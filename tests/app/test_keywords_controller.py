@@ -334,15 +334,19 @@ class TestQuickTagAutoFill:
 
     def test_candidate_list_excludes_recent_values_and_stops_at_100(self, controller):
         candidates = [f"cimke-{index}" for index in range(110)]
-        _set_index_keywords(controller, {"a.jpg": ", ".join(candidates)})
+        _set_index_keywords(
+            controller, {"a.jpg": ", ".join(["", *candidates, ""])}
+        )
         controller._get_settings().setValue(
             "quickTags/recentKeywords", candidates[:2]
         )
 
         result = controller._quick_tag_autofill_candidates()
 
-        assert result == candidates[2:102]
-        assert len(result) == 100
+        assert result == candidates[2:100]
+        assert len(result) == 98
+        assert "" not in result
+        assert not set(candidates[:2]).intersection(result)
 
 
 class TestLegacyQuickTagAutoFillMigration:
