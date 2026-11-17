@@ -6,20 +6,12 @@ PicasaMenu {
     id: menuFile
     property var bar: null
     title: qsTr("&File")
-    // #1616: a tétel `PicasaMenuItem { placeholder: true }` volt —
-    // MÉRVE (`git log -S'menuFileNewAlbum'`): MINDIG az volt, az #416
-    // óta, tehát a #1616 jegy „a tétel él, csak a billentyű néma"
-    // állítása a mai kódon TÉVES. A funkció maga viszont NEM hiányzik:
-    // az `openNewAlbum` (FileOpsDialogs.qml) és a `controller.
-    // createAlbum(name, rows)` már kész és élesen működik a rács
-    // helyi menüjéből (`PhotoContextMenu.newAlbumRequested` →
-    // `fileOpsDialogs.openNewAlbum(window.selectedRows())`, Main.qml).
-    // Ugyanaz a hibaosztály, mint a #1615/#1633: hiányzó BEKÖTÉS, nem
-    // hiányzó funkció — ezért itt a Ctrl+M/Ctrl+O mintáját követjük:
-    // a Fájl-menü tétele és a Ctrl+N UGYANAZT a dialógust nyitja.
-    // Kijelölés nélkül a `createAlbum` üres tokent ad vissza (nincs
-    // mit albumba tenni), ezért a `photoActionsEnabled`-hez kötve él,
-    // mint a többi kijelölés-függő tétel.
+    // #1616: a tétel `PicasaMenuItem { placeholder: true }` volt, az #416
+    // óta. A Ctrl+M/Ctrl+O mintáját követjük: a Fájl-menü tétele és a Ctrl+N
+    // UGYANAZT a dialógust nyitja (`openNewAlbum`, FileOpsDialogs.qml).
+    // #7164: ÜRES albumot készít, a kijelölt képeket nem adja át. A tétel
+    // engedélyezése a `photoActionsEnabled`-hez kötve marad, mert az eredeti
+    // állapota üres kijelölésnél nincs megmérve.
     MenuItem {
         objectName: "menuFileNewAlbum"
         text: qsTr("&New Album...") + "\tCtrl+N"
