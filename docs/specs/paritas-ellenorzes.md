@@ -3801,7 +3801,7 @@ Kész, ha: a mért eredeti végállapot megegyezik a PicasaPy-ban, és a vetít�
 képernyőképes Windows-mérési menet; elsőbbségi része a csonka, hiányzó és
 elérhetetlen hálózati képekre vonatkozó hibaút. A menet a többi megmaradt
 felhasználói hatást is ugyanabban a külön Windows-profilban dönti el. A
-forrás- és binárisvizsgálat lezárult, új Ghidra-kérés nincs.
+a forrás és a bináris vizsgálata lezárult, új Ghidra-kérés nincs.
 
 **Megerősített statikus eltérések:** D2, D7; D1, D3 és D4 a megadott Windows-
 beállításokkal és kattintási próbákkal még ellenőrizendő. D6 csak akkor
