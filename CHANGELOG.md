@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.137] - 2026-11-17
+
+- Eltérő mappába beillesztés előtt a PicasaPy megerősítést kér, ütközéskor pedig átnevezést, kihagyást vagy a művelet megszakítását kínálja; a jóváhagyott beillesztés is megáll az első fájlhibánál (#7112).
+- Vegyes kijelölésnél a kötegelt effekt és a forgatás modális Információ-ablakban jelzi a kihagyott videót; üres kijelölésnél az effekt és a forgatás is ugyanígy figyelmeztet. (#7121).
+- A fotó- és nézőmenü képeit kérdés nélkül adhatod a képernyővédőhöz, a tálcás új album pedig a mai dátummal indul (#7131).
+
 ## [1.0.136] - 2026-11-17
 
 - Az üres albumlistára ejtett képek az Album Properties párbeszédet nyitják meg (név, mai dátum); jóváhagyás után létrejön és megnyílik az új album, Mégse esetén nem változik semmi (#7102).
