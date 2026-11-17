@@ -64,7 +64,11 @@ _EREDETI_FORRAS_SHA256 = {
     # #6281: az index-beli üres album kezelése (két új segéd, öt módosult metódus)
     "_fuggo_ures_album": "6d9fede6f567d5ddf6572d46ebceaf988e921360b2d338255710c353a6a14516",
     "_fuggo_ures_album_frissit": "a72813e92efdf9aa77224f89f05090af1886465f321cd643117bbc0a859d5860",
-    "addRowsToAlbum": "98c24a20a950a99f11cbd0589ddf85e18b9b5795b9138fba41dd593ce33251bc",
+    "addRowsToAlbum": "b9b1d637cc8078b739d5fa681966a5cb76d1e80480d843206a9073ef4c7914be",
+    # #7142: a Beillesztés albumnézetben útvonal szerint ad az albumhoz (közös segéddel)
+    "_add_photos_to_album": "cbc799d0c28b6daedf8a83995c95d5c78a78e7a0cb2bec342605244cf20cbbdc",
+    "_photos_for_paths": "497af8479889fdb7a59d107afddc8bdae201f80e03c031288e72dc311f6dae2e",
+    "addPathsToAlbum": "9d192adcf35898d3288bd9d5eab4ab020baed9c618cdbd8c3ab7345813077315",
     "_album_membership_mutator": "912803685d40a02ebb4095811e6c019ca0f8c685a643aae6a3faa8780f67e672",
     "_known_album_fields": "e47fc1c0bc094ed874334b957274d794cd37957d0fc328e5cb8a2296db6b4874",
     "removeRowsFromAlbum": "6ece39f95ddb1d0fc0a5590d3c256139b2b5937e55210112a1a4402f7e025be1",
