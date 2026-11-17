@@ -110,7 +110,7 @@ def _album_ablak_ok(window, qt_app) -> None:
     qt_app.processEvents()
 
 class TestUjAlbumMenupontEsCtrlN:
-    """A Fájl ▸ Új album… tétel és a `Ctrl+N` ÉLŐ, kijelöléshez kötve."""
+    """A Fájl ▸ Új album… tétel és a `Ctrl+N` ÉLŐ, kijelöléstől függetlenül (#7180)."""
 
     def test_a_tetel_nem_helyfoglalo_kijeloles_mellett(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
@@ -124,14 +124,16 @@ class TestUjAlbumMenupontEsCtrlN:
         )
         assert tetel.property("enabled") is True
 
-    def test_kijeloles_nelkul_a_tetel_letiltott(self, qml_app, qt_app):
+    def test_kijeloles_nelkul_a_tetel_engedelyezett(self, qml_app, qt_app):
+        """#7180: az eredeti Fájl-menü állapotfrissítője (`0x0056e1c0`) a
+        `0x9d67` (New Album...) azonosítót sehol nem szürkíti, tehát a tétel
+        kijelölés nélkül is él (a #7164 óta üres albumot készít)."""
         window, _controller, _engine = qml_app
         _clear_selection(window, qt_app)
 
         tetel = _elem(window, "menuFileNewAlbum")
-        assert tetel.property("enabled") is False, (
-            "kijelölés nélkül a createAlbum úgysem hoz létre semmit — "
-            "a tétel maradjon szürke, mint a többi kijelölés-függő tétel"
+        assert tetel.property("enabled") is True, (
+            "kijelölés nélkül szürke a Fájl ▸ New Album... (#7180)"
         )
 
     def test_a_felirat_a_hirdetett_billentyut_is_tartalmazza(self, qml_app):
@@ -175,15 +177,20 @@ class TestUjAlbumMenupontEsCtrlN:
             "a Ctrl+N nem hozta létre az albumot"
         )
 
-    def test_kijeloles_nelkul_a_ctrl_n_nem_csinal_semmit(self, qml_app, qt_app):
+    def test_kijeloles_nelkul_a_ctrl_n_megnyitja_az_ablakot(self, qml_app, qt_app):
+        """#7180: a Ctrl+N a Fájl ▸ New Album... parancsot váltja ki, ami
+        kijelölés nélkül is megnyitja az Album Properties ablakot; az album az
+        OK után jön létre (üresen, #7164)."""
         window, controller, _engine = qml_app
         _clear_selection(window, qt_app)
 
         QTest.keyClick(window, Qt.Key_N, Qt.ControlModifier)
         qt_app.processEvents()
 
-        assert controller.albums == [], (
-            "a Ctrl+N kijelölés nélkül is létrehozott albumot"
+        assert controller.albums == [], "az album az OK előtt létrejött"
+        _album_ablak_ok(window, qt_app)
+        assert [a["name"] for a in controller.albums] == ["Untitled"], (
+            "a Ctrl+N kijelölés nélkül nem hozta létre az albumot"
         )
 
     def test_a_gyorsbillentyu_elo_es_a_sorozata_a_hirdetett(self, qml_app):
