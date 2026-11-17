@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.139] - 2026-11-17
+
+- A Címkék-panel üres vagy csak szóközt tartalmazó mezőjében az Enter a "nincs beírt szöveg" súgóablakot mutatja, mint az eredetiben, és nem ír címkét; nem üres szövegnél a hozzáadás változatlan (#7135).
+- A mappalistában az almappa nélküli mappa sorára duplán kattintva megnyílik a mappa Folder Properties ablaka (név, dátum, hely, leírás); az almappás sor dupla kattintása továbbra is kinyit/becsuk, mentés-szűrő módban nincs ablak (#7151).
+- A Mappa tulajdonságai ablak OK gombja a mappa nevét is beírja a .picasa.ini fájlba (#7152).
+- A mappa átnevezése Windowson, ha a rendszer hozzáférési hibát ad (például egy másik program épp használja a mappát), fél másodpercenként újrapróbálja, legfeljebb öt másodpercig, és csak utána jelez hibát (#7153).
+- Windowson a Folder Properties név mezője a mappa nevét mutatja, nem a teljes útvonalát (#7160).
+
 ## [1.0.138] - 2026-11-17
 
 - Hálózati mappában a bélyegképek lassú betöltése alatt a fotórács helykitöltőt mutat, és használható marad (#7086).
