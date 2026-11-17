@@ -50,9 +50,18 @@ Rectangle {
     // Teszt-horog és a beviteli mező közös útja: a vessző választja el a
     // címkéket, az üres részek kimaradnak.
     function submit() {
-        var text = tagInput.text.trim()
-        if (text.length === 0 || !panel.hasSelection)
+        if (!panel.hasSelection)
             return
+        var text = tagInput.text.trim()
+        if (text.length === 0) {
+            // #7135: az eredeti Entere (`editselected`, `0x0063acd0` →
+            // `0x0063bb30`) üres vagy csak szóközös szövegnél a „nincs beírt
+            // szöveg” modális súgót mutatja (`notify_notext`), és semmi nem
+            // íródik. Írásvédett kijelölésnél a mező tiltott, oda nem jut Enter.
+            if (panel.cimkezheto)
+                tagNoTextDialog.open()
+            return
+        }
         panel.addWarningVisible = false
         var parts = text.split(",")
         for (var i = 0; i < parts.length; i++) {
