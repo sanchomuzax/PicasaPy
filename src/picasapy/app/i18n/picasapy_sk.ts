@@ -14518,6 +14518,12 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
     <context>
         <name>ImportSourceController</name>
         <message>
+            <location filename="../import_source_controller.py" line="444" />
+            <source>The source files were left untouched because one or more pictures could not be copied.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zdrojové súbory zostali nedotknuté, pretože jeden alebo viac obrázkov sa nepodarilo skopírovať.</translation>
+        </message>
+        <message>
             <source>WARNING
 
 You have chosen to delete ALL FILES from the source media.
@@ -14623,10 +14629,22 @@ TÚTO AKCIU NEMOŽNO VRÁTIŤ SPÄŤ.
             <translation>Šablóna priečinka:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
-            <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Naozaj chcete odstrániť importované súbory z karty? TÚTO AKCIU NEMOŽNO VRÁTIŤ SPÄŤ.</translation>
+            <source>Are you sure you want to remove the imported files from your card? This cannot be undone.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::message</extracomment>
+            <translation>Naozaj chcete odstrániť importované súbory z karty? Túto akciu nie je možné odvolať.</translation>
+        </message>
+        <message>
+            <source>Remove Imported Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::yesButton</extracomment>
+            <translation>Odstrániť importované súbory</translation>
+        </message>
+        <message>
+            <source>Remove All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveAll::yesButton</extracomment>
+            <translation>Odstrániť všetky súbory</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="531" />
@@ -14873,6 +14891,30 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Vylúčiť</translation>
         </message>
+        <message>
+            <source>Include File</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_INCLUDE</extracomment>
+            <translation>Zahrnúť súbor</translation>
+        </message>
+        <message>
+            <source>Exclude File</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_EXCLUDE</extracomment>
+            <translation>Vynechať súbor</translation>
+        </message>
+        <message>
+            <source>Include All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_INCLUDEALL</extracomment>
+            <translation>Zahrnúť všetko</translation>
+        </message>
+        <message>
+            <source>Exclude All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_EXCLUDEALL</extracomment>
+            <translation>Vynechať všetky položky</translation>
+        </message>
     </context>
     <context>
         <name>ImportSourceDestinationPanel</name>
@@ -14904,6 +14946,27 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
             <translation>Ak chcete pokračovať, zadajte nový názov priečinka, alebo vyberte existujúci priečinok</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="141" />
+            <source>Click Import All or Import Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text2(acquirepanel/importtiptext)</extracomment>
+            <translation>Kliknite na položku Importovať všetko alebo Importovať vybraté</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="145" />
+            <source>Import into folder with today's date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text4(acquirepanel/importtiptext)</extracomment>
+            <translation>Importovať do priečinka s dnešným dátumom</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="146" />
+            <source>Import into separate folders for each date taken</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text3(acquirepanel/importtiptext)</extracomment>
+            <translation>Importovať do samostatných priečinkov pre každý dátum vytvorenia</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="111" />
@@ -14968,6 +15031,20 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
             <translation>Importovať</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="262" />
+            <source>Import All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/anowbutton)</extracomment>
+            <translation>Importovať všetky</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="270" />
+            <source>Import Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/import_selected)</extracomment>
+            <translation>Importovať vybrané položky</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="264" />

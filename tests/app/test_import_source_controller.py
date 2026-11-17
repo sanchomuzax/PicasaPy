@@ -399,6 +399,34 @@ class TestIndividualSelection:
         assert not (dest / "2024-03-05" / "a.jpg").exists()
         assert (source / "a.jpg").exists()  # ki lett zárva — a forrás érintetlen
 
+    def test_only_selected_and_included_files_are_imported(
+        self, controller, tmp_path
+    ):
+        source = tmp_path / "kijelolt-kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        make_jpeg(source / "b.jpg", taken_at="2024:03:06 10:00:00")
+        make_jpeg(source / "c.jpg", taken_at="2024:03:07 10:00:00")
+        dest = tmp_path / "kijelolt-konyvtar"
+        dest.mkdir()
+        _scan(controller, str(source))
+        controller.excludeFile(str(source / "b.jpg"))
+
+        finished = []
+        controller.importFinished.connect(
+            lambda copied, failed: finished.append((copied, failed))
+        )
+        controller.runSelectedImport(
+            str(dest), "date", "", "leave",
+            [str(source / "a.jpg"), str(source / "b.jpg")],
+        )
+        _megvar_hattermunkat(controller)
+
+        assert finished == [(1, 0)]
+        assert (dest / "2024-03-05" / "a.jpg").exists()
+        assert not (dest / "2024-03-06" / "b.jpg").exists()
+        assert not (dest / "2024-03-07" / "c.jpg").exists()
+
 
 class TestRunImportNamingModes:
     """#441 — a HÁROM célmappa-elnevezési mód a teljes import-folyamatba
@@ -638,16 +666,16 @@ class TestAfterCopying:
         assert not (source / "a.jpg").exists()
         assert not (source / "b.jpg").exists()  # "everything on card"
 
-    def test_delete_all_spares_the_file_whose_copy_failed(
-        self, controller, tmp_path, monkeypatch
+    @pytest.mark.parametrize("after_copying", ["delete_copied", "delete_all"])
+    def test_copy_failure_leaves_every_source_file_untouched(
+        self, controller, tmp_path, monkeypatch, after_copying
     ):
-        """RÉSZLEGES hiba: ha két jelöltből az egyik másolása elhasal, a
-        "minden törlése" az ÁTJUTOTT fájlt törli, a BUKOTTAT viszont
-        meghagyja — épp az nem került át, a törlése adatvesztés lenne."""
+        """Másolási hiba után a két törlési mód sem törölhet forrást (#7172)."""
         source = tmp_path / "kartya"
         source.mkdir()
         make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
         make_jpeg(source / "b.jpg", taken_at="2024:03:06 10:00:00")
+        make_jpeg(source / "c.jpg", taken_at="2024:03:07 10:00:00")
         dest = tmp_path / "konyvtar"
         dest.mkdir()
 
@@ -664,11 +692,58 @@ class TestAfterCopying:
 
         monkeypatch.setattr(controller_module, "copy_photo", copy_but_fail_on_b)
 
-        controller.runImport(str(dest), "date", "", "delete_all")
+        failed_details = []
+        controller.importFailedDetails.connect(failed_details.append)
+        finished = []
+        controller.importFinished.connect(
+            lambda copied, failed: finished.append((copied, failed))
+        )
+        controller.runImport(str(dest), "date", "", after_copying)
         _megvar_hattermunkat(controller)
 
-        assert not (source / "a.jpg").exists()  # átjutott -> törölhető
-        assert (source / "b.jpg").exists()  # bukott -> MARAD
+        assert finished == [(2, 1)]
+        assert all((source / name).exists() for name in ("a.jpg", "b.jpg", "c.jpg"))
+        assert (dest / "2024-03-05" / "a.jpg").exists()
+        assert not (dest / "2024-03-06" / "b.jpg").exists()
+        assert (dest / "2024-03-07" / "c.jpg").exists()
+        assert len(failed_details) == 1
+        message = "\n".join(failed_details[0]).lower()
+        assert "b.jpg" in message
+        assert "left untouched" in message or "érintetlen" in message
+
+    def test_source_delete_oserror_is_reported_and_import_finishes(
+        self, controller, tmp_path, monkeypatch
+    ):
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "konyvtar"
+        dest.mkdir()
+
+        _scan(controller, str(source))
+
+        import picasapy.app.import_source_controller as controller_module
+
+        def fail_to_remove(_path):
+            raise OSError("a forrás írásvédett")
+
+        monkeypatch.setattr(controller_module, "_remove_source_file", fail_to_remove)
+
+        failed_details = []
+        controller.importFailedDetails.connect(failed_details.append)
+        finished = []
+        controller.importFinished.connect(
+            lambda copied, failed: finished.append((copied, failed))
+        )
+        controller.runImport(str(dest), "date", "", "delete_copied")
+        _megvar_hattermunkat(controller)
+
+        assert finished == [(1, 1)]
+        assert (source / "a.jpg").exists()
+        assert (dest / "2024-03-05" / "a.jpg").exists()
+        assert len(failed_details) == 1
+        assert "a.jpg" in failed_details[0][0]
+        assert "írásvédett" in failed_details[0][0]
 
     def test_failed_copy_of_the_only_candidate_deletes_nothing(
         self, controller, tmp_path, monkeypatch

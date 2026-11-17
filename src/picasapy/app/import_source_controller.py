@@ -351,6 +351,33 @@ class ImportSourceController(
         manual_name: str,
         after_copying: str,
     ) -> None:
+        """Az összes beválogatott, nem kizárt jelölt importálása."""
+        self._run_import(
+            dest_folder, naming_mode, manual_name, after_copying, None
+        )
+
+    @Slot(str, str, str, str, "QVariantList")
+    def runSelectedImport(
+        self,
+        dest_folder: str,
+        naming_mode: str,
+        manual_name: str,
+        after_copying: str,
+        selected_paths: list[str],
+    ) -> None:  # noqa: N802 — QML-stílus
+        """A kijelölt, beválogatott és nem kizárt jelöltek importálása."""
+        self._run_import(
+            dest_folder, naming_mode, manual_name, after_copying, selected_paths
+        )
+
+    def _run_import(
+        self,
+        dest_folder: str,
+        naming_mode: str,
+        manual_name: str,
+        after_copying: str,
+        selected_paths: list[str] | None,
+    ) -> None:
         """A legutóbb szkennelt, BEVÁLOGATOTT (nem kizárt) jelöltek importja
         `dest_folder` alá, a `naming_mode` (#441 HÁROM módja: `NAMING_MANUAL`
         / `NAMING_BY_DATE` / `NAMING_TODAY`) szerint. `after_copying` (#441
@@ -373,10 +400,15 @@ class ImportSourceController(
         if naming_mode == NAMING_MANUAL and not is_valid_folder_name(manual_name):
             return
         all_candidates = self._candidates
+        selected = (
+            None if selected_paths is None
+            else {str(path) for path in selected_paths}
+        )
         included = tuple(
             candidate
             for candidate in all_candidates
             if str(candidate.path) not in self._excluded_paths
+            and (selected is None or str(candidate.path) in selected)
         )
         dest_text = to_local_path(dest_folder)
         total = len(included)
@@ -392,6 +424,7 @@ class ImportSourceController(
         def worker() -> None:
             copied_paths: list[Path] = []
             failed_details: list[str] = []
+            failed_count = 0
             # #459: lemezhely-ellenőrzés ELŐRE (a forrás mérete a NAS-on
             # lassú lehet, ezért itt, a szálon, a másolás ELŐTT — nem a
             # GUI-szálat blokkoló main-thread stat-tal) — a művelet NE
@@ -430,39 +463,54 @@ class ImportSourceController(
                     copied_bytes += _size_of(target)
                 except OSError as error:
                     failed_details.append(f"{candidate.path.name}: {error}")
+                    failed_count += 1
                 self.importProgress.emit(done, total)
                 elapsed = time.monotonic() - started_at
                 self.importSpeed.emit(copied_bytes / elapsed if elapsed > 0 else 0.0)
-            if failed_details:
-                self.importFailedDetails.emit(
-                    failed_details[:_IMPORT_FAILED_DETAILS_LIMIT]
+
+            copy_failed = bool(failed_details)
+            if copy_failed and after_copying in {
+                AFTER_COPY_DELETE_COPIED,
+                AFTER_COPY_DELETE_ALL,
+            }:
+                failed_details.insert(
+                    0,
+                    self.tr(
+                        "The source files were left untouched because one or "
+                        "more pictures could not be copied."
+                    ),
                 )
+
+            def remove_source_safely(path: Path) -> bool:
+                """A törlési hiba is szerepeljen az import eredményében."""
+                try:
+                    _remove_source_file(path)
+                except OSError as error:
+                    failed_details.append(f"{path.name}: {error}")
+                    return False
+                return True
+
             if copied_paths:
                 self._add_folder(str(dest_root))
                 # #1785: a cél a SIKERES másolás után kerül a listába — a
                 # hibás/nem létező mappa ne kínálódjon fel legközelebb.
                 self._remember_destination(str(dest_root))
-                # #441: a törlés CSAK sikeres másolás után futhat le
-                if after_copying == AFTER_COPY_DELETE_COPIED:
+                # #7172: bármelyik másolási hiba letiltja a teljes forrás-
+                # törlést; a másolatok és a mai folytatás megmaradnak.
+                if not copy_failed and after_copying == AFTER_COPY_DELETE_COPIED:
                     for path in copied_paths:
-                        _remove_source_file(path)
-                elif after_copying == AFTER_COPY_DELETE_ALL:
-                    # A "minden törlése" sem törölhet olyan fájlt, amelynek a
-                    # MÁSOLÁSA elbukott — épp az nem jutott át, tehát a
-                    # törlése adatvesztés lenne. A kártya kiürítésének
-                    # szándéka így is teljesül minden átjutott fájlra; a
-                    # bukottak a forráson maradnak, és a hibalistán
-                    # (importFailedDetails) meg is jelennek.
-                    failed_sources = {
-                        candidate.path
-                        for candidate in included
-                        if candidate.path not in set(copied_paths)
-                    }
+                        if not remove_source_safely(path):
+                            failed_count += 1
+                elif not copy_failed and after_copying == AFTER_COPY_DELETE_ALL:
                     for candidate in all_candidates:
-                        if candidate.path in failed_sources:
-                            continue
-                        _remove_source_file(candidate.path)
-            self.importFinished.emit(len(copied_paths), total - len(copied_paths))
+                        if not remove_source_safely(candidate.path):
+                            failed_count += 1
+
+            if failed_details:
+                self.importFailedDetails.emit(
+                    failed_details[:_IMPORT_FAILED_DETAILS_LIMIT]
+                )
+            self.importFinished.emit(len(copied_paths), failed_count)
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-importsource-run")

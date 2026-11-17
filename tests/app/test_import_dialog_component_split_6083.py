@@ -18,10 +18,22 @@ _COMPONENTS = (
     "ImportSourcePreview",
     "ImportSourceDestinationPanel",
 )
-_BASELINE_QSTR_COUNT = 52
+# #7173: a nagybetűs előkérdés helyett az eredeti kisbetűs szöveg, plusz a
+# két eredeti gombfelirat (Remove Imported Files / Remove All Files).
+# #7177: Import All, Import Selected és a tippsor három új állapota.
+_BASELINE_QSTR_COUNT = 58
 _BASELINE_QSTR_SHA256 = (
-    "5212e2af231a128f36745603810696b8cffc8e775cfe7e55004f15ec6f8096a4"
+    "dce939e1712afa3b4464d43b1a61deb691fe6fbe998695eb655246abfe1999c5"
 )
+# A bontás UTÁN, jegyenként felvett új feliratok. A bontás szerződése a fenti
+# 52 eredeti felirat változatlansága; az újak nem tartoznak a lenyomatba, de
+# a kötelező jelenlétük ellenőrzött, hogy a lista ne avulhasson el.
+_UJ_QSTR_FELIRATOK = {
+    # #7178: a bélyegkép helyi menüje (az Include All / Exclude All már
+    # megvolt a gombokon, ezért csak a két "File" parancs új)
+    "Include File",
+    "Exclude File",
+}
 _BASELINE_OBJECT_NAMES = {
     "importRotateLeft:",
     "importRotateRight:",
@@ -165,11 +177,15 @@ def test_a_meglevo_qstr_feliratok_valtozatlanul_megmaradnak():
     fajlok = [_QML / "ImportSourceDialog.qml"] + [
         _QML / f"{component}.qml" for component in _COMPONENTS
     ]
-    forrasok = set().union(*(
+    osszes = set().union(*(
         _qml_strings(fajl.read_text(encoding="utf-8"))
         for fajl in fajlok
         if fajl.is_file()
     ))
+    assert _UJ_QSTR_FELIRATOK <= osszes, (
+        f"a felvett új felirat eltűnt: {sorted(_UJ_QSTR_FELIRATOK - osszes)}"
+    )
+    forrasok = osszes - _UJ_QSTR_FELIRATOK
     lenyomat = hashlib.sha256(
         "\n".join(sorted(forrasok)).encode("utf-8")
     ).hexdigest()

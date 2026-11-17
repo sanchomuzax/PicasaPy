@@ -237,9 +237,8 @@ ELAVULT = (
     "Align right",
     "Preserve Color",
     " s",
-    # #3575: a szöveg rádiófeliratként volt hibás; tippként (#4595) helyes.
-    "Import into separate folders for each date taken",
-    "Import into folder with today's date",
+    # #3575 hibás rádiófeliratként; #4595 után ismét hivatalos tippként
+    # szerepelnek (#7177, acquirepanel_text Text3 és Text4).
     "Collection name:",
     "Fill the empty boxes above with frequently used tags",
     "Add a tag...",

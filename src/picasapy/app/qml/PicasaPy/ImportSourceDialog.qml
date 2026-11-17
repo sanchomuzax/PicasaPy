@@ -113,6 +113,8 @@ Window {
     // Az eredeti previous/next gombok az előnézeti képet léptetik. A
     // bélyegkép-rács megmarad; a kijelölt kép kiemelése és görgetése követi.
     property int selectedPreviewIndex: 0
+    // A rácsbeli importkijelölés külön él az előnézeti képtől.
+    property var selectedPreviewPaths: []
     readonly property int duplicateCount: {
         var count = 0
         for (var i = 0; i < importSourceWindow.previewItems.length; i++) {
@@ -127,8 +129,33 @@ Window {
         }
         return count
     }
+    readonly property int selectedPreviewCount: {
+        var count = 0
+        for (var i = 0; i < importSourceWindow.previewItems.length; i++) {
+            if (importSourceWindow.isPreviewSelected(
+                    importSourceWindow.previewItems[i].path)) count++
+        }
+        return count
+    }
+    readonly property int selectedIncludedCount: {
+        var count = 0
+        for (var j = 0; j < importSourceWindow.previewItems.length; j++) {
+            var item = importSourceWindow.previewItems[j]
+            if (!item.excluded
+                    && importSourceWindow.isPreviewSelected(item.path)) count++
+        }
+        return count
+    }
+    readonly property bool canStartImport:
+        destFolder.length > 0
+        && !importing
+        && (namingMode !== "manual" || manualNameValid)
+    readonly property bool canImportAll: includedCount > 0 && canStartImport
+    readonly property bool canImportSelected:
+        selectedIncludedCount > 0 && canStartImport
 
     property bool importing: false
+    property bool pendingSelectedOnly: false
     property int importDone: 0
     property int importTotal: 0
     // #441: a másolás sebessége bájt/mp-ben (0 = még nem mérhető)
@@ -194,6 +221,31 @@ Window {
         previewPanel.positionAt(nextIndex)
     }
 
+    function isPreviewSelected(path) {
+        return importSourceWindow.selectedPreviewPaths.indexOf(path) >= 0
+    }
+
+    function togglePreviewSelection(path, index) {
+        var selected = importSourceWindow.selectedPreviewPaths.slice()
+        var current = selected.indexOf(path)
+        if (current >= 0) selected.splice(current, 1)
+        else selected.push(path)
+        importSourceWindow.selectedPreviewPaths = selected
+        importSourceWindow.selectedPreviewIndex = index
+        previewPanel.positionAt(index)
+    }
+
+    function selectedImportPaths() {
+        var selected = []
+        for (var i = 0; i < importSourceWindow.previewItems.length; i++) {
+            var item = importSourceWindow.previewItems[i]
+            if (!item.excluded
+                    && importSourceWindow.isPreviewSelected(item.path))
+                selected.push(item.path)
+        }
+        return selected
+    }
+
     // a forrás (rekurzív) beolvasása háttérszálon — a FolderDialog
     // elfogadásakor és tesztből is hívható (a DedupDialog `scan()` mintája)
     function scanCurrentSource() {
@@ -227,30 +279,56 @@ Window {
     // lent, `requestImport`) UTÁN hívódik.
     function runImportNow() {
         importSourceWindow.lastError = ""
-        importSourceController.runImport(
-            importSourceWindow.destFolder,
-            importSourceWindow.namingMode,
-            importSourceWindow.manualFolderName,
-            importSourceWindow.afterCopying)
+        if (importSourceWindow.pendingSelectedOnly) {
+            importSourceController.runSelectedImport(
+                importSourceWindow.destFolder,
+                importSourceWindow.namingMode,
+                importSourceWindow.manualFolderName,
+                importSourceWindow.afterCopying,
+                importSourceWindow.selectedImportPaths())
+        } else {
+            importSourceController.runImport(
+                importSourceWindow.destFolder,
+                importSourceWindow.namingMode,
+                importSourceWindow.manualFolderName,
+                importSourceWindow.afterCopying)
+        }
     }
 
-    // #441: "After Copying:" — kétlépcsős, egyre erősebb megerősítés a
-    // törléssel járó két állapotnál; "Leave card alone"-nál nincs kérdés.
+    // "After Copying:" - a törléssel járó két állapotnál EGYETLEN
+    // megerősítés (az eredeti `0x00519720`, #7173); "Leave card alone"-nál
+    // nincs kérdés.
     function requestImport() {
-        if (importSourceWindow.destFolder.length === 0) return
-        if (importSourceWindow.includedCount === 0) return
-        // #4595: kézi módban cím nélkül nincs import (és nincs megerősítés sem)
-        if (importSourceWindow.namingMode === "manual"
-                && !importSourceWindow.manualNameValid) return
+        importSourceWindow.requestImportMode(false)
+    }
+
+    function requestSelectedImport() {
+        importSourceWindow.requestImportMode(true)
+    }
+
+    function requestImportMode(selectedOnly) {
+        var onlySelected = selectedOnly === true
+        if (onlySelected && !importSourceWindow.canImportSelected) return
+        if (!onlySelected && !importSourceWindow.canImportAll) return
+        importSourceWindow.pendingSelectedOnly = onlySelected
         if (importSourceWindow.afterCopying === "leave") {
             importSourceWindow.runImportNow()
             return
         }
-        removeImportedConfirm.ask("importSourceRemoveImported", qsTr(
-            // #465 4. pont: az eredeti Picasa NAGYBETŰVEL írja — ez a
-            // legsúlyosabb adatvesztési pont az egész programban
-            "Are you sure you want to remove the imported files from your "
-            + "card? THIS CANNOT BE UNDONE."))
+        // Delete Copied: a `confirmRemoveCopied::message` eredeti szövege
+        // (kisbetűs második mondattal); Delete All: a vezérlő összeállított
+        // figyelmeztetése.
+        removeConfirm.ask("", importSourceWindow.afterCopying === "delete_all"
+            ? importSourceController.wipeCardWarning()
+            : qsTr("Are you sure you want to remove the imported files from "
+                   + "your card? This cannot be undone."))
+    }
+
+    function activateDefaultImport() {
+        if (importSourceWindow.selectedPreviewCount <= 1)
+            importSourceWindow.requestImport()
+        else
+            importSourceWindow.requestSelectedImport()
     }
 
     Connections {
@@ -260,6 +338,7 @@ Window {
             importSourceWindow.previewItems = items
             importSourceWindow.previewCount = count
             importSourceWindow.selectedPreviewIndex = 0
+            importSourceWindow.selectedPreviewPaths = []
             importSourceWindow.scanning = false
         }
         function onSourceScanFailed(message) {
@@ -289,9 +368,32 @@ Window {
         }
         function onImportFinished(copied, failed) {
             importSourceWindow.importing = false
+            importSourceWindow.pendingSelectedOnly = false
             importSourceWindow.lastCopiedCount = copied
             importSourceWindow.lastFailedCount = failed
         }
+    }
+
+    Shortcut {
+        objectName: "importSourceReturnShortcut"
+        sequence: "Return"
+        context: Qt.WindowShortcut
+        enabled: importSourceWindow.visible
+        onActivated: importSourceWindow.activateDefaultImport()
+    }
+    Shortcut {
+        objectName: "importSourceEnterShortcut"
+        sequence: "Enter"
+        context: Qt.WindowShortcut
+        enabled: importSourceWindow.visible
+        onActivated: importSourceWindow.activateDefaultImport()
+    }
+    Shortcut {
+        objectName: "importSourceEscapeShortcut"
+        sequence: "Escape"
+        context: Qt.WindowShortcut
+        enabled: importSourceWindow.visible
+        onActivated: importSourceWindow.visible = false
     }
 
     ColumnLayout {
@@ -368,35 +470,17 @@ Window {
         onAccepted: importSourceWindow.destFolder = selectedFolder.toString()
     }
 
-    // #441 — kétlépcsős, egyre erősebb megerősítés a forrás-törléshez.
-    // 1. lépés: mindkét törléssel járó "After Copying:" állapotra közös,
-    // generikus kérdés. "delete_all"-nál ezt követi a 2. lépés (erősebb
-    // figyelmeztetés + "ne figyelmeztess többé"), "delete_copied"-nél a
-    // 2. lépés kimarad — a #422 mintája szerint EGYEDI namePrefix.
+    // Az egyetlen törlés-megerősítés (#7173). Az eredeti ablakban nincs
+    // „Do not ask again” jelölő és nincs „No” gomb, csak az igen-gomb és a
+    // Cancel; az üres kulcs miatt a kérdés soha nem nyomható el.
     ConfirmDialog {
-        id: removeImportedConfirm
-        namePrefix: "importSourceRemoveImportedConfirm"
+        id: removeConfirm
+        namePrefix: "importSourceConfirmRemove"
         title: qsTr("Import from Source")
-        onConfirmed: {
-            if (importSourceWindow.afterCopying === "delete_all") {
-                //: #860: az ÖSSZEÁLLÍTOTT figyelmeztetés a vezérlőtől jön
-                //: (`wipe_card_warning`) — darabszámokkal, a nem felismert
-                //: fájlokkal és a záró „A MŰVELET NEM VONHATÓ VISSZA."
-                //: mondattal. Korábban egy három pontra rövidített mondat
-                //: állt itt, ami épp a lényeget hallgatta el.
-                deleteAllWarningConfirm.ask(
-                    "importSourceDeleteAllWarning",
-                    importSourceController.wipeCardWarning())
-            } else {
-                importSourceWindow.runImportNow()
-            }
-        }
-    }
-
-    ConfirmDialog {
-        id: deleteAllWarningConfirm
-        namePrefix: "importSourceDeleteAllWarningConfirm"
-        title: qsTr("Import from Source")
+        rememberVisible: false
+        noVisible: false
+        yesText: importSourceWindow.afterCopying === "delete_all"
+            ? qsTr("Remove All Files") : qsTr("Remove Imported Files")
         onConfirmed: importSourceWindow.runImportNow()
     }
 }
