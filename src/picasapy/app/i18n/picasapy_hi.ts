@@ -14599,10 +14599,22 @@ THIS CANNOT BE UNDONE.
             <translation>फ़ोल्डर टेम्पलेट:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
-            <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>क्या आप वाकई आयात की गई फ़ाइलें अपने कार्ड से हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता.</translation>
+            <source>Are you sure you want to remove the imported files from your card? This cannot be undone.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::message</extracomment>
+            <translation>क्या आप वाकई अपने कार्ड से आयात की गई फ़ाइलें निकालना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता.</translation>
+        </message>
+        <message>
+            <source>Remove Imported Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::yesButton</extracomment>
+            <translation>आयात की गई फ़ाइलें निकालें</translation>
+        </message>
+        <message>
+            <source>Remove All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveAll::yesButton</extracomment>
+            <translation>सभी फ़ाइलें निकालें</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="531" />
