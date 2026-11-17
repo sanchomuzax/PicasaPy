@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from importlib import import_module
+from pathlib import Path
 
 from PySide6.QtCore import QMimeData, Slot
 
@@ -13,6 +14,40 @@ def _controller_module():
 
 
 class FileOpsControllerClipboardMixin:
+    def _paste_has_different_folder(self, paths: list[str], dest_folder: str) -> bool:
+        """Igaz, ha legalább egy forrásmappa azonosítója eltér a céltól."""
+        _compat = _controller_module()
+        from picasapy.paths import normalize_path, path_key
+
+        destination = _compat._to_local_path(dest_folder) or dest_folder
+        mappa_utak = [destination]
+        mappa_utak.extend(
+            str(Path(_compat._to_local_path(path) or path).parent) for path in paths
+        )
+        normalizalt_utak = {}
+        for path in mappa_utak:
+            normalizalt = normalize_path(path)
+            normalizalt_utak.setdefault(path_key(normalizalt), normalizalt)
+
+        azonositok = {kulcs: ("path", kulcs) for kulcs in normalizalt_utak}
+        database = getattr(self, "_library_db_path", None)
+        if database:
+            from picasapy.index import open_index
+
+            with open_index(database) as conn:
+                for kulcs, path in normalizalt_utak.items():
+                    row = conn.execute(
+                        "SELECT id FROM folders WHERE path = ?", (path,)
+                    ).fetchone()
+                    if row is not None:
+                        azonositok[kulcs] = ("id", int(row["id"]))
+        celkulcs = path_key(normalize_path(destination))
+        celazonosito = azonositok[celkulcs]
+        return any(
+            azonositok[path_key(normalize_path(mappa))] != celazonosito
+            for mappa in mappa_utak[1:]
+        )
+
     def _tegyd_a_vagolapra(self, paths, muvelet: str) -> None:
         """A megadott fájlok a vágólapra, `copy`/`cut` jelzéssel (#1526).
 
@@ -94,8 +129,22 @@ class FileOpsControllerClipboardMixin:
         vagolap = _compat.QGuiApplication.clipboard()
         return None if vagolap is None else vagolap.mimeData()
 
+    @Slot(str, list, str, str)
+    def runPasteBatch(  # noqa: N802
+        self, operation: str, paths: list, dest_folder: str, policy: str
+    ) -> None:
+        """A jóváhagyott Beillesztés köteg (#7112), a választott ütközési
+        szabállyal; az első végleges fájlhibánál megáll (#7114)."""
+        if operation == "cut" or operation == "move":
+            self._move_batch(paths, dest_folder, policy, stop_on_failure=True)
+        else:
+            self._copy_batch(paths, dest_folder, policy, stop_on_failure=True)
+
     @Slot(str, result=bool)
-    def pasteFilesFromClipboard(self, dest_folder: str) -> bool:  # noqa: N802
+    @Slot(str, bool, result=bool)
+    def pasteFilesFromClipboard(  # noqa: N802
+        self, dest_folder: str, ordinary_folder_target: bool = True
+    ) -> bool:
         """A vágólapon lévő fájlok beillesztése a megadott mappába (#1526).
 
         A `cut` jelzésű tartalom ÁTHELYEZ, a `copy` MÁSOL. A meglévő
@@ -122,6 +171,17 @@ class FileOpsControllerClipboardMixin:
         # EGY összegző jelzés (`batchFinished`) nevezi meg a hibát. A
         # fogd-és-vidd és a menüs köteg (#301/#459) ettől függetlenül
         # folytatja a hibás kép után.
+        # #7112: eltérő mappaazonosítónál a felület csak a felhasználói
+        # jóváhagyás után indítja a köteget és annak ütközésválasztóját.
+        if ordinary_folder_target and self._paste_has_different_folder(
+            fajlok, dest_folder
+        ):
+            self.clipboardPasteConfirmationRequested.emit(
+                fajlok, dest_folder, muvelet
+            )
+            return True
+
+        # Az azonos mappás viselkedés egyelőre a korábbi azonnali út.
         if muvelet == "cut":
             self._move_batch(fajlok, dest_folder, "rename", stop_on_failure=True)
         else:

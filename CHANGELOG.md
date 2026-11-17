@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.136] - 2026-11-17
+
+- Az üres albumlistára ejtett képek az Album Properties párbeszédet nyitják meg (név, mai dátum); jóváhagyás után létrejön és megnyílik az új album, Mégse esetén nem változik semmi (#7102).
+- A mappamozgatás célválasztója megjegyzett cél nélkül a mozgatott mappán indul, a választott célt a sikertelen vagy hatás nélküli próbálkozás után is megjegyzi, az ablak címe „Browse for Folder”, és rejtett mappába nem enged mozgatni (#7109).
+- A Kép menü Csoportos szerkesztés almenüjében a Show Text és a Hide Text kijelölt képeknél mindig elérhető, akkor is, ha egyik képen sincs ráírt szöveg, és a menü megnyitása már nem olvassa a képek .picasa.ini fájlját (#7122).
+
 ## [1.0.135] - 2026-11-17
 
 - A kép helyi menüjének és a néző helyi menüjének Add to Album almenüje az eredeti sorrendjét követi: albumok, elválasztó, Starred Photos, Screensaver, elválasztó, New Album...; a néző almenüje album nélkül is elérhető, a Starred Photos csak hozzáad (a már csillagos képet nem fordítja meg), és a New Album... ablak dátuma a kijelölés első képének ideje mínusz egy másodperc (#7100).

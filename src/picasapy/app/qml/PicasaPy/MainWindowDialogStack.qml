@@ -98,6 +98,11 @@ Item {
         function onOperationFailed(operation, message) {
             fileOpsDialogs.ensure().showOperationError(operation, message)
         }
+        // #7112: a Paste-réteg csak azonos mappán kívül kér megerősítést;
+        // a halasztott fájlműveleti párbeszédek itt épülnek fel szükség esetén.
+        function onClipboardPasteConfirmationRequested(paths, dest, operation) {
+            fileOpsDialogs.ensure().openPasteConfirmation(paths, dest, operation)
+        }
         //: #6969: a Lomtárba helyezés `0x0f` eredménye - a külön Delete /
         //: Cancel kérdés a felhasználónak szól, némán elmaradnia nem szabad.
         function onImmediateDeletionRequired(path) {

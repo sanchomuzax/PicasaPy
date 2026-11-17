@@ -89,24 +89,28 @@ class _Hivasok:
     def __init__(self, vezerlo, monkeypatch):
         self.masolas: list[tuple] = []
         self.athelyezes: list[tuple] = []
-        self.megallo: list[bool] = []
-
-        def _koteg(cel):
-            def _hivas(*a, **k):
-                cel.append(a)
-                self.megallo.append(k.get("stop_on_failure", False))
-            return _hivas
-
-        # #7125: a #7114 óta a Beillesztés a `_copy_batch`/`_move_batch`
-        # utat hívja (első hibánál megálló köteg); a slotokat is figyeljük,
-        # hogy egyik út se indulhasson észrevétlenül.
-        for nev, cel in (("copyPhotos", self.masolas), ("_copy_batch", self.masolas),
-                         ("movePhotos", self.athelyezes), ("_move_batch", self.athelyezes)):
-            monkeypatch.setattr(vezerlo, nev, _koteg(cel))
+        self.paste_megerositesek: list[tuple] = []
+        vezerlo.clipboardPasteConfirmationRequested.connect(
+            lambda *args: self.paste_megerositesek.append(args)
+        )
+        monkeypatch.setattr(
+            vezerlo, "copyPhotos", lambda *a: self.masolas.append(a)
+        )
+        monkeypatch.setattr(
+            vezerlo, "movePhotos", lambda *a: self.athelyezes.append(a)
+        )
 
     @property
     def semmi(self) -> bool:
-        return not self.masolas and not self.athelyezes
+        return not self.masolas and not self.athelyezes and not self.paste_megerositesek
+
+    def ellenorzi_a_megerositest(self, kep: Path, cel: Path, operation: str) -> None:
+        assert not self.masolas and not self.athelyezes
+        assert len(self.paste_megerositesek) == 1
+        paths, dest, kapott_operation = self.paste_megerositesek[0]
+        assert [Path(path) for path in paths] == [kep]
+        assert Path(dest) == cel
+        assert kapott_operation == operation
 
 
 @pytest.fixture
@@ -233,15 +237,12 @@ class TestARendesBeillesztesNemSerul:
         _beillesztes(helyzet["window"], helyzet["qt_app"])
 
         hivasok = helyzet["hivasok"]
-        assert len(hivasok.masolas) == 1 and not hivasok.athelyezes
-        assert hivasok.megallo == [True], "a Beillesztés köteg nem az első hibánál megálló út (#7114)"
-        fajlok, cel, szabaly = hivasok.masolas[0]
-        assert [Path(f) for f in fajlok] == [helyzet["kep"]]
-        assert Path(cel) == helyzet["cel"]
-        assert szabaly == "rename", "ütközésnél a beillesztés nem írhat felül"
+        hivasok.ellenorzi_a_megerositest(
+            helyzet["kep"], helyzet["cel"], "copy"
+        )
         szoveg, latszik, _ = _hibasav(helyzet["window"])
         assert szoveg == "" and not latszik, (
-            f"sikeres indításnál nem maradhat hibasáv: {szoveg!r}"
+            f"megerősítés előtt nem maradhat hibasáv: {szoveg!r}"
         )
 
     def test_kivagas_es_cel_eseten_athelyezes_indul(self, helyzet):
@@ -251,8 +252,9 @@ class TestARendesBeillesztesNemSerul:
         _beillesztes(helyzet["window"], helyzet["qt_app"])
 
         hivasok = helyzet["hivasok"]
-        assert len(hivasok.athelyezes) == 1 and not hivasok.masolas
-        assert hivasok.megallo == [True], "a Beillesztés köteg nem az első hibánál megálló út (#7114)"
+        hivasok.ellenorzi_a_megerositest(
+            helyzet["kep"], helyzet["cel"], "cut"
+        )
         assert _hibasav(helyzet["window"])[0] == ""
 
 

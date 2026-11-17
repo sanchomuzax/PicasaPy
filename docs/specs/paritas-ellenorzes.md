@@ -350,6 +350,159 @@ recent-szűrés sorrendjének eltérése már bizonyított, ezért az Autofill-j
 marad. A per-elemes virtuális cél statikus értelmezése a méréshez nem külön
 blokkoló; ezért most nem kérek új Ghidra-kört.
 
+### Zárókör 2 (2026-11-17): a megmaradt NINCS MEG és Ghidra-kör kell tételek eldöntése
+
+Ez a kör az előző zárókör (2026-11-16) maradék tételeit döntötte el. A korábbi szakaszok érintetlenek, a helyesbítések itt vannak. Forrás: utasításszintű olvasás a `Picasa3.exe`-ből (SHA-256 fent), a bináris-index hívó- és sztringadatai, a teljes binárison futtatott eltoláskeresés (`eszkozok/binaris/tagkereso.py`), a PE importtábla bejárása a `call [0x00c4....]` címek feloldásához, és a `referencia/ghidra/2026-10-21-autocomplete.txt` korábbi dekompilálása. Futásidejű Picasa-mérés nincs. A „Nálunk” állítások a munkafa mostani forrásán ellenőrzöttek. Fokok: **megerősített** = két független út, **erős** = egy út, egyértelmű utasításokkal, **feltételes** = következtetés.
+
+#### A. Eldöntve a meglévő bizonyítékból
+
+**A1. Az Autofill jelöltlistáját csak a Tags-panel inicializálója tölti, a címkézés nem frissíti (megerősített); az inicializáló egyszeri futása erős.** Ez lezárja a `0x00639c00`, a `0x006393b0` („mikor töltődik”) és a „a panel `+0x2c0` listájának írója” sort.
+
+- A `0x00639c00` a panel inicializálója (gyerekelemeket is létrehoz, ezért az ismételt futása kettőzött elemeket adna, vagyis valószínűleg egyszeri; a hívója vtábla-hívás, az index nem látja): betölti az `i18n\tagpanel_text.xml` fájlt (`0x00639c25`), a `quicktags::enable_recents` értéket a panel `+0x350` jelzőjébe olvassa (`0x00639c36-0x00639c62`), a könyvtár címkekészletét a `0x00437380(könyvtár, &panel+0x2c0)` hívással tölti (`0x00639c7b-0x00639c83`), rögzített színeket és méreteket állít (`0x00639cc5-0x00639d4b`), létrehozza a `%s/taglist` és `%s/removetag` gyerekelemeket (`0x00639d8b`, `0x00639e22`), végül a `0x0063ae00`, `0x0063b5a0`, `0x0063c7d0` függvényt hívja (`0x00639df7`, `0x00639dfd`, `0x00639eb4`).
+- Első út: a teljes binárison futtatott eltoláskeresés a `[reg+0x2c0]` és `[reg+0x2c4]` hivatkozásokra a Tags-panel tartományában csak a konstruktort (`0x00639440`, nullázás `0x006394a5`, `0x006394ab`), a destruktort (`0x00639510`), az inicializálót (`0x00639c7b`) és az olvasó `0x0063d260`-at (`0x0063d2aa`, `0x0063d2c0`) találta. Második út: az index szerint a `0x00437380` egyetlen hívója a `0x00639c00` (`0x00639c83`), és a `0x00639c00`-nak nincs közvetlen hívója (a `TagPanel::vftable` tagja).
+- A hozzáadás és a törlés utáni frissítő (`0x0065ac80`, `CThumbUI::UpdateKeywordStatus`) a `rightdrawerpanel/tagpanel` csomópontnak csak `selection_changed` eseményt küld (`0x0065acb1-0x0065acfb`). A `0x0063a5e0` erre csak a kijelölés címkelistáját építő `0x0063ae00`-at hívja (`2026-10-21-autocomplete.txt:131-440`), a `+0x2c0` listát nem.
+- Következmény: egy munkamenetben újonnan felvett címke nem jelölt az Autofill számára, amíg az inicializáló újra nem fut (valószínűleg a panel újralétrehozásáig). **Nálunk:** `keywords_controller.py:453-460` (`beginQuickTagAutofill`) minden ablaknyitáskor friss jelöltlistát épít az indexből (`:420-442`). Az eltérés csak a munkamenet közben felvett új címkénél látszik; a panel létrehozásának idejét a B1 mérés dönti el, ezért erre jegytörzs egyelőre nincs.
+
+**A2. A `+0x34a4` nem a néző állapota, hanem felugró menü számláló (megerősített; helyesbíti a 2026-11-16-i „ha a `+0x34a4` a nézőt jelöli” feltevést).**
+
+- A `0x005e2000` a `0x005e2637`-en eggyel növeli a főablak `+0x34a4` mezőjét, a `0x005e264e`-en a `[0x00c407c4]` importot hívja (a PE importtábla bejárása szerint ez a USER32 `TrackPopupMenu`), a `0x005e2659`-en eggyel csökkenti. Ugyanez a minta a `0x005e26a0`-ban (`0x005e2e69`, `0x005e2e83`, `0x005e2e90`). A konstruktor (`0x005643e0`) nullázza (`0x00564c6e`).
+- A `0x0057c430(4)` őr tehát csak felugró menü futása közben lehet igaz, amikor billentyű úgysem érkezik. A Ctrl+K és Ctrl+T nézőbeli elérhetőségét **nem** ez az őr dönti el. A `0x0056c420` és a `0x0056c110` őr az Import- és a Nyomtatás-panel állapota (korábban megválaszolt), a `+0x30d4` 2, 4, 6 módkódja szerkesztőeszköz-állapot (a `0x005f8d80` jóváhagyó kapu kérdező ágai, `ui-audit-editor.md:2450`). A maradék kérdés („szerkesztő nézetben, eszköz nélkül működik-e a Ctrl+K”) a B3 mérésé. Nem blokkoló.
+
+**A3. A hozzáadás és a törlés lánca (erős; a követett láncra érvényes).**
+
+- **Törlés** (`0x0063c5a0` → `IKeywordUpdate +8` = `0x0065b3b0`): minden kijelölt elemre és a törlendő címkére meghívja az elem tárolójának `+0x60` tagját (elem, címke), majd elemenként a `+0x64` tagot (elem, 1) (`0x0065b405-0x0065b46d`), a visszatérési értékeket eldobja, végül frissít (`0x0065b48d`). Nincs megerősítés, nincs küszöb, nincs hibaüzenet. Vegyes kijelölésnél tehát minden kijelölt képre lefut; a címke nélküli képen a `+0x60` belseje dönt, de felületi hatása nincs. **Nálunk:** `removeKeywordFromRows` a kijelölt sorokon megerősítés nélkül dolgozik (`keywords_controller.py:193-202`, `MainRightDrawer.qml:93-95`): egyezik.
+- **Hozzáadás** (egy token, `0x0063bed0`): előbb `IKeywordUpdate +4` = `0x0065b160` (a 30 fölötti megerősítés, `0x0063c036`); ha a felhasználó nemet mond, a függvény a Legutóbbiak frissítése ELŐTT visszatér. Utána, ha a panel `+0x350` jelzője be van kapcsolva, a `0x0063c120` frissíti a Legutóbbiakat (`0x0063c085`), végül `IKeywordUpdate +0x14` = `0x0065b4b0` (`0x0063c0d9`) hajtja végre a hozzáadást: kijelölés-gyűjtő (`0x005c76b0`), majd `+0x10` = `0x0065b590`, amely üres listánál hatás nélkül 0-t ad (`0x0065b59c-0x0065b5a8`), különben a `0x004d9aa0` a címkét egy név szerinti, `__stricmp`-pel (kis- és nagybetűre érzéketlenül, `0x004d9b65`) kereső táblába szúrja az elemekkel, értesíti a figyelőket (`0x004d9eba` → `0x004db8f0`: verziószámláló, piszkos jelző, figyelők hívása), majd frissít (`0x0065b644`). **Nálunk:** a megerősítés a hozzáadás útján van (`MainRightDrawer.qml:83-92`, `MainLibrarySelectionState.qml:184-191`), a Legutóbbiak a megerősítés UTÁN frissülnek (`keywords_controller.py:177-190`): egyezik. A névegyeztetés nálunk Unicode `casefold` (`:185-188`, `:199-200`), a panel listája pedig csak az ASCII betűket hajtja kisbetűre (`:60-62`); nem ASCII betűk (`Ä` és `ä`) kis- és nagybetű-változatánál az eredeti `__stricmp` viselkedése mérés nélkül nem ismert (B2).
+- **A „részleges hiba” üzenet kiváltója.** A `0x0063bb30` a `0x0063bed0` nem nulla és nem `0xf4242` (Mégse) értékét hibaként számolja (`0x0063bc9e-0x0063bca9`), és ha van hiba, kiírja a `Some of the text you entered could not be added as a tag.` szöveget (`0x0063bd90-0x0063bdb4`). A láncban a `0x004d9aa0` csak akkor ad nem nulla értéket, ha a tábla vagy a bejegyzés nem hozható létre (`or eax, -1`: `0x004d9d2e`, `0x004d9d4e`, `0x004d9d65`), vagy ha az elemtömb tömörítése memóriahiba miatt elbukik (`0x004d9be7` → `0x0074cf40`, `0x0074cf7d`: 4). Tartalmi elutasítás (tiltott karakter, létező címke) nincs. A túl hosszú token nem hibás, hanem levágott (A4). Az üzenet tehát hétköznapi bevitelnél gyakorlatilag nem jelenik meg. **Nálunk:** a figyelmeztetés a lemezírási hibát jelzi (`MainRightDrawer.qml:90-91`, `keywords_controller.py:268-273`); ez tudatos eltérés, nem blokkoló.
+
+**A4. A bevitel tokenizálása (megerősített).** A bontó (`0x009881d0`) az üres tokent kihagyja: a határoló ismétlődéseit átugorja (`0x00988230-0x00988237`), az üres szakaszra újraindul (`0x00988272-0x00988274`), tehát `a,,b` és a záró vessző nem hoz létre üres címkét. Minden token legfeljebb `0x80` (128) bájt (`0x0063bbdc-0x0063bbe1`: a harmadik argumentum; `0x0098828c-0x00988290`: a hossz a korlátra vágva). Utána minden token elejéről és végéről levágja a szóközöket (`0x009869a0`), a belső szóközsorokat egyre szűkíti (második bontás szóközön, `0x0063bc5f-0x0063bc60`, összefűzés `0x0063bc71`). **Nálunk:** `TagsPanel.qml:52-63` vessző mentén bont és kihagyja az üreseket; `_clean_keyword` (`keywords_controller.py:65-68`) a szóközöket egyre szűkíti. Az egyetlen eltérés a 128 bájtos levágás, amelyet **nem** másolunk: egy többbájtos UTF-8 karaktert félbevághatna, és csak 128 bájtnál hosszabb címkénél látszana. Tudatos eltérés (zárókör döntése, 2026-11-17), nem blokkoló.
+
+**A5. Írásvédettség, videó, visszavonás, lemezíró (erős a követett láncra; a lemezen látható végállapot a B2 mérésé).**
+
+- **Íráskapu a panelben nincs a láncban.** A `keywords/readonly_file` és `keywords/readonly_label` sztringnek az index szerint egyetlen használója a `0x00840b80` (a `Keywords (%d pictures)` ablak állapotfrissítője). Ezt a `0x0065ac80` csak akkor hívja, ha a főablak `+0xed0` mezője nem nulla (`0x0065ad02`, `0x0065b07c`, `0x0065b0ad`); ezt a mezőt a teljes binárison egyetlen utasítás írja, a konstruktor nullázása (`0x00564d8c`; `add` vagy `lea` alakú hivatkozás nincs). A `Keywords (%d pictures)` ablak és az írásvédett felirata így a vizsgált binárisban elérhetetlen kód. Az „írásvédett” állapotot kiszámító `IKeywordUpdate +0xc` (`0x0065b310` → `0x0047d1b0`) útvonal-alapú, nem fájlattribútum-vizsgálat (nem hív Win32 függvényt). A panel `0x0063bb30`, `0x0063bed0`, `0x0063a5e0`, `0x0063c5a0` függvényében írásvédettségi kapu nincs. **Nálunk:** a panel előre szól és tiltja a bevitelt, ha a kijelölésben van írásvédett elem (`keywords_controller.py:138-170`, `TagsPanel.qml` `readOnlySelection`, #2998), mappaszintű próbaírással. Az eredeti panel tehát a követett lánc szerint nem tilt; hogy az írásvédett fájlon mi történik (némán elmarad, vagy a háttéríró jelez), a B2 mérés kérdése. A mai viselkedést addig nem bontjuk vissza.
+- **A lemezíró aszinkron.** A `0x00415790` konstruktorú objektum (amelyhez az adatbázis-mentő `0x0041ba40` tartozik) `+0x2aa0` tagja a `FileTagger`, a `ytAsyncQueue<KeywordJob>` leszármazottja (vtábla `0x00c82938`; `0x00415d00-0x00415d0d` hívja a `0x00496c40` alapkonstruktort). A címkék fájlba írása tehát feladatsoron át, háttérben történik. A mentéskor a `0x0041ba40` a sort kiüríti (`0x0041bb3e`), a `0x00455e30` időkorláttal figyeli (`0x00455e4c`: `add edi, 0x2aa0`). A felületi frissítés (a táblába szúrás és a figyelők értesítése) azonnali, a fájl később íródik. A feladat konkrét végrehajtója (IPTC, XMP, `.picasa.ini`, formátumonként) statikusan nem azonosított, és a bájtszintű végállapot mérés nélkül sem eldönthető: B2.
+- **Videó:** a hozzáadási láncban (`0x0065b590`, `0x004d9aa0`) típusszűrő nincs; a tárolás helye formátumonként a B2 mérésé.
+- **Visszavonás:** a követett láncban (`0x0063bb30`, `0x0063bed0`, `0x0065b3b0`, `0x0065b4b0`, `0x0065b590`) visszavonási bejegyzés nincs; a `[0x00d6793c]` számláló a kurzorállapotot kezeli (`SetCursor`, `0x0065b518-0x0065b525`). Nálunk sincs címkézési visszavonás. Nem blokkoló.
+
+**A6. Új, bizonyított eltérések a felületen.**
+
+- **Üres gyorscímke-hely (megerősített).** A `0x0063a5e0` `quicktag_%d` ága a megjelenített értéket a `]empty` sztringgel veti össze (`0x0063a959-0x0063a967`, `0x0063a998`); egyezésnél a `0x0063a99a` a `0x0063a9da`-ra ugrik, amely a `0x0063d840`-et hívja, nem egyezésnél a `0x0063bed0`-et. A `0x0063d840` a `quicktagconfig` erőforrásból a „Configure Quick Tags” ablakot építi (`0x0063d8c2`, `0x0063d8db`). Második út: a `2026-10-21-autocomplete.txt` dekompilálása ugyanezt adja (`FUN_0063d840()` a `]empty` összevetés után). Az üres hely buboréksúgója `TagPanel::emptytip` („Click to configure quick tags”, `picasa-beviteli-mezok.md:227`). Az üres gyorscímkére kattintás tehát a konfigurációs ablakot nyitja, nem a „nincs beírt szöveg” súgót. Ez **helyesbíti** a #4271 olvasatát. **Nálunk:** `TagsPanel.qml:323-325` az üres helyre `tagNoTextDialog.open()`-t hív; a tesztek ezt rögzítik: `tests/app/qml_functional/test_cimke_panel_4271.py:250-256`, `tests/app/test_qml_quicktags.py:63-80`.
+- **Üres szöveg Entere (erős; maga az üzenet korábbról megerősített).** Az Enter (`editselected`) a `0x0063acd0`-n át a `0x0063bb30(panel, 0)`-t hívja (`0x0063ad76`); üres vagy szóközös szövegnél `TagPanel::notify_notext` modális üzenet jelenik meg (`0x0063bb85-0x0063bbd9`), és semmi nem íródik. **Nálunk:** `TagsPanel.qml:52-56` (`submit`) üres szövegnél csendben visszatér, a `+` gomb üres szövegnél tiltott (`:100`), a súgóablak (`tagNoTextDialog`, `:382-399`) csak az üres gyorscímkéről nyílik. A `+` gomb eredeti tiltott vagy engedélyezett állapota üres szövegnél nem eldöntött (B3).
+- **Helyi menü elválasztója (erős).** A `0x00735480` négy rekordot ad át a `0x00a6aee0` tételépítőnek (`push 4`, `0x0073559a`): Add (`0xa0b8`), Search (`0xa0b7`), egy csupa nulla rekord (`0x00d6f868`), Remove (`0xa0b9`). A `0x00a6aee0` a nulla feliratmutatót tartalmazó rekordot `0xffff` azonosítóval elválasztóként építi (`0x00a6af04-0x00a6af20`), ugyanígy, ahogy a Szerkesztés menü csupa nulla rekordjai elválasztók (`picasa-menusor-csoportok.md:75`). A Remove tétel előtt tehát elválasztó áll. **Nálunk:** `TagContextMenu.qml:27-41` három tétel, elválasztó nélkül. A menü vizuális egyezését eredeti képernyőkép híján nem mértük.
+- **Mégse és a Legutóbbiak jelölőnégyzet (erős, mérésre vár).** A párbeszéd kattintáskezelője (`0x0083f210`) a Mégse ágon csak a `[ablak+0xd5c]` jelzőt állítja és bezár (`0x0083f24e-0x0083f266`); a jelölőnégyzet ága azonnal kiírja a `Preferences\quicktags::enable_recents` értéket (`0x0083f289-0x0083f2ae` → `0x0083f2f0`, `0x0083f375-0x0083f3a6`). Visszaállító írás nincs. **Nálunk:** `QuickTagsConfigDialog.qml:79-83` a Mégse a kapcsolót is visszaállítja. A viselkedés megfordítása működő funkciót érint, ezért a jegytörzs a B4 mérés után készül (a 2026-11-16-i „lehetséges eltérés” így erősre emelkedik).
+- **Letiltott Autofill gomb (erős).** A `+0x20e` a vezérlők általános „tiltott” jelzője: a `0x009cd7e0` állítja és újrafestést kér (`or [node+8], 2`), a görgetősáv találatvizsgálata kihagyja, ha be van állítva (`0x009cf56d`). A `0x0083ea00` ezt állítja be az Autofill gombon, ha nincs jelölt, tehát a gomb letiltott, nem rejtett. **Nálunk:** `QuickTagsConfigDialog.qml:167` ugyanígy tiltja: egyezik.
+
+**A7. A 30 fölötti megerősítés hatóköre (megerősített).** Az `IKeywordUpdate +4` (`0x0065b160`) egyetlen hívója a hozzáadás útja (`0x0063c036`); ez a gépelt hozzáadásnál tokenenként, a gyorscímkénél és a helyi menü „Add this tag to entire selection” tételénél egyaránt lefut. A törlésnél (A3) nincs. A gépelt bevitelnél a `0x0063bb30` ciklusa minden tokenre külön hívja a `0x0063bed0`-et (`0x0063bc99`), tehát tokenenként külön megerősítés jön; a Mégse (`0xf4242`) az adott tokent hagyja ki, a többit nem érinti (`0x0063bca2-0x0063bcae`). **Nálunk:** a kérdés helye és a törlés egyezik (`MainRightDrawer.qml:86-88`, `MainLibrarySelectionState.qml:184-191`; a törlés nem kér megerősítést), a tokenenkénti sorrend viszont **hibás**: a `submit()` ciklusa (`TagsPanel.qml:57-62`) egymás után hívja az `addRequested`-et, a 30 fölötti ág pedig a függő megerősítés `askFor`-ját hívja újra (`MainRightDrawer.qml:87`, `MainDialogs.qml:70-80`), amely felülírja a sorokat és a címkét. `tag1, tag2` bevitelnél 31 vagy több kijelölt képen így egyetlen kérdés jön, és csak az utolsó token (`tag2`) kerül fel; az első néma módon elvész. Új hiba, lásd az 5. jegytörzset.
+
+#### Az eddig nyitott tételek eldöntése (14 tétel)
+
+| Régi tétel | Döntés | Hol |
+|---|---|---|
+| `Ghidra-kör kell: 0x006a5060` és szomszédai (jelöltsorrend) | (b) mérés | B1. A Ghidra 425 válasza nem erre szólt; a sorrend a kulcsszó-tároló feltöltési sorrendje, ami a futó könyvtárhoz kötött |
+| `Ghidra-kör kell: 0x006393b0` (két előfordulás) | (a) lezárva | A1; a létrehozás időpontja B1 |
+| `Ghidra-kör kell: 0x00639c00` | (a) lezárva | A1 |
+| `Ghidra-kör kell: 0x0056c420` | (a) lezárva | 2026-11-16 és A2 |
+| `Ghidra-kör kell: 0x0057c3b0` (`+0x9c`, `+0x34a4`) | (a) részben lezárva, a maradék (b) mérés, nem blokkoló | A2, B3 |
+| `Ghidra-kör kell:` a panel `+0x2c0` írója (`0x00437380`, `0x004936c0`) | (a) lezárva: az író a `0x00639c00`; a készlet sorrendje (b) mérés | A1, B1 |
+| `NINCS MEG`: futásidejű sorrendmérés (két helyen) | (b) mérés | B1 |
+| `NINCS MEG`: eredeti mérés fájlkivonattal és ini-vel | (b) mérés | B2 |
+| `NINCS MEG`: kijelölés-, videó-, írásvédettségi feltétel | (a) lezárva a láncra, a látható eredmény (b) mérés | A5, B2 |
+| `NINCS MEG`: címke törlése, vegyes kijelölés | (a) lezárva | A3 |
+| `NINCS MEG`: író visszahívás és lemezvégállapot | (a) lezárva az aszinkron sorra, a bájtok (b) mérés, egy Ghidra-sor | A5, B2, lent |
+| `NINCS MEG`: címkézési mérőfutás az archívumban | (b) mérés | B1-B4 |
+| Index, keresés, rács, kijelölés végállapota | (a) az index és a keresés frissítése lezárva (azonnali tábla és `selection_changed`), a rács és a kijelölés (b) mérés | A1, A3, B2 |
+| Visszavonás, hibaág, részleges végrehajtás | (a) lezárva: nincs visszavonás, törlésnél nincs hibaág, hozzáadásnál csak belső hiba; a háttéríró hibája (b) mérés | A3, A5, B2 |
+
+#### B. Mérés dönti el (egy közös mérési jegy)
+
+A következő tételeket sem újabb Ghidra-kör, sem statikus olvasás nem dönti el: a felhasználó által látott eredmény futó adatbázis-állapottól vagy fájlbájtoktól függ. Egy mérési jegy adja őket (Colab, az angol 3.9.141 Wine alatt, a `colab_felmero.py futtat --lepesek ...` útján, izolált mintakönyvtárral). A mérés saját eszközzel elvégezhető, ezért a jegye `ready`, nem `blocked`.
+
+- **B1. Autofill sorrend és pillanatkép.** Három mappa, rövid ismert nevű képekkel és ismert beolvasási sorrenddel; olyan címkékkel, ahol a gyakoriság és az első előfordulás sorrendje eltér (`b` 5 képen az első mappában, `a` 1 képen). Tiszta indítás után Quick Tags konfiguráció, Autofill (Legutóbbiak be és ki), a tíz mező szövege rögzítendő; majd a mezők kiürítése és újabb Autofill; ezután ÚJ címke felvétele a munkamenetben, a konfiguráció újranyitása és Autofill (megjelenik-e az új címke); végül Picasa-újraindítás után megjelenik-e. Dönti: a jelöltsorrendet (`0x006a5060` és szomszédai, `0x00437380`, `0x004936c0`) és a pillanatkép idejét (`0x006393b0`).
+- **B2. Címkézés végállapota.** JPEG, PNG és videó; egy kép és több kép; hozzáadás, törlés és vegyes törlés (két kép a címkével, egy nélküle); fájl SHA-256 előtte és utána, a `.picasa.ini` előtte és utána, a JPEG IPTC és XMP blokkjai, a késleltetés (a `FileTagger` aszinkron); a rács és a kijelölés a művelet után; írásvédett fájlon (`attrib +R`) hozzáadás: a panel felirata, a bevitel tilthatósága, a fájl és az ini állapota; egy `Árvíz` és `árvíz` címkepár hozzáadása és törlése. Dönti: a lemezvégállapotot, a vegyes törlés fájlhatását, az írásvédett és a videós viselkedést, a hibaágat, a nem ASCII kis- és nagybetűs egyeztetést.
+- **B3. Ctrl+K, Ctrl+T és a Nézet > Tags engedélyezése.** Könyvtárban, szerkesztő nézetben eszköz nélkül és vágóeszközzel, teljes képernyős nézetben; a `+` gomb állapota üres szövegnél. Dönti: a nézőbeli és a szerkesztőbeli elérhetőséget (`0x0057c3b0`, `0x005e60d0`).
+- **B4. Mégse és a Legutóbbiak kapcsoló.** A kapcsoló átváltása, Mégse, újranyitás; a panel két felső gombja közben. Dönti: az A6 Mégse pontját.
+
+Egyetlen Ghidra-sor marad, nem blokkoló (a B2 bájtszintű eredményét magyarázza, nem helyettesíti):
+
+- `Ghidra-kör kell: 0x00496d80 - a FileTagger (vtábla 0x00c82938) futtató ciklusa: a 0x00496f08 call edx a KeywordJob melyik virtuális tagját hívja, és az mit ír (IPTC, XMP, .picasa.ini); kik töltik a feladatsort (a 0x0041ba40 és a 0x00455e30 csak kiüríti, illetve várja)`
+
+#### Helyesbítések a korábbi állításokhoz
+
+- A `+0x34a4` mező nem a néző állapota, hanem felugró menü számláló (A2).
+- Az üres gyorscímkére kattintás a konfigurációs ablakot nyitja, nem a „nincs beírt szöveg” súgót (A6); a #4271 olvasata és két tesztje ennek megfelelően javítandó.
+- A `keywords/readonly_label` szöveg nem a Címkék panel kapuja: az eredetiben egy elérhetetlen ablakhoz tartozik (A5); a #2998 panel-kapuja nem az eredeti másolata. Visszabontása mérés (B2) előtt nem indokolt.
+- A Mégse és a Legutóbbiak jelölőnégyzet „lehetséges eltérése” erős eltérés (A6), a jegytörzs a B4 után.
+
+### Zárási döntés (a 2026-11-17-i zárókör után)
+
+**A #7022 kutatási jegy lezárható.** Ez felülírja a 2026-11-16-i döntést, amely szerint az egyetlen blokkoló egy mérési kör. Indok: minden tétel, amelyből fejlesztői jegytörzs készíthető, a bináris utasításaiból eldőlt (A1-A7). A megmaradt tételek (B1-B4) peremesetek (sorrend nagy könyvtárnál, nézőbeli billentyű, a lemezre írt bájtok, Mégse), amelyektől az alábbi jegytörzsek egyike sem függ; ezek egy közös, felvehető mérési jegybe kerülnek. Bizonyítottsági fok: **megerősített** az Autofill-lista címkézéssel nem frissülésére, az üres gyorscímke eltérésre, a `+0x34a4` helyesbítésre és a tokenizálásra; **erős** az üres szöveg Entere eltérésre, a hozzáadás és a törlés láncára, a helyi menü elválasztójára, a letiltott Autofill gombra, az írásvédettségi kapu hiányára és a Mégse viselkedésre; **feltételes** a lemezvégállapotra (nincs mérve).
+
+Nyitott kérdések mérlege (az „Az eddig nyitott tételek eldöntése” tábla 14 sora): 0 nyílt · 5 lezárva (a 2. és a 6. sor maradéka a B1 mérés kérdése, nem külön tétel) · 9 mérési jegyre kijelölve (B1-B4, felvehető, nem blokkoló) · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”.
+
+**Készre ítélt jegytörzsek (jegy nem kell), a mai forráson ellenőrizve:**
+
+- **1. Nézet > Tags, Ctrl+K, Ctrl+T, panelgomb:** kész, `MainWindowLibraryActions.qml:15-23` (`valtsFiokLapot`), `MainKeyboardShortcuts.qml:107-114,326-336`, `MainMenuBar.qml:378` (#7025).
+- **2. Vesszős Add Tag:** kész, `TagsPanel.qml:52-63`.
+- **3. Helyi menü sorrendje (Add, Search, Remove):** kész, `TagContextMenu.qml:27-41`; az elválasztó lent, a 3. jegytörzsben.
+- **4. Pontos Legutóbbiak-egyezés:** kész, `keywords_controller.py:341-359`.
+- **5. Egyszeri Autofill és jelöltforrás (5/b):** kész, `QuickTagsConfigDialog.qml:50-58,152-168`, `keywords_controller.py:420-508` (#7053); a sorrend közelítés az index sorrendjével, a pontos sorrend B1.
+- **6. Tulajdonságok > Edit Tags a Tags panelt kapcsolja:** kész, `PropertiesPanel.qml:133,162`.
+
+**Megmaradó fejlesztői jegytörzsek (öt):**
+
+#### 1. (új) Az üres gyorscímke-hely a Quick Tags konfigurációs ablakot nyissa
+
+**Eredeti:** a `quicktag_%d` esemény a megjelenített értéket a `]empty` sztringgel veti össze (`0x0063a959-0x0063a967`); egyezésnél a `0x0063d840` a „Configure Quick Tags” ablakot nyitja (`0x0063a99a` → `0x0063a9da`, `0x0063d8c2`, `0x0063d8db`), különben a hozzáadás fut. Az üres hely buboréksúgója `TagPanel::emptytip` („Click to configure quick tags”).
+
+**Nálunk:** `TagsPanel.qml:323-325`: az üres (`?`) hely a „nincs beírt szöveg” súgóablakot nyitja (`tagNoTextDialog`); a buboréksúgó (`:328`) viszont a konfigurációt ígéri. A #4271 tesztjei ezt rögzítik: `tests/app/qml_functional/test_cimke_panel_4271.py:250-256`, `tests/app/test_qml_quicktags.py:63-80`.
+
+**Teendő:** az üres hely kattintása a `quickTagsConfigDialog`-ot nyissa (a fogaskerék gombbal azonos úton, `TagsPanel.qml:269`); a nem üres hely továbbra is hozzáad. A két #4271 teszt ennek megfelelően módosul.
+
+**Kész, ha:** valódi kattintás az üres (`?`) gyorscímkére megnyitja a Quick Tags konfigurációs ablakot, nem a „nincs beírt szöveg” ablakot, és nem ír címkét; nem üres hely kattintása hozzáad; a buboréksúgó változatlan; a módosított tesztek valódi kattintással futnak.
+
+#### 2. (új) Az üres szöveg Entere a „nincs beírt szöveg” súgóablakot mutassa
+
+**Eredeti:** az Enter (`editselected`) a `0x0063acd0`-n át a `0x0063bb30`-ra jut (`0x0063ad76`); üres vagy csak szóközt tartalmazó szövegnél `TagPanel::notify_notext` modális üzenet jelenik meg (`0x0063bb85-0x0063bbd9`), semmi nem íródik.
+
+**Nálunk:** `TagsPanel.qml:52-56` (`submit`) csendben visszatér, a `+` gomb üres szövegnél tiltott (`:100`); a súgóablak (`:382-399`) csak az üres gyorscímkéről nyílik (ezt az 1. jegytörzs megszünteti).
+
+**Teendő:** Enterre üres vagy csak szóközt tartalmazó szövegnél a `tagNoTextDialog` jelenjen meg; semmi ne íródjon. A `+` gomb tiltott állapota nem változik (az eredeti állapota B3). Kijelölés nélkül a mai tiltás marad (nem mért).
+
+**Kész, ha:** kijelölt írható képnél az üres és a szóközös mező Entere megjeleníti az eredeti szövegű ablakot (`tagNoTextMessage`), és nem ír címkét; nem üres szövegnél a mai hozzáadás fut; valódi billentyűteszt (`Return`).
+
+#### 3. (új) Elválasztó a címkesor helyi menüjében a Search és a Remove között
+
+**Eredeti:** a `0x00735480` négy rekordot ad a `0x00a6aee0`-nak: Add (`0xa0b8`), Search (`0xa0b7`), csupa nulla rekord (`0x00d6f868`), Remove (`0xa0b9`); a nulla rekord elválasztó (`0x00a6af04-0x00a6af20`).
+
+**Nálunk:** `TagContextMenu.qml:27-41`: három `MenuItem`, elválasztó nélkül.
+
+**Teendő:** a „Search for items with this tag” és a „Remove this tag” közé `MenuSeparator` kerül; a három művelet célja nem változik.
+
+**Kész, ha:** a címkesor jobbklikk-menüjében a sorrend Add, Search, elválasztó, Remove; mindhárom tétel a mai műveletét indítja. A vizuális egyezést eredeti képernyőkép híján a jegy nem méri, ezt kimondja.
+
+#### 4. (megmaradt a 2026-11-16-i zárókörből) A Quick Tags Autofill a forrás első 100 eleméből szűrjön
+
+**Eredeti:** a `0x0063d260` a panel `+0x2c0` listájának első 100 elemét veszi, majd a `0x0063d550` a két legutóbbi címkét kizárja; ha az első 100 között mindkettő szerepel, legfeljebb 98 jelölt marad.
+
+**Nálunk:** `keywords_controller.py:420-442`: a két legutóbbi címke kizárása megelőzi a 100 jelöltes korlátot, így 100 jelölt marad.
+
+**Teendő:** a korlát a forráslista első 100 egyedi elemére vonatkozzon, a szűrés utána fusson. A hatás csak 100-nál több egyedi címkénél és a 99. jelölt után látszik (egy Autofill legfeljebb tíz mezőt tölt), ezért olcsó és nem sürgős.
+
+**Kész, ha:** 100-nál több egyedi címkénél, mindkét recent címkével az első 100 között, a jelöltlista 98 elemű; az üres jelölt kimarad; a recent címkék nem jelöltek.
+
+#### 5. (új, hiba) Több tokenes bevitel 30 fölötti kijelölésnél minden tokent külön megerősítéssel adjon hozzá
+
+**Eredeti:** a gépelt bevitel minden tokenjére külön lefut a hozzáadás (`0x0063bb30` → `0x0063bc99` → `0x0063bed0`), és mindegyik a saját 30 fölötti megerősítését kérdezi (`0x0063c036`, „Are you sure you want to apply this tag to all %d items?”). A Mégse az adott tokent hagyja ki, a következő tokenre ez nincs hatással (`0x0063bca2-0x0063bcae`).
+
+**Nálunk:** `TagsPanel.qml:57-62` egymás után hívja az `addRequested`-et; `MainRightDrawer.qml:86-88` 30 fölötti kijelölésnél a `askFor`-t hívja, amely a függő ablak sorait és címkéjét felülírja (`MainDialogs.qml:70-80`). A felhasználó egyetlen kérdést lát, és csak az utolsó token kerül fel; az előzők némán elvesznek. A hibát a mai tesztek nem fedik (egy tokenes eseteket vizsgálnak).
+
+**Teendő:** a tokenek megerősítése sorban történjen: a következő token kérdése az előző lezárása (Igen vagy Nem) után jön. Egy token vagy legfeljebb 30 kijelölt kép esetén a mai folyamat nem változik.
+
+**Kész, ha:** 31 kijelölt képnél a `tag1, tag2` bevitel két egymás utáni megerősítést ad; mindkettőre igent mondva mindkét címke felkerül mind a 31 képre; az elsőre nemet mondva csak a `tag2` kerül fel; 30 vagy kevesebb képnél nincs kérdés és mindkét címke azonnal felkerül. A teszt valódi gépeléssel és Enterrel fut, a megerősítő ablak gombjait is megnyomja.
+
+**Nem nyílik jegy (a zárókör döntése):** a 128 bájtos tokenlevágás másolása (A4, tudatos eltérés); a hibaüzenet kiváltója (A3, a PicasaPy a lemezírási hibát jelzi); az írásvédettségi kapu visszabontása (A5), a Mégse viselkedés (A6) és a pillanatkép-viselkedés (A1) a B mérés előtt; a `PropertiesPanel.qml:146-150` `KeywordsDialog` példánya, amelyet semmi nem nyit (az eredetiben a megfelelő ablak is elérhetetlen, A5), nem része ennek a jegynek.
+
+**Következő irány (felvehető):** a B1-B4 mérési jegy, a fent megadott tartalommal és az egy Ghidra-sorral. Ez nem blokkolja a #7022 lezárását és a fenti öt jegytörzset.
+
 ## #7012: A Hozzáadás albumhoz teljes folyamata az eredeti Picasával összevetve
 
 **Állapot: nyitott.** A menüpontok címkéjét és néhány kontextusfüggő parancsazonosítót a bináris rekordjaiból azonosítottam, a PicasaPy jelenlegi útja a forrásból követhető. Az eredeti albumválasztás utáni írási kezelő és a végállapot nincs igazolva, ezért a két termék teljes műveleti paritása nem állítható.
@@ -551,6 +704,8 @@ Módszer: a `Picasa3.exe` (3.9.141.259, SHA-256 `644b7bec89a2e4d57d119d15aa36af1
 
 Ghidra-kör kell: 0x004a82d0 - az időzített sorkiürítő (legfeljebb 10 másodpercenként) mely sorba állított módosításból hívja a `0x004753b0`-at és írja a `#db3\saverlist.txt` fájlt, és a `0x00536a90` utáni `0x004abc70` jelző ide vezet-e; ebből dől el, hogy a fotómenü `Screensaver` sora (`]screensaver`) a tálcás ágtól (`0x00531a20`, `0x00531ac0`) eltérő hatású-e.
 
+Ghidra-válasz (2026-11-17, második zárókör, utasításszintű vizsgálattal, lásd lent): a `0x004a82d0` a `ytList<TokenBackup>` sort üríti, a `0x004abc70` jelzője nem ehhez a sorhoz tartozik, és a kérdés nem érinti a felhasználó által látható PicasaPy-viselkedést. Döntés: (c), **nem blokkoló**.
+
 A megmaradó fejlesztői jegytörzsek (mindegyik binárisból igazolt működésre épül, a „Nem szabad” sorok a már működő viselkedést védik):
 
 **J1. Az Add to Album almenü tartalma és az új album párbeszéde.**
@@ -578,6 +733,56 @@ A megmaradó fejlesztői jegytörzsek (mindegyik binárisból igazolt működés
 - Nem szabad: a meglévő album sorára ejtés (hozzáadás), a #5121 célterület-elhelyezése és a menüs `New Album...` út nem változhat.
 
 Nem blokkoló, külön nem jegyzett tételek: az albumsorrend a bal hasábbal egyező (a hasáb sorrendje külön paritási kérdés), a tálcagomb szürke állapota üres tálcánál, a hozzáadás utáni grafikai végállapot (futásidejű mérés, eltérésre nincs bizonyíték), az ini-írás időzítése, a PicasaPy hibasávja, a katalógus belső adatbázisa.
+
+### Kiegészítés (2026-11-17, második zárókör): a "Nálunk" oszlop újraellenőrzése, két új felvétel és a megmaradt tételek
+
+Módszer: a `Picasa3.exe` (3.9.141.259, SHA-256 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`) utasításszintű visszafejtése (`capstone`, 32 bites x86), a bináris-index (`functions`, `xrefs`, `string_xrefs`, `rtti`) lekérdezése, a `referencia/kepernyo/` felvételeinek megnézése és a PicasaPy jelenlegi főágának olvasása (`grep`, a lent idézett sorszámokkal). Dekompilált veremváltozót (`unaff_*`, `local_*`) nem használtam: minden itt idézett állítás a függvény vagy a hívóhely utasításaiból, illetve a hívásgráfból jön, ezért korábbi következtetést sem kellett visszavonni. Futásidejű mérést ebben a körben nem végeztem. A korábbi bejegyzések szövege érintetlen; ahol ez a kiegészítés felülír valamit, kimondom. Fokok: megerősített (két független út), erős (egy út, egyértelmű utasítások), feltételes (következtetés).
+
+**Új eredeti felvételek (korábban sehol nem hivatkozottak).**
+
+- `referencia/kepernyo/2026-11-12-helyi-menu-add-to-album-job643.png`: eredeti Picasa 3.9, angol, két kijelölt kép, a könyvtárban csak a virtuális `Recently Updated` album. A kép helyi menüjének kinyitott `Add to Album` almenüje fentről lefelé: `Starred Photos`, `Screensaver`, vízszintes elválasztó, `New Album...`. Nincs vezető elválasztó, egy sor sem szürke, és a virtuális `Recently Updated` nem szerepel az albumok között.
+- `referencia/kepernyo/2026-11-12-helyi-menu-new-album-job644.png`: a `New Album...` sor után megnyíló Album Properties ablak: a `Name` mező `Untitled` értékű és kijelölt, a `Date` `11/12/2026`, a zenei jelölőnégyzet kikapcsolt és a `Browse...` szürke, a `Place taken (optional)` és a `Description (optional)` üres, van `OK` és `Cancel` gomb. A felvétel neve szerint a mérés 2026-11-12-én készült, és a mappa és a képek dátuma is 2026. nov. 12. (a felvétel fejlécében és állapotsorában), ezért a felvétel a "mai nap" és az "első kép ideje mínusz egy másodperc" olvasatot nem választja szét, de a `0x005e9cd2` és `0x005ea792` alapú olvasatnak nem is mond ellent.
+
+Fokozat: a nulla saját albumos almenüsorrend **megerősített** (felvétel és a `0x0056c5a0` építési sorrendje, két független út); az albumos sorok sorrendje és a néző menüje **erős** (csak bináris, felvétel nincs).
+
+**Felülírt vagy pontosított korábbi állítások (a régi szöveg érintetlen).**
+
+1. A J1 és a J2 kész, és a fő ágban van: a #7100 (almenü sorrend és új album dátum, fotómenü és néző) és a #7101 (albumdefiníció a célmappa ini-jébe) az 1.0.135 kiadás része. A fenti sorok és jegytörzsek erre vonatkozó "Nálunk" állításai (a fotómenü almenüje csak albumokat és `New Album...` sort ad, a néző almenüje album nélkül szürke, az új album dátuma üres, meglévő albumhoz adásnál nincs definíció) elavultak, az új állapot a lenti táblázatban áll.
+2. A J3 (#7102) a zárókör idején még nem volt a fő ágban (a `fix/7102-codex` ágon várt); a PR #7106 2026-11-17-én beolvadt.
+3. A tálca `New Album...` sorára a korábbi szöveg azt írja, hogy a párbeszédet "a tálca tartalmával" nyitja (`MainTrayBar.qml:82-85`). A kód a kijelölt sorokat adja át (`photoActionRows()`, `MainLibrarySelectionState.qml:72-80`), nem a tartott elemeket; a meglévő albumsorok viszont a tálca tartalmát írják (`addHeldToAlbum`, `tray_album_controller.py:240-266`). Hogy az eredeti tálcás sorai melyik képekre hatnak, a lenti (b) tétel dönti el.
+4. A `0x004a82d0` kérdésére (lásd a régi egyetlen Ghidra-sort) a választ a lenti hetedik sor adja.
+
+**A döntések (a jelenlegi forráson ellenőrizve):**
+
+| Tétel | Döntés | Válasz | Bizonyíték | Fok |
+|---|---|---|---|---|
+| Fotómenü `Add to Album` almenüje, jelenlegi állapot | (a) | Sorrend: albumok (`Instantiator`), elválasztó csak ha van album, `Starred Photos`, `Screensaver`, elválasztó, `New Album...` (`PhotoContextMenu.qml:177-229`). Egyezik a job-643 felvétellel (nulla album) és a `0x0056c5a0` építési sorrendjével. A sorrendet és az elválasztót a #7100 QML-tesztje is ellenőrzi (`tests/app/qml_functional/test_hozzaadas_albumhoz_almenu_7100.py:158-222`). **Nincs eltérés.** | job-643, `0x0056c5a0` | megerősített (nulla album), erős (albumokkal) |
+| Néző almenüje | (a) | Ugyanaz a sorlista (`ViewerContextMenu.qml:140-185`), `enabled` megkötés nincs, tehát album nélkül is elérhető, ahogy az eredeti `0x8a` kontextus. A három különleges sor a nézett képre hat (`PhotoViewerContextActions.qml:133-148`). **Nincs eltérés.** | `0x0056d234`, `ui-audit-context-menus.md:727` | erős |
+| `Starred Photos` a fotó- és a néző menüben | (a) | Az `addStarMany` (`photo_ops_transform_mixin.py:109`) csak a még csillagtalan képekre ír, csillagot soha nem von le, ez egyezik az eredeti hozzáadó ággal (`0x00536a90`). A tálcamenü sora külön tétel (lásd a (b) sort). **Nincs eltérés.** | `0x00536efe`, `0x00536f30` | erős |
+| Új album dátuma a fotó- és a néző menüben | (a) | Az `openAddToNewAlbum` az első kijelölt kép idejét adja mínusz egy másodperccel (`FileOpsDialogs.qml:94-102`, `ujmappa_datum.js:68-70`), idő nélküli képnél üres. A job-644 felvétel nem mond ellent. Idő nélküli képnél az eredeti őrértéke `949998,0` (`0x00c7ccf8`), a PicasaPy üres mezőt ad: ritka szélső eset, **nem blokkoló**. Egyébként **nincs eltérés.** | `0x005e9cd2`, `0x005ea792`, job-644 | erős |
+| Albumdefiníció meglévő albumhoz adásnál (J2) | (a) | A fotómenü, a néző és a tálca albumsorai ugyanazt az `_album_membership_mutator`-t használják (`photo_ops_album_membership_mixin.py:30-91`, `tray_album_controller.py:240-266`): ha a célmappa ini-jében nincs `[.album:token]` szakasz, vagy a `name` üres, a szakasz a más mappákból ismert névvel, dátummal, hellyel és leírással kerül be; a névvel ellátott szakasz érintetlen marad, az `albums=` a végére fűz, és ismétlésnél nem változik (`ini/albums.py:65-80`). Tesztek: `tests/app/test_album_write_controller.py`, `tests/app/test_qml_tray_add_to_album_455.py`. **Nincs eltérés.** | `0x00556ff0`, `0x0052c350`, `0x0052a810` | erős |
+| Húzás az üres albumlista helyőrző sorára (J3) | (a), eltérés marad | Az eredeti: a 4-es típusú rekordnál (`0x005e3a88`) a `0x005e3a95` `call 0x0098b6e0` az aktuális helyi időt állítja elő (időlekérdezés, majd a naptári mezők `+1900` és `+1` korrekcióval), a `0x005e3aaf` `0x005ea770`-et hív, ott `0x005ea792` `fsub` egy másodpercet von le, és `0x005ea7e0` a `0x006dc030` Album Properties párbeszédet nyitja. A zárókör idején a fő ágban a `FileOpsDialogs.qml:104-107` `createAlbumFromDrop` azonnal `Untitled` albumot hoz létre (`MainFolderPane.qml:130-133`). Teendő: J3 (#7102, nyitott). | `0x005e3a88`, `0x005e3aaf`, `0x005ea792`, `0x005ea7e0` | erős |
+| `Screensaver` sor hatása a fotómenüből (a korábbi egyetlen Ghidra-sor, `0x004a82d0`) | (c) | A `0x004a82d0` nem tagságíró: a `CAlbumState` `+0x17c` mezőjén ülő `ytList<TokenBackup>` (RTTI `0x00c836f8`, konstruktor `0x004a1560`, `0x004a1613`) sorát üríti. A sorba fűző `0x004ba770` (0x18 bájtos csomópont, fej `+0x4c`, farok `+0x50`, darabszám `+0x48`) egyetlen hívója a `0x004a51f0`, a `CAlbumState` másodlagos vtáblájának (`0x00c836b4`) egyetlen bejegyzése: a `]screensaver` tokenhez 1-es (`0x004a52f1` `mov ebx, 1`, `0x004a5311`), a `]star` tokenhez 0-s fajtát rendel (`0x004a5345` `xor ebx, ebx`), és a `+0x134` mezőn át fűz (a másodlagos alap `+0x48` eltolásával ez a `+0x17c`). A `0x004a82d0` pontosan e két fajtára ír: az 1-esre `saverlist.txt`-t (`0x004a83f9`-`0x004a840f`), a 0-ra `starlist.txt`-t (`0x004a8425`-`0x004a843b`), fajtánként legfeljebb egyszer ürítésenként. Csak akkor fut, ha az utolsó ürítés óta legalább 10 másodperc telt el (`0x004a82ef` `fcomp [0xcf3b28]`, `0x004a82f7`-`0x004a82fa`: a küszöb alatt kilép), és a `0x004a8480` hívja elsőként (a `CAlbumState` főtáblájának utolsó bejegyzése, `0x00c8368c`). A `0x004abc70` jelzője nem ehhez a sorhoz tartozik: a `+0xf0` zár alatt a `+0x138` állapottábla elemét állítja (ugrótábla `0x004abd3c`: `0` és `3` és `4` a `3`-ra, `1` és `2` az `1`-re). A hiányzó láncszem: ki hívja a `0x004a51f0`-et egy gyűjtemény módosítása után (vtábla-hívás, az index nem látja; a `0x00536a90` és a `0x006ca5a0` hívásai között nincs). Felhasználónak látható hatása a PicasaPyban nincs: a képernyővédő forrásai a saját beállításban élnek, a program `saverlist.txt`-t nem ír (a `starlist.txt`-t csak az importáló olvassa, `pmpimport/importer.py:422`), az eredeti fájl átvétele külön, már rögzített kérdés (`picasa-menu-parancsok-viselkedes.md:1957-1961`). A fotómenü `Screensaver` sora ugyanazt a PicasaPy-műveletet kapja, mint a tálcás. **Nem blokkoló.** Ha a fájlírás pontos kiváltója valaha kell (például a `saverlist.txt` átvételéhez), a célpont a `0x004a51f0` vtábla-hívóhelye. | `0x004ba770`, `0x004a51f0`, `0x004a82d0`, `0x004a8480`, `0x004a1560`, `0x004abc70` | erős (a sor és az ürítő), feltételes (a kiváltó hívás) |
+| `Screensaver` sor megerősítő ablaka a fotó- és a néző menüben | (a), eltérés | Az eredeti: a sor `0xbb80 + n` parancsa a `0x005cb990` diszpécserből a `0x00536a90(this, 0)`-ra fut, ugyanarra, mint bármely album. Ebben és a két szintnyi hívottjában nincs megerősítő vagy üzenetablak (a `0x009bac20` és a `MessageBoxA/W`, `DialogBox*` importok hívása hiányzik), az `addtosaver::warning` sztring egyetlen hivatkozója a `0x00531900` (a Létrehozás menü `Add to Screensaver...` kezelője), a `0x009bac20` egyetlen hívója a `0x0053xxxx` tartományban ugyanez. Nálunk: a `requestAddToScreensaver` (`MainLibrarySelectionState.qml:173-180`) albumnézetben megerősítést kér (`MainWindowCommands.qml:670-688`, "Are you sure you want to add all of the selected album's images?"), és ezt hívja a fotómenü (`MainPhotoContextMenu.qml:161`) és a néző (`PhotoViewerContextActions.qml:138-142`) `Screensaver` sora is; a kérdés az egész albumról szól, miközben csak a kijelölt képek kerülnek be. Teendő: J4. | `0x00536a90`, `0x00531900`, `0x009bac20` | erős |
+| Tálca `New Album...` sor alapdátuma | (a), eltérés | Az eredeti kezelő, a `0x00577ea0` az Album Properties alapdátumául az aktuális helyi időt adja (`0x00577ee5` `call 0x0098b6e0`, `0x00577f07` `call 0x0055ce70`), az első kép idejét kérő hívás (`0x005c6460`) és az egy másodperces levonás nélkül; a párbeszédet a `0x00577f1d` `0x006dc030` nyitja. Nálunk: a sor üres dátummal nyit (`MainTrayBar.qml:82-85`, `FileOpsDialogs.qml:112-123`: `isoDate \|\| ""`), tehát a mentett `date=` is üres. A `[.album:]` szakasz `date` kulcsát a job-257 mérés rögzíti (`picasa-keptalca.md:1494`). Teendő: J4. | `0x00577ea0`, `0x0098b6e0` | erős |
+| Tálca `Add to` menü: `Starred Photos` és `Screensaver` sor hatása, és a három különleges sor célpontja | (b) | Két olvasat van, a meglévő bizonyíték nem választ köztük. (A) A sorok a `Labels` lista közönséges gyűjteménysorai, és a kattintás a `thumbui/makealbum` kezelőre, a `0x00577c30`-ra fut: ennek közvetlen hívásai között nincs `]star`-ág, csillagkapcsoló vagy telepítő hívás, és két szintig megerősítő ablak sincs; a hozzáadás a `0x004b0190` és a `0x006ca5a0` útján megy (a tagot kihagyja). Ekkor a `Starred Photos` hozzáad, a `Screensaver` kérdés nélkül ad, és mindhárom különleges sor a tálca listájára hat. (B) A `picasa-keptalca.md:1492` a két sort a külön `action/screensaver` (`0x00531900`, megerősítéssel és telepítővel) és `thumbui/startoggle` (`0x005e81e0`) csomópontra köti; ekkor a `Starred Photos` megfordíthat, a `Screensaver` albumnézetben kérdez. A mért sorrend (`Screensaver`, `Starred Photos`, `Untitled`, `New Album...`) mindkét olvasattal összefér, mert ábécé szerint is így áll. A job-256 mérés csak a csillagtalan képet fedi le. A PicasaPy ma a (B) olvasat szerint viselkedik (`toggleStarMany`: `MainTrayBar.qml:78-81`, megerősítés albumnézetben, kijelölt sorok). **A döntő mérés egyetlen Colab-feladat** az eredeti Picasán: a tálcában két kép van tartva (az egyik már csillagozott), a rácson egy harmadik kép van kijelölve, a könyvtárban van egy `Aaa` nevű saját album is; `Add to` > `Starred Photos`, majd `Add to` > `Screensaver` albumnézetben. Mindegyik után képernyőkép, a bal sáv darabszámai és az érintett képek `.picasa.ini`-szakasza. Ebből dől el: hozzáad vagy megfordít a csillag, kér-e megerősítést a `Screensaver`, a tálca vagy a kijelölés a célpont, és hogy az `Aaa` album a `Screensaver` fölé kerül-e a menüben ((A) olvasat). A PicasaPy ma működő viselkedését a mérés előtt nem szabad változtatni. | `0x00577c30`, `picasa-keptalca.md:1492`, job-256 | feltételes |
+| Értesítősáv a `Screensaver` hozzáadás után | (c) | A PicasaPy "Added %1 pictures to Screensaver." sávot mutat (`MainLibrarySelectionState.qml:167-171`), az eredeti menüs útja (`0x00536a90`) nem jelez vissza. Adatot nem érint, nem rontja a műveletet, a Létrehozás menü útján is ez a visszajelzés áll. **Nem blokkoló**, a J4 nem törli. | `0x00536a90` | erős |
+| Húzás a bal lista `Starred Photos` sorára | (c) | A PicasaPy-ban a csillagozott soron nincs `DropArea` (az `AlbumsSection.qml` ejtési területe az albumdelegáltban van), az eredeti viselkedését nem vizsgáltam: a `0x005e39a0` a `0x004461a0`-ra igaz célt közönséges gyűjteménynek veszi, de hogy a lista csillagozott sora ejtési cél-e, nem dőlt el. Felvétel nem készíthető (a Colab-végrehajtó húzásra nem képes, job-656 és job-657). Nem az Add to alapfolyamat, **nem blokkoló**; ha egyszer kell, a `0x005e39a0` rekordtípus-ágaiból olvasható ki. | `0x005e39a0` | feltételes |
+
+### Zárási döntés (második zárókör, 2026-11-17)
+
+**A #7012 kutatási jegy lezárható.** Blokkoló nincs. Minden korábbi "NINCS MEG" és "Ghidra-kör kell:" tétel eldőlt (a), nem blokkoló (c), vagy egyetlen megnevezett mérésre fut (b). A `0x004a82d0` kérdés (c) lett, a két új felvétel (job-643, job-644) a nulla albumos almenüt megerősíti.
+
+Az egyetlen nyitott tétel a (b) mérés (tálca `Add to` menü, `Starred Photos` és `Screensaver` sor, célpont). Ezt a hívó önálló mérési jegybe tegye (a Colab-végrehajtó futtatja, leírása a fenti táblázatban); az eredménye legfeljebb egy új fejlesztői jegyet (J5) hoz, a J3 és a J4 kiadását nem akadályozza, mert azok a tálca `Starred Photos` és `Screensaver` sorához nem nyúlnak. A jegy tehát nem vár semmire, ami rajtunk kívül áll.
+
+A megmaradó fejlesztői jegytörzsek (mindegyik binárisból igazolt működésre épül):
+
+- **J1 (#7100): kész, a fő ágban (1.0.135).** Nincs teendő. Utómunka a jegyen: a renderelt fotó- és néző-almenü képi összevetése a job-643 felvétellel (nulla album); az albumos sorrend csak a binárisra támaszkodik. Ebben a körben felületi renderelést nem futtattam, ezért az összevetés nincs elvégezve.
+- **J2 (#7101): kész, a fő ágban (1.0.135).** Nincs teendő.
+- **J3 (#7102): kész, a fő ágban (a PR #7106 2026-11-17-én beolvadt).** A lenti szöveg a beolvadás előtti állapotot írja le. Eredeti: a helyőrző sorra ejtés az Album Properties párbeszédet nyitja (név `Untitled`, dátum az aktuális idő mínusz egy másodperc, hely és leírás üres), OK után az album létrejön, a ledobott képek bekerülnek, és az új album nyílik meg; Mégse: nincs változás (`0x005e3a88`, `0x005e3aaf`, `0x005ea792`, `0x005ea7e0`; erős). Nálunk: `FileOpsDialogs.qml:104-107` párbeszéd nélkül, azonnal `Untitled` albumot készít; a `fix/7102-codex` ág ezt módosítja, de a fő ágban még nincs. Teendő: a helyőrző sorra ejtés a párbeszédet nyissa a ledobott sorokkal. Kész, ha: a QML-teszt a párbeszédet renderelve ellenőrzi (név, dátum), OK után az album, a tagság és az aktív album megvan, Mégse után semmi nem változik. Nem szabad: a meglévő album sorára ejtés (hozzáadás), a #5121 célterület-elhelyezése és a menüs `New Album...` út nem változhat.
+- **J4 (#7131): a fotó- és a néző-almenü `Screensaver` sora megerősítés nélkül ad, és a tálca `New Album...` sora a mai dátumot ajánlja.** Eredeti: (1) az almenü `Screensaver` sora a `0x00536a90(this, 0)`-ra fut, ebben és két szintnyi hívottjában nincs megerősítő vagy üzenetablak, az `addtosaver::warning` egyetlen hivatkozója a `0x00531900`; (2) a tálca `New Album...` sorának kezelője (`0x00577ea0`) az Album Properties dátumát az aktuális helyi időre állítja, az első kép ideje és a másodperc levonása nélkül. Fok: erős. Nálunk: (1) a `requestAddToScreensaver` albumnézetben megerősítést kér (`MainLibrarySelectionState.qml:173-180`, `MainWindowCommands.qml:670-688`), és ezt hívja a fotómenü (`MainPhotoContextMenu.qml:161`) és a néző (`PhotoViewerContextActions.qml:138-142`) sora; (2) a tálca `New Album...` sora üres dátummal nyit (`MainTrayBar.qml:82-85`, `FileOpsDialogs.qml:112-123`). Teendő: (1) a fotómenü és a néző `Screensaver` sora a kijelölt (nézett) képeket kérdés nélkül adja a képernyővédőhöz; a Létrehozás menü `Add to Screensaver...` útja (`MainMenuBar.qml:184`) megtartja a megerősítést; a tálca sorát ez a jegy nem érinti, azt a (b) mérés dönti el. (2) A tálca `New Album...` sora az Album Properties dátumát az aktuális helyi dátumra állítja; a fotómenüs út (első kép ideje mínusz egy másodperc) nem változik. Kész, ha: QML-teszt albumnézetben, hogy a fotómenü és a néző `Screensaver` sora után nincs megerősítő ablak, és a képek bekerülnek a képernyővédő forrásai közé; a Létrehozás menü útja albumnézetben megerősítést kér; a tálcából nyitott `New Album...` párbeszéd dátuma a mai nap, és OK után az ini `date=` kulcsa ugyanez; a fotómenüs `New Album...` dátuma változatlan. Nem szabad: a tálcamenü mért sorrendje, a meglévő albumsorok viselkedése, a #7100 almenü-sorrendje, a Létrehozás menü megerősítése és a hozzáadás utáni értesítősáv nem változhat.
+
+Nem blokkoló, külön nem jegyzett tételek (ebben a körben eldöntve): a `Screensaver` fájlírásának pontos kiváltója (a PicasaPy nem ír `saverlist.txt`-t), az értesítősáv a `Screensaver` hozzáadás után, az idő nélküli kép őrértéke az Add to új album párbeszédben, a bal lista `Starred Photos` sorára ejtés, valamint a korábban már nem blokkolónak jelölt tételek (albumsorrend, tálcagomb szürke állapota, hozzáadás utáni grafikai végállapot, az ini-írás időzítése, hibasáv, belső adatbázis).
 
 ## #7028: A képek másolásának és beillesztésének teljes folyamata az eredeti Picasával összevetve
 
@@ -732,6 +937,7 @@ Azt próbáltam cáfolni, hogy a Copy/Move megerősítő kizárólag a húzás-e
 
 1. A `CThumbUI::MoveFilesConfirmCopy` szöveget (`0x00c89f0c`) a bináris-index szerint a `0x005350b0` használja, nem a `0x00579220`; a `0x00579220` a szerkesztőpanel elemeit kezeli. Hogy a kérdés pontosan mikor jön (azonos mappa, mindig, vagy csak húzásnál), nincs igazolva.
    - Ghidra-válasz (2026-11-15, `referencia/ghidra/2026-11-15-7012-7028-colab-decomp.txt`): a `0x005350b0` a fájlok albummappába mozgatásának vagy másolásának közös rutinja; a `param_4` választja a szöveget (1: `MoveFilesConfirmCopy`, 0: `MoveFilesConfirmMove`), a `param_5 == 0` esetén mindig kérdez, 1 esetén csak a `0x00992ed0` fájlonkénti jelzésére. Hívói: `0x00535020` és `0x005e39a0` (ejtés albumra vagy mappára, mozgatás, mindig kérdez), `0x00541fc0` (másolás, csak jelzésnél). **A kérdés a mozgatásé és a húzásé, nem a Ctrl+V beillesztésé**, ezért a 2. jegyjavaslat a mostani formájában elvetve; a húzásos mozgatás kérdése külön összevetés tárgya.
+   - **Feloldás (#7112, 2026-11-16):** a fenti „nem a Ctrl+V beillesztésé” mondat a saját hívólistájának ellentmond. A bináris-index hívóélei szerint a Paste `0x005791d0` hívja a `0x00784100`-at, az egyetlen hívóként a `0x00784100` hívja a `0x00535020`-at, az pedig a `0x005350b0`-at (`param_5=0`, mindig kérdez). A Ctrl+V tehát eléri a megerősítést, amikor a `0x00784100` feltétele (eltérő forrás- és célmappa, közönséges mappacél) teljesül; azonos mappánál és albumcélnál nem. Az 1. jegyjavaslat (#7112) ezért érvényes, a mondat a húzásos utakra (`0x005e39a0`) vonatkozó megjegyzésként olvasandó.
 2. A `0x00716f40` egy elem `+0x5d` bájtját állítja; hogy ez a rácson halványított megjelenítést jelent-e, az értelmezés, nem bizonyíték.
    - Ghidra-kör kell: 0x00716f40 - Mit jelöl a rácselem `+0x5d` bájtja, és a kivágás után hogyan rajzolja a rács az így jelölt elemet [nem blokkoló]
   - Ghidra-válasz (2026-11-16, `referencia/ghidra/2026-11-16-koteg-438-465.txt:4536`): **a `+0x5d` a rácselem kijelölt jelzője, nem a kivágásé** (`picasa-eger-es-kijeloles.md:310`), és a kimenet nem igazolja a kivágott elemek halványított rajzolását. A `0x00716f40(jelző)` (`:4536-4594`) a nézet (`+0x32c` tömb, `+0x330` darabszám) minden elemén, amelynek `+0x5a` bájtja 0, a `+0x5d`-t a `jelző` értékére állítja (a `+0x5a != 0` elemen nullázza), a változást `+0x59 = 1`-gyel (újrarajzolás) jelzi, `jelző != 0` esetén a nézet `+0x390` mezőjét az első ilyen elem `+0xb4` kulcsára állítja, végül a `+0x31c` tömb minden elemének `+4` metódusát hívja: összes elem kijelölése (1) vagy a kijelölés törlése (0). A Cut/Copy kezelő `0x005fe9f0` (a `0x9d39` Cut a `0x005cbb29 push 1`, a `0x9d3b` Copy `edi` = 0 értékkel, a billentyűről az `X` = `0x58` a `0x005e63f5-0x005e63fe` szerint) ezt **`0` jelzővel** hívja a `[this+0xea4]` nézetre (`0x005fea7c push 0`, `0x005fea7e`), tehát a kijelölést törli, nem jelöl kivágottra; az `1` jelzős hívók a `0x00577ba0` (`0x00577bc3`, `[this+0xeac]`, ha a `0x00716920` nullát ad), a `0x005e5070` (`0x005e5084`) és a `0x0082a670` (`0x0082bfe0`). A kivágás jelzője a `[this+0x31a4]` bájt (a `0x005fe9f0` írja, `0x005fea8d`), amelyet a beillesztő ág olvas (`0x005fead6`, `0x005feb0f`) és nulláz (`0x005feb1b`), a `0x00564db6` is nulláz; a `.text` pásztázása szerint rácsrajzoló nem olvassa. **A rácson halványított megjelenítés tehát nem igazolt; a 3. jegyjavaslat alapja (`0x00716f40`, `[item+0x5d] = 1` mint kivágási jelölés) téves értelmezés volt, a javaslat elvetve.** A rajzoló oldal (a `+0x5d` és `+0x59` olvasói) nincs a kimenetben.
@@ -3876,6 +4082,219 @@ Lezárva (a bizonyítékkal): a belépési pontok (1. szakasz); az eseményút �
 - **A `CThumbUI::searchmatch` (` (%d matches)`) és a `CThumUI::searchsizekey` (`size<`, magyarul `méret<`) kulcsok** a szövegtárban vannak, de az EXE-ben hivatkozó literál nincs (nyers bájtkeresés a teljes PE-n, a prefixszel egyező találatok a `searchmatchstr` és `searchmatchnum` voltak): az eredeti ezeket nem használja. Egy `méret<` típusú keresés tehát nem bizonyított.
 - **Elvetett értelmezés:** a `searchoptions/moviesearch` (`0x005d4a90`, `Preferences\SupportMovies`) és a `searchcontainer/moviesearch` két külön elem; a kapcsolat köztük nincs bizonyítva, ezért a filmszűrő láthatóságát ez a lap nem állítja a `SupportMovies`-hoz.
 
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md`: új #7072 szakasz a keresés belépő- és kilépőútjaival, a szóindex mért tartalmával, a gépelés és az eredménysáv viselkedésével, tíz eltéréssel (E1-E10, ebből az E10 feltételes), hat javasolt jegyleírással, nyolc nevesített Ghidra-körrel és egy Colab-feladattal.
+
+## #7083: Az importálás teljes folyamata az eredeti Picasával összevetve
+
+Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
+`644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`.
+A bináris nem futott; az eredeti oldalt statikus olvasásból (`capstone`,
+cím szerinti diszasszemblálás), az index `string_xrefs`/`xrefs`/`rtti`
+tábláiból, az `acquirepanel.tre` és `acquirepanel_text.tre` erőforrásból, a
+`stringres-en-hu.tsv` szövegtárból és a gyorsbillentyű-táblából olvastam. A
+PicasaPy oldalt a jelenlegi forrásból. Korábbi, igazolt részekre hivatkozom,
+újra nem kutattam őket: `picasa-importalas.md` (panelelemek, tippsor, törlési
+figyelmeztetés, hibaszövegek), `picasa-menu-parancsok-viselkedes.md` 41.
+tétel (`AcquirePath`, `LastImport%x`, `acquireUseSubFolder`, almappa-módok),
+`picasa-kereses-modok.md` (a másodpéldány-ellenőrző `originfast` kulcsa),
+`picasa-fo-ablak-elrendezes.md` (`autoexclude`, `importdest`),
+`picasa-gyorsbillentyuk.md` (Ctrl+M), `picasa-lebego-ertesito.md`.
+**Futtatott felvételt az importálási panelről nem találtam:** a #6845 lapon a
+`ki00/kepernyo__29.png` ("importálási ablak") csak a PicasaPy-sor szövegében
+szerepel, a kép a helyi mérőadat-archívumban nincs meg. Ezért minden
+működés-állítás statikus; a futtatott mérést a Nyitott résznél kérem.
+Ideiglenes szkriptjeim és nyers kimeneteim a munkafa `.bt/` mappájában vannak
+(a `.gitignore` kizárja).
+
+**A menürekord-szabály (#7012) alkalmazása.** A menüépítő rekordjaiban a
+parancsmező az eggyel előző rekordhoz tartozik. A Fájl menüben az `&Import From...` (`ID_FILE_IMPORTPICTURE`, felirat `0x00c8c718`) után épített
+`Import from Picasa Web Albums...` blokk írja a `0x9c91` parancsot
+(`0x005592d7`); ez az `&Import From...` rekord parancsa. Független
+ellenőrzés: a gyorsbillentyű-tábla `0x00d6d9b0 | 0x9c91 | &Import From... | Ctrl+M` (`picasa-menu-leltar.md:434`), és az `&Import From...` blokk a
+megelőző `Add &File to Picasa...` rekord `0xe101` (MFC `ID_FILE_OPEN`)
+parancsát írja. A bélyegkép helyi menüjében (`0x00733c70`, 20 bájtos
+rekordok, a parancsszó a rekord `+0xa` mezője) ugyanígy: `Include File` =
+`0x9dc4`, `Exclude File` = `0x9dc5`, `Include All` = `0x9dc2`, `Exclude All` =
+`0x9dc3`.
+
+### Következtetés
+
+Az eredeti importálás nem külön ablak, hanem a főablak `panelroot/acquiretab`
+panelje (`acquirepanel`), amely a könyvtár helyére lép (`m_acquire_enable`,
+`macros.tre:281`). **Három belépési út fut ugyanarra a kezelőre
+(`0x005d3010`):** az eszköztár `Import` gombja, a Fájl ▸ `&Import From...`
+menüpont és a `Ctrl+M`. A `picasa-konyvtar-eszkoztar-viselkedes.md` 1.
+szakaszának "menüegyenérték nincs" állítása ezzel megdőlt: a `0x005cb990`
+parancs-diszpécser ugrótáblája a `0x9c91` parancsot a `0x005cba7c` címre
+viszi, ami közvetlenül a `0x005d3010`-et hívja. A PicasaPy mindhárom belépést
+tartalmazza, ezekben nincs eltérés. Az eltérések a panel tartalmában vannak.
+
+Az eredeti folyamat: forrásválasztás (`Loading N files`, `Acquired N files`)
+▸ bélyegképek és előnézet ▸ választások (cél, almappa-mód, "After Copying")
+▸ `Import All` vagy `Import Selected (N)` ▸ egyetlen megerősítés, ha törlés
+jár vele ▸ indításkor a beállítások mentése ▸ háttérszál: `Reading`, `Copying at speed`,
+`Finishing` (az átmeneti `PhotoLabTemp` átnevezése), `Cleaning Up`
+▸ `scandir` a célmappákra ▸ `Completed Importing` vagy `Error Importing`.
+
+**Igazolt eltérések (a részletek lent): hét.** (E1) a célmappa-elnevezési
+mód alapértéke és megjegyzése, (E2) az "After Copying" megjegyzése és a
+"minden törlése" visszalépése, (E3) a kártyatörlés megerősítése: az eredeti
+egyetlen ablak, a hívás jelölő-szöveget nem ad át (az elrendezést nem
+mértük); nálunk kétlépcsős ablak, amelyen a "Do not ask again" jelölő a
+figyelmeztetést véglegesen eltüntetheti, (E4) az
+`Import Selected (N)` gomb és az Enter/Esc kezelés hiánya, (E5) a tippsor
+három hiányzó állapota, (E6) a korábbi célok mentésének ideje és darabszáma, (E7) panel helyett
+modális ablak, egyetlen nagy előnézet nélkül.
+Feltételes jelölt még a fájlhiba utáni viselkedés (az eredeti az egész
+importot leállítja) és a Windows-forráslista szabálya.
+
+**Bizonyítottsági fok: részben megerősített.** A belépési utak, a panel
+eseménykezelői, a megjegyzett kulcsok és alapértékeik, a törlés-megerősítés
+szerkezete és a szövegek két független úton egyeznek (diszasszemblátum és
+erőforrás). A másolás belső sorrendje, az ütközés-, hiba- és megszakítás-
+kezelés, valamint a végállapot (rács, bal hasáb, kijelölés) nem zárult le.
+
+### Belépési pontok és feltételek
+
+| Eredeti bináris cím | Nálunk fájl:sor | Teendő |
+|---|---|---|
+| **Eszköztár `thumbui/importbutton`:** `0x005d3010` (223 b); hívói `0x005d9cc0` (név-diszpécser), `0x005cb990` (parancs-diszpécser), `0x005e60d0`. Növeli a fő objektum `+0x24c` számlálóját, majd `0x005218e0`-on át megkeresi a `thumbui/acquirebutton` elemet és virtuálisan hívja. A panel `acquirebutton` eseményének kezelője a `0x0051d4c0` (az `iCAcquireController` vtable-ben, `0x0051e9a0`): `[panel+0x3c2]=1`, `[panel+0x3b0]=1`, majd `0x0051c010`, amely a `/StiDevice:` argumentumot vagy a `0x0051b990(panel,1)` forrásválasztást futtatja. A két lánc összekötése statikusan nem teljes. `.tre`: `m_acquire_enable` makró. | `MainToolbar.qml:185-203`; `MainWindowToolbar.qml:72`; `MainWindowCommands.qml:704` (`importSourceDialog`) | A belépés egyezik. A cél más: modális, önálló `Window` (`ImportSourceDialog.qml:16-31`) panel helyett; lásd E7. |
+| **Fájl ▸ `&Import From...`:** `0x00559150`, parancs `0x9c91` (előző-rekord szabály, `0x005592d7`); ugrótábla `0x005cd9fc`/`0x005cdb34` a `0x9c91`-hez `0x005cba7c` → `call 0x005d3010`. A `.text`-ben a `0x9c91` utasítás-azonnali értéke csak a menüépítőben fordul elő; a `0x0056e1c0` állapotfrissítő nem hivatkozza, tehát külön tiltásra nincs bizonyíték. | `PicasaFileMenu.qml:57-61`; `MainMenuBar.qml:314` | Egyezik, feltétel nélkül aktív. A menüpont engedélyezése más állapotforrásból nyitott (lásd Nyitott). Helyesbítés a régi lapra: a menüegyenérték létezik. |
+| **`Ctrl+M`:** gyorsbillentyű-tábla `0x00d6d9b0`, parancs `0x9c91` (`picasa-gyorsbillentyuk.md:166,291,458`). | `PicasaMenuBar.qml:686-690` (`enabled: !bar.editorActive && !bar.textEntryHasFocus`) | Egyezik. A tábla "könyvtár" nézethez köti; a szerkesztő és a szövegmező tiltása a mi döntésünk, ellenpróba nincs. |
+| **Helyi menü a bélyegképeken:** `0x00733c70`: `Include File`, `Exclude File`, `Include All`, `Exclude All`; a parancsok (`0x9dc4`, `0x9dc5`, `0x9dc2`, `0x9dc3`) a `0x005cb990` kezelőiben az `acquirepanel/include`, `includeall`, `exclude`, `excludeall` eseményt küldik (`0x005ccea8`...), a panel `0x0051f070` kezelője `0x0051f7f0(panel, include, all)`-t hív. | Nincs helyi menü. `ImportSourcePreview.qml:100-145`: csak szöveges hivatkozás (`Exclude`/`Include`); `ImportSourcePickerPanel.qml:251-260`: `Exclude All`/`Include All` gomb | Kis jelölt: a négy tétel mint helyi menü. A funkció megvan, csak a belépés hiányzik. |
+| **Parancssor `/StiDevice:`** (Windows WIA kamera csatlakozás): `0x004bc0c0` (`/StiDevice`, `0x00c839e8`), `0x0051c010` (`/StiDevice:`, `Runtime\StiDevice`), forrás kijelölése `0x0051b990`. | Nincs. A PTP/MTP kamera szándékosan kimarad (`import_source_controller_sources.py:156-165`). | Nincs teendő: Windows-specifikus eszközút, a kamera külön termékdöntés tárgya. |
+| **Behúzott hordozó (AutoRun):** az `iCDriveDetectorThread`, `...Response`, `...IsImport`, `...AR` nevű kernel-események (`0x00512cf0`, `0x00514180`); `Runtime\AutoRun` olvasása `0x00522570`, `0x00513d70`, `0x00514040`, `0x0051ee50`; törlése `0x00525630` (az import indítás végén, `0x005254fc`), a `Runtime\StiDevice`-szel együtt. A `PicasaMediaDetector.exe` név a `0x00704be0` folyamatnév-listában áll; az `AutoRun` írója nem azonosított. | Nincs. A forráslista az ablak megnyitásakor frissül (`ImportSourceDialog.qml:151-157`). | Nincs teendő: külső folyamat és Windows-specifikus; Linuxon a csatolás-figyelés külön termékdöntés. |
+| **Bezárás-figyelmeztetés:** `0x005e45c0` (1271 b; hívók `0x0057c4e0` ← `0x005e4ac0`, `0x005d3290` ← `0x005de8e0`): ha a `panelroot/acquiretab` aktív és az `anowbutton` engedélyezett, kérdés: `Import images before closing Picasa?` (`IDS_WARNCLOSEACQUIRE`), gombok `Import Images` és `Quit`; a másik ág az `acquirepanel/acancelbutton`-t nyomja (`0x005e4761`). A `0x005e4ac0` a keresés függvényei közt is szerepel (#7072). | Nincs. Az ablak modális, a főablak vele nem zárható. | Nincs teendő, amíg az importálás modális ablak. Ha a panel-átalakítás megtörténik, ez a kérdés hozzá tartozik. |
+| **Import from Google Photos...:** parancs `0x9dfa` → `0x005cc4b4` → `0x005d2ca0` ("Import in Progress...", `Disk Space Warning`). | `PicasaFileMenu.qml:62-68` (nyugdíjazott) | Nincs teendő; megszűnt szolgáltatás (#6845: nincs látható hatás). Itt fontos: a "not enough free disk space" szöveg innen való, lásd a hibák szakaszát. |
+
+### Ablak (panel), mezők, alapértékek és megjegyzett állapot
+
+- **Elrendezés (`acquirepanel.tre`).** Felül `import_from_menu` és az
+  `excludedupesbutton`; balra a bélyegképek (`selcontainer`, üres állapotban
+  "No photos available"); jobbra az előnézet (`thumbpreview`), alatta a
+  forgatás (`rotate1button`, `rotate2button`), lapozás (`previousbutton`,
+  `nextbutton`), csillag (`startoggle`) és kizárás (`excludetoggle`) gomb és a
+  `fileinfo`; alul `import_to_label`, `import_folder_menu`, `subfolder_menu`,
+  `subfolder_label`, `delete_menu`, a (megszűnt) megosztás blokk, a tippsor és
+  a gombok: `acancelbutton` (`Property escapekey 1`, azaz Esc), `anowbutton`
+  (felirata `Import All`), `import_selected` (`Import Selected (%d)`). A
+  `excludetoggle` letiltja a `startoggle`-t (`Property disabletarget`): kizárt
+  képre nem lehet csillagot tenni. Az `acquirepanel/timesegment` elem rejtett
+  (`m_hidden`). PicasaPy: egy 640 × 680-as modális `Window`, forrás-,
+  szűrő-, másodpéldány-, rács-, cél- és "After Copying" sorokkal
+  (`ImportSourceDialog.qml:297-316`).
+- **Forrás-menü.** `0x00510500` a meghajtókat `GetLogicalDriveStringsA` +
+  `GetDriveTypeA` + `GetVolumeInformationA` szerint sorolja: a 2-es típusú
+  (cserélhető) meghajtó mind, kivéve az `A:` és `B:` betűjelet; a 3-as típusú
+  (fix) kötetnél, ha a fájlrendszer `FAT`, `FAT32` vagy `NTFS`, csak akkor,
+  ha a címke `KODAK`-kal kezdődik (`0x005107c8`-`0x00510824`), más
+  fájlrendszernél megkötés nélkül; az 5-ös típusú (CD-ROM) olvasható kötetnél
+  mind. A
+  felirat `Removable Drive(%s)` (`%s` a gyökér, nem a címke). Nincs `DCIM`
+  vizsgálat a felsorolóban; a `\dcim\` szöveget a `0x0050f6a0` használja
+  (hívói `0x0050f590` és `0x0070d520`; az utóbbit a szál főrutinja,
+  `0x0070ccb0`, korán hívja).
+  `iCAcquireWIAScanner`/`iCAcquireTWAINScanner` (RTTI) az eszközútról. A
+  "Folder on Disk" tétel az `Import Files/Folder` tallózót nyitja
+  (`0x00520fa0`), ami a `Preferences\FilesFromImport` mappát jegyzi meg.
+  PicasaPy: Linuxon `/media` és `/run/media` alatti csatolások, Windowson
+  cserélhető meghajtó vagy `DCIM` mappás kötet (`import_source_controller_ sources.py:77-165`); ez az eredeti szabálytól eltér (CD-ROM nincs, a
+  `KODAK` szabály nincs, a `DCIM` vizsgálat a felsorolóban nincs).
+- **A tippsor négy állapota (`0x0051ae90`).** Az állapotot a `[panel+0x7b0]`
+  almappa-mód és a `[panel+0x480]` jelző adja: kézi mód és jelző nulla = 1.
+  ("Enter new folder title or choose existing folder to continue"), kézi mód
+  és jelző nem nulla = 2. ("Click Import All or Import Selected"), dátum mód
+  = 3. ("Import into separate folders for each date taken"), mai dátum mód =
+  4. ("Import into folder with today's date"). PicasaPy csak az 1. állapotot
+  mutatja (`ImportSourceDestinationPanel.qml:129-140`).
+- **Mikor engedélyezett az Import.** Az `AcquireImportAllEnable` (`0x005276f0`)
+  és `AcquireImportSelectedEnable` (`0x00527730`) állítmány a `0x005238b0 (panel, csakKijelölt)`-et hívja: akkor engedélyez (a visszaadott 1 =
+  engedélyezett, 2 = letiltott; a kódolás az `AcquireHasImages` és az
+  `AcquireDeleteMenuEnable` párhuzamából következik), ha a `[panel+0x480]` nem
+  nulla, és van legalább egy nem kizárt (`[elem+0xbc]==0`), `Import Selected`-nél kijelölt (`[elem+0x5d]`) elem. Az alapgomb-kezelő
+  (`0x0051b620`, feltehetően az Enter; a kód a `+0x228` célra és egy
+  "mégse" jelzőre ágazik) az `anowbutton`-t nyomja, ha legfeljebb egy kép
+  van kijelölve, különben az `import_selected`-et; a jelzős ág az
+  `acancelbutton`-t (Esc). PicasaPy: egyetlen
+  `Import` gomb, engedélye `includedCount > 0 && destFolder && !importing && (nem kézi || manualNameValid)` (`ImportSourceDestinationPanel.qml:251-261`),
+  kijelölés nincs; a #4595 óta a címhiány letiltja a gombot (a régi lap
+  "a gomb engedélyezett" megjegyzése elavult).
+- **Megjegyzett állapot és alapértékek.**
+
+| Kulcs (`Preferences\`) | Eredeti | PicasaPy |
+|---|---|---|
+| `AcquirePath` | cél-gyökér; olvasás `0x00513830`: üres vagy nem létező út esetén a `0x009966a0` hívás eredményére esik vissza (egy ismertmappa-lekérdezés, jelentése nem ellenőrzött), és azt feltehetően visszaírja (`0x00407760`, ugyanaz a hívás, mint a `LastImport%x` írásánál) | `import/defaultdestination`, alap a képek rendszermappája (`import_source_controller_state.py:162-199`); egyezik |
+| `acquireUseSubFolder` | egész; **alapérték 0** (`0x00514180`: `xor esi,esi` → olvasás `0x005148ac`-`0x00514936`, `[panel+0x7b0]`); a menü sorrendje `0x005181b0`: 0 = `Enter Folder Title`, 1 = `Date Taken (YYYY-MM-DD)`, 2 = `%s (Today)`; **írás az import indításakor** `0x00525400` | alap `"date"`, **nem tárolt** (`ImportSourceDialog.qml:94`) |
+| `acquireCleanCard` | egész; alap 0 (`Leave card alone`); olvasás `0x00519560`: a **2 (összes törlése) 1-re esik vissza**; írás `0x0051a0c2`, csak ha a forrás törölhető (`[panel+0x2a6] != 0`) | alap `"leave"`, **nem tárolt** (`ImportSourceDialog.qml:105`) |
+| `LastImport%x` | korábbi célok; **írás az import indításakor** (`0x00525352`), legfeljebb 5 tétel (`0x0052532c`-`0x00525347`: a darabszám 5-re vágva); menü `0x00516180` | **sikeres másolás után**, legfeljebb 8 (`import_source_controller_state.py:55,210-223`; `import_source_controller.py:440-444`) |
+| `autoexclude` | alap 1; `0x0051f600` | `import/autoexclude`, alap igaz (#5473); egyezik |
+| `ImportSegmentMinutes` | alap 0, ekkor 90 perc (`0x005219c5`-`0x00521a10`); perc × 60 / 86400 nap, a bélyegkép-lista `+0x310` mezőjébe | nincs; a rács nem szegmentál |
+| `FilesFromImport` | a fájltallózó utolsó mappája (`0x00521050`) | nincs (Qt `FileDialog`) |
+
+A "Recent sources" legördülő (`ImportSourcePickerPanel.qml:44-57`) **nem
+eredeti:** a `LastImport%x`, a `-seperator-before-LastImports-` és az
+`Acquire::ChooseFolder` a `0x00516180`-ban, az `import_folder_menu`
+építőjében áll (a `0x005254c3` hívás az `acquirepanel/import_folder_menu`
+elemmel). A forráslistának megjegyzett előzménye az eredetiben nincs. Ez egy
+tudatos, működő többlet, nem teendő; a komment (`ImportSourcePickerPanel.qml: 42-43`) téves állítását pontosítani érdemes.
+
+### Tárolás, hatás és állapotsor
+
+| Hatás | Eredeti Picasa 3.9 | PicasaPy most |
+|---|---|---|
+| Fájlok másolása | A `0x0070ccb0` (az `iCAcquireScanner` fő rutinja) háttérszálon dolgozik. A `0x0070bdd0` befejező lépése az átmeneti `PhotoLabTemp`-et átnevezi (a hibaszöveg: `An error has occurred while renaming PhotoLabTemp. Cancelling Import.`), majd egy elérési útra `GetFileAttributes`, a `2` bit törlése, `SetFileAttributes` (`0x0070c424`-`0x0070c446`; a hívott `[0x00d694bc]` és `[0x00d69514]` mutató célja nincs feloldva, a mintázat attribútum-lekérdezés és -beállítás, feltehetően a rejtett jelző levétele). Az átmeneti név létrehozási helye nincs meg (a `PhotoLabTemp` csak a hibaszövegben szerepel). A dátumos ág `0x0070b1e0`. Az ütköző nevek kezelése nyitott. | Közvetlenül a végleges almappába másol (`import_source_controller.py:415-435`), `fileops.copy_photo` ütközésnél új nevet ad (`név-1.jpg`). Átmeneti mappa nincs. |
+| Almappa neve | `Date Taken (YYYY-MM-DD)`: a `%d-%02d-%02d` formátum (`0x00c875c4`, `0x00514980`); `%s (Today)`; kézi cím. Ismeretlen dátumú képek mappája nincs meg. | `ÉÉÉÉ-HH-NN`, kézi név, mai dátum (`importsource.py:351-389`); ismeretlen dátumnál `Ismeretlen dátum` (`importsource.py:48`), eredeti nincs |
+| `.picasa.ini` | A csillag és a forgatás helye az eredetiben nincs meg (nyitott). A forrás-ini szekciójának sorsa törléskor nyitott. | `_mark_imported_ini`: `rotate=rotate(n)` és `backuphash`, `star=yes` a másolat ini-jébe; törléskor a forrás-ini szekció és a kísérők mennek (`import_source_controller_import.py:26-86`) |
+| Index és bal hasáb | A célmappák egy `scandir` feladattal a beolvasó rendszerbe kerülnek (`0x0070c4ce`-`0x0070c55a`, `0x0070baa8`-`0x0070bb85`; `0x0052db70` feladat-rekordot épít a mappa útjával, `0x00709460` és `0x007096f0` egy mappa-halmazba szúr, a halmaz szerepe nem ellenőrzött). | `addWatchedFolder` a sikeres másolás után (`import_source_controller.py:440-444`) |
+| Rács és kijelölés | A panel bezárása és a megjelenő mappa nincs meg (nyitott). | A főablak nem navigál; az ablak nyitva marad. Az értesítő "click to view" feliratot mutat, de üres célponttal: kattintásra semmi nem történik (`PicasaNotifier.qml:360-368`, `:318-338`). |
+| Állapotsor és háttérmunka | A fázisszövegek egy `ytProgress` elembe kerülnek (RTTI `0x00c81db4`; létrehozás `0x0070ebf0`, frissítés `0x00415610(elem, szöveg, tört)`): `Reading %1$d of %2$d files`, `Copying %1$d of %2$d files` + ` at %s/sec` (tört = kész/összes), `Finishing`, `Cleaning Up`, `Completed Importing` vagy `Error Importing` (`[+0x2c8]==6`, tört 1,0). A panel státuszsorába: `Loading %d files`, `Loading %1$d of %2$d files`, `Acquired %d files` (`0x0051e5c0`). Melyik felület mutatja a `ytProgress`-t (lebegő ablak vagy alsó sáv): nyitott. A `picasa-lebego-ertesito.md` "közbenső fázisok" nyitott kérdése ezzel részben lezárul: a közbenső fázisok nem a panelben, hanem a `ytProgress`-ben vannak. | A párbeszédben sáv és "%1 / %2 imported at %3/sec" (`ImportSourceDestinationPanel.qml:195-234`), a végén "Done: %1 imported, %2 failed" (saját szöveg), a végén értesítő `Completed Importing` vagy `Error Importing`. Az eredeti fázisszövegek (`Loading`, `Reading`, `Finishing`, `Cleaning Up`) nincsenek. |
+
+### Hibák, ütközés, megszakítás, hálózat, írásvédett hely és visszavonás
+
+| Eset | Eredeti | PicasaPy most |
+|---|---|---|
+| Fájlhiba másolás közben | "A file error has occurred while importing files. Cancelling Import." (`iCAcquireScanner::error`, `0x0070b1e0`, `0x0070bdd0`), üzenetablak (`0x00980700`), az import leáll. Hogy a már átmásolt fájlok maradnak-e: nyitott. | Az import folytatódik; az első 5 hibát listázza (`import_source_controller.py:431-439`, `_IMPORT_FAILED_DETAILS_LIMIT`), a végén `Done: N imported, M failed`. |
+| Átnevezési hiba | `...renaming PhotoLabTemp. Cancelling Import.` és `...renaming '%s'. Cancelling Import.` (`iCAcquireScanner::error2`) | Nincs ilyen lépés. |
+| Eszköz hibakódok | `0x0051e4c0` (hívó `0x00527470`): 6 = "Unable to connect to the device..."; 7 = "The selected device is busy..."; minden más = `eFileErr` ("...the source is unavailable or the destination is full or read only."), szöveg nélkül `\n(%d)` kóddal; üzenetablakban. | Nincs; `sourceScanFailed` az üres forrásra, `importFailedDetails` a fájlokra. |
+| Eszköz eltűnése import közben | `iCAcquireController::NotifyDeviceGone`: `The device '%s' has unexpectedly disappeared while attempting to import from it.` (`0x0051d9c0`, vtable `0x00c892dc`) | Nincs külön ág; a fájlhibák jelzik. |
+| Elfogyott hely, írásvédett cél | Az `eFileErr` szövege nevezi meg (utólagos jelzés). **Előzetes szabad-hely ellenőrzés az importáló sávban nincs bizonyítva:** a `Disk Space Warning` és `Sorry, there is not enough free disk space to safely download pictures.` egyetlen hivatkozója a `0x005d2ca0`, amit a `0x9dfa` (Google Fotók import) hív. A `GetDiskFreeSpaceExA` burkolóinak hívóit nem követtem. | Előzetes ellenőrzés a másolás előtt (`import_source_controller.py:399-408`), a webes letöltés szövegével. Biztonsági többlet; a szöveg eredete a Google Fotók letöltés. |
+| Megszakítás | Az `acancelbutton` (`0x0051f070` → `0x00523ac0(panel,1)` és `0x00523a00`) a panelt zárja és a listát üríti; Esc ugyanez. Hogy import közben a másolást állítja-e le: nyitott. | Nincs megszakítás: a `Close` csak elrejti az ablakot, a háttérszál fut tovább (`ImportSourceDestinationPanel.qml:262-266`, `import_source_controller.py:392-465`). |
+| Hálózati forrás | A meghajtó-felsorolás a 4-es (hálózati) típust nem veszi fel; a `Folder on Disk` tallózóval bármely út megadható. | Linuxon a lista csak `/media`, `/run/media`; tallózással bármi (`ImportSourcePickerPanel.qml:73-96`). Egyezik. |
+| Visszavonás | Az importnak nincs bizonyított visszavonási útja; a kártyatörlés kifejezetten "nem vonható vissza" (`confirmRemoveCopied::message`). Az Edit ▸ Undo verem tartalmát nem vizsgáltam. | Nincs visszavonás. |
+
+**A kártyatörlés megerősítése (`0x00519720`, 2559 b).** A `0x0051b3c0`
+adja a törlés-menü állapotát (0 = `DeleteNothing`, 1 = `DeleteCopied`, 2 =
+`DeleteAll`). A 0 állapotban nincs kérdés. Az 1 állapotban az általános
+`confirmRemoveCopied::message` ("Are you sure you want to remove the
+imported files from your card? This cannot be undone."), a 2 állapotban a
+`WipeCard...` darabokból összeállított figyelmeztetés kerül **egyetlen**
+ablakra (`0x0051a01c`, az egyetlen `0x009ba4d0` hívás); a cím "Confirm
+Remove" (`confirmRemove::title`), az igen gomb "Remove Imported Files"
+vagy "Remove All Files", a másik gomb "Cancel" (`il_Cancel`). A
+`0x009ba4d0` hívás hét argumentuma: cím, üzenet, igen-szöveg, `0`,
+mégse-szöveg, `0`, `0`; jelölő-szöveg nincs köztük (az ablak elrendezését
+nem mértük). A "Don't warn me about this in the future"
+(`CAcquireUI::dontwarn`, kulcs
+`DoNotConfirmPublicUpload`) a `0x0051b710`-ban, a nyilvános feltöltés
+kérdésén van, **nem** a törlés kérdésén. A `0x005277e0`
+(`AcquireDeleteMenuEnable`) szerint a törlés-menü csak akkor aktív, ha a
+kiválasztott forrás törlést enged (`[panel+0x2a6]`, a forrás-elem `+0x18`
+virtuális metódusából, `0x00519630`); különben a menü 0-ra áll. PicasaPy:
+mindig mindhárom választás elérhető, forrástípustól függetlenül
+(`ImportSourceDestinationPanel.qml:161-192`); `delete_all` esetén két
+egymás utáni, általános `ConfirmDialog`: előbb a "...THIS CANNOT BE UNDONE."
+nagybetűs mondat (az eredetiben ez csak a `WipeCardFinalWarning` vége; a
+`confirmRemoveCopied` szövege kisbetűs), utána az összeállított
+figyelmeztetés (`ImportSourceDialog.qml:239-254`, `:376-401`). A
+`ConfirmDialog` "Do not ask again" jelölője itt látható marad
+(`rememberVisible` alapértéke igaz, `ConfirmDialog.qml:59`; az `ask` a
+kulcs elnyomása esetén megkérdezés nélkül `confirmed()`-et ad,
+`ConfirmDialog.qml:100-110`), így egyetlen bejelölés után a "minden törlése"
+figyelmeztetés véglegesen eltűnhet, és az import a kártyát megkérdezés
+nélkül kiüríti.
+
 ## #7082: A Mappakezelő teljes folyamata az eredeti Picasával összevetve
 
 Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
@@ -4137,6 +4556,230 @@ Ghidra-kimenetekből (`referencia/ghidra/`), a bináris-indexből
 
 | Érték/állítás | Forrás |
 |---|---|
+| Három belépési út ugyanarra a kezelőre | bináris (`0x00559150`, `0x005592d7`, `0x005cb990` ugrótábla, `0x005cba7c`, `0x005d3010`); erőforrás (`picasa-menu-leltar.md:434`, gyorsbillentyű-tábla) |
+| Panel, nem ablak | erőforrás (`acquirepanel.tre`, `macros.tre:281` `m_acquire_enable`); bináris (`0x0051d4c0`, `0x005e45c0` `panelroot/acquiretab`) |
+| Panelgombok kezelői | bináris (`0x0051f070`, `0x0051b620`); erőforrás (`acquirepanel.tre`: `escapekey 1`, `disabletarget`) |
+| Import engedélyezési feltétel | bináris (`0x005238b0`, `0x005276f0`, `0x00527730`, RTTI `AcquireImportAllEnable`, `AcquireImportSelectedEnable`) |
+| Tippsor négy állapota | bináris (`0x0051ae90`); erőforrás (`acquirepanel_text.tre` négy szövege) |
+| `acquireUseSubFolder` alap 0, sorrend | bináris (`0x00514180`, `0x005181b0`, `0x0051ae90`, `0x00524730`); két független fogyasztó egyezik |
+| `acquireCleanCard` 2 → 1 | bináris (`0x00519560`, `0x0051a0c2`) |
+| `LastImport%x` 5 tétel, indításkor | bináris (`0x0052532c`-`0x00525400`); a menü `0x00516180` |
+| Törlés-megerősítés szerkezete, `dontwarn` máshol | bináris (`0x00519720`, `0x0051b710`); szöveg (`stringres-en-hu.tsv:144-162,166,180`) |
+| Meghajtó-felsorolás szabálya | bináris (`0x00510500`: 2-es, 3-as és 5-ös típus, `FAT`, `FAT32`, `NTFS`, `KODAK`, `A:`/`B:`) |
+| Fázisszövegek `ytProgress`-ben | bináris (`0x0070e990`, `0x0070bdd0`, `0x00710700`, `0x00415610`, `0x00562420`); RTTI `ytProgress` |
+| Hibakód-leképezés | bináris (`0x0051e4c0`); szöveg (`stringres-en-hu.tsv:167-170,3000,3004`) |
+| `ImportSegmentMinutes` alap 90 perc | bináris (`0x005219c5`-`0x00521a4e`, konstansok `60,0` és `86400,0`) |
+| Szabad-hely szöveg a Google Fotók ágból | bináris (`0x005d2ca0` egyetlen hívója `0x005cb990`, `0x9dfa`) |
+| PicasaPy mai viselkedése | fájl:sor, közvetlen QML/Python-olvasás |
+| PicasaPy `.picasa.ini`-hatás eredeti megfelelője, átmeneti mappa neve, ütközés, megszakítás, végállapot | `NINCS MEG` |
+
+### A két független út
+
+- **A: bináris út.** Az eseményt a `0x005cb990` ugrótáblájától a
+  `0x005d3010`-ig, a panel parancsait a `0x0051f070` kezelőn át az
+  `0x00522ad0`/`0x00524730` indításig, a beállítás-kulcsokat az olvasóktól
+  az íróikig, a törlés-megerősítőt és a másolószál fázisait követtem.
+- **B: erőforrás és szöveg.** Az `acquirepanel.tre` elrendezése és az
+  `acquirepanel_text.tre` szövegei, a `stringres-en-hu.tsv` angol és magyar
+  szövegei, az RTTI-nevek (`AcquireImportSelectedEnable` stb.), a
+  gyorsbillentyű-tábla és a #6845 felvételi sora. A PicasaPy QML/Python
+  forrását külön olvastam.
+- **Egyezés.** A gombok, a tippsor, a hibaszövegek és a menüparancs a két
+  úton megegyeznek. A hatás és a hibák végállapota csak statikusan
+  adott, ezért nem megerősített.
+
+### Cáfoló kísérletek
+
+- **"A Fájl menüben nincs importálás-egyenérték"** (régi lap): cáfolva, a
+  `0x9c91` ugrótábla-bejegyzése a gomb kezelőjére fut. Cáfoló próba a
+  párosításra: a `0x9c91` a gyorsbillentyű-táblában is az `&Import From...`
+  felirathoz tartozik.
+- **"A közbenső fázisok a lebegő értesítőben vannak"** (feltevés): cáfolva,
+  a szövegek egy `ytProgress` objektumba mennek, nem a `CNotifierPopup`-ba.
+- **"A korábbi importok a forráslistát bővítik"** (a #441 megjegyzése):
+  cáfolva, a `LastImport%x` a célmappa-menüé.
+- **"A törlés kérdésén van `dontwarn`"**: cáfolva, a `dontwarn` a
+  `0x0051b710` nyilvános feltöltési kérdésén áll.
+- **"Az alapértelmezett mód a dátum szerinti"** (a #441 szövege: "a Picasa
+  import-munkafolyamatának lelke"): a bináris alapértéke 0, azaz kézi cím;
+  a dátumos mód a megjegyzett választás lehet, de nem az alapérték.
+- **Kizárt út:** az `AcquireDupeCheckThread` és az `originfast` kulcs a
+  `picasa-kereses-modok.md` 127. sora szerint már lezárt; a PicasaPy
+  gyorsbillentyűs egyezése (`import_source_controller_sources.py:210-242`)
+  ezzel egyezik, nem kutattam újra.
+
+### Igazolt eltérések egy táblázatban
+
+| Jel | Eredeti | PicasaPy |
+|---|---|---|
+| E1 | `acquireUseSubFolder` alap 0 = kézi cím; az utolsó választás megmarad (írás az indításkor) | alap dátum; a választás nem marad meg |
+| E2 | `acquireCleanCard` alap 0; megmarad, a 2 visszalép 1-re; letiltva, ha a forrás nem törölhető | alap "leave"; nem marad meg; mindig mindhárom választás |
+| E3 | egyetlen megerősítő ablak, Cancel gombbal, "ne kérdezd újra" nélkül | kétlépcsős `ConfirmDialog`, "Do not ask again" jelölővel, ami elnyomhatja a figyelmeztetést |
+| E4 | `Import All` és `Import Selected (N)`, kijelöléssel; Enter és Esc | egy `Import` gomb, kijelölés nélkül |
+| E5 | négy tippállapot | csak az 1. |
+| E6 | `LastImport%x` az indításkor, 5 tétel | sikeres másolás után, 8 tétel |
+| E7 | főablak-panel (`panelroot/acquiretab`, `0x005e45c0`; `macros.tre:281`), nagy előnézettel a kijelölt képről | modális, önálló ablak, bélyegenkénti gombokkal |
+| F1 | fájlhibánál "Cancelling Import." (feltételes) | folytatás és hibalista |
+| F2 | Windows-forráslista: cserélhető (nem `A:`/`B:`), fix kötet a `FAT`/`FAT32`/`NTFS` és `KODAK` szabállyal, CD-ROM | cserélhető vagy `DCIM`-es kötet (feltételes, alacsony) |
+
+### Javasolt fejlesztői jegytörzsek
+
+#### 1. Az importálás megjegyzett állapota és alapértékei (E1, E2, E6)
+
+**Eredeti:** a `0x00514180` az `acquireUseSubFolder` kulcsot alapérték 0-val
+olvassa (`[panel+0x7b0]`); a menü sorrendje `0x005181b0`: 0 = `Enter Folder Title`, 1 = `Date Taken (YYYY-MM-DD)`, 2 = `%s (Today)`; a `0x00525400` az
+import indításakor visszaírja. A `0x00519560` az `acquireCleanCard` kulcsot
+alap 0-val olvassa, a 2 értéket 1-re cserélve; a `0x0051a0c2` indításkor
+írja, ha a forrás törölhető. A `0x00525352` indításkor legfeljebb 5
+`LastImport%x` bejegyzést ír (`0x0052532c`). A `0x005277e0` és a `0x00519630`
+a törlés-menüt 0-ra állítja, ha a forrás nem törölhető.
+
+**Nálunk:** `ImportSourceDialog.qml:94` (`namingMode: "date"`, nem tárolt),
+`:105` (`afterCopying: "leave"`, nem tárolt);
+`import_source_controller_state.py:55,210-223` (célok sikeres másolás után,
+8 tétel); `ImportSourceDestinationPanel.qml:161-192` (mindig mindhárom
+törlés-választás).
+
+**Teendő:** tárold az utolsó almappa-módot és az "After Copying" választást
+(a "minden törlése" tárolva a "csak a másoltak" legyen), olvasd vissza az
+ablak megnyitásakor; az alapérték első használatnál a kézi cím. Az
+`After Copying` sor csak olyan forrásnál legyen aktív, amelyről törölni lehet
+(a forrás-típus szabálya az első Ghidra-kör, `0x00519630`, eredményére vár; addig a
+mappa-forrás viselkedése változatlan). A korábbi célokat az import
+indításakor mentsd, legfeljebb 5 tétellel.
+
+**Kész, ha:** friss profilban a mód "Enter Folder Title" és a tippsor az 1.
+állapotot mutatja; egy dátumos import után újranyitva a dátum mód van
+kiválasztva; "Delete everything on card" választás után újranyitva "Delete
+only copied photos" áll; a célok listája 5 tételnél nem hosszabb, és a cél az import
+indításakor, a másolás előtt mentődik.
+
+#### 2. A kártyatörlés megerősítése egyetlen ablak legyen, elnyomható jelölő nélkül (E3)
+
+**Eredeti:** a `0x00519720` mindkét törléses állapotra egyetlen ablakot
+nyit (`0x0051a01c`): cím "Confirm Remove", igen gomb "Remove Imported Files"
+(`DeleteCopied`, üzenet `confirmRemoveCopied::message`) vagy "Remove All
+Files" (`DeleteAll`, üzenet a `WipeCard...` darabokból), másik gomb "Cancel".
+A "Don't warn me" jelölő (`dontwarn`, `DoNotConfirmPublicUpload`) a
+`0x0051b710` nyilvános feltöltési kérdésén van, a törlésén nincs.
+
+**Nálunk:** `ImportSourceDialog.qml:239-254` és `:376-401`: két
+`ConfirmDialog`, mindkettőn alapból látható "Do not ask again"
+(`ConfirmDialog.qml:59,100-110`); az első kérdés szövege nagybetűs ("THIS
+CANNOT BE UNDONE"), az eredeti `confirmRemoveCopied::message` kisbetűs.
+
+**Teendő:** "Delete only copied photos" esetén egy ablak a `confirmRemoveCopied`
+szöveggel; "Delete everything on card" esetén egy ablak az összeállított
+`WipeCard` figyelmeztetéssel; a gombok "Remove Imported Files"/"Remove All
+Files" és "Cancel"; a "Do not ask again" jelölő ne jelenjen meg
+(`rememberVisible: false`), és az `importSourceRemoveImported`, `importSourceDeleteAllWarning` kulcsra
+már mentett elnyomás (`confirmSettings.isSuppressed`) ne járjon hatással; a
+két kulcsot a mentett beállításokból töröld is.
+
+**Kész, ha:** mindkét törléses választásnál pontosan egy ablak nyílik,
+benne a fenti szöveg és gombok; a jelölő nincs; egy korábban elnyomott kulcs
+mellett is megjelenik a kérdés; "Leave card alone"-nál nincs ablak.
+*(Az ablak elrendezését (gombsorrend, fókusz) az eredetiben nem mértük; ezt
+a Nyitott Colab-feladata dönti el. Ezt a jegyet a gombok számára és a
+jelölő hiányára kell érteni.)*
+
+#### 3. `Import Selected (N)`, kijelölés és Enter/Esc (E4)
+
+**Eredeti:** a `0x0051f070` kezelő az `anowbutton`-t `0x00522ad0(panel, 0)`-ra,
+az `import_selected`-et `0x00522ad0(panel, 1)`-re köti (az 1 a
+`0x00524730`-ban csak a kijelöltekre szűkít). Az `Import Selected (%d)`
+felirat `iAcquireUI::importselected`, az `Import All` felirat
+`CAcquireUI::importallbutton`. Az engedélyezést a `0x005238b0` adja (van nem
+kizárt, `Import Selected`-nél kijelölt elem, és a `[panel+0x480]` jelző). Az
+alapgomb-kezelő (`0x0051b620`, feltehetően az Enter) legfeljebb egy kijelölt
+képnél az `Import All`-t, többnél az `Import Selected`-et nyomja; az Esc az
+`acancelbutton`-t (`escapekey 1`).
+
+**Nálunk:** `ImportSourceDestinationPanel.qml:251-261` (egyetlen `Import`
+gomb); `ImportSourcePreview.qml` (kijelölés nincs; a bélyegre kattintás nem
+tesz semmit); `ImportSourceDialog.qml` (Esc és Enter nincs bekötve).
+
+**Teendő:** a bélyegképrácson legyen kijelölés (egyszerű kattintás; a
+többes kijelölés módját az eredetiben nem mértük, ezért csak egyszerű és
+Ctrl-kattintásos kijelölést építs, a Shift-et csak ha mérés igazolja); az
+`Import All` az összes nem kizárt képet, az `Import Selected (N)` csak a
+kijelölt, nem kizárt képeket importálja, a felirat a darabszámot mutatja; az
+Enter az eredeti szabály szerint választ, az Esc a `Close`-t nyomja.
+
+**Kész, ha:** két kép kijelölésekor a második gomb `Import Selected (2)`-t
+mutat és csak ezt a kettőt másolja; kijelölés nélkül vagy egy kijelölt képnél
+az Enter az `Import All`-t indítja; az Esc bezárja az ablakot. A
+`Import All`/`Import Selected` mindkettő tiltva, ha az eredeti `0x005238b0`
+feltételei nem teljesülnek (nincs nem kizárt elem, vagy kézi módban nincs
+cím).
+
+#### 4. A tippsor négy állapota (E5)
+
+**Eredeti:** `0x0051ae90`: kézi mód és üres cím = "Enter new folder title or
+choose existing folder to continue"; kézi mód kitöltött címmel = "Click
+Import All or Import Selected"; dátum mód = "Import into separate folders for
+each date taken"; mai dátum mód = "Import into folder with today's date"
+(`acquirepanel_text.tre`).
+
+**Nálunk:** `ImportSourceDestinationPanel.qml:129-140` csak az első
+állapotot mutatja (kézi mód, üres cím).
+
+**Teendő:** mutasd mind a négyet az eredeti feltételekkel, ugyanabban a
+sorban, ahol az elsőt most.
+
+**Kész, ha:** a négy feltételre mindegyik szöveg megjelenik; a 4 szöveg a
+`qsTr` fordítókulcsokban benne van, minden nyelven.
+
+#### 5. Feltételes jelölt: a fájlhiba az egész importot leállítja
+
+**Eredeti:** `0x0070b1e0` és `0x0070bdd0`: "A file error has occurred while
+importing files. Cancelling Import." (`iCAcquireScanner::error`), üzenetablak
+(`0x00980700`) és az import leáll; a kimenet "Error Importing" (`[+0x2c8]==6`,
+`0x00710700`). A már átmásolt fájlok sorsa és az átmeneti `PhotoLabTemp`
+kezelése nem ismert.
+
+**Nálunk:** `import_source_controller.py:431-439`: a hibás fájl után a
+többi másolása folytatódik, a végén `Done: N imported, M failed`.
+
+**Teendő:** a 3. és 4. Ghidra-kör eredménye után (a leállítás pontos hatása
+és a félkész mappa sorsa). Addig a jelenlegi, adatot védő viselkedés
+marad; ne alakítsd át az eredeti szándéka nélkül.
+
+**Kész, ha:** a feloldott viselkedés (leállás, a már másoltak sorsa, a
+mappák állapota) az eredetivel egyezik.
+
+### Új kutatási jegyjavaslatok
+
+Új külön jegyet nem javaslok: a nyitott kérdések a Ghidra-körök és a
+Colab-feladat sorai a #7083 folyamatához tartoznak; felvehetők a végrehajtóra
+és a kutatói körre.
+
+### Nyitott
+
+- `Ghidra-kör kell: 0x00519630 - a forrás-elem +0x18 virtuális metódusa (a [panel+0x2a6] jelző forrása) cserélhető meghajtón, KODAK fix lemezen, CD-ROM-on és "Folder on Disk" mappán mit ad vissza; azaz melyik forrásnál tiltja a törlés-menüt. A 0x005277e0 predikátum és a 0x00519630 hívás ismert, a forrás-típusok szemantikája nem. [blokkoló az 1. jegytörzs törlés-sorára]`
+- `Ghidra-kör kell: 0x0070BDD0 - az átmeneti mappa létrehozása és neve (a PhotoLabTemp csak a hibaszövegben szerepel), az átnevezés sorrendje, az ütköző célnevek kezelése (átugrás, felülírás vagy új név), és a 0x0070C424-0x0070C446 attribútumlépés célja; valamint a 0x00994580 és 0x00992780 szerepe a dátumos ágban (0x0070B1E0). [blokkoló az ütközés és a fájlhiba pontokra]`
+- `Ghidra-kör kell: 0x0070CCB0 - a [szál+0x2c8] állapotkódok jelentése (2, 3, 5, 6), mi állítja a 6-ot, és a fájlhiba után törlődnek-e a már átmásolt fájlok vagy a PhotoLabTemp; valamint a [panel+0x758] és a 0x00523AC0 megszakítás import közben a szálra hat-e. [blokkoló az 5. jegytörzsre és a megszakításra]`
+- `Ghidra-kör kell: 0x00524730 - az indítás előfeltételei (a 0x0051E0D0 és 0x0051E000 hívások, a -1 visszatérés), és a [panel+0x480] jelzőt dátum és mai-dátum módban mi állítja (kézi módban a cím, a többiben?); azaz engedélyezett-e az Import cím nélkül dátum módban. [nem blokkoló, a 4. jegytörzs feltételét pontosítja]`
+- `Ghidra-kör kell: 0x0071A4D0 - az import indítása után a panel mit csinál (letiltás, bezárás), és a befejezés után melyik mappa és nézet marad aktív (a 0x00513FC0, 0x0052DB70 és 0x00709460 hatása a bal hasábra és a rácsra). [blokkoló a végállapotra]`
+- `Ghidra-kör kell: 0x0070E990 - a [szál+0x2b4] ytProgress elemet melyik felület mutatja (lebegő ablak, a 0x00657300 értesítő, vagy az alsó tevékenységsáv), és a "Completed Importing" kattintásra visz-e valahová. [nem blokkoló, Colab-képpel is eldönthető]`
+- `Ghidra-kör kell: 0x0050F6A0 - a \dcim\ és GetDriveType==2 vizsgálat hívási helyei (0x0050F590, 0x0070D520): a beolvasást a DCIM mappára szűkíti-e, vagy a dátumos névadást/törlési engedélyt dönti el. [nem blokkoló, a forráslista szabályát pontosítja]`
+- `Ghidra-kör kell: 0x00522570 - a Runtime\AutoRun és Runtime\StiDevice írója és a 0x00513D70, 0x00514040, 0x0051EE50 szerepe (a behúzott hordozó utáni automatikus panelnyitás). [nem blokkoló, Windows-specifikus]`
+- `Ghidra-kör kell: 0x005154F0 - az ImportSegmentMinutes (alap 90 perc) hatása a bélyegkép-listára ([lista+0x310]): rajzol-e csoporthatárt, és a 0x005219A0 mikor állítja be. [nem blokkoló]`
+- `Colab-feladat kell: az importálási panel futtatott felvétele: (1) friss profil, kártya nélkül, a panel nyitó állapota (melyik almappa-mód áll, melyik tippszöveg); (2) mappa a "Folder on Disk"-ből, három kép, az almappa-mező természete (szerkeszthető legördülő-e, felkínálja-e a meglévő almappákat: a tippsor 1. szövege "choose existing folder"-t is említ), "Enter Folder Title" mód, az `Import All` után a panel, a haladás, a végállapot, a bal hasáb és a rács; (3) ugyanaz egy már meglévő nevű képpel a célban (ütközés); (4) csillag és forgatás az importban, majd a cél `.picasa.ini`; (5) "Delete only copied photos" választás és a megerősítő ablak (gombok, jelölő, fókusz), majd a panel újranyitása (megmaradt-e a mód és a törlés-választás); (6) Esc és Cancel import közben. [nem blokkoló, a végrehajtó felvehető feladata]`
+- **NINCS MEG:** a `Fájl ▸ Import From...` menüpont engedélyezése más állapotforrásból (a `0x0056e1c0` nem hivatkozza). Út: a Colab-feladat (1) pontja, menü nyitva különböző módokban.
+- **NINCS MEG:** a csillag és a forgatás tárolása az eredeti importban (`.picasa.ini` vagy az index) és az átmeneti mappa neve. Út: a Colab-feladat (4) pontja és a 2. Ghidra-kör.
+- **NINCS MEG:** `Ctrl+M` letiltása a szerkesztőben és a szövegmezőben az eredeti gyorsítótáblán. Út: célzott Colab-próba szerkesztő módban.
+
+Nyitott kérdések: 9 nyílt Ghidra-kör · 1 Colab-feladat · 3 NINCS MEG · 0 blokkolt (külső akadály) · 0 hatókörön kívül · 0 csak-nyitva. Lezárva (a bizonyítékkal): a belépési utak és a közös kezelő; a panelgombok kezelői; az Import engedélyezési feltétele; a megjegyzett kulcsok és alapértékeik; a törlés-megerősítés szerkezete; a hibakód-leképezés; a fázisszövegek hordozója (`ytProgress`).
+
+### Módosított fájlok
+
+- `docs/specs/paritas-ellenorzes.md`: új #7083 szakasz a belépési pontokról
+  (a menüegyenérték helyesbítésével), a panel mezőiről, a megjegyzett
+  állapotról, a hatásról, a hibákról és a kártyatörlés megerősítéséről, hét
+  igazolt és két feltételes eltéréssel, öt fejlesztői jegytörzzsel, kilenc
+  nevesített Ghidra-körrel és egy Colab-feladattal.
+
 | Batch Edit almenü 14 parancsa és 5 elválasztója | bináris: `0x00d6e4ac` rekord, `0x00d6e318` gyerektábla (`picasa-menu-leltar.md` §10.1/a); `0x00559150` menüépítő |
 | Diszpécser parancskód-kezelő megfeleltetések | bináris: `0x005cb990` switch (`2026-10-21-idorend-30.txt:1405-2520`) |
 | Forgatás kezelője (`0x005eef30`), 90° és 270° | bináris: `0x005eef30(param_1, 0x5a)` és `0x005eef30(param_1, 0x10e)` (`2026-11-11-6532-colab-10-iro-es-hivok.txt:47699`) |

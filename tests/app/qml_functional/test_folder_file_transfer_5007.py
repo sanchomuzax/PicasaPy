@@ -18,6 +18,10 @@ from PySide6.QtTest import QTest
 from conftest import _build_qml_app
 from picasapy.ini import load_or_empty, parse_document, save_document
 from support.jpeg_factory import make_jpeg
+from tests.app.qml_functional._paste_megerosites_7112 import (
+    jovahagy_a_beillesztest,
+    megerosito_ablak,
+)
 
 
 def _keszits_atviteli_mappakat(root: Path) -> None:
@@ -261,6 +265,12 @@ class TestFajlVagolap:
         _mappat_kivalaszt(window, controller, qt_app, target)
         QTest.keyClick(window, Qt.Key.Key_V, Qt.KeyboardModifier.ControlModifier)
 
+        # #7112: másik mappába a Ctrl+V előbb megerősítést kér, és jóváhagyásig
+        # semmi nem másolódik.
+        megerosito_ablak(window, qt_app)
+        assert not target_photo.exists(), "a megerősítés előtt már másolt a Ctrl+V"
+        jovahagy_a_beillesztest(window, qt_app, "copy")
+
         _varj(
             qt_app,
             lambda: target_photo.exists()
@@ -286,6 +296,12 @@ class TestFajlVagolap:
         paste_item = _menu_tetel(window, "menuEditPaste")
         assert paste_item.property("enabled") is True
         _menu_elsutese(paste_item)
+
+        # #7112: másik mappába a menüs Beillesztés is megerősítést kér, és
+        # jóváhagyásig semmi nem másolódik.
+        megerosito_ablak(window, qt_app)
+        assert not target_photo.exists(), "a megerősítés előtt már másolt a menü"
+        jovahagy_a_beillesztest(window, qt_app, "copy")
 
         _varj(
             qt_app,

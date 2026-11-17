@@ -69,6 +69,20 @@ def _osszegzesek(vezerlo) -> list[tuple]:
     return kapott
 
 
+def _jovahagyott_beillesztes(vezerlo, cel: Path) -> None:
+    """A másik mappás kérdés után a választott köteg induljon el."""
+    kerdesek = []
+    vezerlo.clipboardPasteConfirmationRequested.connect(
+        lambda *args: kerdesek.append(args)
+    )
+
+    assert vezerlo.pasteFilesFromClipboard(str(cel)) is True
+    assert len(kerdesek) == 1, "az eltérő mappás Beillesztés nem kért jóváhagyást"
+    paths, dest, operation = kerdesek[0]
+    assert Path(dest) == cel
+    vezerlo.runPasteBatch(operation, paths, dest, "rename")
+
+
 class TestABeillesztesLeall:
     def test_masolasnal_a_masodik_hibajanal_megall(
         self, vezerlo, harom_kep, masodik_iras_hibas, monkeypatch
@@ -77,7 +91,7 @@ class TestABeillesztesLeall:
         monkeypatch.setattr(vezerlo, "_vagolap_adata", lambda: _mime([a, b, c], "copy"))
         osszegzesek = _osszegzesek(vezerlo)
 
-        assert vezerlo.pasteFilesFromClipboard(str(cel)) is True
+        _jovahagyott_beillesztes(vezerlo, cel)
 
         assert (cel / "a.jpg").read_bytes() == b"a.jpg", "az első másolat nem maradt meg"
         assert not (cel / "b.jpg").exists(), "a hibás képből félkész példány maradt"
@@ -107,7 +121,7 @@ class TestABeillesztesLeall:
         monkeypatch.setattr(vezerlo, "_vagolap_adata", lambda: _mime([a, b, c], "cut"))
         osszegzesek = _osszegzesek(vezerlo)
 
-        assert vezerlo.pasteFilesFromClipboard(str(cel)) is True
+        _jovahagyott_beillesztes(vezerlo, cel)
 
         assert (cel / "a.jpg").exists() and not a.exists(), "az első áthelyezés elveszett"
         assert b.exists() and not (cel / "b.jpg").exists()
@@ -122,9 +136,38 @@ class TestABeillesztesLeall:
         (a, b, c), cel = harom_kep
         monkeypatch.setattr(vezerlo, "_vagolap_adata", lambda: _mime([a, b, c], "copy"))
 
-        assert vezerlo.pasteFilesFromClipboard(str(cel)) is True
+        _jovahagyott_beillesztes(vezerlo, cel)
 
         assert sorted(p.name for p in cel.iterdir()) == ["a.jpg", "b.jpg", "c.jpg"]
+
+    def test_run_paste_batch_elso_hibanal_megall_es_a_valasztott_kihagyast_tartja(
+        self, vezerlo, harom_kep, monkeypatch
+    ):
+        (a, b, c), cel = harom_kep
+        meglevo_a = cel / "a.jpg"
+        meglevo_a.write_bytes(b"cel-a")
+
+        eredeti = batch_module.copy_photo
+
+        def copy_photo(path, dest_folder):
+            if Path(path).name == "b.jpg":
+                raise OSError(28, "No space left on device")
+            return eredeti(path, dest_folder)
+
+        monkeypatch.setattr(batch_module, "copy_photo", copy_photo)
+        osszegzesek = _osszegzesek(vezerlo)
+
+        vezerlo.runPasteBatch(
+            "copy", [str(a), str(b), str(c)], str(cel), "skip"
+        )
+
+        assert meglevo_a.read_bytes() == b"cel-a", "a skip választás felülírta a célt"
+        assert not (cel / "a-1.jpg").exists(), "a skip választást átnevezésként kezelte"
+        assert not (cel / "b.jpg").exists(), "a hibás másolat félkészen maradt"
+        assert not (cel / "c.jpg").exists(), "az első hiba után a következő kép is elindult"
+        assert len(osszegzesek) == 1
+        assert osszegzesek[0][:4] == ("copy", 0, 1, 1)
+        assert "b.jpg" in osszegzesek[0][4] and "No space left" in osszegzesek[0][4]
 
     def test_a_vagolap_nem_ragadhat_a_kovetkezo_kotegre(
         self, vezerlo, harom_kep, masodik_iras_hibas, monkeypatch
@@ -133,7 +176,7 @@ class TestABeillesztesLeall:
         indított húzásos köteg ettől még folytatja a hibás kép után."""
         (a, b, c), cel = harom_kep
         monkeypatch.setattr(vezerlo, "_vagolap_adata", lambda: _mime([a, b, c], "copy"))
-        vezerlo.pasteFilesFromClipboard(str(cel))
+        _jovahagyott_beillesztes(vezerlo, cel)
         masik = cel.parent / "masik"
         masik.mkdir()
 
