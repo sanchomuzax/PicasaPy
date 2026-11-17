@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.140] - 2026-11-17
+
+- A Fájl ▸ New Album a kijelölt képektől függetlenül üres albumot hoz létre, a `Untitled` névvel és a létrehozás napjával, mint az eredeti; a kép helyi menüjének és a tálcának New Album útja továbbra is felveszi a kijelölt képeket (#7164).
+
 ## [1.0.139] - 2026-11-17
 
 - A Címkék-panel üres vagy csak szóközt tartalmazó mezőjében az Enter a "nincs beírt szöveg" súgóablakot mutatja, mint az eredetiben, és nem ír címkét; nem üres szövegnél a hozzáadás változatlan (#7135).
