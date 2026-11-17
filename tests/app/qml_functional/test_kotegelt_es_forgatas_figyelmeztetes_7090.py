@@ -80,6 +80,18 @@ def _sav(window) -> QObject:
     return sav
 
 
+def _info_ablak(window) -> QObject:
+    """#7121: a figyelmeztetés az eredeti modális Információ-ablakában jelenik meg."""
+    ablak = window.findChild(QObject, "operationInfoDialog")
+    assert ablak is not None, "az Információ-ablak nincs a fában"
+    return ablak
+
+
+def _info_szoveg(window) -> str:
+    elem = window.findChild(QObject, "operationInfoText")
+    return elem.property("text") if elem is not None else ""
+
+
 def _menusor(window) -> QObject:
     bar = window.property("menuBar")
     assert bar is not None, "a menüsor nincs a fában"
@@ -154,12 +166,11 @@ class TestKotegeltEffektFigyelmeztet:
 
         _kotegelt_effekt(window, controller, qt_app, "sepia")
 
+        ablak = _info_ablak(window)
         assert var_feltetelre(
-            qt_app, lambda: sav.property("cellCount") == 1, 5.0
+            qt_app, lambda: ablak.property("opened") is True, 5.0
         ), "a kihagyott videóról a felhasználó SEMMIT nem lát"
-        assert sav.property("lastTitle") == EFFEKT_SZOVEG, sav.property(
-            "lastTitle"
-        )
+        assert _info_szoveg(window) == EFFEKT_SZOVEG, _info_szoveg(window)
 
     def test_a_kepek_modosulnak_a_video_nem(self, vegyes_app, qt_app):
         window, controller, _engine = vegyes_app
@@ -203,19 +214,17 @@ class TestForgatasFigyelmeztet:
         self, vegyes_app, qt_app
     ):
         window, controller, _engine = vegyes_app
-        sav = _sav(window)
         _mindent_kijelol(window, controller, qt_app)
 
         menu = _helyi_menu(window, qt_app, row=0)
         menu.rotateRightRequested.emit()
         qt_app.processEvents()
 
-        assert sav.property("cellCount") == 1, (
-            "a kihagyott videóról a felhasználó SEMMIT nem lát"
-        )
-        assert sav.property("lastTitle") == FORGATAS_SZOVEG, sav.property(
-            "lastTitle"
-        )
+        ablak = _info_ablak(window)
+        assert var_feltetelre(
+            qt_app, lambda: ablak.property("opened") is True, 5.0
+        ), "a kihagyott videóról a felhasználó SEMMIT nem lát"
+        assert _info_szoveg(window) == FORGATAS_SZOVEG, _info_szoveg(window)
         # A forgatás maga változatlan: a fotók elfordultak, a videó nem.
         for photo in controller.photos.photos:
             if photo.kind != "video":
@@ -224,14 +233,14 @@ class TestForgatasFigyelmeztet:
     def test_a_menusor_forgatasa_is_figyelmeztet(self, vegyes_app, qt_app):
         """A Kép ▸ Forgatás jobbra tétel útja: ugyanaz a jelzés."""
         window, controller, _engine = vegyes_app
-        sav = _sav(window)
         _mindent_kijelol(window, controller, qt_app)
 
         _menusor(window).batchApplyEffectRequested.emit("rotate_cw")
         qt_app.processEvents()
 
-        assert sav.property("cellCount") == 1
-        assert sav.property("lastTitle") == FORGATAS_SZOVEG
+        ablak = _info_ablak(window)
+        assert var_feltetelre(qt_app, lambda: ablak.property("opened") is True, 5.0)
+        assert _info_szoveg(window) == FORGATAS_SZOVEG
 
     def test_csak_kepes_kijelolesnel_a_forgatas_NEM_figyelmeztet(
         self, kepes_app, qt_app

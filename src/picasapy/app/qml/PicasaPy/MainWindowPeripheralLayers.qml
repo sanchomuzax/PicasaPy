@@ -155,6 +155,7 @@ Item {
     PicasaNotifier {
         id: picasaNotifier
         _hostWindow: layers.hostWindow
+        hostOperationInfoDialog: mainWindowDialogStack
         onActivated: function (kind, payload) {
             if (kind === "collage")
                 hostWindow.openCollageNodeInEditor(payload)
