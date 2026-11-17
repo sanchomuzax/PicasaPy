@@ -7,10 +7,16 @@ elmaradt beillesztésre az üres vágólap szövegét mutatta, a célmappa
 hiányára is.
 
 A próbák a VALÓDI főablakon futnak (`qml_app`): a függvényt az ablakról hívjuk,
-és a kirajzolt hibasávot olvassuk vissza, nem a forrást.
+és a kirajzolt hibasávot, illetve (#7143) a kirajzolt modális Információ-ablakot
+olvassuk vissza, nem a forrást.
+
+#7143: az eredeti a célhiányt modális Információ-ablakban mondja
+(`0x005791fb-0x0057921b`), nem hibasávban; az üres vágólap üzenete a hibasávban
+maradt.
 
 Mit őriz (a jegy „Kész, ha” és „Nem szabad” pontjai):
-  * fájl a vágólapon, de nincs célmappa: célhiány-üzenet, semmi nem indul;
+  * fájl a vágólapon, de nincs célmappa: célhiány-üzenet MODÁLIS ablakban, a
+    hibasáv üres, semmi nem indul;
   * üres vágólap (célmappával és anélkül is): az üres vágólap üzenete;
   * egyik elutasított esetben sem jön létre vagy mozdul el fájl;
   * a rendes beillesztés (van fájl és van cél) változatlanul elindul, és
@@ -24,6 +30,7 @@ from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPointF, QTranslator, Qt
+from tests.support.varakozas import var_feltetelre
 
 _CEL_HIANY = "A Folder or Album must be selected to do this."
 _URES_VAGOLAP = "There are no files on the clipboard to paste."
@@ -77,6 +84,16 @@ def _hibasav(window) -> tuple[str, bool, bool]:
     szoveg = _gyerek(window, "errorBannerText").property("text")
     sav = _gyerek(window, "errorBanner")
     return szoveg, sav.property("visible") is True, sav.property("notice") is True
+
+
+def _info_ablak(window, qt_app) -> tuple[QObject, str]:
+    """A modális Információ-ablak és a kirajzolt szövege (megvárja a megnyitást)."""
+    ablak = _gyerek(window, "operationInfoDialog")
+    assert var_feltetelre(qt_app, lambda: ablak.property("visible") is True), (
+        "nem jelent meg a modális Információ-ablak"
+    )
+    assert ablak.property("modal") is True
+    return ablak, _gyerek(window, "operationInfoText").property("text")
 
 
 def _fa(gyoker: Path) -> list[str]:
@@ -160,11 +177,13 @@ class TestACelHiany:
 
         _beillesztes(helyzet["window"], helyzet["qt_app"])
 
-        szoveg, latszik, tajekoztatas = _hibasav(helyzet["window"])
+        _ablak, szoveg = _info_ablak(helyzet["window"], helyzet["qt_app"])
         assert szoveg == _CEL_HIANY, szoveg
-        assert latszik, "a célhiány jelzése nem látszik a hibasávban"
-        assert tajekoztatas, "a célhiány tájékoztatás (borostyán), nem hiba"
         assert szoveg != _URES_VAGOLAP, "a célhiányt az üres vágólap szövege takarja"
+        sav_szoveg, sav_latszik, _ = _hibasav(helyzet["window"])
+        assert sav_szoveg == "" and not sav_latszik, (
+            f"a célhiány a hibasávban is megjelent: {sav_szoveg!r}"
+        )
         assert helyzet["hivasok"].semmi, "cél nélkül nem indulhat másolás/áthelyezés"
         assert _fa(helyzet["gyoker"]) == elotte, "fájl jött létre vagy mozdult"
         assert helyzet["kep"].read_bytes() == b"kep"
@@ -177,28 +196,37 @@ class TestACelHiany:
 
         _beillesztes(helyzet["window"], helyzet["qt_app"])
 
-        assert _hibasav(helyzet["window"])[0] == _CEL_HIANY
+        assert _info_ablak(helyzet["window"], helyzet["qt_app"])[1] == _CEL_HIANY
+        assert _hibasav(helyzet["window"])[0] == ""
         assert helyzet["hivasok"].semmi
         assert _fa(helyzet["gyoker"]) == elotte, "kivágásnál a forrás nem mozdulhat"
 
-    def test_a_celhiany_sav_a_kepernyon_belul_es_teljes_szoveggel_all(self, helyzet):
-        """Kirajzolt eredmény: a sáv látszik, és a teljes szöveg a sávon belül van."""
+    def test_a_celhiany_ablak_a_kepernyon_belul_es_teljes_szoveggel_all(self, helyzet):
+        """Kirajzolt eredmény: az ablak látszik, a teljes szöveg az ablakon belül
+        van, az OK gomb látható, és a hibasáv nem szól közbe."""
         _vagolapra(helyzet)
         _celmappa(helyzet, "")
 
         _beillesztes(helyzet["window"], helyzet["qt_app"])
 
-        sav = _gyerek(helyzet["window"], "errorBanner")
-        szoveg = _gyerek(helyzet["window"], "errorBannerText")
+        ablak, _ = _info_ablak(helyzet["window"], helyzet["qt_app"])
+        szoveg = _gyerek(helyzet["window"], "operationInfoText")
+        gomb = _gyerek(helyzet["window"], "operationInfoOkButton")
         assert szoveg.property("text") == _CEL_HIANY
-        assert sav.property("width") > 0 and sav.property("height") > 0
-        bal_felso = szoveg.mapToItem(sav, QPointF(0, 0))
-        assert bal_felso.x() >= 0 and bal_felso.y() >= 0
-        assert bal_felso.x() + szoveg.property("width") <= sav.property("width")
-        assert bal_felso.y() + szoveg.property("height") <= sav.property("height")
+        assert var_feltetelre(
+            helyzet["qt_app"], lambda: gomb.isVisible() and gomb.isEnabled()
+        ), "az OK gomb nem vált láthatóvá"
+        ablak_szel, ablak_mag = ablak.property("width"), ablak.property("height")
+        assert ablak_szel > 0 and ablak_mag > 0
+        bal_felso = szoveg.mapToScene(QPointF(0, 0))
+        ablak_x, ablak_y = ablak.property("x"), ablak.property("y")
+        assert bal_felso.x() >= ablak_x and bal_felso.y() >= ablak_y
+        assert bal_felso.x() + szoveg.property("width") <= ablak_x + ablak_szel
+        assert bal_felso.y() + szoveg.property("height") <= ablak_y + ablak_mag
         # a Text nem vágja le: egész sorok férnek a megjelenített magasságba
         assert szoveg.property("contentHeight") <= szoveg.property("height") + 0.5
         assert szoveg.property("truncated") is not True
+        assert _hibasav(helyzet["window"])[1] is False, "a hibasáv is látszik"
 
 
 class TestAzUresVagolap:
@@ -272,7 +300,8 @@ class TestAMagyarFelirat:
 
         _beillesztes(window, qt_app)
 
-        assert _hibasav(window)[0] == _CEL_HIANY_HU
+        assert _info_ablak(window, qt_app)[1] == _CEL_HIANY_HU
+        assert _hibasav(window)[0] == ""
         assert hivasok.semmi
 
     def test_az_ures_vagolap_magyar_szovege_valtozatlan(

@@ -162,7 +162,11 @@ class TestABeillesztes:
         ]
         assert mappakent == [([kep], cel, muvelet)]
 
-    def test_azonos_mappa_viselkedese_tovabbra_is_azonnali(self, vezerlo, tmp_path, monkeypatch):
+    def test_azonos_mappaban_nincs_fajlmuvelet_es_nincs_kerdes(
+        self, vezerlo, tmp_path, monkeypatch
+    ):
+        """#7143: az eredeti azonos mappában nem végez fájlműveletet (A3,
+        `0x0056ec92`); a korábbi azonnali `név-1` másolat megszűnt."""
         kep = tmp_path / "a.jpg"
         kep.write_bytes(b"kep")
         index = tmp_path / "index.db"
@@ -182,14 +186,11 @@ class TestABeillesztes:
             lambda *args: kerdesek.append(args)
         )
 
-        assert vezerlo.pasteFilesFromClipboard(str(tmp_path)) is True
+        assert vezerlo.pasteFilesFromClipboard(str(tmp_path)) is False
 
-        batchok_mappakent = [
-            ([Path(path) for path in paths], Path(dest), policy, stop_on_failure)
-            for paths, dest, policy, stop_on_failure in batch_inditasok
-        ]
-        assert batchok_mappakent == [([kep], tmp_path, "rename", True)]
+        assert batch_inditasok == []
         assert kerdesek == []
+        assert sorted(p.name for p in tmp_path.glob("*.jpg")) == ["a.jpg"]
 
     def test_nem_mappacelnel_az_eltero_mappa_sem_ker_megerositest(
         self, vezerlo, tmp_path, monkeypatch

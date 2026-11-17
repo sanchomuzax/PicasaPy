@@ -42,10 +42,13 @@ PicasaMenu {
     // vágólapra — a binárisban a `Preferred DropEffect` formátum
     // különbözteti meg őket (mozgatás vs. másolás). Linuxon ennek a
     // párja az `x-special/gnome-copied-files` első sora.
+    //: #7143: az eredeti nézőben és szerkesztőben a Kivágást és a Beillesztést
+    //: szürkíti (`0x0056e95f-0x0056e98d`), a Másolás él. Nálunk a szerkesztő a
+    //: nézőben lakik, tehát a nyitott néző (`editorActive`) a megfelelője.
     MenuItem {
         objectName: "menuEditCut"
         text: qsTr("Cu&t") + "\tCtrl+X"
-        enabled: bar.photoActionsEnabled
+        enabled: bar.photoActionsEnabled && !bar.editorActive
         onTriggered: bar.cutFilesRequested()
     }
     MenuItem {
@@ -62,10 +65,15 @@ PicasaMenu {
     //: A tétel akkor él, ha VAN fájl a vágólapon — üres vágólapnál a
     //: szürke tétel megmagyarázza magát (nincs mit beilleszteni),
     //: szemben egy néma kattintással.
+    //:
+    //: #7143: az eredeti szerint ezen felül szürke nézőben és szerkesztőben,
+    //: valamint ha a vágólap minden fájlja a célmappában van (azonos mappában
+    //: nincs fájlművelet, `0x0056ec92`). A kaput (`clipboardPasteAllowed`) a
+    //: gazda számolja, a Ctrl+V ugyanazt használja.
     MenuItem {
         objectName: "menuEditPaste"
         text: qsTr("&Paste") + "\tCtrl+V"
-        enabled: bar.clipboardHasFiles
+        enabled: bar.clipboardHasFiles && bar.clipboardPasteAllowed
         onTriggered: bar.pasteFilesRequested()
     }
     MenuSeparator {}

@@ -68,7 +68,6 @@ def test_a_fajl_szerkesztes_es_kep_menu_a_nezett_keppel_dolgozik(
             "menuFileRename",
             "menuFileNewAlbum",
             "menuFileOpenInEditor",
-            "menuEditCut",
             "menuEditCopy",
             "menuEditCopyEffects",
             "menuPictureViewAndEdit",
@@ -91,6 +90,15 @@ def test_a_fajl_szerkesztes_es_kep_menu_a_nezett_keppel_dolgozik(
             )
         assert _elem(window, "menuPictureUnhide").property("enabled") is False, (
             "a látható, megnyitott kép mellett a Kép ▸ Unhide szürke"
+        )
+
+        # #7143: az eredeti nézőben és szerkesztőben a Kivágást és a
+        # Beillesztést szürkíti (`0x0056e95f-0x0056e98d`), a Másolás él.
+        assert _elem(window, "menuEditCut").property("enabled") is False, (
+            "nyitott néző mellett a Kivágás nem szürke"
+        )
+        assert _elem(window, "menuEditPaste").property("enabled") is False, (
+            "nyitott néző mellett a Beillesztés nem szürke"
         )
 
         # A tesztképeken nincs Text eszközös réteg; a nyitott néző önmagában

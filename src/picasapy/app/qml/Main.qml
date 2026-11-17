@@ -48,6 +48,8 @@ ApplicationWindow {
     property point helpCursor: Qt.point(-1, -1)
     readonly property alias _szovegmezoneVanFokusz: mainWindowCommands._szovegmezoneVanFokusz
     readonly property alias _konyvtariGyorsbillentyuEngedelyezve: mainWindowCommands._konyvtariGyorsbillentyuEngedelyezve
+    //: #7143: a Beillesztés közös kapuja (menü, Ctrl+V, `beillesztAVagolaprol`)
+    readonly property alias vagolapBeillesztesEngedelyezett: mainWindowLibraryActions.vagolapBeillesztesEngedelyezett
     property alias trayHasPictures: mainWindowCommands.trayHasPictures
     readonly property alias keyboardShortcutGroups: mainWindowCommands.keyboardShortcutGroups
     property alias activityCancelConfirm: mainWindowPeripheralLayers.exportActivityCancelConfirm
@@ -577,6 +579,7 @@ ApplicationWindow {
         hostController: typeof controller !== "undefined" ? controller : null
         hostRefs: ({
             documentTabStrip: documentTabStrip,
+            operationInfoDialog: mainWindowPeripheralLayers.exportDialogStack,
             photoViewer: photoViewer,
             picasaMenuBar: picasaMenuBar,
             slideshow: slideshow,
