@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.138] - 2026-11-17
+
+- Hálózati mappában a bélyegképek lassú betöltése alatt a fotórács helykitöltőt mutat, és használható marad (#7086).
+- Az üres gyorscímke-hely (?) kattintása a Quick Tags beállító ablakot nyitja, mint az eredetiben, és már nem a "nincs beírt szöveg" súgót; a kitöltött hely továbbra is hozzáadja a címkét (#7134).
+- A címkesor jobbklikk-menüjében a Search for items with this tag és a Remove this tag közé elválasztó került, a három művelet változatlan (#7136).
+- A Quick Tags automatikus kitöltése előbb a könyvtár első 100 egyedi címkéjét veszi, majd kihagyja a két legutóbbit (#7137).
+- Több címke egyidejű bevitelekor a 30-nál több kijelölt képnél minden címkét külön jóváhagyással adhatsz hozzá (#7138).
+- Albumnézetben a Beillesztés (menü és Ctrl+V) a vágólap képeit az albumhoz adja, fájlt nem másol és nem kérdez; a már tag kép nem kerül be kétszer, a Kivágás pedig nem töröl a forrásból (#7142).
+- A Kivágás és a Beillesztés nézőben szürke (a Ctrl+X és a Ctrl+V sem hat), azonos mappában a Beillesztés szürke és nem készít másolatot, sikeres beillesztés után a Beillesztés szürke, a cél nélküli üzenet pedig modális ablakban jelenik meg (#7143).
+
 ## [1.0.137] - 2026-11-17
 
 - Eltérő mappába beillesztés előtt a PicasaPy megerősítést kér, ütközéskor pedig átnevezést, kihagyást vagy a művelet megszakítását kínálja; a jóváhagyott beillesztés is megáll az első fájlhibánál (#7112).
