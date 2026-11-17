@@ -7196,7 +7196,8 @@ picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::MoveYesButton;s
 %1 ?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::3</extracomment>
-            <translation>Sigur doriţi să copiaţi fişierul(ele) în\n%s?\n</translation>
+            <translation>Sigur doriţi să copiaţi fişierul(ele) în
+%1?</translation>
         </message>
         <message>
             <source>Are you sure you want to move the file(s) to

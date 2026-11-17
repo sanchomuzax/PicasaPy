@@ -7184,7 +7184,8 @@ picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::MoveYesButton;s
 %1 ?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::3</extracomment>
-            <translation>Weet u zeker dat u de bestanden naar \n%s wilt kopiëren?\n</translation>
+            <translation>Weet u zeker dat u de bestanden naar 
+%1 wilt kopiëren?</translation>
         </message>
         <message>
             <source>Are you sure you want to move the file(s) to
