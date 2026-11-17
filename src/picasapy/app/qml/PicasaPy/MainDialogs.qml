@@ -68,16 +68,33 @@ Item {
                 property var rows: []
                 property string keyword: ""
                 property string message: ""
+                // A vesszős bevitel több kérést küld egymás után. A sorokat
+                // és a címkét együtt tároljuk, amíg az előző kérdés bezárul.
+                property var pendingRequests: []
 
-                function askFor(rowList, tag) {
-                    rows = rowList.slice()
-                    keyword = tag
+                function showNextRequest() {
+                    if (visible || pendingRequests.length === 0) return
+                    var waiting = pendingRequests.slice()
+                    var next = waiting.shift()
+                    pendingRequests = waiting
+                    rows = next.rows
+                    keyword = next.keyword
                     message = qsTr(
                         "You have a fairly large number of items selected.\n\n"
                         + "Are you sure you want to apply this tag to all %d items?"
-                    ).replace("%d", String(rowList.length))
+                    ).replace("%d", String(rows.length))
                     open()
                 }
+
+                function askFor(rowList, tag) {
+                    pendingRequests = pendingRequests.concat([{
+                        rows: rowList.slice(),
+                        keyword: tag
+                    }])
+                    showNextRequest()
+                }
+
+                onClosed: Qt.callLater(showNextRequest)
 
                 onAccepted: {
                     if (controller) controller.addKeywordToRows(rows, keyword)
