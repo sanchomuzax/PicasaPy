@@ -18,6 +18,7 @@ Külső program nincs a próbákban.
 from __future__ import annotations
 
 import os
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -324,13 +325,15 @@ class TestFotoAlmenu:
         )
         zar(qt_app, menu)
 
-    def test_a_fajl_menu_new_album_ablaka_datum_nelkul_nyilik_valtozatlanul(
+    def test_a_fajl_menu_new_album_ablaka_a_mai_datummal_nyilik_nem_az_elso_kepevel(
         self, mappa_app, qt_app
     ):
-        """Nem szabad: a Fájl menü útja (`0x005eb810`, más belépő) nem kap dátumot."""
+        """A Fájl menü útja (`0x005eb810`, más belépő) a létrehozás napját kapja
+        (#7164), nem a kijelölés első képének idejét."""
         window, controller, _motor = mappa_app
         _betolt(window, qt_app, controller)
         kijelol(window, qt_app, [0, 1])
+        elotte = date.today().isoformat()
 
         megnyit_fomenu(window, qt_app, "&File")
         tetel = fomenu_objektum(window, "menuFileNewAlbum")
@@ -339,7 +342,9 @@ class TestFotoAlmenu:
 
         parbeszed = gyerek(window, "toolbarNewAlbumPropertiesDialog")
         assert varj(qt_app, lambda: parbeszed.property("opened") is True)
-        assert parbeszed.property("currentDate") == ""
+        assert parbeszed.property("currentDate") in {
+            elotte, date.today().isoformat()
+        }
         zar(qt_app, parbeszed)
 
 

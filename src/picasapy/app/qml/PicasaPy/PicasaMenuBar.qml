@@ -351,9 +351,8 @@ MenuBar {
     signal renameRequested()
     signal exportRequested()
     // #1616: Fájl ▸ Új album… (Ctrl+N) — a belépő (`openNewAlbum`,
-    // FileOpsDialogs.qml) a Main.qml-ben él, és ugyanazt a
-    // `fileOpsDialogs.openNewAlbum(...)` belépőt hívja, amit a rács helyi
-    // menüjének „Új album…" tétele is (PhotoContextMenu.newAlbumRequested).
+    // FileOpsDialogs.qml) a Main.qml-ben él. #7164: üres albumot nyit; a rács
+    // helyi menüjének Add to Album ▸ New Album... sora más belépő.
     signal newAlbumRequested()
     // #1615: Fájl ▸ Importálás forrása… (Ctrl+M) —
     // `eMenuFile::ID_FILE_IMPORTPICTURE`, `cmd 0x9c91`. A párbeszéd

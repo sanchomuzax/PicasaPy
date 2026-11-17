@@ -35,5 +35,11 @@ def test_a_talca_uj_album_ma_datummal_indul_es_a_fotomenus_datumkulon_marad():
     foto = _forras("MainPhotoContextMenu.qml")
 
     assert 'Qt.formatDate(new Date(), "yyyy-MM-dd")' in talca
-    assert "openNewAlbumProperties(controller.currentFolder, rows)" in dialogusok
+    # #7164: a Fájl menü útja (`openNewAlbum`) üres albumot nyit, a mai dátummal
+    fajl_menu_ut = dialogusok.split("function openNewAlbum()", 1)[1].split(
+        "function ", 1
+    )[0]
+    assert "controller.currentFolder, []" in fajl_menu_ut
+    assert 'Qt.formatDate(new Date(), "yyyy-MM-dd")' in fajl_menu_ut
+    assert "rows" not in fajl_menu_ut
     assert "openAddToNewAlbum(hostWindow.selectedRows())" in foto
