@@ -206,8 +206,20 @@ PicasaMenu {
     MenuItem {
         objectName: "menuFolderDelete"
         text: qsTr("&Delete...")
-        enabled: bar.currentFolder !== "" && bar.currentAlbumToken === ""
-                 && bar.currentPersonName === ""
+        // #7181: ez a tétel a megnyitott mappát, felhasználói albumot vagy
+        // személyalbumot törli. A korábbi mappaútvonal album- és
+        // személynézetben megmarad, keresésnél pedig a találati lista nem
+        // törlési cél, ezért a tényleges nézetet is ellenőrizzük.
+        enabled: !(controllerRef && controllerRef.searchActive === true)
+            && (bar.currentPersonName !== ""
+                || (bar.currentAlbumToken !== ""
+                    && bar.currentAlbumToken.charAt(0) !== "]")
+                || (bar.currentAlbumToken === ""
+                    && bar.currentPersonName === ""
+                    && bar.currentFolder !== ""
+                    && (!controllerRef
+                        || controllerRef.viewModeName === undefined
+                        || controllerRef.viewModeName === "folder")))
         onTriggered: bar.folderDeleteRequested()
     }
 }
