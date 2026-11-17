@@ -104,6 +104,7 @@ from .folder_date import (
 )
 from .folder_music import read_folder_music, with_folder_music
 from .folder_location import read_folder_location, with_folder_location
+from .folder_name import with_folder_name
 from .io import (
     IniConflictError,
     IniSaveError,
@@ -215,6 +216,7 @@ __all__ = [
     "without_folder_category",
     "with_folder_music",
     "with_folder_location",
+    "with_folder_name",
     "with_contact",
     "with_reassigned_face",
     "without_face",
