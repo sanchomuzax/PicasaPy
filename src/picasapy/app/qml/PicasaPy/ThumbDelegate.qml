@@ -121,8 +121,12 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: -cell.captionStrip / 2
-        width: image.paintedWidth + 10
-        height: image.paintedHeight + 10
+        width: image.status === Image.Ready
+            ? image.paintedWidth + 10
+            : Math.max(10, image.width + 10)
+        height: image.status === Image.Ready
+            ? image.paintedHeight + 10
+            : Math.max(10, image.height + 10)
         color: Theme.thumbCard
         // #384: kijelöléskor a saját keret a kártyával egybeolvad — a
         // kék/fehér kettős keretet a selectionOuter/Inner adja alatta;
@@ -130,6 +134,16 @@ Item {
         border.width: 1
         border.color: cell.selected ? Theme.thumbCard
                      : (mouse.containsMouse ? Theme.thumbHover : Theme.thumbBorder)
+
+        Rectangle {
+            id: placeholder
+            objectName: "thumbPlaceholder"
+            anchors.centerIn: parent
+            width: Math.max(0, image.width)
+            height: Math.max(0, image.height)
+            visible: image.status !== Image.Ready
+            color: Theme.thumbBorder
+        }
 
         Image {
             id: image
@@ -148,6 +162,7 @@ Item {
             // ne akadjon meg a dekódolásra).
             asynchronous: Qt.platform.pluginName !== "offscreen"
             cache: true
+            visible: status === Image.Ready
             // #83: a cache-elt thumbnail (application.py: DPR-arányos
             // méret) mindig legalább a legnagyobb rács-fokozatnyi — ez az
             // Image ezért csak KICSINYÍT. A mipmap a köztes csúszka-
