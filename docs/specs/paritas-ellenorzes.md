@@ -595,7 +595,7 @@ Fokozat: a nulla saját albumos almenüsorrend **megerősített** (felvétel és
 **Felülírt vagy pontosított korábbi állítások (a régi szöveg érintetlen).**
 
 1. A J1 és a J2 kész, és a fő ágban van: a #7100 (almenü sorrend és új album dátum, fotómenü és néző) és a #7101 (albumdefiníció a célmappa ini-jébe) az 1.0.135 kiadás része. A fenti sorok és jegytörzsek erre vonatkozó "Nálunk" állításai (a fotómenü almenüje csak albumokat és `New Album...` sort ad, a néző almenüje album nélkül szürke, az új album dátuma üres, meglévő albumhoz adásnál nincs definíció) elavultak, az új állapot a lenti táblázatban áll.
-2. A J3 (#7102) **nincs a mainben**: a `fix/7102-codex` ágon vár, a mainben a viselkedés a régi (`FileOpsDialogs.qml:104-107`).
+2. A J3 (#7102) a zárókör idején még nem volt a fő ágban (a `fix/7102-codex` ágon várt); a PR #7106 2026-11-17-én beolvadt.
 3. A tálca `New Album...` sorára a korábbi szöveg azt írja, hogy a párbeszédet "a tálca tartalmával" nyitja (`MainTrayBar.qml:82-85`). A kód a kijelölt sorokat adja át (`photoActionRows()`, `MainLibrarySelectionState.qml:72-80`), nem a tartott elemeket; a meglévő albumsorok viszont a tálca tartalmát írják (`addHeldToAlbum`, `tray_album_controller.py:240-266`). Hogy az eredeti tálcás sorai melyik képekre hatnak, a lenti (b) tétel dönti el.
 4. A `0x004a82d0` kérdésére (lásd a régi egyetlen Ghidra-sort) a választ a lenti hetedik sor adja.
 
