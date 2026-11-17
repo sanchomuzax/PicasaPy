@@ -25,9 +25,14 @@ Window {
     property string helpTopic: "features/importalas.md"
     WindowHelp { tema: importSourceWindow.helpTopic }
     width: 640
-    height: 680
+    // #7185: a tartalom görgetés nélküli oszlop; az előnézeti rács a legkisebb
+    // magasságán is elfér, de a többi sáv nem zsugorodik. A legkisebb
+    // magasság ezért a tartalom legkisebb magasságát követi, különben az
+    // alsó gombsor (Import All, Import Selected, Close) kilóg az ablakból.
+    height: Math.max(680, minimumHeight)
     minimumWidth: 480
-    minimumHeight: 480
+    minimumHeight: Math.max(480, Math.ceil(importSourceContent.implicitHeight)
+                                 + 2 * importSourceContent.anchors.margins)
     color: Theme.canvasBg
     //: #3575: a külön `Window` NEM örökli a főablak `palette`-jét — enélkül
     //: a célmappa-módok rádiófeliratai olvashatatlanok (mint a #3593-ban).
@@ -397,6 +402,7 @@ Window {
     }
 
     ColumnLayout {
+        id: importSourceContent
         anchors.fill: parent
         anchors.margins: 10
         spacing: 8
