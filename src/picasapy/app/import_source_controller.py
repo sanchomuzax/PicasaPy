@@ -96,6 +96,7 @@ from .wipe_card_warning import wipe_card_warning as wipe_card_warning
 from .worker_thread import BackgroundWorkerMixin
 from .display_mode_paint import current_display_mode_suffix as current_display_mode_suffix
 from .import_source_controller_scanning import ImportSourceControllerScanningMixin
+from .import_source_controller_choices import ImportSourceControllerChoicesMixin
 from .import_source_controller_state import (
     AFTER_COPY_DELETE_ALL,
     AFTER_COPY_DELETE_COPIED,
@@ -169,6 +170,7 @@ def _read_mountinfo() -> str:
 
 class ImportSourceController(
     ImportSourceControllerStateMixin,
+    ImportSourceControllerChoicesMixin,
     ImportSourceControllerScanningMixin,
     BackgroundWorkerMixin,
     QObject,
@@ -416,6 +418,11 @@ class ImportSourceController(
             self.importFinished.emit(0, total)
             return
         dest_root = Path(dest_text)
+        # #7183: az eredeti az import INDÍTÁSAKOR ment (`0x00525400`): az
+        # almappa-módot, a törlési módot és a célt — a hibás futás célja is
+        # bekerül az előzménybe (ez váltja a #1785 sikeres-másolás utáni mentését).
+        self._remember_import_choices(naming_mode, after_copying)
+        self._remember_destination(str(dest_root))
         self.importStarted.emit(total)
         if total == 0:
             self.importFinished.emit(0, 0)
@@ -492,9 +499,6 @@ class ImportSourceController(
 
             if copied_paths:
                 self._add_folder(str(dest_root))
-                # #1785: a cél a SIKERES másolás után kerül a listába — a
-                # hibás/nem létező mappa ne kínálódjon fel legközelebb.
-                self._remember_destination(str(dest_root))
                 # #7172: bármelyik másolási hiba letiltja a teljes forrás-
                 # törlést; a másolatok és a mai folytatás megmaradnak.
                 if not copy_failed and after_copying == AFTER_COPY_DELETE_COPIED:

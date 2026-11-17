@@ -15,8 +15,10 @@ importok · alapértelmezett hely · „Choose…".
   letűnt kártyát felkínálni és hibával elutasítani rosszabb, mint meg sem
   mutatni. A TÁROLT lista nem csonkul: ha a mappa visszakerül, magától újra
   megjelenik — ezt külön teszt állítja.
-* **A felső korlát nyolc**, ugyanannyi, mint a forrásoké. Az eredeti
-  maximuma nincs kimérve; a jegy is ezt mondja.
+* **A felső korlát öt** (#7183: az eredeti legfeljebb öt legutóbbi célt
+  őriz, `0x0052532c-0x00525400`; a #1785 eredeti nyolcát ez váltja). A
+  mentés is az import INDÍTÁSAKOR történik, nem a sikeres másolás után: ezt
+  a `test_import_beallitasok_7183.py` méri.
 """
 
 from __future__ import annotations

@@ -140,6 +140,8 @@ def test_kijelolt_fajlok_kattintassal_forraskent_importalodnak(
     assert int(dialog.property("previewCount")) == 2
 
     dialog.setProperty("destFolder", str(cel))
+    # #7183: üres profilban a kézi cím az alapérték; a dátum szerinti bontást kérjük
+    _kattint(dialog, _elem(dialog, "importSourceNamingByDateRadio"), qt_app)
     kesz = []
     indult = []
     controller.importFinished.connect(lambda ok, hiba: kesz.append((ok, hiba)))

@@ -49,10 +49,11 @@ MAX_RECENT_SOURCES = 8
 # AZONOS legördülő adja ugyanezt; a három szakaszból a „Tallózás…" külön
 # gombként már megvolt.
 #
-# A megőrzött célok maximális száma az eredetiben NINCS kimérve; nyolcat
-# tartunk, ugyanannyit, mint a forrásokból — a legördülő így nem hízik el.
+# #7183: az eredeti legfeljebb ÖT legutóbbi célt őriz (`0x0052532c-
+# 0x00525400`), és az import INDÍTÁSAKOR menti — a hibás célt is megjegyzi.
+# (Ez váltja a #1785 korábbi, nyolcas és sikeres-másolás utáni mentését.)
 RECENT_DESTINATIONS_SETTINGS_KEY = "import/recentdestinations"
-MAX_RECENT_DESTINATIONS = 8
+MAX_RECENT_DESTINATIONS = 5
 DEFAULT_DESTINATION_SETTINGS_KEY = "import/defaultdestination"
 
 # #1555: az importálás átméretezési beállítása. ⚠️ KÉPPONT-értéket
@@ -210,9 +211,9 @@ class ImportSourceControllerStateMixin:
     def _remember_destination(self, folder: str) -> None:
         """A most használt cél a lista ELEJÉRE; ismétlés nélkül.
 
-        A forrás mintája (`_remember_source`), egy különbséggel: a célt a
-        SIKERES másolás után jegyezzük meg, mert a cél létezését csak
-        akkor tudjuk."""
+        A forrás mintája (`_remember_source`). #7183: az import INDÍTÁSAKOR
+        hívódik (az eredeti is ekkor ment), tehát a hibás futás célja is
+        bekerül; a listában legfeljebb `MAX_RECENT_DESTINATIONS` elem van."""
         if not folder:
             return
         recent = [

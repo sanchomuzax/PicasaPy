@@ -166,6 +166,11 @@ ColumnLayout {
     }
 
     // -- "After Copying:" háromállapotú forrás-törlés (#441) -----------
+    // #7183: a három mód csak törölhető forrásnál aktív (csatolt meghajtó,
+    // gyökerében `DCIM` mappával: `0x00519630`, `0x005277e0`); egyébként a
+    // menü Leave állású és letiltott. A választott (tárolt) érték a
+    // `hostWindow.afterCopying`-ben marad, törölhető forrásra visszaváltva
+    // újra ez látszik.
     Text {
         text: qsTr("After Copying:")
         font.pixelSize: Theme.fontSize
@@ -179,22 +184,25 @@ ColumnLayout {
         RadioButton {
             objectName: "importSourceAfterLeaveRadio"
             text: qsTr("Leave card alone")
+            enabled: hostWindow.sourceDeletable
             ButtonGroup.group: afterCopyingGroup
-            checked: hostWindow.afterCopying === "leave"
+            checked: hostWindow.effectiveAfterCopying === "leave"
             onToggled: if (checked) hostWindow.afterCopying = "leave"
         }
         RadioButton {
             objectName: "importSourceAfterDeleteCopiedRadio"
             text: qsTr("Delete only copied photos")
+            enabled: hostWindow.sourceDeletable
             ButtonGroup.group: afterCopyingGroup
-            checked: hostWindow.afterCopying === "delete_copied"
+            checked: hostWindow.effectiveAfterCopying === "delete_copied"
             onToggled: if (checked) hostWindow.afterCopying = "delete_copied"
         }
         RadioButton {
             objectName: "importSourceAfterDeleteAllRadio"
             text: qsTr("Delete everything on card")
+            enabled: hostWindow.sourceDeletable
             ButtonGroup.group: afterCopyingGroup
-            checked: hostWindow.afterCopying === "delete_all"
+            checked: hostWindow.effectiveAfterCopying === "delete_all"
             onToggled: if (checked) hostWindow.afterCopying = "delete_all"
         }
     }

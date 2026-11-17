@@ -89,9 +89,10 @@ Window {
     }
 
     // #441: a HÁROM célmappa-elnevezési mód — a `picasapy.importsource.
-    // NAMING_*` konstansaival egyező string. A dátum szerinti bontás a
-    // Picasa import-munkafolyamatának lelke, ezért ez az alapértelmezés.
-    property string namingMode: "date"
+    // NAMING_*` konstansaival egyező string. #7183: az eredeti alapértéke a
+    // kézi cím (`acquireUseSubFolder` = 0, `0x00514180`); az ablak nyitáskor
+    // a vezérlő tárolt értékét veszi fel (`loadStoredImportChoices`).
+    property string namingMode: "manual"
     property string manualFolderName: ""
     // #4837: a kézi név egyetlen, biztonságos útvonal-elem-e (Python dönt)
     readonly property bool manualNameValid:
@@ -101,8 +102,28 @@ Window {
             || importSourceController.isValidFolderName(manualFolderName))
 
     // #441: "After Copying:" — a `picasapy.app.import_source_controller.
-    // AFTER_COPY_*` konstansaival egyező string.
+    // AFTER_COPY_*` konstansaival egyező string. #7183: a VÁLASZTOTT (tárolt)
+    // érték; ténylegesen csak törölhető forrásnál érvényes, egyébként az
+    // `effectiveAfterCopying` Leave.
     property string afterCopying: "leave"
+    // #7183: a forrás a csatolt meghajtók listájából jött-e (a mappa-, fájl- és
+    // előzményforrás sosem törölhető). A forrásválasztók állítják.
+    property bool sourceFromDrive: false
+    // #7183: törölhető forrás = csatolt meghajtó, gyökerében `DCIM` mappával
+    // (`0x0050f590` → `0x0050f6a0`); a vizsgálat Python-oldali (kis-nagybetű
+    // érzéketlen).
+    readonly property bool sourceDeletable:
+        importSourceWindow.sourceFromDrive
+        && importSourceWindow.sourceFiles.length === 0
+        && importSourceWindow.sourceFolder.length > 0
+        && (typeof importSourceController !== "undefined"
+            && importSourceController
+            && importSourceController.isDeletableSource !== undefined)
+        && importSourceController.isDeletableSource(
+               importSourceWindow.sourceFolder) === true
+    readonly property string effectiveAfterCopying:
+        importSourceWindow.sourceDeletable
+            ? importSourceWindow.afterCopying : "leave"
 
     property bool scanning: false
     // előnézeti elemek — dict-ek listája: {path, thumbUrl, duplicate,
@@ -175,7 +196,24 @@ Window {
 
     property string lastError: ""
 
+    // #7183: az almappa-mód és a törlési mód az import INDÍTÁSAKOR mentődik;
+    // újranyitáskor a tárolt érték látszik (a nyitás óta csak átállított,
+    // el nem indított választás elvész, mint az eredetiben).
+    function loadStoredImportChoices() {
+        if (typeof importSourceController === "undefined"
+                || !importSourceController)
+            return
+        if (importSourceController.namingMode !== undefined)
+            importSourceWindow.namingMode = importSourceController.namingMode
+        if (importSourceController.afterCopying !== undefined)
+            importSourceWindow.afterCopying = importSourceController.afterCopying
+    }
+
+    Component.onCompleted: importSourceWindow.loadStoredImportChoices()
+
     onVisibleChanged: {
+        if (visible)
+            importSourceWindow.loadStoredImportChoices()
         if (visible
                 && typeof importSourceController !== "undefined"
                 && importSourceController
@@ -246,6 +284,16 @@ Window {
         return selected
     }
 
+    // #7183: a mappa-forrás kiválasztása — a mappaválasztó, a korábbi források
+    // és a csatolt meghajtók legördülője egyaránt ezen át állít forrást;
+    // `fromDrive` csak a csatolt meghajtók listájából igaz.
+    function useSourceFolder(folder, fromDrive) {
+        importSourceWindow.sourceFiles = []
+        importSourceWindow.sourceFolder = folder
+        importSourceWindow.sourceFromDrive = fromDrive === true
+        importSourceWindow.scanCurrentSource()
+    }
+
     // a forrás (rekurzív) beolvasása háttérszálon — a FolderDialog
     // elfogadásakor és tesztből is hívható (a DedupDialog `scan()` mintája)
     function scanCurrentSource() {
@@ -269,6 +317,7 @@ Window {
     function useSelectedFiles(fileUrls) {
         if (!fileUrls || fileUrls.length === 0) return
         importSourceWindow.sourceFolder = ""
+        importSourceWindow.sourceFromDrive = false
         importSourceWindow.sourceFiles = fileUrls.map(function (url) {
             return url.toString()
         })
@@ -284,14 +333,14 @@ Window {
                 importSourceWindow.destFolder,
                 importSourceWindow.namingMode,
                 importSourceWindow.manualFolderName,
-                importSourceWindow.afterCopying,
+                importSourceWindow.effectiveAfterCopying,
                 importSourceWindow.selectedImportPaths())
         } else {
             importSourceController.runImport(
                 importSourceWindow.destFolder,
                 importSourceWindow.namingMode,
                 importSourceWindow.manualFolderName,
-                importSourceWindow.afterCopying)
+                importSourceWindow.effectiveAfterCopying)
         }
     }
 
@@ -311,14 +360,14 @@ Window {
         if (onlySelected && !importSourceWindow.canImportSelected) return
         if (!onlySelected && !importSourceWindow.canImportAll) return
         importSourceWindow.pendingSelectedOnly = onlySelected
-        if (importSourceWindow.afterCopying === "leave") {
+        if (importSourceWindow.effectiveAfterCopying === "leave") {
             importSourceWindow.runImportNow()
             return
         }
         // Delete Copied: a `confirmRemoveCopied::message` eredeti szövege
         // (kisbetűs második mondattal); Delete All: a vezérlő összeállított
         // figyelmeztetése.
-        removeConfirm.ask("", importSourceWindow.afterCopying === "delete_all"
+        removeConfirm.ask("", importSourceWindow.effectiveAfterCopying === "delete_all"
             ? importSourceController.wipeCardWarning()
             : qsTr("Are you sure you want to remove the imported files from "
                    + "your card? This cannot be undone."))
@@ -421,11 +470,8 @@ Window {
         id: sourceFolderDialog
         objectName: "importSourceFolderDialog"
         title: qsTr("Choose source folder...")
-        onAccepted: {
-            importSourceWindow.sourceFiles = []
-            importSourceWindow.sourceFolder = selectedFolder.toString()
-            importSourceWindow.scanCurrentSource()
-        }
+        onAccepted: importSourceWindow.useSourceFolder(
+            selectedFolder.toString(), false)
     }
 
     // #4596: kijelölt fájlok a forrás. A szűrők az eredeti tallózóéi
@@ -479,7 +525,7 @@ Window {
         title: qsTr("Import from Source")
         rememberVisible: false
         noVisible: false
-        yesText: importSourceWindow.afterCopying === "delete_all"
+        yesText: importSourceWindow.effectiveAfterCopying === "delete_all"
             ? qsTr("Remove All Files") : qsTr("Remove Imported Files")
         onConfirmed: importSourceWindow.runImportNow()
     }
