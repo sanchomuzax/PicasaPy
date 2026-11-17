@@ -2245,9 +2245,9 @@ helyi menüje ugyanahhoz a `0x9e0e` parancshoz vezet; külön gyorsbillentyűt v
 a rács helyi menüjében parancsot nem találtam. Egy kép közvetlen dátumot kap, több kép
 alapértelmezés szerint eltolást; a 22 képes Picasa 3.9-es képernyőkép az
 eltolás rádió kijelölését méri, a Ghidra-kimenet pedig nem talál megjegyzett
-beállítást. A párbeszéd kezdeti dátummezői egy `CThumbUI` által visszaadott
-objektum `+0x6c` mezőjéből kapott `FILETIME`-mal indulnak; hogy ez melyik
-képhez vagy nézetállapothoz tartozik, nem bizonyított. A JPEG-ág a
+beállítást. A párbeszéd kezdeti dátummezője a feloldott kijelölési lista első
+elemének katalógusából lekért `FILETIME`-mal indul; a lista a rács indexsorrendjét
+követi. A JPEG-ág a
 `DateTimeOriginal` mezőt írja, a nem-EXIF ág a fájlrendszer idejét és
 `thumbindex.db` rekordját kezeli, `.picasa.ini` kulcsot nem ír. A még
 megmaradt, felhasználó által látható pontokat egyetlen kontrollált
@@ -2255,40 +2255,47 @@ Windows-mérési sorozat dönti el, ezért a jegy még nem zárható.
 
 ### Bizonyítottsági fok
 
-**Feltételes.** A parancs és az íróág bináris útvonalakon követhető; a relatív
-alapmódot külön meglévő képernyőmérés igazolja, a megjegyzés hiányát a
-Ghidra-kimenet. A kijelölési lista rácssorrendje ismert, de nincs bizonyíték,
-hogy ez adja a párbeszéd kezdő dátumát. A néző/tálca elérhetőségét, a látható
-végállapotot, az írásvédelmi kimenetet és a kezdő dátum képforrását még nem
-mérte meg senki.
+**Feltételes.** A kezdő dátum forrását a hívóhely utasításai, a konstruktor
+adatátvétele és a kijelölési lista külön feltárt sorrendje együtt igazolja; a
+PicasaPy jelenlegi QML-je ugyanezt a sorindex szerinti első elemet választja.
+A relatív alapmódot külön meglévő képernyőmérés igazolja, a megjegyzés hiányát
+a Ghidra-kimenet. A néző/tálca menüengedélyezése, a natív ablak viselkedése,
+a siker utáni látható végállapot és az írásvédettség tényleges kimenete továbbra
+is Windows-mérést igényel.
 
 ### 1. Belépési pontok, kijelölés és gyorsbillentyű
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| **Eszközök menü.** A `0x00559150` menürekord-építő a `0x00c8e048` azonosítót és `0x00c8e070` feliratot társítja a `0x00d6e904` rekordhoz; ennek parancsmezője `0x9e0e` (`0x0055c7cd`). A parancs-diszpécser `0x005cb990` `case 0x9e0e` ága `0x0057d7f0`-re lép. Egy kép a közvetlen dátumot, legalább két kép az eltolási adatot adja át (`0x0057d7f0`, `0x0077cf70`). | A menütétel `PicasaToolsMenu.qml:78-83`; a könyvtári célhalmaz átadása `MainMenuBar.qml:361-362`. A menüpont `MainMenuBar.qml:121-122` szerint legalább egy kijelölést és nem megnyitott nézőt követel. | A kezelő viselkedése igazolt; az eredeti menüpont üres kijelölés, néző és tálca melletti engedélyezése mérendő. A `0x005c76b0` kijelölés nélkül is összegyűjtheti a látható elemeket, ezért a kezelő tartalékágából önmagában nem következik a menü állapota. |
-| **Tulajdonság helyi menüje.** A `0x00638990` a kiválasztott `PropertiesListItem` `+8` típusát vizsgálja; `0x37` esetén hozzáadja a `0x9e0e` parancsot és a `0x00c8e048` feliratot. A hívó `0x00637fa0`. A `0x37` az EXIF `0x9003` `DateTimeOriginal` mező (`picasa-metaadat-tulajdonsagok.md:53`). | A `PropertiesPanel.qml:71-103` adatlistát mutat. A panel jobb kattintás menüje `PropertiesPanel.qml:136-155`, és csak a „Edit Tags” tételt tartalmazza. | **Igazolt eltérés.** A dátumsor célzott helyi menüjének művelete hiányzik. Fejlesztői jegyjavaslat lent. |
+| **Eszközök menü.** A `0x00559150` menürekord-építő a `0x00c8e048` azonosítót és `0x00c8e070` feliratot társítja a `0x00d6e904` rekordhoz; ennek parancsmezője `0x9e0e` (`0x0055c7cd`). A parancs-diszpécser `0x005cb990` `case 0x9e0e` ága `0x0057d7f0`-re lép. Egy kép a közvetlen dátumot, legalább két kép az eltolási adatot adja át (`0x0057d7f0`, `0x0077cf70`). | A menütétel `PicasaToolsMenu.qml:79-83`; a könyvtári művelet a `MainMenuBar.qml:354-355` címen adja át a `photoActionRows()` értékét. A `MainMenuBar.qml:112-114` legalább egy kijelölést és zárt nézőt követel. | A kezelő viselkedése igazolt; az eredeti menüpont üres kijelölés, néző és tálca melletti engedélyezése mérendő. A `0x005c76b0` kijelölés nélkül is összegyűjtheti a látható elemeket, ezért a kezelő tartalékágából önmagában nem következik a menü állapota. |
+| **Tulajdonság helyi menüje.** A `0x00638990` a kiválasztott `PropertiesListItem` `+8` típusát vizsgálja; `0x37` esetén hozzáadja a `0x9e0e` parancsot és a `0x00c8e048` feliratot. A hívó `0x00637fa0`. A `0x37` az EXIF `0x9003` `DateTimeOriginal` mező (`picasa-metaadat-tulajdonsagok.md:53`). | A `PropertiesPanel.qml:165-169` dátumtípusú sorhoz jeleníti meg a „Adjust &Date and Time...” műveletet; a jobb kattintás sorfelismerése `:194-205`. A könyvtári panel `MainRightDrawer.qml:150-154`, a néző panelje `PhotoViewerRightPanels.qml:43-47` az adott sorral nyitja meg a párbeszédet. | **Egyezik a belépési pont.** A régi „csak Edit Tags” leírás elavult; erre fejlesztői jegy nem indokolt. |
 | **Rács helyi menüje.** A teljes `.text` pásztázás a `0x9e0e` közvetlen kódtalálatait csak a menürekord-építőben (`0x0055c7cd`) és a tulajdonságmenüben (`0x00638a0a`) találta. Külön rács-helyi dátumparancsot nem azonosítottam. | A `PhotoContextMenu.qml:163-520` nem tartalmaz dátummódosítót. | Az eredeti közvetlen kódbeli dátumbejárat hiánya ellenőrzött. A Tools menü ettől még meghívható lehet rácskijelölésre. |
-| **Néző.** A `0x005c76b0` előbb a látható nézetet gyűjti; üres nézetlista esetén a `this+0xe64` aktuális képre hivatkozik, ha az nem `-1`. A főablak-eseménykezelő és a parancs menüengedélyezése ettől még nincs végigkövetve. | A `MainMenuBar.qml:121-122` az Eszközök dátumműveletét letiltja nyitott nézőnél; a `ViewerContextMenu.qml:122-294` nem tartalmaz dátumműveletet. | A bináris kezelője képes az aktuális egyképes nézet elemét bemenetként felvenni, de az eredeti menü tényleges engedélyezése mérendő. A PicasaPy tiltása ismert eltérésjelölt. |
-| **Képtálca.** Az eredeti `0x005c76b0` bemenete a látható nézet, a csoportosított arcnézet csomópontja (`+0x3c9`, virtuális `+0xdc`), illetve az aktuális kép (`+0xe68`); külön tálcalista nem szerepel az útban. | A `TrayContextMenu.qml:40-95` nem tartalmaz dátummódosítót. Az Eszközök menü `MainMenuBar.qml:121-122` a főrács `selectedIndexes` értékéhez kötődik, nem a tálca tartalmához. | A vizsgált kezelő útja nem a tálca-listát adja át. Az Eszközök menü tálca melletti elérhetőségét egy Windows-mérés zárja le. |
+| **Néző.** A `0x005c76b0` előbb a látható nézetet gyűjti; üres nézetlista esetén a `this+0xe64` aktuális képre hivatkozik, ha az nem `-1`. A főablak-eseménykezelő és a parancs menüengedélyezése ettől még nincs végigkövetve. | A `MainMenuBar.qml:112-114` az Eszközök dátumműveletét letiltja nyitott nézőnél; a `ViewerContextMenu.qml:122-294` nem tartalmaz dátumműveletet. | A bináris kezelője képes az aktuális egyképes nézet elemét bemenetként felvenni, de az eredeti menü tényleges engedélyezése mérendő. A PicasaPy tiltása ismert eltérésjelölt. |
+| **Képtálca.** Az eredeti `0x005c76b0` bemenete a látható nézet, a csoportosított arcnézet csomópontja (`+0x3c9`, virtuális `+0xdc`), illetve az aktuális kép (`+0xe68`); külön tálcalista nem szerepel az útban. | A `TrayContextMenu.qml:40-95` nem tartalmaz dátummódosítót. Az Eszközök menü `MainMenuBar.qml:112-114` a főrács `selectedIndexes` értékéhez kötődik, nem a tálca tartalmához. | A vizsgált kezelő útja nem a tálca-listát adja át. Az Eszközök menü tálca melletti elérhetőségét egy Windows-mérés zárja le. |
 | **Gyorsbillentyű.** A `Picasa3i18n.dll` `SHORTCUTS.XML` erőforrása 48 rekeszt tartalmaz dátum-idő műveletre mutató rekord nélkül; a `0x00559150` menüsor 32 gyorsbillentyűs rekordja közt sincs `0x9e0e`. A `0x00c8e070` felirat `Adjust &Date and Time...`; ez menübillentyűt jelez, külön Ctrl/Alt+billentyű-kötést nem. | A QML felirata szintén `Adjust &Date and Time...` (`PicasaToolsMenu.qml:80`); a teljes `MainKeyboardShortcuts.qml:1-551` fájlban nincs dátumművelet. | Külön gyorsbillentyű-parancsot egyik oldalon sem találtam. A menü feliratának `D` menübillentyűje nem külön műveletbillentyű. |
 
 Az eredeti kezelő a `0x0057d7f0` útján hívja a `0x005c76b0` kiválasztási
 segédet. Egy elemnél a cím `Adjust Photo Date`; két vagy több elemnél a
 `0x0077c7c0` a `OffsetPhotoDate:Title` erőforrásból darabszámos címet épít.
-A `0x0057d7f0` a `CThumbUI` `+0x24` virtuális helyén át a `0x00a6ccf0`
-gettert hívja; az visszaadja a `CThumbUI+0x50` objektumot, amelynek a kezelő
-a `+0x6c` mezőjét olvassa és FILETIME-ként adja tovább. A `0x00a6ccf0`
-utasításai és a `CThumbUI::vftable` helye a meglévő
-`picasa-idorend-viselkedes.md:547`, illetve az RTTI és a célzott helyi
-disassembly alapján igazoltak. A kezelő külön a feloldott lista első
-azonosítójával is meghívja a katalógus `+0xc4` virtuális helyét, de a meglévő
-#403 kimenet ezt nem köti össze az ablaknak átadott FILETIME-mal. A lista
-sorrendje ettől függetlenül ismert: a `0x00506500` megtartja a bemeneti
+A kezdő `FILETIME` adatútját a hívóhely disassemblyje tisztázza: a
+`0x0057d894` a `CThumbUI+0x50` objektum `+0x6c` értékét betölti EDI-be, de ez
+nem a dátum. A `0x0057d8f3` a feloldott lista első azonosítójával meghívja a
+katalógus `+0xc4` virtuális metódusát, amely a veremrekordba írja a dátumot.
+A `0x0057d91a` a korábban betöltött `+0x6c` értéket külön argumentumként
+veremre teszi, majd a `0x0057d91b` az EDI-t a `+0xc4` által kitöltött
+veremrekordra állítja a `0x0077c670` konstruktor `0x0057d923` hívása előtt.
+A konstruktor az `unaff_EDI[0]` és `[1]` értékét másolja a kezdeti
+dátum/idő mezőkbe (`referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp.txt`,
+#402-403). Így a kezdő érték a feloldott lista első elemének katalógusadata,
+nem a `CThumbUI+0x50` objektum `+0x6c` mezője.
+
+A sorrend külön bizonyítékból ismert: a `0x00506500` megtartja a bemeneti
 sorrendet, a `0x007166c0` pedig a látható, kijelölt elemeket rácsindex szerint
-gyűjti. **Nem bizonyított**, hogy a párbeszéd az első kijelölt, az aktív vagy
-más kép idejét mutatja. A nézetből kijelölés nélkül is minden látható, nem
-rejtett elem bekerülhet; a parancs menüszintű engedélyezését ez nem dönti el.
+gyűjti (`referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp-2.txt`, #418;
+`2026-11-16-7022-7031-7033-colab-decomp.txt`, #424). A párbeszéd tehát a
+rácssorrend szerinti első kijelölt kép idejéből indul. Kijelölés nélkül a
+segéd látható elemeket is gyűjthet, de ebből nem következik a Tools menü
+engedélyezése.
 
 ### 2. Ablak, mezők és alapértékek
 
@@ -2297,13 +2304,15 @@ Az eredeti `runtime/offsettime.fen` leíró (`0x00cb40a0` azonosító,
 `New photo date` dátum/idő mezőt, `relative` és `absolute` rádiót, valamint
 OK/Cancel gombot sorol fel. A `0x0077c7c0` a `currentdate` vezérlőt tölti,
 majd a kapott FILETIME alapján állítja elő az új dátum és idő kezdeti
-értékét. A `0x0057d7f0` hívó a `CThumbUI+0x50` objektum `+0x6c` mezőjéből
-kapott FILETIME-ot adja át (`0x0057d894`-`0x0057d923`; a
-`picasa-menu-parancsok-viselkedes.md:279` ugyanezt az adatfolyamot írja le).
-A `0x0077c7c0` ezt azonos kezdeti értékként köti a jelenlegi és új dátum/idő
-vezérlőkhöz. A mező forrásobjektumának `+0x6c` jelentése és az, hogy ez melyik
-kép ideje, **NINCS MEG**. A lista első elemének katalóguslekérése önmagában
-nem bizonyítja, hogy a két adatút ugyanarra a képre mutat. A többes elemszám
+értékét. A `0x0057d7f0` a lista első azonosítójával kéri le a katalógus
+`+0xc4` metódusát (`0x0057d8ec`-`0x0057d8f3`); az általa kitöltött
+veremrekord címe kerül EDI-be a `0x0077c670` konstruktor hívásakor
+(`0x0057d91b`-`0x0057d923`). A konstruktor ezt a rekordot másolja a jelenlegi
+és új dátum/idő mezőkbe (#402-403). A külön betöltött
+`CThumbUI+0x50` objektum `+0x6c` értéke egy másik argumentum, nem a kezdeti
+`FILETIME`. A `0x00506500` megőrzi a listát, a `0x007166c0` rácsindex szerint
+gyűjti; a kezdő dátum ezért a rácssorrend első kijelölt elemének ideje.
+A többes elemszám
 csak akkor kerül a címbe, ha a darabszám nagyobb egynél (`0x0077c7c0`). Az
 eredeti `.fen` szélesség-megjelölése `fit`.
 
@@ -2328,14 +2337,14 @@ abszolút módban cél-FILETIME-t állít a `+0x78/+0x7c` mezőkbe. A
 mindig közvetlen cél-FILETIME-t ad át (`0x0057d9d4-0x0057da08`), tehát az
 egy-képes eredmény abszolút.
 
-PicasaPy oldalon az `AdjustTimestampDialog.qml:62-80` az első kapott sorból
-tölti a jelenlegi és új időt, minden nyitáskor relatív módot választ, és a
-címet csak több sornál bővíti (`:22-24`). Az egyképes cím egyezik. Az
-eredeti és a PicasaPy egyaránt relatív móddal indul és nem menti el a
-választást. A PicasaPy az első `photoRows` elem idejéből indul, az eredeti
-kezdő dátum forrása viszont nem ismert, ezért a képre vonatkozó egyezés nem
-állítható. A PicasaPy egyképes relatív képlete ugyanarra a célidőre jut, ha az
-új idő a párbeszédben megadott cél.
+PicasaPy oldalon az `AdjustTimestampDialog.qml:62-82` előbb a kapott sorokat
+számszerű sorindex szerint rendezi (`:65-67`), majd az első rendezett sorból
+tölti a jelenlegi és új időt (`:68-69`); minden nyitáskor relatív módot
+választ (`:80-81`), és a címet csak több sornál bővíti (`:22-24`). Az eredeti
+és a PicasaPy kezdő dátumforrása egyaránt a rácssorrend szerinti első kép, a
+relatív mód és a beállítás meg nem jegyzése is egyezik. Az egyképes cím
+egyezik; az egyképes eredeti végrehajtás közvetlen cél-FILETIME-t ad át, a
+PicasaPy relatív képlete pedig az azonos kezdő időből ugyanarra a célidőre jut.
 
 A PicasaPy ablak modális és 540 széles (`AdjustTimestampDialog.qml:25-29`);
 az eredeti leíró `width="fit"` értéket ad, modális jelzőt nem tartalmaz.
@@ -2368,8 +2377,11 @@ Ha az EXIF-író (`0x009ed330`) nem ad sikeres eredményt, a háttérfeldolgozó
 típusnál a `0x004ef3c0` vagy `0x004ef5a0` rekordmódosítót is meghívja.
 A következő kijelölt elem feldolgozása folytatódik. Visszagörgető hívást
 nem találtam, ezért a bináris útban részleges siker lehetséges. A
-`SetFileTime` vagy a katalógusírás hibájának pontos felhasználói jelzése
-**NINCS MEG**.
+`0x00992780` és a `0x004ef3c0`/`0x004ef5a0` visszatérési értékét a két worker
+nem ellenőrzi; a vezérlés a következő kijelölt elemre lép. Ezekben a munkaszál-ágakban
+explicit hibaüzenet-küldés nem látható, de a Windows-felületen megjelenő
+pontos jelzést és a tényleges fájl/katalógus állapotot futásmérés nélkül nem
+állítom.
 
 Az eredeti kódágban külön írásvédettség-előellenőrzést nem azonosítottam.
 Az, hogy egy Windows `readonly` attribútum vagy mappaszintű engedély mellett
@@ -2389,27 +2401,33 @@ attribútumot előre.
 
 ### 5. A két független út
 
-- **A út, a bináris utasításszintű olvasása:** a `0x00559150` rekordbázis és
-  `0x005cb990` diszpécser után `0x0057d7f0` nyitja meg a műveletet;
-  `0x0077c670` és `0x0077cee0` adja a kezdő rádió értékét, a `0x0077cfd0`
-  választja a két háttérfeldolgozót. Az írók a `0x37` mezőt,
-  `0x009ed330`-at és a tartalék `0x00992780`/`0x004ef3c0`/`0x004ef5a0`
-  utat használják.
-- **B út, külön felületi és adatrekord-bizonyíték:** a Picasa 3.9-es
-  `Colab EN 28` képernyőmérésen a relatív mód van kiválasztva, a hozzá tartozó
-  `runtime/offsettime.fen` pedig ezt teszi első rádiónak. Ettől külön a
-  `0x00638990` Tulajdonságok-lista menüépítője ugyanazt a `0x9e0e` kódot adja
-  a `0x37` tulajdonsághoz; a `pmp-database.md` 15.1-15.2 szakaszának
-  rekordmásolási és adatbázis-ellenőrzése a videós ág `thumbindex` első
-  FILETIME-ját azonosítja.
-- **Egyezés:** az A bináris út és a B képernyőmérése/ablakleírója egyezik a
-  kezdő relatív módban. A külön Tulajdonságok-menü és katalógusrekord-út
-  egyezik a `0x9e0e` művelet, a `0x37` EXIF-tulajdonság és a nem-EXIF
-  katalógusmező tekintetében. A kijelölési lista rácssorrendű, de ez nem
-  bizonyítja, hogy az ablak kezdő FILETIME-ja az első kijelölt képből jön;
-  ezért a PicasaPy kattintási sorrendjével való eltérés egyelőre nem
-  állítható. Az eredeti néző- és tálcamenü engedélyezése, a kezdő dátum
-  képforrása és a siker utáni látható állapot futásmérést igényel.
+- **A út, a hívóhely és konstruktor utasításszintű olvasása:** a
+  `0x0057d894`-ben betöltött `+0x6c` értéket a hívó a veremre teszi, majd a
+  `0x0057d91b` a `0x0077c670` hívás előtt az EDI-t a katalógus `+0xc4`
+  kimeneti rekordjára állítja. A konstruktor ezen a mutatón keresztül tölti
+  be a kezdő dátummezőt. Ez az út a dátumértéket azonosítja, a lista sorrendjét
+  nem feltételezi.
+- **B út, külön feltárt kijelölési lánc:** a `0x007166c0` a kijelölt,
+  látható elemeket rácsindex szerint adja, a `0x00506500` pedig megőrzi a
+  bemeneti sorrendet és a feloldott első elem kerül a lista elejére
+  (`referencia/ghidra/2026-11-15-7031-7032-7033-colab-decomp-2.txt`, #418;
+  `2026-11-16-7022-7031-7033-colab-decomp.txt`, #424). Ez az út a sorrendet
+  azonosítja, nem használja a kezdő dátumra vonatkozó A út következtetését.
+  A PicasaPy forrás külön ellenőrzése (`AdjustTimestampDialog.qml:65-69`)
+  ugyancsak a számszerű sorindex szerinti első sort használja.
+- **Külön felületi mérés:** a `Colab EN 28` képernyőn a relatív mód van
+  kiválasztva, a `runtime/offsettime.fen` ezt teszi első rádiónak. A
+  `0x00638990` Tulajdonságok-lista menüépítő a `0x37` tulajdonsághoz adja a
+  `0x9e0e` parancsot; a `pmp-database.md` 15.1-15.2 szakasza a videós ág
+  `thumbindex` első FILETIME-ját azonosítja.
+- **Egyezés:** az A bináris hívóhely/konstruktor út és a B kiválasztási
+  sorrend út egyezik: a párbeszéd dátummezőjét a rácsindex szerinti első
+  kijelölt kép katalógusadata tölti, ahogy a PicasaPy rendezett
+  `photoRows[0]` értéke is. A PicasaPy jelenlegi forrása ezt közvetlenül is
+  alátámasztja. A külön Tulajdonságok-menü és katalógusrekord-út egyezik a
+  `0x9e0e` művelet, a `0x37` EXIF-tulajdonság és a nem-EXIF katalógusmező
+  tekintetében. Az eredeti Tools menü engedélyezése, a natív ablak és a siker
+  utáni látható állapot futásmérést igényel.
 
 ### 6. Cáfoló kísérlet
 
@@ -2427,6 +2445,17 @@ ellenőrizték. Az ellenpróba az erőforrás teljes rekeszszámát és a közve
 bináris hivatkozásokat vizsgálta, ezért nem az index negatív találatára épül.
 A `&Date` felirat menü-mnemonikája ettől külön marad.
 
+A korábbi dátumforrás-olvasatot is cáfoltam: ha a `CThumbUI+0x50` objektum
+`+0x6c` értéke volna a kezdő dátum, a konstruktor ezt az értéket használná.
+A hívóhelyen viszont a `0x0057d91a` ezt külön argumentumként veremre teszi,
+majd a `0x0057d91b` az EDI-t átállítja a katalógus `+0xc4` rekordjára; a
+`0x0077c670` az `unaff_EDI[0..1]` rekordpárt olvassa. Ezt a cáfolatot a
+Ghidra konstruktorleírás és a hívóhely Capstone-utasításai egymástól
+függetlenül támasztják alá. A lista sorrendjére irányuló külön ellenőrzés
+(`0x007166c0`, `0x00506500`) és a jelenlegi QML számszerű rendezése szintén
+megcáfolja a régi kattintási sorrend állítást. A 15.2/b szerinti ellenpróba
+tehát ugyanazon bizonyítékmércével ellenőrizte a régi állítás cáfolatát.
+
 ### 7. A kérdés „Kész, ha” pontjai
 
 A megadott jegyszöveg négy kérdést sorol fel, külön „Kész, ha” felsorolást
@@ -2434,14 +2463,17 @@ nem ad. Ezek alapján:
 
 1. ⛔ **Belépési pontok és feltételek:** Eszközök menü és Tulajdonságok-lista
    helyi menü címmel bizonyított (`0x00559150`, `0x005cb990`,
-   `0x00638990`). Külön dátum gyorsbillentyű nincs az erőforrásban; a
-   néző/tálca elérhetőség és az eredeti írásvédettségi kapu nyitott.
+   `0x00638990`); a jelenlegi PicasaPy Tulajdonságok-menü is megvan
+   (`PropertiesPanel.qml:165-169, 194-205`). Külön dátum gyorsbillentyű nincs
+   az erőforrásban; az eredeti Tools menü néző/tálca/üres kijelölés melletti
+   állapota és az írásvédettségi kimenet nyitott.
 2. ⛔ **Ablak, alapértékek és megjegyzés:** a mezők, módok, OK/Mégse,
    elemszámos cím, a kezdő relatív mód és a megjegyzés hiánya ismert
    (`0x0077c7c0`, `0x0077c670`, `0x0077cd50`, `0x0077cee0`; mérés:
-   `Colab EN 28`). A kezdeti dátummező `FILETIME` forrása a
-   `CThumbUI+0x50` objektum `+0x6c` mezője, de a hozzá tartozó kép nem ismert.
-   A natív ablak mérete és modális viselkedése is mérendő.
+   `Colab EN 28`). A kezdeti dátum a rácssorrend első kijelölt eleméből jön
+   (`0x0057d8f3`, `0x0057d91b`, `0x0057d923`, #402-403, #418, #424), a
+   PicasaPy is a rendezett első sort használja. A natív ablak mérete és
+   modális viselkedése mérendő.
 3. ⛔ **Hatás és visszavonás:** a JPEG `DateTimeOriginal`, a nem-EXIF
    `thumbindex` és fájlidő ág, az `.ini`-kulcs hiánya és a visszavonás hiánya
    igazolt. A JPEG index, a rácssorrend, a mappafa és az idővonal siker utáni
@@ -2453,7 +2485,7 @@ nem ad. Ezek alapján:
 
 ### 8. Javasolt fejlesztői jegytörzs
 
-#### A Tulajdonságok panel dátumsorának helyi menüje nyissa meg a dátumállítót
+#### A Tulajdonságok panel dátumsorának helyi menüje (már megvalósítva)
 
 **Eredeti:** a `0x00638990` a `PropertiesListItem` `0x37` típusú
 `DateTimeOriginal` sorához (`0x9003`) hozzáadja a `0x9e0e` Dátum és idő
@@ -2461,11 +2493,10 @@ beállítása parancsot. A `0x00637fa0` hívja ezt a helyi menüépítőt.
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| `0x00638990`: `0x37` tulajdonságsorhoz a `0x9e0e` műveletet adja. | `PropertiesPanel.qml:71-103, 136-155`: a panel a tulajdonságokat csak megjeleníti; jobb kattintásra az „Edit Tags” menü nyílik. | A dátumot megjelenítő tulajdonságsor helyi menüjébe kerüljön a dátumállító, és az adott kép adataival nyíljon meg. |
+| `0x00638990`: `0x37` tulajdonságsorhoz a `0x9e0e` műveletet adja. | `PropertiesPanel.qml:165-169, 194-205`, `MainRightDrawer.qml:150-154`, `PhotoViewerRightPanels.qml:43-47`: a dátumsor jobb kattintására az adott kép dátumállítója nyílik. | **Nincs teendő.** A helyi menü a jelenlegi forrásban megvan, és az adott sorral nyitja a párbeszédet. |
 
-**Kész, ha:** a `DateTimeOriginal` sor jobb kattintására megnyílik a
-dátumállító az adott kép aktuális dátumával; más tulajdonságsor nem kap
-dátummódosító műveletet.
+**Állapot:** teljesült a forrásban; más tulajdonságsorhoz nem kapcsolódik a
+dátummódosító menütétel.
 
 #### A sikeres JPEG-dátumírás fájlideje kövesse az eredeti Picasát
 
@@ -2643,9 +2674,9 @@ képforrása nyitott marad, amíg a kontrollált mérés nem azonosítja.
 | 3. Hatás és visszavonás | ⛔ | A közvetlen adattárolás és az undo hiánya megvan; a JPEG index, rács, mappafa és idővonal siker utáni állapota még mérendő. |
 | 4. Írásvédelem és részleges hiba | ⛔ | A hibás EXIF-írás tartalékága és a visszagörgetés hiánya megvan; a tényleges Windows üzenet és részleges eredmény még mérendő. |
 
-Az első kép kezdő dátumként való használatából fejlesztői jegy nem javasolható
-a mérés előtt; a korábbi #7054 jegytörzs visszavonva. A Tulajdonságok-panel
-dátumsorának helyi menüje külön igazolt eltérés marad.
+Az első kép kezdő dátumként való használata most bizonyított; a #7054
+eltérésjavaslat nem indokolt. A Tulajdonságok-panel dátumsorának helyi menüje
+a jelenlegi forrásban már megvan, ezért az sem nyitott fejlesztői eltérés.
 
 ### 10. Nyitott
 
@@ -2655,26 +2686,22 @@ dátumsorának helyi menüje külön igazolt eltérés marad.
 
 | Nyitott tétel | Mit dönt el a meglévő bizonyíték | Státusz és megszerzés |
 |---|---|---|
-| A kezdeti dátummező melyik kép idejét mutatja. | A `0x0057d7f0` a `CThumbUI+0x50` objektum `+0x6c` mezőjéből kapott FILETIME-ot adja át; a lista első rekordjának külön katalóguslekérése nem köti ezt egy képhez. | **Blokkoló, látható.** Ismert, különböző EXIF `DateTimeOriginal` értékű képekkel kell ellenőrizni az egyképes és többképes párbeszéd kezdeti dátumát, a kijelölési kattintássorrend és az aktuális kép rögzítésével. |
-| Eszközök menü engedélyezése üres kijelölésnél, nézőben és képtálcával; helyi menü és billentyű tényleges útja. | A kezelő a nézet elemeit és tartalékágban az aktuális képet összegyűjtheti, de ez nem bizonyítja, hogy a menü engedélyezett-e. Külön dátum gyorsbillentyűt a teljes erőforrás- és utasításszintű keresés nem talált. | **Blokkoló, látható.** Picasa 3.9 felületmérés üres kijelölés, egy és több kép, néző és csak képtálca állapotban. |
+| A kezdeti dátummező melyik kép idejét mutatja. | A `0x0057d8f3` katalógus `+0xc4` lekérése tölti a `0x0077c670` konstruktor által olvasott rekordot; a `0x007166c0` és `0x00506500` alapján ez a rácssorrend szerinti első kijelölt elem. | **Lezárva, statikusan igazolt.** A `0x0057d894`-ben betöltött `+0x6c` külön argumentum, nem a kezdeti `FILETIME`; a hívóhely disassemblyje ellenőrzi az EDI felülírását. |
+| Eszközök menü engedélyezése üres kijelölésnél, nézőben és képtálcával. | A kezelő a nézet elemeit és tartalékágban az aktuális képet összegyűjtheti, de ez nem bizonyítja, hogy a menü engedélyezett-e. A dátum Tulajdonságok-helyi menüje igazolt, külön dátum gyorsbillentyű nincs. | **Blokkoló, látható.** Picasa 3.9 felületmérés az Eszközök menü állapotáról üres kijelölés, egy és több kép, néző és csak képtálca állapotban. |
 | Az ablak tényleges mérete és modális viselkedése. | A `runtime/offsettime.fen` leíró `width="fit"` értéke nem adja meg a tényleges ablakméretet, és modális jelzőt sem tartalmaz. | **Blokkoló, látható.** A natív Picasa 3.9 párbeszédablak méretét és a főablakra gyakorolt modalitását kell rögzíteni. |
 | Siker után a rács, kijelölés, mappafa és nyitott idővonal állapota. | A bináris közvetlen íróutat megmutatja, de nem a főablak frissítésének végállapotát. | **Blokkoló, látható.** Előtte és utána rögzített Picasa 3.9 felületmérés több képpel, nyitva hagyott idővonallal. |
 | Fájlattribútummal írásvédett fájl, mappajogosultsági hiba, hibaüzenet és részleges köteg eredménye. | A kódág tartalék írást és továbblépést mutat, visszagörgetést nem; a Windows hibaüzenetét és a tényleges eredményt nem. | **Blokkoló, látható.** Külön írásvédett fájllal és írásra tiltott mappával végzett többképes Picasa 3.9 mérés. |
 | A JPEG utáni `thumbindex.db` belső rekord pontos változása. | A közvetlen EXIF írás ismert; a JPEG utáni katalógus-frissítés pontos rekordállapota nem. | **Nem blokkoló.** A belső adatbázissor önmagában nem látható a felhasználónak; a belőle eredő rács-, mappa- és idővonal-változás a fenti mérés része. |
 
 Egyetlen kontrollált mérési sorozat fedje le a fenti blokkoló pontokat.
-Tiszta profil kell, továbbá legalább három írható JPEG ismert, egymástól
-eltérő EXIF `DateTimeOriginal` értékkel, hogy a többképes próba a lehetséges
-képforrásokat megkülönböztesse. A JPEG-ek fájl-hozzáférési és módosítási ideje
-is legyen feljegyezve. Külön minta legyen egy fájlattribútummal írásvédett
-JPEG, egy írásra tiltott mappában levő kép és egy videó. A többképes próba
-rögzítse a kijelölési sorrendet és az aktuális képet, majd a párbeszéd kezdeti
-jelenlegi és új dátumát, hogy kiderüljön, melyik kép ideje jelenik meg. Ugyanebben
-a mérési sorozatban rögzítendő az Eszközök menü és a tényleges helyi menük állapota
-üres kijelölésnél, nézőben és képtálcával; az ablak mérete és modális viselkedése;
-a módosítás előtti és utáni EXIF, fájlidők, rácssorrend, kijelölés, mappafa,
-idővonal, pontos hibaüzenetek és részleges végállapot. Az egyképes és többképes
-esetet is le kell futtatni. A méréshez Windowsos Picasa 3.9 környezet kell; a
+Rögzítendő az Eszközök menü állapota üres kijelölésnél, egy és több kép,
+néző és csak képtálca mellett; az ablak mérete és modális viselkedése; a
+módosítás előtti és utáni EXIF, fájlidők, rácssorrend, kijelölés, mappafa,
+nyitott idővonal, pontos hibaüzenetek és a részleges végállapot. A sikeres
+egyképes és többképes utat, az írásvédett JPEG-et, az írásra tiltott mappát
+és a videó bemenetet is vizsgálja a sorozat. A párbeszéd kezdő dátumának
+forrását nem kell ezzel a méréssel eldönteni; statikusan igazolt. A méréshez
+Windowsos Picasa 3.9 környezet kell; a
 jelenlegi helyi gépen az eredeti PE32 bináris olvasható, de sem `wine`, sem
 `wine64` futtató nincs elérhető. Új Ghidra-kör nem szükséges.
 - **NINCS MEG, nem blokkoló:** a megadott mérőadat-archívumban nincs
@@ -2686,10 +2713,9 @@ jelenlegi helyi gépen az eredeti PE32 bináris olvasható, de sem `wine`, sem
 
 **A #7033 jelenleg nem zárható.** Egyetlen blokkoló maradt: a fenti,
 elkülönített Picasa 3.9 Windows-mérési sorozat. Ghidra-kör nem kell; a
-kezdő dátum képforrását a különböző ismert időbélyegű minták futásmérése dönti
-el. A már megalapozott fejlesztői jegytörzsek: a Tulajdonságok dátumsorának
-helyi menüje és az eredeti JPEG fájlidő-kezelése. A korábbi #7054 javaslatot
-visszavontam, mert az alapul vett képforrást nem bizonyítottam.
+kezdő dátum képforrása statikusan igazolt. Fejlesztői eltérésjelölt az
+eredeti JPEG fájlidő-kezelése; a Properties dátumsorának helyi menüje a
+jelenlegi forrásban már egyezik.
 
 ### Hívói helyesbítés a zárókörhöz (2026-11-16): a kezdő dátum forrása igazolt, a #7054 áll
 
@@ -2712,6 +2738,57 @@ első kép dátumával nyílik) helyes, **nem vonjuk vissza**; a fenti mérési
 sorozat erre a kérdésre nem kell. A zárási döntés blokkolója ezzel megszűnt;
 a megmaradt mérési pontok (írásvédett fájl üzenete, siker utáni idővonal) a
 felhasználó számára látható viselkedést érintik, de egyik sem a kezdő mezőé.
+
+### Zárókör (2026-11-17): a megmaradt tételek döntése
+
+Az alábbi audit a korábbi Ghidra-kiegészítések történeti állításait nem vonja
+össze és nem törli. Ahol a régi bekezdés a `CThumbUI+0x50` `+0x6c` mezőt nevezi
+kezdő dátumnak, vagy nyitva hagyja a képforrást, ott a jelen zárókör a közvetlen
+hívóhely disassemblyjével ellenőrzött `unaff_EDI` adatátvétel az irányadó.
+
+| Korábbi `NINCS MEG` vagy nyitott állítás | Újraellenőrzés eredménye és forrás | Státusz |
+|---|---|---|
+| A dátumablak kezdő dátumának képforrása. | `0x0057d8f3` a feloldott lista első elemétől kéri a katalógus `+0xc4` adatot; `0x0057d91b` az EDI-t az ezzel kitöltött rekordra állítja a `0x0077c670` hívása előtt. A konstruktor `unaff_EDI[0..1]` értékét teszi a dátummezőbe. A `0x00506500` megőrzi a sorrendet, a `0x007166c0` rácsindex szerint adja a kijelölést. | **Lezárva.** A rácssorrend szerinti első kijelölt kép ideje. A `+0x6c` nem a dátummező forrása. A PicasaPy `AdjustTimestampDialog.qml:65-69` a sorindex szerint rendezett első képből indul. |
+| Tulajdonságok dátumsorának helyi menüje. | Eredeti `0x00638990`; jelenleg `PropertiesPanel.qml:165-169, 194-205`, `MainRightDrawer.qml:150-154`, `PhotoViewerRightPanels.qml:43-47`. | **Lezárva, egyezik.** Régi eltérésjavaslat nem marad. |
+| Eszközök menü üres kijelölésnél, nézőben és képtálcával. | A kezelő bemenetgyűjtése nem bizonyítja a menü engedélyezését. PicasaPy forrása `MainMenuBar.qml:112-114`; eredeti tényleges menüállapotot nem rögzít meglévő mérés. | **NINCS MEG, blokkoló és látható.** Picasa 3.9 Windows felületi mérés kell az egyes állapotokban. |
+| Párbeszéd tényleges mérete és modalitása. | Az eredeti `offsettime.fen` `width="fit"` leírása nem adja meg a natív méretet vagy modalitást. PicasaPy forrásban a `modal: true`, `width: 540` (`AdjustTimestampDialog.qml:25-29`), ami nem bizonyítja az eredeti futási értéket. | **NINCS MEG, blokkoló és látható.** Natív Windows párbeszédablak mérése kell. |
+| Siker utáni rács, kijelölés, mappafa és idővonal. | PicasaPy újraszkenneli a mappát és frissíti a nézetet (`timestamp_controller.py:308-320`, `sync_photos.py:202-242`); az időrend újratöltése `syncFinished` jelhez kötött (`application_startup_controllers.py:270-274`), amelyet a dátumkezelő nem bocsát ki. Az eredeti látható végállapot nincs a bináris íróútból eldöntve. | **NINCS MEG, blokkoló és látható.** Előtte-utána Windows felületi mérés kell, nyitva hagyott időrenddel. |
+| Írásvédett fájl, mappajogosultság, hibaüzenet és részleges köteg. | A két eredeti worker hibás EXIF után fallbacket hív, a fallback és katalógusmódosítás visszatérését nem ellenőrzi, majd továbblép; visszagörgetés nem látható (`0x00490580`, `0x00490c10`, `0x00992780`, `0x004ef3c0`, `0x004ef5a0`). A tényleges Windows fájl- és indexállapot, illetve a látható hiba nem állapítható meg futtatás nélkül. | **NINCS MEG, blokkoló és látható.** Írásvédett JPEG, írásra tiltott mappa és többképes próba kell; rögzítse a pontos üzenetet és a részleges eredményt. |
+| A JPEG utáni `thumbindex.db` belső rekord pontos állapota. | A felhasználói hatásait külön sorok kezelik; a belső rekordérték önmagában nem látható. | **NINCS MEG, nem blokkoló.** |
+| Dátummódosítási mérőadat-archívum. | A megadott archívum tagnevei között nincs a dátummódosításhoz tartozó munkamenet. | **NINCS MEG, nem blokkoló.** A szükséges hiányzó forrás a Windows-futás. |
+
+Egyetlen célzott mérés dönt el minden nyitott, felhasználó által látható
+állítást: Picasa 3.9.141.259 Windows alatt rögzíteni kell az Eszközök menü
+állapotát üres, egyképes és többképes kijelölésnél, nézőben és képtálcával; a
+párbeszéd méretét és modalitását; egy sikeres dátummódosítás előtt és után az
+EXIF-et, fájlidőket, rácssorrendet, kijelölést, mappafát és megnyitott
+idővonalat; végül az írásvédett JPEG, az írásra tiltott mappa és a részleges
+többképes végrehajtás pontos eredményét. A kezdő dátum képforrását ez a mérés
+már nem dönti el. A Ghidra-kimenetek megvannak és a hívóhely megerősíti a
+rekordforrást; a #7033 alatt nincs további `Ghidra-kör kell:` tétel.
+
+### Zárási döntés
+
+**A #7033 nem zárható le a jelen bizonyítékkal.** Az egyetlen blokkoló a fenti
+egyetlen, összefüggő Picasa 3.9 Windows-mérési sorozat. A kezdő dátum forrása
+megerősített két független bináris úttal; a PicasaPy sorindex szerinti
+rendezése a forrásban ellenőrzött. A részletes tulajdonságmenü-eltérés és a
+#7054 képforrás-eltérés nem marad nyitva.
+
+Az egyetlen megmaradó fejlesztői jegytörzs jelölt:
+
+**Eredeti:** sikeres JPEG EXIF-írás után, ha az EXIF `DateTime` (`0x0132`)
+olvasható, a `0x00ab35e0` a fájl hozzáférési és módosítási idejét erre az
+értékre állítja, a létrehozási időt érintetlenül hagyja.
+
+| Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x009eb290`, `0x00ab35e0`, `0x00ab34d0`: sikeres EXIF-írás után a hozzáférési és módosítási fájlidőt az EXIF `DateTime` értékére állítja, a létrehozási időt nem változtatja. | `timestamp_controller.py:197-208`: az írás előtti hozzáférési, módosítási és Windowson létrehozási időt állítja vissza. | A sikeres JPEG-dátummódosítás után a hozzáférési és módosítási idő kövesse az EXIF `DateTime` értékét, a létrehozási idő maradjon változatlan. |
+
+**Kész, ha:** kontrollált JPEG-módosítás után a hozzáférési és módosítási
+idő az új EXIF `DateTime` értéke, a létrehozási idő pedig az eredeti marad.
+
+**Ellentmondás, ezért a jelölt most nem indítható (a hívó megjegyzése, 2026-11-17).** A #4927 kiadásban rögzített korábbi állítás szerint a dátummódosító munkafolyamat objektumában nincs `0x1c` (EXIF `DateTime`) mező, így a `0x009f05c0` keresés nem talál, a `0x00ab35e0` nem fut, és a mentett eredeti fájlidő-hármas áll vissza; a jelenlegi PicasaPy (`timestamp_controller.py:197-208`) ezt követi. A fenti jelölt ennek az ellenkezőjét állítja. A két állítás közül a fenti Windows-mérési sorozat fájlidő-pontja dönt; addig fejlesztői jegy nem nyílik.
 
 ## #7060: A diavetítés teljes folyamata az eredeti Picasával összevetve
 
