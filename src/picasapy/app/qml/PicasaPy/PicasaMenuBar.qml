@@ -232,10 +232,6 @@ MenuBar {
     property bool libraryPhotoActionsEnabled: false
     //: A TextInput/TextEdit aktív fókusza esetén a billentyű a mezőé.
     property bool textEntryHasFocus: false
-    // #4335: a kijelölt fedvények állapota a controller INI-lekérdezéséből.
-    property bool textOverlayShowEnabled: false
-    property bool textOverlayHideEnabled: false
-    signal textOverlayStatesRefreshRequested()
     signal textOverlayVisibilityRequested(bool visible)
     //: #1768: a szerkesztő-előnézet aktív-e. Az eredeti a `0x9caa`
     //: parancsot (a Mappakezelő MINDKÉT belépési pontját) a menü

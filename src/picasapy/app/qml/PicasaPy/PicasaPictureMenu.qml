@@ -6,7 +6,6 @@ PicasaMenu {
     id: menuPicture
     property var bar: null
     title: qsTr("&Picture")
-    onAboutToShow: bar.textOverlayStatesRefreshRequested()
     MenuItem {
         objectName: "menuPictureViewAndEdit"
         text: qsTr("&View and Edit") + "\tCtrl+3"
@@ -98,18 +97,20 @@ PicasaMenu {
             onTriggered: bar.batchApplyEffectRequested("redeye")
         }
         MenuSeparator {}
-        // #4335: külön parancsok, a kijelölésben levő szövegfedvények
-        // aktuális `textactive=` állapota szerint engedélyezve.
+        // #4335/#7122: az eredeti (`0x0056e1c0`) a két tételt csak a csoport
+        // közös szürkítő ágában tiltja, ezért a kapujuk a csoporté. A menünyitás
+        // nem olvas ini-t; a kattintás (`setTextOverlayVisibleMany`) dönti el,
+        // melyik képen van átállítandó szövegfedvény.
         MenuItem {
             objectName: "menuPictureShowText"
             text: qsTr("Show Text")
-            enabled: bar.photoActionsEnabled && bar.textOverlayShowEnabled
+            enabled: bar.photoActionsEnabled
             onTriggered: bar.textOverlayVisibilityRequested(true)
         }
         MenuItem {
             objectName: "menuPictureHideText"
             text: qsTr("Hide Text")
-            enabled: bar.photoActionsEnabled && bar.textOverlayHideEnabled
+            enabled: bar.photoActionsEnabled
             onTriggered: bar.textOverlayVisibilityRequested(false)
         }
     }
