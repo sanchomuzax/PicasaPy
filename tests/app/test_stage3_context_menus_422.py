@@ -13,9 +13,11 @@ TagsPanel / TrayBar végzi.
 
 from __future__ import annotations
 
+import json
+
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl
-from PySide6.QtQml import QQmlComponent, QQmlEngine
+from PySide6.QtQml import QQmlComponent, QQmlEngine, QQmlExpression, qmlContext
 
 _KEEPALIVE = []
 
@@ -149,11 +151,74 @@ class TestFolderListContextMenu:
         assert events == [True]
 
 
+def _menu_sorok(menu) -> list[dict]:
+    """A menü sorai építési sorrendben: objectName, osztály, felirat.
+
+    Az `itemAt(i)` a menü TÉNYLEGES sorait adja, az elválasztót is: a
+    `findChildren` az elválasztót nem különböztetné meg a tételektől."""
+    kifejezes = QQmlExpression(
+        qmlContext(menu),
+        menu,
+        "JSON.stringify((function () {"
+        "  var sorok = [];"
+        "  for (var i = 0; i < count; ++i) {"
+        "    var sor = itemAt(i);"
+        "    sorok.push({"
+        "      nev: sor ? sor.objectName : null,"
+        "      szeparator: sor ? sor.toString().indexOf('MenuSeparator') >= 0 : false,"
+        "      felirat: sor && sor.text !== undefined ? sor.text : null"
+        "    });"
+        "  }"
+        "  return sorok;"
+        "})())",
+    )
+    eredmeny, hiba = kifejezes.evaluate()
+    assert not hiba, kifejezes.error()
+    return json.loads(eredmeny if isinstance(eredmeny, str) else eredmeny.toString())
+
+
 class TestTagContextMenu:
     """A címke menüje — a `Tags` osztály 3 tétele, mind bekötve."""
 
     # #7025: az eredeti sorrend: kijelölésre adás, keresés, eltávolítás.
     EXPECTED = ["tagMenuAddToSelection", "tagMenuFindTagged", "tagMenuRemove"]
+
+    def test_the_menu_order_has_a_separator_between_search_and_remove(
+        self, qml_engine
+    ):
+        """#7136: az eredeti `0x00735480` négy rekordot ad át a
+        `0x00a6aee0`-nak: Add, Search, csupa nulla rekord (elválasztó),
+        Remove. Nálunk a sorok: Add, Search, MenuSeparator, Remove."""
+        menu = _load(qml_engine, "TagContextMenu")
+        sorok = _menu_sorok(menu)
+        assert [sor["nev"] for sor in sorok] == [
+            "tagMenuAddToSelection",
+            "tagMenuFindTagged",
+            "tagMenuSeparator",
+            "tagMenuRemove",
+        ]
+        assert [sor["szeparator"] for sor in sorok] == [False, False, True, False]
+
+    def test_the_menu_has_exactly_one_separator_and_four_rows(self, qml_engine):
+        """Nem szabad: több elválasztó vagy további sor (az eredeti rekordtáblája
+        négy sor). A szélső sor sem lehet elválasztó."""
+        menu = _load(qml_engine, "TagContextMenu")
+        sorok = _menu_sorok(menu)
+        assert len(sorok) == 4
+        assert sum(1 for sor in sorok if sor["szeparator"]) == 1
+        assert not sorok[0]["szeparator"] and not sorok[-1]["szeparator"]
+
+    def test_the_labels_are_unchanged(self, qml_engine):
+        """Nem szabad: a három tétel hivatalos felirata nem változik."""
+        menu = _load(qml_engine, "TagContextMenu")
+        feliratok = {
+            sor["nev"]: sor["felirat"] for sor in _menu_sorok(menu) if not sor["szeparator"]
+        }
+        assert feliratok == {
+            "tagMenuAddToSelection": "Add this tag to entire selection",
+            "tagMenuFindTagged": "Search for items with this tag",
+            "tagMenuRemove": "Remove this tag",
+        }
 
     def test_all_three_commands_are_present_in_order(self, qml_engine):
         menu = _load(qml_engine, "TagContextMenu")
