@@ -89,12 +89,20 @@ class _Hivasok:
     def __init__(self, vezerlo, monkeypatch):
         self.masolas: list[tuple] = []
         self.athelyezes: list[tuple] = []
-        monkeypatch.setattr(
-            vezerlo, "copyPhotos", lambda *a: self.masolas.append(a)
-        )
-        monkeypatch.setattr(
-            vezerlo, "movePhotos", lambda *a: self.athelyezes.append(a)
-        )
+        self.megallo: list[bool] = []
+
+        def _koteg(cel):
+            def _hivas(*a, **k):
+                cel.append(a)
+                self.megallo.append(k.get("stop_on_failure", False))
+            return _hivas
+
+        # #7125: a #7114 óta a Beillesztés a `_copy_batch`/`_move_batch`
+        # utat hívja (első hibánál megálló köteg); a slotokat is figyeljük,
+        # hogy egyik út se indulhasson észrevétlenül.
+        for nev, cel in (("copyPhotos", self.masolas), ("_copy_batch", self.masolas),
+                         ("movePhotos", self.athelyezes), ("_move_batch", self.athelyezes)):
+            monkeypatch.setattr(vezerlo, nev, _koteg(cel))
 
     @property
     def semmi(self) -> bool:
@@ -226,6 +234,7 @@ class TestARendesBeillesztesNemSerul:
 
         hivasok = helyzet["hivasok"]
         assert len(hivasok.masolas) == 1 and not hivasok.athelyezes
+        assert hivasok.megallo == [True], "a Beillesztés köteg nem az első hibánál megálló út (#7114)"
         fajlok, cel, szabaly = hivasok.masolas[0]
         assert [Path(f) for f in fajlok] == [helyzet["kep"]]
         assert Path(cel) == helyzet["cel"]
@@ -243,6 +252,7 @@ class TestARendesBeillesztesNemSerul:
 
         hivasok = helyzet["hivasok"]
         assert len(hivasok.athelyezes) == 1 and not hivasok.masolas
+        assert hivasok.megallo == [True], "a Beillesztés köteg nem az első hibánál megálló út (#7114)"
         assert _hibasav(helyzet["window"])[0] == ""
 
 
