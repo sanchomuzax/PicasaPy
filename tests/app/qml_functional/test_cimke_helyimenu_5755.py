@@ -163,7 +163,11 @@ def _click_tag_command(window, qt_app, object_name: str) -> None:
 def _menu_texts(menu) -> list[str]:
     texts = []
     for index in range(int(menu.property("count") or 0)):
-        expression = QQmlExpression(qmlContext(menu), menu, f"itemAt({index}).text")
+        # #7136: az elválasztónak nincs felirata, a listában "-" jelöli.
+        expression = QQmlExpression(
+            qmlContext(menu), menu,
+            f"itemAt({index}).text === undefined ? '-' : itemAt({index}).text",
+        )
         value, error = expression.evaluate()
         assert not error, expression.error()
         texts.append(str(value))
@@ -206,6 +210,7 @@ def test_three_menu_commands_click_through_with_official_order_and_effects(
     assert _menu_texts(menu) == [
         "Add this tag to entire selection",
         "Search for items with this tag",
+        "-",
         "Remove this tag",
     ]
 
