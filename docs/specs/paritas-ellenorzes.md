@@ -2519,7 +2519,7 @@ a `ini/folder_location.py` és a `setFolderLocationOf`
 a helymentés mellett). Írási hibát jelezz, de a már megtörtént átnevezést ne
 vond vissza. Ha a sor már a mappa nevét tartalmazza, ne legyen írás. A kulcs
 olvasói hatása (az eredeti ebből jeleníti-e meg a mappa nevét) nem bizonyított:
-a cél a fájltartalom egyezése. Mellékteendő, ugyanebben a csomagban: az
+a cél a fájltartalom egyezése. Kisebb kapcsolódó teendő, ugyanebben a csomagban: az
 `ini/folder_date.py:144-146` megjegyzése a `0x0071031e` kapura hivatkozik, ami
 a teljes-ini-író (`0x00710080`) sajátja; a Folder Properties beállítója a
 `0.000000` szöveget sorként írja (fenti (b)), a megjegyzést ennek megfelelően
