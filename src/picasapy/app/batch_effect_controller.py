@@ -406,16 +406,6 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                 names.append(photo.name)
         return names
 
-    @Slot(list, bool, result=bool)
-    def hasTextOverlayStateInSelection(self, rows, visible: bool) -> bool:  # noqa: N802
-        """Van-e a kijelölésben a kért láthatósági állapotú szövegfedvény.
-
-        Az index nem tartja a `text=`/`textactive=` értéket, ezért a kijelölt
-        mappák `.picasa.ini`-jét olvassuk. A hibás vagy olvashatatlan bejegyzés
-        nem teszi aktívvá a parancsot.
-        """
-        return bool(_selected_text_overlay_photos(self, rows, visible))
-
     @Slot(list, bool)
     def setTextOverlayVisibleMany(self, rows, visible: bool) -> None:  # noqa: N802
         """A kijelölt, szövegfedvényes képek `textactive=` állapotának beállítása."""

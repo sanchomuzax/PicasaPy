@@ -1,9 +1,9 @@
-"""A Mappa áthelyezése célválasztójának címe és megjegyzett útja (#7067).
+"""A Mappa áthelyezése célválasztójának címe és megjegyzett útja (#7109).
 
-Az eredeti `0x0053f4a0` a `Move Folder to %s` címet (`0x00c8aca4`) mutatja a
-mozgatott mappa nevével, és a `Preferences/MoveFolderLastPath` kulcsban
-megjegyzi az utolsó célt. Itt valódi egérkattintással nyitjuk a menüből a
-választót, és valódi áthelyezéssel írjuk a megjegyzett utat.
+Az eredeti a `Browse for Folder` rendszercímet használja, és a
+`Preferences/MoveFolderLastPath` kulcsban megjegyzi a kiválasztott célt.
+Itt valódi egérkattintással nyitjuk a menüből a választót, és valódi
+áthelyezéssel írjuk a megjegyzett utat.
 
 ## Mit mér, és mit nem
 
@@ -118,36 +118,38 @@ def _indit(app, qt_app) -> Path:
     return Path(controller.currentFolder)
 
 
-def test_a_celvalaszto_cime_megnevezi_a_mozgatott_mappat(athelyezes_app, qt_app):
+def test_a_celvalaszto_cime_browse_for_folder(athelyezes_app, qt_app):
     library = _indit(athelyezes_app, qt_app)
     window = athelyezes_app[0]
 
     dialog = _megnyit_menuvel(window, qt_app, library / "atmozgatando")
 
-    assert dialog.property("title") == "Move Folder to atmozgatando"
+    assert dialog.property("title") == "Browse for Folder"
     zar(qt_app, dialog)
 
 
-def test_a_cim_a_masik_mappa_nevet_mutatja_a_masodik_nyitaskor(athelyezes_app, qt_app):
+def test_a_cim_nem_valtozik_a_mozgatott_mappaval(athelyezes_app, qt_app):
     library = _indit(athelyezes_app, qt_app)
     window = athelyezes_app[0]
 
     elso = _megnyit_menuvel(window, qt_app, library / "atmozgatando")
-    assert elso.property("title") == "Move Folder to atmozgatando"
+    assert elso.property("title") == "Browse for Folder"
     zar(qt_app, elso)
 
     masodik = _megnyit_menuvel(window, qt_app, library / "masik")
-    assert masodik.property("title") == "Move Folder to masik"
+    assert masodik.property("title") == "Browse for Folder"
     zar(qt_app, masodik)
 
 
-def test_megjegyzett_cel_nelkul_a_kezdohely_a_forras_szuloje(athelyezes_app, qt_app):
+def test_megjegyzett_cel_nelkul_a_kezdohely_a_mozgatott_mappa(
+    athelyezes_app, qt_app
+):
     library = _indit(athelyezes_app, qt_app)
     window = athelyezes_app[0]
 
     dialog = _megnyit_menuvel(window, qt_app, library / "atmozgatando")
 
-    assert _kezdomappa(dialog) == library
+    assert _kezdomappa(dialog) == library / "atmozgatando"
     zar(qt_app, dialog)
 
 
@@ -162,11 +164,11 @@ def test_a_korabbi_futas_celmappajabol_indul_az_elso_nyitas(
     assert _kezdomappa(dialog) == tmp_path / "korabbi_cel", (
         "a célválasztó nem a megjegyzett célmappából indult"
     )
-    assert dialog.property("title") == "Move Folder to atmozgatando"
+    assert dialog.property("title") == "Browse for Folder"
     zar(qt_app, dialog)
 
 
-def test_eltunt_megjegyzett_cel_utan_a_forras_szuloje_a_kezdohely(
+def test_eltunt_megjegyzett_cel_utan_a_mozgatott_mappa_a_kezdohely(
     eltunt_cel_utan_app, qt_app
 ):
     library = _indit(eltunt_cel_utan_app, qt_app)
@@ -174,7 +176,7 @@ def test_eltunt_megjegyzett_cel_utan_a_forras_szuloje_a_kezdohely(
 
     dialog = _megnyit_menuvel(window, qt_app, library / "atmozgatando")
 
-    assert _kezdomappa(dialog) == library
+    assert _kezdomappa(dialog) == library / "atmozgatando"
     zar(qt_app, dialog)
 
 

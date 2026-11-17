@@ -114,11 +114,13 @@ Item {
             UjMappaDatum.albumDatum(elso ? elso.takenAt : ""))
     }
 
-    //: #2911: a képek albumlistára ejtése az eredetiben névbekérő nélkül,
-    //: azonnal „Untitled” albumot készít (mérve); ez az út NEM a menüké.
+    // #7102: a helyőrző sorra ejtés az Album Properties párbeszédet nyitja;
+    // alapdátuma a mai nap mínusz egy másodperc (`0x005ea770`, mai idő).
     function createAlbumFromDrop(rows) {
         if (!controller || !rows || rows.length === 0) return
-        controller.createAlbum(dialogs.ujAlbumNeve, rows)
+        dialogs.openNewAlbumProperties(
+            controller.currentFolder, rows,
+            Qt.formatDate(new Date(Date.now() - 1000), "yyyy-MM-dd"))
     }
 
     // #5812: az eszköztár új album gombja az Album Properties párbeszédet

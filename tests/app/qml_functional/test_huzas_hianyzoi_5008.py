@@ -655,9 +655,10 @@ def test_photos_dragged_onto_new_album_area_create_an_album_with_them(
     dnd_qml_app, qt_app, height_delta
 ):
     """#5008: a rácsból az albumlista „új album" területére húzott kép új
-    albumba kerül. A névbekérő párbeszéd a #2911 óta nincs meg, az album
-    csendben „Untitled" nevet kap — valódi egérhúzással, a ledobási jel
-    közvetlen hívása nélkül."""
+    albumba kerül, valódi egérhúzással, a ledobási jel közvetlen hívása
+    nélkül. A #7102 óta (eredeti: `0x005e39a0` -> `0x005ea770`) az ejtés az
+    Album Properties ablakot nyitja „Untitled" névvel, és az album az OK
+    után jön létre."""
     window, controller, engine = dnd_qml_app
     window.resize(window.width(), window.height() + height_delta)
     qt_app.processEvents()
@@ -683,10 +684,22 @@ def test_photos_dragged_onto_new_album_area_create_an_album_with_them(
     )
     _real_drag(window, qt_app, engine, source_proxy, source_mouse, album_area)
 
+    dialog = _child(window, "toolbarNewAlbumPropertiesDialog")
+    _wait(
+        qt_app,
+        lambda: dialog.property("opened") is True,
+        "az új album területre ejtés nem nyitotta meg az Album Properties ablakot",
+    )
+    assert len(controller.albums) == 0, "az album az OK előtt létrejött"
+    QMetaObject.invokeMethod(
+        _child(dialog, "folderPropertiesOkButton"),
+        "clicked",
+        Qt.ConnectionType.DirectConnection,
+    )
     _wait(
         qt_app,
         lambda: len(controller.albums) == 1,
-        "a rácsról az új album területre húzott kép nem hozott létre albumot",
+        "az Album Properties OK-ja nem hozta létre az albumot",
     )
     token = controller.albums[0]["token"]
     section = load_or_empty(library / ".picasa.ini").section("b.jpg")
@@ -854,6 +867,19 @@ def test_tray_photo_dragged_onto_new_album_area_creates_an_album_with_it(
     album_area = _find_visual(window, "albumDropArea")
     _real_drag(window, qt_app, engine, tray_proxy, tray_thumb, album_area)
 
+    # #7102: az ejtés az Album Properties ablakot nyitja, az album az OK után jön létre
+    dialog = _child(window, "toolbarNewAlbumPropertiesDialog")
+    _wait(
+        qt_app,
+        lambda: dialog.property("opened") is True,
+        "a tálcáról ejtés nem nyitotta meg az Album Properties ablakot",
+    )
+    assert len(controller.albums) == 0, "az album az OK előtt létrejött"
+    QMetaObject.invokeMethod(
+        _child(dialog, "folderPropertiesOkButton"),
+        "clicked",
+        Qt.ConnectionType.DirectConnection,
+    )
     _wait(
         qt_app,
         lambda: len(controller.albums) == 1,
