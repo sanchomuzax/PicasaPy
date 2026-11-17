@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 import re
+import sys
+import time
 import uuid
 from pathlib import Path
 
@@ -11,6 +13,16 @@ from .move_folder import is_system_path
 
 # A fájlrendszer-művelet fogantyúja: a tesztek csak ezt cserélik.
 _rename = os.rename
+# Az újrapróbálás várakozásának és óráinak fogantyúi (#7153): a teszt ezeket
+# cseréli, valódi várakozás nélkül, a globális `time` érintése nélkül.
+_sleep = time.sleep
+_monotonic = time.monotonic
+
+
+def _platform() -> str:
+    """A futó platform, külön függvény, hogy a teszt helyettesíthesse (#1217)."""
+    return sys.platform
+
 
 _WINDOWS_DEVICE_NAME = re.compile(
     r"^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?$", re.IGNORECASE
@@ -51,12 +63,62 @@ def rename_folder(folder: str | Path, new_name: str) -> Path:
     if case_only:
         return _rename_folder_case_only(source, target)
     try:
-        _rename(str(source), str(target))
+        _rename_with_access_retry(source, target)
     except OSError as error:
         raise FolderRenameError(
             f"A mappa átnevezése nem sikerült: {error}"
         ) from error
     return target
+
+
+#: A Windows ERROR_ACCESS_DENIED hibakódja (a `PermissionError.winerror`-ja).
+_WINERROR_ACCESS_DENIED = 5
+#: Az eredeti `0x00994400`: 500 ezredmásodpercenként, legfeljebb 5 másodpercig.
+_RETRY_INTERVAL_SECONDS = 0.5
+_RETRY_WINDOW_SECONDS = 5.0
+
+
+def _is_access_denied(error: OSError) -> bool:
+    return (
+        isinstance(error, PermissionError)
+        and getattr(error, "winerror", None) == _WINERROR_ACCESS_DENIED
+    )
+
+
+def _rename_with_access_retry(source: Path, target: Path) -> None:
+    """Egy átnevezés; Windowson hozzáférési hibánál időkorlátig újrapróbál (#7153).
+
+    Az eredeti `0x00994400` a `MoveFileExW` 5-ös hibakódjánál, ha a forrás
+    létezik, 500 ezredmásodpercenként újrapróbálja, legfeljebb 5 másodpercig.
+    Az első hiba után a ciklus bármely hibára folytatódik az időkorlátig, az
+    időkorlát után az utolsó hiba megy tovább a hívónak (ő adja a felhasználói
+    üzenetet). Más platformon és más első hibánál egyetlen próba van.
+
+    A várakozás a hívó szálán fut, ugyanúgy, mint az eredetiben: a hívó
+    (`renameFolder`) szinkron QML-slot, tehát a felületi szál legfeljebb
+    ugyanannyi ideig vár, mint az eredetinél.
+    """
+    try:
+        _rename(str(source), str(target))
+        return
+    except OSError as error:
+        if (
+            _platform() != "win32"
+            or not _is_access_denied(error)
+            or not source.exists()
+        ):
+            raise
+        last_error = error
+
+    deadline = _monotonic() + _RETRY_WINDOW_SECONDS
+    while _monotonic() < deadline:
+        _sleep(_RETRY_INTERVAL_SECONDS)
+        try:
+            _rename(str(source), str(target))
+            return
+        except OSError as error:
+            last_error = error
+    raise last_error
 
 
 def sanitize_folder_rename_name(name: str) -> str:
