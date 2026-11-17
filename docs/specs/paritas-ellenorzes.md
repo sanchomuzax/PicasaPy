@@ -3967,7 +3967,7 @@ rollback, undo és a törlés utáni kijelölés nyitva maradt.
 
 **Bizonyítottsági fok: nyitott.** A File New Album üresalbum-hatását, a
 dátumalapértéket és a törlőablakot külön bináris/mérési bizonyíték támasztja
-alá, a mai útakat a forrás igazolja. A teljes kért életciklushoz hiányzik a
+alá, a mai utakat a forrás igazolja. A teljes kért életciklushoz hiányzik a
 menu-engedélyezés teljes feltételrendszere és több eredeti hiba-/törlés utáni
 végállapot.
 
@@ -3975,7 +3975,7 @@ végállapot.
 
 | Eredeti (bináris cím vagy mérés) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| **Fájl menü / új album:** `0x00559150` felirata `&New Album...`; az utána épített rekord parancsmezője `0x9d67`. A `0x005cb990` `0x9d67` ága a `0x005eb810`-hoz vezet. Ez a `0x0055cf70` modellel nyitja az Album Properties ablakot, majd a `0x0055d120` albumkészítőbe adja a modellt; az átadott argumentumok között nincs képkijelölés. A job-323/324 Picasa-mérés kijelölt kép mellett is üres albumot és változatlan mappa-INI-t rögzít. | `PicasaFileMenu.qml:23-27`; `MainMenuBar.qml:300-304`; `FileOpsDialogs.qml:101-107,156-170`; `photo_ops_album_membership_mixin.py:229-268` | A PicasaPy Fájl-menü átadja a kijelölt képeket (`photoActionRows`), és azok tagságát is kiírja. Kijelölés nélkül az út korán visszatér. Válaszd el a File-út albumtagságát a kijelöléstől; az eredeti üres kijelölésű menüpontengedélyezés maradjon nyitott a célzott mérésig. |
+| **Fájl menü / új album:** `0x00559150` felirata `&New Album...`; az utána épített rekord parancsmezője `0x9d67`. A `0x005cb990` `0x9d67` ága a `0x005eb810`-hoz vezet. Ez a `0x0055cf70` modellel nyitja az Album Properties ablakot, majd a `0x0055d120` albumkészítőbe adja a modellt; az átadott argumentumok között nincs képkijelölés. A job-323/324 Picasa-mérés kijelölt kép mellett is üres albumot és változatlan mappa-INI-t rögzít. | `PicasaFileMenu.qml:23-27`; `MainMenuBar.qml:300-304`; `FileOpsDialogs.qml:101-107,156-170`; `photo_ops_album_membership_mixin.py:229-268` | A PicasaPy Fájl-menü átadja a kijelölt képeket (`photoActionRows`), és azok tagságát is kiírja. Kijelölés nélkül az út korán visszatér. Válaszd el a File-út albumtagságát a kijelöléstől; a menütétel engedélyezése üres kijelölésnél az eredetiben maradjon nyitott a célzott mérésig. |
 | **Gyorsbillentyű:** a bináris `New Album` gyorsbillentyű-erőforrása `Ctrl+N` (`enUS/shortcuts.xml:115-117`); a File-út `0x005eb810`. A teljes menüállapot nem következik a kezelőből. | `PicasaMenuBar.qml:712-723`; `PicasaFileMenu.qml:23-27` | A mai Ctrl+N csak kijelölt képeknél aktív. Az eredeti üres kijelölésű engedélyezése `NINCS MEG`; külön Picasa 3.9 mérés kell. Albumtulajdonság-/törlésgyorsbillentyű: `NINCS MEG`. |
 | **Kép- és nézőmenü Add-to ▸ New Album...:** az `0xa09c` ág a `0x005e9890` → `0x005e9bb0(this,1)` útvonalra jut; ez külön a File (`0x005eb810`) és a tálca (`0x00577ea0`) útjától (lásd #7012). | `PhotoContextMenu.qml:171-197`; `MainPhotoContextMenu.qml:153`; `FileOpsDialogs.qml:109-119` | A PicasaPy ezt a kijelölt képekből nyitja, az első kép dátumát ajánlja. Ne vonjuk össze a File- vagy tálca-út javításával. |
 | **Tálca Add to ▸ New Album...:** `thumbui/makealbum` a `0x00577c30` → `0x00577ea0` úton nyit Album Properties ablakot (`0x006dc030`); a `0x00577ea0` a `0x0098b6e0` aktuális időértékét adja a `0x0055ce70` modellnek, majd elfogadáskor `0x0055d120(0,1,0)`-t hív és megnyitja az új albumot. A job-257 mérés szerint az `Untitled` album a kijelölt képpel együtt jött létre, az `.ini` album- és képtagságot kapott (`picasa-keptalca.md:1494`). A job-255 egy kép és saját album nélkül is megnyíló menüt rögzít, de a tartott/kijelölt képek pontos engedélyezési feltétele nyitott (`picasa-keptalca.md:1498-1501`). | `TrayScratchPanel.qml:521-528,573-576`; `TrayBar.qml:76`; `MainTrayBar.qml:82-87`; `FileOpsDialogs.qml:133-170` | A PicasaPy tálcamenü `heldCount > 0` mellett engedélyezett; az új album útja a rács kijelölt sorait adja át és a mai helyi dátumot ajánlja. A mért Picasa-út dátuma és kijelölt képes tagsága egyezik; a tartott/kijelölt állapotok közti kapu összevetése nyitott. |
@@ -4170,7 +4170,7 @@ részei pedig a #7012-ben szerepelnek.
 ### Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md`: a meglévő #7069 szakasz helyesbítése és
-  pontosítása: File és tálca út szétválasztása; File-újalbum üres-tagság/
+  pontosítása: File és tálca út szétválasztása; a File-út új albumának üres tagsága/
   dátumeltérés; a siker utáni albummegnyitás és normál törlőablak státuszának
   javítása; bizonyítéktábla, cáfoló kör, feltételes fejlesztői javaslat és
   célzott nyitott kérdések.
