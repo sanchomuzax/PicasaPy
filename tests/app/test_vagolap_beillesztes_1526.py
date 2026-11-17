@@ -27,6 +27,7 @@ from pathlib import Path
 from PySide6.QtCore import QByteArray, QMimeData, QUrl
 
 from picasapy.app.fileops_controller import FileOpsController, vagolap_fajlok
+from picasapy.index import open_index
 
 _GNOME = "x-special/gnome-copied-files"
 
@@ -96,6 +97,7 @@ class TestABeillesztes:
         cel = tmp_path / "cel"
         cel.mkdir()
         monkeypatch.setattr(vezerlo, "_vagolap_adata", lambda: _mime([kep], "copy"))
+        monkeypatch.setattr(vezerlo, "_paste_has_different_folder", lambda *_args: False)
 
         assert vezerlo.pasteFilesFromClipboard(str(cel)) is True
         assert (cel / "a.jpg").exists(), "a beillesztés nem másolta át a fájlt"
@@ -109,10 +111,123 @@ class TestABeillesztes:
         cel = tmp_path / "cel"
         cel.mkdir()
         monkeypatch.setattr(vezerlo, "_vagolap_adata", lambda: _mime([kep], "cut"))
+        monkeypatch.setattr(vezerlo, "_paste_has_different_folder", lambda *_args: False)
 
         assert vezerlo.pasteFilesFromClipboard(str(cel)) is True
         assert (cel / "a.jpg").exists()
         assert not kep.exists(), "kivágáskor a forrásnak el kell tűnnie"
+
+    @pytest.mark.parametrize("muvelet", ["copy", "cut"])
+    def test_eltero_mappa_beillesztes_elott_megerositest_var(
+        self, vezerlo, tmp_path, monkeypatch, muvelet
+    ):
+        forras = tmp_path / "forras"
+        cel = tmp_path / "cel"
+        forras.mkdir()
+        cel.mkdir()
+        kep = forras / "a.jpg"
+        kep.write_bytes(b"kep")
+        index = tmp_path / "index.db"
+        with open_index(index) as conn:
+            conn.executemany(
+                "INSERT INTO folders(path) VALUES (?)",
+                ((str(forras),), (str(cel),)),
+            )
+        vezerlo._library_db_path = index
+        monkeypatch.setattr(vezerlo, "_vagolap_adata", lambda: _mime([kep], muvelet))
+        elinditott = []
+        monkeypatch.setattr(
+            vezerlo,
+            "copyPhotos",
+            lambda paths, dest, policy: elinditott.append(("copy", paths, dest, policy)),
+        )
+        monkeypatch.setattr(
+            vezerlo,
+            "movePhotos",
+            lambda paths, dest, policy: elinditott.append(("move", paths, dest, policy)),
+        )
+        kerdesek = []
+        vezerlo.clipboardPasteConfirmationRequested.connect(
+            lambda paths, dest, kind: kerdesek.append((paths, dest, kind))
+        )
+
+        assert vezerlo.pasteFilesFromClipboard(str(cel)) is True
+
+        assert kep.read_bytes() == b"kep"
+        assert not (cel / "a.jpg").exists(), "jóváhagyás előtt ne változzon a fájlrendszer"
+        assert elinditott == []
+        mappakent = [
+            ([Path(path) for path in paths], Path(dest), kind)
+            for paths, dest, kind in kerdesek
+        ]
+        assert mappakent == [([kep], cel, muvelet)]
+
+    def test_azonos_mappa_viselkedese_tovabbra_is_azonnali(self, vezerlo, tmp_path, monkeypatch):
+        kep = tmp_path / "a.jpg"
+        kep.write_bytes(b"kep")
+        index = tmp_path / "index.db"
+        with open_index(index) as conn:
+            conn.execute("INSERT INTO folders(path) VALUES (?)", (str(tmp_path),))
+        vezerlo._library_db_path = index
+        monkeypatch.setattr(vezerlo, "_vagolap_adata", lambda: _mime([kep], "copy"))
+        batch_inditasok = []
+        monkeypatch.setattr(
+            vezerlo, "_copy_batch",
+            lambda paths, dest, policy, *, stop_on_failure=False: batch_inditasok.append(
+                (paths, dest, policy, stop_on_failure)
+            ),
+        )
+        kerdesek = []
+        vezerlo.clipboardPasteConfirmationRequested.connect(
+            lambda *args: kerdesek.append(args)
+        )
+
+        assert vezerlo.pasteFilesFromClipboard(str(tmp_path)) is True
+
+        batchok_mappakent = [
+            ([Path(path) for path in paths], Path(dest), policy, stop_on_failure)
+            for paths, dest, policy, stop_on_failure in batch_inditasok
+        ]
+        assert batchok_mappakent == [([kep], tmp_path, "rename", True)]
+        assert kerdesek == []
+
+    def test_nem_mappacelnel_az_eltero_mappa_sem_ker_megerositest(
+        self, vezerlo, tmp_path, monkeypatch
+    ):
+        forras = tmp_path / "forras"
+        cel = tmp_path / "cel"
+        forras.mkdir()
+        cel.mkdir()
+        kep = forras / "a.jpg"
+        kep.write_bytes(b"kep")
+        index = tmp_path / "index.db"
+        with open_index(index) as conn:
+            conn.executemany(
+                "INSERT INTO folders(path) VALUES (?)",
+                ((str(forras),), (str(cel),)),
+            )
+        vezerlo._library_db_path = index
+        monkeypatch.setattr(vezerlo, "_vagolap_adata", lambda: _mime([kep], "copy"))
+        batch_inditasok = []
+        monkeypatch.setattr(
+            vezerlo, "_copy_batch",
+            lambda paths, dest, policy, *, stop_on_failure=False: batch_inditasok.append(
+                (paths, dest, policy, stop_on_failure)
+            ),
+        )
+        kerdesek = []
+        vezerlo.clipboardPasteConfirmationRequested.connect(
+            lambda *args: kerdesek.append(args)
+        )
+
+        assert vezerlo.pasteFilesFromClipboard(str(cel), False) is True
+
+        batchok_mappakent = [
+            ([Path(path) for path in paths], Path(dest), policy, stop_on_failure)
+            for paths, dest, policy, stop_on_failure in batch_inditasok
+        ]
+        assert batchok_mappakent == [([kep], cel, "rename", True)]
+        assert kerdesek == []
 
     def test_ures_vagolapra_NEM_indul_muvelet(self, vezerlo, tmp_path, monkeypatch):
         """A hívó ebből tud üzenetet adni — nem néma hatástalanság."""

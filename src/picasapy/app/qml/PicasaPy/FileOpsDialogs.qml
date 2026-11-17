@@ -19,6 +19,9 @@ Item {
     // az eszköztár, de jóváhagyáskor a pillanatfelvételnyi kijelölést is
     // tagságként menti.
     property var newAlbumPhotoRows: []
+    // #7114: a vágólapos Beillesztés köteg az első fájlhibánál megáll; a
+    // jóváhagyott Paste ezt a jelzőt viszi a névütközési kérdésen át.
+    property bool pasteBatchActive: false
 
     function openRename(row) {
         renameDialog.openFor(row)
@@ -65,14 +68,26 @@ Item {
     // #457/2: a köteg indítása — előbb MEGNÉZZÜK, van-e névütközés, és csak
     // akkor kérdezünk (az eredeti sem kérdezett fölöslegesen); ütközés nélkül
     // az „átnevezés" ág fut, de az ott nem nevez át semmit.
-    function startBatch(operation, paths, dest) {
+    function startBatch(operation, paths, dest, paste) {
+        dialogs.pasteBatchActive = paste === true
         if (fileOpsController.conflictCountFor(paths, dest) > 0)
             duplicateNamesDialog.openFor(operation, paths, dest)
         else
             runBatch(operation, paths, dest, "rename")
     }
+    // #7112: Ctrl+V eltérő mappaazonosítójú Paste-je előbb megerősítést kér;
+    // jóváhagyás után ugyanaz az ütközésvizsgálat fut, mint a többi kötegnél.
+    function openPasteConfirmation(paths, dest, operation) {
+        pasteConfirmDialog.openFor(paths, dest, operation)
+    }
+    function startPasteBatch(operation, paths, dest) {
+        startBatch(operation, paths, dest, true)
+    }
     function runBatch(operation, paths, dest, policy) {
-        if (operation === "copy")
+        if (dialogs.pasteBatchActive) {
+            dialogs.pasteBatchActive = false
+            fileOpsController.runPasteBatch(operation, paths, dest, policy)
+        } else if (operation === "copy")
             fileOpsController.copyPhotos(paths, dest, policy)
         else
             fileOpsController.movePhotos(paths, dest, policy)
@@ -439,6 +454,56 @@ Item {
         onAccepted: moveConfirmDialog.openFor(paths, selectedFolder.toString())
     }
 
+    // #7112: az eltérő forrás- és célmappás vágólap-művelet megerősítése.
+    Dialog {
+        id: pasteConfirmDialog
+        objectName: "pasteConfirmDialog"
+        implicitWidth: 380 + leftPadding + rightPadding
+        title: operation === "copy" ? qsTr("Confirm Copy") : qsTr("Confirm Move")
+        modal: true
+        anchors.centerIn: parent
+        property string operation: "copy"
+        property var paths: []
+        property string dest: ""
+        function openFor(pathList, destFolder, kind) {
+            if (!pathList || pathList.length === 0) return
+            paths = pathList.slice(0)
+            dest = destFolder
+            operation = kind === "cut" || kind === "move" ? "move" : "copy"
+            open()
+        }
+        Text {
+            width: 380
+            text: pasteConfirmDialog.operation === "copy"
+                ? qsTr("Are you sure you want to copy the file(s) to\n%1 ?")
+                    .arg(pasteConfirmDialog.dest)
+                : qsTr("Are you sure you want to move the file(s) to\n%1 ?")
+                    .arg(pasteConfirmDialog.dest)
+            wrapMode: Text.WordWrap
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+        footer: DialogButtonBox {
+            Button {
+                objectName: "pasteConfirmAcceptButton"
+                text: pasteConfirmDialog.operation === "copy"
+                    ? qsTr("Copy Files") : qsTr("Move Files")
+                onClicked: {
+                    var operation = pasteConfirmDialog.operation
+                    var paths = pasteConfirmDialog.paths.slice(0)
+                    var dest = pasteConfirmDialog.dest
+                    pasteConfirmDialog.close()
+                    dialogs.startPasteBatch(operation, paths, dest)
+                }
+            }
+            Button {
+                objectName: "pasteConfirmCancelButton"
+                text: qsTr("Cancel")
+                onClicked: pasteConfirmDialog.close()
+            }
+        }
+    }
+
     // #457/2: az eredeti a célmappa kiválasztása UTÁN még rákérdezett
     // (`CThumbUI::MoveFilesToAlbumFolder::6`, elfogadó gomb: „Fájlok
     // áthelyezése" — `MoveYesButton`). Csak ezután jött a névütközés
@@ -496,7 +561,7 @@ Item {
         // a szövegdoboz + a stílus térközei. A `Text.implicitWidth` Qt 6-ban
         // ÍRÁSVÉDETT, ezért nem ott törjük meg a kört.
         implicitWidth: 380 + leftPadding + rightPadding
-        title: moveConfirmDialog.title
+        title: operation === "copy" ? qsTr("Confirm Copy") : qsTr("Confirm Move")
         modal: true
         anchors.centerIn: parent
         property string operation: "move"
