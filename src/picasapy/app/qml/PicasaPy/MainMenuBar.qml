@@ -297,11 +297,10 @@ PicasaMenuBar {
     onGiftCdRequested: hostGiftCdHost.nyisd()
     onExportRequested: hostExportDialogs.ensure().openForSelection(
         hostWindow.viewerOpen ? hostWindow.photoActionRows() : undefined)
-    // #1616: Fájl ▸ Új album… / Ctrl+N — UGYANAZT az `openNewAlbum`
-    // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
-    // (a `PhotoContextMenu.onNewAlbumRequested` kötése lentebb, a
-    // helyi menü példányán)
-    onNewAlbumRequested: hostFileOpsDialogs.ensure().openNewAlbum(hostWindow.photoActionRows())
+    // #1616: Fájl ▸ Új album… / Ctrl+N. #7164: a kijelölt képeket NEM adja át,
+    // üres albumot nyit; a rács helyi menüjének Add to Album ▸ New Album...
+    // sora (`openAddToNewAlbum`, lentebb a helyi menü példányán) felveszi őket.
+    onNewAlbumRequested: hostFileOpsDialogs.ensure().openNewAlbum()
     // #1615: Fájl ▸ Importálás forrása… / Ctrl+M — UGYANAZ a példány,
     // amit az eszköztár „Import" gombja nyit (ld. `onImportRequested`)
     onImportSourceRequested: hostImportSourceDialog.open()

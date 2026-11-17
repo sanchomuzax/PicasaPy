@@ -98,18 +98,20 @@ Item {
         dialogs.appWindow.clearSelection()
     }
 
-    // A Fájl menü és a kép helyi menüje ugyanazt az Album Properties
-    // párbeszédet nyitja, mint az eszköztár; a kijelölt sorok csak az OK után
-    // kerülnek be az albumba.
-    function openNewAlbum(rows) {
-        if (!controller || !rows || rows.length === 0) return
-        dialogs.openNewAlbumProperties(controller.currentFolder, rows)
+    // #7164: a Fájl ▸ New Album... a kijelöléstől függetlenül ÜRES albumot
+    // készít (az eredeti `0x005eb810` a `0x0055cf70` modellel nyitja az Album
+    // Properties ablakot, és a `0x0055d120` készítőnek képkijelölést nem ad
+    // át): a név `Untitled`, a dátum a létrehozás napja.
+    function openNewAlbum() {
+        if (!controller) return
+        dialogs.openNewAlbumProperties(
+            controller.currentFolder, [],
+            Qt.formatDate(new Date(), "yyyy-MM-dd"))
     }
 
     // #7100: az Add to Album ▸ New Album... (fotó- és nézőmenü) ugyanezt az
-    // ablakot nyitja, de a dátuma a kijelölés ELSŐ képének ideje mínusz egy
-    // másodperc (nincs dátum: üres). A Fájl menü útja (`openNewAlbum`) más
-    // belépő, annak dátuma változatlanul üres.
+    // ablakot nyitja, de a kijelölt képeket felveszi, és a dátuma a kijelölés
+    // ELSŐ képének ideje mínusz egy másodperc (nincs dátum: üres).
     function openAddToNewAlbum(rows) {
         if (!controller || !rows || rows.length === 0) return
         var elso = controller.photos.itemAt(Number(rows[0]))

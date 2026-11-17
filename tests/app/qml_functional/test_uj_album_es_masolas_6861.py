@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -92,17 +93,27 @@ def _vizualis_elem(window, nev: str):
     raise AssertionError(f"{nev} vizuális elem nem található")
 
 
+def _ini_bajtok(controller) -> bytes | None:
+    ini = Path(controller.currentFolder) / ".picasa.ini"
+    return ini.read_bytes() if ini.exists() else None
+
+
 @pytest.mark.parametrize("height_offset", [-5, 0, 5])
-def test_file_menu_new_album_ok_utan_a_kijelolt_ket_keppel_letrejon(
+def test_file_menu_new_album_kijelolt_kepek_mellett_is_ures_albumot_hoz_letre(
     qml_app, qt_app, tmp_path, height_offset
 ):
+    """#7164: az eredeti `0x005eb810` a kijelölést nem adja át az albumkészítőnek,
+    a modell neve `Untitled`, a dátuma a létrehozás napja."""
     window, controller, _engine = qml_app
     _ablakmagassag(window, qt_app, height_offset)
-    assert _varj(qt_app, lambda: controller.photos.rowCount() == 2)
-    megnyit_fomenu(window, qt_app, "&File")
     _kijelol_ket_kept(window, qt_app, controller)
+    ini_elotte = _ini_bajtok(controller)
+    elotte = date.today().isoformat()
+
+    megnyit_fomenu(window, qt_app, "&File")
     tetel = _elem(window, "menuFileNewAlbum")
     assert tetel.property("visible") is True
+    assert tetel.property("enabled") is True
     _kattints(qt_app, tetel)
 
     dialog = _elem(window, "toolbarNewAlbumPropertiesDialog")
@@ -112,6 +123,14 @@ def test_file_menu_new_album_ok_utan_a_kijelolt_ket_keppel_letrejon(
     assert dialog.property("title") == "Album Properties"
     assert controller.albums == [], "az album az OK előtt jött létre"
     assert _elem(dialog, "folderPropertiesNameField").property("text") == "Untitled"
+    utana = date.today().isoformat()
+    assert dialog.property("currentDate") in {elotte, utana}, (
+        "az ablak dátuma nem a létrehozás napja"
+    )
+    datum_mezo = str(_elem(dialog, "folderPropertiesDateField").property("text"))
+    assert str(date.fromisoformat(dialog.property("currentDate")).year) in datum_mezo, (
+        f"a dátummező nem a mai napot mutatja: {datum_mezo!r}"
+    )
     if height_offset == 0:
         _kiadasi_kep(window, "picasapy-uj-album.png")
 
@@ -121,19 +140,39 @@ def test_file_menu_new_album_ok_utan_a_kijelolt_ket_keppel_letrejon(
     )
     album = controller.albums[0]
     assert album["name"] == "Untitled"
-    assert album["count"] == 2, "az albumnak mindkét kijelölt képet tartalmaznia kell"
+    assert album["count"] == 0, "a kijelölt képek nem kerülhetnek az új albumba"
 
-    ini = (Path(controller.currentFolder) / ".picasa.ini").read_text(encoding="utf-8")
-    assert f"[.album:{album['token']}]" in ini
-    assert ini.count(f"albums={album['token']}") == 2
+    assert _ini_bajtok(controller) == ini_elotte, (
+        "a képek mappájának .picasa.ini-je megváltozott"
+    )
+    ini = (ini_elotte or b"").decode("utf-8")
+    assert "albums=" not in ini, "a kijelölt képek albumtagságot kaptak"
 
     pane = _elem(window, "folderPane")
     model = pane.property("albumsModel")
     if hasattr(model, "toVariant"):
         model = model.toVariant()
     assert any(
-        sor["token"] == album["token"] and sor["count"] == 2 for sor in model
-    ), "az új album nem jelent meg a bal hasábban két képpel"
+        sor["token"] == album["token"] and sor["count"] == 0 for sor in model
+    ), "az új üres album nem jelent meg a bal hasábban"
+
+
+def test_file_menu_new_album_tetel_engedelyezese_valtozatlan(
+    qml_app, qt_app
+):
+    """#7164 nem szabad: a tétel a képkijelöléshez kötve marad (`photoActionsEnabled`),
+    mert az eredeti állapota üres kijelölésnél nincs megmérve."""
+    window, controller, _engine = qml_app
+    assert _varj(qt_app, lambda: controller.photos.rowCount() == 2)
+    window.setProperty("selectedIndexes", [])
+    window.setProperty("selectedIndex", -1)
+    qt_app.processEvents()
+    megnyit_fomenu(window, qt_app, "&File")
+    tetel = _elem(window, "menuFileNewAlbum")
+    assert tetel.property("enabled") is False, "kijelölés nélkül élő lett a tétel"
+
+    _kijelol_ket_kept(window, qt_app, controller)
+    assert tetel.property("enabled") is True, "kijelöléssel szürke maradt a tétel"
 
 
 @pytest.mark.parametrize("height_offset", [-5, 0, 5])
