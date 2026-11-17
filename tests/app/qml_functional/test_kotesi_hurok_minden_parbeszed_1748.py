@@ -221,6 +221,10 @@ _KOTELEZO_VALTOZATOK = {
         "hostWindow: ({}); hostPhotoViewer: ({}); hostDocumentTabStrip: ({}); "
         "hostUnnamedFaceRefreshTimer: ({})",
     ),
+    # #7121: az Információ-ablak gazdája kötelező tulajdonság lett.
+    "MainWindowLibraryActions": (
+        "hostWindow: ({}); hostController: ({}); hostPhotoViewer: ({}); hostToolbar: ({}); hostOperationInfoDialog: ({})",
+    ),
     "MainWindowPeripheralLayers": (
         "hostWindow: ({}); hostController: ({}); hostRefs: ({})",
     ),
