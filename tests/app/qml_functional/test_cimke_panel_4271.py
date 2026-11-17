@@ -201,7 +201,7 @@ class TestGyorscimkeSugo4271:
             )
             assert translator.translate(contextus, forras) == magyar, forras
 
-    def test_uresslot_kattintasa_tanit_es_hoverre_buborekot_mutat(
+    def test_uresslot_kattintasa_konfiguraciot_nyit_es_hoverre_buborekot_mutat(
         self, qml_app, qt_app
     ):
         window, _controller, engine = qml_app
@@ -249,21 +249,134 @@ class TestGyorscimkeSugo4271:
             QTest.mouseMove(window, QPoint(1, 1))
             assert _wait_for(qt_app, lambda tip=tip: not tip.property("isVisible"))
             _click(window, button, qt_app)
-            help_dialog = _item(window, "tagNoTextDialog")
+            # #7134: az eredetiben az üres hely a „Configure Quick Tags”
+            # ablakot nyitja (nem a „nincs beírt szöveg” súgót).
+            config_dialog = _item(window, "quickTagsConfigDialog")
             assert _wait_for(
-                qt_app, lambda help_dialog=help_dialog: help_dialog.property("visible")
+                qt_app,
+                lambda config_dialog=config_dialog: config_dialog.property(
+                    "visible"
+                ),
             )
-            help_text = _item(window, "tagNoTextMessage")
-            assert help_text.property("text") == (
-                "Type in a tag (word or phrase) in the text box to the left "
-                "of the button you just pressed.\n\n"
-                "Then press the button again to add the tag to the selected "
-                "items.\n\n"
-                "(TIP: Press <ENTER> after you type in your tag to "
-                "automatically add the tag without pressing the button)"
+            assert config_dialog.property("title") == "Configure quick tags"
+            assert _item(window, "tagNoTextDialog").property("visible") is False
+            config_dialog.close()
+            assert _wait_for(
+                qt_app,
+                lambda config_dialog=config_dialog: not config_dialog.property(
+                    "visible"
+                ),
             )
-            help_dialog.close()
-            qt_app.processEvents()
+
+
+_NINCS_BEIRT_SZOVEG_SUGO = (
+    "Type in a tag (word or phrase) in the text box to the left "
+    "of the button you just pressed.\n\n"
+    "Then press the button again to add the tag to the selected "
+    "items.\n\n"
+    "(TIP: Press <ENTER> after you type in your tag to "
+    "automatically add the tag without pressing the button)"
+)
+
+
+def _cimkek(controller, fajl: str):
+    from picasapy.metadata import read_file_metadata
+
+    return read_file_metadata(Path(controller._roots[0]) / fajl).keywords
+
+
+@pytest.mark.parametrize("magassag_eltolas", [-5, 0, 5])
+class TestUresGyorscimkeHely7134:
+    """#7134: az üres (`?`) gyorscímke-hely a konfigurációt nyitja, mint az
+    eredeti (`quicktag_%d` esemény, `]empty` összevetés, `0x0063d840`).
+
+    Valódi egérkattintás a kirajzolt főablakon, a nézőterület ±5 képpontos
+    mozgatásával."""
+
+    def _felkeszit(self, window, qt_app, magassag_eltolas, gomb_neve):
+        window.requestActivate()
+        assert _wait_for(qt_app, lambda: window.isActive())
+        window.setProperty("selectedIndexes", [0])
+        window.setProperty("selectedIndex", 0)
+        window.setProperty("activeDrawerTab", "tags")
+        assert _wait_for(
+            qt_app, lambda: window.findChild(QObject, gomb_neve) is not None
+        )
+        window.setHeight(int(window.height()) + magassag_eltolas)
+        qt_app.processEvents()
+        gomb = _item(window, gomb_neve)
+        assert _wait_for(qt_app, lambda: gomb.isVisible())
+        return gomb
+
+    def test_az_ures_hely_kattintasa_a_konfiguraciot_nyitja_es_nem_ir_cimket(
+        self, qml_app, qt_app, magassag_eltolas
+    ):
+        window, controller, _engine = qml_app
+        gomb = self._felkeszit(window, qt_app, magassag_eltolas, "quickTagButton7")
+        assert gomb.property("text") == "?"
+        config = _item(window, "quickTagsConfigDialog")
+        sugo = _item(window, "tagNoTextDialog")
+        assert config.property("visible") is False
+        elotte = _cimkek(controller, "a.jpg")
+
+        _click(window, gomb, qt_app)
+
+        assert _wait_for(qt_app, lambda: config.property("visible"))
+        assert config.property("title") == "Configure quick tags"
+        assert sugo.property("visible") is False
+        assert _cimkek(controller, "a.jpg") == elotte
+        config.close()
+
+    def test_az_ures_hely_ugyanazt_az_ablakot_nyitja_mint_a_fogaskerek(
+        self, qml_app, qt_app, magassag_eltolas
+    ):
+        window, controller, _engine = qml_app
+        gomb = self._felkeszit(window, qt_app, magassag_eltolas, "quickTagButton3")
+        config = _item(window, "quickTagsConfigDialog")
+
+        _click(window, _item(window, "quickTagsGearButton"), qt_app)
+        assert _wait_for(qt_app, lambda: config.property("visible"))
+        fogaskerek_cime = config.property("title")
+        config.close()
+        assert _wait_for(qt_app, lambda: not config.property("visible"))
+
+        _click(window, gomb, qt_app)
+        assert _wait_for(qt_app, lambda: config.property("visible"))
+        assert config.property("title") == fogaskerek_cime
+        # ugyanaz az egy ablak: nem keletkezett második példány
+        assert len(window.findChildren(QObject, "quickTagsConfigDialog")) == 1
+        config.close()
+
+    def test_a_nem_ures_hely_kattintasa_hozzaad_es_nem_nyit_ablakot(
+        self, qml_app, qt_app, magassag_eltolas
+    ):
+        window, controller, _engine = qml_app
+        controller.setQuickTagsReserveRecent(False)
+        controller.setQuickTagLabel(3, "vitorlás")
+        gomb = self._felkeszit(window, qt_app, magassag_eltolas, "quickTagButton3")
+        assert gomb.property("text") == "vitorlás"
+        config = _item(window, "quickTagsConfigDialog")
+        sugo = _item(window, "tagNoTextDialog")
+        assert _cimkek(controller, "a.jpg") == ()
+
+        _click(window, gomb, qt_app)
+
+        assert _wait_for(qt_app, lambda: _cimkek(controller, "a.jpg") == ("vitorlás",))
+        assert config.property("visible") is False
+        assert sugo.property("visible") is False
+
+    def test_a_nincs_beirt_szoveg_sugo_megmarad_a_masik_jegynek(
+        self, qml_app, qt_app, magassag_eltolas
+    ):
+        """A #7135 (üres szövegű Enter) ezt a súgóablakot használja majd, ezért
+        a deklaráció és a szöveg nem változhat."""
+        window, _controller, _engine = qml_app
+        self._felkeszit(window, qt_app, magassag_eltolas, "quickTagButton7")
+        sugo = _item(window, "tagNoTextDialog")
+        assert sugo.property("visible") is False
+        assert _item(window, "tagNoTextMessage").property("text") == (
+            _NINCS_BEIRT_SZOVEG_SUGO
+        )
 
 
 @pytest.mark.parametrize("magassag_eltolas", [-5, 0, 5])
