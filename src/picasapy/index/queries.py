@@ -223,6 +223,21 @@ def photo_by_id(conn: sqlite3.Connection, photo_id: int) -> PhotoRecord | None:
     return _records([row])[0] if row is not None else None
 
 
+def photo_by_path(
+    conn: sqlite3.Connection, folder_path: str | Path, name: str
+) -> PhotoRecord | None:
+    """Egy fotó rekordja a mappa útvonala és a fájlnév szerint (#7142).
+
+    A hívó a mappa útját a tárolt (normalizált) alakban adja. Ami nincs az
+    indexben (a könyvtáron kívüli fájl), arra `None` jön: a kereső nem
+    indexel, és semmit nem hoz létre."""
+    row = conn.execute(
+        f"{_select(conn)} WHERE f.path = ? AND p.name = ?",
+        (str(folder_path), name),
+    ).fetchone()
+    return _records([row])[0] if row is not None else None
+
+
 def all_photos(
     conn: sqlite3.Connection, *, include_hidden_folders: bool | None = None
 ) -> tuple[PhotoRecord, ...]:

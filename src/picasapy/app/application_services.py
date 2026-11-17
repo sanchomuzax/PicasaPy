@@ -51,6 +51,11 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
     # #7112: a Paste a forrás- és célmappa tényleges indexazonosítóját
     # hasonlítja össze, nem a felhasználó felé látható útvonalalakot.
     fileops._library_db_path = getattr(controller, "_db_path", None)
+    # #7142: albumnézetben a Beillesztés az album tagságát bővíti, fájlt nem
+    # másol; az ini-írást a vezérlő meglévő albumtagság-útja végzi.
+    fileops._album_tagsag_iro = lambda paths, token: controller.addPathsToAlbum(
+        paths, token
+    )
 
     def refresh(*paths: str) -> None:
         seen: set[str] = set()

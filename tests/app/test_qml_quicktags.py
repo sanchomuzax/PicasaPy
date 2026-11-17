@@ -5,12 +5,26 @@ A `qml_app` közös fixture-t használja (tests/app/conftest.py) — a
 teljes Main.qml-t offscreen betöltve, valódi controller mögötte."""
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtTest import QTest
 
 from picasapy.metadata import read_file_metadata
+from support.qt_wait import varj_kattinthatora
+from support.varakozas import var_feltetelre
 
 
 def _invoke(obj, method) -> None:
     QMetaObject.invokeMethod(obj, method, Qt.ConnectionType.DirectConnection)
+
+
+def _click(window, item, qt_app) -> None:
+    """Valódi egérkattintás a kirajzolt elem közepére (#7134)."""
+    assert item.width() > 0 and item.height() > 0, "a kattintási cél mérete nulla"
+    varj_kattinthatora(window, item)
+    point = item.mapToScene(item.boundingRect().center()).toPoint()
+    QTest.mouseClick(
+        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, point
+    )
+    qt_app.processEvents()
 
 
 class TestQuickTagsGrid:
@@ -54,16 +68,21 @@ class TestQuickTagsGrid:
         button = window.findChild(QObject, "quickTagButton3")
         assert button.property("text") == "vitorlás"
         assert button.property("enabled") is True
-        _invoke(button, "clicked")
-        qt_app.processEvents()
-        assert read_file_metadata(lib / "a.jpg").keywords == ("vitorlás",)
+        _click(window, button, qt_app)
+        assert var_feltetelre(
+            qt_app,
+            lambda: read_file_metadata(lib / "a.jpg").keywords == ("vitorlás",),
+            5.0,
+        )
         panel = self._panel(window)
         assert list(panel.property("tags")) == ["vitorlás"]
 
-    def test_empty_quick_tag_button_opens_the_teaching_tip_with_selection(
+    def test_empty_quick_tag_button_opens_the_quick_tags_config_dialog(
         self, qml_app, qt_app
     ):
-        """#4271: a korábbi tiltás helyett az üres ? súgót nyit."""
+        """#7134: az üres ? hely az eredetiben (`]empty` összevetés, majd a
+        `0x0063d840`) a Configure Quick Tags ablakot nyitja, nem a
+        „nincs beírt szöveg” súgót, és nem ír címkét."""
         window, controller, lib, engine = qml_app
         window.setProperty("activeDrawerTab", "tags")
         window.setProperty("selectedIndexes", [0])
@@ -72,11 +91,19 @@ class TestQuickTagsGrid:
         button = window.findChild(QObject, "quickTagButton7")
         assert button.property("text") == "?"
         assert button.property("enabled") is True
-        _invoke(button, "clicked")
-        qt_app.processEvents()
+        config = window.findChild(QObject, "quickTagsConfigDialog")
         help_dialog = window.findChild(QObject, "tagNoTextDialog")
-        assert help_dialog is not None
-        assert help_dialog.property("visible") is True
+        assert config is not None and help_dialog is not None
+        assert config.property("visible") is False
+
+        _click(window, button, qt_app)
+
+        assert var_feltetelre(
+            qt_app, lambda: bool(config.property("visible")), 5.0
+        ), "az üres hely kattintása nem nyitotta meg a konfigurációs ablakot"
+        assert help_dialog.property("visible") is False
+        assert read_file_metadata(lib / "a.jpg").keywords == ()
+        config.close()
 
     def test_top_two_buttons_reflect_recently_used_tag_live(
         self, qml_app, qt_app

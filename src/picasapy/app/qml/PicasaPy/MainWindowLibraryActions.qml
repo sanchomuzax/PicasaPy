@@ -11,6 +11,27 @@ QtObject {
     required property var hostToolbar
     required property var hostOperationInfoDialog
 
+    //: #7143: a vágólap minden fájlja a MEGNYITOTT mappában van. Az eredeti
+    //: Beillesztése azonos mappában hatástalan és szürke (`0x0056ec92`),
+    //: fájlművelet nincs. Albumnál a cél az album, nem a mappa (#7142): ott
+    //: nem tiltunk. A `clipboardHasFiles` olvasása a függőség: a vágólap
+    //: változása újraértékeli a kötést (a slot maga nem jelez).
+    readonly property bool _vagolapCsakAMegnyitottMappaban: {
+        if (typeof fileOpsController === "undefined" || !fileOpsController
+                || !hostController)
+            return false
+        if (hostController.viewModeName === "album")
+            return false
+        return (fileOpsController.clipboardHasFiles,
+                fileOpsController.clipboardOnlyInFolder(
+                    hostController.currentFolder))
+    }
+    //: #7143: a Beillesztés KÖZÖS kapuja: a menütétel, a Ctrl+V és a
+    //: `beillesztAVagolaprol` ugyanezt használja. Nézőben (az eredeti
+    //: szerkesztő-előnézete) és azonos mappában tiltott.
+    readonly property bool vagolapBeillesztesEngedelyezett:
+        !hostWindow.viewerOpen && !_vagolapCsakAMegnyitottMappaban
+
     // #7025: a Tags lap ugyanazon az úton vált, mint a Ctrl+T, Ctrl+K és
     // a felső panelgomb. Ha már aktív, kiüríti a fiókot.
     function valtsFiokLapot(nev) {

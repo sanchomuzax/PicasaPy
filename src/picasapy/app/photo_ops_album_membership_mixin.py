@@ -13,6 +13,7 @@ from picasapy.index.albums import (
     _remove_empty_album,
     _store_empty_album,
 )
+from picasapy.index.queries import photo_by_path
 from picasapy.ini import STAR_ALBUM_TOKEN
 from picasapy.ini.albums import (
     albums_of,
@@ -22,6 +23,7 @@ from picasapy.ini.albums import (
     without_album,
     without_album_everywhere,
 )
+from picasapy.paths import normalize_path
 
 from .photo_ops_compat import _WRITE_ERRORS, update_document
 
@@ -39,16 +41,63 @@ class PhotoOpsAlbumMembershipMixin:
         valid = self._rows_to_photos(rows)
         if not valid:
             return
+        self._add_photos_to_album(valid, token)
 
+    def addPathsToAlbum(self, paths, token: str) -> bool:  # noqa: N802
+        """Fájlútvonalak (a vágólap képei) felvétele egy albumba (#7142).
+
+        SZÁNDÉKOSAN nem `@Slot`: az egyetlen hívója a Beillesztés Python-útja
+        (`pasteFilesFromClipboard`, a `wire_fileops` köti be), QML-hívó nincs -
+        egy bekötetlen slot néma lánc-szakadás volna (`scripts/kepesseg_or.py`).
+
+        Az eredeti Beillesztés közönséges album célnál kihagyja a fájlműveleti
+        ágat (`0x00784100`): nincs kérdés és nincs másolás, az elemek az album
+        tagjai lesznek. Az útvonalakat a KÖNYVTÁR képeire oldjuk fel (index,
+        mappa + fájlnév); ami nincs benne, azt nem indexeljük és nem
+        másoljuk, és idegen mappába ini sem kerül. A már tag kép nem kerül be
+        kétszer (`with_album` idempotens), a forrásfájlokhoz nem nyúlunk, így
+        a Kivágás sem töröl.
+
+        Visszatérés: volt-e a vágólapon könyvtárbeli kép (a művelet
+        elindult). Az írási hibát az `albumWriteFailed` jelzi; a hívó
+        `False`-ra a „nincs beilleszthető fájl” üzenetet adja."""
+        token = (token or "").strip()
+        photos = self._photos_for_paths(paths)
+        if not token or not photos:
+            return False
+        self._add_photos_to_album(photos, token)
+        return True
+
+    def _photos_for_paths(self, paths) -> list:
+        """A könyvtárban lévő képek rekordjai útvonal szerint, sorrendtartóan,
+        duplikátum nélkül."""
+        records = []
+        seen: set[int] = set()
+        with open_index(self._db_path) as conn:
+            for raw in paths or ():
+                local = Path(str(raw))
+                record = photo_by_path(
+                    conn, normalize_path(local.parent), local.name
+                )
+                if record is not None and record.id not in seen:
+                    seen.add(record.id)
+                    records.append(record)
+        return records
+
+    def _add_photos_to_album(self, photos, token: str) -> bool:
+        """A rekordok felvétele egy albumba (a közös mag: rács-sor és útvonal)."""
         with open_index(self._db_path) as conn:
             pending = _pending_empty_album(conn, token)
 
         mutate = self._album_membership_mutator(token, pending)
 
-        if self._write_album_batch(valid, mutate) and pending is not None:
+        if not self._write_album_batch(photos, mutate):
+            return False
+        if pending is not None:
             with open_index(self._db_path) as conn:
                 _remove_empty_album(conn, token)
                 self._load_albums(conn)
+        return True
 
     def _album_membership_mutator(self, token: str, pending):
         """A definíciót és a tagságot együtt, egyetlen kötegelt írásban kezeli."""

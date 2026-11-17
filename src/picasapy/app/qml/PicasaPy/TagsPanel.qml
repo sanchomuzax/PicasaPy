@@ -320,9 +320,13 @@ Rectangle {
                 font.pixelSize: Theme.fontSize - 1
                 hoverEnabled: true
                 enabled: panel.cimkezheto
+                // #7134: az üres hely a konfigurációt nyitja, mint az
+                // eredeti (`quicktag_%d`: `]empty` összevetés, majd a
+                // `0x0063d840`), a fogaskerékkel azonos úton. A
+                // `tagNoTextDialog` az üres szövegű Enteré (#7135).
                 onClicked: quickTagButton.label.length > 0
                     ? panel.addRequested(quickTagButton.label)
-                    : tagNoTextDialog.open()
+                    : quickTagsConfigDialog.open()
 
                 ToolTip.text: qsTr("Click to configure quick tags")
                 ToolTip.visible: quickTagButton.hovered

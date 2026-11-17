@@ -262,10 +262,12 @@ Item {
     }
 
     Shortcut {
+        //: #7143: nézőben és szerkesztőben a Kivágás tiltott (`0x0056e95f`),
+        //: ugyanúgy, mint a menütétel; a könyvtári kapu ezt már tartalmazza.
         id: shortcutCutFiles
         objectName: "shortcutCutFiles"
         sequence: "Ctrl+X"
-        enabled: !hostWindow._szovegmezoneVanFokusz
+        enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
                  && hostWindow.photoActionRows().length > 0
         onActivated: hostFileOpsController.cutFilesToClipboard(
             hostWindow.photoActionPaths())
@@ -276,10 +278,14 @@ Item {
         //: #1526: a Beillesztés billentyűje — ugyanaz a fókusz-kapu, mint a
         //: másoláson: szövegmezőben a mezőé a billentyű (különben átnevezés
         //: közben nem lehetne beilleszteni a szövegbe).
+        //:
+        //: #7143: a menütétellel KÖZÖS kapu (`vagolapBeillesztesEngedelyezett`):
+        //: azonos mappában a billentyű is hatástalan.
         id: shortcutPasteFiles
         objectName: "shortcutPasteFiles"
         sequence: "Ctrl+V"
         enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
+                 && hostWindow.vagolapBeillesztesEngedelyezett
         onActivated: hostWindow.beillesztAVagolaprol()
     }
 
