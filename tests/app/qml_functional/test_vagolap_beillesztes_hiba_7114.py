@@ -14,9 +14,21 @@ hogy a felület ne mondhasson mást, mint ami a mappában van.
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QMetaObject, QMimeData, QObject, Qt, QUrl
+import pytest
+from PySide6.QtCore import (
+    QByteArray,
+    QMetaObject,
+    QMimeData,
+    QObject,
+    QPoint,
+    QPointF,
+    Qt,
+    QUrl,
+)
+from PySide6.QtTest import QTest
 
 from picasapy.fileops import copy as copy_module
 
@@ -32,10 +44,39 @@ def _mime(utak, muvelet: str) -> QMimeData:
     return adat
 
 
+def _varj(qt_app, feltetel, masodperc=10):
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        if feltetel():
+            return True
+        QTest.qWait(50)
+    qt_app.processEvents()
+    return bool(feltetel())
+
+
+def _kattints(window, qt_app, object_name):
+    elem = window.findChild(QObject, object_name)
+    assert elem is not None, f"{object_name} nem épült fel"
+    kozep = elem.mapToScene(
+        QPointF(elem.property("width") / 2, elem.property("height") / 2)
+    )
+    QTest.mouseClick(
+        window,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        QPoint(round(kozep.x()), round(kozep.y())),
+    )
+    qt_app.processEvents()
+
+
+@pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
 def test_a_beillesztes_hibaja_az_osszegzo_parbeszeden_latszik(
-    qml_app, tmp_path, monkeypatch
+    qml_app, qt_app, tmp_path, monkeypatch, magassag_elteres
 ):
     window, controller, engine = qml_app
+    window.setHeight(window.height() + magassag_elteres)
+    qt_app.processEvents()
     fileops = engine.rootContext().contextProperty("fileOpsController")
     assert fileops is not None
 
@@ -63,13 +104,24 @@ def test_a_beillesztes_hibaja_az_osszegzo_parbeszeden_latszik(
     controller._current_folder = str(cel)
 
     QMetaObject.invokeMethod(window, "beillesztAVagolaprol", Qt.ConnectionType.DirectConnection)
+    megerosito = window.findChild(QObject, "pasteConfirmDialog")
+    assert _varj(
+        qt_app,
+        lambda: megerosito is not None and megerosito.property("visible") is True,
+    ), "az eltérő mappás Paste nem kért jóváhagyást"
+    accept = window.findChild(QObject, "pasteConfirmAcceptButton")
+    assert accept is not None and accept.property("text") == "Copy Files"
+    _kattints(window, qt_app, "pasteConfirmAcceptButton")
 
+    parbeszed = window.findChild(QObject, "batchSummaryDialog")
+    assert _varj(
+        qt_app,
+        lambda: parbeszed is not None and parbeszed.property("visible") is True,
+    ), "a jóváhagyás utáni köteg nem nyitotta meg az összegzést"
     assert (cel / "a.jpg").read_bytes() == b"a.jpg", "az első másolat nem maradt meg"
     assert not (cel / "b.jpg").exists(), "a hibás képből félkész példány maradt"
     assert not (cel / "c.jpg").exists(), "a hiba után a harmadik kép is elindult"
 
-    parbeszed = window.findChild(QObject, "batchSummaryDialog")
-    assert parbeszed is not None
     assert parbeszed.property("visible") is True, "az összegző jelzés nem jelent meg"
     uzenet = parbeszed.property("message")
     assert "b.jpg" in uzenet, "a jelzés nem nevezi meg a hibás képet"

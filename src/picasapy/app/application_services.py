@@ -48,6 +48,10 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
 
     from .application_platform import _watched_folder_of
 
+    # #7112: a Paste a forrás- és célmappa tényleges indexazonosítóját
+    # hasonlítja össze, nem a felhasználó felé látható útvonalalakot.
+    fileops._library_db_path = getattr(controller, "_db_path", None)
+
     def refresh(*paths: str) -> None:
         seen: set[str] = set()
         for path in paths:

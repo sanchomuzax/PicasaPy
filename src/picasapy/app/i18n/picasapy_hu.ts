@@ -7159,10 +7159,22 @@ picasapy-origin-key: customaspectratio:customaspectratio/labelgroup10.title;rena
             <translation>Példa:</translation>
         </message>
         <message>
+            <source>Confirm Copy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::MoveFilesConfirmCopy</extracomment>
+            <translation>Másolás jóváhagyása</translation>
+        </message>
+        <message>
             <source>Confirm Move</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::MoveFilesConfirmMove</extracomment>
             <translation>Áthelyezés jóváhagyása</translation>
+        </message>
+        <message>
+            <source>Copy Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::CopyYesButton</extracomment>
+            <translation>Fájlok másolása</translation>
         </message>
         <message>
             <source>Move Files</source>
@@ -7171,9 +7183,18 @@ picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::MoveYesButton;s
             <translation>Fájlok áthelyezése</translation>
         </message>
         <message>
+            <source>Are you sure you want to copy the file(s) to
+%1 ?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::3</extracomment>
+            <translation>Biztosan ide szeretné másolni a fájl(oka)t:
+%1?</translation>
+        </message>
+        <message>
             <source>Are you sure you want to move the file(s) to
 %1 ?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::6</extracomment>
             <translation>Biztosan áthelyezi a fájl(oka)t ide:
 %1?</translation>
         </message>
@@ -7181,7 +7202,8 @@ picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::MoveYesButton;s
             <source>This folder already contains files with the same name.
 
 Would you like to rename or skip these files?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::MoveFilesToAlbumFolder::2</extracomment>
             <translation>Ez a mappa már tartalmaz azonos nevű fájlokat.
 
 Átnevezi vagy átugorja ezeket?</translation>
@@ -7200,7 +7222,8 @@ picasapy-origin-key: acquirepanel_text:Text(acquirepanel/excludedupes_label);str
         </message>
         <message>
             <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
             <translation>Mégse</translation>
         </message>
         <message>
