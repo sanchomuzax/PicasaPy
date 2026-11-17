@@ -258,6 +258,15 @@ def _write_overlay(controller, row, active):
     return ini_path, photo.name
 
 
+def _photo_textactive(controller, row):
+    photo = controller.photos.photos[row]
+    ini_path = Path(photo.folder_path) / PICASA_INI_NAME
+    if not ini_path.exists():
+        return None
+    section = load_document(ini_path).section(photo.name)
+    return section.get("textactive") if section is not None else None
+
+
 def _photo_filters(controller, row):
     photo = controller.photos.photos[row]
     ini_path = Path(photo.folder_path) / PICASA_INI_NAME
@@ -363,24 +372,47 @@ class TestPhotoMenuCommands:
             _close_picture_menu(qt_app, window)
 
     @pytest.mark.parametrize("height_offset", (-5, 0, 5))
-    def test_picture_show_hide_text_clicks_follow_selected_overlay_state(
+    def test_picture_show_hide_text_enabled_without_any_text_layer(
         self, qml_app, qt_app, height_offset
     ):
+        """#7122: az eredeti menüépítő (`0x0056e1c0`) a Show Text és a Hide
+        Text tételt csak a `0x4000` ágban szürkíti, ahol a csoport összes
+        tétele szürke. Kijelölt képeknél tehát mindkettő él akkor is, ha
+        egyik képen sincs ráírt szöveg; a kattintás ilyenkor semmit sem ír."""
         window, controller, _engine = qml_app
         window.setHeight(window.height() + height_offset)
         window.setProperty("selectedIndexes", [0, 1])
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()
 
-        # Without text layers neither state-specific command is enabled.
         show_item = _picture_menu_item(qt_app, window, "menuPictureShowText")
         hide_item = _find_menu_item(window, "menuPictureHideText")
-        assert show_item["enabled"] is False
-        assert hide_item["enabled"] is False
-        _close_picture_menu(qt_app, window)
+        assert show_item["enabled"] is True
+        assert hide_item["enabled"] is True
+        _click_item(qt_app, show_item)
 
-        # A mixed selection enables each command. Real menu clicks should
-        # apply the requested state to every selected photo with a text layer.
+        hide_item = _picture_menu_item(qt_app, window, "menuPictureHideText")
+        assert hide_item["enabled"] is True
+        _click_item(qt_app, hide_item)
+
+        for row in (0, 1):
+            assert _photo_textactive(controller, row) is None, (
+                "szöveg nélküli képre a Show/Hide Text nem írhat textactive-ot"
+            )
+
+    @pytest.mark.parametrize("height_offset", (-5, 0, 5))
+    def test_picture_show_hide_text_clicks_apply_requested_state(
+        self, qml_app, qt_app, height_offset
+    ):
+        """A kattintás a `setTextOverlayVisibleMany`-n át a kért végállapotot
+        írja a kijelölt, szövegfedvényes képekre; a két tétel közben végig
+        aktív marad (nem függ a fájlban lévő `textactive=` értéktől)."""
+        window, controller, _engine = qml_app
+        window.setHeight(window.height() + height_offset)
+        window.setProperty("selectedIndexes", [0, 1])
+        window.setProperty("selectedIndex", 0)
+        qt_app.processEvents()
+
         first_ini, first_name = _write_overlay(controller, 0, active=False)
         second_ini, second_name = _write_overlay(controller, 1, active=True)
 
@@ -398,7 +430,7 @@ class TestPhotoMenuCommands:
         show_item = _picture_menu_item(qt_app, window, "menuPictureShowText")
         hide_item = _find_menu_item(window, "menuPictureHideText")
         assert show_item["enabled"] is True
-        assert hide_item["enabled"] is False
+        assert hide_item["enabled"] is True
         _click_item(qt_app, show_item)
 
         first = load_document(first_ini).section(first_name)
@@ -408,8 +440,81 @@ class TestPhotoMenuCommands:
 
         show_item = _picture_menu_item(qt_app, window, "menuPictureShowText")
         hide_item = _find_menu_item(window, "menuPictureHideText")
-        assert show_item["enabled"] is False
+        assert show_item["enabled"] is True
         assert hide_item["enabled"] is True
+
+    def test_picture_batch_edit_submenu_stays_grey_without_selection(
+        self, qml_app, qt_app
+    ):
+        """Üres kijelölésnél a Csoportos szerkesztés almenü (és vele a Show
+        Text / Hide Text) szürke marad, mert a kapu a csoport közös
+        `photoActionsEnabled` értéke."""
+        window, _controller, _engine = qml_app
+        window.setProperty("selectedIndexes", [])
+        window.setProperty("selectedIndex", -1)
+        qt_app.processEvents()
+
+        menu_bar = window.property("menuBar")
+        menu = next(
+            item for item in menu_bar.findChildren(QObject)
+            if item.property("title") in {"&Picture", "&Kép"}
+        )
+        _KEEP_QML_OBJECTS.extend((menu_bar, menu))
+        submenu_item = _menu_item_info(
+            menu, "menuPictureBatchEdit", window, text="&Batch Edit"
+        )
+        assert submenu_item["enabled"] is False
+        batch_menu = window.findChild(QObject, "menuPictureBatchEdit")
+        _KEEP_QML_OBJECTS.append(batch_menu)
+        for name in ("menuPictureShowText", "menuPictureHideText"):
+            assert _batch_menu_item_info(window, name)["enabled"] is False
+
+    def test_picture_menu_opening_does_not_read_picasa_ini(
+        self, qml_app, qt_app, monkeypatch
+    ):
+        """A Kép menü megnyitása nem olvas `.picasa.ini`-t (#7122): az
+        eredeti menüépítő sem teszi, a két Text tétel állapota nem a
+        fájlból jön. A számláló a közös ini-betöltőt figyeli."""
+        import picasapy.ini.io as ini_io
+
+        window, controller, _engine = qml_app
+        window.setProperty("selectedIndexes", [0, 1])
+        window.setProperty("selectedIndex", 0)
+        qt_app.processEvents()
+        _write_overlay(controller, 0, active=False)
+
+        reads = []
+        original = ini_io.load_document
+
+        def counting_load(path):
+            reads.append(str(path))
+            return original(path)
+
+        monkeypatch.setattr(ini_io, "load_document", counting_load)
+
+        _picture_menu_item(qt_app, window, "menuPictureShowText")
+        _close_picture_menu(qt_app, window)
+
+        assert reads == [], f"a menünyitás ini-t olvasott: {reads}"
+
+    def test_picture_menu_has_no_text_state_refresh_path(self, qml_app):
+        """A menünyitáskori ini-olvasás kikerült: se a controller lekérdezése,
+        se a menü frissítő jelzése nem létezik többé."""
+        _window, controller, _engine = qml_app
+        assert not hasattr(controller, "hasTextOverlayStateInSelection")
+        qml_dir = (
+            Path(__file__).resolve().parents[3]
+            / "src" / "picasapy" / "app" / "qml" / "PicasaPy"
+        )
+        for qml_file in qml_dir.glob("*.qml"):
+            source = qml_file.read_text(encoding="utf-8")
+            for gone in (
+                "textOverlayStatesRefreshRequested",
+                "textOverlayShowEnabled",
+                "textOverlayHideEnabled",
+                "hasTextOverlayStateInSelection",
+            ):
+                assert gone not in source, f"{qml_file.name}: {gone}"
 
 
 class TestDeleteShortcutsAreContextDependent:

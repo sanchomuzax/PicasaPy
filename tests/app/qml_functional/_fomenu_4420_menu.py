@@ -103,6 +103,16 @@ _NINCS_LATHATO_HATAS = {
     "menuFolderRefreshThumbnails": (
         "Nincs látható változás: a bélyegképek frissítése háttérmunka."
     ),
+    "menuPictureShowText": (
+        "Nincs látható változás (#7122): a tétel az eredetihez hasonlóan "
+        "kijelölésnél mindig aktív, de a mintaképeken nincs szövegréteg, "
+        "ezért a kattintás nem ír semmit."
+    ),
+    "menuPictureHideText": (
+        "Nincs látható változás (#7122): a tétel az eredetihez hasonlóan "
+        "kijelölésnél mindig aktív, de a mintaképeken nincs szövegréteg, "
+        "ezért a kattintás nem ír semmit."
+    ),
 }
 _NINCS_LATHATO_HATAS_UTVONAL = {
     ("Folder", "Refresh Thumbnails"): (
@@ -137,14 +147,6 @@ _LETILTOTT_A_TISZTA_MINTABAN = {
     "menuCreateMovieFromPeopleAlbums": (
         "A tiszta profilban nincs névvel ellátott arc, ezért nincs nem üres "
         "Emberek-albuma."
-    ),
-    "menuPictureShowText": (
-        "A kijelölt mintaképeken nincs feliratszöveg, ezért a Show Text "
-        "feltételesen letiltott."
-    ),
-    "menuPictureHideText": (
-        "A kijelölt mintaképeken nincs feliratszöveg, ezért a Hide Text "
-        "feltételesen letiltott."
     ),
     "menuEditPaste": (
         "A mintában nincs beilleszthető fájl a vágólapon."
