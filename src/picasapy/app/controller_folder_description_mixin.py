@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 from PySide6.QtCore import Slot
-from picasapy.ini import load_or_empty, read_folder_location, with_folder_location
+from picasapy.ini import (
+    load_or_empty,
+    read_folder_location,
+    with_folder_location,
+    with_folder_name,
+)
 from picasapy.scanner import PICASA_INI_NAME
 from .photo_ops_controller import _WRITE_ERRORS
 
@@ -33,6 +38,34 @@ class AppControllerFolderDescriptionMixin:
             controller_module.update_document(
                 ini_path,
                 lambda document: with_folder_location(document, location),
+                backup=True,
+            )
+        except _WRITE_ERRORS as error:
+            self.jelentsdAzIrasiHibat(error)
+            return False
+        return True
+
+    @Slot(str, result=bool)
+    def setFolderNameOf(self, folder_path: str) -> bool:  # noqa: N802
+        """A tényleges mappanév mentése a `[Picasa]/name` kulcsba."""
+        if not folder_path:
+            return False
+        folder = Path(folder_path)
+        name = folder.name
+        if not name:
+            return False
+        ini_path = folder / PICASA_INI_NAME
+
+        from . import controller as controller_module
+
+        try:
+            document = load_or_empty(ini_path)
+            section = document.section("Picasa")
+            if section is not None and section.get("name") == name:
+                return True
+            controller_module.update_document(
+                ini_path,
+                lambda current: with_folder_name(current, name),
                 backup=True,
             )
         except _WRITE_ERRORS as error:
