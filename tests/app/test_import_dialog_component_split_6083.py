@@ -20,9 +20,10 @@ _COMPONENTS = (
 )
 # #7173: a nagybetűs előkérdés helyett az eredeti kisbetűs szöveg, plusz a
 # két eredeti gombfelirat (Remove Imported Files / Remove All Files).
-_BASELINE_QSTR_COUNT = 54
+# #7177: Import All, Import Selected és a tippsor három új állapota.
+_BASELINE_QSTR_COUNT = 58
 _BASELINE_QSTR_SHA256 = (
-    "4a5d21a090263d0ce43084323505781b3d4825052b03b9081b4c4dee00ee4859"
+    "dce939e1712afa3b4464d43b1a61deb691fe6fbe998695eb655246abfe1999c5"
 )
 # A bontás UTÁN, jegyenként felvett új feliratok. A bontás szerződése a fenti
 # 52 eredeti felirat változatlansága; az újak nem tartoznak a lenyomatba, de

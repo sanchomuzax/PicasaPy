@@ -399,6 +399,34 @@ class TestIndividualSelection:
         assert not (dest / "2024-03-05" / "a.jpg").exists()
         assert (source / "a.jpg").exists()  # ki lett zárva — a forrás érintetlen
 
+    def test_only_selected_and_included_files_are_imported(
+        self, controller, tmp_path
+    ):
+        source = tmp_path / "kijelolt-kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        make_jpeg(source / "b.jpg", taken_at="2024:03:06 10:00:00")
+        make_jpeg(source / "c.jpg", taken_at="2024:03:07 10:00:00")
+        dest = tmp_path / "kijelolt-konyvtar"
+        dest.mkdir()
+        _scan(controller, str(source))
+        controller.excludeFile(str(source / "b.jpg"))
+
+        finished = []
+        controller.importFinished.connect(
+            lambda copied, failed: finished.append((copied, failed))
+        )
+        controller.runSelectedImport(
+            str(dest), "date", "", "leave",
+            [str(source / "a.jpg"), str(source / "b.jpg")],
+        )
+        _megvar_hattermunkat(controller)
+
+        assert finished == [(1, 0)]
+        assert (dest / "2024-03-05" / "a.jpg").exists()
+        assert not (dest / "2024-03-06" / "b.jpg").exists()
+        assert not (dest / "2024-03-07" / "c.jpg").exists()
+
 
 class TestRunImportNamingModes:
     """#441 — a HÁROM célmappa-elnevezési mód a teljes import-folyamatba
