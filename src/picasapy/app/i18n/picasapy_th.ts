@@ -14491,7 +14491,7 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <location filename="../import_source_controller.py" line="444" />
             <source>The source files were left untouched because one or more pictures could not be copied.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ไฟล์ต้นฉบับไม่ถูกแก้ไข เนื่องจากไม่สามารถคัดลอกรูปภาพอย่างน้อยหนึ่งรูปได้</translation>
         </message>
         <message>
             <source>WARNING
