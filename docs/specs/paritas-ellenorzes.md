@@ -2378,7 +2378,7 @@ típusnál a `0x004ef3c0` vagy `0x004ef5a0` rekordmódosítót is meghívja.
 A következő kijelölt elem feldolgozása folytatódik. Visszagörgető hívást
 nem találtam, ezért a bináris útban részleges siker lehetséges. A
 `0x00992780` és a `0x004ef3c0`/`0x004ef5a0` visszatérési értékét a két worker
-nem ellenőrzi; a vezérlés a következő kijelölt elemre lép. E workerágakban
+nem ellenőrzi; a vezérlés a következő kijelölt elemre lép. Ezekben a munkaszál-ágakban
 explicit hibaüzenet-küldés nem látható, de a Windows-felületen megjelenő
 pontos jelzést és a tényleges fájl/katalógus állapotot futásmérés nélkül nem
 állítom.
