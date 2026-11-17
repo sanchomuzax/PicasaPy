@@ -12,6 +12,7 @@ from picasapy.ini import (
     save_document,
     with_folder_date_override,
     with_folder_music,
+    with_folder_name,
 )
 from support.jpeg_factory import make_jpeg
 from support.varakozas import hibaturo_feltetel, var_feltetelre
@@ -74,6 +75,7 @@ def _open_properties(window, controller, folder, qt_app):
     dialog.setProperty(
         "currentMusicFile", controller.folderMusicFile(str(folder))
     )
+    dialog.setProperty("folderLocation", controller.folderLocationOf(str(folder)))
     dialog.open()
     assert _wait(
         qt_app,
@@ -107,6 +109,9 @@ def test_nev_mezo_ok_atnevezes_es_mappalista_kepek_harom_ablakmagassagon(
     music.write_bytes(b"zene")
     ini = parse_document("").with_value(
         "Picasa", "description", "Megőrzött leírás"
+    )
+    ini = with_folder_name(ini, "Elavult név").with_value(
+        "Picasa", "location", "Vízpart"
     )
     ini = with_folder_date_override(ini, "2024-02-03")
     ini = with_folder_music(ini, True, str(music))
@@ -161,8 +166,38 @@ def test_nev_mezo_ok_atnevezes_es_mappalista_kepek_harom_ablakmagassagon(
             assert controller.folderDateOverride(str(target)) == "2024-02-03"
             assert controller.folderMusicEnabled(str(target)) is True
             assert controller.folderMusicFile(str(target)) == str(music)
+            picasa = parse_document(
+                (target / ".picasa.ini").read_text(encoding="utf-8")
+            ).section("Picasa")
+            assert picasa is not None
+            assert picasa.get("name") == new_name
+            assert picasa.get("location") == "Vízpart"
             _wait_idle(controller, qt_app)
             folder = target
+
+        # A változatlan nevű OK is javítsa a régi `name=` értéket.
+        ini_path = folder / ".picasa.ini"
+        current_document = parse_document(ini_path.read_text(encoding="utf-8"))
+        save_document(with_folder_name(current_document, "Elavult név"), ini_path)
+        dialog, name_field = _open_properties(window, controller, folder, qt_app)
+        assert name_field.property("text") == folder.name
+        _click(window, window.findChild(QObject, "folderPropertiesOkButton"))
+        assert _wait(qt_app, lambda: not dialog.property("opened"))
+        picasa = parse_document(ini_path.read_text(encoding="utf-8")).section(
+            "Picasa"
+        )
+        assert picasa is not None and picasa.get("name") == folder.name
+        assert picasa.get("location") == "Vízpart"
+
+        # A hiányzó ini-fájlt is létrehozza az OK, ha a név már változatlan.
+        ini_path.unlink()
+        dialog, _name_field = _open_properties(window, controller, folder, qt_app)
+        _click(window, window.findChild(QObject, "folderPropertiesOkButton"))
+        assert _wait(qt_app, lambda: not dialog.property("opened"))
+        picasa = parse_document(ini_path.read_text(encoding="utf-8")).section(
+            "Picasa"
+        )
+        assert picasa is not None and picasa.get("name") == folder.name
     finally:
         window.resize(window.width(), original_height)
 
@@ -179,6 +214,9 @@ def test_lefoglalt_celnel_kattintasra_hiba_latszik_es_semmi_nem_valtozik(
     make_jpeg(folder / "source.jpg")
     make_jpeg(target / "target.jpg")
     (target / "sentinel.txt").write_text("marad", encoding="utf-8")
+    source_ini = folder / ".picasa.ini"
+    source_ini.write_text("[Picasa]\nname=Elavult név\n", encoding="utf-8")
+    source_ini_before = source_ini.read_bytes()
     with open_index(tmp_path / "index.db") as conn:
         sync_tree(conn, library)
     controller._reload(preserve_scroll=True)
@@ -218,6 +256,7 @@ def test_lefoglalt_celnel_kattintasra_hiba_latszik_es_semmi_nem_valtozik(
             assert dialog.property("opened") is True
             assert folder.is_dir() and target.is_dir()
             assert (folder / "source.jpg").exists()
+            assert source_ini.read_bytes() == source_ini_before
             assert (target / "sentinel.txt").read_text(encoding="utf-8") == "marad"
             assert str(folder) in _folder_paths(controller)
             assert str(target) in _folder_paths(controller)

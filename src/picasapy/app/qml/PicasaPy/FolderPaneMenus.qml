@@ -477,6 +477,12 @@ Item {
                 return null
             return controller.renameFolder(path, name)
         }
+        folderNameHandler: function(path) {
+            if (typeof controller === "undefined" || !controller
+                    || typeof controller.setFolderNameOf !== "function")
+                return false
+            return controller.setFolderNameOf(path)
+        }
         folderLocationHandler: function(path, location) {
             if (typeof controller === "undefined" || !controller
                     || typeof controller.setFolderLocationOf !== "function")

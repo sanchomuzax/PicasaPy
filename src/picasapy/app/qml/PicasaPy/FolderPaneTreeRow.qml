@@ -323,6 +323,18 @@ Rectangle {
             }
             folderPane.folderChosen(path)
         }
+        // #7151: az eredeti `0x00765d30` az `lb_predouble` eseményre az
+        // almappa nélküli (5-ös rekordtípusú) mappasoron a Folder
+        // Properties útját indítja (`0x006db580`). A lapos listán nincs
+        // almappa-szint, tehát minden mappasor ilyen. Mentés-szűrő módban
+        // a sor pipa, ott nincs ablak; a fejlécek (év, rejtett) nem mappák.
+        onDoubleClicked: function(mouse) {
+            if (kind !== "folder" || mouse.button !== Qt.LeftButton)
+                return
+            if (folderPane.mentesSzuroAktiv)
+                return
+            folderPane.openFolderDescription(path)
+        }
 
         PressFeedbackOverlay { pressSource: parent }
     }
