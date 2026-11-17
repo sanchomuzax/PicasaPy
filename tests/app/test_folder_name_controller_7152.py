@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+
+import pytest
 from PySide6.QtCore import QObject
 
 from picasapy.ini import IniSaveError
@@ -56,6 +59,7 @@ def test_hianyzo_ini_eseten_letrehozza_a_nev_sort(tmp_path):
     assert "name=Új mappa" in (folder / ".picasa.ini").read_text(encoding="utf-8")
 
 
+@pytest.mark.skipif(os.name != "posix", reason="a chmod-os írásvédelem csak POSIX-on érvényes (#1864)")
 def test_mar_egyezo_nevnel_nincs_iras_es_irasvedett_fajlon_sincs_hiba(
     tmp_path, monkeypatch
 ):
