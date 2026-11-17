@@ -709,16 +709,19 @@ MenuBar {
         onActivated: bar.addFileRequested()
     }
     // #1616: a Fájl-menü felirata Ctrl+N-et hirdet — ugyanaz a hibaosztály,
-    // mint a Ctrl+M/Ctrl+O volt. A kijelölés-függés (`photoActionsEnabled`)
-    // itt SZÁNDÉKOS, eltérően a Ctrl+M/Ctrl+O-tól: a `createAlbum` üres
-    // kijelölésnél nem hoz létre semmit (üres tokent ad vissza), tehát a
-    // billentyűnek sincs mit csinálnia — ugyanaz a feltétel, mint a
-    // menütételen.
+    // mint a Ctrl+M/Ctrl+O volt. A #7164 óta a Fájl ▸ New Album... a
+    // kijelöléstől függetlenül ÜRES albumot készít, a #7180 óta pedig a tétel
+    // és a billentyű kijelölés nélkül is él (az eredeti `0x0056e1c0`
+    // állapotfrissítő a `0x9d67` parancsot nem szürkíti, a `0x005eb810`
+    // kezelő nem vizsgál kijelölést), tehát a kijelöléstől független
+    // Ctrl+M/Ctrl+O-hoz hasonlóan nincs `photoActionsEnabled` feltétele. A
+    // szövegmező-fókusz melletti tiltás marad: szövegmezőben a `Ctrl+N` nem
+    // nyit ablakot.
     Shortcut {
         id: shortcutNewAlbum
         objectName: "shortcutNewAlbum"
         sequence: "Ctrl+N"
-        enabled: bar.photoActionsEnabled && !bar.textEntryHasFocus
+        enabled: !bar.textEntryHasFocus
         onActivated: bar.newAlbumRequested()
     }
 
