@@ -68,8 +68,11 @@ Item {
     // #457/2: a köteg indítása — előbb MEGNÉZZÜK, van-e névütközés, és csak
     // akkor kérdezünk (az eredeti sem kérdezett fölöslegesen); ütközés nélkül
     // az „átnevezés" ág fut, de az ott nem nevez át semmit.
-    function startBatch(operation, paths, dest, paste) {
-        dialogs.pasteBatchActive = paste === true
+    function startBatch(operation, paths, dest) {
+        dialogs.pasteBatchActive = false
+        _startBatch(operation, paths, dest)
+    }
+    function _startBatch(operation, paths, dest) {
         if (fileOpsController.conflictCountFor(paths, dest) > 0)
             duplicateNamesDialog.openFor(operation, paths, dest)
         else
@@ -81,7 +84,8 @@ Item {
         pasteConfirmDialog.openFor(paths, dest, operation)
     }
     function startPasteBatch(operation, paths, dest) {
-        startBatch(operation, paths, dest, true)
+        dialogs.pasteBatchActive = true
+        _startBatch(operation, paths, dest)
     }
     function runBatch(operation, paths, dest, policy) {
         if (dialogs.pasteBatchActive) {

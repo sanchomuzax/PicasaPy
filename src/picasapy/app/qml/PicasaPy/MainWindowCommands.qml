@@ -377,9 +377,8 @@ Item {
             hostWindow.errorBannerText.text = qsTr("A Folder or Album must be selected to do this.")
             return
         }
-        if (fileOpsController.pasteFilesFromClipboard(
-                hostController.currentFolder,
-                hostController.viewModeName === "folder"))
+        var mappaNezet = hostController.viewModeName === "folder"
+        if (fileOpsController.pasteFilesFromClipboard(hostController.currentFolder, mappaNezet))
             return
         hostWindow.errorBanner.notice = true
         hostWindow.errorBannerText.text = qsTr("There are no files on the clipboard to paste.")
