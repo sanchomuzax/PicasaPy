@@ -157,11 +157,11 @@ def test_file_menu_new_album_kijelolt_kepek_mellett_is_ures_albumot_hoz_letre(
     ), "az új üres album nem jelent meg a bal hasábban"
 
 
-def test_file_menu_new_album_tetel_engedelyezese_valtozatlan(
+def test_file_menu_new_album_tetel_kijelolestol_fuggetlenul_engedelyezett(
     qml_app, qt_app
 ):
-    """#7164 nem szabad: a tétel a képkijelöléshez kötve marad (`photoActionsEnabled`),
-    mert az eredeti állapota üres kijelölésnél nincs megmérve."""
+    """#7180: a tétel kijelölés nélkül is él (az eredeti `0x0056e1c0` a `0x9d67`
+    azonosítót sehol nem szürkíti), kijelöléssel is."""
     window, controller, _engine = qml_app
     assert _varj(qt_app, lambda: controller.photos.rowCount() == 2)
     window.setProperty("selectedIndexes", [])
@@ -169,10 +169,10 @@ def test_file_menu_new_album_tetel_engedelyezese_valtozatlan(
     qt_app.processEvents()
     megnyit_fomenu(window, qt_app, "&File")
     tetel = _elem(window, "menuFileNewAlbum")
-    assert tetel.property("enabled") is False, "kijelölés nélkül élő lett a tétel"
+    assert tetel.property("enabled") is True, "kijelölés nélkül szürke a tétel"
 
     _kijelol_ket_kept(window, qt_app, controller)
-    assert tetel.property("enabled") is True, "kijelöléssel szürke maradt a tétel"
+    assert tetel.property("enabled") is True, "kijelöléssel szürke lett a tétel"
 
 
 @pytest.mark.parametrize("height_offset", [-5, 0, 5])

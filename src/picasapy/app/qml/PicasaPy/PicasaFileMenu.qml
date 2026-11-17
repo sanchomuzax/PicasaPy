@@ -9,13 +9,14 @@ PicasaMenu {
     // #1616: a tétel `PicasaMenuItem { placeholder: true }` volt, az #416
     // óta. A Ctrl+M/Ctrl+O mintáját követjük: a Fájl-menü tétele és a Ctrl+N
     // UGYANAZT a dialógust nyitja (`openNewAlbum`, FileOpsDialogs.qml).
-    // #7164: ÜRES albumot készít, a kijelölt képeket nem adja át. A tétel
-    // engedélyezése a `photoActionsEnabled`-hez kötve marad, mert az eredeti
-    // állapota üres kijelölésnél nincs megmérve.
+    // #7164: ÜRES albumot készít, a kijelölt képeket nem adja át.
+    // #7180: a tétel kijelölés nélkül is engedélyezett, ezért nincs `enabled`
+    // feltétele: az eredeti Fájl-menü állapotfrissítője (`0x0056e1c0`) a
+    // `0x9d67` (New Album...) azonosítót sehol nem szürkíti, és a `0x005eb810`
+    // kezelő nem vizsgál kijelölést.
     MenuItem {
         objectName: "menuFileNewAlbum"
         text: qsTr("&New Album...") + "\tCtrl+N"
-        enabled: bar.photoActionsEnabled
         onTriggered: bar.newAlbumRequested()
     }
     // #1774 (mérve): a mentések szerint itt csoporthatár van.
@@ -72,8 +73,9 @@ PicasaMenu {
     // tétel a #324 audit óta helyfoglaló volt, holott a parancs neve
     // ELLENÉRE nem mappa-létrehozás, hanem a kijelölt képek áthelyezése
     // (ld. a `moveToNewFolderRequested` jelzés fenti megjegyzését). A
-    // kijelölés-függés (`photoActionsEnabled`) ugyanaz a minta, mint az
-    // „Új album…"-nál (#1616): kijelölés nélkül nincs mit áthelyezni.
+    // kijelölés-függés (`photoActionsEnabled`) itt indokolt: kijelölés
+    // nélkül nincs mit áthelyezni. (Az „Új album…" a #7180 óta nem függ
+    // kijelöléstől.)
     MenuItem {
         objectName: "menuFileMoveToNewFolder"
         text: qsTr("Mo&ve to New Folder...")
