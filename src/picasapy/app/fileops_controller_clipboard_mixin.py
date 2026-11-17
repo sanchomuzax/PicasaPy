@@ -140,10 +140,27 @@ class FileOpsControllerClipboardMixin:
         else:
             self._copy_batch(paths, dest_folder, policy, stop_on_failure=True)
 
+    def _paste_into_album(self, fajlok: list[str], album_token: str) -> bool:
+        """A vágólap képei az album tagjai lesznek, fájlművelet nélkül (#7142).
+
+        Az írót a `wire_fileops` köti be (`_album_tagsag_iro`, a vezérlő
+        `addPathsToAlbum`-ja): a `.picasa.ini`-t az `ini` API-n át a
+        meglévő albumtagság-út írja. Bekötetlen íróval NEM esünk vissza a
+        fájlműveletre: albumnézetben az tilos, és a hívó az üres eredményből
+        üzenetet ad. `True`, ha volt a könyvtárban kép (a művelet elindult)."""
+        iro = getattr(self, "_album_tagsag_iro", None)
+        if iro is None:
+            return False
+        return bool(iro(fajlok, album_token))
+
     @Slot(str, result=bool)
     @Slot(str, bool, result=bool)
+    @Slot(str, bool, str, result=bool)
     def pasteFilesFromClipboard(  # noqa: N802
-        self, dest_folder: str, ordinary_folder_target: bool = True
+        self,
+        dest_folder: str,
+        ordinary_folder_target: bool = True,
+        album_token: str = "",
     ) -> bool:
         """A vágólapon lévő fájlok beillesztése a megadott mappába (#1526).
 
@@ -154,9 +171,17 @@ class FileOpsControllerClipboardMixin:
         fogd-és-vidd műveleteknél — nem külön ág, amit külön kellene őrizni.
 
         Visszatérés: elindult-e művelet. Üres vágólapra `False`, és a hívó
-        ebből tud üzenetet adni — nem néma hatástalanság."""
+        ebből tud üzenetet adni, tehát a hatástalanság nem néma.
+
+        #7142: közönséges album célnál (`album_token`) az eredeti
+        `0x00784100` kihagyja a fájlműveleti ágat: nincs megerősítő kérdés
+        és nincs másolás/áthelyezés, a képek az album tagjai lesznek, a
+        Kivágás sem töröl a forrásból (`_paste_into_album`). Ilyenkor a
+        `dest_folder` és az `ordinary_folder_target` figyelmen kívül marad."""
         _compat = _controller_module()
         fajlok, muvelet = _compat.vagolap_fajlok(self._vagolap_adata())
+        if album_token:
+            return bool(fajlok) and self._paste_into_album(fajlok, album_token)
         if not fajlok or not dest_folder:
             return False
         # ⚠️ `rename`, nem `skip` és nem felülírás: ütközésnél a beillesztés

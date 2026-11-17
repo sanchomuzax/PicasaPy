@@ -370,15 +370,15 @@ Item {
     function beillesztAVagolaprol() {
         if (typeof fileOpsController === "undefined" || !fileOpsController
                 || !hostController) return
+        var nezet = hostController.viewModeName  // #7142: album célnál nincs célhiány-üzenet, kérdés és fájlművelet
         //: #7113: `IDS_NEED_SELECTED_ALBUM` (`0x005791fb`) - fájl van a
         //: vágólapon, de nincs célmappa; az üres vágólap külön üzenet.
-        if (fileOpsController.clipboardHasFiles && !hostController.currentFolder) {
+        if (nezet !== "album" && fileOpsController.clipboardHasFiles && !hostController.currentFolder) {
             hostWindow.errorBanner.notice = true
             hostWindow.errorBannerText.text = qsTr("A Folder or Album must be selected to do this.")
             return
         }
-        var mappaNezet = hostController.viewModeName === "folder"
-        if (fileOpsController.pasteFilesFromClipboard(hostController.currentFolder, mappaNezet))
+        if (fileOpsController.pasteFilesFromClipboard(hostController.currentFolder, nezet === "folder", nezet === "album" ? hostController.currentAlbumToken : ""))
             return
         hostWindow.errorBanner.notice = true
         hostWindow.errorBannerText.text = qsTr("There are no files on the clipboard to paste.")

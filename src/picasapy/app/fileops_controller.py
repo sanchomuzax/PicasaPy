@@ -175,6 +175,8 @@ class FileOpsController(
     folderDeleteFailed = Signal(str)
 
     _vagolap_adat = None
+    #: #7142: `(fájlútvonalak, album-token) -> bool` - a `wire_fileops` köti be.
+    _album_tagsag_iro = None
 
     def __init__(self, parent=None, settings: QSettings | None = None) -> None:
         super().__init__(parent)
