@@ -9,6 +9,7 @@ QtObject {
     required property var hostController
     required property var hostPhotoViewer
     required property var hostToolbar
+    required property var hostOperationInfoDialog
 
     // #7025: a Tags lap ugyanazon az úton vált, mint a Ctrl+T, Ctrl+K és
     // a felső panelgomb. Ha már aktív, kiüríti a fiókot.
@@ -141,7 +142,11 @@ QtObject {
     function kotegEffekt(nev) {
         if (!hostController) return
         var sorok = hostWindow.selectedRows()
-        if (sorok.length === 0) return
+        if (sorok.length === 0) {
+            hostOperationInfoDialog.showOperationInfo(
+                qsTr("This operation requires selected images."))
+            return
+        }
         hostController.applyEffectMany(sorok, nev)
     }
 

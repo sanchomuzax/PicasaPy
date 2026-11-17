@@ -283,6 +283,7 @@ ApplicationWindow {
         hostController: typeof controller !== "undefined" ? controller : null
         hostPhotoViewer: photoViewer
         hostToolbar: toolbar
+        hostOperationInfoDialog: mainWindowPeripheralLayers.exportDialogStack
     }
     function valtsFiokLapot(nev) { mainWindowLibraryActions.valtsFiokLapot(nev) }
     function ureseidAFiokot() { mainWindowLibraryActions.ureseidAFiokot() }

@@ -9577,6 +9577,15 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
         </message>
     </context>
     <context>
+        <name>MainWindowLibraryActions</name>
+        <message>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_NEEDS_SELECTION</extracomment>
+            <source>This operation requires selected images.</source>
+            <translation>Tato operace vyžaduje vybrané fotky.</translation>
+        </message>
+    </context>
+    <context>
         <name>MainWindowDialogStack</name>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="0" />

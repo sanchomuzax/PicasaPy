@@ -158,24 +158,37 @@ class TestRacsGyorsbillentyu:
 
 class TestUresKijeloles:
     @pytest.mark.parametrize("shift", [False, True])
+    @pytest.mark.parametrize("magassag_eltolas", [-5, 0, 5])
     def test_ures_kijelolesnel_a_HIVATALOS_uzenet_jelenik_meg(
-        self, forgatas_app, qt_app, shift
+        self, forgatas_app, qt_app, shift, magassag_eltolas
     ):
         window, controller, _engine = forgatas_app
         _keszitsd_elo(window, controller, qt_app)
+        cel = int(window.height()) + magassag_eltolas
+        window.setHeight(cel)
+        assert _varj(qt_app, lambda: int(window.height()) == cel), (
+            f"a főablak magassága nem állt be {cel} px-re"
+        )
         _kijelol(window, qt_app, [])
-        sav = _objektum(window, "picasaNotifier")
-        assert sav.property("cellCount") == 0
+        dialog = _objektum(window, "operationInfoDialog")
+        assert dialog.property("visible") is False
         jelzesek: list[int] = []
         controller.rotationNeedsSelection.connect(lambda: jelzesek.append(1))
 
         _billentyu(window, shift=shift)
 
-        assert _varj(qt_app, lambda: sav.property("cellCount") == 1), (
-            "üres kijelölésnél a forgatás billentyűje némán visszatért"
+        assert _varj(qt_app, lambda: dialog.property("visible") is True), (
+            "üres kijelölésnél nem jelent meg a modális Info ablak"
         )
         assert jelzesek == [1]
-        assert sav.property("lastTitle") == _HIVATALOS_UZENET
+        assert dialog.property("modal") is True
+        assert dialog.property("title") == "Info"
+        assert _objektum(window, "operationInfoText").property("text") == _HIVATALOS_UZENET
+        ok_gomb = _objektum(window, "operationInfoOkButton")
+        assert isinstance(ok_gomb, QQuickItem)
+        assert ok_gomb.property("text") == "OK"
+        _kattint(window, ok_gomb, qt_app)
+        assert _varj(qt_app, lambda: dialog.property("visible") is False)
         assert _lepesek(controller)[:3] == [0, 0, 0]
 
 

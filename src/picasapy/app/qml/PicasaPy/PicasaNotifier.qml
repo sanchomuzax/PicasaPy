@@ -72,6 +72,7 @@ Window {
     //: A hívó főablaka külön `Window`; a sáv ezért megjegyzi annak utolsó
     //: használható képernyőjét, ha a főablak rejtett vagy épp méret nélküli.
     property var _hostWindow: null
+    property var hostOperationInfoDialog: null
     // Az utolsó használható képernyő MÁSOLATA (név és téglalap), nem a
     // képernyő-objektum: a Qt 6.11-ben a `Window.screen` élő objektum, amely
     // az ablakkal együtt vándorol, így eltárolva a rejtett vagy tálcára tett
@@ -429,16 +430,15 @@ Window {
         function onRotationTypeFailed(skipped) {
             if (skipped <= 0)
                 return
-            notifier.notify(
-                "rotate-failed",
-                qsTr("One or more images could not be rotated because of the file type."),
-                "", "")
+            if (hostOperationInfoDialog)
+                hostOperationInfoDialog.showOperationInfo(
+                    qsTr("One or more images could not be rotated because of the file type."))
         }
 
         function onRotationNeedsSelection() {
-            notifier.notify(
-                "rotate-noselection",
-                qsTr("Must have selected images to rotate."), "", "")
+            if (hostOperationInfoDialog)
+                hostOperationInfoDialog.showOperationInfo(
+                    qsTr("Must have selected images to rotate."))
         }
 
         //: #7090: a kötegelt effekt (Kép menü, Csoportos szerkesztés,
@@ -452,10 +452,9 @@ Window {
         function onBatchEditTypeFailed(skipped) {
             if (skipped <= 0)
                 return
-            notifier.notify(
-                "batch-edit-failed",
-                qsTr("Some images were not modified because of the file type.  Note that effects cannot be applied to movies."),
-                "", "")
+            if (hostOperationInfoDialog)
+                hostOperationInfoDialog.showOperationInfo(
+                    qsTr("Some images were not modified because of the file type.  Note that effects cannot be applied to movies."))
         }
 
         function onSaveCopyReady(saved, targetPath) {
