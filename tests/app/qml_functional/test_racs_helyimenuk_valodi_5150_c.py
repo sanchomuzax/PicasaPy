@@ -33,6 +33,7 @@ from tests.app.qml_functional._mappa_kep_menu_5150_helpers import (
 )
 from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
     album_darab,
+    _elem_ablaka,
     almenu_megnyitasa,
     egyezik,
     elokeszit_str,
@@ -363,6 +364,69 @@ class TestCimkeMenu:
             "a címkesor jobbklikkje nem nyitotta meg a címke-menüt"
         )
         return menu
+
+    def test_a_kirajzolt_menu_sorrendje_add_search_elvalaszto_remove(
+        self, cimke_app, qt_app
+    ):
+        """#7136: a megnyitott, KIRAJZOLT menü sorai fentről lefelé: Add, Search,
+        elválasztó, Remove (az eredeti `0x00735480` négy rekordja, a harmadik
+        csupa nulla = elválasztó).
+
+        Az elválasztónak látszania kell, és tényleges helyet kell foglalnia a
+        Search és a Remove sora között. ⚠️ Ez a teszt a SORREND és az elválasztó
+        jelenléte a rajzolt fában, nem képpontos egyezés: a vizuális egyezést
+        eredeti képernyőkép híján nem méri (a jegy ezt kimondja)."""
+        window, controller, _motor = cimke_app
+        elokeszit_str(window, qt_app, controller)
+        self._cimke_panel(window, qt_app)
+        menu = self._cimke_menu(window, qt_app)
+
+        def sor(nev):
+            elem = keres_vizualis_mindenablakban(window, nev)
+            assert elem is not None, f"{nev} nem látszik a megnyitott menüben"
+            return elem
+
+        add, keres, elvalaszto, eltavolit = (
+            sor("tagMenuAddToSelection"),
+            sor("tagMenuFindTagged"),
+            sor("tagMenuSeparator"),
+            sor("tagMenuRemove"),
+        )
+        # mind egy ablakban, ugyanabban a függőleges oszlopban rajzolódnak
+        ablakok = {
+            id(_elem_ablaka(window, elem)) for elem in (add, keres, elvalaszto, eltavolit)
+        }
+        assert len(ablakok) == 1, "a menü sorai nem ugyanabban az ablakban rajzolódnak"
+        felso = [
+            elem.mapToScene(QPointF(0, 0)).y() for elem in (add, keres, elvalaszto, eltavolit)
+        ]
+        assert felso == sorted(felso) and len(set(felso)) == 4, (
+            f"a sorok függőleges sorrendje nem Add, Search, elválasztó, Remove: {felso}"
+        )
+        assert elvalaszto.height() > 0 and elvalaszto.width() > 0, (
+            "az elválasztó nulla méretű, nem látszik"
+        )
+        # az elválasztó a Search alja és a Remove teteje KÖZÖTT áll, nem fedi egyiket sem
+        assert felso[2] >= felso[1] + keres.height() - 0.5, "az elválasztó belelóg a Search sorába"
+        assert felso[3] >= felso[2] + elvalaszto.height() - 0.5, (
+            "az elválasztó belelóg a Remove sorába"
+        )
+        assert menu.property("visible") is True
+
+        # a KIRAJZOLT képen az elválasztó sávjában van a háttértől eltérő vonal
+        ablak = _elem_ablaka(window, elvalaszto)
+        kep = ablak.grabWindow()
+        bal = elvalaszto.mapToScene(QPointF(0, 0))
+        x = int((bal.x() + elvalaszto.width() / 2) * kep.devicePixelRatio())
+        fenti = int((bal.y() - 1) * kep.devicePixelRatio())
+        sav = range(
+            int(bal.y() * kep.devicePixelRatio()),
+            int((bal.y() + elvalaszto.height()) * kep.devicePixelRatio()),
+        )
+        hatter = kep.pixelColor(x, fenti)
+        assert any(kep.pixelColor(x, y) != hatter for y in sav), (
+            "az elválasztó sávjában nincs kirajzolt vonal (minden képpont a háttér színe)"
+        )
 
     def test_a_rateteles_a_kijelolesre_valodi_kattintassal(self, cimke_app, qt_app):
         window, controller, _motor = cimke_app
