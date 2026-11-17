@@ -350,6 +350,159 @@ recent-szűrés sorrendjének eltérése már bizonyított, ezért az Autofill-j
 marad. A per-elemes virtuális cél statikus értelmezése a méréshez nem külön
 blokkoló; ezért most nem kérek új Ghidra-kört.
 
+### Zárókör 2 (2026-11-17): a megmaradt NINCS MEG és Ghidra-kör kell tételek eldöntése
+
+Ez a kör az előző zárókör (2026-11-16) maradék tételeit döntötte el. A korábbi szakaszok érintetlenek, a helyesbítések itt vannak. Forrás: utasításszintű olvasás a `Picasa3.exe`-ből (SHA-256 fent), a bináris-index hívó- és sztringadatai, a teljes binárison futtatott offszetkeresés (`eszkozok/binaris/tagkereso.py`), a PE importtábla bejárása a `call [0x00c4....]` címek feloldásához, és a `referencia/ghidra/2026-10-21-autocomplete.txt` korábbi dekompilálása. Futásidejű Picasa-mérés nincs. A „Nálunk” állítások a munkafa mostani forrásán ellenőrzöttek. Fokok: **megerősített** = két független út, **erős** = egy út, egyértelmű utasításokkal, **feltételes** = következtetés.
+
+#### A. Eldöntve a meglévő bizonyítékból
+
+**A1. Az Autofill jelöltlistáját csak a Tags-panel inicializálója tölti, a címkézés nem frissíti (megerősített); az inicializáló egyszeri futása erős.** Ez lezárja a `0x00639c00`, a `0x006393b0` („mikor töltődik”) és a „a panel `+0x2c0` listájának írója” sort.
+
+- A `0x00639c00` a panel inicializálója (gyerekelemeket is létrehoz, ezért az ismételt futása kettőzött elemeket adna, vagyis valószínűleg egyszeri; a hívója vtábla-hívás, az index nem látja): betölti az `i18n\tagpanel_text.xml` fájlt (`0x00639c25`), a `quicktags::enable_recents` értéket a panel `+0x350` jelzőjébe olvassa (`0x00639c36-0x00639c62`), a könyvtár címkekészletét a `0x00437380(könyvtár, &panel+0x2c0)` hívással tölti (`0x00639c7b-0x00639c83`), rögzített színeket és méreteket állít (`0x00639cc5-0x00639d4b`), létrehozza a `%s/taglist` és `%s/removetag` gyerekelemeket (`0x00639d8b`, `0x00639e22`), végül a `0x0063ae00`, `0x0063b5a0`, `0x0063c7d0` függvényt hívja (`0x00639df7`, `0x00639dfd`, `0x00639eb4`).
+- Első út: a teljes binárison futtatott offszetkeresés a `[reg+0x2c0]` és `[reg+0x2c4]` hivatkozásokra a Tags-panel tartományában csak a konstruktort (`0x00639440`, nullázás `0x006394a5`, `0x006394ab`), a destruktort (`0x00639510`), az inicializálót (`0x00639c7b`) és az olvasó `0x0063d260`-at (`0x0063d2aa`, `0x0063d2c0`) találta. Második út: az index szerint a `0x00437380` egyetlen hívója a `0x00639c00` (`0x00639c83`), és a `0x00639c00`-nak nincs közvetlen hívója (a `TagPanel::vftable` tagja).
+- A hozzáadás és a törlés utáni frissítő (`0x0065ac80`, `CThumbUI::UpdateKeywordStatus`) a `rightdrawerpanel/tagpanel` csomópontnak csak `selection_changed` eseményt küld (`0x0065acb1-0x0065acfb`). A `0x0063a5e0` erre csak a kijelölés címkelistáját építő `0x0063ae00`-at hívja (`2026-10-21-autocomplete.txt:131-440`), a `+0x2c0` listát nem.
+- Következmény: egy munkamenetben újonnan felvett címke nem jelölt az Autofill számára, amíg az inicializáló újra nem fut (valószínűleg a panel újralétrehozásáig). **Nálunk:** `keywords_controller.py:453-460` (`beginQuickTagAutofill`) minden ablaknyitáskor friss jelöltlistát épít az indexből (`:420-442`). Az eltérés csak a munkamenet közben felvett új címkénél látszik; a panel létrehozásának idejét a B1 mérés dönti el, ezért erre jegytörzs egyelőre nincs.
+
+**A2. A `+0x34a4` nem a néző állapota, hanem felugró menü számláló (megerősített; helyesbíti a 2026-11-16-i „ha a `+0x34a4` a nézőt jelöli” feltevést).**
+
+- A `0x005e2000` a `0x005e2637`-en eggyel növeli a főablak `+0x34a4` mezőjét, a `0x005e264e`-en a `[0x00c407c4]` importot hívja (a PE importtábla bejárása szerint ez a USER32 `TrackPopupMenu`), a `0x005e2659`-en eggyel csökkenti. Ugyanez a minta a `0x005e26a0`-ban (`0x005e2e69`, `0x005e2e83`, `0x005e2e90`). A konstruktor (`0x005643e0`) nullázza (`0x00564c6e`).
+- A `0x0057c430(4)` őr tehát csak felugró menü futása közben lehet igaz, amikor billentyű úgysem érkezik. A Ctrl+K és Ctrl+T nézőbeli elérhetőségét **nem** ez az őr dönti el. A `0x0056c420` és a `0x0056c110` őr az Import- és a Nyomtatás-panel állapota (korábban megválaszolt), a `+0x30d4` 2, 4, 6 módkódja szerkesztőeszköz-állapot (a `0x005f8d80` jóváhagyó kapu kérdező ágai, `ui-audit-editor.md:2450`). A maradék kérdés („szerkesztő nézetben, eszköz nélkül működik-e a Ctrl+K”) a B3 mérésé. Nem blokkoló.
+
+**A3. A hozzáadás és a törlés lánca (erős; a követett láncra érvényes).**
+
+- **Törlés** (`0x0063c5a0` → `IKeywordUpdate +8` = `0x0065b3b0`): minden kijelölt elemre és a törlendő címkére meghívja az elem tárolójának `+0x60` tagját (elem, címke), majd elemenként a `+0x64` tagot (elem, 1) (`0x0065b405-0x0065b46d`), a visszatérési értékeket eldobja, végül frissít (`0x0065b48d`). Nincs megerősítés, nincs küszöb, nincs hibaüzenet. Vegyes kijelölésnél tehát minden kijelölt képre lefut; a címke nélküli képen a `+0x60` belseje dönt, de felületi hatása nincs. **Nálunk:** `removeKeywordFromRows` a kijelölt sorokon megerősítés nélkül dolgozik (`keywords_controller.py:193-202`, `MainRightDrawer.qml:93-95`): egyezik.
+- **Hozzáadás** (egy token, `0x0063bed0`): előbb `IKeywordUpdate +4` = `0x0065b160` (a 30 fölötti megerősítés, `0x0063c036`); ha a felhasználó nemet mond, a függvény a Legutóbbiak frissítése ELŐTT visszatér. Utána, ha a panel `+0x350` jelzője be van kapcsolva, a `0x0063c120` frissíti a Legutóbbiakat (`0x0063c085`), végül `IKeywordUpdate +0x14` = `0x0065b4b0` (`0x0063c0d9`) hajtja végre a hozzáadást: kijelölés-gyűjtő (`0x005c76b0`), majd `+0x10` = `0x0065b590`, amely üres listánál hatás nélkül 0-t ad (`0x0065b59c-0x0065b5a8`), különben a `0x004d9aa0` a címkét egy név szerinti, `__stricmp`-pel (kis- és nagybetűre érzéketlenül, `0x004d9b65`) kereső táblába szúrja az elemekkel, értesíti a figyelőket (`0x004d9eba` → `0x004db8f0`: verziószámláló, piszkos jelző, figyelők hívása), majd frissít (`0x0065b644`). **Nálunk:** a megerősítés a hozzáadás útján van (`MainRightDrawer.qml:83-92`, `MainLibrarySelectionState.qml:184-191`), a Legutóbbiak a megerősítés UTÁN frissülnek (`keywords_controller.py:177-190`): egyezik. A névegyeztetés nálunk Unicode `casefold` (`:185-188`, `:199-200`), a panel listája pedig csak az ASCII betűket hajtja kisbetűre (`:60-62`); nem ASCII betűk (`Ä` és `ä`) kis- és nagybetű-változatánál az eredeti `__stricmp` viselkedése mérés nélkül nem ismert (B2).
+- **A „részleges hiba” üzenet kiváltója.** A `0x0063bb30` a `0x0063bed0` nem nulla és nem `0xf4242` (Mégse) értékét hibaként számolja (`0x0063bc9e-0x0063bca9`), és ha van hiba, kiírja a `Some of the text you entered could not be added as a tag.` szöveget (`0x0063bd90-0x0063bdb4`). A láncban a `0x004d9aa0` csak akkor ad nem nulla értéket, ha a tábla vagy a bejegyzés nem hozható létre (`or eax, -1`: `0x004d9d2e`, `0x004d9d4e`, `0x004d9d65`), vagy ha az elemtömb tömörítése memóriahiba miatt elbukik (`0x004d9be7` → `0x0074cf40`, `0x0074cf7d`: 4). Tartalmi elutasítás (tiltott karakter, létező címke) nincs. A túl hosszú token nem hibás, hanem levágott (A4). Az üzenet tehát hétköznapi bevitelnél gyakorlatilag nem jelenik meg. **Nálunk:** a figyelmeztetés a lemezírási hibát jelzi (`MainRightDrawer.qml:90-91`, `keywords_controller.py:268-273`); ez tudatos eltérés, nem blokkoló.
+
+**A4. A bevitel tokenizálása (megerősített).** A bontó (`0x009881d0`) az üres tokent kihagyja: a határoló ismétlődéseit átugorja (`0x00988230-0x00988237`), az üres szakaszra újraindul (`0x00988272-0x00988274`), tehát `a,,b` és a záró vessző nem hoz létre üres címkét. Minden token legfeljebb `0x80` (128) bájt (`0x0063bbdc-0x0063bbe1`: a harmadik argumentum; `0x0098828c-0x00988290`: a hossz a korlátra vágva). Utána minden tokent szóközlevág (`0x009869a0`), a belső szóközsorokat egyre szűkíti (második bontás szóközön, `0x0063bc5f-0x0063bc60`, összefűzés `0x0063bc71`). **Nálunk:** `TagsPanel.qml:52-63` vessző mentén bont és kihagyja az üreseket; `_clean_keyword` (`keywords_controller.py:65-68`) a szóközöket egyre szűkíti. Az egyetlen eltérés a 128 bájtos levágás, amelyet **nem** másolunk: egy többbájtos UTF-8 karaktert félbevághatna, és csak 128 bájtnál hosszabb címkénél látszana. Tudatos eltérés (zárókör döntése, 2026-11-17), nem blokkoló.
+
+**A5. Írásvédettség, videó, visszavonás, lemezíró (erős a követett láncra; a lemezen látható végállapot a B2 mérésé).**
+
+- **Íráskapu a panelben nincs a láncban.** A `keywords/readonly_file` és `keywords/readonly_label` sztringnek az index szerint egyetlen használója a `0x00840b80` (a `Keywords (%d pictures)` ablak állapotfrissítője). Ezt a `0x0065ac80` csak akkor hívja, ha a főablak `+0xed0` mezője nem nulla (`0x0065ad02`, `0x0065b07c`, `0x0065b0ad`); ezt a mezőt a teljes binárison egyetlen utasítás írja, a konstruktor nullázása (`0x00564d8c`; `add` vagy `lea` alakú hivatkozás nincs). A `Keywords (%d pictures)` ablak és az írásvédett felirata így a vizsgált binárisban elérhetetlen kód. Az „írásvédett” állapotot kiszámító `IKeywordUpdate +0xc` (`0x0065b310` → `0x0047d1b0`) útvonal-alapú, nem fájlattribútum-vizsgálat (nem hív Win32 függvényt). A panel `0x0063bb30`, `0x0063bed0`, `0x0063a5e0`, `0x0063c5a0` függvényében írásvédettségi kapu nincs. **Nálunk:** a panel előre szól és tiltja a bevitelt, ha a kijelölésben van írásvédett elem (`keywords_controller.py:138-170`, `TagsPanel.qml` `readOnlySelection`, #2998), mappaszintű próbaírással. Az eredeti panel tehát a követett lánc szerint nem tilt; hogy az írásvédett fájlon mi történik (némán elmarad, vagy a háttéríró jelez), a B2 mérés kérdése. A mai viselkedést addig nem bontjuk vissza.
+- **A lemezíró aszinkron.** A `0x00415790` konstruktorú objektum (amelyhez az adatbázis-mentő `0x0041ba40` tartozik) `+0x2aa0` tagja a `FileTagger`, a `ytAsyncQueue<KeywordJob>` leszármazottja (vtábla `0x00c82938`; `0x00415d00-0x00415d0d` hívja a `0x00496c40` alapkonstruktort). A címkék fájlba írása tehát feladatsoron át, háttérben történik. A mentéskor a `0x0041ba40` a sort kiüríti (`0x0041bb3e`), a `0x00455e30` időkorláttal figyeli (`0x00455e4c`: `add edi, 0x2aa0`). A felületi frissítés (a táblába szúrás és a figyelők értesítése) azonnali, a fájl később íródik. A feladat konkrét végrehajtója (IPTC, XMP, `.picasa.ini`, formátumonként) statikusan nem azonosított, és a bájtszintű végállapot mérés nélkül sem eldönthető: B2.
+- **Videó:** a hozzáadási láncban (`0x0065b590`, `0x004d9aa0`) típusszűrő nincs; a tárolás helye formátumonként a B2 mérésé.
+- **Visszavonás:** a követett láncban (`0x0063bb30`, `0x0063bed0`, `0x0065b3b0`, `0x0065b4b0`, `0x0065b590`) visszavonási bejegyzés nincs; a `[0x00d6793c]` számláló a kurzorállapotot kezeli (`SetCursor`, `0x0065b518-0x0065b525`). Nálunk sincs címkézési visszavonás. Nem blokkoló.
+
+**A6. Új, bizonyított eltérések a felületen.**
+
+- **Üres gyorscímke-hely (megerősített).** A `0x0063a5e0` `quicktag_%d` ága a megjelenített értéket a `]empty` sztringgel veti össze (`0x0063a959-0x0063a967`, `0x0063a998`); egyezésnél a `0x0063a99a` a `0x0063a9da`-ra ugrik, amely a `0x0063d840`-et hívja, nem egyezésnél a `0x0063bed0`-et. A `0x0063d840` a `quicktagconfig` erőforrásból a „Configure Quick Tags” ablakot építi (`0x0063d8c2`, `0x0063d8db`). Második út: a `2026-10-21-autocomplete.txt` dekompilálása ugyanezt adja (`FUN_0063d840()` a `]empty` összevetés után). Az üres hely buboréksúgója `TagPanel::emptytip` („Click to configure quick tags”, `picasa-beviteli-mezok.md:227`). Az üres gyorscímkére kattintás tehát a konfigurációs ablakot nyitja, nem a „nincs beírt szöveg” súgót. Ez **helyesbíti** a #4271 olvasatát. **Nálunk:** `TagsPanel.qml:323-325` az üres helyre `tagNoTextDialog.open()`-t hív; a tesztek ezt rögzítik: `tests/app/qml_functional/test_cimke_panel_4271.py:250-256`, `tests/app/test_qml_quicktags.py:63-80`.
+- **Üres szöveg Entere (erős; maga az üzenet korábbról megerősített).** Az Enter (`editselected`) a `0x0063acd0`-n át a `0x0063bb30(panel, 0)`-t hívja (`0x0063ad76`); üres vagy szóközös szövegnél `TagPanel::notify_notext` modális üzenet jelenik meg (`0x0063bb85-0x0063bbd9`), és semmi nem íródik. **Nálunk:** `TagsPanel.qml:52-56` (`submit`) üres szövegnél csendben visszatér, a `+` gomb üres szövegnél tiltott (`:100`), a súgóablak (`tagNoTextDialog`, `:382-399`) csak az üres gyorscímkéről nyílik. A `+` gomb eredeti tiltott vagy engedélyezett állapota üres szövegnél nem eldöntött (B3).
+- **Helyi menü elválasztója (erős).** A `0x00735480` négy rekordot ad át a `0x00a6aee0` tételépítőnek (`push 4`, `0x0073559a`): Add (`0xa0b8`), Search (`0xa0b7`), egy csupa nulla rekord (`0x00d6f868`), Remove (`0xa0b9`). A `0x00a6aee0` a nulla feliratmutatójú rekordot `0xffff` azonosítóval elválasztóként építi (`0x00a6af04-0x00a6af20`), ugyanígy, ahogy a Szerkesztés menü csupa nulla rekordjai elválasztók (`picasa-menusor-csoportok.md:75`). A Remove tétel előtt tehát elválasztó áll. **Nálunk:** `TagContextMenu.qml:27-41` három tétel, elválasztó nélkül. A menü vizuális egyezését eredeti képernyőkép híján nem mértük.
+- **Mégse és a Legutóbbiak jelölőnégyzet (erős, mérésre vár).** A párbeszéd kattintáskezelője (`0x0083f210`) a Mégse ágon csak a `[ablak+0xd5c]` jelzőt állítja és bezár (`0x0083f24e-0x0083f266`); a jelölőnégyzet ága azonnal kiírja a `Preferences\quicktags::enable_recents` értéket (`0x0083f289-0x0083f2ae` → `0x0083f2f0`, `0x0083f375-0x0083f3a6`). Visszaállító írás nincs. **Nálunk:** `QuickTagsConfigDialog.qml:79-83` a Mégse a kapcsolót is visszaállítja. A viselkedés megfordítása működő funkciót érint, ezért a jegytörzs a B4 mérés után készül (a 2026-11-16-i „lehetséges eltérés” így erősre emelkedik).
+- **Letiltott Autofill gomb (erős).** A `+0x20e` a vezérlők általános „tiltott” jelzője: a `0x009cd7e0` állítja és újrafestést kér (`or [node+8], 2`), a görgetősáv találatvizsgálata kihagyja, ha be van állítva (`0x009cf56d`). A `0x0083ea00` ezt állítja be az Autofill gombon, ha nincs jelölt, tehát a gomb letiltott, nem rejtett. **Nálunk:** `QuickTagsConfigDialog.qml:167` ugyanígy tiltja: egyezik.
+
+**A7. A 30 fölötti megerősítés hatóköre (megerősített).** Az `IKeywordUpdate +4` (`0x0065b160`) egyetlen hívója a hozzáadás útja (`0x0063c036`); ez a gépelt hozzáadásnál tokenenként, a gyorscímkénél és a helyi menü „Add this tag to entire selection” tételénél egyaránt lefut. A törlésnél (A3) nincs. A gépelt bevitelnél a `0x0063bb30` ciklusa minden tokenre külön hívja a `0x0063bed0`-et (`0x0063bc99`), tehát tokenenként külön megerősítés jön; a Mégse (`0xf4242`) az adott tokent hagyja ki, a többit nem érinti (`0x0063bca2-0x0063bcae`). **Nálunk:** a kérdés helye és a törlés egyezik (`MainRightDrawer.qml:86-88`, `MainLibrarySelectionState.qml:184-191`; a törlés nem kér megerősítést), a tokenenkénti sorrend viszont **hibás**: a `submit()` ciklusa (`TagsPanel.qml:57-62`) egymás után hívja az `addRequested`-et, a 30 fölötti ág pedig a függő megerősítés `askFor`-ját hívja újra (`MainRightDrawer.qml:87`, `MainDialogs.qml:70-80`), amely felülírja a sorokat és a címkét. `tag1, tag2` bevitelnél 31 vagy több kijelölt képen így egyetlen kérdés jön, és csak az utolsó token (`tag2`) kerül fel; az első néma módon elvész. Új hiba, lásd az 5. jegytörzset.
+
+#### Az eddig nyitott tételek eldöntése (14 tétel)
+
+| Régi tétel | Döntés | Hol |
+|---|---|---|
+| `Ghidra-kör kell: 0x006a5060` és szomszédai (jelöltsorrend) | (b) mérés | B1. A Ghidra 425 válasza nem erre szólt; a sorrend a kulcsszó-tároló feltöltési sorrendje, ami a futó könyvtárhoz kötött |
+| `Ghidra-kör kell: 0x006393b0` (két előfordulás) | (a) lezárva | A1; a létrehozás időpontja B1 |
+| `Ghidra-kör kell: 0x00639c00` | (a) lezárva | A1 |
+| `Ghidra-kör kell: 0x0056c420` | (a) lezárva | 2026-11-16 és A2 |
+| `Ghidra-kör kell: 0x0057c3b0` (`+0x9c`, `+0x34a4`) | (a) részben lezárva, a maradék (b) mérés, nem blokkoló | A2, B3 |
+| `Ghidra-kör kell:` a panel `+0x2c0` írója (`0x00437380`, `0x004936c0`) | (a) lezárva: az író a `0x00639c00`; a készlet sorrendje (b) mérés | A1, B1 |
+| `NINCS MEG`: futásidejű sorrendmérés (két helyen) | (b) mérés | B1 |
+| `NINCS MEG`: eredeti mérés fájlkivonattal és ini-vel | (b) mérés | B2 |
+| `NINCS MEG`: kijelölés-, videó-, írásvédettségi feltétel | (a) lezárva a láncra, a látható eredmény (b) mérés | A5, B2 |
+| `NINCS MEG`: címke törlése, vegyes kijelölés | (a) lezárva | A3 |
+| `NINCS MEG`: író visszahívás és lemezvégállapot | (a) lezárva az aszinkron sorra, a bájtok (b) mérés, egy Ghidra-sor | A5, B2, lent |
+| `NINCS MEG`: címkézési mérőfutás az archívumban | (b) mérés | B1-B4 |
+| Index, keresés, rács, kijelölés végállapota | (a) az index és a keresés frissítése lezárva (azonnali tábla és `selection_changed`), a rács és a kijelölés (b) mérés | A1, A3, B2 |
+| Visszavonás, hibaág, részleges végrehajtás | (a) lezárva: nincs visszavonás, törlésnél nincs hibaág, hozzáadásnál csak belső hiba; a háttéríró hibája (b) mérés | A3, A5, B2 |
+
+#### B. Mérés dönti el (egy közös mérési jegy)
+
+A következő tételeket sem újabb Ghidra-kör, sem statikus olvasás nem dönti el: a felhasználó által látott eredmény futó adatbázis-állapottól vagy fájlbájtoktól függ. Egy mérési jegy adja őket (Colab, az angol 3.9.141 Wine alatt, a `colab_felmero.py futtat --lepesek ...` útján, izolált mintakönyvtárral). A mérés saját eszközzel elvégezhető, ezért a jegye `ready`, nem `blocked`.
+
+- **B1. Autofill sorrend és pillanatkép.** Három mappa, rövid ismert nevű képekkel és ismert beolvasási sorrenddel; olyan címkékkel, ahol a gyakoriság és az első előfordulás sorrendje eltér (`b` 5 képen az első mappában, `a` 1 képen). Tiszta indítás után Quick Tags konfiguráció, Autofill (Legutóbbiak be és ki), a tíz mező szövege rögzítendő; majd a mezők kiürítése és újabb Autofill; ezután ÚJ címke felvétele a munkamenetben, a konfiguráció újranyitása és Autofill (megjelenik-e az új címke); végül Picasa-újraindítás után megjelenik-e. Dönti: a jelöltsorrendet (`0x006a5060` és szomszédai, `0x00437380`, `0x004936c0`) és a pillanatkép idejét (`0x006393b0`).
+- **B2. Címkézés végállapota.** JPEG, PNG és videó; egy kép és több kép; hozzáadás, törlés és vegyes törlés (két kép a címkével, egy nélküle); fájl SHA-256 előtte és utána, a `.picasa.ini` előtte és utána, a JPEG IPTC és XMP blokkjai, a késleltetés (a `FileTagger` aszinkron); a rács és a kijelölés a művelet után; írásvédett fájlon (`attrib +R`) hozzáadás: a panel felirata, a bevitel tilthatósága, a fájl és az ini állapota; egy `Árvíz` és `árvíz` címkepár hozzáadása és törlése. Dönti: a lemezvégállapotot, a vegyes törlés fájlhatását, az írásvédett és a videós viselkedést, a hibaágat, a nem ASCII kis- és nagybetűs egyeztetést.
+- **B3. Ctrl+K, Ctrl+T és a Nézet > Tags engedélyezése.** Könyvtárban, szerkesztő nézetben eszköz nélkül és vágóeszközzel, teljes képernyős nézetben; a `+` gomb állapota üres szövegnél. Dönti: a nézőbeli és a szerkesztőbeli elérhetőséget (`0x0057c3b0`, `0x005e60d0`).
+- **B4. Mégse és a Legutóbbiak kapcsoló.** A kapcsoló átváltása, Mégse, újranyitás; a panel két felső gombja közben. Dönti: az A6 Mégse pontját.
+
+Egyetlen Ghidra-sor marad, nem blokkoló (a B2 bájtszintű eredményét magyarázza, nem helyettesíti):
+
+- `Ghidra-kör kell: 0x00496d80 - a FileTagger (vtábla 0x00c82938) futtató ciklusa: a 0x00496f08 call edx a KeywordJob melyik virtuális tagját hívja, és az mit ír (IPTC, XMP, .picasa.ini); kik töltik a feladatsort (a 0x0041ba40 és a 0x00455e30 csak kiüríti, illetve várja)`
+
+#### Helyesbítések a korábbi állításokhoz
+
+- A `+0x34a4` mező nem a néző állapota, hanem felugró menü számláló (A2).
+- Az üres gyorscímkére kattintás a konfigurációs ablakot nyitja, nem a „nincs beírt szöveg” súgót (A6); a #4271 olvasata és két tesztje ennek megfelelően javítandó.
+- A `keywords/readonly_label` szöveg nem a Címkék panel kapuja: az eredetiben egy elérhetetlen ablakhoz tartozik (A5); a #2998 panel-kapuja nem az eredeti másolata. Visszabontása mérés (B2) előtt nem indokolt.
+- A Mégse és a Legutóbbiak jelölőnégyzet „lehetséges eltérése” erős eltérés (A6), a jegytörzs a B4 után.
+
+### Zárási döntés (a 2026-11-17-i zárókör után)
+
+**A #7022 kutatási jegy lezárható.** Ez felülírja a 2026-11-16-i döntést, amely szerint az egyetlen blokkoló egy mérési kör. Indok: minden tétel, amelyből fejlesztői jegytörzs készíthető, a bináris utasításaiból eldőlt (A1-A7). A megmaradt tételek (B1-B4) peremesetek (sorrend nagy könyvtárnál, nézőbeli billentyű, lemezbájtok, Mégse), amelyektől az alábbi jegytörzsek egyike sem függ; ezek egy közös, felvehető mérési jegybe kerülnek. Bizonyítottsági fok: **megerősített** az Autofill-lista címkézéssel nem frissülésére, az üres gyorscímke eltérésre, a `+0x34a4` helyesbítésre és a tokenizálásra; **erős** az üres szöveg Entere eltérésre, a hozzáadás és a törlés láncára, a helyi menü elválasztójára, a letiltott Autofill gombra, az írásvédettségi kapu hiányára és a Mégse viselkedésre; **feltételes** a lemezvégállapotra (nincs mérve).
+
+Nyitott kérdések mérlege (az „Az eddig nyitott tételek eldöntése” tábla 14 sora): 0 nyílt · 5 lezárva (a 2. és a 6. sor maradéka a B1 mérés kérdése, nem külön tétel) · 9 mérési jegyre kijelölve (B1-B4, felvehető, nem blokkoló) · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”.
+
+**Készre ítélt jegytörzsek (jegy nem kell), a mai forráson ellenőrizve:**
+
+- **1. Nézet > Tags, Ctrl+K, Ctrl+T, panelgomb:** kész, `MainWindowLibraryActions.qml:15-23` (`valtsFiokLapot`), `MainKeyboardShortcuts.qml:107-114,326-336`, `MainMenuBar.qml:378` (#7025).
+- **2. Vesszős Add Tag:** kész, `TagsPanel.qml:52-63`.
+- **3. Helyi menü sorrendje (Add, Search, Remove):** kész, `TagContextMenu.qml:27-41`; az elválasztó lent, a 3. jegytörzsben.
+- **4. Pontos Legutóbbiak-egyezés:** kész, `keywords_controller.py:341-359`.
+- **5. Egyszeri Autofill és jelöltforrás (5/b):** kész, `QuickTagsConfigDialog.qml:50-58,152-168`, `keywords_controller.py:420-508` (#7053); a sorrend közelítés az index sorrendjével, a pontos sorrend B1.
+- **6. Tulajdonságok > Edit Tags a Tags panelt kapcsolja:** kész, `PropertiesPanel.qml:133,162`.
+
+**Megmaradó fejlesztői jegytörzsek (öt):**
+
+#### 1. (új) Az üres gyorscímke-hely a Quick Tags konfigurációs ablakot nyissa
+
+**Eredeti:** a `quicktag_%d` esemény a megjelenített értéket a `]empty` sztringgel veti össze (`0x0063a959-0x0063a967`); egyezésnél a `0x0063d840` a „Configure Quick Tags” ablakot nyitja (`0x0063a99a` → `0x0063a9da`, `0x0063d8c2`, `0x0063d8db`), különben a hozzáadás fut. Az üres hely buboréksúgója `TagPanel::emptytip` („Click to configure quick tags”).
+
+**Nálunk:** `TagsPanel.qml:323-325`: az üres (`?`) hely a „nincs beírt szöveg” súgóablakot nyitja (`tagNoTextDialog`); a buboréksúgó (`:328`) viszont a konfigurációt ígéri. A #4271 tesztjei ezt rögzítik: `tests/app/qml_functional/test_cimke_panel_4271.py:250-256`, `tests/app/test_qml_quicktags.py:63-80`.
+
+**Teendő:** az üres hely kattintása a `quickTagsConfigDialog`-ot nyissa (a fogaskerék gombbal azonos úton, `TagsPanel.qml:269`); a nem üres hely továbbra is hozzáad. A két #4271 teszt ennek megfelelően módosul.
+
+**Kész, ha:** valódi kattintás az üres (`?`) gyorscímkére megnyitja a Quick Tags konfigurációs ablakot, nem a „nincs beírt szöveg” ablakot, és nem ír címkét; nem üres hely kattintása hozzáad; a buboréksúgó változatlan; a módosított tesztek valódi kattintással futnak.
+
+#### 2. (új) Az üres szöveg Entere a „nincs beírt szöveg” súgóablakot mutassa
+
+**Eredeti:** az Enter (`editselected`) a `0x0063acd0`-n át a `0x0063bb30`-ra jut (`0x0063ad76`); üres vagy csak szóközt tartalmazó szövegnél `TagPanel::notify_notext` modális üzenet jelenik meg (`0x0063bb85-0x0063bbd9`), semmi nem íródik.
+
+**Nálunk:** `TagsPanel.qml:52-56` (`submit`) csendben visszatér, a `+` gomb üres szövegnél tiltott (`:100`); a súgóablak (`:382-399`) csak az üres gyorscímkéről nyílik (ezt az 1. jegytörzs megszünteti).
+
+**Teendő:** Enterre üres vagy csak szóközt tartalmazó szövegnél a `tagNoTextDialog` jelenjen meg; semmi ne íródjon. A `+` gomb tiltott állapota nem változik (az eredeti állapota B3). Kijelölés nélkül a mai tiltás marad (nem mért).
+
+**Kész, ha:** kijelölt írható képnél az üres és a szóközös mező Entere megjeleníti az eredeti szövegű ablakot (`tagNoTextMessage`), és nem ír címkét; nem üres szövegnél a mai hozzáadás fut; valódi billentyűteszt (`Return`).
+
+#### 3. (új) Elválasztó a címkesor helyi menüjében a Search és a Remove között
+
+**Eredeti:** a `0x00735480` négy rekordot ad a `0x00a6aee0`-nak: Add (`0xa0b8`), Search (`0xa0b7`), csupa nulla rekord (`0x00d6f868`), Remove (`0xa0b9`); a nulla rekord elválasztó (`0x00a6af04-0x00a6af20`).
+
+**Nálunk:** `TagContextMenu.qml:27-41`: három `MenuItem`, elválasztó nélkül.
+
+**Teendő:** a „Search for items with this tag” és a „Remove this tag” közé `MenuSeparator` kerül; a három művelet célja nem változik.
+
+**Kész, ha:** a címkesor jobbklikk-menüjében a sorrend Add, Search, elválasztó, Remove; mindhárom tétel a mai műveletét indítja. A vizuális egyezést eredeti képernyőkép híján a jegy nem méri, ezt kimondja.
+
+#### 4. (megmaradt a 2026-11-16-i zárókörből) A Quick Tags Autofill a forrás első 100 eleméből szűrjön
+
+**Eredeti:** a `0x0063d260` a panel `+0x2c0` listájának első 100 elemét veszi, majd a `0x0063d550` a két legutóbbi címkét kizárja; ha az első 100 között mindkettő szerepel, legfeljebb 98 jelölt marad.
+
+**Nálunk:** `keywords_controller.py:420-442`: a két legutóbbi címke kizárása megelőzi a 100 jelöltes korlátot, így 100 jelölt marad.
+
+**Teendő:** a korlát a forráslista első 100 egyedi elemére vonatkozzon, a szűrés utána fusson. A hatás csak 100-nál több egyedi címkénél és a 99. jelölt után látszik (egy Autofill legfeljebb tíz mezőt tölt), ezért olcsó és nem sürgős.
+
+**Kész, ha:** 100-nál több egyedi címkénél, mindkét recent címkével az első 100 között, a jelöltlista 98 elemű; az üres jelölt kimarad; a recent címkék nem jelöltek.
+
+#### 5. (új, hiba) Több tokenes bevitel 30 fölötti kijelölésnél minden tokent külön megerősítéssel adjon hozzá
+
+**Eredeti:** a gépelt bevitel minden tokenjére külön lefut a hozzáadás (`0x0063bb30` → `0x0063bc99` → `0x0063bed0`), és mindegyik a saját 30 fölötti megerősítését kérdezi (`0x0063c036`, „Are you sure you want to apply this tag to all %d items?”). A Mégse az adott tokent hagyja ki, a következő tokenre ez nincs hatással (`0x0063bca2-0x0063bcae`).
+
+**Nálunk:** `TagsPanel.qml:57-62` egymás után hívja az `addRequested`-et; `MainRightDrawer.qml:86-88` 30 fölötti kijelölésnél a `askFor`-t hívja, amely a függő ablak sorait és címkéjét felülírja (`MainDialogs.qml:70-80`). A felhasználó egyetlen kérdést lát, és csak az utolsó token kerül fel; az előzők némán elvesznek. A hibát a mai tesztek nem fedik (egy tokenes eseteket vizsgálnak).
+
+**Teendő:** a tokenek megerősítése sorban történjen: a következő token kérdése az előző lezárása (Igen vagy Nem) után jön. Egy token vagy legfeljebb 30 kijelölt kép esetén a mai folyamat nem változik.
+
+**Kész, ha:** 31 kijelölt képnél a `tag1, tag2` bevitel két egymás utáni megerősítést ad; mindkettőre igent mondva mindkét címke felkerül mind a 31 képre; az elsőre nemet mondva csak a `tag2` kerül fel; 30 vagy kevesebb képnél nincs kérdés és mindkét címke azonnal felkerül. A teszt valódi gépeléssel és Enterrel fut, a megerősítő ablak gombjait is megnyomja.
+
+**Nem nyílik jegy (a zárókör döntése):** a 128 bájtos tokenlevágás másolása (A4, tudatos eltérés); a hibaüzenet kiváltója (A3, a PicasaPy a lemezírási hibát jelzi); az írásvédettségi kapu visszabontása (A5), a Mégse viselkedés (A6) és a pillanatkép-viselkedés (A1) a B mérés előtt; a `PropertiesPanel.qml:146-150` `KeywordsDialog` példánya, amelyet semmi nem nyit (az eredetiben a megfelelő ablak is elérhetetlen, A5), nem része ennek a jegynek.
+
+**Következő irány (felvehető):** a B1-B4 mérési jegy, a fent megadott tartalommal és az egy Ghidra-sorral. Ez nem blokkolja a #7022 lezárását és a fenti öt jegytörzset.
+
 ## #7012: A Hozzáadás albumhoz teljes folyamata az eredeti Picasával összevetve
 
 **Állapot: nyitott.** A menüpontok címkéjét és néhány kontextusfüggő parancsazonosítót a bináris rekordjaiból azonosítottam, a PicasaPy jelenlegi útja a forrásból követhető. Az eredeti albumválasztás utáni írási kezelő és a végállapot nincs igazolva, ezért a két termék teljes műveleti paritása nem állítható.
