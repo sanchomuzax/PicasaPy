@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.135] - 2026-11-17
+
+- A kép helyi menüjének és a néző helyi menüjének Add to Album almenüje az eredeti sorrendjét követi: albumok, elválasztó, Starred Photos, Screensaver, elválasztó, New Album...; a néző almenüje album nélkül is elérhető, a Starred Photos csak hozzáad (a már csillagos képet nem fordítja meg), és a New Album... ablak dátuma a kijelölés első képének ideje mínusz egy másodperc (#7100).
+- Meglévő albumba adáskor a célmappa .picasa.ini fájljába az album neve és adatai is bekerülnek, ahogy az eredeti Picasában (#7101).
+- A Mappa menü, a mappa helyi menüje és a mappafa közbenső csomópontjának menüje szürkíti a mappa mozgatását a hét ismert felhasználói mappán (Képek, Asztal, Zene, Videók, Dokumentumok, felhasználói és közös alkalmazásadat), és a mozgatás ezeken a célválasztó után is megáll; az alattuk álló mappák továbbra is mozgathatók (#7108).
+- Ha a vágólapon van fájl, de nincs kijelölt mappa vagy album, a Beillesztés az eredeti Picasa szövegével jelzi a hiányzó célt (A Folder or Album must be selected to do this.), nem az üres vágólapot; üres vágólapnál az üres vágólap üzenete marad, és egyik esetben sem jön létre fájl (#7113).
+- A vágólapról Beillesztés az első fájlhibánál megáll, ahogy az eredeti Picasában: a korábban sikeresen átvitt képek megmaradnak, a hibás kép után következőket nem kezdi el, és egyetlen összegzés nevezi meg a hibát; a húzással és a menüből indított másolás és áthelyezés továbbra is folytatja a hiba után (#7114).
+- A paritás-ellenőrzés specifikációja két lapra vált, mindkettő az 1 MB-os méretkorlát alatt (#7116).
+- A szerkesztőben nyitott képnél a Kép ▸ Csoportos szerkesztés ▸ Sepia és ▸ Black and White ugyanúgy az Effektek fület választja ki, mint a Warmify, a Sharpen és a Film Grain: nem ír a kép effektláncába és nem indít kötegelt műveletet; a könyvtárnézetben a kijelölt képekre továbbra is lefut (#7123).
+
 ## [1.0.134] - 2026-11-16
 
 - A Mappa áthelyezése célválasztójának címe most „Mappa áthelyezése ide:” és a mozgatott mappa neve, és a választó a legutóbb választott célmappából indul (#7067).
