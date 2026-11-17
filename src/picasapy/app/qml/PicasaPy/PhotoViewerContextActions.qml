@@ -136,9 +136,12 @@ Item {
                 controller.addStarMany([sor])
         }
         onScreensaverRequested: {
+            // #7131: a nézett képet kérdés nélkül adjuk a képernyővédőhöz.
             if (viewer.appWindow
-                && viewer.appWindow.requestAddToScreensaver !== undefined)
-                viewer.appWindow.requestAddToScreensaver()
+                && viewer.appWindow.photoActionPaths !== undefined
+                && viewer.appWindow.addPhotosToScreensaver !== undefined)
+                viewer.appWindow.addPhotosToScreensaver(
+                    viewer.appWindow.photoActionPaths())
         }
         onNewAlbumRequested: {
             if (viewer.appWindow && viewer.appWindow.fileOpsDialogs !== undefined

@@ -79,8 +79,10 @@ TrayBar {
         if (hostController)
             hostController.toggleStarMany(hostWindow.photoActionRows())
     }
+    // #7131: a tálca New Album... sorának alapdátuma a mai helyi nap.
     onNewAlbumWithSelectionRequested:
         hostFileOpsDialogs.ensure().openNewAlbumProperties(
             hostController ? hostController.currentFolder : "",
-            hostWindow.photoActionRows())
+            hostWindow.photoActionRows(),
+            Qt.formatDate(new Date(), "yyyy-MM-dd"))
 }
