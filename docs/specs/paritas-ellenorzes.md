@@ -3275,12 +3275,15 @@ külön jelzem.
 
 ### Következtetés
 
-- **Belépés.** A Nézet ▸ Diavetítés (`0x9c9f`), a Mappa/Album ▸ Diavetítés
-  megtekintése (`0x9c6d`), a `Ctrl+4`, a mappa- és albumfejléc `play` gombja és
+- **Belépés.** A Nézet ▸ Diavetítés (`0x9c9f`), a felső Mappa/Album menü ▸
+  Diavetítés megtekintése (`0x9c6d`), a `Ctrl+4`, a mappa- és albumfejléc `play` gombja és
   a szerkesztő `Play` gombja (a `thumbui/sbutton` álneve) mind ugyanabba a
   függvénybe fut: `0x005e8a70(this, 0)`. Az Időrend (`0x9ccc`, `Ctrl+5`,
   `thumbui/timelinebutton`) ugyanide fut, `1` móddal. A PicasaPy-ban is egyetlen
-  indító van (`MainSlideshow.qml:60`), a belépések egyeznek.
+  indító van (`MainSlideshow.qml:60`). A `0x9c6d` a felső `eMenuLabelFolder`
+  menü parancsa, nem a mappa vagy album jobbklikk-menüjéé; az eredeti Folder és
+  Album helyi menük teljes leltára, valamint a PicasaPy helyi menüi sem adnak
+  diavetítés-parancsot.
 - **Fő lelet: két vetítő van, és a normál nem az, amelyikre a korábbi
   összevetések épültek.** A `0x005e8a70` `0` módban, `Shift` nélkül
   (`0x005e8b00`, `0x005e8b0a`) nem a `qshow`/`OneUpUI` vetítőt indítja
@@ -3342,8 +3345,9 @@ videó lejátszása, a nézet-bejárás szabályai. `NINCS MEG`: a 9. szakasz t�
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| **Nézet ▸ Diavetítés és Mappa/Album ▸ Diavetítés megtekintése.** `0x00559150` rekordjai: `0x9c9f` és `0x9c6d` (`picasa-menu-parancsok.csv:181`, `:74`). A `0x005cb990` a parancsazonosítót a `word [msg+8]` mezőből veszi (`0x005cb9a1`), az `edi` nulla (`0x005cb9a6`), az ugrótábla `0x9c42`-bázisú (`0x005cba5d`-`0x005cba75`): mindkét azonosító a `11`-es bájtra, a `0x005cbbd1` ágra jut: `push edi`, `push ebx`, `call 0x005e8a70` (`0x005cbbd3`). | `PicasaViewMenu.qml:174-178`, `PicasaFolderMenu.qml:30-34`, `MainMenuBar.qml:373`, `MainWindowCommands.qml:443-445`, `MainSlideshow.qml:60-71` | Egyezik: a két menü ugyanazt a műveletet indítja, mint az eredetiben. |
-| **`Ctrl+4`.** A `0x005e60d0` `0x005e625e`-`0x005e626f` ága: `call 0x005696c0` (kapu), `push 0`, `push ebp`, `call 0x005e8a70`. A `Ctrl+5` ugyanitt `push 1` (`0x005e6287`). | `MainKeyboardShortcuts.qml:312-317` | Egyezik. A `0x005696c0` kapu jelentése nyitott (G6). |
+| **Nézet ▸ Diavetítés.** A `0x00559150` rekordja `0x9c9f` (`picasa-menu-parancsok.csv:181`). **Felső Mappa/Album ▸ Diavetítés megtekintése.** A `0x00559150` `eMenuLabelFolder` rekordja `0x9c6d` (`:74`); az `eMenuLabelFolder` a menüsáv Mappa menüosztálya (`picasa-menu-parancsok-viselkedes.md` 30. adag), Album-nézetben a cím Albumra vált. A `0x005cb990` mindkét azonosítót a `0x005cbbd1` közös ágára küldi, amely `0x005e8a70(this, 0)`-t hív (`0x005cbbd3`). | `PicasaViewMenu.qml:174-178`, `PicasaFolderMenu.qml:9,30-34`, `PicasaMenuBar.qml:739-743`, `MainMenuBar.qml:366`, `MainWindowCommands.qml:451-452`, `MainSlideshow.qml:60-71` | Egyezik: mindkét felső menütétel ugyanazt a műveletet indítja. A `0x9c6d` nem helyi menüparancs. |
+| **Mappa/Album helyi menüje (jobb klikk).** A teljes Folder-építő (`0x007319f0`, a `picasa-menu-parancsok-viselkedes.md` 32.1-ben felsorolt 18 tétel) és az Album-építő (`0x00732160`, 1081 B; célzott disassembly) nem tartalmazza az `ID_ALBUM_SLIDESHOW` / `0x9c6d` parancsot. A `0x9c6d` a felső menüé; az a korábbi állítás, hogy helyi menüpont, a 30. adagban helyesbített téves besorolás. | `FolderContextMenu.qml`, `AlbumContextMenu.qml` (a két QML helyi menüben nincs slideshow tétel); a felső menü külön `PicasaFolderMenu.qml:30-34` | Egyezik: a mappa és album jobbklikk-menüje egyik rendszerben sem indít diavetítést; nincs fejlesztői teendő. |
+| **`Ctrl+4`.** A `0x005e60d0` `0x005e625e`-`0x005e626f` ága: `call 0x005696c0` (kapu), `push 0`, `push ebp`, `call 0x005e8a70`. A `Ctrl+5` ugyanitt `push 1` (`0x005e6287`). | `MainKeyboardShortcuts.qml:323-329` | Egyezik. A `0x005696c0` kapu jelentése nyitott (G6). |
 | **Mappa/album fejléc `play` gombja.** A `0x005e0f70` a `play` nevet (`0xc96f44`) hasonlítja (`0x005e143c`-`0x005e1461`), majd `push 0`, `call 0x005e8a70` (`0x005e146c`-`0x005e146f`). Súgó: `Diavetítés teljes képernyőn` (`headerpaneltext.tre:38-39`, hivatalos magyar: `panel-feliratok-hu.tsv:474`). | `LightboxHeaderButtons.qml:30-47`, `LightboxFeedGroup.qml:69-71`, `MainLibraryCanvas.qml:267-269` | A belépés és a súgószöveg egyezik. Hogy a nem aktuális mappa fejlécéről melyik nézet és melyik kép kerül sorra, nyitott (G5). |
 | **Szerkesztő `Play` gombja.** `editpanel/sbutton` (felirat `Lejátszás`, `panel-feliratok-hu.tsv:4913`), `Property alias thumbui/sbutton` (`editpanel.tre:1124-1127`); a `thumbui/sbutton` ág (`0x005d9cc0`: `cmp ecx, 0xc900e0` `0x005da733`, `push 0` `0x005da740`) szintén `0x005e8a70(this, 0)`. A könyvtár alsó `Slideshow` gombja (`thumbui/sbutton`) alapból `m_hidden` (`konyvtar-ablak-meretek.md:419-422`). | `PhotoViewerTopBar.qml:196-203`, `PhotoViewerQuickToolbar.qml:104-114`, `MainSlideshow.qml:62-65` (a néző aktuális képétől indul) | A belépés egyezik. Kis eltérés a súgószövegben: az eredeti hivatalos magyar szöveg `Állítson össze és nézzen diavetítést ezekből a fotókból` (`panel-feliratok-hu.tsv:4914`), a PicasaPy `Diavetítés lejátszása`. |
 | **Időrend.** `0x9ccc` → `0x005cbbdd` (`push 1`), `Ctrl+5` `0x005e6287`, `thumbui/timelinebutton` `0x005da7ab` (`push 1`): `0x005e8a70(this, 1)`, a `qshow` útja. | `PicasaViewMenu.qml:180-185`, `TimelinePanel.qml:539` | Nem tárgya ennek a szakasznak (`picasa-idorend-viselkedes.md` 38.2.8). |
@@ -3570,7 +3574,7 @@ az alábbi mérés a következő döntő lépés, új dekompilációs kérés ne
 
 | Feltétel | Állapot |
 |---|---|
-| Belépési pontok: Nézet menü, eszköztár/fejléc, gyorsbillentyű, néző és helyi menü | ✅ A menüparancs, `Ctrl+4`, fejléc `play` és szerkesztő gomb útja megvan. ⛔ Nem aktuális mappafejléc esetén a kattintás előtti nézetváltás futásban nem bizonyított. |
+| Belépési pontok: Nézet menü, eszköztár/fejléc, gyorsbillentyű, néző, mappa/album helyi menü | ✅ A két felső menüparancs, `Ctrl+4`, fejléc `play` és szerkesztő gomb útja megvan; a mappa és album helyi menü egyik rendszerben sem tartalmaz slideshow tételt. ⛔ Nem aktuális mappafejléc esetén a kattintás előtti nézetváltás futásban nem bizonyított. |
 | Vetített elemek: kijelölt vagy teljes nézet, mappa/album, fotó és videó | ✅ Statikusan igazolt, hogy a kijelölés nem szűri a teljes aktuális nézetet, és üres nézetnél csendes a visszatérés. ⛔ A `+0x5a` pontos UI-jelentése, a többes kijelölés futási képe és a videó lejátszása mérendő. |
 | Vezérlők, alapértékek és megőrzés | ✅ A diaidő, ismétlés, zene jelölő, átmenet és a mostani billentyűforrások összevetve. ⛔ A Timeline normál vetítésbeli eltérése, a sáv láthatóságának futási képe és a zene lista sorrendje még teendő. |
 | Kilépési hatás, visszatérés, kijelölés, képernyőkímélő és tárolás | ✅ A visszatérési nézet, aktuális kép és vetítési kilépési ág statikusan összevetve. ⛔ A lista végi képernyőállapot és a Windows képernyőkímélő hatása mérendő. |
@@ -3581,6 +3585,7 @@ az alábbi mérés a következő döntő lépés, új dekompilációs kérés ne
 - **A út, utasításszint:** `annot_disasm.py` a `0x005de8e0` → `0x005e0f70` fejléc-hívásnál, a `0x005e6710` → `0x00760970` billentyűútnál, a `0x005e60d0` kapujánál és a `0x005c4ce0` → `0x0075f430` → `0x0075fb20` időzített léptetésnél. A `0x00717eb0` hívója a `0x00717560` paraméter- és kimeneti regisztereit is igazolja.
 - **B út, külön kimenet és másik réteg:** a `referencia/ghidra/2026-11-16-koteg-438-465.txt` `FUN_0075f430`, `FUN_00717560`, `FUN_005e0f70` és `FUN_0075cdc0` dekompilációi, a korábbi `2026-10-17-qshow-2.txt` `FUN_005e60d0` kimenete, valamint a `tre` erőforrások és a jelenlegi forrás. Ahol ugyanarra a viselkedési útra vonatkozik, az utasításszintű olvasattal egyezik. A futásmérés hiányát ez nem pótolja, ezért a teljes következtetés feltételes.
 - **Cáfoló kísérlet:** megpróbáltam a `+0x5b` bájtot a vetített sorozat kizáró feltételének tekinteni, és a `+0x5a` jelzőt automatikusan „rejtett képnek” nevezni. A `FUN_00717560` Ghidra-kimenete a `+0x5a` bájtot vizsgálja; a hívóhely disassemblyje az `EDI` nézetet és `ESI` kimeneti tömböt erősíti meg, és a `+0x5b` nem szerepel a listaképző ágban. Az eredmény cáfolja a `+0x5b` kizáró szerepét, de nem igazolja a `+0x5a` emberi jelentését. Ugyanazzal a bizonyítási mércével ellenőriztem a cáfolatot: a kapcsolódó specifikációk is csak kizáró/elnyomó jelzőnek nevezik; a rejtett képre vonatkozó megfeleltetést a Picasa-futásmérésnek kell eldöntenie.
+- **Belépési pontot cáfoló kísérlet:** a korábbi besorolás szerint a `0x9c6d` a mappa/album helyi menüjéből indította volna a vetítést. Ezt a `0x00732160` teljes függvényének közvetlen disassemblyjével ellenőriztem; az Album menüépítő parancsai és feliratai között nincs `ID_ALBUM_SLIDESHOW`/`0x9c6d`. Független ellenőrzésként a teljes, szűretlen Folder-helyi menüleltárt (`0x007319f0`, 18 tétel; `picasa-menu-parancsok-viselkedes.md` 32.1) és az `eMenuLabelFolder` osztály besorolását vetettem össze; ez a felső Mappa főmenü osztálya, ahogy a menüviselkedés-lap 30. adagja helyesbíti. A jelenlegi `FolderContextMenu.qml`/`AlbumContextMenu.qml` ugyanígy nem kínál helyi slideshow parancsot, míg a `PicasaFolderMenu.qml` igen. A cáfolatot tehát két külön forrású úton ellenőriztem; a helyes következtetés az, hogy a két jobbklikk-menü nem belépési pont, és ebből nem következik fejlesztői eltérés.
 
 #### D6. A nem ismétlődő vetítés lista végén maradjon nyitva
 
