@@ -59,11 +59,11 @@ def test_delete_oserror_shows_error_and_enables_import_again(
     error_text = window.findChild(QObject, "importSourceErrorText")
     assert error_text is not None
     confirm = window.findChild(
-        QObject, "importSourceRemoveImportedConfirmDialog"
+        QObject, "importSourceConfirmRemoveDialog"
     )
     assert confirm is not None
     confirm_yes = window.findChild(
-        QObject, "importSourceRemoveImportedConfirmYesButton"
+        QObject, "importSourceConfirmRemoveYesButton"
     )
     assert confirm_yes is not None
     original_height = dialog.height()
