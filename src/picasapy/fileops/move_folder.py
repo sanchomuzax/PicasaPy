@@ -24,6 +24,8 @@ import os
 import shutil
 from pathlib import Path
 
+from .known_folders import is_known_user_folder
+
 #: A fájlrendszer-műveletek MODULSZINTŰ fogantyúi (#1375) — a teszt EZEKET
 #: cserélje, ne a globális `os`/`shutil` tagjait.
 _stat = os.stat
@@ -71,11 +73,18 @@ class FolderMoveError(RuntimeError):
     """A mappa áthelyezése nem sikerült — a forrás érintetlen."""
 
 
-def is_system_path(folder: Path) -> bool:
+def is_system_path(folder: Path, *, known_folders: bool = True) -> bool:
     """Rendszer-könyvtár-e (az eredeti `MoveFolderSysPath` esete).
 
     A felhasználó saját home-ja NEM az: azt szabad mozgatni-e, arról a
-    szülője dönt. A `/home` maga viszont igen."""
+    szülője dönt. A `/home` maga viszont igen.
+
+    A hét ismert felhasználói mappa (Képek, Asztal, Zene, Videók,
+    Dokumentumok, a felhasználói és a közös alkalmazásadat) PONTOS
+    egyezéssel szintén rendszerút (#7108): az eredeti mozgatás tétele rajtuk
+    szürke, és a végrehajtó is megáll. Az alattuk álló mappák nem azok.
+    `known_folders=False` a mai, szűkebb védelmet adja (az átnevezés ezt
+    használja: a jegy az áthelyezésről szól)."""
     resolved = Path(folder).resolve()
     # a meghajtó gyökere (linuxon "/", windowson "C:\\") sosem mozgatható
     if resolved == resolved.parent:
@@ -86,7 +95,9 @@ def is_system_path(folder: Path) -> bool:
     }:
         return True
     # a home-könyvtár maga sem mozgatható (a benne lévő mappák igen)
-    return resolved == Path.home().resolve()
+    if resolved == Path.home().resolve():
+        return True
+    return known_folders and is_known_user_folder(resolved)
 
 
 def _is_hidden_folder(folder: Path) -> bool:

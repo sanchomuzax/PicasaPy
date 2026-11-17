@@ -32,7 +32,9 @@ def rename_folder(folder: str | Path, new_name: str) -> Path:
     source = Path(folder)
     if not source.is_dir():
         raise FolderRenameError(f"A mappa nem található: {source}")
-    if is_system_path(source):
+    # #7108: az ismert felhasználói mappák tiltása az ÁTHELYEZÉSRE vonatkozik,
+    # az átnevezés védelme a mai rendszerutak és a home maradt
+    if is_system_path(source, known_folders=False):
         raise FolderRenameError("Rendszermappa nem nevezhető át.")
 
     name = sanitize_folder_rename_name(new_name)

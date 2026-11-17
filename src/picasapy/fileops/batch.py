@@ -51,11 +51,16 @@ class BatchResult:
     kihagyottak (a `SKIP` házirend miatt), `failed` pedig a (forrás, hiba)
     párok. A hívó ebből tud EGYETLEN összegzést mutatni — az eredeti is
     darabszámmal jelentett, nem fájlonkénti ablakkal (#459).
+
+    `not_started` (#7114): a `stop_on_failure` köteg első végleges hibája
+    után EL sem kezdett elemek. Üres, ha a köteg végigfutott, így a hívó
+    meg tudja különböztetni a „kihagyott" és a „meg sem próbált" képet.
     """
 
     done: tuple[tuple[Path, Path], ...] = ()
     skipped: tuple[Path, ...] = ()
     failed: tuple[tuple[Path, str], ...] = ()
+    not_started: tuple[Path, ...] = ()
 
 
 def _conflicts(path: Path, dest: Path) -> bool:
@@ -107,6 +112,8 @@ def copy_photos(
     dest_folder: Path,
     policy: str = RENAME,
     progress: Callable[[int, int], None] | None = None,
+    *,
+    stop_on_failure: bool = False,
 ) -> BatchResult:
     """Fotók másolása a célmappába, a `policy` szerint (#457).
 
@@ -116,8 +123,16 @@ def copy_photos(
     `progress(kész, összes)`: fájlonként hívódik — az eredeti is számlálót
     mutatott (`CAcquireUI::copying` = „Copying %1$d of %2$d files"), nem
     csak egy pörgő sávot.
+
+    `stop_on_failure` (#7114): az első végleges fájlhibánál a köteg MEGÁLL,
+    a további elemeket el sem kezdi (`BatchResult.not_started`), a korábbi
+    másolatok megmaradnak. Alapértéke kikapcsolt: a fogd-és-vidd és a
+    menüs köteg (#301/#459) a hibás fájl után is folytatja. Csak a
+    vágólapos Beillesztés kéri.
     """
-    return _run(paths, dest_folder, policy, copy_photo, progress)
+    return _run(
+        paths, dest_folder, policy, copy_photo, progress, stop_on_failure=stop_on_failure
+    )
 
 
 def move_photos(
@@ -125,12 +140,16 @@ def move_photos(
     dest_folder: Path,
     policy: str = RENAME,
     progress: Callable[[int, int], None] | None = None,
+    *,
+    stop_on_failure: bool = False,
 ) -> BatchResult:
     """Fotók áthelyezése a célmappába, a `policy` szerint (#457).
 
     Az eredeti a KÉPEKRE ugyanazt a rename/skip párbeszédet adta, mint
     másolásnál (`::5`); a MAPPA áthelyezését viszont ütközéskor elutasította
     (`CThumbUI::MoveFolderExists`) — az más művelet, nem ez.
+
+    `stop_on_failure`: lásd `copy_photos` (#7114).
     """
     return _run(
         paths,
@@ -139,6 +158,7 @@ def move_photos(
         _move_with_rename,
         progress,
         retry_transient_locks=True,
+        stop_on_failure=stop_on_failure,
     )
 
 
@@ -208,6 +228,7 @@ def _run(
     progress=None,
     *,
     retry_transient_locks: bool = False,
+    stop_on_failure: bool = False,
 ) -> BatchResult:
     if policy not in (RENAME, SKIP):
         raise ValueError(f"Ismeretlen ütközés-házirend: {policy!r}")
@@ -215,6 +236,7 @@ def _run(
     done: list[tuple[Path, Path]] = []
     skipped: list[Path] = []
     failed: list[tuple[Path, str]] = []
+    not_started: list[Path] = []
     items = [Path(raw) for raw in paths]
     total = len(items)
     # #1452: a kísérő-mappák listáját a köteg EGÉSZÉRE megjegyezzük, és a
@@ -256,7 +278,15 @@ def _run(
             # hány sikerült
             if progress is not None:
                 progress(index, total)
-    return BatchResult(tuple(done), tuple(skipped), tuple(failed))
+            if stop_on_failure and failed:
+                # #7114: az eredeti `0x005350b0` az első végleges fájlhibánál
+                # kilép a ciklusból: a többi képet el sem kezdi, a korábbi
+                # sikeres másolatokat pedig nem görgeti vissza.
+                not_started = items[index:]
+                break
+    return BatchResult(
+        tuple(done), tuple(skipped), tuple(failed), tuple(not_started)
+    )
 
 
 def _is_transient_lock_error(error: Exception) -> bool:

@@ -373,6 +373,8 @@ PicasaMenuBar {
     onSlideshowRequested: hostWindow.startSlideshow(-1)
     // #3460/#4630: a Mappa/Album menü a megnyitott hely leírását szerkeszti
     currentFolder: hostController ? hostController.currentFolder : ""
+    // #7108: a Mappa ▸ Move tétel szürke az ismert mappákon
+    moveGuard: hostFileOpsController ? hostFileOpsController : null
     onEditFolderDescriptionRequested: {
         if (hostController) {
             if (hostController.currentAlbumToken !== "")

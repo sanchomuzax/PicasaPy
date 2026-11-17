@@ -85,6 +85,11 @@ Item {
     signal removeFromPicasaRequested(string path)
     signal moveFolderRequested(string path)
 
+    // #7108: a mozgatás védelmét eldöntő objektum (`isMoveProtectedFolder`).
+    // A HierFolder menü Move tétele (`0x9df5`) az eredetiben a rendszerutakon
+    // és a hét ismert mappán szürke. Védő nélkül (null) a tétel él.
+    property var moveGuard: null
+
     // A forrás nem a virtualizált ListView-sor: a QQuickListView újrahasznosíthatja
     // a delegátumot, miközben a mutató áthalad a fán. Ez az állandó proxy
     // viszi a mappa payloadját a DropArea-ig.
@@ -479,6 +484,9 @@ Item {
         MenuItem {
             objectName: "hierMenuMoveFolder"
             text: qsTr("Move Folder...")       // HierFolder::ID_MOVEHIERFOLDER
+            enabled: !(root.moveGuard !== null && contextMenu.folderPath !== ""
+                       && root.moveGuard.isMoveProtectedFolder(
+                           contextMenu.folderPath) === true)
             onTriggered: root.moveFolderRequested(contextMenu.folderPath)
         }
     }

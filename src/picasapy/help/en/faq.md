@@ -168,6 +168,12 @@ Free some space or check the folder's permissions.
 You chose **Edit** ▸ **Paste**, but there are no files on the clipboard. Copy
 or cut photos first, either in PicasaPy or in your file manager.
 
+### “A Folder or Album must be selected to do this.”
+
+You chose **Edit** ▸ **Paste** while files are on the clipboard, but no
+folder is selected to receive them. Select a folder in the folder list and
+paste again. Nothing is copied or moved until a folder is selected.
+
 ### “None of your photos have this tag.”
 
 You entered a tag in the dialog for displaying a tag as an album, but none
