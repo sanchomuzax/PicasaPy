@@ -139,6 +139,8 @@ PicasaMenuBar {
     //: indul el, és a sávon üzenetet adunk — némán nem tűnik el.
     clipboardHasFiles: hostFileOpsController
                        ? hostFileOpsController.clipboardHasFiles : false
+    //: #7143: a menü és a Ctrl+V ugyanazt a kaput használja (néző, azonos mappa)
+    clipboardPasteAllowed: hostWindow.vagolapBeillesztesEngedelyezett
     // #5877: a text= réteg állapotát a .picasa.ini-ből olvassa;
     // a textactive= láthatósága nem változtatja meg a réteg meglétét.
     hasSelectedTextLayer: (hostController

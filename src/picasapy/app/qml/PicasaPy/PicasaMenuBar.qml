@@ -562,6 +562,11 @@ MenuBar {
     signal copyFilesRequested()
     //: #1526: a Beillesztés — a gazda tudja, melyik mappa a cél.
     property bool clipboardHasFiles: false
+    //: #7143: a Beillesztés KAPUJA - a gazda dönti el, hogy a mostani nézet és
+    //: mappa mellett egyáltalán lehet-e beilleszteni (néző nyitva, vagy a
+    //: vágólap minden fájlja a célmappában van). A menütétel és a Ctrl+V
+    //: ugyanazt a kaput használja. Önálló menüsornál alapból nyitva.
+    property bool clipboardPasteAllowed: true
     //: #5877: a kijelölés első képén van-e Text eszközös szövegréteg.
     property bool hasSelectedTextLayer: false
     //: #5877: van-e beilleszthető Text eszközös réteg a belső pufferben.

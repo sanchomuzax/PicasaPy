@@ -15,6 +15,9 @@ from picasapy.ini import load_or_empty, parse_document, save_document
 from picasapy.ini.rect64 import Rect64, encode_rect64
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import varj_feltetelre
+from tests.app.qml_functional._paste_megerosites_7112 import (
+    jovahagy_a_beillesztest,
+)
 
 
 _HEIGHT_DELTAS = (-5, 0, 5)
@@ -324,17 +327,41 @@ def test_grid_to_tray_and_tray_to_grid_use_the_dragged_rows_and_clipboard_keys(
     ), "a Ctrl+C nem másolásként jelölte a vágólap fájljait"
 
     paste_shortcut = _child(window, "shortcutPasteFiles")
-    assert paste_shortcut.property("enabled") is True
+    # #7143: a rács mappájában (a forrás mappájában) a Ctrl+V hatástalan: az
+    # eredeti azonos mappában nem végez fájlműveletet, a korábbi `c-1.jpg`
+    # másolat megszűnt.
+    assert paste_shortcut.property("enabled") is False
     QTest.keyClick(window, Qt.Key.Key_V, Qt.KeyboardModifier.ControlModifier)
+    qt_app.processEvents()
+    assert not any(library.glob("c-*.jpg")), "a Ctrl+V azonos mappába másolt"
+
+    # Másik mappában ugyanez a billentyű megerősítés után másol.
+    target_folder = library / "cel"
+    controller.selectFolder(str(target_folder))
     _wait(
         qt_app,
-        lambda: any(library.glob("c-*.jpg")),
-        "a Ctrl+V nem másolta vissza a fájlt a rács mappájába",
+        lambda: Path(controller.currentFolder) == target_folder,
+        "a célmappa nem lett aktív",
+    )
+    assert paste_shortcut.property("enabled") is True
+    QTest.keyClick(window, Qt.Key.Key_V, Qt.KeyboardModifier.ControlModifier)
+    jovahagy_a_beillesztest(window, qt_app, "copy")
+    _wait(
+        qt_app,
+        lambda: (target_folder / "c.jpg").is_file(),
+        "a Ctrl+V nem másolta a fájlt a másik mappába",
     )
     assert photo_to_copy.is_file(), "Ctrl+V másoláskor meg kell maradnia a forrásnak"
     from picasapy.app.worker_thread import wait_for_all_background_workers
 
     assert wait_for_all_background_workers(30.0)
+    # A Ctrl+X részhez vissza a rács eredeti (gyökér) mappájába.
+    controller.selectFolder(str(library))
+    _wait(
+        qt_app,
+        lambda: Path(controller.currentFolder) == library,
+        "a rács mappája nem lett újra aktív",
+    )
 
     # A rácson a Ctrl+X billentyűesemény ténylegesen kivágja a kijelölt fájlt.
     photo_to_cut = library / "cut-me.jpg"

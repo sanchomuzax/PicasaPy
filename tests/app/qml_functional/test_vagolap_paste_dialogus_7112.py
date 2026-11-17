@@ -133,7 +133,10 @@ def test_paste_megerosites_es_utkozesvalaszok_valodi_kattintassal(
         else:
             assert len(list(cel.glob(f"{nev}*"))) == 1
 
-    # Albumcélon a MainWindowCommands nem kéri az eltérő mappa megerősítését.
+    # Albumcélon a MainWindowCommands nem kéri az eltérő mappa megerősítését,
+    # és (#7142) fájlt sem másol: az album tagságát bővíti (a részletes
+    # próbák: `test_album_beillesztes_7142.py`). A könyvtáron kívüli fájl a
+    # korábbi mappába sem kerül át.
     album_forras = tmp_path / "album-forras"
     album_forras.mkdir()
     album_kep = album_forras / "album-cel.jpg"
@@ -142,6 +145,7 @@ def test_paste_megerosites_es_utkozesvalaszok_valodi_kattintassal(
     fileops.copyFilesToClipboard([str(album_kep)])
     commands = _gyerek(window, "mainWindowCommands")
     assert QMetaObject.invokeMethod(commands, "beillesztAVagolaprol")
-    assert _varj(qt_app, lambda: (Path(_controller.currentFolder) / album_kep.name).exists())
+    qt_app.processEvents()
+    assert not (Path(_controller.currentFolder) / album_kep.name).exists()
     paste_dialog = window.findChild(QObject, "pasteConfirmDialog")
     assert paste_dialog is None or paste_dialog.property("visible") is False

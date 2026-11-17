@@ -14,18 +14,12 @@ def _controller_module():
 
 
 class FileOpsControllerClipboardMixin:
-    def _paste_has_different_folder(self, paths: list[str], dest_folder: str) -> bool:
-        """Igaz, ha legalább egy forrásmappa azonosítója eltér a céltól."""
-        _compat = _controller_module()
+    def _paste_folder_identities(self, folder_paths: list[str]) -> dict:
+        """Mappaút-kulcs -> azonosító: az indexbeli mappa-id, ennek híján az út."""
         from picasapy.paths import normalize_path, path_key
 
-        destination = _compat._to_local_path(dest_folder) or dest_folder
-        mappa_utak = [destination]
-        mappa_utak.extend(
-            str(Path(_compat._to_local_path(path) or path).parent) for path in paths
-        )
         normalizalt_utak = {}
-        for path in mappa_utak:
+        for path in folder_paths:
             normalizalt = normalize_path(path)
             normalizalt_utak.setdefault(path_key(normalizalt), normalizalt)
 
@@ -41,12 +35,57 @@ class FileOpsControllerClipboardMixin:
                     ).fetchone()
                     if row is not None:
                         azonositok[kulcs] = ("id", int(row["id"]))
-        celkulcs = path_key(normalize_path(destination))
-        celazonosito = azonositok[celkulcs]
-        return any(
-            azonositok[path_key(normalize_path(mappa))] != celazonosito
-            for mappa in mappa_utak[1:]
-        )
+        return azonositok
+
+    def _paste_sources_outside(self, paths: list[str], dest_folder: str) -> list[str]:
+        """A vágólap azon fájljai, amelyek mappaazonosítója eltér a céltól (#7143).
+
+        Az eredeti a Beillesztést csak eltérő forrás- és célmappánál futtatja
+        (`0x0056ec92`, `0x00784100`); azonos mappában nincs fájlművelet. A
+        PicasaPy vágólapján külső program vegyes mappájú fájljai is lehetnek,
+        ezért fájlonként döntünk: a célmappában már ott lévő fájl kimarad."""
+        _compat = _controller_module()
+        from picasapy.paths import normalize_path, path_key
+
+        destination = _compat._to_local_path(dest_folder) or dest_folder
+        forras_mappak = [
+            str(Path(_compat._to_local_path(path) or path).parent) for path in paths
+        ]
+        azonositok = self._paste_folder_identities([destination, *forras_mappak])
+        celazonosito = azonositok[path_key(normalize_path(destination))]
+        return [
+            path
+            for path, mappa in zip(paths, forras_mappak, strict=True)
+            if azonositok[path_key(normalize_path(mappa))] != celazonosito
+        ]
+
+    def _paste_has_different_folder(self, paths: list[str], dest_folder: str) -> bool:
+        """Igaz, ha legalább egy forrásmappa azonosítója eltér a céltól."""
+        return bool(self._paste_sources_outside(paths, dest_folder))
+
+    @Slot(str, result=bool)
+    def clipboardOnlyInFolder(self, dest_folder: str) -> bool:  # noqa: N802
+        """Igaz, ha a vágólap fájljai MIND a megadott mappában vannak (#7143).
+
+        Ilyenkor a Beillesztés az eredeti szerint szürke és hatástalan (nincs
+        fájlművelet, `0x0056ec92`). Üres vágólapra és üres célra hamis: az
+        előbbinél a tétel amúgy is szürke, az utóbbinál a cél nélküli üzenet
+        (`IDS_NEED_SELECTED_ALBUM`) dolga a jelzés."""
+        if not dest_folder:
+            return False
+        fajlok, _muvelet = _controller_module().vagolap_fajlok(self._vagolap_adata())
+        if not fajlok:
+            return False
+        # A QML-kötés a nézetállapot minden változására újraértékeli ezt a
+        # kaput, az azonosítókeresés pedig az indexet nyitja: egy bejegyzéses
+        # memo elég, a kulcs a vágólap tartalma és a célmappa.
+        kulcs = (tuple(fajlok), dest_folder)
+        if getattr(self, "_vagolap_kapu_memo", (None, None))[0] != kulcs:
+            self._vagolap_kapu_memo = (
+                kulcs,
+                not self._paste_sources_outside(fajlok, dest_folder),
+            )
+        return self._vagolap_kapu_memo[1]
 
     def _tegyd_a_vagolapra(self, paths, muvelet: str) -> None:
         """A megadott fájlok a vágólapra, `copy`/`cut` jelzéssel (#1526).
@@ -136,14 +175,68 @@ class FileOpsControllerClipboardMixin:
         """A jóváhagyott Beillesztés köteg (#7112), a választott ütközési
         szabállyal; az első végleges fájlhibánál megáll (#7114)."""
         if operation == "cut" or operation == "move":
-            self._move_batch(paths, dest_folder, policy, stop_on_failure=True)
+            eredmeny = self._move_batch(paths, dest_folder, policy, stop_on_failure=True)
         else:
-            self._copy_batch(paths, dest_folder, policy, stop_on_failure=True)
+            eredmeny = self._copy_batch(paths, dest_folder, policy, stop_on_failure=True)
+        self._urit_sikeres_beillesztes_utan(eredmeny, paths)
+
+    def _urit_sikeres_beillesztes_utan(self, eredmeny, fajlok) -> None:
+        """A köteg hibátlan lefutása után a SAJÁT vágólap kiürül (#7143).
+
+        Az eredetiben a sikeres beillesztés a belső listát kiüríti, a Mégse
+        megtartja (`0x005feaeb-0x005feb05`). Hibás vagy el sem indult köteg
+        (`None`) után a lista marad, hogy a felhasználó újra próbálhassa."""
+        if eredmeny is None or eredmeny.failed:
+            return
+        self._urit_a_sajat_vagolapot(fajlok)
+
+    def _urit_a_sajat_vagolapot(self, fajlok) -> None:
+        """Kiüríti a PicasaPy saját fájl-vágólapját, ha még azt a tartalmat hordja.
+
+        Csak ami a miénk: fej nélküli környezetben a `_vagolap_adat` mindig a
+        saját adatunk; valódi munkamenetben a rendszervágólapot csak akkor
+        töröljük, ha mi birtokoljuk (`ownsClipboard`). Külső program (fájlkezelő,
+        böngésző) vágólapjához nem nyúlunk: az a PicasaPy felülhalmaza. Ha időközben
+        új Másolás történt (más fájlok vannak a vágólapon, mint a beillesztetteké),
+        azt sem töröljük."""
+        _compat = _controller_module()
+        from picasapy.paths import normalize_path, path_key
+
+        def kulcsok(utak) -> set:
+            return {path_key(normalize_path(str(path))) for path in utak}
+
+        aktualis, _muvelet = _compat.vagolap_fajlok(self._vagolap_adata())
+        if not aktualis or not kulcsok(fajlok) <= kulcsok(aktualis):
+            return
+        if _compat.QGuiApplication.platformName() not in ("offscreen", "minimal"):
+            vagolap = _compat.QGuiApplication.clipboard()
+            if vagolap is None or not vagolap.ownsClipboard():
+                return
+            vagolap.clear()
+        self._vagolap_adat = None
+        self.clipboardFilesChanged.emit()
+
+    def _paste_into_album(self, fajlok: list[str], album_token: str) -> bool:
+        """A vágólap képei az album tagjai lesznek, fájlművelet nélkül (#7142).
+
+        Az írót a `wire_fileops` köti be (`_album_tagsag_iro`, a vezérlő
+        `addPathsToAlbum`-ja): a `.picasa.ini`-t az `ini` API-n át a
+        meglévő albumtagság-út írja. Bekötetlen íróval NEM esünk vissza a
+        fájlműveletre: albumnézetben az tilos, és a hívó az üres eredményből
+        üzenetet ad. `True`, ha volt a könyvtárban kép (a művelet elindult)."""
+        iro = getattr(self, "_album_tagsag_iro", None)
+        if iro is None:
+            return False
+        return bool(iro(fajlok, album_token))
 
     @Slot(str, result=bool)
     @Slot(str, bool, result=bool)
+    @Slot(str, bool, str, result=bool)
     def pasteFilesFromClipboard(  # noqa: N802
-        self, dest_folder: str, ordinary_folder_target: bool = True
+        self,
+        dest_folder: str,
+        ordinary_folder_target: bool = True,
+        album_token: str = "",
     ) -> bool:
         """A vágólapon lévő fájlok beillesztése a megadott mappába (#1526).
 
@@ -154,10 +247,27 @@ class FileOpsControllerClipboardMixin:
         fogd-és-vidd műveleteknél — nem külön ág, amit külön kellene őrizni.
 
         Visszatérés: elindult-e művelet. Üres vágólapra `False`, és a hívó
-        ebből tud üzenetet adni — nem néma hatástalanság."""
+        ebből tud üzenetet adni, tehát a hatástalanság nem néma.
+
+        #7142: közönséges album célnál (`album_token`) az eredeti
+        `0x00784100` kihagyja a fájlműveleti ágat: nincs megerősítő kérdés
+        és nincs másolás/áthelyezés, a képek az album tagjai lesznek, a
+        Kivágás sem töröl a forrásból (`_paste_into_album`). Ilyenkor a
+        `dest_folder` és az `ordinary_folder_target` figyelmen kívül marad."""
         _compat = _controller_module()
         fajlok, muvelet = _compat.vagolap_fajlok(self._vagolap_adata())
+        if album_token:
+            beillesztve = bool(fajlok) and self._paste_into_album(fajlok, album_token)
+            if beillesztve:
+                self._urit_a_sajat_vagolapot(fajlok)
+            return beillesztve
         if not fajlok or not dest_folder:
+            return False
+        # #7143: azonos mappában nincs fájlművelet (`0x0056ec92`): a célmappában
+        # már ott lévő fájl kimarad, és ha minden ilyen, a Beillesztés
+        # hatástalan. Fizikai másolat (`név-1`) azonos mappába nem készül.
+        fajlok = self._paste_sources_outside(fajlok, dest_folder)
+        if not fajlok:
             return False
         # ⚠️ `rename`, nem `skip` és nem felülírás: ütközésnél a beillesztés
         # ÚJ nevet ad, tehát semmi nem vész el. Az eredeti ilyenkor
@@ -181,9 +291,15 @@ class FileOpsControllerClipboardMixin:
             )
             return True
 
-        # Az azonos mappás viselkedés egyelőre a korábbi azonnali út.
+        # Nem közönséges mappacél (keresés, címke stb.): nincs megerősítés,
+        # a köteg azonnal indul, és hibátlan lefutás után a vágólap ürül.
         if muvelet == "cut":
-            self._move_batch(fajlok, dest_folder, "rename", stop_on_failure=True)
+            eredmeny = self._move_batch(
+                fajlok, dest_folder, "rename", stop_on_failure=True
+            )
         else:
-            self._copy_batch(fajlok, dest_folder, "rename", stop_on_failure=True)
+            eredmeny = self._copy_batch(
+                fajlok, dest_folder, "rename", stop_on_failure=True
+            )
+        self._urit_sikeres_beillesztes_utan(eredmeny, fajlok)
         return True
