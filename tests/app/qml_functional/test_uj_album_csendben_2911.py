@@ -13,9 +13,12 @@ kijelölt képek csak a jóváhagyás után kerülnek a gyűjteménybe.
 - a név a felület saját, FORDÍTHATÓ felirata (a próba-motorban a forrásalak
   `Untitled`; hogy magyarul „Névtelen", azt a
   `tests/app/test_ujalbum_nev_forditas_2911.py` méri a `.qm`-ből);
-- ⛔ üres kijelölésnél nem történik semmi — nálunk az album a
-  `.picasa.ini`-ben él (`[.album:<token>]`), tehát TAG nélkül nincs hova
-  kiírni. Az eredetinek adatbázisa volt, ott az üres album is létezhetett.
+- ⛔ a kijelöléses utak (Add to ▸ New Album..., helyi menü) üres kijelölésnél
+  nem csinálnak semmit, mert nálunk az album a `.picasa.ini`-ben él
+  (`[.album:<token>]`), tehát TAG nélkül nincs hova kiírni. A Fájl ▸ New
+  Album... és a Ctrl+N a #7164/#7180 óta kivétel: kijelöléstől függetlenül
+  megnyitja az ablakot, és üres albumot készít
+  (`test_uj_album_kijeloles_nelkul_7180.py`).
 """
 
 from __future__ import annotations
@@ -129,7 +132,23 @@ class TestNincsParbeszed:
 
 
 class TestUresKijeloles:
-    def test_nem_jon_letre_album(self, qml_app, qt_app):
+    def test_a_racs_helyi_menuje_nem_hoz_letre_albumot(self, qml_app, qt_app):
+        """A kijelöléses út (a kép helyi menüje) üres kijelölésnél hatástalan."""
+        window, controller, _engine = qml_app
+        window.setProperty("selectedIndex", -1)
+        window.setProperty("selectedIndexes", [])
+        qt_app.processEvents()
+
+        _elem(window, "photoContextMenu").newAlbumRequested.emit()
+        qt_app.processEvents()
+
+        dialog = window.findChild(QObject, "toolbarNewAlbumPropertiesDialog")
+        assert dialog is None or dialog.property("opened") is not True
+        assert controller.albums == []
+
+    def test_a_fajl_menu_nem_hoz_letre_albumot_az_ok_elott(self, qml_app, qt_app):
+        """#7180: a Fájl ▸ New Album... kijelölés nélkül megnyitja az ablakot,
+        de album csak az OK után jön létre."""
         window, controller, _engine = qml_app
         window.setProperty("selectedIndex", -1)
         window.setProperty("selectedIndexes", [])
@@ -142,4 +161,5 @@ class TestUresKijeloles:
         )
         qt_app.processEvents()
 
+        assert _elem(window, "toolbarNewAlbumPropertiesDialog").property("opened")
         assert controller.albums == []

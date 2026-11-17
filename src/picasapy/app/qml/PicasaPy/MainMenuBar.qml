@@ -160,7 +160,17 @@ PicasaMenuBar {
         if (hostController) hostFolderPane.mozgatasMappara(hostController.currentFolder)
     }
     onFolderDeleteRequested: {
-        if (hostController) hostFolderPane.torlesLomtarba(hostController.currentFolder)
+        if (!hostController || hostController.searchActive) return
+        if (hostController.currentPersonName !== "") {
+            hostFolderPane._askDeleteCurrentPeopleAlbum()
+        } else if (hostController.currentAlbumToken !== "") {
+            var token = hostController.currentAlbumToken
+            if (token.charAt(0) === "]") return
+            var album = hostController.albumProperties(token)
+            hostFolderPane._askDeleteAlbum(token, album.name || "")
+        } else if (hostController.currentFolder !== "") {
+            hostFolderPane.torlesLomtarba(hostController.currentFolder)
+        }
     }
     onFolderRemoveFromPicasaRequested: {
         if (hostController)
