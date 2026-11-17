@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.141] - 2026-11-18
+
+- Ha importáláskor egy kép másolása nem sikerül, a törlési módok a forrásból semmit nem törölnek, és a forrás törlésének hibája sem akasztja meg az importablakot (#7172).
+- Az import "After Copying" törlési módjai (Delete only copied photos, Delete everything on card) egyetlen megerősítést kérnek az eredeti Remove Imported Files / Remove All Files és Cancel gombokkal, a Delete Copied az eredeti kisbetűs figyelmeztetéssel, "Do not ask again" jelölő nélkül, így a kérdés nem nyomható el véglegesen (#7173).
+- Az importablak külön Import All és Import Selected (N) gombot ad, a bélyegképek többes kijelöléssel választhatók, az Enter és az Esc az eredeti szerint működik, a tippsor pedig az importmódnak megfelelő négy eredeti üzenet egyikét mutatja (#7177).
+- Az importablak előnézetében a bélyegképre jobbat kattintva helyi menü nyílik Include File, Exclude File, Include All és Exclude All paranccsal; a mai gombok és a bélyegkép alatti hivatkozás változatlanul működnek (#7178).
+- A Fájl ▸ New Album... és a Ctrl+N kijelölt kép nélkül is elérhető: megnyitja az Untitled, mai dátumos Album Properties ablakot, és OK után üres albumot hoz létre (#7180).
+- Az Album/Mappa menü Delete... tétele mostantól törli a megnyitott felhasználói vagy személyalbumot, a képfájlok megőrzésével (#7181).
+- Az importablak alapméretében és legkisebb méretében is teljesen látszik az alsó gombsor (Import All, Import Selected, Close), eddig kilógott az ablak aljáról (#7185).
+
 ## [1.0.140] - 2026-11-17
 
 - A Fájl ▸ New Album a kijelölt képektől függetlenül üres albumot hoz létre, a `Untitled` névvel és a létrehozás napjával, mint az eredeti; a kép helyi menüjének és a tálcának New Album útja továbbra is felveszi a kijelölt képeket (#7164).
