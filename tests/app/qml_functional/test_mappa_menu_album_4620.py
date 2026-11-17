@@ -10,7 +10,6 @@ _MAPPA_MUVELETEK = (
     "menuFolderLocate",
     "menuFolderRemoveFromPicasa",
     "menuFolderMove",
-    "menuFolderDelete",
 )
 
 
@@ -31,19 +30,22 @@ def test_mappa_menu_muveletek_album_es_mappanezetben(qml_app, qt_app):
         qt_app.processEvents()
         assert int(window.height()) == alapmagassag + eltolás
 
-        # Mappanézetben a négy művelet továbbra is a megnyitott mappára él.
+        # Mappanézetben a mappaműveletek és a mappatörlés is aktív.
         assert controller.currentAlbumToken == ""
         for nev in _MAPPA_MUVELETEK:
             assert _child(window, nev).property("enabled") is True
+        assert _child(window, "menuFolderDelete").property("enabled") is True
 
         # Az album megnyitása után a controller a korábbi mappa útvonalát
-        # megtartja; a Mappa menü műveletei ettől még legyenek tiltva.
+        # megtartja; a fizikai mappaműveletek ettől még legyenek tiltva.
+        # A Delete... viszont az albumot célozza, ezért aktív marad (#7181).
         controller.showAlbum(_ALBUM_TOKEN)
         qt_app.processEvents()
         assert controller.currentAlbumToken == _ALBUM_TOKEN
         assert controller.currentFolder == korabbi_mappa
         for nev in _MAPPA_MUVELETEK:
             assert _child(window, nev).property("enabled") is False, nev
+        assert _child(window, "menuFolderDelete").property("enabled") is True
 
         # Visszatéréskor a mappanézet műveletei ismét aktívak.
         controller.clearFilter()

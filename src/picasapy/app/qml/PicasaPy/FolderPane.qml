@@ -366,6 +366,25 @@ Rectangle {
             qsTr("Are you sure you want to delete the album \"%1\"?")
                 .replace("%1", name))
     }
+
+    // #7181: az Album/Mappa menü az éppen megnyitott személyalbumot is a
+    // bal hasáb helyi menüjének párbeszédablakával távolítja el.
+    function _askDeleteCurrentPeopleAlbum() {
+        if (!controller || !controller.currentPersonName) return
+        var name = controller.currentPersonName
+        var personId = ""
+        var people = controller.people || []
+        for (var i = 0; i < people.length; ++i) {
+            if (people[i].name === name) {
+                personId = people[i].person_id || ""
+                break
+            }
+        }
+        paneMenus.peopleAlbumDeleteConfirmation.personName = name
+        paneMenus.peopleAlbumDeleteConfirmation.personId = personId
+        paneMenus.peopleAlbumDeleteConfirmation.open()
+    }
+
     function openPeopleAlbumContextMenu(name, personId) {
         paneMenus.peopleAlbumContextMenu.personName = name
         paneMenus.peopleAlbumContextMenu.personId = personId || ""
