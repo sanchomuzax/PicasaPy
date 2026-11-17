@@ -71,7 +71,11 @@ def test_a_normal_dissolve_ideje_1000ms_a_diaidotol_fuggetlenul(
             qt_app, lambda: not animation.property("running"), masodperc=10.0
         )
         eltelt_ms = meres.elapsed()
-        assert 850 <= eltelt_ms <= 1200, (
+        # A beállított hossz pontos ellenőrzése fent áll (`dissolveTransitionMs`);
+        # a falióra a terhelt windowsos CI-gépen 1218 ms-ot is mért (#7166), ezért a
+        # felső határ a terhelt gép késését tűri, a beállított hossz eltérését a fenti
+        # tulajdonság-ellenőrzés fogja meg.
+        assert 850 <= eltelt_ms <= 1500, (
             f"{masodperc} s diaidőnél a Dissolve {eltelt_ms} ms volt"
         )
 
