@@ -141,8 +141,9 @@ def with_folder_date_override(document: IniDocument, date_iso: str) -> IniDocume
     bemenet viszont továbbra is ISO, mert a hívók (controller-slot,
     QML-dialógus) azzal dolgoznak.
 
-    Üres vagy érvénytelen bemenetnél a kulcs **kimarad**: az eredeti író
-    is kihagyja a sort, ha az érték `0.0` (`0x0071031e`–`0x0071032a`).
+    Üres vagy érvénytelen bemenetnél a kulcs **kimarad**. A Folder Properties
+    beállítója ezzel szemben a `0.000000` szöveget sorként írja; a
+    `0x0071031e` kapu a teljes ini-író (`0x00710080`) útvonalához tartozik.
     """
     tisztitott = date_iso.strip()
     if not _ervenyes_iso(tisztitott):

@@ -54,6 +54,7 @@ Dialog {
     property bool currentMusicEnabled: false
     property string currentMusicFile: ""
     property var renameFolderHandler: null
+    property var folderNameHandler: null
     property var folderLocationHandler: null
     property string renameError: ""
 
@@ -250,6 +251,12 @@ Dialog {
             root.folderPath = result.path
             root.folderName = result.name
             nameField.text = result.name
+        }
+        if (!root.albumMode && !root.newFolderCreation
+                && typeof root.folderNameHandler === "function") {
+            var nameSaved = root.folderNameHandler(root.folderPath)
+            if (nameSaved !== true)
+                return
         }
         if (!root.albumMode && !root.newFolderCreation
                 && locationField.text !== root.folderLocation) {
