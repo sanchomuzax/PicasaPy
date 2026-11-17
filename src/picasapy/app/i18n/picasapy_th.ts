@@ -14593,10 +14593,22 @@ THIS CANNOT BE UNDONE.
             <translation>แม่แบบโฟลเดอร์:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
-            <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>คุณแน่ใจหรือไม่ว่าต้องการนำไฟล์ที่นำเข้าแล้วออกจากการ์ด? เลิกทำไม่ได้</translation>
+            <source>Are you sure you want to remove the imported files from your card? This cannot be undone.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::message</extracomment>
+            <translation>คุณแน่ใจหรือไม่ว่าต้องการนำไฟล์ที่นำเข้าออกจากการ์ดของคุณ การดำเนินการนี้ไม่สามารถเลิกทำได้</translation>
+        </message>
+        <message>
+            <source>Remove Imported Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::yesButton</extracomment>
+            <translation>ลบไฟล์ที่นำเข้า</translation>
+        </message>
+        <message>
+            <source>Remove All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveAll::yesButton</extracomment>
+            <translation>นำไฟล์ทั้งหมดออก</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="531" />

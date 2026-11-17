@@ -14608,10 +14608,22 @@ TÄTÄ EI VOI KUMOTA.
             <translation>Kansiomalli:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
-            <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Haluatko varmasti poistaa tuodut tiedostot kortilta? TÄTÄ EI VOI KUMOTA.</translation>
+            <source>Are you sure you want to remove the imported files from your card? This cannot be undone.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::message</extracomment>
+            <translation>Haluatko varmasti poistaa tuodut tiedostot kortistasi? Poistoa ei voi kumota.</translation>
+        </message>
+        <message>
+            <source>Remove Imported Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::yesButton</extracomment>
+            <translation>Poista tuodot tiedostot</translation>
+        </message>
+        <message>
+            <source>Remove All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveAll::yesButton</extracomment>
+            <translation>Poista kaikki tiedostot</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="531" />

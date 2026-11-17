@@ -14608,10 +14608,22 @@ DET GÅR INTE ATT ÅNGRA.
             <translation>Mappmall:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
-            <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Är du säker på att du vill ta bort de importerade filerna från kortet? DET GÅR INTE ATT ÅNGRA.</translation>
+            <source>Are you sure you want to remove the imported files from your card? This cannot be undone.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::message</extracomment>
+            <translation>Vill du verkligen radera de importerade filerna från kortet? Åtgärden kan inte ångras.</translation>
+        </message>
+        <message>
+            <source>Remove Imported Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::yesButton</extracomment>
+            <translation>Ta bort importerade filer</translation>
+        </message>
+        <message>
+            <source>Remove All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveAll::yesButton</extracomment>
+            <translation>Ta bort alla filer</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="531" />

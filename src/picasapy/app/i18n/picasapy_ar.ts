@@ -14668,10 +14668,22 @@ THIS CANNOT BE UNDONE.
             <translation>قالب المجلد:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
-            <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>هل تريد بالتأكيد إزالة الملفات المستوردة من بطاقتك؟ لا يمكن التراجع عن ذلك.</translation>
+            <source>Are you sure you want to remove the imported files from your card? This cannot be undone.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::message</extracomment>
+            <translation>هل تريد إزالة الملفات التي تم استيرادها من بطاقتك؟ لا يمكن التراجع عن هذا الإجراء.</translation>
+        </message>
+        <message>
+            <source>Remove Imported Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::yesButton</extracomment>
+            <translation>إزالة الملفات التي تم استيرادها</translation>
+        </message>
+        <message>
+            <source>Remove All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveAll::yesButton</extracomment>
+            <translation>إزالة كل الملفات</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="531" />

@@ -14593,10 +14593,22 @@ THIS CANNOT BE UNDONE.
             <translation>Πρότυπο φακέλου:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
-            <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Είστε βέβαιοι ότι θέλετε να αφαιρέσετε τα εισαγόμενα αρχεία από την κάρτα σας; ΑΥΤΗ Η ΕΝΕΡΓΕΙΑ ΔΕΝ ΜΠΟΡΕΙ ΝΑ ΑΝΑΙΡΕΘΕΙ.</translation>
+            <source>Are you sure you want to remove the imported files from your card? This cannot be undone.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::message</extracomment>
+            <translation>Είστε βέβαιοι ότι θέλετε να καταργήσετε τα αρχεία που έχουν εισαχθεί από την κάρτα σας; Δεν είναι δυνατή η αναίρεση αυτής της ενέργειας.</translation>
+        </message>
+        <message>
+            <source>Remove Imported Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveCopied::yesButton</extracomment>
+            <translation>Κατάργηση αρχείων που έχουν εισαχθεί</translation>
+        </message>
+        <message>
+            <source>Remove All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::confirmRemoveAll::yesButton</extracomment>
+            <translation>Κατάργηση όλων των αρχείων</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="531" />

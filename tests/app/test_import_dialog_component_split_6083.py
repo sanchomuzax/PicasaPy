@@ -18,9 +18,11 @@ _COMPONENTS = (
     "ImportSourcePreview",
     "ImportSourceDestinationPanel",
 )
-_BASELINE_QSTR_COUNT = 52
+# #7173: a nagybetűs előkérdés helyett az eredeti kisbetűs szöveg, plusz a
+# két eredeti gombfelirat (Remove Imported Files / Remove All Files).
+_BASELINE_QSTR_COUNT = 54
 _BASELINE_QSTR_SHA256 = (
-    "5212e2af231a128f36745603810696b8cffc8e775cfe7e55004f15ec6f8096a4"
+    "4a5d21a090263d0ce43084323505781b3d4825052b03b9081b4c4dee00ee4859"
 )
 _BASELINE_OBJECT_NAMES = {
     "importRotateLeft:",

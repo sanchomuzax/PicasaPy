@@ -234,8 +234,9 @@ Window {
             importSourceWindow.afterCopying)
     }
 
-    // #441: "After Copying:" — kétlépcsős, egyre erősebb megerősítés a
-    // törléssel járó két állapotnál; "Leave card alone"-nál nincs kérdés.
+    // "After Copying:" - a törléssel járó két állapotnál EGYETLEN
+    // megerősítés (az eredeti `0x00519720`, #7173); "Leave card alone"-nál
+    // nincs kérdés.
     function requestImport() {
         if (importSourceWindow.destFolder.length === 0) return
         if (importSourceWindow.includedCount === 0) return
@@ -246,11 +247,13 @@ Window {
             importSourceWindow.runImportNow()
             return
         }
-        removeImportedConfirm.ask("importSourceRemoveImported", qsTr(
-            // #465 4. pont: az eredeti Picasa NAGYBETŰVEL írja — ez a
-            // legsúlyosabb adatvesztési pont az egész programban
-            "Are you sure you want to remove the imported files from your "
-            + "card? THIS CANNOT BE UNDONE."))
+        // Delete Copied: a `confirmRemoveCopied::message` eredeti szövege
+        // (kisbetűs második mondattal); Delete All: a vezérlő összeállított
+        // figyelmeztetése.
+        removeConfirm.ask("", importSourceWindow.afterCopying === "delete_all"
+            ? importSourceController.wipeCardWarning()
+            : qsTr("Are you sure you want to remove the imported files from "
+                   + "your card? This cannot be undone."))
     }
 
     Connections {
@@ -368,35 +371,17 @@ Window {
         onAccepted: importSourceWindow.destFolder = selectedFolder.toString()
     }
 
-    // #441 — kétlépcsős, egyre erősebb megerősítés a forrás-törléshez.
-    // 1. lépés: mindkét törléssel járó "After Copying:" állapotra közös,
-    // generikus kérdés. "delete_all"-nál ezt követi a 2. lépés (erősebb
-    // figyelmeztetés + "ne figyelmeztess többé"), "delete_copied"-nél a
-    // 2. lépés kimarad — a #422 mintája szerint EGYEDI namePrefix.
+    // Az egyetlen törlés-megerősítés (#7173). Az eredeti ablakban nincs
+    // „Do not ask again” jelölő és nincs „No” gomb, csak az igen-gomb és a
+    // Cancel; az üres kulcs miatt a kérdés soha nem nyomható el.
     ConfirmDialog {
-        id: removeImportedConfirm
-        namePrefix: "importSourceRemoveImportedConfirm"
+        id: removeConfirm
+        namePrefix: "importSourceConfirmRemove"
         title: qsTr("Import from Source")
-        onConfirmed: {
-            if (importSourceWindow.afterCopying === "delete_all") {
-                //: #860: az ÖSSZEÁLLÍTOTT figyelmeztetés a vezérlőtől jön
-                //: (`wipe_card_warning`) — darabszámokkal, a nem felismert
-                //: fájlokkal és a záró „A MŰVELET NEM VONHATÓ VISSZA."
-                //: mondattal. Korábban egy három pontra rövidített mondat
-                //: állt itt, ami épp a lényeget hallgatta el.
-                deleteAllWarningConfirm.ask(
-                    "importSourceDeleteAllWarning",
-                    importSourceController.wipeCardWarning())
-            } else {
-                importSourceWindow.runImportNow()
-            }
-        }
-    }
-
-    ConfirmDialog {
-        id: deleteAllWarningConfirm
-        namePrefix: "importSourceDeleteAllWarningConfirm"
-        title: qsTr("Import from Source")
+        rememberVisible: false
+        noVisible: false
+        yesText: importSourceWindow.afterCopying === "delete_all"
+            ? qsTr("Remove All Files") : qsTr("Remove Imported Files")
         onConfirmed: importSourceWindow.runImportNow()
     }
 }
