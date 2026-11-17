@@ -4699,7 +4699,7 @@ E5 időzítési jegy: a jelenlegi `MainWindowToolbar.qml:48-69, 82-87` nem haszn
 **Két út a szóillesztéshez:**
 
 - **A:** a meglévő Ghidra-kimenet a `0x006c0fc0` pozitív/kizárt listáját és a `0x0043f9a0` feldolgozó ágait mutatja.
-- **B:** a helyi utasításszintű olvasás a `0x004dc690` előtag-összehasonlítását és a `0x00413290` bitmapmetszését mutatja; a `0x0043fda4` hívóhely veremargumentumai igazolják, melyik bitmap a forrás és melyik a cél. A két út egyezik a pozitív szavak metszésében és a kizárt szavak törlésében.
+- **B:** a helyi utasításszintű olvasás a `0x004dc690` előtag-összehasonlítását és a `0x00413290` találati bitképeinek metszetét mutatja; a `0x0043fda4` hívóhely veremargumentumai igazolják, melyik bitmap a forrás és melyik a cél. A két út egyezik a pozitív szavak metszésében és a kizárt szavak törlésében.
 
 **Cáfoló kísérlet:** megpróbáltam cáfolni, hogy az eredeti csak idézett, teljes frázist keres, és hogy a `0x004dcb90` végzi a kizárást. A `0x004dc690` hívólistáján és utasításain a keresőszó hosszával végzett előtag-összehasonlítás látszik; a `0x0043f9a0` kizáró ciklusa a negatív bitmapben megjelölt elemeket törli, míg `0x004dcb90` az index pontos szóadatát keresi vissza. A cáfoló eredményét a tényleges hívóhelyekkel ellenőriztem; az eredeti nem azonos az egyetlen idézett FTS-frázissal.
 
