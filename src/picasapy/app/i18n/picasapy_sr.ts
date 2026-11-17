@@ -14873,6 +14873,30 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Искључи</translation>
         </message>
+        <message>
+            <source>Include File</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_INCLUDE</extracomment>
+            <translation>Укључи датотеку</translation>
+        </message>
+        <message>
+            <source>Exclude File</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_EXCLUDE</extracomment>
+            <translation>Изузми датотеку</translation>
+        </message>
+        <message>
+            <source>Include All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_INCLUDEALL</extracomment>
+            <translation>Укључи све</translation>
+        </message>
+        <message>
+            <source>Exclude All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_EXCLUDEALL</extracomment>
+            <translation>Изузми све</translation>
+        </message>
     </context>
     <context>
         <name>ImportSourceDestinationPanel</name>

@@ -14,6 +14,42 @@ Rectangle {
     color: Theme.contentPanel
     border.color: Theme.chromeBorder
 
+    // #7178: a bélyegkép helyi menüje. Az eredetiben (`0x00733c70`, 20 bájtos
+    // rekordok) négy parancs áll, ebben a sorrendben: Include File, Exclude
+    // File, Include All, Exclude All. Ugyanazt a kiválasztási állapotot
+    // módosítják, mint a bélyegkép alatti hivatkozás és az Include All /
+    // Exclude All gomb: a vezérlő négy metódusát hívják.
+    PicasaMenu {
+        id: thumbMenu
+        objectName: "importSourceThumbMenu"
+        // a jobbkattintott bélyegkép forrás-útvonala (a két "File" parancs
+        // erre hat)
+        property string targetPath: ""
+
+        MenuItem {
+            objectName: "importSourceThumbMenuIncludeFile"
+            text: qsTr("Include File")
+            onTriggered: importSourceController.includeFile(
+                thumbMenu.targetPath)
+        }
+        MenuItem {
+            objectName: "importSourceThumbMenuExcludeFile"
+            text: qsTr("Exclude File")
+            onTriggered: importSourceController.excludeFile(
+                thumbMenu.targetPath)
+        }
+        MenuItem {
+            objectName: "importSourceThumbMenuIncludeAll"
+            text: qsTr("Include All")
+            onTriggered: importSourceController.includeAll()
+        }
+        MenuItem {
+            objectName: "importSourceThumbMenuExcludeAll"
+            text: qsTr("Exclude All")
+            onTriggered: importSourceController.excludeAll()
+        }
+    }
+
     GridView {
         id: previewGrid
         objectName: "importSourcePreviewGrid"
@@ -57,6 +93,19 @@ Rectangle {
                 // #441: az előnézet a beállított forgatással mutat —
                 // az eredetiben is a MÁR kiegyenesített kép látszott
                 rotation: 90 * (thumbFrame.modelData.rotation || 0)
+            }
+
+            // #7178: jobbklikk a bélyegképen a helyi menüt nyitja. Csak a
+            // jobb gombot fogadja, így a bal gombos vezérlőket (forgatás,
+            // csillag, Include/Exclude hivatkozás) nem zavarja.
+            MouseArea {
+                objectName: "importSourceThumbMenuArea:" + thumbFrame.index
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                onClicked: function (mouse) {
+                    thumbMenu.targetPath = thumbFrame.modelData.path
+                    thumbMenu.popup(thumbFrame, mouse.x, mouse.y)
+                }
             }
 
             // #441: forgatás és csillagozás MÁR AZ IMPORT ELŐTT — az

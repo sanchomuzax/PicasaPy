@@ -14841,6 +14841,30 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Loại trừ</translation>
         </message>
+        <message>
+            <source>Include File</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_INCLUDE</extracomment>
+            <translation>Bao gồm tệp</translation>
+        </message>
+        <message>
+            <source>Exclude File</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_EXCLUDE</extracomment>
+            <translation>Loại trừ tệp</translation>
+        </message>
+        <message>
+            <source>Include All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_INCLUDEALL</extracomment>
+            <translation>Bao gồm tất cả</translation>
+        </message>
+        <message>
+            <source>Exclude All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Import::ID_IMPORT_EXCLUDEALL</extracomment>
+            <translation>Loại trừ tất cả</translation>
+        </message>
     </context>
     <context>
         <name>ImportSourceDestinationPanel</name>
