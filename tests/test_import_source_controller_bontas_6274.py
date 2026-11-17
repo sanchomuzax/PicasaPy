@@ -109,7 +109,8 @@ _MOZGATOTT_FORRASOK = {
     ("import_source_controller_sources.py", None, "_duplikatumok"):
         "96a23ad277faf88c9cc18c81b5b7214a73b8ab0b40ef085affd6c9a486f020d7",
     ("import_source_controller.py", "ImportSourceController", "runImport"):
-        "82d5b6adf2ed4621227bc7a45a2df40c4138e29de2d02a89d433b8867e253cb0",
+        # #7172: az importhiba utáni forráskímélés és törlési OSError-kezelés.
+        "a5f87b65b9da2d25d76b54a1626f8743162c25138c5dbba41760c9a48beeb226",
     ("import_source_controller_import.py", None, "_size_of"):
         "0f47e44e0fa4ebf543afb784d96deff0affcdde3b956de3794ce0311d3a76cb3",
     ("import_source_controller_import.py", None, "_mark_imported_ini"):
