@@ -256,8 +256,9 @@ Rectangle {
         paneMenus.folderPropertiesDialog.mode = "folder"
         paneMenus.folderPropertiesDialog.newFolderCreation = false
         paneMenus.folderPropertiesDialog.folderPath = path
-        paneMenus.folderPropertiesDialog.folderName =
-            path.substring(path.lastIndexOf("/") + 1)
+        //: #7160: Windowson az útvonalban fordított perjel áll
+        paneMenus.folderPropertiesDialog.folderName = path.substring(
+            Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\")) + 1)
         paneMenus.folderPropertiesDialog.currentDate =
             controller ? controller.folderDateOverride(path) : ""
         paneMenus.folderPropertiesDialog.currentDescription =

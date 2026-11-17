@@ -153,7 +153,12 @@ def _lapos_sor(window, qt_app, ut: str) -> QQuickItem:
 def _fa_sor(window, qt_app, ut: str) -> QQuickItem:
     return _egyetlen_sor(
         window, qt_app,
-        lambda: _latszo(window, "hierRowMouse:" + ut),
+        lambda: [
+            e for e in _walk(window.contentItem())
+            if e.objectName().startswith("hierRowMouse:")
+            and _azonos_ut(e.objectName().split(":", 1)[1], ut)
+            and _tenyleg_latszik(e)
+        ],
         f"a fa {ut!r} sora",
     )
 
@@ -211,6 +216,12 @@ def _mezo(window, nev: str) -> str:
     return str(mezo.property("text"))
 
 
+def _azonos_ut(a: str, b: str) -> bool:
+    """Platformfüggetlen útvonal-egyezés: Windowson a fa a perjeles és a fordított
+    perjeles alakot is adhatja (#7160)."""
+    return str(a).replace("\\", "/") == str(b).replace("\\", "/")
+
+
 def _fa(engine):
     return engine.rootContext().contextProperty("folderHierarchyController")
 
@@ -226,13 +237,14 @@ def _fanezet(engine, qt_app) -> None:
     assert varj_feltetelre(
         qt_app,
         lambda: any(
-            str(r["path"]).endswith("/fotok/reszlet") for r in fa.property("rows")
+            str(r["path"]).replace("\\", "/").endswith("/fotok/reszlet")
+            for r in fa.property("rows")
         ),
     ), "a fa nem mutatja a fotok/reszlet sort kinyitva"
 
 
 def _fa_sor_adat(engine, ut: str) -> dict:
-    sorok = [s for s in _fa(engine).property("rows") if s["path"] == ut]
+    sorok = [s for s in _fa(engine).property("rows") if _azonos_ut(s["path"], ut)]
     assert len(sorok) == 1, f"a fa modelljében nincs egyértelmű {ut} sor"
     return sorok[0]
 
