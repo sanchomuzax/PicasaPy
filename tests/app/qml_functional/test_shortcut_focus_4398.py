@@ -253,11 +253,12 @@ def test_search_caption_and_tag_fields_keep_their_keys(
 
 # #4696: a PhotoViewer láthatóságához kötött Ctrl+9 az 56. QML-gyorsbillentyű;
 # #4569: a néző teljes képernyős F11-e az 57.
+# #7177: az importablak Return, Enter és Escape kötése a 68-70.
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])
 def test_all_shortcut_sequences_are_silent_while_search_has_focus(
     qml_app, qt_app, height_delta
 ):
-    """Mind a 67 QML-kötés szekvenciáját valódi leütéssel próbálja szövegfókuszban."""
+    """Mind a 70 QML-kötés szekvenciáját valódi leütéssel próbálja szövegfókuszban."""
     window, _controller, _engine = qml_app
     window.setHeight(window.height() + height_delta)
     window.show()
@@ -273,7 +274,7 @@ def test_all_shortcut_sequences_are_silent_while_search_has_focus(
 
     qml_root = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml"
     sequences = _declared_shortcut_sequences(qml_root)
-    assert len(sequences) == 67, f"a QML-leltár {len(sequences)} Shortcut-kötést ad"
+    assert len(sequences) == 70, f"a QML-leltár {len(sequences)} Shortcut-kötést ad"
 
     for sequence in sequences:
         parsed = QKeySequence(sequence)

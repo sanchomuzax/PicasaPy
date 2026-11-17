@@ -84,6 +84,8 @@ Rectangle {
                 anchors.fill: parent
                 onClicked: hostWindow.togglePreviewSelection(
                     thumbFrame.modelData.path, thumbFrame.index)
+
+                PressFeedbackOverlay { pressSource: parent }
             }
 
             Image {
