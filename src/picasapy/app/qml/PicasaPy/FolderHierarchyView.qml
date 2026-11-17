@@ -79,6 +79,9 @@ Item {
     // indexen kívüli, saját képet nem tartalmazó köztes sorok maradnak a
     // HierFolder rövid menüjénél.
     signal folderContextMenuRequested(string path)
+    // #7151: az almappa nélküli sor dupla kattintása a Folder Properties
+    // ablakot kéri (`0x00765d30`, 5-ös rekordtípus); a gazda nyitja meg.
+    signal folderPropertiesRequested(string path)
     // A `HierFolder` menüosztály három olyan tétele, aminek a rétege a
     // gazdában van (`FUN_00733a40`): a komponens csak jelez, nem cselekszik.
     signal locateOnDiskRequested(string path)
@@ -388,7 +391,19 @@ Item {
                     if (row.isRoot) { root.toggle(row.modelData.path); return }
                     root.choose(row.modelData.path)
                 }
-                onDoubleClicked: root.toggle(row.modelData.path)
+                // #7151: az almappa nélküli (nem gyökér) sor a Folder
+                // Properties ablakot kéri, az almappás sor (és a gyökér)
+                // dupla kattintása kinyit/becsuk (`0x004ab9a0`, 6-os
+                // rekordtípus). Mentés-szűrő módban a sor pipa: ablak nincs.
+                onDoubleClicked: function (mouse) {
+                    if (!row.isRoot && !row.modelData.hasChildren
+                            && mouse.button === Qt.LeftButton) {
+                        if (!root.mentesSzuroAktiv)
+                            root.folderPropertiesRequested(row.modelData.path)
+                        return
+                    }
+                    root.toggle(row.modelData.path)
+                }
 
                 PressFeedbackOverlay { pressSource: parent }
             }
