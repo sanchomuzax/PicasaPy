@@ -2,10 +2,12 @@
 
 Az eredetiben (`0x005eb810` siker után) a `0x004af790`-től kapott új album
 azonosítója lesz az aktuális album, és a nézet frissül. Nálunk a Fájl ▸ New
-Album... és az eszköztár új album gombja ugyanazt az Album Properties
-párbeszédet használja; jóváhagyás után annak rácsa nyílik, mégpedig ugyanazon
-az úton, mint a bal hasáb albumsorának kattintása. Mégse vagy íráshiba esetén
-a jelenlegi nézet és a kijelölés marad.
+Album..., az eszköztár új album gombja és a kép helyi menüjének New Album...
+sora ugyanazt az Album Properties párbeszédet használja; jóváhagyás után az
+új album rácsa nyílik, mégpedig ugyanazon az úton, mint a bal hasáb
+albumsorának kattintása. Mégse vagy íráshiba esetén a jelenlegi nézet és a
+kijelölés marad. A Fájl ▸ New Album... üres albumot készít (#7164), ezért az
+íráshiba-próba a képeket felvevő helyi menü útját használja.
 """
 
 from __future__ import annotations
@@ -18,6 +20,12 @@ from PySide6.QtCore import QObject
 
 from tests.app.qml_functional._felsomenupontok_helpers_4329 import _objektum
 from tests.app.qml_functional._fomenu_4420_menu import _kattints
+from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
+    almenu_megnyitasa,
+    gyerek,
+    jobbklikk_fotón,
+    kattints,
+)
 from tests.app.qml_functional._teszt_menu_6861 import megnyit_fomenu
 from tests.app.qml_functional.conftest import _build_qml_app
 from tests.support.jpeg_factory import make_minta_jpeg
@@ -77,6 +85,14 @@ def _fajl_uj_album(window, qt_app) -> QObject:
     return _megnyilt_parbeszed(window, qt_app)
 
 
+def _helyi_menu_uj_album(window, qt_app) -> QObject:
+    """Kép helyi menüje ▸ Add to Album ▸ New Album... valódi kattintásokkal."""
+    menu = jobbklikk_fotón(window, qt_app, 0)
+    almenu_megnyitasa(window, qt_app, menu, "contextMenuAddToAlbum")
+    kattints(window, qt_app, gyerek(window, "contextMenuNewAlbum"))
+    return _megnyilt_parbeszed(window, qt_app)
+
+
 def _eszkoztar_uj_album(window, qt_app) -> QObject:
     _kattints(qt_app, _elem(window, "toolbarNewAlbumButton"))
     return _megnyilt_parbeszed(window, qt_app)
@@ -126,8 +142,8 @@ def test_file_menu_new_album_ok_utan_az_uj_album_nyilik_meg(
     )
     assert controller.viewModeName == "album"
     assert controller.filterActive is True
-    assert controller.photos.rowCount() == 2, (
-        "az új album rácsa a két kijelölt képet kell mutassa"
+    assert controller.photos.rowCount() == 0, (
+        "a Fájl menüből készült album üres, rácsa is az (#7164)"
     )
     assert _kijeloles(window) == [], (
         "a bal hasábból nyitott albumhoz hasonlóan a kijelölés törlődik"
@@ -190,7 +206,7 @@ def test_irashiba_utan_marad_a_jelenlegi_nezet_es_kijeloles(
     hibak: list[str] = []
     controller.albumWriteFailed.connect(hibak.append)
 
-    dialog = _fajl_uj_album(window, qt_app)
+    dialog = _helyi_menu_uj_album(window, qt_app)
     eredeti_mod = mappa.stat().st_mode
     mappa.chmod(0o555)
     try:

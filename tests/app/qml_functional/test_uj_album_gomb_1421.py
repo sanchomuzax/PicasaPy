@@ -10,8 +10,9 @@ elkülönítve készít üres albumot.
 
 A bináris szerint a menütétel maga is a `thumbui/newalbum` **kattintást
 szimulálja** (eszköztár-viselkedés spec, 2. szakasz). Nálunk a Fájl menü
-és a kép-helyi menü továbbra is a kijelöléses `openNewAlbum()` utat járja;
-az eszköztár a #5812 tulajdonságpárbeszédét nyitja.
+(#7164 óta) kijelöléstől függetlenül üres albumot készít, a kép-helyi menü a
+kijelölt képeket felvevő `openAddToNewAlbum()` utat járja; az eszköztár a #5812
+tulajdonságpárbeszédét nyitja.
 
 ## ⚠️ Amit a rejtés jelent
 
@@ -71,7 +72,7 @@ class TestAGombLETEZIK:
 
 class TestKulonEszkozlistasUt:
     def test_a_toolbar_es_a_fajl_menu_kulon_utvonalat_hasznal(self):
-        """A toolbar üres albumot készít; a Fájl menü kijelöléses út marad."""
+        """A toolbar és a Fájl menü üres albumot készít; a helyi menü kijelöléses."""
         toolbar = _MAIN_TOOLBAR.read_text(encoding="utf-8")
         # #6136: a fotó-helyi menü főablaki bekötése a MainPhotoContextMenu.qml-be
         # költözött, ahol a gazdát hostWindow / hostFileOpsDialogs néven éri el.
@@ -86,16 +87,18 @@ class TestKulonEszkozlistasUt:
         assert "openNewAlbum(window.selectedRows())" not in toolbar_route
         # #7100: a fotó-helyi menü Add to Album ▸ New Album... sora a kijelölés
         # első képének dátumát adja át (`openAddToNewAlbum`), a Fájl menü útja
-        # (`MainMenuBar.qml`, az eredetiben más belépő) a régi `openNewAlbum` marad.
+        # (`MainMenuBar.qml`, az eredetiben más belépő) az `openNewAlbum` marad,
+        # de #7164 óta a kijelölt képek átadása nélkül (üres album, mai dátum).
         assert (
             "onNewAlbumRequested: fileOpsDialogs.ensure().openAddToNewAlbum("
             "window.selectedRows())" in fo
         ), "a fotó-helyi menü New Album... útja megváltozott"
         fajl_menu = _MAIN_TOOLBAR.with_name("MainMenuBar.qml").read_text(encoding="utf-8")
         assert (
-            "onNewAlbumRequested: hostFileOpsDialogs.ensure().openNewAlbum("
-            "hostWindow.photoActionRows())" in fajl_menu
-        ), "a Fájl menü kijelöléses útja megváltozott"
+            "onNewAlbumRequested: hostFileOpsDialogs.ensure().openNewAlbum()"
+            in fajl_menu
+        ), "a Fájl menü üres albumos útja megváltozott"
+        assert "openNewAlbum(hostWindow.photoActionRows())" not in fajl_menu
 
 
 class TestAszukAblak:
