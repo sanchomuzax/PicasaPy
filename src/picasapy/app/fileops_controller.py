@@ -42,7 +42,7 @@ from picasapy.fileops import (
     validate_folder_name,
 )
 from picasapy.fileops import open_with
-from picasapy.fileops.move_folder import FolderMoveError
+from picasapy.fileops.move_folder import FolderMoveError, is_system_path
 from picasapy.ini import (
     IniConflictError,
     IniSaveError,

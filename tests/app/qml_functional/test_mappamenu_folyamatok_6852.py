@@ -207,7 +207,7 @@ def test_a_mappatorles_nem_alapertelmezett_igen_gombbal_kerdez(
 
 
 @pytest.mark.parametrize("height_delta", _ABLAKMAGASSAG_ELTERESEK)
-def test_az_athelyezes_mappavalasztasa_a_forras_szulojeben_nyilik(
+def test_az_athelyezes_mappavalasztasa_a_mozgatott_mappaban_nyilik(
     mappa_app, qt_app, height_delta
 ):
     _magassag(mappa_app, qt_app, height_delta)
@@ -215,9 +215,9 @@ def test_az_athelyezes_mappavalasztasa_a_forras_szulojeben_nyilik(
     _nyisd_meg_menuvel(mappa_app, qt_app, "folderMenuMoveFolder")
 
     dialog = gyerek(window, "moveFolderDialog")
-    assert varj(qt_app, lambda: nyitott(dialog)), "a Move Folder to ablak nem nyílt meg"
-    # #7067: az eredeti címe `Move Folder to %s`, a mozgatott mappa nevével
-    assert dialog.property("title") == f"Move Folder to {Path(folder).name}"
+    assert varj(qt_app, lambda: nyitott(dialog)), "a Browse for Folder ablak nem nyílt meg"
+    # #7109: a rendszerablak címe nem a mozgatott mappa nevét viseli.
+    assert dialog.property("title") == "Browse for Folder"
     _, native_probe = _mappavalaszto_nativ_proba(_engine, dialog)
     assert native_probe.property("nativePicker"), (
         "a mappaböngészőt nem natív módban kényszerítettük, így hiányozhat a "
@@ -226,8 +226,8 @@ def test_az_athelyezes_mappavalasztasa_a_forras_szulojeben_nyilik(
     current_folder = dialog.property("currentFolder")
     assert current_folder is not None, "a mappaválasztó kezdőmappája hiányzik"
     current_path = current_folder.toLocalFile()
-    assert Path(current_path) == Path(folder).parent, (
-        f"a mappaválasztó nem a forrás szülőjében nyílt: {current_path!r}"
+    assert Path(current_path) == Path(folder), (
+        f"a mappaválasztó nem a mozgatott mappában nyílt: {current_path!r}"
     )
     assert dialog.property("acceptLabel") == "OK"
     assert dialog.property("rejectLabel") == "Cancel"

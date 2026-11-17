@@ -56,13 +56,17 @@ _EREDETI_NYILVANOS_NEVEK = {
     "write_album_places",
 }
 
-# A bontás előtti photo_ops_album_mixin.py 22 metódusának LF-normalizált,
-# UTF-8 forrásszöveg-lenyomata a dekorátortól a metódus záró soráig.
+# A bontás előtti photo_ops_album_mixin.py metódusainak LF-normalizált,
+# UTF-8 forrásszöveg-lenyomata a dekorátortól a metódus záró soráig. A #7101
+# az albumtagság két belső segédjét és az `addRowsToAlbum` forrását módosítja; a #7102
+# után a `createAlbum` csak Python-hívó metódus (a felület már nem hívja).
 _EREDETI_FORRAS_SHA256 = {
     # #6281: az index-beli üres album kezelése (két új segéd, öt módosult metódus)
     "_fuggo_ures_album": "6d9fede6f567d5ddf6572d46ebceaf988e921360b2d338255710c353a6a14516",
     "_fuggo_ures_album_frissit": "a72813e92efdf9aa77224f89f05090af1886465f321cd643117bbc0a859d5860",
-    "addRowsToAlbum": "79097cd609e59098501f9d323e629a39943e92d68c0148688b0b507453f1298e",
+    "addRowsToAlbum": "98c24a20a950a99f11cbd0589ddf85e18b9b5795b9138fba41dd593ce33251bc",
+    "_album_membership_mutator": "912803685d40a02ebb4095811e6c019ca0f8c685a643aae6a3faa8780f67e672",
+    "_known_album_fields": "e47fc1c0bc094ed874334b957274d794cd37957d0fc328e5cb8a2296db6b4874",
     "removeRowsFromAlbum": "6ece39f95ddb1d0fc0a5590d3c256139b2b5937e55210112a1a4402f7e025be1",
     "deleteAlbum": "82152426a235bc13e9dc864f9e7253362ebe481eaf18870b66854da553ae5ffa",
     "sortAlbum": "d037c31c30de643224579a7f939e1d26c2c266416472cb22cb9802e961637869",
@@ -75,7 +79,7 @@ _EREDETI_FORRAS_SHA256 = {
     "editAlbumProperties": "bdea3581ac51e62e42f0dd58cd78840cef66879a93ac976d14adf2526752829a",
     "editAlbumMusic": "777d8ae03eff326af0309dad4171d5cbacfff36ce8581e51431bbc0fccbfe14f",
     "_album_dokumentumok": "93229cf8ec334fca93d3d22d80fc1dfe077badfc8df952be25162eef0d612045",
-    "createAlbum": "ef0c45d043b67bb6714deea959268ab0c4eb89ab3c84bf0cdadbd732d54a9a3a",
+    "createAlbum": "18e07bfb696efaa560be0c1176db9ba18537b2419a414e18c7dc8a4c2ce652e5",
     "createAlbumWithProperties": "e7f9f61ae2a5fb48dcb264eb2a1c21ce4b81ed9f07b7359fb15828bf78e0ce57",
     "createEmptyAlbum": "c96d70e3e9bf57c6380655b3ea833da02ef9749d30dc5c963de1a9965456b165",
     "_albumot_keszit": "1c690d2f14511d1ade16ab7a024c6143f6624a1b6d7ca29c340e9e324c40b0ac",
@@ -97,7 +101,6 @@ _QT_METHODS = (
     ("slot", "albumProperties", 1),
     ("slot", "editAlbumProperties", 5),
     ("slot", "editAlbumMusic", 3),
-    ("slot", "createAlbum", 2),
     ("slot", "createAlbumWithProperties", 7),
     ("slot", "createEmptyAlbum", 7),
     ("slot", "setPhotoAsDesktopBackground", 1),

@@ -22,6 +22,13 @@ function _ketjegyu(n) { return (n < 10 ? "0" : "") + n }
 // utáni napja ISO-alakban; "" hiányzó vagy érvénytelen időnél (a hívó ilyenkor
 // a mai napra esik vissza).
 function kepNapja(takenAt) {
+    return _napEltolassal(takenAt, 1000)
+}
+
+// A `takenAt` napja `eltolasMs` milliszekundummal eltolva, ISO-alakban; "" a
+// hiányzó vagy érvénytelen időnél. (#7100: az Add to Album ▸ New Album...
+// ablak -1 mp-et használ, a mappaablak +1 mp-et.)
+function _napEltolassal(takenAt, eltolasMs) {
     var r = _IDO.exec(String(takenAt === undefined || takenAt === null
                              ? "" : takenAt).trim())
     if (!r)
@@ -37,7 +44,7 @@ function kepNapja(takenAt) {
             || alap.getUTCDate() !== nap || alap.getUTCHours() !== ora
             || alap.getUTCMinutes() !== perc || alap.getUTCSeconds() !== mp)
         return ""
-    var kesobb = new Date(alap.getTime() + 1000)
+    var kesobb = new Date(alap.getTime() + eltolasMs)
     return kesobb.getUTCFullYear() + "-" + _ketjegyu(kesobb.getUTCMonth() + 1)
         + "-" + _ketjegyu(kesobb.getUTCDate())
 }
@@ -51,4 +58,13 @@ function kezdoDatum(takenAt) {
     var ma = new Date()
     return ma.getFullYear() + "-" + _ketjegyu(ma.getMonth() + 1)
         + "-" + _ketjegyu(ma.getDate())
+}
+
+// #7100: az Add to Album ▸ New Album... ablak kezdő dátuma. Az eredeti
+// (`0x0056c5a0` almenü New Album ága, Album Properties) a kijelölés ELSŐ
+// képének idejéből MÍNUSZ egy másodpercet vesz; az éjfélkor készült kép így
+// az előző napot adja. Kép ideje nélkül a mező ÜRES (nem a mai nap, ellentétben
+// az Áthelyezés új mappába ablakkal).
+function albumDatum(takenAt) {
+    return _napEltolassal(takenAt, -1000)
 }

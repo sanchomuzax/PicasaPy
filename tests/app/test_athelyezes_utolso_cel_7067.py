@@ -39,11 +39,11 @@ def _helyi(url: QUrl) -> Path:
     return Path(url.toLocalFile())
 
 
-def test_megjegyzett_ut_nelkul_a_kezdohely_a_forras_szuloje(vezerlo, tmp_path):
+def test_megjegyzett_ut_nelkul_a_kezdohely_a_forras(vezerlo, tmp_path):
     forras = tmp_path / "gyujtemeny" / "forras"
     forras.mkdir(parents=True)
 
-    assert _helyi(vezerlo.moveFolderStartUrl(str(forras))) == forras.parent
+    assert _helyi(vezerlo.moveFolderStartUrl(str(forras))) == forras
 
 
 def test_sikeres_athelyezes_utan_a_celmappa_megmarad(vezerlo, beallitasok, tmp_path):
@@ -71,7 +71,7 @@ def test_a_kovetkezo_kezdohely_a_megjegyzett_celmappa(vezerlo, tmp_path):
     assert _helyi(vezerlo.moveFolderStartUrl(str(masodik))) == cel
 
 
-def test_eltunt_megjegyzett_cel_utan_a_forras_szuloje_a_kezdohely(vezerlo, tmp_path):
+def test_eltunt_megjegyzett_cel_utan_a_forras_a_kezdohely(vezerlo, tmp_path):
     elso = tmp_path / "gyujtemeny" / "elso"
     masodik = tmp_path / "gyujtemeny" / "masodik"
     cel = tmp_path / "cel"
@@ -83,10 +83,12 @@ def test_eltunt_megjegyzett_cel_utan_a_forras_szuloje_a_kezdohely(vezerlo, tmp_p
     (cel / "elso").rmdir()
     cel.rmdir()
 
-    assert _helyi(vezerlo.moveFolderStartUrl(str(masodik))) == masodik.parent
+    assert _helyi(vezerlo.moveFolderStartUrl(str(masodik))) == masodik
 
 
-def test_sikertelen_athelyezes_nem_jegyez_meg_celt(vezerlo, beallitasok, tmp_path):
+def test_sikertelen_athelyezes_utan_is_megjegyzi_a_celt(
+    vezerlo, beallitasok, tmp_path
+):
     forras = tmp_path / "gyujtemeny" / "forras"
     cel = tmp_path / "cel"
     forras.mkdir(parents=True)
@@ -97,8 +99,26 @@ def test_sikertelen_athelyezes_nem_jegyez_meg_celt(vezerlo, beallitasok, tmp_pat
 
     assert [muvelet for muvelet, _ in hibak] == ["move_folder"]
     assert forras.is_dir()
-    assert beallitasok.value(KULCS) is None
-    assert _helyi(vezerlo.moveFolderStartUrl(str(forras))) == forras.parent
+    assert Path(str(beallitasok.value(KULCS))) == cel
+    assert _helyi(vezerlo.moveFolderStartUrl(str(forras))) == cel
+
+
+def test_a_forras_mint_cel_csendes_nop_es_megjegyzi_a_valasztast(
+    vezerlo, beallitasok, tmp_path
+):
+    forras = tmp_path / "gyujtemeny" / "forras"
+    forras.mkdir(parents=True)
+    hibak = _hibak(vezerlo)
+    mozgatott = []
+    vezerlo.folderMoved.connect(lambda *args: mozgatott.append(args))
+
+    vezerlo.moveFolder(str(forras), str(forras))
+
+    assert forras.is_dir()
+    assert hibak == []
+    assert mozgatott == []
+    assert Path(str(beallitasok.value(KULCS))) == forras
+    assert _helyi(vezerlo.moveFolderStartUrl(str(forras))) == forras
 
 
 def test_ures_cel_nem_jegyez_meg_semmit(vezerlo, beallitasok, tmp_path):

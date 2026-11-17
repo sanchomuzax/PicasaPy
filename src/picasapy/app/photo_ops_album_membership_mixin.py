@@ -15,6 +15,7 @@ from picasapy.index.albums import (
 )
 from picasapy.ini import STAR_ALBUM_TOKEN
 from picasapy.ini.albums import (
+    albums_of,
     ensure_album,
     with_album,
     with_album_fields,
@@ -42,10 +43,16 @@ class PhotoOpsAlbumMembershipMixin:
         with open_index(self._db_path) as conn:
             pending = _pending_empty_album(conn, token)
 
-        if pending is None:
-            def mutate(document, photo):
-                return with_album(document, photo.name, token)
-        else:
+        mutate = self._album_membership_mutator(token, pending)
+
+        if self._write_album_batch(valid, mutate) and pending is not None:
+            with open_index(self._db_path) as conn:
+                _remove_empty_album(conn, token)
+                self._load_albums(conn)
+
+    def _album_membership_mutator(self, token: str, pending):
+        """A definíciót és a tagságot együtt, egyetlen kötegelt írásban kezeli."""
+        if pending is not None:
             def mutate(document, photo):
                 document = ensure_album(document, token, pending.name)
                 document = with_album_fields(
@@ -60,10 +67,48 @@ class PhotoOpsAlbumMembershipMixin:
                 )
                 return with_album(document, photo.name, token)
 
-        if self._write_album_batch(valid, mutate) and pending is not None:
-            with open_index(self._db_path) as conn:
-                _remove_empty_album(conn, token)
-                self._load_albums(conn)
+            return mutate
+
+        known_fields = self._known_album_fields(token)
+
+        def mutate(document, photo):
+            section = document.section(f".album:{token}")
+            if known_fields is not None and (
+                section is None or not (section.get("name") or "").strip()
+            ):
+                document = ensure_album(document, token, known_fields["name"])
+                document = document.with_value(f".album:{token}", "token", token)
+                document = with_album_fields(
+                    document,
+                    token,
+                    name=known_fields["name"],
+                    date=known_fields["date"],
+                    location=known_fields["location"],
+                    description=known_fields["description"],
+                )
+            return with_album(document, photo.name, token)
+
+        return mutate
+
+    def _known_album_fields(self, token: str) -> dict[str, str | None] | None:
+        """A meglévő ini-definíciókból összegyűjti a más mappákban ismert mezőket."""
+        mezok: dict[str, str | None] = {
+            "name": None,
+            "date": None,
+            "location": None,
+            "description": None,
+        }
+        for _ini_path, document in self._album_dokumentumok(token):
+            for album in albums_of(document):
+                if album.token != token:
+                    continue
+                for field in mezok:
+                    value = getattr(album, field)
+                    if value and value.strip() and mezok[field] is None:
+                        mezok[field] = value
+        if not any(mezok.values()):
+            return None
+        return mezok
 
     @Slot(list, str)
     def removeRowsFromAlbum(self, rows, token: str) -> None:
@@ -124,7 +169,6 @@ class PhotoOpsAlbumMembershipMixin:
         self._refresh_view()
         return True
 
-    @Slot(str, list, result=str)
     def createAlbum(self, name: str, rows) -> str:
         """Új virtuális album a kijelölt képekkel: véletlen (32 hex karakteres)
         token, a `[.album:<token>]` definíció MINDEN érintett mappa ini-jébe

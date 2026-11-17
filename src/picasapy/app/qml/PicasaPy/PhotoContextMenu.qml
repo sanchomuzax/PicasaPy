@@ -106,6 +106,10 @@ PicasaMenu {
     //: #3464: az arc egy MEGLÉVŐ személyhez kerül
     signal moveToPersonRequested(string name)
     signal newAlbumRequested()
+    //: #7100: az Add to Album almenü két különleges gyűjteménye (az
+    //: eredetiben a `]star` és a `]screensaver`, `0x0056c5a0`)
+    signal starredPhotosRequested()
+    signal screensaverRequested()
     signal rotateRightRequested()
     signal rotateLeftRequested()
     signal hideToggleRequested()
@@ -173,7 +177,12 @@ PicasaMenu {
         objectName: "contextMenuAddToAlbum"
         title: qsTr("Add to Album")
 
-        Repeater {
+        // #7100: `Instantiator` + `insertItem`, NEM `Repeater`. A `Menu`-beli
+        // `Repeater` a menü felépítése UTÁNI modellváltozáskor (új album, az
+        // indexbetöltés) a delegáltakat rossz helyre szúrja: a régi elrendezésnél
+        // a `New Album...` MÖGÉ, az újnál a `Starred Photos` közé. Mérve (Qt
+        // 6.8): az `Instantiator` minden modellcserénél az elejére teszi őket.
+        Instantiator {
             id: addToAlbumRepeater
             objectName: "contextMenuAddToAlbumRepeater"
             model: menu.albums
@@ -184,11 +193,34 @@ PicasaMenu {
                 text: modelData.name
                 onTriggered: helyiMenu.addToAlbumRequested(modelData.token)
             }
+            onObjectAdded: function (index, object) {
+                addToAlbumMenu.insertItem(index, object)
+            }
+            onObjectRemoved: function (index, object) {
+                addToAlbumMenu.removeItem(object)
+            }
         }
         MenuSeparator {
             visible: menu.albums.length > 0
             height: visible ? implicitHeight : 0
         }
+        // #7100: az eredeti `0x0056c5a0` a fotómenü és a néző almenüjét azonos
+        // sorrenddel építi: albumok, elválasztó (ha van album), Starred Photos,
+        // Screensaver, elválasztó, New Album... A két gyűjteményt a katalógus
+        // induláskor mindig regisztrálja (`0x004abe70`), ezért a gyakorlatban
+        // mindig megjelennek, és a második elválasztó is mindig áll. A
+        // Starred Photos HOZZÁAD (nem fordít). A tálcamenü sorrendje más.
+        MenuItem {
+            objectName: "contextMenuAddToStarredPhotos"
+            text: qsTr("Starred Photos", "stringres:CThumbDB::starredphotos")
+            onTriggered: menu.starredPhotosRequested()
+        }
+        MenuItem {
+            objectName: "contextMenuAddToScreensaver"
+            text: qsTr("Screensaver", "stringres:CThumbDB::ScreensaverAlbumName")
+            onTriggered: menu.screensaverRequested()
+        }
+        MenuSeparator {}
         MenuItem {
             objectName: "contextMenuNewAlbum"
             text: qsTr("New Album...")

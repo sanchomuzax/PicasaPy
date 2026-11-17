@@ -37,7 +37,13 @@ törlője adja (`0x005ef6b0`, #7017): `filters`, `crop`, `flipped`, `redo`,
 eltérően EZ igen érinti a crop64-et is. Az `_batch_edit_undo` verem ezért
 minden érintett kulcs előző nyers értékét megőrzi, enélkül az „Undo All
 Edits" visszavonása a vágást, a tükrözést vagy a szövegfedvényt véglegesen
-elveszítené, miközben a szűrőlánc visszatérne (#465 javítás, #7017)."""
+elveszítené, miközben a szűrőlánc visszatérne (#465 javítás, #7017).
+
+Videó (#7090): az eredeti kötegelt motor (`0x005fe370`) a nem támogatott
+típusú (mozgókép) elemet átugorja, a többit módosítja, és a köteg végén
+figyelmeztet (`IDS_SOME_EDITS_FAILED_TYPE`). Az `applyEffectMany` ezt
+követi: a videó nem kap `filters=` láncot, a kihagyottak számát pedig a
+`batchEditTypeFailed(int)` jelzés viszi a felületre (`PicasaNotifier.qml`)."""
 
 from __future__ import annotations
 
@@ -212,6 +218,11 @@ class BatchEffectMixin(BackgroundWorkerMixin):
     batchEditChanged = Signal()
     # egyetlen visszavonási lépés elérhetősége változott (#425 4. pont)
     canUndoBatchEditChanged = Signal()
+    # #7090: a köteg végén jelzi, hány kijelölt elem maradt ki a típusa miatt
+    # (videó). Az eredeti `IDS_SOME_EDITS_FAILED_TYPE` figyelmeztetése; a
+    # vezérlő csak a TÉNYT viszi, a szöveg a felületen él
+    # (`PicasaNotifier.qml`), mint a forgatás `rotationTypeFailed`-jénél.
+    batchEditTypeFailed = Signal(int)
     # worker szálból jövő, Qt által automatikusan a GUI-szálra sorolt jelzések
     _batchEditProgress = Signal(str, int, int)  # (mappa, kész, összes)
     _batchEditWorkDone = Signal()
@@ -225,6 +236,9 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         self._batch_edit_folder = ""
         self._batch_edit_done = 0
         self._batch_edit_total = 0
+        # #7090: az épp futó köteg típusuk miatt kihagyott elemeinek száma;
+        # a köteg végén (`_on_batch_edit_work_done`) kerül a felületre
+        self._batch_edit_skipped = 0
         self._batch_edit_cancel = threading.Event()
         # az utolsó köteg visszavonási adatai: képenkénti `_UndoEntry`-k
         # (mappa, fájlnév, az érintett kulcsok ELŐZŐ nyers értéke); None =
@@ -278,9 +292,18 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         # PhotoGridModel tényleges változásait követi.
         if effect_name not in _KNOWN_EFFECTS:
             return
-        photos = self._rows_to_photos(rows)
-        if not photos:
+        kijelolt = self._rows_to_photos(rows)
+        if not kijelolt:
             return
+        # #7090: az eredeti (`0x005fe370`) a nem támogatott típusú fájlt
+        # (mozgókép) átugorja, a többit módosítja, és a köteg végén megmondja,
+        # hogy valami kimaradt. A videó `filters=` láncot nem kaphat.
+        photos = [photo for photo in kijelolt if photo.kind != "video"]
+        kihagyott = len(kijelolt) - len(photos)
+        if not photos:
+            self.batchEditTypeFailed.emit(kihagyott)
+            return
+        self._batch_edit_skipped = kihagyott
 
         by_folder: dict[str, list] = {}
         for photo in photos:
@@ -382,16 +405,6 @@ class BatchEffectMixin(BackgroundWorkerMixin):
             if EditSession.from_value(section.get("filters")).has("redeye"):
                 names.append(photo.name)
         return names
-
-    @Slot(list, bool, result=bool)
-    def hasTextOverlayStateInSelection(self, rows, visible: bool) -> bool:  # noqa: N802
-        """Van-e a kijelölésben a kért láthatósági állapotú szövegfedvény.
-
-        Az index nem tartja a `text=`/`textactive=` értéket, ezért a kijelölt
-        mappák `.picasa.ini`-jét olvassuk. A hibás vagy olvashatatlan bejegyzés
-        nem teszi aktívvá a parancsot.
-        """
-        return bool(_selected_text_overlay_photos(self, rows, visible))
 
     @Slot(list, bool)
     def setTextOverlayVisibleMany(self, rows, visible: bool) -> None:  # noqa: N802
@@ -517,6 +530,11 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         self.batchEditChanged.emit()
         self.canUndoBatchEditChanged.emit()
         self._refresh_view()
+        # #7090: a figyelmeztetés a köteg LEFUTÁSA után jön (az eredeti is
+        # így teszi), és kötegenként számolódik: a kiolvasással nullázódik
+        kihagyott, self._batch_edit_skipped = self._batch_edit_skipped, 0
+        if kihagyott > 0:
+            self.batchEditTypeFailed.emit(kihagyott)
 
     @Slot()
     def cancelBatchEdit(self) -> None:

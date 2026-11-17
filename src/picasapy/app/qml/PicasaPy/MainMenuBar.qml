@@ -72,15 +72,6 @@ PicasaMenuBar {
     onWriteXmpFacesDialogRequested:
         hostXmpFacesWriteDialog.ensure().openFor(hostWindow.photoActionRows())
     onResetFacesRequested: hostWindow.resetFacesForPaths(hostWindow.photoActionPaths())
-    // #4335: a fájlban tárolt állapotot a Picture menü nyitásakor
-    // frissítjük, mert az index nem jelzi a `textactive=` változását.
-    onTextOverlayStatesRefreshRequested: {
-        var rows = hostWindow.photoActionRows()
-        mainMenuBar.textOverlayShowEnabled = hostController
-            ? hostController.hasTextOverlayStateInSelection(rows, false) : false
-        mainMenuBar.textOverlayHideEnabled = hostController
-            ? hostController.hasTextOverlayStateInSelection(rows, true) : false
-    }
     photoActionsEnabled: hostWindow.photoActionRows().length > 0
     // #7017: a szürkítés egyetlen helyen, Pythonban dől el; a fotómodell
     // revíziója a láncváltás, forgatás és tükrözés után újraértékelteti.
@@ -373,6 +364,8 @@ PicasaMenuBar {
     onSlideshowRequested: hostWindow.startSlideshow(-1)
     // #3460/#4630: a Mappa/Album menü a megnyitott hely leírását szerkeszti
     currentFolder: hostController ? hostController.currentFolder : ""
+    // #7108: a Mappa ▸ Move tétel szürke az ismert mappákon
+    moveGuard: hostFileOpsController ? hostFileOpsController : null
     onEditFolderDescriptionRequested: {
         if (hostController) {
             if (hostController.currentAlbumToken !== "")

@@ -232,10 +232,6 @@ MenuBar {
     property bool libraryPhotoActionsEnabled: false
     //: A TextInput/TextEdit aktív fókusza esetén a billentyű a mezőé.
     property bool textEntryHasFocus: false
-    // #4335: a kijelölt fedvények állapota a controller INI-lekérdezéséből.
-    property bool textOverlayShowEnabled: false
-    property bool textOverlayHideEnabled: false
-    signal textOverlayStatesRefreshRequested()
     signal textOverlayVisibilityRequested(bool visible)
     //: #1768: a szerkesztő-előnézet aktív-e. Az eredeti a `0x9caa`
     //: parancsot (a Mappakezelő MINDKÉT belépési pontját) a menü
@@ -438,6 +434,15 @@ MenuBar {
     readonly property bool folderLocateEnabled:
         currentFolder !== "" && currentAlbumToken === ""
         && currentPersonName === ""
+    // #7108: a mozgatás védelmét eldöntő objektum (`isMoveProtectedFolder`).
+    // Az eredeti Mappa menü (`0x0056e1c0`) a Move tételt szürkíti, ha a
+    // megnyitott mappa a hét ismert mappa egyike vagy rendszerút. Védő nélkül
+    // (null) a tétel a mappanézet kapuját követi, mint eddig.
+    property var moveGuard: null
+    readonly property bool folderMoveEnabled:
+        folderLocateEnabled
+        && !(moveGuard !== null
+             && moveGuard.isMoveProtectedFolder(currentFolder) === true)
     // #4416: a felső Mappa menü Hide/Show tételei ugyanazt a vezérlői
     // műveletet használják, mint a mappa helyi menüje. A két felső tétel
     // külön parancs, ezért csak akkor billentünk, ha az állapot eltér a

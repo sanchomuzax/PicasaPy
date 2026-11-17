@@ -273,7 +273,8 @@ Item {
 
     // #457: melyik mappát mozgatjuk épp (a dialógus elfogadásakor kell)
 
-    // #7067: a mozgatott mappa neve a célválasztó címéhez (`%s` az eredetiben)
+    // #7067: megőrzött segéd a korábbi, mappanévvel formázott címhez.
+    // A rendszeres böngészőablak címe most nem függ a mozgatott mappától.
     function _folderName(path) {
         const vago = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"))
         return path.substring(vago + 1)
@@ -293,9 +294,8 @@ Item {
     FolderDialog {
         id: moveFolderDialog
         objectName: "moveFolderDialog"
-        //: picasapy-origin: picasa
-        //: picasapy-origin-key: stringres:CThumbUI::MoveFolderFormat
-        title: qsTr("Move Folder to %1").arg(menus._folderName(folderPane._movingFolder))
+        //: picasapy-origin: picasapy
+        title: qsTr("Browse for Folder")
         // A natív mappaböngésző adja a fastruktúrát és a Make New Folder műveletet.
         //: picasapy-origin: picasa
         //: picasapy-origin-key: stringres:il_OKButton
@@ -313,6 +313,9 @@ Item {
 
     FolderContextMenu {
         id: folderContextMenu
+        // #7108: a Move Folder tétel szürke az ismert mappákon
+        moveGuard: typeof fileOpsController !== "undefined"
+                   ? fileOpsController : null
         onAddNameTagsRequested: function(path) {
             if (typeof faceScanController !== "undefined" && faceScanController)
                 faceScanController.scanFolder(path)

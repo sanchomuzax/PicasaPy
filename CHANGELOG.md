@@ -7,6 +7,33 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.136] - 2026-11-17
+
+- Az üres albumlistára ejtett képek az Album Properties párbeszédet nyitják meg (név, mai dátum); jóváhagyás után létrejön és megnyílik az új album, Mégse esetén nem változik semmi (#7102).
+- A mappamozgatás célválasztója megjegyzett cél nélkül a mozgatott mappán indul, a választott célt a sikertelen vagy hatás nélküli próbálkozás után is megjegyzi, az ablak címe „Browse for Folder”, és rejtett mappába nem enged mozgatni (#7109).
+- A Kép menü Csoportos szerkesztés almenüjében a Show Text és a Hide Text kijelölt képeknél mindig elérhető, akkor is, ha egyik képen sincs ráírt szöveg, és a menü megnyitása már nem olvassa a képek .picasa.ini fájlját (#7122).
+
+## [1.0.135] - 2026-11-17
+
+- A kép helyi menüjének és a néző helyi menüjének Add to Album almenüje az eredeti sorrendjét követi: albumok, elválasztó, Starred Photos, Screensaver, elválasztó, New Album...; a néző almenüje album nélkül is elérhető, a Starred Photos csak hozzáad (a már csillagos képet nem fordítja meg), és a New Album... ablak dátuma a kijelölés első képének ideje mínusz egy másodperc (#7100).
+- Meglévő albumba adáskor a célmappa .picasa.ini fájljába az album neve és adatai is bekerülnek, ahogy az eredeti Picasában (#7101).
+- A Mappa menü, a mappa helyi menüje és a mappafa közbenső csomópontjának menüje szürkíti a mappa mozgatását a hét ismert felhasználói mappán (Képek, Asztal, Zene, Videók, Dokumentumok, felhasználói és közös alkalmazásadat), és a mozgatás ezeken a célválasztó után is megáll; az alattuk álló mappák továbbra is mozgathatók (#7108).
+- Ha a vágólapon van fájl, de nincs kijelölt mappa vagy album, a Beillesztés az eredeti Picasa szövegével jelzi a hiányzó célt (A Folder or Album must be selected to do this.), nem az üres vágólapot; üres vágólapnál az üres vágólap üzenete marad, és egyik esetben sem jön létre fájl (#7113).
+- A vágólapról Beillesztés az első fájlhibánál megáll, ahogy az eredeti Picasában: a korábban sikeresen átvitt képek megmaradnak, a hibás kép után következőket nem kezdi el, és egyetlen összegzés nevezi meg a hibát; a húzással és a menüből indított másolás és áthelyezés továbbra is folytatja a hiba után (#7114).
+- A paritás-ellenőrzés specifikációja két lapra vált, mindkettő az 1 MB-os méretkorlát alatt (#7116).
+- A szerkesztőben nyitott képnél a Kép ▸ Csoportos szerkesztés ▸ Sepia és ▸ Black and White ugyanúgy az Effektek fület választja ki, mint a Warmify, a Sharpen és a Film Grain: nem ír a kép effektláncába és nem indít kötegelt műveletet; a könyvtárnézetben a kijelölt képekre továbbra is lefut (#7123).
+
+## [1.0.134] - 2026-11-16
+
+- A Mappa áthelyezése célválasztójának címe most „Mappa áthelyezése ide:” és a mozgatott mappa neve, és a választó a legutóbb választott célmappából indul (#7067).
+- A szerkesztő diavetítés-gombjának súgója az eredeti Picasa hivatalos szövegét mutatja (#7068).
+- A keresés az Esc billentyűvel és a második Ctrl+F-fel is bezárható, a rácson gépelt betű pedig a keresőmezőbe kerül (#7075).
+- Az új album létrehozása után (Fájl ▸ New Album... és az eszköztár gombja) az új album nyílik meg; Mégse vagy íráshiba esetén marad a jelenlegi nézet és kijelölés (#7076).
+- A keresőmező háttere jelzi a találatot (világoszöld, ha van, halványpiros, ha nincs), a keresési sáv az eredeti Picasa szövegeit mutatja („Találatok a(z) „…” kifejezésre”, „Nincs találat”, „N találat: arc”), és 1000 fölött a darabszámok ezres tagolással íródnak (#7079).
+- A kereső gépelés közben összevonja a kereséseket, és az eredeti szóhatárok szerint kezeli a kifejezést (#7081).
+- Hálózati mappán görgetéskor a bélyegképek betöltése kevésbé akasztja meg a felületet: a képfájlok olvasása és az arcfelismerés aktivitásfigyelője nem tartja fel a felületet kiszolgáló szálat (#7086).
+- A Kép ▸ Csoportos szerkesztés a kijelölt videókat kihagyja (nem kapnak szűrőláncot), és a végén az eredeti Picasa figyelmeztetését mutatja; tisztán képes kijelölésnél nincs figyelmeztetés (#7090).
+
 ## [1.0.133] - 2026-11-16
 
 - A Gyorscímkék Autofill most egyszeri műveletként tölti ki a konfigurált üres mezőket (#7053).

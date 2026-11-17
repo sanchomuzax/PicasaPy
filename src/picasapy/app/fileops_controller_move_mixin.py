@@ -63,8 +63,7 @@ class FileOpsControllerMoveMixin:
     @Slot(list, str, str)
     def copyPhotos(self, paths: list, dest_folder: str, policy: str) -> None:
         """Kijelölés másolása a célmappába (#457/2), `policy` = rename|skip."""
-        _compat = _controller_module()
-        self._run_batch("copy", _compat.copy_photos, paths, dest_folder, policy)
+        self._copy_batch(paths, dest_folder, policy)
 
     @Slot(list, str, str)
     def movePhotos(self, paths: list, dest_folder: str, policy: str) -> None:
@@ -75,10 +74,38 @@ class FileOpsControllerMoveMixin:
         A már eltűnt célmappát csendben elutasítjuk: a mappasor és a lemez
         között a fájlfigyelő frissítése előtt rövid ideig eltérhet az állapot.
         """
+        self._move_batch(paths, dest_folder, policy)
+
+    def _copy_batch(
+        self, paths: list, dest_folder: str, policy: str, *, stop_on_failure: bool = False
+    ):
+        """A másolás köteg-útja; a `stop_on_failure` csak a vágólapos
+        Beillesztésé (#7114), a húzás és a menü (#301/#459) folytatja."""
+        _compat = _controller_module()
+        return self._run_batch(
+            "copy",
+            _compat.copy_photos,
+            paths,
+            dest_folder,
+            policy,
+            stop_on_failure=stop_on_failure,
+        )
+
+    def _move_batch(
+        self, paths: list, dest_folder: str, policy: str, *, stop_on_failure: bool = False
+    ):
+        """Az áthelyezés köteg-útja (lásd `_copy_batch`)."""
         _compat = _controller_module()
         if not self.destinationFolderExists(dest_folder):
-            return
-        self._run_batch("move", _compat.move_photos, paths, dest_folder, policy)
+            return None
+        return self._run_batch(
+            "move",
+            _compat.move_photos,
+            paths,
+            dest_folder,
+            policy,
+            stop_on_failure=stop_on_failure,
+        )
 
     @Slot(list, str)
     @Slot(list, str, str, str, str, bool, str)
@@ -222,7 +249,9 @@ class FileOpsControllerMoveMixin:
         except _compat._OPERATION_ERRORS as error:
             self.operationFailed.emit("split_folder", str(error))
 
-    def _run_batch(self, operation, function, paths, dest_folder, policy):
+    def _run_batch(
+        self, operation, function, paths, dest_folder, policy, *, stop_on_failure=False
+    ):
         _compat = _controller_module()
         dest = _compat.Path(_compat._to_local_path(dest_folder))
 
@@ -244,8 +273,11 @@ class FileOpsControllerMoveMixin:
             speed = moved_bytes / elapsed if elapsed > 0 else 0.0
             self.batchProgress.emit(operation, str(dest), done, total, speed)
 
+        # #7114: a kapcsolót csak kérésre adjuk át, így a négy-argumentumú
+        # hívásokra épülő kötegek (húzás, menü) pontosan úgy futnak, mint eddig.
+        extra = {"stop_on_failure": True} if stop_on_failure else {}
         try:
-            result = function(paths_list, dest, policy, report)
+            result = function(paths_list, dest, policy, report, **extra)
         except _compat._OPERATION_ERRORS as error:
             self.operationFailed.emit(operation, str(error))
             return
@@ -305,36 +337,61 @@ class FileOpsControllerMoveMixin:
             self.operationFailed.emit("move_folder", self.tr("Choose a destination folder first."))
             return
         source = _compat.Path(_compat._to_local_path(folder) or folder)
+        # Az elfogadás maga jegyzi meg a választást, a lemezművelet
+        # eredményétől függetlenül (#7109).
+        self._remember_move_folder_target(target_text)
+        if source == _compat.Path(target_text):
+            # A mozgatott mappa önmagára választása hatás nélküli és csendes.
+            return
         try:
             moved = _compat.move_folder(source, _compat.Path(target_text))
         except _compat.FolderMoveError as error:
             self.operationFailed.emit("move_folder", str(error))
             return
-        self._remember_move_folder_target(target_text)
         # #1538: a NORMALIZÁLT forrás megy ki, nem a kapott nyers szöveg —
         # az `file://` URL-t a fogadó oldal nem tudná megtalálni.
         self.folderMoved.emit(str(source), str(moved))
 
+    @Slot(str, result=bool)
+    def isMoveProtectedFolder(self, folder: str) -> bool:  # noqa: N802
+        """Igaz, ha a mappa nem mozgatható: a menütétel ilyenkor szürke (#7108).
+
+        Az eredeti a Mappa menüben, a mappafa helyi menüjében és a HierFolder
+        menüben is szürkíti a mozgatást a rendszerutakon és a hét ismert
+        mappán (`0x0056e1c0`, `0x0056c5a0`, `0x9df5`). A válasz UGYANAZ a
+        predikátum, amelyet a végrehajtás is használ (`is_system_path`),
+        tehát a szürke tétel és a megálló végrehajtás nem térhet el."""
+        _compat = _controller_module()
+        local = _compat._to_local_path(folder) if folder else ""
+        if not local:
+            return False
+        # A kötés minden mappaváltáskor lefut: hálózati úton a `resolve()` a
+        # fő szálat megakaszthatná (#7086), és rendszerút vagy ismert mappa
+        # hálózati megosztáson amúgy sem lehet.
+        from picasapy.halozati_ut import is_network_path
+
+        if is_network_path(local):
+            return False
+        return _compat.is_system_path(_compat.Path(local))
+
     def _remember_move_folder_target(self, target_text: str) -> None:
-        """A sikeres áthelyezés célmappájának megőrzése (#7067).
+        """Az elfogadott áthelyezési cél megőrzése (#7109).
 
         Az eredeti `0x0053f4a0` a `Preferences/MoveFolderLastPath` kulcsba
-        írja vissza az utolsó célt; hibás áthelyezésnél ide nem jutunk el."""
+        írja vissza a kiválasztott célt, még a mozgatás megkísérlése előtt."""
         self._get_settings().setValue(MOVE_FOLDER_LAST_PATH_KEY, target_text)
 
     @Slot(str, result=QUrl)
     def moveFolderStartUrl(self, folder: str) -> QUrl:  # noqa: N802
-        """A célválasztó kezdőhelye a `folder` áthelyezésekor (#7067).
+        """A célválasztó kezdőhelye a `folder` áthelyezésekor (#7109).
 
         Az eredeti a megjegyzett utolsó célt adja át, ha az létező mappa.
-        Első futáskor (nincs megjegyzett út) a mai viselkedés marad: a
-        forrásmappa szülője, amíg az eredeti első futásos alaphelyét nem
-        mérjük."""
+        Ha ilyen nincs, a mozgatott mappa saját útvonala az alaphely."""
         _compat = _controller_module()
         tarolt = self._get_settings().value(MOVE_FOLDER_LAST_PATH_KEY)
         if isinstance(tarolt, str) and tarolt.strip():
             utolso = _compat._to_local_path(tarolt)
             if utolso and _compat.Path(utolso).is_dir():
                 return _compat.to_file_url(utolso)
-        # Nincs (érvényes) megjegyzett út: a mai alaphely, a forrás szülője, marad.
-        return self.parentFolderUrl(folder)
+        source_text = _compat._to_local_path(folder) or folder
+        return _compat.to_file_url(source_text)

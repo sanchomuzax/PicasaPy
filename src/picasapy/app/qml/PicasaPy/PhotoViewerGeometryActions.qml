@@ -354,13 +354,17 @@ function show(index) { viewer.currentIndex = index; viewer.forceActiveFocus() }
 
 // A Kép menü egyes egylépéses javításai szerkesztőben a megfelelő
 // panelfület nyitják meg; a könyvtárnézetben a kijelölésre futnak.
+// #7123: a sepia és a bw az eredetiben (0x00579330, 0x9d4a, 0x9d4c) a
+// warm, unsharp és grain2 ágával azonos hívást futtatja, ezért ők is az
+// Effektek fület választják, nem az egyképes kötegre esnek vissza.
 function selectMenuEffect(name) {
     if (name === "autolight" || name === "autocolor"
             || name === "enhance") {
         editorPanel.selectTab(0)
         return true
     }
-    if (name === "unsharp" || name === "warm" || name === "grain2") {
+    if (name === "sepia" || name === "unsharp" || name === "warm"
+            || name === "grain2" || name === "bw") {
         editorPanel.selectTab(2)
         return true
     }

@@ -14,7 +14,12 @@ kijelölő gesztusa.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from pathlib import Path
+
+import pytest
+from PySide6.QtCore import Q_ARG, QDateTime, QMetaObject, QObject, Qt
+
+from tests.support.varakozas import var_feltetelre
 
 
 def _child(root, name):
@@ -113,23 +118,100 @@ class TestDropTargets:
         assert hint.property("visible") is True
         assert "album" in hint.property("text").lower()
 
-    def test_a_listara_ejtes_LETREHOZZA_az_albumot(self, qml_app, qt_app):
-        """#2911: a négy belépő egyike — párbeszéd nélkül, „Untitled" néven.
-
-        ⚠️ Korábban azt állította, hogy megnyílik a `newAlbumDialog`. A
-        SZÁNDÉK ugyanaz (az ejtés indítja az album-készítést); a mért
-        eredetiben viszont ezen az úton nincs névbekérő."""
+    @pytest.mark.parametrize("height_offset", [-5, 0, 5])
+    def test_a_helyorzo_sorra_ejtes_album_properties_parbeszedet_nyit_es_ok_utan_letrehoz(
+        self, qml_app, qt_app, height_offset
+    ):
+        """#7102: a createAlbumFromDrop renderelt Album Properties ablakot nyit."""
         window, controller, _engine = qml_app
+        vart_magassag = window.height() + height_offset
+        window.setHeight(vart_magassag)
+        assert var_feltetelre(
+            qt_app, lambda: window.height() == vart_magassag, 5.0
+        )
+        assert var_feltetelre(qt_app, lambda: controller.photos.rowCount() >= 1, 5.0)
+
+        before_date = QDateTime.currentDateTime().addSecs(-1).date()
         window.setProperty("selectedIndexes", [0])
+        _emit(
+            _child(window, "folderPane"),
+            "newAlbumPhotosDropped",
+            Q_ARG("QVariant", [0]),
+        )
+
+        dialog = _child(window, "toolbarNewAlbumPropertiesDialog")
+        assert var_feltetelre(
+            qt_app, lambda: dialog.property("opened") is True, 5.0
+        ), "a helyőrző sorra ejtés nem nyitotta meg az Album Properties ablakot"
+        assert dialog.property("title") == "Album Properties"
+        assert controller.albums == [], "az album az OK előtt létrejött"
+        assert _child(dialog, "folderPropertiesNameField").property("text") == "Untitled"
+        assert dialog.property("currentDate") == before_date.toString(
+            Qt.DateFormat.ISODate
+        )
+        assert _child(dialog, "folderPropertiesDateField").property("text")
+        assert dialog.property("_dateValid") is True
+        assert _child(dialog, "folderPropertiesLocation").property("text") == ""
+        assert _child(dialog, "folderPropertiesDescription").property("text") == ""
+        assert _child(dialog, "folderPropertiesUseMusic").property("checked") is False
+
+        _emit(_child(dialog, "folderPropertiesOkButton"), "clicked")
+        assert var_feltetelre(qt_app, lambda: len(controller.albums) == 1, 5.0), (
+            "az OK nem hozta létre az albumot"
+        )
+        album = controller.albums[0]
+        assert album["name"] == "Untitled"
+        assert album["count"] == 1, "a ledobott kép nem lett albumtag"
+        assert var_feltetelre(
+            qt_app, lambda: controller.currentAlbumToken == album["token"], 5.0
+        ), "az OK után nem az új album nyílt meg"
+        assert controller.viewModeName == "album"
+        assert controller.photos.rowCount() == 1
+
+        photo_ini = Path(controller.photos.filePathAt(0)).parent / ".picasa.ini"
+        assert f"albums={album['token']}" in photo_ini.read_text(encoding="utf-8")
+
+    @pytest.mark.parametrize("height_offset", [-5, 0, 5])
+    def test_a_helyorzo_sorra_ejtes_megse_utan_nem_valtoztat_semmin(
+        self, qml_app, qt_app, height_offset
+    ):
+        window, controller, _engine = qml_app
+        vart_magassag = window.height() + height_offset
+        window.setHeight(vart_magassag)
+        assert var_feltetelre(
+            qt_app, lambda: window.height() == vart_magassag, 5.0
+        )
+        assert var_feltetelre(qt_app, lambda: controller.photos.rowCount() >= 1, 5.0)
+        window.setProperty("selectedIndexes", [0])
+        mappa = controller.currentFolder
+        photo_ini = Path(mappa) / ".picasa.ini"
+        ini_elotte = photo_ini.read_bytes() if photo_ini.exists() else None
 
         _emit(
             _child(window, "folderPane"),
             "newAlbumPhotosDropped",
             Q_ARG("QVariant", [0]),
         )
-        qt_app.processEvents()
+        dialog = _child(window, "toolbarNewAlbumPropertiesDialog")
+        assert var_feltetelre(
+            qt_app, lambda: dialog.property("opened") is True, 5.0
+        ), "a helyőrző sorra ejtés nem nyitotta meg az Album Properties ablakot"
+        assert controller.albums == []
 
-        assert [a["name"] for a in controller.albums] == ["Untitled"]
+        _emit(_child(dialog, "folderPropertiesCancelButton"), "clicked")
+        assert var_feltetelre(
+            qt_app, lambda: dialog.property("opened") is False, 5.0
+        ), "a Mégse nem zárta be az Album Properties ablakot"
+        assert controller.albums == []
+        assert controller.currentAlbumToken == ""
+        assert controller.viewModeName == "folder"
+        assert controller.currentFolder == mappa
+        assert controller.photos.rowCount() >= 1
+        selected = window.property("selectedIndexes")
+        if hasattr(selected, "toVariant"):
+            selected = selected.toVariant()
+        assert list(selected) == [0], "a Mégse megváltoztatta a kijelölést"
+        assert (photo_ini.read_bytes() if photo_ini.exists() else None) == ini_elotte
 
     def test_ures_kijelolesnel_nem_tortenik_semmi(self, qml_app, qt_app):
         window, controller, _engine = qml_app
