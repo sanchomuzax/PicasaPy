@@ -418,12 +418,12 @@ class KeywordsMixin:
         return labels
 
     def _quick_tag_autofill_candidates(self) -> list[str]:
-        """Könyvtári címkék első indexbeli előfordulás szerint, max. 100.
+        """A forrás első 100 egyedi címkéjéből kizárja a recent értékeket.
 
         Az eredeti soros deduplikálást bájtra pontosan közelítjük Python
         sztring-egyezéssel; kis/nagybetűt és Unicode-normalizálást nem vonunk
         össze. Az `all_photos` sorrendje a jegyben rögzített rekord-bejárási
-        közelítés.
+        közelítés. A 100-as korlát a recent szűrés előtt érvényesül.
         """
         recent = set(self._quick_tag_recent())
         seen: set[str] = set()
@@ -434,10 +434,9 @@ class KeywordsMixin:
                     if keyword in seen:
                         continue
                     seen.add(keyword)
-                    if keyword in recent:
-                        continue
-                    candidates.append(keyword)
-                    if len(candidates) == 100:
+                    if keyword not in recent:
+                        candidates.append(keyword)
+                    if len(seen) == 100:
                         return candidates
         return candidates
 
