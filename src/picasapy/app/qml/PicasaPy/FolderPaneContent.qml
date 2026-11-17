@@ -395,6 +395,10 @@ Flickable {
             onFolderContextMenuRequested: function(path) {
                 folderPane.openFolderContextMenu(path)
             }
+            // #7151: az almappa nélküli sor dupla kattintása
+            onFolderPropertiesRequested: function(path) {
+                folderPane.openFolderDescription(path)
+            }
 
             // A `HierFolder` menü három tétele, aminek a rétege a
             // gazdában van — ugyanazokra a hívásokra kötve, mint a
