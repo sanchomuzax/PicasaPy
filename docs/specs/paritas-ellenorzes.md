@@ -2393,7 +2393,7 @@ fájlíró burkolónak (`0x009bef50`; a kulcs az `edi`, az érték az `esi`
 regiszterben). Ez a `"0.000000"` szövegre is áll: **a `date=0.000000` sor
 íródik, nem kulcstörlés** (erős, egy út; a burkoló belseje, `0x009bd640`, nincs
 olvasva). Üres vagy null értéknél az `esi` nullázódik, és ha az ini-objektum
-`+0xc` állapotbájtja nulla, a függvény írás nélkül kilép (`0x0099b5ce`,
+`+0xc` állapotjelző bájtja nulla, a függvény írás nélkül kilép (`0x0099b5ce`,
 `0x0099b705`); különben nulla értékkel hívja tovább a burkolót (a Windows
 ini-szokás szerint ez kulcstörlés: feltételes). A kulcs sorrendje a
 szakaszon belül (új kulcs a szakasz végére kerül-e) a fájl bájtsorrendjét
@@ -2511,7 +2511,7 @@ sort ír (Ghidra 417 és 421, a Z1 diszasszemblálása). Fok: erős.
 író: `ini`, `app`, `fileops`). A mappa `.picasa.ini` fájlja az átnevezéssel
 együtt költözik, a régi `name=` sor elavultan marad.
 
-**Teendő:** az OK-nál, sikeres átnevezés után (és változatlan névnél is) írd a
+**Teendő:** az OK megnyomásakor, sikeres átnevezés után (és változatlan névnél is) írd a
 `[Picasa]/name` kulcsot a mappa tényleges nevével az `ini` csomag API-ján át,
 a `ini/folder_location.py` és a `setFolderLocationOf`
 (`controller_folder_description_mixin.py:21-41`) mintájára (új
