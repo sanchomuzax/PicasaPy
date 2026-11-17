@@ -169,7 +169,6 @@ class PhotoOpsAlbumMembershipMixin:
         self._refresh_view()
         return True
 
-    @Slot(str, list, result=str)
     def createAlbum(self, name: str, rows) -> str:
         """Új virtuális album a kijelölt képekkel: véletlen (32 hex karakteres)
         token, a `[.album:<token>]` definíció MINDEN érintett mappa ini-jébe

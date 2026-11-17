@@ -58,7 +58,8 @@ _EREDETI_NYILVANOS_NEVEK = {
 
 # A bontás előtti photo_ops_album_mixin.py metódusainak LF-normalizált,
 # UTF-8 forrásszöveg-lenyomata a dekorátortól a metódus záró soráig. A #7101
-# az albumtagság két belső segédjét és az `addRowsToAlbum` forrását módosítja.
+# az albumtagság két belső segédjét és az `addRowsToAlbum` forrását módosítja; a #7102
+# után a `createAlbum` csak Python-hívó metódus (a felület már nem hívja).
 _EREDETI_FORRAS_SHA256 = {
     # #6281: az index-beli üres album kezelése (két új segéd, öt módosult metódus)
     "_fuggo_ures_album": "6d9fede6f567d5ddf6572d46ebceaf988e921360b2d338255710c353a6a14516",
@@ -78,7 +79,7 @@ _EREDETI_FORRAS_SHA256 = {
     "editAlbumProperties": "bdea3581ac51e62e42f0dd58cd78840cef66879a93ac976d14adf2526752829a",
     "editAlbumMusic": "777d8ae03eff326af0309dad4171d5cbacfff36ce8581e51431bbc0fccbfe14f",
     "_album_dokumentumok": "93229cf8ec334fca93d3d22d80fc1dfe077badfc8df952be25162eef0d612045",
-    "createAlbum": "ef0c45d043b67bb6714deea959268ab0c4eb89ab3c84bf0cdadbd732d54a9a3a",
+    "createAlbum": "18e07bfb696efaa560be0c1176db9ba18537b2419a414e18c7dc8a4c2ce652e5",
     "createAlbumWithProperties": "e7f9f61ae2a5fb48dcb264eb2a1c21ce4b81ed9f07b7359fb15828bf78e0ce57",
     "createEmptyAlbum": "c96d70e3e9bf57c6380655b3ea833da02ef9749d30dc5c963de1a9965456b165",
     "_albumot_keszit": "1c690d2f14511d1ade16ab7a024c6143f6624a1b6d7ca29c340e9e324c40b0ac",
@@ -100,7 +101,6 @@ _QT_METHODS = (
     ("slot", "albumProperties", 1),
     ("slot", "editAlbumProperties", 5),
     ("slot", "editAlbumMusic", 3),
-    ("slot", "createAlbum", 2),
     ("slot", "createAlbumWithProperties", 7),
     ("slot", "createEmptyAlbum", 7),
     ("slot", "setPhotoAsDesktopBackground", 1),
