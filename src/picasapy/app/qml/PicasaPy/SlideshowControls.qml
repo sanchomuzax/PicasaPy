@@ -180,13 +180,9 @@ Item {
             //: #5541: az eredetiben a `oneup.tre` 75-81. sorában a ◀ és a ▶▶ gombon
             //: `mousedown` van; a kezelőjük a `0x008032e0`. Ezért LENYOMÁSRA léptet,
             //: nyomva tartva nem ismétel.
-            PicasaButton {
-                objectName: "slideshowTimelineButton"
-                text: qsTr("Timeline")
-                height: controlsRow.buttonHeight
-                visible: slideshow.timelineButtonVisible
-                onClicked: slideshow.timelineRequested()
-            }
+            // #7209: a normál (`editoneup`) vetítőben a `timeline` rejtett
+            // (`editoneup.tre:62-66`), ezért nincs Timeline gomb; az Időrend a
+            // Nézet menüből és a Ctrl+5-ről nyílik.
             PicasaButton {
                 objectName: "slideshowPrevButton"
                 text: "◀"; width: 34
@@ -227,7 +223,6 @@ Item {
                 objectName: "slideshowTransitionBox"
                 height: controlsRow.buttonHeight
                 width: 150
-                visible: !slideshow.timelineButtonVisible
                 //: a lista a képernyő alján álló sáv fölé nyílik
                 popup.y: -popup.implicitHeight
                 model: slideshow.atmenetek.map(function (a) { return a.nev })

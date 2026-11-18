@@ -73,6 +73,42 @@ PicasaMenuBar {
         hostXmpFacesWriteDialog.ensure().openFor(hostWindow.photoActionRows())
     onResetFacesRequested: hostWindow.resetFacesForPaths(hostWindow.photoActionPaths())
     photoActionsEnabled: hostWindow.photoActionRows().length > 0
+    // #7208: a megnyitott tag nélküli album Delete billentyűre megerősítés nélkül törlődik
+    canDeleteOpenEmptyAlbum: {
+        if (!hostController || !hostController.currentAlbumToken) return false
+        var token = hostController.currentAlbumToken
+        if (token.charAt(0) === "]") return false
+        if (photoActionsEnabled) return false
+        if (hostController.photos && hostController.photos.rowCount() > 0) return false
+        var albums = hostController.albums || []
+        for (var i = 0; i < albums.length; ++i) {
+            if (albums[i].token === token) {
+                return (albums[i].count === 0)
+            }
+        }
+        return false
+    }
+    onDeleteOpenEmptyAlbumRequested: {
+        if (!hostController || !hostController.currentAlbumToken) return
+        var token = hostController.currentAlbumToken
+        if (token.charAt(0) === "]") return
+        var albums = hostController.albums || []
+        var nextToken = ""
+        for (var i = 0; i < albums.length; ++i) {
+            if (albums[i].token === token) {
+                if (i + 1 < albums.length) {
+                    nextToken = albums[i + 1].token
+                } else if (i > 0) {
+                    nextToken = albums[i - 1].token
+                }
+                break
+            }
+        }
+        hostController.deleteAlbum(token)
+        if (nextToken !== "") {
+            hostController.showAlbum(nextToken)
+        }
+    }
     // #7017: a szürkítés egyetlen helyen, Pythonban dől el; a fotómodell
     // revíziója a láncváltás, forgatás és tükrözés után újraértékelteti.
     undoAllEditsEnabled: hostController

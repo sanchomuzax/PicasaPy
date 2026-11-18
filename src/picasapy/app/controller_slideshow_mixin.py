@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from PySide6.QtCore import Property, QUrl, Slot
-from PySide6.QtGui import QGuiApplication
 from . import formatting
 from .controller_signals import AppControllerSignalsMixin as _Signals
 from .slideshow_pan_zoom import qml_pan_zoom_rectangles
@@ -18,20 +17,6 @@ _SLIDESHOW_TRANSITIONS = (
 
 class SlideshowSettingsMixin:
     """A diavetítés QML-beállításai és segédei."""
-
-    @Property(bool, notify=_Signals.statusChanged)
-    def bigSlideshow2(self):  # noqa: N802 - QML-property-konvenció
-        value = self._get_settings().value("Preferences/BigSlideshow2", 1)
-        if value in (False, "false", "False", "0", 0):
-            return False
-        return True
-
-    #: #5653: a `GetDeviceCaps(BITSPIXEL)` Qt-megfelelője; a vetítő QML-je
-    #: ezt a megnevezett értéket ellenőrzi (16 vagy 32 bit).
-    @Property(int, notify=_Signals.statusChanged)
-    def slideshowScreenDepth(self):  # noqa: N802 - QML-property-konvenció
-        screen = QGuiApplication.primaryScreen()
-        return screen.depth() if screen is not None else 0
 
     #: #433: a diavetítés MEGŐRZÖTT beállításai. Az eredeti a `Preferences`
     #: alá teszi őket (`SlideshowEffectTime`, `captionmode`); nálunk a saját
