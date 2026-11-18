@@ -159,7 +159,10 @@ class TestKivetel:
 
         result = without_album_everywhere(document, _A)
 
-        assert result.section(f".album:{_A}") is None
+        # #7208: a [.album:<token>] szakasz megmarad, csak a token= sorral
+        szakasz = result.section(f".album:{_A}")
+        assert szakasz is not None
+        assert szakasz.items() == (("token", _A),)
         assert result.section("a.jpg").get("albumorder") == f"{_B}:2.0"
         b = result.section("b.jpg")
         assert b.get("albumorder") is None
