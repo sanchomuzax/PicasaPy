@@ -137,8 +137,7 @@ Rectangle {
                     Text {
                         id: countText
                         objectName: "suggestionCount"
-                        text: modelData.kind === "word"
-                            ? "" : "(" + modelData.count + ")"
+                        text: "(" + modelData.count + ")"
                         color: Theme.placeholderText
                         font.pixelSize: Theme.fontSize
                     }
