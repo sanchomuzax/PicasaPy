@@ -3818,7 +3818,7 @@ jegyet nem igényelnek, mert ugyanannak a #7060 folyamatnak a nyitott pontjai.
 
 ### #7234 statikus kiegészítés a G1/G2/G4/G7 kérdésekhez (2026-11-18)
 
-**G1 — léptető és visszatérés.** A `0x00717d10` előbb a `0x0071c8c0`-t,
+**G1 - léptető és visszatérés.** A `0x00717d10` előbb a `0x0071c8c0`-t,
 majd a `0x00717560`-at hívja; ha az nulla, a `0x00717420`-at próbálja. Ha
 mindkettő nulla, a `view+0x2e0` mezőbe `-1`-et ír és 0-val tér vissza;
 egyébként a helper értékét adja vissza (`2026-11-18-koteg-466-495.txt:3617-3671`).
@@ -3843,7 +3843,7 @@ hívóhely-xrefek, ezért annak szünet-, lista-végi vagy kilépési ágát nem
 `SlideshowView.qml:288-299`; a LoopSlideshow-paritás mindaddig nyitott,
 amíg az eredeti hívási ág nem tisztázott.
 
-**G2 — `+0x5a`/`+0x5b`.** A `0x00716d70` a bejárt elemek `+0x5b` mezőjét
+**G2 - `+0x5a`/`+0x5b`.** A `0x00716d70` a bejárt elemek `+0x5b` mezőjét
 nullázza; `param_3 == 0` esetén `+0x5a=1`, nem nulla `param_3` esetén
 `+0x5a=0` (`…466-495.txt:3674-3794`). A `0x00714010` csak `+0x5a`-t
 állítja 1-re, és akkor `+0x59` dirty jelzőt is ír, ha az előző `+0x5a` nulla
@@ -3855,14 +3855,14 @@ bejáró csak a `+0x5a == 0` elemeket teszi a lista kimenetébe, ezért a nem nu
 Azt, hogy a kérdezett három állapot közül melyik íróág állítja 1-re, és a
 `+0x5b` jelentését ez nem dönti el.
 
-**G4 — fájlbetöltési hiba.** A `0x0075eda0` nem általános fotóbetöltő:
+**G4 - fájlbetöltési hiba.** A `0x0075eda0` nem általános fotóbetöltő:
 `moviestart`/`movieend` metaadatot keres, videóidőt számol, és 0-val tér vissza
 (`…466-495.txt:3795-4106`). A közvetlen hívók közt `0x0075de50`, `0x0075f430`,
 `0x0075fb20`, `0x00760240` van. Sérült/hiányzó/hálózati képfájlra adott
 eredeti viselkedés ebből nem következik. PicasaPy slideshow-képútjának eredeti
 hiba-paritása ezért nyitott.
 
-**G7 — zeneszál.** A `0x0075ca20` meghívja a `0x0075cdc0` forrásépítőt, majd
+**G7 - zeneszál.** A `0x0075ca20` meghívja a `0x0075cdc0` forrásépítőt, majd
 az `+0x48` listához jutott forrásból dolgozik (`…466-495.txt:4110-4267`). A
 `0x0075cdc0` a `Preferences\MP3SlideshowPath` értékéből egyetlen listatételt
 épít; üres beállításnál a `0x00cb224c` (`mp3\\`) útvonalrészt a
@@ -3879,7 +3879,7 @@ albumból, bekapcsolt mappából vagy beállított mappából olvas; az utóbbi
 (`controller_slideshow_mixin.py:173-196`). Az eredeti enumerátor sorrendje és
 a repeat szabály még nem eldöntött.
 
-#### Eredeti / nálunk / teendő — alapértelmezett zeneforrás
+#### Eredeti / nálunk / teendő - alapértelmezett zeneforrás
 
 Eredeti: ha `MP3SlideshowPath` üres, a `0x0075cdc0` a `mp3\\` alapútvonalat
 oldja fel a `0x009a38a0` segéden át, majd a `0x009a3db0` enumerátort hívja
@@ -3902,15 +3902,15 @@ Kész, ha:
 - az egyedileg beállított album-, mappa- és globális források továbbra is a
   meglévő elsőbbségi sorrendben működnek.
 
-**Nyitott — célzott következő címek:**
+**Nyitott - célzott következő címek:**
 
-- Ghidra-kör kell: 0x00717c50 — a közvetlen léptetőhívó a visszatérés után milyen lista-végi és `LoopSlideshow` állapotot ad a nézetnek
-- Ghidra-kör kell: 0x00717eb0 — a két léptetőhívási ág `+0x390`-írása és lista-végi visszatérése
-- Ghidra-kör kell: 0x00571e50 — a `0x0075f430`-at hívó eseménykezelő hogyan kezeli annak visszatérését, a szünetet, a lista végét és a `0x0075de50`-re kilépést; meglévő Ghidra-anyagban csak xref szerepel [blokkoló]
-- Ghidra-kör kell: 0x00781680 — a `0x00714010` hívása előtti feltétel és a `+0x5a`-t okozó nézetállapot
-- Ghidra-kör kell: 0x0075de50 — a fő diavetítő út és a tényleges fotóbetöltő/hibaág címe
-- Ghidra-kör kell: 0x009a3db0 — a `mp3\\` útvonal enumerálásának eleje-vége sorrendje és a rendező vagy véletlen sorrendet adó hívás
-- Ghidra-kör kell: 0x0075d430 — a zeneszál track-választási, ismétlési és következő sávra lépési szabálya
+- Ghidra-kör kell: 0x00717c50 - a közvetlen léptetőhívó a visszatérés után milyen lista-végi és `LoopSlideshow` állapotot ad a nézetnek
+- Ghidra-kör kell: 0x00717eb0 - a két léptetőhívási ág `+0x390`-írása és lista-végi visszatérése
+- Ghidra-kör kell: 0x00571e50 - a `0x0075f430`-at hívó eseménykezelő hogyan kezeli annak visszatérését, a szünetet, a lista végét és a `0x0075de50`-re kilépést; meglévő Ghidra-anyagban csak xref szerepel [blokkoló]
+- Ghidra-kör kell: 0x00781680 - a `0x00714010` hívása előtti feltétel és a `+0x5a`-t okozó nézetállapot
+- Ghidra-kör kell: 0x0075de50 - a fő diavetítő út és a tényleges fotóbetöltő/hibaág címe
+- Ghidra-kör kell: 0x009a3db0 - a `mp3\\` útvonal enumerálásának eleje-vége sorrendje és a rendező vagy véletlen sorrendet adó hívás
+- Ghidra-kör kell: 0x0075d430 - a zeneszál track-választási, ismétlési és következő sávra lépési szabálya
 
 ## #7059: A mappa áthelyezésének teljes folyamata az eredeti Picasával összevetve
 
@@ -5590,7 +5590,7 @@ A mérés a `picasa-colab-jobs` #740, #741 és #742 feladata (eredeti Picasa 3.9
 
 ### #7234 zárókör a keresés-visszaállításról és a szóindex célcíméről (2026-11-18)
 
-**#492 — a keresés állapotának visszaállítása.** A `0x00660c80` a
+**#492 - a keresés állapotának visszaállítása.** A `0x00660c80` a
 keresési/szűrőállapotot rekonstruáló rutin: átveszi a rejtett képek jelzőjét,
 az aktuális mappakulcsot, a beviteli szöveget és a keresőgombok állapotát
 (`2026-11-18-koteg-466-495.txt:4783-5907`). Ez nem igazolja a keresőmező
@@ -5617,9 +5617,9 @@ xrefje a navigációs útban jelenik meg (`2026-11-15-7012-7022-colab-decomp.txt
 előzményrekord készül. A `0x0057ec70` részletes mezőhatása és a `+0x32b0`
 objektum UI-jelentése nyitott.
 
-- Ghidra-kör kell: 0x0057ec70 — a `+0x32b0` objektum tényleges UI-típusa, mezői, valamint a keresésindításkor történő kijelölés/fókusz/görgetés-visszaállítás esetleges kapcsolata [nem blokkoló]
+- Ghidra-kör kell: 0x0057ec70 - a `+0x32b0` objektum tényleges UI-típusa, mezői, valamint a keresésindításkor történő kijelölés/fókusz/görgetés-visszaállítás esetleges kapcsolata [nem blokkoló]
 
-**#493 — a `0x004403c0` nem a fotómezők indexelője.** A `0x00682c00`
+**#493 - a `0x004403c0` nem a fotómezők indexelője.** A `0x00682c00`
 dekompilációja ezt a függvényt a `CUploadManager::DeleteSuppressed` útban
 hívja, a `]web_` és `]suppress` feltöltési szójelekkel
 (`2026-11-18-koteg-466-495.txt:5908-6467`). A bináris-index a `0x004403c0`
@@ -5639,7 +5639,7 @@ kulcsszót fedi (`src/picasapy/index/schema.py:121-149`); a mappanév és a szí
 külön út (`src/picasapy/index/queries.py:516-566`), kamera/EXIF, dátum és
 hely nem önálló FTS-oszlop.
 
-#### Eredeti / nálunk / teendő — mező-hozzárendelés
+#### Eredeti / nálunk / teendő - mező-hozzárendelés
 
 Eredeti: a `0x004403c0` a feltöltési `]web_`/`]suppress` állapothoz tartozik;
 a `.picasa.ini` mezők részben a `0x00456610`-ból a `0x004d9aa0` vagy a
@@ -5661,7 +5661,7 @@ Kész, ha:
 - az egyes mezők eredményét külön, egyedi próbaértékkel rögzítették;
 - hiányzó bizonyítékot nyitott kérdésként hagytak, becsült mező nincs.
 
-**Célzott következő kérés:** Ghidra-kör kell: `0x004d9aa0` — az általános
+**Célzott következő kérés:** Ghidra-kör kell: `0x004d9aa0` - az általános
 szó-beszúró már dekompilált törzse csak a token normalizálását és tárolását
 mutatja; az új kérdés a közvetlen hívók mezőeredetének csoportos feltárása
 (különösen `0x0041c340`, `0x00439a80`, `0x00449090`, `0x00456610`), és a
