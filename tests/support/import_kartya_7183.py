@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
+from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 from support.varakozas import var_feltetelre
@@ -39,8 +40,9 @@ def kattint(ablak, elem_, qt_app) -> None:
         f"{elem_.objectName()} nem kattintható"
     )
     kozep = elem_.mapToScene(QPointF(elem_.width() / 2, elem_.height() / 2))
+    celablak = ablak.window() if isinstance(ablak, QQuickItem) else ablak
     QTest.mouseClick(
-        ablak,
+        celablak,
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
@@ -54,8 +56,9 @@ def kattint_letiltottra(ablak, elem_, qt_app) -> None:
         f"{elem_.objectName()} nem tiltott"
     )
     kozep = elem_.mapToScene(QPointF(elem_.width() / 2, elem_.height() / 2))
+    celablak = ablak.window() if isinstance(ablak, QQuickItem) else ablak
     QTest.mouseClick(
-        ablak,
+        celablak,
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
@@ -96,8 +99,9 @@ def kattint_legordulo_sorra(ablak, qt_app, sor: int = 0) -> None:
     kozep = lista.mapToScene(
         QPointF(lista.width() / 2, sormagassag * (sor + 0.5))
     )
+    celablak = ablak.window() if isinstance(ablak, QQuickItem) else ablak
     QTest.mouseClick(
-        ablak,
+        celablak,
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),

@@ -100,8 +100,8 @@ MainToolbar {
             hostRefs.suggestionsTimer.stop()
         hostRefs.searchSuggestionsBox.suggestions = []
     }
-    // #23: az "Import" gomb az Import forrásból ablakot nyitja
-    onImportRequested: hostRefs.importSourceDialog.open()
+    // #7206: az "Import" gomb a főablak Import paneljét nyitja meg.
+    onImportRequested: hostRefs.importSourceDialog.openImportSourcePanel()
     // #5812: az eszköztár az Album Properties ablakot nyitja.
     // #5835: mappa nélküli nézetben a kijelölt vagy fókuszban levő kép
     // mappáját adja át; a többi albumút külön él.

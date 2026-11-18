@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from PySide6.QtCore import QPointF, QObject, Qt
-from PySide6.QtQuick import QQuickWindow
+from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 from support.halasztott_parbeszed import nyisd_meg
@@ -18,7 +18,7 @@ from support.qt_wait import hangos_hurok
 
 def _dialog_and_controller(window, engine):
     nyisd_meg(window, "importSourceDialog")
-    dialog = window.findChild(QQuickWindow, "importSourceDialog")
+    dialog = window.findChild(QQuickItem, "importSourceDialog")
     assert dialog is not None
     controller = engine.rootContext().contextProperty("importSourceController")
     assert controller is not None
@@ -61,12 +61,12 @@ def test_delete_oserror_shows_error_and_enables_import_again(
         QObject, "importSourceConfirmRemoveYesButton"
     )
     assert confirm_yes is not None
-    original_height = dialog.height()
+    original_height = window.height()
 
     # A tényleges gombkattintást a felépült ablak geometriájából számoljuk;
     # három közeli ablakmagasságon is újra használhatónak kell maradnia.
     for height_delta in (-5, 0, 5):
-        dialog.setProperty("height", original_height + height_delta)
+        window.setProperty("height", original_height + height_delta)
         source = tmp_path / f"kartya-{height_delta:+d}"
         source.mkdir()
         make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
@@ -102,4 +102,4 @@ def test_delete_oserror_shows_error_and_enables_import_again(
         assert (source / "a.jpg").exists()
         assert (dest / "2024-03-05" / "a.jpg").exists()
 
-    dialog.setProperty("height", original_height)
+    window.setProperty("height", original_height)

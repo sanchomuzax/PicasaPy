@@ -349,7 +349,7 @@ PicasaMenuBar {
     onNewAlbumRequested: hostFileOpsDialogs.ensure().openNewAlbum()
     // #1615: Fájl ▸ Importálás forrása… / Ctrl+M — UGYANAZ a példány,
     // amit az eszköztár „Import" gombja nyit (ld. `onImportRequested`)
-    onImportSourceRequested: hostImportSourceDialog.open()
+    onImportSourceRequested: hostImportSourceDialog.openImportSourcePanel()
     // #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O
     onAddFileRequested: hostAddFileDialog.open()
     // #1614: Fájl ▸ Áthelyezés új mappába… — a `moveToNewFolderDialog`

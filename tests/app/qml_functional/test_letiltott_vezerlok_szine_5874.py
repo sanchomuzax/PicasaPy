@@ -145,18 +145,21 @@ def test_a_letiltott_gomb_es_mezo_felirata_szurke_a_kirajzolt_ablakban(
     _main_window, controller, engine = qml_app
     import picasapy.app.application as app_module
 
-    for qml_name in ("Main.qml", "PicasaPy/ImportSourceDialog.qml"):
-        source = (app_module._APP_DIR / "qml" / qml_name).read_text(
-            encoding="utf-8"
+    # Az importpanel már a Main.qml ablakának gyermeke, ezért a Controls
+    # palettáját a főablaktól örökli; nem várunk külön Window-palettát az
+    # ImportSourceDialog.qml-ben.
+    qml_name = "Main.qml"
+    source = (app_module._APP_DIR / "qml" / qml_name).read_text(
+        encoding="utf-8"
+    )
+    for role in ("windowText", "text", "buttonText"):
+        assert f"disabled.{role}: Theme.textGray" in source, (
+            f"{qml_name}: hiányzik a disabled.{role} Theme-kötése"
         )
-        for role in ("windowText", "text", "buttonText"):
-            assert f"disabled.{role}: Theme.textGray" in source, (
-                f"{qml_name}: hiányzik a disabled.{role} Theme-kötése"
+        for group in ("active", "inactive"):
+            assert f"{group}.{role}: Theme.ink" in source, (
+                f"{qml_name}: hiányzik a {group}.{role} Theme-kötése"
             )
-            for group in ("active", "inactive"):
-                assert f"{group}.{role}: Theme.ink" in source, (
-                    f"{qml_name}: hiányzik a {group}.{role} Theme-kötése"
-                )
 
     komponens = QQmlComponent(engine)
     komponens.setData(_VEZERLOK.encode("utf-8"), QUrl())
