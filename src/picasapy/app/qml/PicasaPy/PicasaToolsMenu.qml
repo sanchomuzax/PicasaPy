@@ -78,7 +78,7 @@ PicasaMenu {
     MenuItem {
         objectName: "menuToolsAdjustTimestamp"
         text: qsTr("Adjust &Date and Time...")
-        enabled: bar.libraryPhotoActionsEnabled
+        enabled: true
         onTriggered: bar.adjustTimestampRequested()
     }
     MenuSeparator {}
