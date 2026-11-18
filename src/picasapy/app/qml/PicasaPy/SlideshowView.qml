@@ -48,14 +48,7 @@ Rectangle {
     property bool _resyncing: false
     property bool screensaverMode: false
     property bool screensaverInputArmed: false
-    // #5653: az eredeti oneup láthatósági feltételei. A képernyőmélység
-    // tesztben felülírható; az éles értéket a host adja át QScreenből.
-    property bool bigSlideshow2: true
-    property int screenDepth: 0
     property bool timelineSlideshow: false
-    readonly property bool timelineButtonVisible: bigSlideshow2
-        && (screenDepth === 16 || screenDepth === 32)
-        && !timelineSlideshow
     //: #2992: a diaidő MÁSODPERCBEN, a sáv ± gombjaival állítható
     //: (`tpslabel`/`minusone`/`tps`/`plusone`). Az alapérték 3 — mérve
     //: (`SlideshowEffectTime`, `0x007facd3`). A hívó a vezérlőhöz köti,
@@ -132,7 +125,6 @@ Rectangle {
     signal closed()
     signal starToggled(int index)
     signal rotateRequested(int index, int delta)
-    signal timelineRequested()
     //: #433: a választó nem ír közvetlenül a beállításba — a gazda dönti el,
     //: hova kerül (a `starToggled`/`rotateRequested` mintája).
     signal transitionPicked(string kulcs)
@@ -293,9 +285,16 @@ Rectangle {
             screensaverMode = false
     }
 
+    // #7209 (D6): ismétlés nélkül a lista végén az automatikus léptetés
+    // megáll, de a vetítő NYITVA marad az utolsó képen (mérve: `picasa-colab-jobs`
+    // #700); kilépni Esc-cel vagy az Exit gombbal lehet, a kézi jobbra lépés
+    // az első képre fordul (#7190). Csak a vetíthető fotó nélküli lista zár.
     function advance() {
         var target = nextPhotoIndex(currentIndex, 1)
-        if (target < 0) { stop(); return }
+        if (target < 0) {
+            if (count() === 0) stop()
+            return
+        }
         currentIndex = target
     }
 
