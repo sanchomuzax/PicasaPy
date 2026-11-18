@@ -22,6 +22,10 @@ from PySide6.QtQuick import QQuickWindow
 from PySide6.QtTest import QTest
 from support.halasztott_parbeszed import nyisd_meg
 
+from support.import_kartya_7183 import (
+    csatolt_kartya_kivalasztasa,
+    datum_szerinti_bontas,
+)
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import hangos_hurok
 
@@ -148,10 +152,11 @@ class TestDialogWindow:
         qt_app.processEvents()
         assert dialog.property("visible") is False
 
-    def test_by_date_is_the_default_naming_mode(self, qml_app):
+    def test_manual_title_is_the_default_naming_mode(self, qml_app):
+        # #7183: az eredeti `acquireUseSubFolder` alapja 0 (kézi cím)
         window, _controller, _lib, _engine = qml_app
         dialog = _dialog_window(window)
-        assert dialog.property("namingMode") == "date"
+        assert dialog.property("namingMode") == "manual"
 
     def test_leave_card_alone_is_the_default_after_copying(self, qml_app):
         window, _controller, _lib, _engine = qml_app
@@ -188,6 +193,9 @@ class TestSourcePreview:
         assert Path(str(dialog.property("destFolder"))) == Path(expected)
         destination_text = _child(window, "importSourceDestPathText")
         assert Path(str(destination_text.property("text"))) == Path(expected)
+        # #7183: üres profilban a kézi cím az alapérték, cím nélkül nincs import
+        assert start_button.property("enabled") is False
+        datum_szerinti_bontas(dialog, qt_app)
         assert start_button.property("enabled") is True
 
     def test_empty_source_shows_empty_text(self, qml_app, qt_app, tmp_path):
@@ -315,6 +323,7 @@ class TestRunImport:
 
         _scan(dialog, source, engine, qt_app)
         dialog.setProperty("destFolder", str(dest))
+        datum_szerinti_bontas(dialog, qt_app)
 
         start_button = _child(window, "importSourceStartButton")
         assert start_button.property("enabled") is True
@@ -537,10 +546,17 @@ def _kerdes(window):
     }
 
 
-def _forras_es_cel(tmp_path, dialog, engine, qt_app, *, darab=1):
-    """Beolvasott forrás és beállított cél; visszaadja (forrás, cél)."""
+def _forras_es_cel(
+    tmp_path, dialog, engine, qt_app, monkeypatch, *, darab=1
+):
+    """DCIM mappás csatolt kártya (valódi kattintással kiválasztva), dátum
+    szerinti bontás és beállított cél; visszaadja (forrás, cél).
+
+    #7183: a törlési mód csak olyan forrásnál él, amely a csatolt meghajtók
+    listájából jött, és a gyökerében `DCIM` mappa van."""
     source = tmp_path / "kartya"
     source.mkdir()
+    (source / "DCIM").mkdir()
     for index in range(darab):
         make_jpeg(
             source / f"{'abcdef'[index]}.jpg",
@@ -548,8 +564,12 @@ def _forras_es_cel(tmp_path, dialog, engine, qt_app, *, darab=1):
         )
     dest = tmp_path / "cel-konyvtar"
     dest.mkdir()
-    _scan(dialog, source, engine, qt_app)
+    csatolt_kartya_kivalasztasa(
+        dialog, _import_source_controller(engine), qt_app, monkeypatch,
+        source, darab=darab,
+    )
     dialog.setProperty("destFolder", str(dest))
+    datum_szerinti_bontas(dialog, qt_app)
     return source, dest
 
 
@@ -559,12 +579,16 @@ class TestAfterCopyingConfirmation:
     egérkattintással indítja az importot és válaszol a kérdésre."""
 
     def test_delete_copied_asks_one_question_with_the_original_texts(
-        self, qml_app, qt_app, tmp_path
+        self, qml_app, qt_app, tmp_path, monkeypatch
     ):
         window, _controller, _lib, engine = qml_app
         dialog = _dialog_window(window)
-        source, dest = _forras_es_cel(tmp_path, dialog, engine, qt_app)
-        dialog.setProperty("afterCopying", "delete_copied")
+        source, dest = _forras_es_cel(
+            tmp_path, dialog, engine, qt_app, monkeypatch
+        )
+        _click_center(
+            dialog, _child(window, "importSourceAfterDeleteCopiedRadio"), qt_app
+        )
 
         kerdes = _kerdes(window)
         assert kerdes["dialog"] is not None
@@ -591,14 +615,16 @@ class TestAfterCopyingConfirmation:
         assert not (source / "a.jpg").exists()
 
     def test_delete_all_asks_one_question_with_the_wipe_warning(
-        self, qml_app, qt_app, tmp_path
+        self, qml_app, qt_app, tmp_path, monkeypatch
     ):
         window, _controller, _lib, engine = qml_app
         dialog = _dialog_window(window)
         source, _dest = _forras_es_cel(
-            tmp_path, dialog, engine, qt_app, darab=2
+            tmp_path, dialog, engine, qt_app, monkeypatch, darab=2
         )
-        dialog.setProperty("afterCopying", "delete_all")
+        _click_center(
+            dialog, _child(window, "importSourceAfterDeleteAllRadio"), qt_app
+        )
         controller = _import_source_controller(engine)
         controller.excludeFile(str(source / "b.jpg"))
         qt_app.processEvents()
@@ -634,12 +660,16 @@ class TestAfterCopyingConfirmation:
         assert not (source / "b.jpg").exists()
 
     def test_cancel_in_the_question_stops_the_removal_and_the_import(
-        self, qml_app, qt_app, tmp_path
+        self, qml_app, qt_app, tmp_path, monkeypatch
     ):
         window, _controller, _lib, engine = qml_app
         dialog = _dialog_window(window)
-        source, dest = _forras_es_cel(tmp_path, dialog, engine, qt_app)
-        dialog.setProperty("afterCopying", "delete_all")
+        source, dest = _forras_es_cel(
+            tmp_path, dialog, engine, qt_app, monkeypatch
+        )
+        _click_center(
+            dialog, _child(window, "importSourceAfterDeleteAllRadio"), qt_app
+        )
         started = []
         _import_source_controller(engine).importStarted.connect(started.append)
 
@@ -654,21 +684,27 @@ class TestAfterCopyingConfirmation:
         assert list(dest.iterdir()) == []
 
     def test_previously_suppressed_old_keys_do_not_skip_the_question(
-        self, qml_app, qt_app, tmp_path
+        self, qml_app, qt_app, tmp_path, monkeypatch
     ):
         # #7173: a két régi elnyomó kulcs (a `Do not ask again` jelölő
         # lenyomata) már semmire sem hat: a kérdés mindig megjelenik.
         window, _controller, _lib, engine = qml_app
         dialog = _dialog_window(window)
-        source, _dest = _forras_es_cel(tmp_path, dialog, engine, qt_app)
+        source, _dest = _forras_es_cel(
+            tmp_path, dialog, engine, qt_app, monkeypatch
+        )
         settings = engine.rootContext().contextProperty("confirmSettings")
         settings.setSuppressed("importSourceRemoveImported", True)
         settings.setSuppressed("importSourceDeleteAllWarning", True)
         started = []
         _import_source_controller(engine).importStarted.connect(started.append)
 
-        for mode in ("delete_copied", "delete_all"):
-            dialog.setProperty("afterCopying", mode)
+        for mode, radio in (
+            ("delete_copied", "importSourceAfterDeleteCopiedRadio"),
+            ("delete_all", "importSourceAfterDeleteAllRadio"),
+        ):
+            _click_center(dialog, _child(window, radio), qt_app)
+            assert dialog.property("effectiveAfterCopying") == mode
             _click_center(
                 dialog, _child(window, "importSourceStartButton"), qt_app
             )
@@ -679,10 +715,14 @@ class TestAfterCopyingConfirmation:
             _click_center(dialog, kerdes["cancel"], qt_app)
             assert kerdes["dialog"].property("visible") is False, mode
 
-    def test_leave_card_alone_skips_confirmation(self, qml_app, qt_app, tmp_path):
+    def test_leave_card_alone_skips_confirmation(
+        self, qml_app, qt_app, tmp_path, monkeypatch
+    ):
         window, _controller, _lib, engine = qml_app
         dialog = _dialog_window(window)
-        source, dest = _forras_es_cel(tmp_path, dialog, engine, qt_app)
+        source, dest = _forras_es_cel(
+            tmp_path, dialog, engine, qt_app, monkeypatch
+        )
         # afterCopying alapértelmezetten "leave"
 
         loop = _quit_on(_import_source_controller(engine).importFinished)

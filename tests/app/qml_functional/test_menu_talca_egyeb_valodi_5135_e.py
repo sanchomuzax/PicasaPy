@@ -1,7 +1,9 @@
 """Az „Egyéb" táblázat tételei VALÓDI egérkattintással (#5135, 3. rész, E).
 
 Fájl ▸ Import From… (Ctrl+M): a forrás-importáló párbeszéd vezérlői.
-Forrás (mappa, kártya) nélkül is nyílik, és minden vezérlője engedélyezett.
+Forrás (mappa, kártya) nélkül is nyílik. #7183: az elnevezés alapja a kézi
+cím, a három törlési rádió pedig csak DCIM mappás csatolt kártyánál aktív,
+ezért a törlési tesztek ilyen kártyát választanak (valódi kattintással).
 Az állapotot a párbeszéd (`namingMode`, `afterCopying`) és a vezérlő
 (`mediaFilter`, `resizeLimit`) mezőin mérjük.
 
@@ -30,6 +32,8 @@ import pytest
 from PySide6.QtCore import QObject
 
 from conftest import _build_qml_app
+from support.import_kartya_7183 import csatolt_kartya_kivalasztasa
+from support.jpeg_factory import make_jpeg
 from tests.app.qml_functional._felsomenupontok_helpers_4329 import _kattints
 from tests.app.qml_functional._fomenu_4420_menu import _megnyit
 from tests.app.qml_functional.test_menu_talca_egyeb_valodi_5135 import (
@@ -68,6 +72,19 @@ def _import_megnyit(window, qt_app):
     return _gyerek(window, "importSourceDialog")
 
 
+def _dcim_kartya_kivalasztasa(
+    dialog, engine, qt_app, monkeypatch, tmp_path
+) -> None:
+    """DCIM mappás csatolt kártya a meghajtó-listából, valódi kattintással."""
+    import_ctl = engine.rootContext().contextProperty("importSourceController")
+    kartya = tmp_path / "kartya"
+    (kartya / "DCIM" / "100CANON").mkdir(parents=True)
+    make_jpeg(kartya / "DCIM" / "100CANON" / "a.jpg")
+    csatolt_kartya_kivalasztasa(
+        dialog, import_ctl, qt_app, monkeypatch, kartya, darab=1
+    )
+
+
 def _kattint_es_var(window, qt_app, nev: str, feltetel) -> None:
     """Valódi kattintás a `nev` vezérlőn, majd várakozás az állapotra."""
     _kattints(qt_app, _gyerek(window, nev))
@@ -81,7 +98,7 @@ class TestElnevezes:
         window, controller, _engine = import_app
         _elokeszit(window, qt_app, controller)
         dialog = _import_megnyit(window, qt_app)
-        assert dialog.property("namingMode") == "date"
+        assert dialog.property("namingMode") == "manual"
 
         _kattint_es_var(
             window, qt_app, "importSourceNamingTodayRadio",
@@ -96,12 +113,15 @@ class TestElnevezes:
 
 class TestMasolasUtan:
     def test_torles_masolas_utan_radio_valodi_kattintassal_valtozik(
-        self, import_app, qt_app
+        self, import_app, qt_app, monkeypatch, tmp_path
     ):
-        window, controller, _engine = import_app
+        window, controller, engine = import_app
         _elokeszit(window, qt_app, controller)
         dialog = _import_megnyit(window, qt_app)
         assert dialog.property("afterCopying") == "leave"
+        _dcim_kartya_kivalasztasa(
+            dialog, engine, qt_app, monkeypatch, tmp_path
+        )
 
         _kattint_es_var(
             window, qt_app, "importSourceAfterDeleteCopiedRadio",
@@ -114,12 +134,15 @@ class TestMasolasUtan:
         _zar(qt_app, dialog)
 
     def test_minden_torlese_radio_valodi_kattintassal_valtozik(
-        self, import_app, qt_app
+        self, import_app, qt_app, monkeypatch, tmp_path
     ):
         """Csak a rádió állapota változik; a törlést nem indítjuk el."""
-        window, controller, _engine = import_app
+        window, controller, engine = import_app
         _elokeszit(window, qt_app, controller)
         dialog = _import_megnyit(window, qt_app)
+        _dcim_kartya_kivalasztasa(
+            dialog, engine, qt_app, monkeypatch, tmp_path
+        )
 
         _kattint_es_var(
             window, qt_app, "importSourceAfterDeleteAllRadio",

@@ -26,6 +26,8 @@ _REGI_NYILVANOS_NEVEK = {
     "INI_NAME",
     "ImportCandidate",
     "ImportSourceController",
+    # #7183: az import megjegyzett választásai (almappa-mód, törlési mód)
+    "ImportSourceControllerChoicesMixin",
     "ImportSourceControllerScanningMixin",
     "ImportSourceControllerStateMixin",
     "IndexFastKeySource",
@@ -136,6 +138,7 @@ _QML_METODUSOK = [
     (1, "recentDestinationsChanged", 0),
     (1, "defaultDestinationChanged", 0),
     (1, "resizeLimitChanged", 0),
+    (1, "importChoicesChanged", 0),  # #7183
     (2, "scanSource", 2),
     (2, "scanSource", 1),
     (2, "scanFiles", 1),
@@ -152,6 +155,7 @@ _QML_METODUSOK = [
     (2, "includeFile", 1),
     (2, "excludeAll", 0),
     (2, "includeAll", 0),
+    (2, "isDeletableSource", 1),  # #7183
     (2, "wipeCardWarning", 0),
     (2, "isValidFolderName", 1),
 ]
@@ -166,6 +170,9 @@ _QML_TULAJDONSAGOK = [
     ("resizeOptions", "resizeLimitChanged", False),
     ("resizeLimit", "resizeLimitChanged", False),
     ("mediaFilter", "mediaFilterChanged", False),
+    # #7183: a legutóbb indított import almappa-módja és törlési módja
+    ("namingMode", "importChoicesChanged", False),
+    ("afterCopying", "importChoicesChanged", False),
 ]
 
 

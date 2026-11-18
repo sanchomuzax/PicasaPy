@@ -2,11 +2,16 @@
 
 from pathlib import Path
 
-from PySide6.QtCore import QMetaObject, QPointF, QObject, Qt
+from PySide6.QtCore import QPointF, QObject, Qt
 from PySide6.QtQuick import QQuickWindow
 from PySide6.QtTest import QTest
 
 from support.halasztott_parbeszed import nyisd_meg
+from support.import_kartya_7183 import (
+    csatolt_kartya_kivalasztasa,
+    datum_szerinti_bontas,
+    elem,
+)
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import hangos_hurok
 
@@ -30,16 +35,6 @@ def _click_center(item, qt_app):
         Qt.KeyboardModifier.NoModifier,
         centre.toPoint(),
     )
-    qt_app.processEvents()
-
-
-def _scan(dialog, controller, source, qt_app):
-    dialog.setProperty("sourceFolder", str(source))
-    loop = hangos_hurok(controller.sourceScanFinished)
-    QMetaObject.invokeMethod(
-        dialog, "scanCurrentSource", Qt.ConnectionType.DirectConnection
-    )
-    loop.exec()
     qt_app.processEvents()
 
 
@@ -78,9 +73,16 @@ def test_delete_oserror_shows_error_and_enables_import_again(
         dest = tmp_path / f"cel-konyvtar-{height_delta:+d}"
         dest.mkdir()
 
-        _scan(dialog, controller, source, qt_app)
+        # #7183: törölni csak DCIM mappás csatolt kártyáról lehet (valódi
+        # kattintás a meghajtó-listán és a törlési rádión)
+        (source / "DCIM").mkdir()
+        csatolt_kartya_kivalasztasa(
+            dialog, controller, qt_app, monkeypatch, source, darab=1
+        )
         dialog.setProperty("destFolder", str(dest))
-        dialog.setProperty("afterCopying", "delete_copied")
+        datum_szerinti_bontas(dialog, qt_app)
+        _click_center(elem(dialog, "importSourceAfterDeleteCopiedRadio"), qt_app)
+        assert dialog.property("effectiveAfterCopying") == "delete_copied"
         assert start_button.property("enabled") is True
 
         _click_center(start_button, qt_app)

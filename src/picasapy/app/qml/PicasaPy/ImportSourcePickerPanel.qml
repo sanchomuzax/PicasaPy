@@ -49,11 +49,8 @@ ColumnLayout {
                     && importSourceController)
                    ? importSourceController.recentSources : []
             displayText: qsTr("Recent sources")
-            onActivated: {
-                hostWindow.sourceFiles = []
-                hostWindow.sourceFolder = model[currentIndex]
-                hostWindow.scanCurrentSource()
-            }
+            // #7183: az előzményből választott forrás sosem törölhető
+            onActivated: hostWindow.useSourceFolder(model[currentIndex], false)
         }
         PicasaComboBox {
             objectName: "importSourceMountedSourcesBox"
@@ -65,9 +62,8 @@ ColumnLayout {
             onActivated: {
                 var source = model[currentIndex]
                 if (!source) return
-                hostWindow.sourceFiles = []
-                hostWindow.sourceFolder = source.path
-                hostWindow.scanCurrentSource()
+                // #7183: csak a csatolt meghajtók listájából törölhető forrás
+                hostWindow.useSourceFolder(source.path, true)
             }
         }
         // #4596: a „Tallózás…” kételemű menüt nyit: mappa vagy fájlok

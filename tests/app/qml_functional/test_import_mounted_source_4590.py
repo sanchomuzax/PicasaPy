@@ -126,6 +126,8 @@ def test_attached_card_can_be_selected_and_imported_at_nearby_window_heights(
         assert int(dialog.property("previewCount")) == 1
 
     dialog.setProperty("destFolder", str(destination))
+    # #7183: üres profilban a kézi cím az alapérték; a dátum szerinti bontást kérjük
+    _kattint(dialog, _elem(dialog, "importSourceNamingByDateRadio"), qt_app)
     finished = []
     controller.importFinished.connect(lambda copied, failed: finished.append((copied, failed)))
     start_button = _elem(dialog, "importSourceStartButton")
