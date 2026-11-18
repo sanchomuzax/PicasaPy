@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from PySide6.QtCore import Property, QUrl, Slot
+from picasapy.halozati_ut import fajlrendszer_gyoker
 from . import formatting
 from .controller_signals import AppControllerSignalsMixin as _Signals
 from .slideshow_pan_zoom import qml_pan_zoom_rectangles
@@ -178,8 +179,15 @@ class SlideshowSettingsMixin:
             tracks = self.albumMusicTrackUrls(token)
             if tracks:
                 return tracks
-        if self._current_folder and self.folderMusicEnabled(self._current_folder):
-            return self.folderMusicTrackUrls(self._current_folder)
+        if self._current_folder:
+            if fajlrendszer_gyoker(self._current_folder) is not None:
+                state = self._network_folder_music_state(self._current_folder)
+                if state is None:
+                    return []
+                if state[0]:
+                    return self.folderMusicTrackUrls(self._current_folder)
+            elif self.folderMusicEnabled(self._current_folder):
+                return self.folderMusicTrackUrls(self._current_folder)
         folder = Path(self.slideshowMusicFolder).expanduser()
         try:
             if not folder.is_dir():

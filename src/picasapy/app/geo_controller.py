@@ -53,8 +53,11 @@ class GeoMixin:
         Így a térkép és a rács sosem térhet el: mappa-nézetben a mappa
         geocímkézett képei, a Helyek-szűrőben az összes ilyen kép.
         Listát adunk (nem tuple-t): a QML-oldalon a tuple NEM tömb (#232)."""
+        photos = self._photos.photos
+        if getattr(self, "_geo_marker_source", None) is photos:
+            return self._geo_marker_cache
         markers = []
-        for row, photo in enumerate(self._photos.photos):
+        for row, photo in enumerate(photos):
             point = photo.location
             if point is None:
                 continue
@@ -72,6 +75,8 @@ class GeoMixin:
                     "longitude": point.longitude,
                 }
             )
+        self._geo_marker_source = photos
+        self._geo_marker_cache = markers
         return markers
 
     @Property(int, notify=geoChanged)
@@ -178,6 +183,7 @@ class GeoMixin:
         except (OSError, ValueError) as error:
             self.geoWriteFailed.emit(str(error))
             return
+        self._geo_marker_source = None
         self.geoChanged.emit()
 
     # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a felület ugyanezt az adatot

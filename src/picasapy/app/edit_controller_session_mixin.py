@@ -7,7 +7,7 @@ import threading
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QMetaObject
-from picasapy.halozati_ut import halozati_gyoker
+from picasapy.halozati_ut import fajlrendszer_gyoker
 from picasapy.ini import parse_document
 from picasapy.metadata.reader import _cache_exif_details, _cached_exif_details
 
@@ -71,7 +71,7 @@ class EditControllerSessionMixin:
         self._memory_only = False
         self._photo_id = photo_id
         self._image_path = path
-        network_path = halozati_gyoker(path) is not None
+        network_path = fajlrendszer_gyoker(path) is not None
         self._network_edit_generation = getattr(
             self, "_network_edit_generation", 0
         ) + 1

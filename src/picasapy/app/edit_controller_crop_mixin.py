@@ -6,7 +6,7 @@ import logging
 import threading
 
 from PySide6.QtCore import QMetaObject, Qt
-from picasapy.halozati_ut import halozati_gyoker
+from picasapy.halozati_ut import fajlrendszer_gyoker
 
 from .edit_controller_shared import (
     EditSession,
@@ -151,7 +151,7 @@ class EditControllerCropMixin:
         """
         if not self._photo_id or self._image_path is None:
             return []
-        if halozati_gyoker(self._image_path) is not None:
+        if fajlrendszer_gyoker(self._image_path) is not None:
             if getattr(self, "_network_edit_load_pending", False):
                 return []
             if getattr(self, "_network_edit_load_failed", False):

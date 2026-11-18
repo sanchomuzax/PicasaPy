@@ -33,7 +33,6 @@ from PySide6.QtCore import QMetaObject, Qt, Slot
 
 from picasapy.index import open_index
 from picasapy.index.sync_folders import watched_root_missing
-from picasapy.halozati_ut import halozati_gyoker
 
 logger = logging.getLogger(__name__)
 
@@ -106,20 +105,7 @@ class _LibraryEltuntGyokerMixin:
         if getattr(self, "_missing_root_check_running", False):
             return
         roots = tuple(self._roots)
-        if not any(halozati_gyoker(root) is not None for root in roots):
-            # Helyi lemezen megtartjuk a korábbi közvetlen útvonalat; a
-            # hálózati `stat()`-ok az alábbi workerben futnak.
-            results = []
-            for gyoker in roots:
-                if not watched_root_missing(gyoker) or not szulo_jelen_van(gyoker):
-                    continue
-                with open_index(self._db_path) as conn:
-                    nevek = indexelt_fajlnevek(conn, gyoker)
-                uj = atnevezett_testver(gyoker, nevek)
-                if uj is not None:
-                    results.append((gyoker, uj))
-            self._missing_root_results = results
-            self._apply_missing_root_results()
+        if not roots:
             return
         self._missing_root_check_running = True
 

@@ -155,7 +155,7 @@ class ContentInfoMixin:
             return []
         photo = photos[row]
         contacts = central_contacts_path(self._db_path)
-        if halozati_gyoker(photo.folder_path) is not None and photo.kind == "photo":
+        if _halozati_utvonal(photo.folder_path) and photo.kind == "photo":
             path = Path(photo.folder_path) / photo.name
             details = _cached_exif_details(path)
             if details is None:

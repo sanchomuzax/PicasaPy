@@ -91,7 +91,8 @@ class _LibraryActivityMixin:
         self.importChanged.emit()
         now = time.monotonic()
         if (
-            new_photos > self._import_new_at_reload
+            done != total
+            and new_photos > self._import_new_at_reload
             and now - self._import_last_reload >= _legacy()._PROGRESS_RELOAD_MIN_S
         ):
             self._import_last_reload = now
