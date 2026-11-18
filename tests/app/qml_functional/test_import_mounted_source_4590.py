@@ -30,7 +30,7 @@ def _kattint(window, item, qt_app) -> None:
     )
     center = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
     QTest.mouseClick(
-        window,
+        item.window(),
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(center.x()), round(center.y())),
@@ -62,7 +62,7 @@ def _kattint_elso_legordulo_sorra(window, qt_app) -> None:
     )
     center = row_list.mapToScene(QPointF(row_list.width() / 2, row_height / 2))
     QTest.mouseClick(
-        window,
+        row_list.window(),
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(center.x()), round(center.y())),
@@ -94,6 +94,9 @@ def test_attached_card_can_be_selected_and_imported_at_nearby_window_heights(
         raising=False,
     )
 
+    main_window.resize(1280, 800)
+    main_window.show()
+    qt_app.processEvents()
     _kattint(main_window, _elem(main_window, "toolbarImportButton"), qt_app)
     _varj(
         qt_app,
@@ -102,13 +105,13 @@ def test_attached_card_can_be_selected_and_imported_at_nearby_window_heights(
     )
     dialog = _elem(main_window, "importSourceDialog")
     _varj(qt_app, lambda: bool(dialog.property("visible")), "az importablak nem nyílt meg")
-    original_height = float(dialog.property("height"))
+    original_height = float(main_window.height())
     source_box = _elem(dialog, "importSourceMountedSourcesBox")
     scan_done = []
     controller.sourceScanFinished.connect(lambda *_args: scan_done.append(True))
 
     for height_delta in (-5, 0, 5):
-        dialog.setProperty("height", original_height + height_delta)
+        main_window.setProperty("height", original_height + height_delta)
         qt_app.processEvents()
         controller.refreshMountedSources()
         qt_app.processEvents()

@@ -27,6 +27,10 @@ def search_conn(tmp_path):
         "caption.jpg",
         "keyword.jpg",
         "insidezqa_keyword.jpg",
+        "keyword_only.jpg",
+        "zqkw1_filename.jpg",
+        "caption_only.jpg",
+        "zqcap1_filename.jpg",
     )
     for name in names:
         (content / name).write_bytes(b"test")
@@ -40,7 +44,9 @@ def search_conn(tmp_path):
         "[insidezqa_name.jpg]\ncaption=ordinary\n"
         "[caption.jpg]\ncaption=zqab-caption\n"
         "[keyword.jpg]\nkeywords=zqab-keyword\n"
-        "[insidezqa_keyword.jpg]\nkeywords=insidezqa\n",
+        "[insidezqa_keyword.jpg]\nkeywords=insidezqa\n"
+        "[keyword_only.jpg]\nkeywords=zqkw1\n"
+        "[caption_only.jpg]\ncaption=zqcap1\n",
         encoding="utf-8",
     )
 
@@ -50,6 +56,9 @@ def search_conn(tmp_path):
     partial_folder = root / "insidezqa-mappa-zqbb"
     partial_folder.mkdir()
     (partial_folder / "folder_partial.jpg").write_bytes(b"test")
+    tag_folder = root / "zqcap1-mappa"
+    tag_folder.mkdir()
+    (tag_folder / "folder_only.jpg").write_bytes(b"test")
 
     with open_index(tmp_path / "index.db") as connection:
         sync_tree(connection, root)
@@ -105,8 +114,13 @@ def test_a_normalizalo_megtartja_a_kizaro_elotagot(query, expected):
     assert search_queries._normalize_search_query(query) == expected
 
 
-def test_a_cimke_elotag_levagodik_es_minden_mezo_keresheto_marad(search_conn):
-    expected = _names(search_conn, "zqa")
+def test_a_tag_elotag_kizarolag_kulcsszoban_keres(search_conn):
+    assert _names(search_conn, "tag:zqa") == {"keyword.jpg", "reversed.jpg"}
+    assert _names(search_conn, "tag:zqkw1") == {"keyword_only.jpg"}
+    assert _names(search_conn, "tag:zqcap1") == set()
 
-    assert _names(search_conn, "tag:zqa") == expected
-    assert _names(search_conn, "címke:zqa") == expected
+    assert _names(search_conn, "zqcap1") == {
+        "caption_only.jpg",
+        "zqcap1_filename.jpg",
+        "folder_only.jpg",
+    }

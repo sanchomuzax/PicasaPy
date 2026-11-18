@@ -27,6 +27,10 @@ _COMMANDS = (
     Path(__file__).resolve().parents[3]
     / "src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml"
 ).read_text(encoding="utf-8")
+_IMPORT_ACTIONS = (
+    Path(__file__).resolve().parents[3]
+    / "src/picasapy/app/qml/PicasaPy/MainWindowImportActions.qml"
+).read_text(encoding="utf-8")
 _MAIN = main_sources()
 
 
@@ -159,7 +163,9 @@ class TestAForras:
         assert blokk.index("kilepesMegerositve = true") < blokk.index("Qt.quit()")
 
     def test_a_menu_es_az_ablak_x_e_ugyanazt_a_jelzot_olvassa(self):
-        kilepes = _COMMANDS[_COMMANDS.index("function kilepes()") :][:400]
+        kilepes = _IMPORT_ACTIONS[
+            _IMPORT_ACTIONS.index("function kilepes(") :
+        ][:800]
         ablak = _MAIN[_MAIN.index("onClosing:") :][:500]
         assert "kilepesMegerositve" in kilepes
         assert "kilepesMegerositve" in ablak

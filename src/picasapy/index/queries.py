@@ -16,6 +16,7 @@ from .search_color import parse_color_terms
 _PATH_SEP = re.compile(r"[/\\]")
 _SEARCH_EDGE_CHARS = " ,./\\"
 _SEARCH_TAG_PREFIXES = ("tag:", "címke:")
+_SEARCH_KEYWORD_COLUMNS = ("keywords_ini", "keywords_file")
 
 
 def _normalize_search_query(query: str) -> str:
@@ -516,7 +517,8 @@ def search_photos(
     conn: sqlite3.Connection, query: str, *, only_id: int | None = None
 ) -> tuple[PhotoRecord, ...]:
     """Keresés MINDENBEN (Picasa): fájlnév/felirat/kulcsszó (FTS5) ÉS
-    mappanév — az egyező nevű mappák teljes tartalma is találat.
+    mappanév — az egyező nevű mappák teljes tartalma is találat. A `tag:`
+    előtag csak a kulcsszómezőkre szűkíti a keresést (#7218).
 
     #383: a `color:`/`szín:` tokenek (pl. `color:blue nyaralás`) a
     szabadszavas résztől ELVÁLNAK — a színszűrés a maradék szöveges
@@ -537,12 +539,17 @@ def search_photos(
     színtokenek és az idézőjel-védés is duplikálódna, és ha elcsúsznának, a
     nézet NÉMÁN hibás tagságot mutatna.
     """
+    keyword_only = (
+        (query or "").strip(_SEARCH_EDGE_CHARS).lower().startswith("tag:")
+    )
     normalized_query = _normalize_search_query(query)
     remainder, color_tokens = parse_color_terms(normalized_query)
     if not remainder and not color_tokens:
         return ()
     if remainder:
-        records = _text_search(conn, remainder, only_id=only_id)
+        records = _text_search(
+            conn, remainder, only_id=only_id, keyword_only=keyword_only
+        )
     elif only_id is None:
         records = all_photos(conn)
     else:
@@ -557,7 +564,11 @@ def search_photos(
 
 
 def _text_search(
-    conn: sqlite3.Connection, query: str, *, only_id: int | None = None
+    conn: sqlite3.Connection,
+    query: str,
+    *,
+    only_id: int | None = None,
+    keyword_only: bool = False,
 ) -> tuple[PhotoRecord, ...]:
     """Szavankénti FTS5-prefix keresés és mappanév-egyezés (#7193).
 
@@ -572,31 +583,40 @@ def _text_search(
     def prefix_query(term: str) -> str:
         return '"' + term.replace('"', '""') + '"*'
 
+    def keyword_prefix_query(term: str) -> str:
+        scoped_terms = " OR ".join(
+            f"{column} : {prefix_query(term)}"
+            for column in _SEARCH_KEYWORD_COLUMNS
+        )
+        return f"({scoped_terms})"
+
     folder_ids: list[int] = []
     excluded_folder_ids: set[int] = set()
-    for row in conn.execute("SELECT id, path FROM folders"):
-        folder_terms = {
-            term.removeprefix("-")
-            for term in _normalize_search_query(
-                _PATH_SEP.split(row["path"])[-1]
-            ).split()
-        }
-        if positive_terms and all(
-            any(folder_term.startswith(term) for folder_term in folder_terms)
-            for term in positive_terms
-        ):
-            folder_ids.append(row["id"])
-        if any(
-            folder_term.startswith(term)
-            for term in excluded_terms
-            for folder_term in folder_terms
-        ):
-            excluded_folder_ids.add(row["id"])
+    if not keyword_only:
+        for row in conn.execute("SELECT id, path FROM folders"):
+            folder_terms = {
+                term.removeprefix("-")
+                for term in _normalize_search_query(
+                    _PATH_SEP.split(row["path"])[-1]
+                ).split()
+            }
+            if positive_terms and all(
+                any(folder_term.startswith(term) for folder_term in folder_terms)
+                for term in positive_terms
+            ):
+                folder_ids.append(row["id"])
+            if any(
+                folder_term.startswith(term)
+                for term in excluded_terms
+                for folder_term in folder_terms
+            ):
+                excluded_folder_ids.add(row["id"])
 
     where: list[str] = []
     params: list[str | int] = []
     if positive_terms:
-        fts_query = " AND ".join(prefix_query(term) for term in positive_terms)
+        build_query = keyword_prefix_query if keyword_only else prefix_query
+        fts_query = " AND ".join(build_query(term) for term in positive_terms)
         match_clause = "p.id IN (SELECT rowid FROM photos_fts WHERE photos_fts MATCH ?)"
         params.append(fts_query)
         if folder_ids:
@@ -606,11 +626,14 @@ def _text_search(
         where.append(f"({match_clause})")
 
     for term in excluded_terms:
+        excluded_query = (
+            keyword_prefix_query(term) if keyword_only else prefix_query(term)
+        )
         where.append(
             "p.id NOT IN (SELECT rowid FROM photos_fts "
             "WHERE photos_fts MATCH ?)"
         )
-        params.append(prefix_query(term))
+        params.append(excluded_query)
     if excluded_folder_ids:
         placeholders = ",".join("?" * len(excluded_folder_ids))
         where.append(f"p.folder_id NOT IN ({placeholders})")

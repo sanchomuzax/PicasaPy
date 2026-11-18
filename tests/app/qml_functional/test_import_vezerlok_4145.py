@@ -22,7 +22,7 @@ def _kattint(ablak, elem, qt_app) -> None:
     )
     kozep = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2))
     QTest.mouseClick(
-        ablak,
+        elem.window(),
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
@@ -59,7 +59,7 @@ def _kattint_elso_legordulo_sorra(ablak, qt_app) -> None:
         QPointF(lista.width() / 2, tartalom_magassag / darab / 2)
     )
     QTest.mouseClick(
-        ablak,
+        lista.window(),
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
@@ -68,7 +68,7 @@ def _kattint_elso_legordulo_sorra(ablak, qt_app) -> None:
         qt_app.processEvents()
 
 
-@pytest.fixture(params=(675, 680, 685))
+@pytest.fixture(params=(-5, 0, 5))
 def panel_magassag(request):
     return request.param
 
@@ -81,7 +81,7 @@ def _nyitott_import_ablak(qml_app, qt_app, panel_magassag: int):
     _kattint(foablak, _elem(foablak, "toolbarImportButton"), qt_app)
     import_ablak = _elem(foablak, "importSourceDialog")
     assert import_ablak.property("visible") is True
-    import_ablak.setProperty("height", panel_magassag)
+    foablak.setProperty("height", 800 + panel_magassag)
     qt_app.processEvents()
     return foablak, import_ablak
 
@@ -92,8 +92,7 @@ def import_ablak(qml_app, qt_app, panel_magassag):
         qml_app, qt_app, panel_magassag
     )
     yield ablak
-    # Az ImportSourceDialog külön, modális QWindow. A következő próba
-    # tényleges kattintásait ne nyelje el nyitva maradt előző ablak.
+    # A panelt elrejtjük, hogy a következő próba a főablak könyvtárát kapja.
     ablak.setProperty("visible", False)
     qt_app.processEvents()
 

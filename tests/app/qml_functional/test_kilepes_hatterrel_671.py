@@ -27,6 +27,10 @@ _COMMANDS = (
     Path(__file__).resolve().parents[3]
     / "src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml"
 ).read_text(encoding="utf-8")
+_IMPORT_ACTIONS = (
+    Path(__file__).resolve().parents[3]
+    / "src/picasapy/app/qml/PicasaPy/MainWindowImportActions.qml"
+).read_text(encoding="utf-8")
 _MENU = menu_sources()
 
 
@@ -61,23 +65,29 @@ class TestAKilepesEgyHelyenDolEl:
     def test_az_ablak_X_e_is_ugyanide_fut(self):
         """Ha csak a menü kérdezne, az „X" némán elvinné a futó munkát."""
         kezd = _MAIN.index("onClosing:")
-        blokk = _MAIN[kezd : kezd + 400]
-        assert "backgroundWorkRunning()" in blokk
+        blokk = _MAIN[kezd : kezd + 500]
+        assert "mainWindowCommands._windowCloseRequest = true" in blokk
+        assert "window.kilepes()" in blokk
         assert "close.accepted = false" in blokk
-        assert "kilepesDialog.askExit()" in blokk
 
 
 class TestAKerdesFeltetele:
     def test_a_kilepes_a_HATTERMUNKAT_kerdezi(self):
-        kezd = _COMMANDS.index("function kilepes()")
-        blokk = _COMMANDS[kezd : kezd + 400]
+        kezd = _IMPORT_ACTIONS.index("function kilepes(")
+        blokk = _IMPORT_ACTIONS[kezd : kezd + 800]
         assert "hostController.backgroundWorkRunning()" in blokk
         assert "Qt.quit()" in blokk, "munka nélkül azonnal kilép"
 
+    def test_a_kilepes_egyutt_kerdezi_az_importot_es_a_hattermunkat(self):
+        kezd = _IMPORT_ACTIONS.index("function kilepes(")
+        blokk = _IMPORT_ACTIONS[kezd : kezd + 800]
+        assert "importActions.askBeforeClose()" in blokk
+        assert "hostController.backgroundWorkRunning()" in blokk
+
     def test_a_null_or_ott_van(self):
         """#305: a leépülő motor is újraértékelheti a kötést."""
-        kezd = _COMMANDS.index("function kilepes()")
-        assert "hostController &&" in _COMMANDS[kezd : kezd + 400]
+        kezd = _IMPORT_ACTIONS.index("function kilepes(")
+        assert "&& importActions.hostController" in _IMPORT_ACTIONS[kezd : kezd + 800]
 
     @pytest.mark.parametrize("felirat", ["Exit Now", "Keep Going"])
     def test_a_MERT_gombpar(self, felirat):

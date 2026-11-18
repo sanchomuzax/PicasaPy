@@ -37,14 +37,15 @@ def _varj(qt_app, condition, message: str, seconds: float = 10.0) -> None:
 def _kattint(window, item, qt_app) -> None:
     assert item.isEnabled() and item.width() > 0 and item.height() > 0
     center = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
+    target_window = item.window()
     # A kattintás csak az ablakon BELÜL ér célba — kisebb CI-képernyőn ez
     # nem magától értetődő, ezért kimondjuk.
-    assert 0 <= center.x() < window.width() and 0 <= center.y() < window.height(), (
+    assert 0 <= center.x() < target_window.width() and 0 <= center.y() < target_window.height(), (
         f"a kattintás helye ({center.x():.0f},{center.y():.0f}) kívül esik "
-        f"az ablakon ({window.width()}x{window.height()})"
+        f"az ablakon ({target_window.width()}x{target_window.height()})"
     )
     QTest.mouseClick(
-        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+        target_window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
         QPoint(round(center.x()), round(center.y())),
     )
     qt_app.processEvents()
@@ -91,15 +92,15 @@ def test_kijelolt_fajlok_kattintassal_forraskent_importalodnak(
     cel = tmp_path / "cel"
     cel.mkdir()
 
+    main_window.resize(1280, 860)
+    main_window.show()
+    qt_app.processEvents()
     _kattint(main_window, _elem(main_window, "toolbarImportButton"), qt_app)
     _varj(qt_app, lambda: main_window.findChild(QObject, "importSourceDialog") is not None,
           "az Import gomb nem hozta létre a párbeszédet")
     dialog = _elem(main_window, "importSourceDialog")
     _varj(qt_app, lambda: bool(dialog.property("visible")), "az importablak nem nyílt meg")
-    # rögzített, a teljes tartalomnak elég ablakméret — a CI képernyője kisebb
-    dialog.setProperty("width", 640)
-    dialog.setProperty("height", 860)
-    qt_app.processEvents()
+    # A teljes munkaterület a főablak geometriáját követi.
 
     valaszto = _elem(dialog, "importSourceFilesDialog")
     _kattint(dialog, _elem(dialog, "importSourceChooseSourceButton"), qt_app)
