@@ -398,8 +398,28 @@ PicasaMenuBar {
            hostController.hasSavedBackup(hostWindow.photoActionRows())) : false
     // #4332: siker esetén a dátummódosítás az EXIF DateTimeOriginal
     // mezőt írja; ha az EXIF-írás nem lehetséges, indexfelülírásra esik vissza.
-    onAdjustTimestampRequested:
-        hostCreateDialogs.ensure().openTimestamp(hostWindow.photoActionRows())
+    onAdjustTimestampRequested: {
+        var rows = hostWindow.photoActionRows()
+        // #7230: üres kijelölésnél csak a megnyitott mappa teljes képcsoportja
+        // a cél. Album-, kereső- és üres nézetben a parancs hatástalan marad.
+        if (rows.length === 0 && !hostWindow.viewerOpen && hostController
+                && hostController.viewModeName === "folder") {
+            var folder = hostController.currentFolder
+            var photos = hostController.photos
+            if (folder) {
+                for (var row = 0; row < photos.rowCount(); ++row) {
+                    var path = photos.filePathAt(row)
+                    var separator = Math.max(
+                        path.lastIndexOf("/"), path.lastIndexOf("\\")
+                    )
+                    if (separator >= 0 && path.substring(0, separator) === folder)
+                        rows.push(row)
+                }
+            }
+        }
+        if (rows.length > 0)
+            hostCreateDialogs.ensure().openTimestamp(rows)
+    }
     onSaveRequested: hostSaveDialogs.ensure().openSave(hostWindow.photoActionRows())
     onRevertRequested: hostSaveDialogs.ensure().openRevert(hostWindow.photoActionRows())
     // #1527: a mentés-család két új tagja
