@@ -292,7 +292,10 @@ Item {
     Shortcut {
         id: shortcutRotateRight
         sequence: "Ctrl+R"
+        //: #7189: diavetítés alatt nem fut: az eredeti normál vetítésben a
+        //: `Ctrl+R` nem jut a főablak ágáig (`0x005e6710`, `0x005e60d0`).
         enabled: !hostWindow._szovegmezoneVanFokusz
+                 && !hostWindow.slideshowRunning
         onActivated: hostController.rotateRightMany(hostWindow.rotateTargetRows())
     }
 
@@ -300,6 +303,7 @@ Item {
         id: shortcutRotateLeft
         sequence: "Ctrl+Shift+R"
         enabled: !hostWindow._szovegmezoneVanFokusz
+                 && !hostWindow.slideshowRunning
         onActivated: hostController.rotateLeftMany(hostWindow.rotateTargetRows())
     }
 

@@ -3,10 +3,11 @@ import QtQuick.Controls
 
 // Diavetítés (#8) — a Picasa Ctrl+4-es teljes képernyős vetítése.
 // Időzített léptetés (videókat kihagyva, körbefordulással), szóköz =
-// szünet, Esc = kilépés, nyilak = kézi léptetés, Ctrl+R / Ctrl+Shift+R =
-// forgatás vetítés közben. A léptetés-logika a controllertől független
-// (csak a photosModel-t használja); a csillag/forgatás műveleteket
-// jelekkel kéri — a bekötés a Main.qml dolga.
+// szünet, Esc = kilépés, nyilak = kézi léptetés. A forgatás a
+// vezérlősáv gombjaival megy; az Enter és a Ctrl+R nem vetítésbillentyű.
+// A léptetés-logika a controllertől független (csak a photosModel-t
+// használja); a csillag/forgatás műveleteket jelekkel kéri, a bekötés a
+// Main.qml dolga.
 Rectangle {
     id: show
     color: "#000000"
@@ -674,11 +675,6 @@ Rectangle {
             if (show.screensaverInputArmed) show.stop()
         } else show.advance()
     }
-    Keys.onReturnPressed: {
-        if (show.screensaverMode) {
-            if (show.screensaverInputArmed) show.stop()
-        } else show.advance()
-    }
     Keys.onLeftPressed: {
         if (show.screensaverMode) {
             if (show.screensaverInputArmed) show.stop()
@@ -697,16 +693,12 @@ Rectangle {
             if (show.screensaverInputArmed) show.stop()
         } else show.advance()
     }
+    //: #7189: az `Enter` és a `Ctrl+R`/`Ctrl+Shift+R` normál vetítésben nem
+    //: kap kezelőt (`0x00760970`, `0x005e6710`, `0x005e60d0`); a főablak
+    //: forgatás-Shortcutjai is tiltottak, amíg a vetítés látszik.
     Keys.onPressed: (event) => {
         if (show.screensaverMode) {
             if (show.screensaverInputArmed) show.stop()
-            event.accepted = true
-            return
-        }
-        if (event.key === Qt.Key_R
-                && (event.modifiers & Qt.ControlModifier)) {
-            show.rotateCurrent(
-                (event.modifiers & Qt.ShiftModifier) ? -1 : 1)
             event.accepted = true
             return
         }

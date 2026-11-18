@@ -387,11 +387,10 @@ Item {
     // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat.
     // #7003: a célpont a TELJES kijelölés (az eredeti közös forgatási útja,
     // `0x005e60d0` -> `0x005ee6e0`, sorban végigmegy rajta); nézőben csak a
-    // megjelenített kép, diavetítés közben (#8) a vetített kép. Üres célnál
-    // a vezérlő `rotationNeedsSelection` jelzése szól (`IDS_MUST_SELECT_TO_ROT`).
+    // megjelenített kép. Üres célnál a vezérlő `rotationNeedsSelection`
+    // jelzése szól (`IDS_MUST_SELECT_TO_ROT`). Diavetítés alatt a két
+    // Shortcut nem fut (#7189), ezért vetítési ág nincs.
     function rotateTargetRows() {
-        if (hostWindow.slideshowRunning && hostRefs.slideshow)
-            return [hostRefs.slideshow.currentIndex]
         return hostWindow.photoActionRows()
     }
     // #103: csak-videó célpontnál a forgatás tiltott — a tálca ↺/↻
