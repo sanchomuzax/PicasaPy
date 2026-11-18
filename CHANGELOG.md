@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.149] - 2026-11-18
+
+- A Mappakezelő OK gombja után a kijelölt képek és a rács görgetési helye megmarad (#7224).
+
 ## [1.0.148] - 2026-11-18
 
 - A tag: előtaggal indított keresés csak a kulcsszavak között keres, előtag nélkül pedig névre, feliratra, kulcsszóra és mappanévre is kereshet (#7218).
