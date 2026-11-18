@@ -539,28 +539,19 @@ Rectangle {
                     Keys.priority: Keys.BeforeItem
                     Keys.onPressed: function (event) {
                         if (event.key === Qt.Key_Escape) {
-                            if (toolbar.searchSuggestionsVisible) {
+                            if (toolbar.searchSuggestionsVisible)
                                 toolbar.searchSuggestionKeyPressed(event.key)
-                                event.accepted = true
-                                return
+                            else if (searchField.text.length
+                                     || (typeof controller !== "undefined" && controller
+                                         && controller.searchActive)) {
+                                searchField.clear(); toolbar.searchCleared(); searchField.forceActiveFocus()
                             }
-                            if (searchField.text.length > 0
-                                    || (typeof controller !== "undefined"
-                                        && controller
-                                        && controller.searchActive)) {
-                                searchField.clear()
-                                toolbar.searchCleared()
-                                searchField.forceActiveFocus()
-                                event.accepted = true
-                            }
+                            event.accepted = true
                             return
                         }
-                        if (!toolbar.searchSuggestionsVisible)
-                            return
-                        if (event.key === Qt.Key_Down
-                                || event.key === Qt.Key_Up
-                                || event.key === Qt.Key_Return
-                                || event.key === Qt.Key_Enter) {
+                        if (toolbar.searchSuggestionsVisible
+                                && [Qt.Key_Down, Qt.Key_Up, Qt.Key_Return,
+                                    Qt.Key_Enter].indexOf(event.key) !== -1) {
                             toolbar.searchSuggestionKeyPressed(event.key)
                             event.accepted = true
                         }

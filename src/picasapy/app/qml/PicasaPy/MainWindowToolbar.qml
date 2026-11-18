@@ -144,10 +144,6 @@ MainToolbar {
             hostRefs.searchSuggestionsBox.dismiss()
     }
     onSearchEdited: function(text) {
-        if (text.trim().length === 0 && _searchOrigin !== null) {
-            toolbar.searchCleared()
-            return
-        }
         if (text.trim().length > 0)
             toolbar.captureSearchOrigin()
         hostWindow.clearSelection()
