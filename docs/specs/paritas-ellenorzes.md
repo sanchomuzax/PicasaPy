@@ -5170,10 +5170,56 @@ egy korábbi állítást, kimondom.
 | A `tag:`/`címke:` előtag hatása (`[szűrő+0xc]`) | (b) M3 két keresése (`címke:zqkw1` és `zqkw1`) eldönti, van-e mezőszűrés | **nem blokkoló**; addig az előtag csak leválik (mai viselkedés) |
 | Szöveg és film/online/másodpéldány gomb/kor-csúszka kapcsolata (E1) | (b) M6 | **nem blokkoló** a szöveg és a csillag/arc/geocímke gomb ÉS-kapcsolatára |
 
-Egyetlen célzott Ghidra-kör marad (az E8-hoz), a korábbi `0x00682c00` kérés
-helyett:
+#### K2 statikus eredmény (#7196)
 
-- Ghidra-kör kell: 0x00456610 - a `.picasa.ini` és a képmezők szóindexbe írása (17 276 bájt, `caption`, `keywords`, `rating`, `hidden`, `geotag`, `faces`, `filters`, `albumlist` sztringek; a szóbeszúrót `0x004d9aa0`-t hívja): mely mezőből milyen szavak kerülnek az indexbe (a felirat és a kulcsszó szavanként bontva?), és a fájlnév-, kiterjesztés-, EXIF-, dátum- és helyszavak innen vagy más ágból jönnek-e (a `0x00439a80` és a `0x00437550` a következő jelölt). [blokkoló az E8 fejlesztői jegyre, nem blokkoló a #7072 lezárására]
+A `0x00456610`-hoz már volt archivált Ghidra-kimenet; ezt a függvény méretre
+korlátozott helyi disassemblyjével és a bináris-index xrefjeivel ellenőriztem.
+Az alábbi eredmény a közvetlen hívásokat rögzíti. A `0x004d9aa0` kulcsot és
+rekordazonosító-listát frissít; önmagában nem bont szöveget szavakra.
+
+| `.picasa.ini` mező (string-xref) | Utasításút a `0x00456610`-ban | Közvetlen szóindex-hatás | Bizonyítottság |
+|---|---|---|---|
+| `caption` (`0x00c7fad0`) | A mezőág `0x00458946`/`0x00458984`; a teljes mezőértéket a `+0x50` virtuális helyre adja át (`0x00458991`). | Nem a `0x004d9aa0`-t hívja közvetlenül. Helyi szóköz-/szókarakter-darabolás nincs; a callback utáni szóhatár **NINCS MEG**. | megerősített: a közvetlen átadás; nyitott: a callback végső feldolgozása |
+| `keywords` (`0x00c81848`) | A `0x004588d7` a `0x009881d0`-t hívja `0x2c` (vessző) elválasztóval; az eredmény elemei egyenként a `+0x5c` virtuális helyre jutnak (`0x00458904`). | Vesszőnkénti elembontás bizonyított; szóközön belüli vagy további szóhatár **NINCS MEG**, mert a callback célja nincs feloldva. Nincs közvetlen `0x004d9aa0` hívás. | megerősített: a vesszőtagolás; nyitott: a végső szóhatár |
+| `rating` (`0x00c81448`) | Az `atol` a `0x00458a33` címen olvassa az értéket; nem nulla értéknél a `0x00458b1d` hívja a beszúrót. | A `]star` jelölő kerül be (`0x00c811d4`); a numerikus érték nem indexkulcs. | megerősített |
+| `hidden` (`0x00c81860`) | A `yes` ág a `0x00458ee5` címen hívja a beszúrót; a másik ág `0x004da1d0`-t használ. | A `yes` értékhez `]hidden` jelölő tartozik (`0x00c811f4`). | megerősített |
+| `geotag` (`0x00c81874`) | A `0x00459344` körüli ág `sscanf("%lf,%lf")`-fel két koordinátát olvas. | Ebben az ágban nincs közvetlen `0x004d9aa0` hívás; a koordinátaszöveg indexelése nem igazolt. | megerősített: a parse-út; nyitott: downstream hatás |
+| `faces` (`0x00c81884`) | Külön rekordág indul `0x0045944a`-nél. | Ebben az ágban nincs közvetlen `0x004d9aa0` hívás; a rekord későbbi hatása nem igazolt. | megerősített: a külön ág; nyitott: downstream hatás |
+| `filters` (`0x00c80b04`) | Külön szűrőfeldolgozó ág indul `0x00457704`-től. | Ebben az ágban nincs közvetlen `0x004d9aa0` hívás; az effektadatok későbbi hatása nem igazolt. | megerősített: a külön ág; nyitott: downstream hatás |
+| `albumlist` (`0x00c8188c`) | Ha a `param_6` engedi, az értéket a `0x005c2100` kapja a `0x00459984` címen. | Nincs közvetlen `0x004d9aa0` hívás. | megerősített: a közvetlen hívási út |
+
+A `0x00456610` négy közvetlen `0x004d9aa0` hívása: `0x00458b1d`
+(`rating` → `]star`), `0x00458ce9` (`star` igen → `]star`), `0x00458ee5`
+(`hidden` igen → `]hidden`) és `0x0045907a` (`screensaver` → `]screensaver`).
+Ez a közvetlen híváslista a disassemblyvel, az archivált dekompilációval és az
+index hívás-xrefjeivel egyezik.
+
+A másik két jelölt sem dönti el a fájlmezők forrását. A `0x00439a80` a
+`0x0043b4f4` körüli rekordgyűjtés után `0x0044bdf0`-t hív, majd a
+`0x0043b51d` címen a `0x004d9aa0`-t; a kulcs dinamikus (`param_1 + 0x1a`),
+jelentése **NINCS MEG**. A `0x00437550` teljes függvénytestében a vesszőtagolás
+után `0x004d9570`-t hív (`0x004378f9`, `0x0043791a`), közvetlen
+`0x004d9aa0` hívása nincs. Ebből nem következik, hogy fájlnév, kiterjesztés,
+EXIF, dátum vagy helyszavak egyik ágban sincsenek: e források hozzárendelése
+**NINCS MEG**.
+
+**Cáfoló kör:** ellenőriztem azt a lehetőséget, hogy a `caption`/`keywords`
+mezőt maga a `0x00456610` bontja általános szavakra. A teljes érintett
+utasításlánc ezt cáfolja: a caption egyben callbacket kap, a keywords csak
+vesszőnként tagolódik. Ez nem cáfolja, hogy a feloldatlan callback később
+szavakra bont.
+
+**M3 szükséges kiegészítése:** a jelenlegi M3 egytagú caption- és keyword-
+mintái nem különböztetik meg a teljes mező és a szavankénti indexelést. Adj
+meg többtagú, egyedi captiont és kulcsszót, majd keresd külön az egyes tagokat.
+A tervben fájlnév, `jpg`, EXIF make/model és dátum szerepel, de egyedi
+IPTC-hely/lokációs érték és GPS-geotag nem; a helyszavak eldöntéséhez ezekkel
+is kell M3-találatpróba. A futásidejű mérést a hívó végzi (#7195).
+
+**Bizonyítottság:** a közvetlen mezőágak és híváshelyek megerősítettek a
+disassembly, a Ghidra-kimenet és az xrefek egyezése alapján. A végső
+caption-/keyword-szóhatár, a callbackek szemantikája, valamint a fájlnév-,
+EXIF-, dátum- és helyszavak forrása nyitott; ezekhez M3 szükséges.
 
 #### Futtatott mérés az eredeti Picasán (a hívó adja fel a Colab-végrehajtón)
 
