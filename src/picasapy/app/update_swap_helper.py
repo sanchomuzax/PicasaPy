@@ -322,13 +322,21 @@ def _onellenorzes(executable: Path, *, timeout: float = 180.0) -> bool:
     return eredmeny.returncode == 0
 
 
-def _qml_elofordit(executable: Path, *, timeout: float = 180.0) -> bool:
+def _qml_elofordit(
+    executable: Path,
+    *,
+    timeout: float = 180.0,
+    progress_status: Path | None = None,
+) -> bool:
     """A friss telepítés QML-cache-ét melegíti; hiba esetén csak naplóz."""
     try:
         from .qml_cache_warmup import melegitsd_qml_cache
 
+        env = gyermek_kornyezet()
+        if progress_status is not None:
+            env[update_ablak._QML_HALADAS_STATUS_ENV] = str(progress_status)
         output = melegitsd_qml_cache(
-            [str(executable)], gyermek_kornyezet(), timeout=timeout
+            [str(executable)], env, timeout=timeout
         )
     except Exception as error:  # noqa: BLE001 - a cache-hiba nem vonhatja vissza a cserét
         _log_update(f"QML-gyorsítótár előmelegítése sikertelen: {_sanitized_log_message(error)}")
@@ -544,7 +552,11 @@ def _telepites(
         else:
             started = time.monotonic()
             lepes("qml_cache")
-            _qml_elofordit(install_dir / executable, timeout=180.0)
+            _qml_elofordit(
+                install_dir / executable,
+                timeout=180.0,
+                progress_status=getattr(ablak, "_status_ut", None),
+            )
             _log_update(
                 "QML-cache előmelegítése befejeződött; "
                 f"idő: {time.monotonic() - started:.2f} s"
