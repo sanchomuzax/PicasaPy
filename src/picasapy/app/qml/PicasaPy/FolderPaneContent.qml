@@ -305,6 +305,17 @@ Flickable {
             activeFocusOnTab: true
             Keys.onUpPressed: folderPane.stepFolder(-1)
             Keys.onDownPressed: folderPane.stepFolder(1)
+            //: #7192: a módosító nélkül gépelt karakter a rácséval AZONOS
+            //: úton jut a keresőmezőbe (`0x005c40e0` és `0x005c42d0` is a
+            //: `0x005c3fe0`-ba vezet): a tartományt és az elnyelést a
+            //: SearchGridKeys.qml adja, itt nincs külön szabály. A nyilak a
+            //: saját kezelőjükben maradnak.
+            Keys.onPressed: function(event) {
+                var hostWindow = folderPane ? folderPane.appWindow : null
+                if (hostWindow && hostWindow.header
+                        && hostWindow.header.handleLibraryGridKey)
+                    hostWindow.header.handleLibraryGridKey(event)
+            }
 
             // #731: a görgő-léptetés (#77) CSAK a mappalista fölött
             // aktív. Korábban a hasáb GYÖKERÉN ült egy `WheelHandler`,
