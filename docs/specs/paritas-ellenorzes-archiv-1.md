@@ -2433,6 +2433,95 @@ Most nem javaslok külön kutatási jegyet: a nyitott tételek ennek a Print-fol
 - `NINCS MEG`: az eredeti 3.9.141 viselkedése írásvédett nyomtató/spool cél, hiányzó képfájl és megszakítás esetén. Megszerzés: Windowsos mérés külön üres profilban, külön PDF/printer célokkal; rögzítendő a hibaüzenet, létrejött fájl/spool, visszaálló UI és kijelölés.
 - `NINCS MEG`: eredeti Photo Tray tartalma és mappafa/rács állapota nyomtatás után. Megszerzés: Windowsos 3.9.141 mérés egy, majd több kijelölt képpel és eltérő Photo Tray tartalommal; előtte/utána képernyő és `.picasa.ini` és index fájlkivonatának összevetése.
 
+### #7234 nyomtatási zárókör (2026-11-18)
+
+**#466 - kevesebb mint két kijelölt kép.** A `0x00744ee0` ága a
+`0x004133e0`, `0x004b0190(param_2)`, majd `0x006cab20` útvonalat használja
+(`2026-11-15-6988-colab-decomp.txt:1059-1195`). A `0x004b0190` az aktív
+objektum több tárolójához iterátorokat köt (`2026-10-21-idorend-26.txt:62-114`);
+a `0x006cab20` indexenként bejárja a kapott vektort, az átengedett elemeket
+hozzáfűzi a kimenethez, és nem rendez át (`2026-11-18-koteg-466-495.txt:1-195`).
+Ez a menet a **bejárási sorrendet** megőrzi, de önmagában nem bizonyítja, hogy a
+forráslista a mappa/album minden képét tartalmazza. A `0x005cb180(0x10,1)`
+diszasszemblálva az `[ECX+0xeac]` objektum `+0x3c0` értékét adja vissza, vagy
+`-1`-et, ha az objektum hiányzik; a mező azonosítója/folder-album jelentése
+`NINCS MEG` (bináris `0x005cb180`).
+
+**#467 - felülvizsgálat és nyomtatás.** A `0x00743980` a
+`printpanel/reviewnowbutton` eseményre `0x007451a0`-t, a
+`printpanel/pnowbutton` eseményre `0x00745770`-et hívja; mindkettő után
+`0x004984d0`-val tér vissza. Az állapotfrissítés a `0x00745980`-ra jut
+(`2026-11-18-koteg-466-495.txt:196-1406`, különösen a `0x007444ae`,
+`0x007444cf`, `0x007446c7` ág). A `0x007434d0` printer-hiba esetén a
+`Picasa has encountered a problem with the printer '%s'. Please report this error.`
+szöveget a `0x00980700` modális útjára küldi (bináris `0x007434d0:0x007435a0-0x007435e6`).
+A felülvizsgálat üres útvonalmezőjű rekordot kihagy (`0x007451a0`), de sem a
+videót, sem a hiányzó/olvashatatlan képfájlt nem szűri: ebben a függvényben
+nincs képfájl-olvasás vagy videótípus-vizsgálat. A nyomtatási szál tényleges
+rajzoló-/dekódolóágát nem azonosítottam.
+
+**#468 - szál és megszakítás.** A `0x007433f0` konstruktor a négy objektum-
+vptr mezőbe `CPrintJobThread::vftable`-t ír; a `0x00743650` függvény ennek
+`+0x28` virtuális bejegyzése (vtable/RTTI `0x00cb0cf8`, `0x00cb0d20`). A
+`0x00743650` `printjobthread::cancelling` állapotot állít, a szál `+0x0c`
+metódusát (0,0)-val, majd a `+0x14` állapotmetódust hívja
+(`2026-11-15-6988-colab-decomp.txt:852-879,1235-1259`). A `0x00745770` a
+`0x00d67904+0x20` virtuális hívásával regisztrálja a `printjob:%x` objektumot,
+majd a thread `+0x0c` metódusát indítja; az utána hívott `0x0097b350(0,1)`
+diszasszemblált törzse mindkét ágban 0-val tér vissza, így a hívó
+`+0xec4` mezőjét törlő ága mindig lefut (bináris `0x0097b350`, valamint
+`0x00745770`, Ghidra: `...6988-colab-decomp.txt:760-849`). A manager `+0x20`
+metódus implementációja és a `0x00743650` virtuális hívói (Cancel, ablakbezárás,
+folyamatjelző) nyitottak; a statikus `xrefs`-lista hiánya nem cáfolat.
+
+**#469 - visszaállító.** A `0x005f8160` nullázza a `+0x337c` mezőt, majd a
+`0x0050ccd0` módérték alapján `0x005d7780`, `0x005d77d0` vagy `0x005d78d0`
+editorpanel-segédet hív; az utóbbi `editpanel/tabpanel%d`, `editcontrols`,
+`fxthumbs` csomópontokat használja. A vizsgált törzsben nincs közvetlen
+`thumbui/mainuipanel`/`printpanel` rendezés vagy rács-/tálcakijelölés-írás
+(`2026-11-18-koteg-466-495.txt:1409-1480`; helper diszasszemblálás
+`0x005d78d0`). A segédek közvetett hatása ettől még nincs kizárva.
+
+**#470 - Review-lista.** Az `0x0085c060` rekordazonosító + effektív DPI
+párokat ad. A `0x007451a0` a minőségi kód szerint három menetben fűz
+`Low → Good → Best` sorrendű csoportokat, csoporton belül az eredeti forrás
+sorrendjében (`2026-11-15-6988-colab-decomp.txt:440-729`, assembly
+`0x007451a0:0x00745210-0x0074567b`). A `0x0085c640` rekordfelvevő a 20 bájtos
+rekordot a vektor végére írja, nem rendezi (`2026-11-18-koteg-466-495.txt:1482-1601`).
+A `0x00776b00` az átadott rekordazonosítók egyezéseit kiveszi a nyomtatási
+listából, eltolással megőrzi a maradék sorrendjét (bináris `0x00776b00`).
+PicasaPy `print_controller_quality_mixin.py:75-103` ezzel szemben egzakt DPI
+szerint rendezi a sorokat; az eredeti csoporton belüli forrássorrendhez ez
+eltérhet. A részletes viselkedés a `picasa-nyomtatas.md` Review-sorrend
+alfejezetében szerepel.
+
+**Nyitott, célzott következő címek:**
+
+- Ghidra-kör kell: 0x005cb180 - a visszaadott `+0x3c0` mező azonosítója mely mappa/album és hogyan képződik [blokkoló]
+- Ghidra-kör kell: 0x004b0190 - a meglévő kimenet a paraméterezett iterátorokat rögzíti, de nem dönti el, hogy a `0x00744ee0` ágban kapott album/mappa iterátorai az összes képet adják-e, és milyen sorrendben [blokkoló; új kérdés a meglévő törzshöz]
+- Ghidra-kör kell: 0x00cb0d20 - oldja fel a `CPrintJobThread` vtable worker-slotját a pointerlistából, majd a workerben a videó-, hiányzó- és olvashatatlan-kép szűrését [blokkoló]
+- Ghidra-kör kell: 0x00745980 - a státuszfrissítés már disassemblyvel feltárt; a Cancel esemény szálhoz kötése és a `0x00743650` vtable-slot hívóhelye maradt nyitott [blokkoló]
+- Ghidra-kör kell: 0x00d67904 - a globális manager `+0x20` slotjának implementációja; a globális objektum vtable-jének futásidejű konstrukciója nincs feltárva [nem blokkoló]
+- Ghidra-kör kell: 0x005d78d0 - a `0x005f8160` által hívott editorpanel-segéd közvetett layout- vagy kijelölési hatása [nem blokkoló]
+
+**#467 státusz-kiegészítés.** A helyi, cím szerinti disassembly a `0x00745980`
+függvényben kiszámolja a legkisebb DPI-t és a küszöb alatti képek darabszámát
+(`0x00745cee-0x00745d15`), majd a `printpanel/statustext` mezőbe ír
+(`0x00745e01-0x00745e06`). Nulla kis kép esetén a `ThumbUIPrint::ReadyPrompt`
+„You are ready to print.”, ellenkező esetben a `ThumbUIPrint::ReviewPrompt`
+„Please review before printing.\n%d small %s found.” erőforrást választja
+(`0x00745da4`, `0x00745dd9`). A legkisebb DPI-sor az 1 000 000-es
+üres-listaértéknél kimarad (`0x00745d15`). Ez az állapotszöveg-feladatot
+megválaszolja, de a virtuális Cancel-hívókat nem azonosítja.
+
+**#466 lista-kiegészítés.** A már meglévő `0x007166c0` kimenet index szerint
+bejárja az aktuális nézet elemeit, és a `+0xb4` rekordazonosítót hozzáfűzi,
+ha a `+0x5d` jelző nem nulla és a `+0x5a` jelző nulla; így ennek a nézetlistának
+a sorrendje stabil (`2026-11-16-7022-7031-7033-colab-decomp.txt:2011-2208`).
+Ez a `0x00744ee0` előzetes nézet-/kijelölés-gyűjtője, nem a következő
+a `0x004b0190(param_2)` albumbejáró tartalmának bizonyítéka. A teljes
+mappa/album-készlet és a `0x005cb180` `+0x3c0` mező jelentése nyitott marad.
+
 
 
 ## #7000: A forgatás parancsainak teljes folyamata az eredeti Picasával összevetve
