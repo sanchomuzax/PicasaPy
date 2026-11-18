@@ -81,7 +81,15 @@ class GeoMixin:
 
     @Slot()
     def showGeotagged(self) -> None:
-        """Hely-szűrő be (szűrősor geo-ikonja): minden geocímkézett kép."""
+        """Hely-szűrő be (szűrősor geo-ikonja): minden geocímkézett kép.
+
+        #7191: aktív keresés közben a keresőszöveg megmarad, a találat a
+        szöveg és a geocímke metszete."""
+        if self._attach_button_to_search("geo"):
+            return
+        self._show_geotagged_photos()
+
+    def _show_geotagged_photos(self) -> None:
         self._view_mode = ("geo", "")
         started = time.perf_counter()
         with open_index(self._db_path) as conn:

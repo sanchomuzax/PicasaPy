@@ -292,17 +292,22 @@ def test_searchbutton_valodi_kattintassal_megnyitja_a_keresesi_beallitasokat(
 
     face_option = window.findChild(QObject, "facesearch")
     _click_item(window, face_option, qt_app)
+    # #7191: az arcos gomb a keresőszöveggel KÖZÖS állapotban van: a szöveg
+    # ("a") megmarad, a találat a szöveg és az arc metszete (itt üres, mert a
+    # próbaképeken nincs arc); a kikapcsolás a gomb nélküli keresésre bővít
     assert _wait_until(
         qt_app,
-        lambda: controller.viewModeName == "faces"
+        lambda: controller.buttonFilterName == "faces"
+        and controller.searchQuery == "a"
         and controller.photos.rowCount() == 0,
-    ), "az arcos képek beállítása nem szűrte a főablakot"
+    ), "az arcos képek beállítása nem szűrte a keresés találatait"
     _click_item(window, face_option, qt_app)
     assert _wait_until(
         qt_app,
-        lambda: controller.viewModeName == "folder"
-        and controller.photos.rowCount() == 2,
-    ), "az arcos képek beállításának kikapcsolása nem állította vissza a nézetet"
+        lambda: controller.buttonFilterName == ""
+        and controller.searchQuery == "a"
+        and controller.photos.rowCount() == 1,
+    ), "az arcos képek beállításának kikapcsolása nem hozta vissza a keresést"
 
     dupe_option = window.findChild(QObject, "dupesearch")
     _click_item(window, dupe_option, qt_app)

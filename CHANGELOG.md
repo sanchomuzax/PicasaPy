@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.145] - 2026-11-18
+
+- A diavetítés kézi léptetése az utolsó képről az elsőre fordul, az első képről hátra pedig nem lép, ismétléstől függetlenül. (#7190).
+- A keresőmezőbe írt szöveg és a csillag, az arc vagy a geocímke szűrő együtt szűkít: a találat csak az a kép, amely mindkettőnek megfelel; a szűrőgomb kikapcsolása a keresőszöveget, a szöveg törlése a gombot megtartja (#7191).
+
 ## [1.0.144] - 2026-11-18
 
 - A keresési találatok darabszáma, a bal oldali mappalista és a találati sáv sem számolja a rejtett képeket, ha a rejtett képek megjelenítése ki van kapcsolva (#7194).

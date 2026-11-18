@@ -58,14 +58,19 @@ class TestABekotes:
         assert "controller.showFacesOnly()" in _blokk()
 
     def test_ujra_kattintva_KIKAPCSOL(self):
-        assert "controller.clearFilter()" in _blokk()
+        """#7191: a kikapcsolás a `clearButtonFilter`-en át megy, ami keresés
+        közben a keresőszöveget megtartja (a keresés nélküli ág ugyanúgy
+        `clearFilter`)."""
+        assert "controller.clearButtonFilter()" in _blokk()
 
     def test_az_aktiv_allapot_a_NEZETMODRA_kot(self):
         """Nem saját logikai jelzőre: a pipa akkor is helyes legyen, ha a
         szűrőt máshonnan kapcsolják ki (a #1468 rádió-csapdájának
         rokona)."""
         blokk = _blokk()
-        assert 'controller.viewModeName === "faces"' in blokk
+        # #7191: keresés közben a `viewModeName` `search`, a gomb a
+        # szöveggel közös állapotban a `buttonFilterName`-ből olvas
+        assert 'controller.buttonFilterName === "faces"' in blokk
 
     def test_a_helyfoglalo_glif_ELTUNT(self):
         """A foga: ha valaki visszateszi a néma `Text { text: "☺" }`
@@ -88,7 +93,8 @@ class TestAVezerloOldal:
 
         from picasapy.app.controller import AppController
 
-        forras = inspect.getsource(AppController.showFacesOnly)
+        # #7191: a szűrő törzse a `_show_faces_photos`-ba költözött
+        forras = inspect.getsource(AppController._show_faces_photos)
         kod = "\n".join(
             sor for sor in forras.splitlines()
             if not sor.lstrip().startswith("#")
