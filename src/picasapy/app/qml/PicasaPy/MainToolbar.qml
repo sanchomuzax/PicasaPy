@@ -541,9 +541,8 @@ Rectangle {
                         if (event.key === Qt.Key_Escape) {
                             if (toolbar.searchSuggestionsVisible)
                                 toolbar.searchSuggestionKeyPressed(event.key)
-                            else if (searchField.text.length
-                                     || (typeof controller !== "undefined" && controller
-                                         && controller.searchActive)) {
+                            else if (searchField.text.length || (typeof controller !== "undefined"
+                                         && controller && controller.searchActive)) {
                                 searchField.clear(); toolbar.searchCleared(); searchField.forceActiveFocus()
                             }
                             event.accepted = true
