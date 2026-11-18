@@ -432,6 +432,27 @@ a két helperhez és a Review-címkéket a hívóhoz rendelik; az RTTI/vtable a
 `0x0085c23d` `test ah, 0x41` utasítása ekkor `AH & 0x41 = 0x40` értéket ad
 (páratlan paritás), ezért a `jp` nem fut le, és a helper igazat ad.
 
+### Review-sorrend és listaeltávolítás (#7234, 2026-11-18)
+
+A `0x007451a0` a `0x0085c060` listáját három, 0-tól 2-ig futó minőségi
+menetben olvassa végig; minden menetben a forrásindex növekvő. A `0` kódú
+rekordok `Low`, az `1` kódúak `Good`, a `2` kódúak `Best` csoportba kerülnek,
+tehát a teljes lista csoportsorrendje **Low → Good → Best**, a csoporton belüli
+sorrend pedig a forráslista sorrendje. A rekordfelvevő `0x0085c640` 20 bájtos
+rekordot fűz a tömb végére; önálló rendezési ága nincs. A `0x00776b00` a
+megadott rekordazonosítókat keresi a nyomtatási listában, egyezéskor a későbbi
+azonosítókat balra tolja, majd csökkenti a lista hosszát; a megmaradó elemek
+sorrendjét megtartja.
+
+Az `0x0085c060` által előállított lebegőpontos érték az effektív DPI; a Review
+rekord `+0x10` mezője viszont a fenti `0`/`1`/`2` minőségi kód. Bizonyíték:
+`0x007451a0` dekompiláció és utasításmenete (`2026-11-15-6988-colab-decomp.txt:440-729`,
+bináris `0x007451a0`); rekordfelvétel `0x0085c640`
+(`2026-11-18-koteg-466-495.txt:1482-1601`); eltávolító utasításmenete
+`0x00776b00` (bináris). PicasaPy `src/picasapy/app/print_controller_quality_mixin.py:75-103`
+ezzel szemben az összes Review-sort egzakt DPI szerint növekvőre rendezi.
+Az osztálysorrend megegyezik, a csoporton belüli sorrend eltérhet.
+
 ---
 
 ## A „kis kép" KÜSZÖBE: `Preferences\DPIWarning`, alapérték **150** (2026-09-04)

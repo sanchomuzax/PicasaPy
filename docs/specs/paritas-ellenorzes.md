@@ -3810,6 +3810,64 @@ zenesorrend, fejlécindítás, üres lista, automatikus kilépési kijelölés,
 képernyőkímélő és képhiba eredménye a méréstől függ. Ezek külön kutatási
 jegyet nem igényelnek, mert ugyanannak a #7060 folyamatnak a nyitott pontjai.
 
+### #7234 statikus kiegészítés a G1/G2/G4/G7 kérdésekhez (2026-11-18)
+
+**G1 — léptető és visszatérés.** A `0x00717d10` előbb a `0x0071c8c0`-t,
+majd a `0x00717560`-at hívja; ha az nulla, a `0x00717420`-at próbálja. Ha
+mindkettő nulla, a `view+0x2e0` mezőbe `-1`-et ír és 0-val tér vissza;
+egyébként a helper értékét adja vissza (`2026-11-18-koteg-466-495.txt:3617-3671`).
+A függvény nem olvassa a `LoopSlideshow` mezőt, és maga nem írja a `+0x390`
+mezőt. A `0x00717c50` közvetlen hívó a hívás után a célértéket a `+0x390`-be
+írja (bináris `0x00717c50:0x00717cec-0x00717cf5`). A jegyben megnevezett
+`0x005c4ce0` és `0x00571e50` a `0x0075f430` hívói, nem a léptető közvetlen
+hívói; a `0x0075f430` → `0x0075fac0` úton a léptető visszatérési értékét
+nem használják (`2026-11-16-koteg-438-465.txt:4871-4891`, bináris
+`0x0075fac0`). Az utolsó kép, ismétlés nélküli eredeti UI-végállapota továbbra
+is nyitott; PicasaPy a vetítőt nyitva hagyja az utolsó képen
+(`SlideshowView.qml:288-299`, mért #7209).
+
+**G2 — `+0x5a`/`+0x5b`.** A `0x00716d70` a bejárt elemek `+0x5b` mezőjét
+nullázza; `param_3 == 0` esetén `+0x5a=1`, nem nulla `param_3` esetén
+`+0x5a=0` (`…466-495.txt:3674-3794`). A `0x00714010` csak `+0x5a`-t
+állítja 1-re, és akkor `+0x59` dirty jelzőt is ír, ha az előző `+0x5a` nulla
+(bináris `0x00714010`). A `0x00781680` ezt a segédet a `0x0078299a` helyen,
+egy előző feltételes ág után hívja; az ág nem bizonyítja önmagában, hogy a
+mező rejtett képet, fejlécsort vagy hiányzó fájlt jelent. A `+0x5b`-hez
+szemantikai név nincs igazolva.
+
+**G4 — fájlbetöltési hiba.** A `0x0075eda0` nem általános fotóbetöltő:
+`moviestart`/`movieend` metaadatot keres, videóidőt számol, és 0-val tér vissza
+(`…466-495.txt:3795-4106`). A közvetlen hívók közt `0x0075de50`, `0x0075f430`,
+`0x0075fb20`, `0x00760240` van. Sérült/hiányzó/hálózati képfájlra adott
+eredeti viselkedés ebből nem következik. PicasaPy slideshow-képútjának eredeti
+hiba-paritása ezért nyitott.
+
+**G7 — zeneszál.** A `0x0075ca20` meghívja a `0x0075cdc0` forrásépítőt, majd
+az `+0x48` listához jutott forrásból dolgozik (`…466-495.txt:4110-4267`). A
+`0x0075cdc0` a `Preferences\MP3SlideshowPath` értékéből egyetlen listatételt
+épít; üres beállításnál a `0x00cb224c` (`mp3\\`) útvonalrészt a
+`0x009a38a0` helperen átoldja, majd a `0x009a3db0` enumerátort hívja (bináris
+`0x0075cdc0`). A forráslista rendezése nem látható itt, ezért rendezett vagy
+véletlen sorrend nem állítható. A `0x0075d570` az audioobjektum `+0x18` vagy
+`+0x1c` vtable metódusát váltja és a thread `+0x1a4` állapotát állítja;
+ez a pause út. A `0x0075d620` kilépési útban `0x3e8` ms számlálóról indul,
+`0xa` ms lépésekben vár, majd `close audio1`-t küld. A külön `0x0097b420`
+várakozót a `0x0075c960` destruktor `0` argumentummal hívja, tehát a két
+várakozási út nem ugyanaz (bináris `0x0075d620`, `0x0075c960`). PicasaPy
+albumból, bekapcsolt mappából vagy beállított mappából olvas; az utóbbi
+`.mp3` fájljait kis-/nagybetűtől független fájlnév szerint rendezi
+(`controller_slideshow_mixin.py:173-196`). Az eredeti enumerátor sorrendje és
+a repeat szabály még nem eldöntött.
+
+**Nyitott — célzott következő címek:**
+
+- Ghidra-kör kell: 0x00717c50 — a közvetlen léptetőhívó a visszatérés után milyen lista-végi és `LoopSlideshow` állapotot ad a nézetnek
+- Ghidra-kör kell: 0x00717eb0 — a két léptetőhívási ág `+0x390`-írása és lista-végi visszatérése
+- Ghidra-kör kell: 0x00781680 — a `0x00714010` hívása előtti feltétel és a `+0x5a`-t okozó nézetállapot
+- Ghidra-kör kell: 0x0075de50 — a fő diavetítő út és a tényleges fotóbetöltő/hibaág címe
+- Ghidra-kör kell: 0x009a3db0 — a `mp3\\` útvonal enumerálásának eleje-vége sorrendje és a rendező/randombesoroló hívás
+- Ghidra-kör kell: 0x0075d430 — a zeneszál track-választási, ismétlési és következő sávra lépési szabálya
+
 ## #7059: A mappa áthelyezésének teljes folyamata az eredeti Picasával összevetve
 
 Vizsgálati tárgy: Picasa 3.9.141.259, SHA-256:
