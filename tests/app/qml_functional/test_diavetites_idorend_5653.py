@@ -1,4 +1,11 @@
-"""A vetítő Timeline gombjának feltételei és belépési útja (#5653)."""
+"""A vetítő vezérlősávja: Timeline gomb és átmenet-választó (#5653, #7209).
+
+#7209 (D1): az eredeti normál (`editoneup`) vetítőben a `timeline` rejtett
+(`editoneup.tre:62-66`), ezért a Timeline gomb SEHOL nem látszik, az
+átmenet-választó pedig mindig. A #5653 eredeti feltételei (BigSlideshow2,
+16/32 bites képernyő) így megszűntek; az Időrend a Nézet menüből és a
+Ctrl+5-ről nyílik.
+"""
 
 from __future__ import annotations
 
@@ -6,7 +13,7 @@ import os
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QObject, QPoint, Qt
+from PySide6.QtCore import QObject, Qt
 from PySide6.QtGui import QWindow
 from PySide6.QtTest import QTest
 
@@ -72,15 +79,18 @@ def _start_show(window, qt_app):
 
 
 def _set_screen_depth(show, depth: int) -> None:
-    # A valódi QScreen mélységét felülírjuk, hogy mindhárom ágat mérjük.
+    # A valódi QScreen mélységét felülírjuk (régi 16/32 bites ág): a gomb
+    # akkor sem jelenhet meg. A property megszűnése esetén a próba nem hasal el.
     show.setProperty("screenDepth", depth)
 
 
 def _timeline_button_and_transition(window):
-    return (
-        _child(window, "slideshowTimelineButton"),
-        _child(window, "slideshowTransitionBox"),
-    )
+    timeline = window.findChild(QObject, "slideshowTimelineButton")
+    return timeline, _child(window, "slideshowTransitionBox")
+
+
+def _timeline_button_hidden(timeline) -> bool:
+    return timeline is None or not timeline.isVisible()
 
 
 def _start_timeline_slideshow(window, qt_app):
@@ -111,97 +121,53 @@ def _start_timeline_slideshow(window, qt_app):
     return _child(window, "slideshowView")
 
 
-def test_normal_slideshow_shows_timeline_instead_of_transition(
-    qml_app_5653, qt_app
+@pytest.mark.parametrize("depth", [16, 32, 24, 0])
+def test_normal_slideshow_never_shows_timeline_always_shows_transition(
+    qml_app_5653, qt_app, depth
 ):
     window, controller, _engine = qml_app_5653
     assert controller._get_settings().contains("Preferences/BigSlideshow2") is False
-    assert controller.bigSlideshow2 is True
     show = _start_show(window, qt_app)
-    _set_screen_depth(show, 32)
+    _set_screen_depth(show, depth)
 
     timeline, transition = _timeline_button_and_transition(window)
-    assert timeline.isVisible()
-    assert not transition.isVisible()
-
-
-def test_big_slideshow_disabled_shows_transition_instead_of_timeline(
-    qml_app_5653, qt_app
-):
-    window, controller, _engine = qml_app_5653
-    show = _start_show(window, qt_app)
-    _set_screen_depth(show, 32)
-    controller._get_settings().setValue("Preferences/BigSlideshow2", False)
-    controller.statusChanged.emit()
-
-    timeline, transition = _timeline_button_and_transition(window)
-    assert not timeline.isVisible()
-    assert transition.isVisible()
-
-
-def test_timeline_started_slideshow_shows_transition_instead_of_timeline(
-    qml_app_5653, qt_app
-):
-    window, _controller, _engine = qml_app_5653
-    show = _start_timeline_slideshow(window, qt_app)
-    _set_screen_depth(show, 32)
-
-    timeline, transition = _timeline_button_and_transition(window)
-    assert not timeline.isVisible()
-    assert transition.isVisible()
-
-
-def test_other_screen_depth_shows_transition_instead_of_timeline(
-    qml_app_5653, qt_app
-):
-    window, _controller, _engine = qml_app_5653
-    show = _start_show(window, qt_app)
-    _set_screen_depth(show, 24)
-
-    timeline, transition = _timeline_button_and_transition(window)
-    assert not timeline.isVisible()
-    assert transition.isVisible()
-
-
-@pytest.mark.parametrize("height_delta", [-5, 0, 5])
-def test_real_timeline_button_click_opens_the_view_menu_timeline(
-    qml_app_5653, qt_app, height_delta
-):
-    window, _controller, _engine = qml_app_5653
-    window.show()
-    window.setVisibility(QWindow.Visibility.Windowed)
-    target_height = window.height() + height_delta
-    window.resize(window.width(), target_height)
-    _wait(
-        qt_app,
-        lambda: window.height() == target_height,
-        "a főablak magassága nem állt be",
+    assert _timeline_button_hidden(timeline), (
+        f"a Timeline gomb látszik a normál vetítésben ({depth} bit)"
     )
-    show = _start_show(window, qt_app)
-    _set_screen_depth(show, 32)
-    timeline, transition = _timeline_button_and_transition(window)
-    assert timeline.isVisible() and not transition.isVisible()
+    assert transition.isVisible()
 
-    if height_delta == 0 and (mappa := os.environ.get(KIADASKEP_MAPPA)):
+    if depth == 32 and (mappa := os.environ.get(KIADASKEP_MAPPA)):
         image = window.grabWindow()
         assert not image.isNull(), "a vetítő kiadásképe üres"
         output_dir = Path(mappa)
         output_dir.mkdir(parents=True, exist_ok=True)
-        output = output_dir / "diavetites_idorend_5653.png"
+        output = output_dir / "diavetites_normal_vezerlosav_7209.png"
         assert image.save(str(output), "PNG"), f"nem menthető a kiadáskép: {output}"
 
-    center = timeline.mapToScene(timeline.boundingRect().center())
-    QTest.mouseClick(
-        window,
-        Qt.MouseButton.LeftButton,
-        Qt.KeyboardModifier.NoModifier,
-        QPoint(round(center.x()), round(center.y())),
-    )
-    _wait(
-        qt_app,
-        lambda: window.property("timelineOpen") is True,
-        "a Timeline gomb nem hívta meg a Nézet ▸ Időrend belépését",
-    )
-    _wait(qt_app, lambda: not show.property("visible"), "a vetítés nem zárult be")
-    view = _child(window, "timelineView")
-    _wait(qt_app, view.isVisible, "az Időrend-bemutató nem jelent meg")
+
+@pytest.mark.parametrize("depth", [16, 32])
+def test_big_slideshow_disabled_still_shows_transition_only(
+    qml_app_5653, qt_app, depth
+):
+    window, controller, _engine = qml_app_5653
+    show = _start_show(window, qt_app)
+    _set_screen_depth(show, depth)
+    controller._get_settings().setValue("Preferences/BigSlideshow2", False)
+    controller.statusChanged.emit()
+
+    timeline, transition = _timeline_button_and_transition(window)
+    assert _timeline_button_hidden(timeline)
+    assert transition.isVisible()
+
+
+@pytest.mark.parametrize("depth", [16, 32])
+def test_timeline_started_slideshow_keeps_transition_only(
+    qml_app_5653, qt_app, depth
+):
+    window, _controller, _engine = qml_app_5653
+    show = _start_timeline_slideshow(window, qt_app)
+    _set_screen_depth(show, depth)
+
+    timeline, transition = _timeline_button_and_transition(window)
+    assert _timeline_button_hidden(timeline)
+    assert transition.isVisible()

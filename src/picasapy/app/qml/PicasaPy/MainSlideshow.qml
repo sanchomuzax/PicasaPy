@@ -113,10 +113,6 @@ SlideshowView {
         }
     }
 
-    bigSlideshow2: (typeof controller !== "undefined" && controller)
-        ? controller.bigSlideshow2 : true
-    screenDepth: (typeof controller !== "undefined" && controller)
-        ? controller.slideshowScreenDepth : 0
     timelineSlideshow: hostWindow.timelineSlideshowActive
     panZoomRectanglesProvider: function(
         sourceWidth, sourceHeight, viewWidth, viewHeight
@@ -180,12 +176,6 @@ SlideshowView {
     onSecondsChosen: function (masodperc) {
         if (typeof controller !== "undefined" && controller)
             controller.setSlideshowSeconds(masodperc)
-    }
-    // #5653: ugyanaz az Időrend-belépés, mint a Nézet menüben; a vetítés
-    // bezárása előbb lefuttatja az exitSlideshow visszaállítását.
-    onTimelineRequested: {
-        slideshow.stop()
-        hostWindow.toggleTimeline()
     }
     onClosed: hostWindow.exitSlideshow()
     onStarToggled: function(index) {

@@ -7,10 +7,10 @@ ezen a modulon átengedni.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .album_order import without_album_place
-from .document import ALBUM_SECTION_PREFIX, IniDocument
+from .document import ALBUM_SECTION_PREFIX, IniDocument, _make_kv_line
 from .folder_music import read_music_settings, with_music_settings
 
 # A Picasa különleges, virtuális Csillagozott albuma. A tag az INI `star`
@@ -45,13 +45,25 @@ def serialize_album_refs(refs: tuple[str, ...]) -> str:
 def albums_of(document: IniDocument) -> tuple[Album, ...]:
     """A dokumentum összes virtuális albuma, definíciós sorrendben."""
     albums = []
+    # #7208: a törölt album csak `token=` sorral marad meg, tag nélkül; ezt nem
+    # mutatjuk albumként. A tagokkal bíró, név nélküli album viszont látszik.
+    hivatkozott = {
+        token
+        for kep in document.file_sections()
+        for token in parse_album_refs(kep.get("albums") or "")
+    }
     for section in document.sections:
         if not section.name.startswith(ALBUM_SECTION_PREFIX):
+            continue
+        name = section.get("name")
+        token = section.name[len(ALBUM_SECTION_PREFIX) :]
+        if (not name or not name.strip()) and {k for k, _ in section.items()} <= {"token"} \
+                and token not in hivatkozott:
             continue
         use_music, music_file = read_music_settings(document, section.name)
         albums.append(Album(
             # A szekciónévbeli token az azonosító, a token= kulcs redundáns.
-            token=section.name[len(ALBUM_SECTION_PREFIX) :],
+            token=token,
             name=section.get("name"),
             date=section.get("date"),
             description=section.get("description"),
@@ -108,11 +120,12 @@ def without_album(
 
 
 def without_album_everywhere(document: IniDocument, token: str) -> IniDocument:
-    """Egy album definíciójának és minden képtagságának eltávolítása.
+    """Egy album definíciójának és minden képtagságának eltávolítása (#7208).
 
     Egy mappa ini-jében az album definíciója a `[.album:<token>]` szekció,
-    a tagságok pedig a képszekciók `albums=` CSV-kulcsai. A többi albumot,
-    képadatot és ismeretlen sort változatlanul hagyja.
+    amelyből a törléskor a `name=`, `date=` stb. kulcsok kikerülnek, de
+    maga a szekció és a `token=` sora megmarad. A képszekciókból az `albums=`
+    (és az `albumorder=`) kikerül, a többi kulcsuk érintetlen marad.
     """
     token = (token or "").strip()
     if not token:
@@ -120,7 +133,17 @@ def without_album_everywhere(document: IniDocument, token: str) -> IniDocument:
     updated = document
     for section in document.file_sections():
         updated = without_album(updated, section.name, token)
-    return updated.without_section(f"{ALBUM_SECTION_PREFIX}{token}")
+    section_name = f"{ALBUM_SECTION_PREFIX}{token}"
+    target = updated.section(section_name)
+    if target is None:
+        return updated
+    newline = target.header.ending or updated.newline
+    token_line = _make_kv_line("token", token, newline)
+    cleaned_section = replace(target, lines=(token_line,))
+    sections = tuple(
+        cleaned_section if s is target else s for s in updated.sections
+    )
+    return replace(updated, sections=sections)
 
 
 #: A tulajdonság-párbeszéd MÉRT mezői → a `.picasa.ini` kulcsai.

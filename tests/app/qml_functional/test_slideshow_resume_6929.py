@@ -98,7 +98,8 @@ def test_folytataskor_azonnal_lep_es_a_kovetkezo_diaido_mulva_jon(
 @pytest.mark.parametrize("window_height_delta", [-5, 0, 5])
 @pytest.mark.parametrize(
     ("loop", "vart_index", "vart_lathato", "vart_playing"),
-    [(True, 0, True, True), (False, 1, False, False)],
+    # #7209 (D6): ismétlés nélkül a lista végén a vetítő nyitva marad
+    [(True, 0, True, True), (False, 1, True, True)],
 )
 def test_utolso_foto_folytatasakor_megmarad_a_lista_szabaly(
     qml_app, qt_app, loop, vart_index, vart_lathato, vart_playing,
