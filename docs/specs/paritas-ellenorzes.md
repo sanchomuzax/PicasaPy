@@ -5213,7 +5213,7 @@ szavakra bont.
 mintái nem különböztetik meg a teljes mező és a szavankénti indexelést. Adj
 meg többtagú, egyedi captiont és kulcsszót, majd keresd külön az egyes tagokat.
 A tervben fájlnév, `jpg`, EXIF make/model és dátum szerepel, de egyedi
-IPTC-hely/lokációs érték és GPS-geotag nem; a helyszavak eldöntéséhez ezekkel
+IPTC-helyérték és GPS-geotag nem; a helyszavak eldöntéséhez ezekkel
 is kell M3-találatpróba. A futásidejű mérést a hívó végzi (#7195).
 
 **Bizonyítottság:** a közvetlen mezőágak és híváshelyek megerősítettek a
