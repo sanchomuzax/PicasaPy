@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.147] - 2026-11-18
+
+- Az importálás a főablak paneljén nyílik meg nagy képelőnézettel, és bezárás előtt felajánlja a képek importját (#7206).
+
 ## [1.0.146] - 2026-11-18
 
 - A megnyitott üres album a Delete billentyűre megerősítés nélkül törlődik, az Album menü Delete parancsa után a könyvtár eleje látszik, és az ini megőrzi az album tokenjét (#7208).
