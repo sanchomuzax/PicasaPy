@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.146] - 2026-11-18
+
+- A megnyitott üres album a Delete billentyűre megerősítés nélkül törlődik, az Album menü Delete parancsa után a könyvtár eleje látszik, és az ini megőrzi az album tokenjét (#7208).
+- A diavetítés vezérlősávjában nincs többé Timeline gomb, az átmenet-választó mindig látszik. Ismétlés nélkül a vetítés a lista végén nyitva marad az utolsó képen (Esc-cel vagy a Kilépés gombbal zárható, a Jobbra gomb az első képre lép) (#7209).
+
 ## [1.0.145] - 2026-11-18
 
 - A diavetítés kézi léptetése az utolsó képről az elsőre fordul, az első képről hátra pedig nem lép, ismétléstől függetlenül. (#7190).
