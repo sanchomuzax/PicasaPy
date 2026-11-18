@@ -538,13 +538,29 @@ Rectangle {
                     onTextEdited: toolbar.searchEdited(text)
                     Keys.priority: Keys.BeforeItem
                     Keys.onPressed: function (event) {
+                        if (event.key === Qt.Key_Escape) {
+                            if (toolbar.searchSuggestionsVisible) {
+                                toolbar.searchSuggestionKeyPressed(event.key)
+                                event.accepted = true
+                                return
+                            }
+                            if (searchField.text.length > 0
+                                    || (typeof controller !== "undefined"
+                                        && controller
+                                        && controller.searchActive)) {
+                                searchField.clear()
+                                toolbar.searchCleared()
+                                searchField.forceActiveFocus()
+                                event.accepted = true
+                            }
+                            return
+                        }
                         if (!toolbar.searchSuggestionsVisible)
                             return
                         if (event.key === Qt.Key_Down
                                 || event.key === Qt.Key_Up
                                 || event.key === Qt.Key_Return
-                                || event.key === Qt.Key_Enter
-                                || event.key === Qt.Key_Escape) {
+                                || event.key === Qt.Key_Enter) {
                             toolbar.searchSuggestionKeyPressed(event.key)
                             event.accepted = true
                         }

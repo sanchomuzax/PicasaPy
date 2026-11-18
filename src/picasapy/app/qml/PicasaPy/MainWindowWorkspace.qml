@@ -45,6 +45,11 @@ Item {
         return timelineViewLoader.item
     }
 
+    function revealSearchPhoto(row) {
+        if (row >= 0 && mainLibraryCanvas && mainLibraryCanvas.grid)
+            mainLibraryCanvas.grid.scrollToRow(Number(row))
+    }
+
     // #8: a diavetítés a főablak önálló vetítési rétege.
     Loader {
         id: slideshowLoader

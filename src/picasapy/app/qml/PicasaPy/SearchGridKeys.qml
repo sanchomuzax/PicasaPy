@@ -4,8 +4,9 @@ import QtQuick
 // kilép a keresésből (`0x005c42f8`-`0x005c4342`), a módosító nélkül gépelt
 // `0x21`-`0x7f` karakter a keresőmezőbe kerül (`0x005c3fe0`). A keresési
 // javaslatok Esc-útja a mezőn marad; a rács Esc-je csak ezután lép ki.
-// A Colab-mérésig nem mentjük és nem állítjuk vissza a keresés előtti
-// kijelölést, görgetést, mappát vagy fókuszt.
+// #7216: a keresőmező nyitott javaslatlistája mellett a Ctrl+F nem csinál
+// semmit; a keresésből való kilépés a keresés előtti mappát és kijelölést
+// állítja vissza. A pontos görgetési pozíció nem része ennek az útnak.
 QtObject {
     id: keys
 
@@ -21,8 +22,11 @@ QtObject {
 
     //: #2163: a `Ctrl+F` (`searchcontainer/searchbutton`, `0x005e63bb`) a
     //: mezőre viszi a fókuszt és megnyitja a keresési beállításokat; aktív
-    //: keresésnél (#7075) a második `Ctrl+F` kilép a keresésből.
+    //: keresésnél a második `Ctrl+F` csak zárt javaslatlistán lép ki.
     function fokusz() {
+        var suggestions = ownerWindow ? ownerWindow.searchSuggestionsBox : null
+        if (suggestions && suggestions.visible)
+            return
         if (typeof controller !== "undefined" && controller
                 && controller.searchActive) {
             keys.kilep()

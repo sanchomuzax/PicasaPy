@@ -1,8 +1,8 @@
 """#7075: keresésbe és keresésből a Picasa billentyűútjaival.
 
 Minden próbában a billentyűt vagy a törlőgombot valódi QML-eseménnyel
-aktiváljuk. A Picasa előtti kijelölés/görgetés/mappa visszaállítása külön
-Colab-mérést igényel, ezért ezek a próbák az eddigi állapotot hagyják érvényben.
+aktiváljuk. A keresésből kilépéskor a #7216 szerint visszaáll a keresés
+előtti kijelölés; a pontos görgetési pozíció nem része az ellenőrzésnek.
 """
 
 from __future__ import annotations
@@ -94,7 +94,7 @@ def test_masodik_ctrl_f_torli_a_keresest(qml_app, qt_app):
 
 
 @pytest.mark.parametrize("height_offset", (-5, 0, 5))
-def test_x_nem_allitja_vissza_a_kijelolest_es_masodik_ctrl_f_kilep(
+def test_x_visszaallitja_a_kijelolest_es_zart_listan_ctrl_f_kilep(
     qml_app, qt_app, height_offset
 ):
     window, controller, _engine = qml_app
@@ -118,8 +118,8 @@ def test_x_nem_allitja_vissza_a_kijelolest_es_masodik_ctrl_f_kilep(
 
     assert _varj(qt_app, lambda: controller.searchActive is False)
     assert _elem(window, "searchField").property("text") == ""
-    assert _kijeloles(window) == [], (
-        "az X nem állíthatja vissza a keresés előtti kijelölést"
+    assert _kijeloles(window) == [0], (
+        "az X állítsa vissza a keresés előtti képkijelölést (#7216)"
     )
 
     _keresest_indit(window, controller, qt_app)
