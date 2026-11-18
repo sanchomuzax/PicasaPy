@@ -641,8 +641,8 @@ Rectangle {
                     Layout.fillWidth: true
                     text: qsTr("Show only photos with faces")
                     onClicked: if (controller) {
-                        controller.viewModeName === "faces"
-                            ? controller.clearFilter()
+                        controller.buttonFilterName === "faces"
+                            ? controller.clearButtonFilter()
                             : controller.showFacesOnly()
                     }
                 }

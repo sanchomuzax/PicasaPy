@@ -14,6 +14,11 @@ from PySide6.QtCore import Slot
 from picasapy.index import open_index, search_photos, search_suggestions
 from picasapy.index.queries import _normalize_search_query
 
+from .search_button_filter import (
+    BUTTON_FILTERS,
+    SEARCH_MODES,
+    intersect_with_button,
+)
 from .search_results import group_by_folder
 
 
@@ -34,9 +39,18 @@ class SearchMixin:
         #7081: a nézetállapot (`searchQuery`, a mentett album neve) a
         BEÍRT szöveget őrzi; az eredeti tisztítás és szóhatár-bontás csak az
         illesztéshez (`matching`) kell, és a `search_photos` maga is ezt
-        végzi."""
+        végzi.
+        #7191: a csillag-, arc- és geocímke-gomb a szöveggel KÖZÖS állapot
+        (az eredetiben a szöveg és a gomb szava egy listában van, a találat a
+        metszet). A bekapcsolt gomb ezért a keresés közben is él, és a szöveg
+        törlése (üres `text`) a gombot megtartja: a gomb nézetére lépünk."""
         query = text.strip()
         matching = _normalize_search_query(query)
+        button = self._active_button_filter()
+        if not query and button:
+            self._restore_full_folder_pane()
+            self._show_button_view(button)
+            return
         self._filter_active = False
         self._filter_status = ""
         started = time.perf_counter()
@@ -47,6 +61,7 @@ class SearchMixin:
                 )
                 self._view_mode = ("folder", self._current_folder or "")
             else:
+                self._search_button = button
                 self._view_mode = ("search", query)
                 # #1500: a `color:`/`szín:` keresés gyorsítótárát EZ a
                 # hívás tölteti fel (háttérben), és ez jelzi a felületnek,
@@ -57,7 +72,7 @@ class SearchMixin:
                 # felhasználó akkor is tájékoztatást kapjon, ha a keresés
                 # amúgy nulla találatot ad.
                 self._note_color_search(conn, matching)
-                records = search_photos(conn, query)
+                records = self._search_matches(conn, query)
         if query:
             self._show_search_pane(records)
             self._show_search_results(records, time.perf_counter() - started)
@@ -73,6 +88,25 @@ class SearchMixin:
         `viewallbutton`-ja). A darabszám mindig az épp megjelenő találatokból
         készül, így nem avulhat el (#1443/#1515 tanulsága)."""
         self._show_filtered(records, elapsed)
+
+    def _active_button_filter(self) -> str:
+        """A most bekapcsolt csillag-/arc-/geocímke-gomb neve, vagy üres (#7191).
+
+        Keresés közben a keresés mellé kötött gomb (`_search_button`), egyébként
+        a gomb saját nézetmódja. Mindig a pillanatnyi nézetmódból számolódik,
+        ezért egy másik nézetre váltás után nem maradhat elavult gomb."""
+        mode = self._view_mode[0]
+        if mode in SEARCH_MODES:
+            return self._search_button
+        return mode if mode in BUTTON_FILTERS else ""
+
+    def _search_matches(self, conn, query: str):
+        """A keresés találatai a bekapcsolt gombbal metszve (#7191).
+
+        A bal hasáb, a darabszám és a rács ugyanebből a halmazból épül."""
+        return intersect_with_button(
+            conn, search_photos(conn, query), self._search_button
+        )
 
     def _show_search_pane(self, records) -> None:
         """A bal hasáb keresésre szűkítése (#49): csak a találatos mappák,
@@ -105,7 +139,7 @@ class SearchMixin:
         self._get_settings().setValue("session/lastFolder", folder_path)
         started = time.perf_counter()
         with open_index(self._db_path) as conn:
-            all_matches = search_photos(conn, query)
+            all_matches = self._search_matches(conn, query)
         # a hasáb az ÖSSZES találatos mappát mutatja tovább (#49), hogy
         # át lehessen kattintani a többibe; a rács a mappára szűkül
         self._show_search_pane(all_matches)

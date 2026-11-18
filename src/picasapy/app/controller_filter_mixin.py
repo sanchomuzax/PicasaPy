@@ -11,14 +11,56 @@ from picasapy.index import (
 )
 from picasapy.ini import RECENT_ALBUM_TOKEN
 from . import formatting, kor_szuro
+from .search_button_filter import FACES, GEO, SEARCH_MODES, STAR
 from .controller_signals import AppControllerSignalsMixin as _Signals
 
 class ViewFilterMixin:
     """A csillag-, film-, kor-, arc- és album-szűrők."""
 
+    # -- szöveggel közös gombok: csillag, arc, geocímke (#7191) ---------------
+
+    def _attach_button_to_search(self, button: str) -> bool:
+        """Aktív keresés közben a gombot a keresés mellé köti (#7191).
+
+        Az eredetiben a keresőszöveg és a gomb szava egy listában van, a
+        találat a metszetük: a gomb bekapcsolása nem dobja el a szöveget,
+        hanem szűkíti a találatot. Igaz, ha a gomb a keresés mellé került
+        (a nézet már frissült); hamis, ha nincs aktív keresés."""
+        if self._view_mode[0] not in SEARCH_MODES:
+            return False
+        self._search_button = button
+        self._refresh_view()
+        return True
+
+    def _show_button_view(self, button: str) -> None:
+        """A gomb önálló (szöveg nélküli) nézete, a gomb saját útján."""
+        if button == STAR:
+            self._show_starred_photos("starred")
+        elif button == FACES:
+            self._show_faces_photos()
+        elif button == GEO:
+            self._show_geotagged_photos()
+
+    @Slot()
+    def clearButtonFilter(self) -> None:  # noqa: N802
+        """A csillag-, arc- vagy geocímke-gomb kikapcsolása (#7191).
+
+        Aktív keresésnél a keresőszöveg MEGMARAD: a találat a gomb nélküli
+        szöveges keresésre bővül. Keresés nélkül a szűrő kikapcsol, mint a
+        `clearFilter`. Az „Az összes megtekintése" és a keresőmező ✕ gombja
+        továbbra is a `clearFilter` (az eredeti `searchclr` a gombokat is
+        törli)."""
+        if self._view_mode[0] in SEARCH_MODES:
+            self._search_button = ""
+            self._refresh_view()
+            return
+        self.clearFilter()
+
     @Slot()
     def showStarred(self) -> None:
         """A ★ eszköztári szűrője — megőrzi a mappa-kontextust."""
+        if self._attach_button_to_search(STAR):
+            return
         self._show_starred_photos("starred")
 
     @Slot()
@@ -125,6 +167,11 @@ class ViewFilterMixin:
         olcsó; az arc-adat ini-söprést igényel, amit nem futtathatunk
         minden kötés-kiértékelésnél. Ha nincs arcos kép, a szűrő üres
         rácsot ad — az pedig a #1945 óta kimondja magáról, hogy üres."""
+        if self._attach_button_to_search(FACES):
+            return
+        self._show_faces_photos()
+
+    def _show_faces_photos(self) -> None:
         self._view_mode = ("faces", "")
         started = time.perf_counter()
         with open_index(self._db_path) as conn:
@@ -154,6 +201,7 @@ class ViewFilterMixin:
         """Szűrő ki („Az összes megtekintése") — vissza a mappa-nézethez."""
         self._filter_active = False
         self._filter_status = ""
+        self._search_button = ""
         # #1830: a kor-felirat is tűnjön el — különben a sávon ottmaradna
         # egy „Legfeljebb N napos képek." mondat szűrés nélkül
         self._age_filter_days = None

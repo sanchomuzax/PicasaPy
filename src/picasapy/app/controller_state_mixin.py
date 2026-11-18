@@ -129,6 +129,16 @@ class AppControllerStateMixin:
         azt nem, hogy MIVEL — két szűrő-gomb egyszerre látszana aktívnak."""
         return self._view_mode[0]
 
+    @Property(str, notify=_Signals.statusChanged)
+    def buttonFilterName(self):
+        """A bekapcsolt csillag-/arc-/geocímke-gomb neve (`starred` · `faces` ·
+        `geo`), vagy üres (#7191).
+
+        A három gomb a keresőszöveggel KÖZÖS állapotban van: keresés közben
+        a `viewModeName` `search`, a gomb ettől függetlenül be lehet
+        kapcsolva. A felület a gomb be/ki állapotát ebből olvassa."""
+        return self._active_button_filter()
+
     @Property(bool, notify=_Signals.statusChanged)
     def canSaveSearch(self):
         """Menthető-e a jelenlegi nézet albumként (#1405) — a mag a

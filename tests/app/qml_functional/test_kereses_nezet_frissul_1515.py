@@ -254,30 +254,57 @@ class TestZoldEredmenysav:
     kapcsolta ki (`_filter_active`), ezért a Csillagozottakból keresőmezőbe
     gépelve a sáv OTTMARADT a szűrő elavult darabszámával."""
 
+    def _mindket_kepet_csillagoz(self, controller, tmp_path, qt_app) -> None:
+        """Mindkét próbakép csillagos (ini + újraindexelés), hogy a csillagozott
+        nézetnek legyen a keresésétől eltérő (2 képes) darabszáma."""
+        from pathlib import Path
+
+        from picasapy.index import open_index, sync_tree
+
+        mappa = Path(controller.currentFolder)
+        (mappa / ".picasa.ini").write_text(
+            "[a.jpg]\nstar=yes\n[b.jpg]\nstar=yes\n", encoding="utf-8"
+        )
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, mappa)
+        controller._reload_after_sync()
+        qt_app.processEvents()
+
     def test_keresesnel_a_sav_a_kereses_talalatait_mutatja(
-        self, qml_app, qt_app
+        self, qml_app, qt_app, tmp_path
     ) -> None:
         """#4531: a sáv a keresés SAJÁT szövegét viszi (a visszalépő
-        gombbal együtt), nem a csillagozott szűrő régi darabszámát."""
+        gombbal együtt), nem a csillagozott szűrő régi darabszámát.
+
+        #7191: a csillag a szöveggel KÖZÖS állapot (az eredetiben egy
+        szólistában vannak), ezért a keresés már nem váltja le a csillagot,
+        hanem metszi vele. A próbaképek mind csillagosak, így a metszet
+        ugyanaz az egy kép, a sáv szövege viszont a keresésé."""
         window, controller, _engine = qml_app
+        self._mindket_kepet_csillagoz(controller, tmp_path, qt_app)
         controller.showStarred()
         qt_app.processEvents()
         assert controller.filterActive is True
+        assert _nevek(controller) == ["a.jpg", "b.jpg"]
         csillagozott_szoveg = controller.filterStatusText
 
         _keress(window, qt_app, "a")
 
         assert _nevek(controller) == ["a.jpg"], "a keresés nem futott le"
         assert controller.filterActive is True
+        assert controller.buttonFilterName == "starred"
         assert controller.filterStatusText != csillagozott_szoveg, (
             "a zöld sáv a csillagozott szűrő szövegét mutatja keresés alatt"
         )
 
     def test_ures_keresesnel_is_eltunik(self, qml_app, qt_app) -> None:
-        """A keresés törlése a mappa-feedhez visz vissza — ott sincs sáv."""
+        """A keresés törlése a mappa-feedhez visz vissza, ott sincs sáv.
+
+        #7191: gomb NÉLKÜL. Bekapcsolt gombnál a szöveg törlése a gomb
+        nézetére visz vissza (ld. `test_szoveg_es_szuro_egyutt_7191.py`)."""
         window, controller, _engine = qml_app
-        controller.showStarred()
-        qt_app.processEvents()
+        _keress(window, qt_app, "a")
+        assert controller.filterActive is True
 
         _torold_a_keresest(window, qt_app)
 

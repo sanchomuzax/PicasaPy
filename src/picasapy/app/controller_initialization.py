@@ -62,6 +62,9 @@ def initialize_controller_state(
     self._view_mode = ("folder", "")  # (mód, paraméter) az újratöltéshez
     self._filter_active = False
     self._filter_status = ""
+    # #7191: a keresés mellé kötött csillag-/arc-/geocímke-gomb neve; csak
+    # keresési nézetmódban érvényes (`_active_button_filter`)
+    self._search_button = ""
     #: #1830: az idő-csúszka kor-szűrője — a MEGENGEDETT legnagyobb kor
     #: napban, vagy `None`, ha nincs kor-szűrés. A csúszka nyers értékét
     #: nem tartjuk meg: a felirat és a vágópont is a napokból számol.

@@ -80,10 +80,13 @@ import QtQuick.Window
                     // leépítésekor átmenetileg null lehet
                     // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
                     // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
+                    // #7191: a három gomb a keresőszöveggel KÖZÖS állapotban
+                    // van, ezért a be/ki állapotuk a `buttonFilterName`-ből
+                    // jön (keresés közben a `viewModeName` `search`)
                     readonly property bool ctlFilterActive:
                         (typeof controller !== "undefined" && controller
-                         && controller.viewModeName !== undefined)
-                            ? controller.viewModeName === "starred" : false
+                         && controller.buttonFilterName !== undefined)
+                            ? controller.buttonFilterName === "starred" : false
                     objectName: "starFilterButton"
                     width: 22; height: 20; radius: 2
                     //: #839: a MÉRT állapotok — aktívan ZÖLD gomb fehér
@@ -114,7 +117,7 @@ import QtQuick.Window
                                               && typeof controller !== "undefined"
                                               && controller) {
                             parent.ctlFilterActive
-                                ? controller.clearFilter()
+                                ? controller.clearButtonFilter()
                                 : controller.showStarred()
                         }
                     }
@@ -142,8 +145,8 @@ import QtQuick.Window
                     width: 22; height: 20
                     readonly property bool aktiv:
                         (typeof controller !== "undefined" && controller
-                         && controller.viewModeName !== undefined)
-                            ? controller.viewModeName === "faces" : false
+                         && controller.buttonFilterName !== undefined)
+                            ? controller.buttonFilterName === "faces" : false
                     Rectangle {
                         anchors.fill: parent
                         radius: 2
@@ -173,7 +176,7 @@ import QtQuick.Window
                                               && typeof controller !== "undefined"
                                               && controller) {
                             parent.aktiv
-                                ? controller.clearFilter()
+                                ? controller.clearButtonFilter()
                                 : controller.showFacesOnly()
                         }
                     }
@@ -295,8 +298,8 @@ import QtQuick.Window
                                       ? controller.filterActive : false)
                     readonly property bool aktiv:
                         (typeof controller !== "undefined" && controller
-                         && controller.viewModeName !== undefined)
-                            ? controller.viewModeName === "geo" : false
+                         && controller.buttonFilterName !== undefined)
+                            ? controller.buttonFilterName === "geo" : false
                     Rectangle {
                         objectName: "geoFilterBackground"
                         anchors.fill: parent
@@ -350,7 +353,7 @@ import QtQuick.Window
                                               && typeof controller !== "undefined"
                                               && controller) {
                             parent.aktiv
-                                ? controller.clearFilter()
+                                ? controller.clearButtonFilter()
                                 : controller.showGeotagged()
                         }
                     }
