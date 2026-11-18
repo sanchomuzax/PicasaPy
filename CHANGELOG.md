@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.154] - 2026-11-18
+
+- A keresési javaslatok szósorai mutatják, hány képen szerepel a szó, és a gyakoribb szó áll elöl, mint az eredeti Picasában. (#7242).
+
 ## [1.0.153] - 2026-11-18
 
 - A dátummódosítás az EXIF mellett az XMP- és az IPTC-dátumot is átírja, mint az eredeti Picasa. (#7237).
