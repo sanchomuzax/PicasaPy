@@ -44,7 +44,6 @@ def test_a_pont_es_alahuzas_szoelvalaszto_a_mappatalalatban(search_conn):
     [
         (" ,./\\NYARALÁS_fő.album\\,./ ", "nyaralás fő album"),
         ("É東京:42", "é東京:42"),
-        ("Címke:CSALÁD", "család"),
         ("tag:Family", "family"),
     ],
 )

@@ -45,6 +45,7 @@ ApplicationWindow {
     property alias _pendingSelectedIds: mainWindowCommands._pendingSelectedIds
     property alias _pendingAnchorId: mainWindowCommands._pendingAnchorId
     readonly property alias _kulonAblakosParbeszedNyitva: mainWindowCommands._kulonAblakosParbeszedNyitva
+    property bool importPanelOpen: false
     property point helpCursor: Qt.point(-1, -1)
     readonly property alias _szovegmezoneVanFokusz: mainWindowCommands._szovegmezoneVanFokusz
     readonly property alias _konyvtariGyorsbillentyuEngedelyezve: mainWindowCommands._konyvtariGyorsbillentyuEngedelyezve
@@ -84,8 +85,15 @@ ApplicationWindow {
     // `implicitHeight`-jét már kiszámolta, de a garanciát egy
     // `Layout.minimumHeight`-re bízta, amit semmi nem érvényesít az ablak
     // szintjén — ez az a hely, ahol érvényesíteni kell.
-    minimumHeight: (photoViewer ? photoViewer.requiredHeight : 0)
-                   + (window.menuBar ? window.menuBar.height : 0)
+    minimumHeight: Math.max(
+        (photoViewer ? photoViewer.requiredHeight : 0)
+            + (window.menuBar ? window.menuBar.height : 0),
+        importPanelOpen && importSourceDialog && importSourceDialog.item
+            ? importSourceDialog.item.implicitHeight
+                + (window.header ? window.header.height : 0)
+                + (window.footer ? window.footer.height : 0)
+                + (window.menuBar ? window.menuBar.height : 0)
+            : 0)
     // #1367: az ablak nem mehet olyan keskenyre, hogy az alsó
     // műveletsáv kilógjon — a #1345 fix gombcellái óta a sáv nem
     // zsugorodik tovább. Az igény MÉRT (ld. `TrayBar.requiredWidth`),
@@ -99,19 +107,15 @@ ApplicationWindow {
         onPointChanged: window.helpCursor = point.position
     }
     visible: true
-    //: #671: az ablak „X"-e UGYANAZT az utat járja, mint a Fájl ▸ Kilépés.
-    //: Ha háttérmunka fut, a bezárást visszavonjuk, és a kérdés dönt;
-    //: egyébként a Qt zárja az ablakot, ahogy eddig.
+    //: #7206: az ablak „X"-e és a menü egy helyen dönt az import- és
+    //: háttérmunka-kérdésről. Ha kérdés nyílik, a bezárási kérést visszavonjuk.
     onClosing: function (close) {
-        if (!window.aaKapu(window.kilepes)) {   // #3644
+        mainWindowCommands._windowCloseRequest = true
+        var bezarasElfogadva = window.kilepes()
+        mainWindowCommands._windowCloseRequest = false
+        if (!bezarasElfogadva) {
             window.kilepesMegerositve = false
             close.accepted = false
-            return
-        }
-        if (!window.kilepesMegerositve
-                && controller && controller.backgroundWorkRunning()) {
-            close.accepted = false
-            kilepesDialog.askExit()
             return
         }
         // #6387: a főablakból nyitott súgó nem modális, ezért a főablakkal
@@ -578,6 +582,7 @@ ApplicationWindow {
         hostController: typeof controller !== "undefined" ? controller : null
         hostRefs: ({
             documentTabStrip: documentTabStrip,
+            importSourceDialog: mainWindowWorkspace.exportImportSourceDialog,
             operationInfoDialog: mainWindowPeripheralLayers.exportDialogStack,
             photoViewer: photoViewer,
             picasaMenuBar: picasaMenuBar,
@@ -597,7 +602,7 @@ ApplicationWindow {
     function helpTopicUnderCursor() { return mainWindowCommands.helpTopicUnderCursor() }
     function mentsdAKeresest() { mainWindowCommands.mentsdAKeresest() }
     function aaKapu(folytatas) { return mainWindowCommands.aaKapu(folytatas) }
-    function kilepes() { mainWindowCommands.kilepes() }
+    function kilepes() { return mainWindowCommands.kilepes() }
     function masoldASzovegreteget() { mainWindowCommands.masoldASzovegreteget() }
     function illeszdBeASzovegreteget() { mainWindowCommands.illeszdBeASzovegreteget() }
     function beillesztAVagolaprol() { mainWindowCommands.beillesztAVagolaprol() }
@@ -645,7 +650,7 @@ ApplicationWindow {
         hostFolderPane: folderPane
         hostGiftCdHost: mainWindowPeripheralLayers.exportGiftCdHost
         hostHelpDialog: helpDialog
-        hostImportSourceDialog: importSourceDialog
+        hostImportSourceDialog: mainWindowWorkspace
         hostMainDialogs: mainDialogs
         hostMoveDatabaseDialog: moveDatabaseDialog
         hostOptionsDialog: optionsDialog
@@ -691,7 +696,7 @@ ApplicationWindow {
             searchSuggestionsBox: searchSuggestionsBox,
             suggestionsTimer: suggestionsTimer,
             picasaMenuBar: picasaMenuBar,
-            importSourceDialog: importSourceDialog,
+            importSourceDialog: mainWindowWorkspace,
             fileOpsDialogs: fileOpsDialogs
         })
     }

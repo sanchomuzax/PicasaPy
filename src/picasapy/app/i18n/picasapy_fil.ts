@@ -9769,6 +9769,24 @@ picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
     <context>
         <name>MainWindowCommands</name>
         <message>
+            <source>Import images before closing PicasaPy?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_WARNCLOSEACQUIRE</extracomment>
+            <translation>Mag-import ng mga larawan bago isara ang PicasaPy?</translation>
+        </message>
+        <message>
+            <source>Import Images</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_WARNCLOSEACQUIRE_YES_BUTTON</extracomment>
+            <translation>I-import ang Mga Larawan</translation>
+        </message>
+        <message>
+            <source>Quit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_WARNCLOSEACQUIRE_NO_BUTTON</extracomment>
+            <translation>Mag-quit</translation>
+        </message>
+        <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="48" />
             <source>Configure Buttons...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>

@@ -11,6 +11,8 @@ from PySide6.QtTest import QTest
 from support.jpeg_factory import make_jpeg
 from support.varakozas import var_feltetelre
 
+_FOABLAK = None
+
 
 def _elem(gyoker, nev: str):
     talalat = gyoker.findChild(QObject, nev)
@@ -40,7 +42,7 @@ def _kattint(ablak, elem, qt_app):
     )
     kozep = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2))
     QTest.mouseClick(
-        ablak,
+        _FOABLAK,
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
@@ -93,9 +95,21 @@ def _kepkartyak(ablak, darab: int):
 
 
 def _kattints_kartyara(ablak, kartya, qt_app):
-    kozep = kartya.mapToScene(QPointF(kartya.width() / 2, kartya.height() / 2))
+    racs = _elem(ablak, "importSourcePreviewGrid")
+    racs.setProperty("contentY", kartya.y())
+    qt_app.processEvents()
+    kartya_teteje = kartya.mapToItem(racs, QPointF(0, 0)).y()
+    assert kartya_teteje >= 0 and kartya_teteje + kartya.height() <= racs.height(), (
+        f"{kartya.objectName()} nem fér el a görgetett előnézeti rácsban"
+    )
+    kepernyokozeppont = kartya.mapToGlobal(
+        QPointF(kartya.width() / 2, kartya.height() / 2)
+    )
+    kozep = _FOABLAK.mapFromGlobal(
+        QPoint(round(kepernyokozeppont.x()), round(kepernyokozeppont.y()))
+    )
     QTest.mouseClick(
-        ablak,
+        _FOABLAK,
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
@@ -104,10 +118,11 @@ def _kattints_kartyara(ablak, kartya, qt_app):
 
 
 def _billentyu(ablak, kulcs, qt_app):
-    ablak.requestActivate()
-    ablak.contentItem().forceActiveFocus()
+    foablak = _FOABLAK
+    foablak.requestActivate()
+    foablak.contentItem().forceActiveFocus()
     qt_app.processEvents()
-    QTest.keyClick(ablak, kulcs)
+    QTest.keyClick(foablak, kulcs)
     qt_app.processEvents()
 
 
@@ -128,7 +143,9 @@ def _ellenoriz_masolatok(dest: Path, fajlok, indexek):
 
 
 def test_valodi_kijeloles_gombok_enter_es_esc(qml_app, qt_app, tmp_path, monkeypatch):
+    global _FOABLAK
     fobl, _fovezerlo, engine = qml_app
+    _FOABLAK = fobl
     fobl.resize(1280, 800)
     fobl.show()
     qt_app.processEvents()
@@ -149,15 +166,16 @@ def test_valodi_kijeloles_gombok_enter_es_esc(qml_app, qt_app, tmp_path, monkeyp
     )
     ablak.setProperty("manualFolderName", "kezzel-valasztott")
 
+    eredeti_magassag = fobl.height()
     for elteres in (-5, 0, 5):
-        ablak.setProperty("height", 680 + elteres)
+        fobl.setProperty("height", eredeti_magassag + elteres)
         qt_app.processEvents()
         for elem in (minden, kijelolt, zaras):
-            fent = elem.mapToScene(QPointF(0, 0)).y()
+            fent = elem.mapToItem(ablak, QPointF(0, 0)).y()
             assert fent >= -3 and fent + elem.height() <= ablak.height() + 3, (
                 f"{elem.objectName()} kilóg {elteres:+} px ablakmagasságnál"
             )
-    ablak.setProperty("height", 680)
+    fobl.setProperty("height", eredeti_magassag)
 
     ablak.setProperty("namingMode", "date")
     assert str(tipp.property("text")) == (
@@ -174,6 +192,7 @@ def test_valodi_kijeloles_gombok_enter_es_esc(qml_app, qt_app, tmp_path, monkeyp
     ablak.setProperty("manualFolderName", "kezzel-valasztott")
     assert kijelolt.property("enabled") is False
     _kattints_kartyara(ablak, _kepkartyak(ablak, 3)[0], qt_app)
+    assert int(ablak.property("selectedPreviewCount")) == 1
     _kattints_kartyara(ablak, _kepkartyak(ablak, 3)[2], qt_app)
     assert str(kijelolt.property("text")) == "Import Selected (2)"
     assert kijelolt.property("enabled") is True

@@ -166,7 +166,9 @@ class TestLegordulok:
         szuro = _gyerek(window, "importSourceMediaFilterBox")
         assert import_ctl.property("mediaFilter") != "pictures"
 
-        _valassz_legordulobol(qt_app, dialog, szuro, "Picture Files")
+        # #7206 óta az importpanel a főablak gyereke; a popupot is a főablak
+        # fogadja, a panel QQuickItem nem adható át a QTest.mouseClick-nek.
+        _valassz_legordulobol(qt_app, window, szuro, "Picture Files")
         assert _varj(
             qt_app, lambda: import_ctl.property("mediaFilter") == "pictures"
         ), (
@@ -185,7 +187,7 @@ class TestLegordulok:
         cel = valaszto.property("opciok")[1]
         cimke = valaszto.property("model")[1]
 
-        _valassz_legordulobol(qt_app, dialog, valaszto, cimke)
+        _valassz_legordulobol(qt_app, window, valaszto, cimke)
         assert _varj(
             qt_app, lambda: import_ctl.property("resizeLimit") == cel
         ), f"a(z) {cimke!r} tétel nem állította az átméretezési határt"

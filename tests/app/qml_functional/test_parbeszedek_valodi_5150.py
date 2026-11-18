@@ -259,7 +259,7 @@ class TestImportForras:
         importer = engine.rootContext().contextProperty("importSourceController")
         elotte = bool(importer.property("autoExclude"))
 
-        _klikk_ablakban(qt_app, dialog, _gyerek(dialog, "importSourceAutoExcludeCheckBox"))
+        _klikk_ablakban(qt_app, window, _gyerek(dialog, "importSourceAutoExcludeCheckBox"))
 
         assert _varj(
             qt_app, lambda: bool(importer.property("autoExclude")) is not elotte
@@ -275,7 +275,7 @@ class TestImportForras:
         importer = engine.rootContext().contextProperty("importSourceController")
         _forras_jeloltjei(importer, dialog, qt_app, tmp_path)
 
-        _klikk_ablakban(qt_app, dialog, _gyerek(dialog, "importSourceExcludeAllButton"))
+        _klikk_ablakban(qt_app, window, _gyerek(dialog, "importSourceExcludeAllButton"))
 
         assert _varj(
             qt_app,
@@ -297,7 +297,7 @@ class TestImportForras:
             lambda: all(bool(t["excluded"]) for t in _lista(dialog.property("previewItems"))),
         ), "a próba feltétele: minden kép kizárva"
 
-        _klikk_ablakban(qt_app, dialog, _gyerek(dialog, "importSourceIncludeAllButton"))
+        _klikk_ablakban(qt_app, window, _gyerek(dialog, "importSourceIncludeAllButton"))
 
         assert _varj(
             qt_app,
@@ -310,7 +310,7 @@ class TestImportForras:
         _elokeszit(window, qt_app, controller)
         dialog = _import_megnyit(window, qt_app)
 
-        _klikk_ablakban(qt_app, dialog, _gyerek(dialog, "importSourceCloseButton"))
+        _klikk_ablakban(qt_app, window, _gyerek(dialog, "importSourceCloseButton"))
 
         assert _varj(qt_app, lambda: dialog.property("visible") is False), (
             "a Bezárás kattintás nem zárta be az importálást"
@@ -326,7 +326,7 @@ class TestImportForras:
         assert jelolo.property("enabled") is False, "a Feltöltés jelölőnek tiltottnak kell lennie"
         elotte = jelolo.property("checked")
 
-        _klikk_ablakban(qt_app, dialog, jelolo)
+        _klikk_ablakban(qt_app, window, jelolo)
 
         assert jelolo.property("checked") == elotte, "a tiltott Feltöltés jelölő átváltott"
         _zar(qt_app, dialog)
@@ -336,7 +336,7 @@ class TestImportForras:
         _elokeszit(window, qt_app, controller)
         dialog = _import_megnyit(window, qt_app)
         # a jelölő az Options menüben él: valódi kattintással nyitjuk meg
-        _klikk_ablakban(qt_app, dialog, _gyerek(dialog, "importSourceOptionsButton"))
+        _klikk_ablakban(qt_app, window, _gyerek(dialog, "importSourceOptionsButton"))
         assert _varj(
             qt_app, lambda: _gyerek(dialog, "importSourceSyncStarredOnlyCheckBox").property("visible") is True
         ), "az Options menü nem nyitotta meg a csillagozottak jelölőt"
@@ -344,7 +344,7 @@ class TestImportForras:
         assert jelolo.property("enabled") is False, "a csillagozottak jelölőnek tiltottnak kell lennie"
         elotte = jelolo.property("checked")
 
-        _klikk_ablakban(qt_app, dialog, jelolo)
+        _klikk_ablakban(qt_app, window, jelolo)
 
         assert jelolo.property("checked") == elotte, "a tiltott csillagozottak jelölő átváltott"
         _zar(qt_app, dialog)

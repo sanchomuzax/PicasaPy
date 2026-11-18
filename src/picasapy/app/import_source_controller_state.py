@@ -360,6 +360,11 @@ class ImportSourceControllerStateMixin:
                     "thumbUrl": _controller_module()._thumb_url(-(index + 1))
                     if self._provider is not None
                     else "",
+                    # A nagy import-előnézethez a képfájlt mutatjuk, nem a
+                    # rács bélyegképét. A URL-t a közös útvonal-formázó készíti.
+                    "imageUrl": _controller_module().to_file_url(path_text).toString()
+                    if _controller_module().media_kind_of(path_text) == "photo"
+                    else "",
                     "duplicate": candidate.path in self._duplicate_paths,
                     "excluded": path_text in self._excluded_paths,
                     # #441: import előtti forgatás/csillagozás

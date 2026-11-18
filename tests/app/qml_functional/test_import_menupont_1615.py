@@ -32,10 +32,16 @@ from xml.etree import ElementTree
 
 import pytest
 
-from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtCore import QObject, QPoint, QPointF, Qt
+from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 from support.halasztott_parbeszed import nyisd_meg
+from support.varakozas import var_feltetelre
+from tests.app.qml_functional._fomenu_4420_menu import (
+    _gyoker_menu,
+    _menu_fejlec,
+)
 
 import picasapy.app
 
@@ -51,7 +57,10 @@ def _elem(root, nev):
 
 
 def _parbeszed(window):
-    return _elem(window, "importSourceDialog")
+    panel = _elem(window, "importSourceDialog")
+    assert isinstance(panel, QQuickItem), "az importfelület nem főablak-panel"
+    assert panel.window() == window, "az importfelület külön ablakban nyílt meg"
+    return panel
 
 
 def _meg_nem_all(window):
@@ -65,17 +74,41 @@ def _meg_nem_all(window):
 def _bezar(window, qt_app):
     """⚠️ MÉRT teszt-higiénia, nem díszítés.
 
-    Az `ImportSourceDialog` ÖNÁLLÓ `Window`. Az offscreen platformon a
-    nyitva hagyott (exposed) ablakot a `qml_app` lebontása nem szedi el
-    azonnal, és a KÖVETKEZŐ teszt `QTest.keyClick`-jei elnyelődnek —
-    mérve: a fókusz-ablak és az `activeFocus` a következő tesztben helyes
-    volt, a leütött betű mégsem ért a keresőmezőbe. Ezért minden nyitó
-    teszt a végén becsukja a párbeszédet.
+    A panel minden nyitó teszt végén elrejtődik, hogy a következő próba a
+    könyvtári munkaterületet kapja.
     """
     parbeszed = window.findChild(QObject, "importSourceDialog")
     if parbeszed is not None and parbeszed.property("visible"):
         parbeszed.setProperty("visible", False)
         qt_app.processEvents()
+
+
+def _kattint(window, item, qt_app):
+    point = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
+    QTest.mouseClick(
+        window,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        QPoint(round(point.x()), round(point.y())),
+    )
+    qt_app.processEvents()
+
+
+def _megnyit_file_menu(window, qt_app):
+    menu_bar = window.property("menuBar")
+    menu = _gyoker_menu(menu_bar, "&File")
+    if menu.property("opened") is not True:
+        _kattint(window, _menu_fejlec(menu_bar, "&File"), qt_app)
+    assert var_feltetelre(qt_app, lambda: menu.property("opened") is True, 5), (
+        "a Fájl menü nem nyílt meg"
+    )
+
+
+def _kattint_menupontra(window, qt_app, name):
+    item = _elem(window, name)
+    assert item.property("visible") is True, f"{name} nem látható"
+    assert item.property("enabled") is True, f"{name} tiltott"
+    _kattint(window, item, qt_app)
 
 
 class TestMenupont:
@@ -108,10 +141,8 @@ class TestMenupont:
 
         tetel = _elem(window, "menuFileImportFrom")
         assert tetel.property("enabled") is True
-        QMetaObject.invokeMethod(
-            tetel, "triggered", Qt.ConnectionType.DirectConnection
-        )
-        qt_app.processEvents()
+        _megnyit_file_menu(window, qt_app)
+        _kattint_menupontra(window, qt_app, "menuFileImportFrom")
 
         assert _parbeszed(window).property("visible") is True, (
             "a Fájl ▸ Importálás forrása… nem nyitotta meg a párbeszédet"
@@ -123,23 +154,14 @@ class TestMenupont:
         példányt nyitja — különben a két úton más állapot élne."""
         window, _controller, _engine = qml_app
 
-        QMetaObject.invokeMethod(
-            _elem(window, "toolbarImportButton"),
-            "clicked",
-            Qt.ConnectionType.DirectConnection,
-        )
-        qt_app.processEvents()
+        _kattint(window, _elem(window, "toolbarImportButton"), qt_app)
         gombbol = _parbeszed(window)
         assert gombbol.property("visible") is True
         gombbol.setProperty("visible", False)
         qt_app.processEvents()
 
-        QMetaObject.invokeMethod(
-            _elem(window, "menuFileImportFrom"),
-            "triggered",
-            Qt.ConnectionType.DirectConnection,
-        )
-        qt_app.processEvents()
+        _megnyit_file_menu(window, qt_app)
+        _kattint_menupontra(window, qt_app, "menuFileImportFrom")
         menubol = _parbeszed(window)
 
         assert menubol is gombbol, (

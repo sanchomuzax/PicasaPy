@@ -78,6 +78,7 @@ _FORRASOK = (
     _QML / "PicasaPy" / "MainWindowDialogStack.qml",
     _QML / "PicasaPy" / "MainWindowPeripheralLayers.qml",
     _QML / "PicasaPy" / "MainWindowWorkspace.qml",
+    _QML / "PicasaPy" / "MainWindowImportActions.qml",
 )
 _TAROLOK = {"MainDialogs"}
 
@@ -154,6 +155,16 @@ def _deferred_tartomanyok(szoveg: str) -> list[tuple[int, int]]:
     return blokk_tartomanyok(szoveg, "DeferredDialog")
 
 
+def _import_source_panel_loader() -> str:
+    fajl = _QML / "PicasaPy" / "MainWindowWorkspace.qml"
+    szoveg = kommentek_nelkul(fajl.read_text(encoding="utf-8"))
+    for kezdet, veg in blokk_tartomanyok(szoveg, "Loader"):
+        blokk = szoveg[kezdet:veg]
+        if "id: importSourcePanelLoader" in blokk:
+            return blokk
+    return ""
+
+
 def _kozvetlenul_epulok() -> set[str]:
     szoveg = _forras()
     tartomanyok = _deferred_tartomanyok(szoveg)
@@ -165,6 +176,10 @@ def _kozvetlenul_epulok() -> set[str]:
         hely = talalat.start()
         if not any(kezd < hely < veg for kezd, veg in tartomanyok):
             ki.add(nev)
+    # A panel neveben levo Dialog miatt az egyszeru bejaras parbeszednek nezi,
+    # de a Loader active kotese csak az elso Import megnyitasakor hozza letre.
+    if "ImportSourceDialog {" in _import_source_panel_loader():
+        ki.discard("ImportSourceDialog")
     return ki
 
 
@@ -177,6 +192,10 @@ class TestAHalasztas:
             "fel az `AZONNAL_EPULO` táblába azzal, hogy MIÉRT nem lehet "
             "halasztani (#1719/#1720)."
         )
+        loader = _import_source_panel_loader()
+        assert "property bool betoltve: false" in loader
+        assert "active: workspace.hostWindow.importPanelOpen || betoltve" in loader
+        assert "onActiveChanged: if (active) betoltve = true" in loader
 
     def test_a_tabla_nem_tartalmaz_elavult_tetelt(self):
         """Az őr foga MÁSIK irányban: ha egy párbeszéd időközben
