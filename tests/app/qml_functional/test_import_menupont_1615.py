@@ -32,7 +32,7 @@ from xml.etree import ElementTree
 
 import pytest
 
-from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, Qt
+from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 

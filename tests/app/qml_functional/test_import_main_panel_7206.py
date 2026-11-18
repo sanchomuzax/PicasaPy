@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QUrl, Qt
 from PySide6.QtQuick import QQuickItem, QQuickWindow
@@ -85,8 +87,8 @@ def test_import_panel_is_embedded_and_large_preview_tracks_the_clicked_photo(
     assert panel.property("selectedPreviewIndex") == 1
     preview = _elem(panel, "importSourceLargePreviewImage")
     assert preview.property("visible") is True
-    assert QUrl(preview.property("source")).toLocalFile() == str(second)
-    assert QUrl(preview.property("source")).toLocalFile() != str(first)
+    assert Path(QUrl(preview.property("source")).toLocalFile()) == second
+    assert Path(QUrl(preview.property("source")).toLocalFile()) != first
 
 
 def test_main_window_close_prompts_before_importing_scanned_photos(

@@ -95,8 +95,18 @@ def _kepkartyak(ablak, darab: int):
 
 
 def _kattints_kartyara(ablak, kartya, qt_app):
-    kozep = kartya.mapToItem(
-        _FOABLAK.contentItem(), QPointF(kartya.width() / 2, kartya.height() / 2)
+    racs = _elem(ablak, "importSourcePreviewGrid")
+    racs.setProperty("contentY", kartya.y())
+    qt_app.processEvents()
+    kartya_teteje = kartya.mapToItem(racs, QPointF(0, 0)).y()
+    assert kartya_teteje >= 0 and kartya_teteje + kartya.height() <= racs.height(), (
+        f"{kartya.objectName()} nem fér el a görgetett előnézeti rácsban"
+    )
+    kepernyokozeppont = kartya.mapToGlobal(
+        QPointF(kartya.width() / 2, kartya.height() / 2)
+    )
+    kozep = _FOABLAK.mapFromGlobal(
+        QPoint(round(kepernyokozeppont.x()), round(kepernyokozeppont.y()))
     )
     QTest.mouseClick(
         _FOABLAK,
@@ -182,6 +192,7 @@ def test_valodi_kijeloles_gombok_enter_es_esc(qml_app, qt_app, tmp_path, monkeyp
     ablak.setProperty("manualFolderName", "kezzel-valasztott")
     assert kijelolt.property("enabled") is False
     _kattints_kartyara(ablak, _kepkartyak(ablak, 3)[0], qt_app)
+    assert int(ablak.property("selectedPreviewCount")) == 1
     _kattints_kartyara(ablak, _kepkartyak(ablak, 3)[2], qt_app)
     assert str(kijelolt.property("text")) == "Import Selected (2)"
     assert kijelolt.property("enabled") is True
