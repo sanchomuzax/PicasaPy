@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.152] - 2026-11-18
+
+- A fotónézőben az Eszközök menü Configure Photo Viewer, Configure Screensaver és Back Up Pictures tétele szürke, mint az eredeti Picasában. (#7231).
+
 ## [1.0.151] - 2026-11-18
 
 - Az Eszközök menü dátummódosítója nézőben az aktuális képre, mappanézetben pedig az adott mappa képeire nyílik meg. (#7230).
