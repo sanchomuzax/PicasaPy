@@ -15,7 +15,34 @@ from pathlib import Path
 
 import pytest
 
-from picasapy.app import qml_cache_warmup, qml_precompile
+from picasapy.app import qml_cache_warmup, qml_precompile, update_ablak
+
+
+def test_a_qml_eloforditas_a_kesz_fajlok_aranyat_jelenti(tmp_path, monkeypatch):
+    status_ut = tmp_path / "frissites.json"
+    update_ablak._status_iras(status_ut, {"stage": "qml_cache"})
+    monkeypatch.setenv(update_ablak._QML_HALADAS_STATUS_ENV, str(status_ut))
+    megfigyelt_szazalekok = []
+
+    def _futtat(command, **_kwargs):
+        status = update_ablak._status_olvasas(status_ut)
+        megfigyelt_szazalekok.append(update_ablak._qml_halas_szazalek(status))
+        cel = Path(command[command.index("-o") + 1])
+        cel.parent.mkdir(parents=True, exist_ok=True)
+        cel.write_bytes(b"compiled")
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(qml_precompile, "_qmlcachegen_exe", lambda: tmp_path / "qmlcachegen")
+    monkeypatch.setattr(qml_precompile, "_qml_import_path", lambda: str(tmp_path))
+    monkeypatch.setattr(qml_precompile, "_run", _futtat)
+    fajlok = [tmp_path / f"{nev}.qml" for nev in ("Elso", "Masodik", "Harmadik")]
+
+    assert qml_precompile._forditsd_le(tmp_path / "cache", fajlok) == 0
+    status = update_ablak._status_olvasas(status_ut)
+    megfigyelt_szazalekok.append(update_ablak._qml_halas_szazalek(status))
+
+    assert megfigyelt_szazalekok == [0, 33, 66, 100]
+    assert (status["qml_done"], status["qml_total"]) == (3, 3)
 
 
 class _HamisQCoreApplication:
