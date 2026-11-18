@@ -3909,7 +3909,7 @@ Kész, ha:
 - Ghidra-kör kell: 0x00571e50 — a `0x0075f430`-at hívó eseménykezelő hogyan kezeli annak visszatérését, a szünetet, a lista végét és a `0x0075de50`-re kilépést; meglévő Ghidra-anyagban csak xref szerepel [blokkoló]
 - Ghidra-kör kell: 0x00781680 — a `0x00714010` hívása előtti feltétel és a `+0x5a`-t okozó nézetállapot
 - Ghidra-kör kell: 0x0075de50 — a fő diavetítő út és a tényleges fotóbetöltő/hibaág címe
-- Ghidra-kör kell: 0x009a3db0 — a `mp3\\` útvonal enumerálásának eleje-vége sorrendje és a rendező/randombesoroló hívás
+- Ghidra-kör kell: 0x009a3db0 — a `mp3\\` útvonal enumerálásának eleje-vége sorrendje és a rendező vagy véletlen sorrendet adó hívás
 - Ghidra-kör kell: 0x0075d430 — a zeneszál track-választási, ismétlési és következő sávra lépési szabálya
 
 ## #7059: A mappa áthelyezésének teljes folyamata az eredeti Picasával összevetve
@@ -5613,8 +5613,8 @@ A `0x0057f1d0` 0x70 bájtos navigációs rekordot foglal, a `+0x8` objektumot a
 `0x0057ec70`-tel másolja, majd a rekordot a kapott listához fűzi. Közvetlen
 hívói a `0x00604260` és `0x006042b0` Vissza/Előre kezelők; a `thumbui/navback`
 xrefje a navigációs útban jelenik meg (`2026-11-15-7012-7022-colab-decomp.txt`,
-`2026-11-15-7012-7028-colab-decomp.txt`). Ez nem bizonyít keresésindításkori
-előzményfelvételt. A `0x0057ec70` részletes mezőhatása és a `+0x32b0`
+`2026-11-15-7012-7028-colab-decomp.txt`). Ez nem bizonyítja, hogy a keresés indításakor
+előzményrekord készül. A `0x0057ec70` részletes mezőhatása és a `+0x32b0`
 objektum UI-jelentése nyitott.
 
 - Ghidra-kör kell: 0x0057ec70 — a `+0x32b0` objektum tényleges UI-típusa, mezői, valamint a keresésindításkor történő kijelölés/fókusz/görgetés-visszaállítás esetleges kapcsolata [nem blokkoló]
