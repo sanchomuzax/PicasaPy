@@ -58,11 +58,13 @@ PicasaMenu {
     MenuItem {
         objectName: "menuToolsPhotoViewerSettings"
         text: qsTr("Configure Photo Viewer...")
+        enabled: !bar.editorActive
         onTriggered: bar.configurePhotoViewerRequested()
     }
     MenuItem {
         objectName: "menuToolsScreensaver"
         text: qsTr("Configure Screensaver...")
+        enabled: !bar.editorActive
         onTriggered: bar.configureScreensaverRequested()
     }
     // #1774 (mérve): a mentések szerint itt csoporthatár van.
@@ -72,6 +74,7 @@ PicasaMenu {
     MenuItem {
         objectName: "menuToolsBackup"
         text: qsTr("&Back Up Pictures...")
+        enabled: !bar.editorActive
         onTriggered: bar.backupRequested()
     }
     PicasaMenuItem { text: qsTr("Batch Upload..."); placeholder: false; retired: true }  // #638
