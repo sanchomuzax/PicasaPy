@@ -17,16 +17,7 @@ ColumnLayout {
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }
-        Text {
-            objectName: "importSourceDestPathText"
-            Layout.fillWidth: true
-            elide: Text.ElideMiddle
-            text: hostWindow.destFolderDisplay.length > 0
-                  ? hostWindow.destFolderDisplay
-                  : qsTr("(none selected)")
-            font.pixelSize: Theme.fontSize
-            color: Theme.ink
-        }
+        Item { Layout.fillWidth: true }
         // #1785: a korábbi CÉLMAPPÁK — az eredeti a célt is megjegyzi
         // (`Preferences\LastImport%x`), és háromszakaszos menüben
         // kínálja: korábbi importok · alapértelmezett hely · „Choose…".
@@ -98,6 +89,18 @@ ColumnLayout {
             text: qsTr("Browse...")
             onClicked: folderDialog.open()
         }
+    }
+    // #7206: a főablak-panel keskeny jobb hasábjában a sorban nem fér el az
+    // útvonal (a legördülők és a Browse... elviszik a helyet), ezért külön sorba kerül.
+    Text {
+        objectName: "importSourceDestPathText"
+        Layout.fillWidth: true
+        elide: Text.ElideMiddle
+        text: hostWindow.destFolderDisplay.length > 0
+              ? hostWindow.destFolderDisplay
+              : qsTr("(none selected)")
+        font.pixelSize: Theme.fontSize
+        color: Theme.ink
     }
 
     ButtonGroup { id: namingModeGroup }

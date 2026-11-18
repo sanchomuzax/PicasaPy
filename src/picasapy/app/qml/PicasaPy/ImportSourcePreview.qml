@@ -312,7 +312,10 @@ Rectangle {
             objectName: "importSourceLargePreviewImage"
             anchors.fill: parent
             anchors.margins: 8
-            z: -1
+            // A saját Rectangle-háttér mögé kerülne -1-es z-vel, így a
+            // képforrás betöltődne, de a felhasználó csak a háttérszínt látná.
+            // A z=0 a panel háttere fölé, az 1-es vezérlősor alá rajzol.
+            z: 0
             source: previewPanelRoot.selectedItem
                 ? (previewPanelRoot.fallbackToThumbnail
                    || !previewPanelRoot.selectedItem.imageUrl

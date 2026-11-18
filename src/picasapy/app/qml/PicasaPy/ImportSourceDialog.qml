@@ -460,13 +460,34 @@ Rectangle {
             sourceFolderDialog: sourceFolderDialog
             sourceFilesDialog: sourceFilesDialog
         }
-        ImportSourcePreview {
-            id: previewPanel
-            hostWindow: importSourceWindow
-        }
-        ImportSourceDestinationPanel {
-            hostWindow: importSourceWindow
-            folderDialog: destFolderDialog
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 8
+
+            // A kijelölt kép a panel megmaradó, nyújtott részét kapja; a
+            // bélyegképrács mellette önállóan görgethető marad.
+            ImportSourcePreview {
+                id: previewPanel
+                hostWindow: importSourceWindow
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+            // A célbeállítás belső soraiban több rögzített szélességű
+            // választó van. A sima Item ad neki külön sávot, így a belső
+            // ColumnLayout nem nyújtózik rá a teljes sorra.
+            Item {
+                Layout.minimumWidth: 530
+                Layout.preferredWidth: 530
+                Layout.maximumWidth: 530
+                Layout.fillHeight: true
+
+                ImportSourceDestinationPanel {
+                    anchors.fill: parent
+                    hostWindow: importSourceWindow
+                    folderDialog: destFolderDialog
+                }
+            }
         }
     }
 

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, QUrl, Qt
+from PySide6.QtGui import QColor, QImage
 from PySide6.QtQuick import QQuickItem, QQuickWindow
 from PySide6.QtTest import QTest
 
@@ -20,10 +20,15 @@ def _bejara(item):
             yield from _bejara(child)
 
 
-def _elem(root, name: str):
+def _keres(root, name: str):
     found = root.findChild(QObject, name)
     if found is None:
         found = next((item for item in _bejara(root) if item.objectName() == name), None)
+    return found
+
+
+def _elem(root, name: str):
+    found = _keres(root, name)
     assert found is not None, f"{name} nem található"
     return found
 
@@ -37,6 +42,12 @@ def _kattint(window: QQuickWindow, item, qt_app) -> None:
         QPoint(round(point.x()), round(point.y())),
     )
     qt_app.processEvents()
+
+
+def _egyszinu_png(path: Path, color: QColor) -> None:
+    image = QImage(320, 240, QImage.Format.Format_RGB32)
+    image.fill(color)
+    assert image.save(str(path), "PNG")
 
 
 def _import_panel(window, qt_app, height_delta: int = 0):
@@ -54,22 +65,23 @@ def _import_panel(window, qt_app, height_delta: int = 0):
     return _elem(window, "importSourceDialog")
 
 
-@pytest.mark.parametrize("height_delta", (-5, 0, 5))
 def test_import_panel_is_embedded_and_large_preview_tracks_the_clicked_photo(
-    qml_app, qt_app, tmp_path, height_delta
+    qml_app, qt_app, tmp_path
 ):
     window, _controller, _engine = qml_app
-    panel = _import_panel(window, qt_app, height_delta)
+    panel = _import_panel(window, qt_app)
 
     assert isinstance(panel, QQuickItem), "az importfelület nem főablak-panel"
     assert panel.window() == window, "az importfelület külön ablakban nyílt meg"
 
     source = tmp_path / "forras"
     source.mkdir()
-    first = source / "elso.jpg"
-    second = source / "masodik.jpg"
-    make_minta_jpeg(first, seed=1)
-    make_minta_jpeg(second, seed=2)
+    first = source / "elso.png"
+    second = source / "masodik.png"
+    elso_szin = QColor(220, 35, 45)
+    masodik_szin = QColor(25, 190, 75)
+    _egyszinu_png(first, elso_szin)
+    _egyszinu_png(second, masodik_szin)
     panel.setProperty("sourceFolder", str(source))
     panel.setProperty("destFolder", str(tmp_path / "cel"))
     assert QMetaObject.invokeMethod(
@@ -82,6 +94,15 @@ def test_import_panel_is_embedded_and_large_preview_tracks_the_clicked_photo(
         10,
     ), "a próbaképek beolvasása nem fejeződött be"
 
+    grid = _elem(panel, "importSourcePreviewGrid")
+    delegates_megvannak = var_feltetelre(
+        qt_app, lambda: _keres(panel, "importSourceThumb:1") is not None, 5
+    )
+    assert delegates_megvannak, (
+        "az előnézeti rács delegáltja nem épült fel: "
+        f"count={grid.property('count')}, "
+        f"méret={grid.width():.0f}x{grid.height():.0f}"
+    )
     thumbnail = _elem(panel, "importSourceThumb:1")
     _kattint(window, thumbnail, qt_app)
     assert panel.property("selectedPreviewIndex") == 1
@@ -89,6 +110,45 @@ def test_import_panel_is_embedded_and_large_preview_tracks_the_clicked_photo(
     assert preview.property("visible") is True
     assert Path(QUrl(preview.property("source")).toLocalFile()) == second
     assert Path(QUrl(preview.property("source")).toLocalFile()) != first
+
+    def szin_egyezik(actual):
+        return all(
+            abs(got - expected) <= 3
+            for got, expected in zip(
+                (actual.red(), actual.green(), actual.blue()),
+                (masodik_szin.red(), masodik_szin.green(), masodik_szin.blue()),
+                strict=True,
+            )
+        )
+
+    pane = _elem(panel, "importSourceLargePreviewPane")
+    for height_delta in (-5, 0, 5):
+        window.setProperty("height", 800 + height_delta)
+
+        def elonezet_kozep_szin():
+            pont = preview.mapToScene(
+                QPointF(preview.width() / 2, preview.height() / 2)
+            )
+            return window.grabWindow().pixelColor(round(pont.x()), round(pont.y()))
+
+        assert var_feltetelre(
+            qt_app,
+            lambda: pane.height() >= panel.height() * 0.5
+            and szin_egyezik(elonezet_kozep_szin()),
+            5,
+        ), (
+            f"{800 + height_delta} px-es ablaknál az előnézet nem tölti ki "
+            "a panel legalább felét, vagy a kijelölt kép képpontja nem látszik"
+        )
+        if height_delta == 0:
+            ablak_kep = window.grabWindow()
+            kep_utvonal = (
+                Path(__file__).resolve().parents[3] / ".codex-kepernyokep-7206.png"
+            )
+            assert ablak_kep.size().width() == 1280 and ablak_kep.size().height() == 800
+            assert ablak_kep.save(str(kep_utvonal), "PNG"), (
+                f"a képernyőkép nem menthető: {kep_utvonal}"
+            )
 
 
 def test_main_window_close_prompts_before_importing_scanned_photos(
