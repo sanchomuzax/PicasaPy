@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.150] - 2026-11-18
+
+- Az első Esc bezárja a keresési javaslatokat, a következő pedig törli a keresést, miközben a fókusz a mezőben marad (#7215).
+- A keresőmező törlőgombja és a találati sávból való kilépés visszaállítja a keresés előtti mappa- és képkijelölést, a bal oldali lista pedig csak a találatos elemeket mutatja (#7216).
+- A keresési javaslatok a mappákat és a kulcsszavakat is mutatják, mappaválasztáskor pedig a keresés megmarad (#7217).
+
 ## [1.0.149] - 2026-11-18
 
 - A Mappakezelő OK gombja után a kijelölt képek és a rács görgetési helye megmarad (#7224).
