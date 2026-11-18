@@ -22,6 +22,7 @@ Item {
     property bool slideshowOpen: false
 
     property alias exportDocumentTabStrip: documentTabStrip
+    property alias exportImportSourceDialog: importSourcePanelLoader
     property alias exportPeoplePanel: jobbFiok.peoplePanel
     property alias exportFolderPane: folderPane
     property alias exportRightDrawer: jobbFiok
@@ -43,6 +44,12 @@ Item {
     function ensureTimelineView() {
         timelineViewLoader.betoltve = true
         return timelineViewLoader.item
+    }
+
+    function openImportSourcePanel() {
+        importSourcePanelLoader.active = true
+        if (importSourcePanelLoader.item)
+            importSourcePanelLoader.item.open()
     }
 
     // #8: a diavetítés a főablak önálló vetítési rétege.
@@ -75,6 +82,7 @@ Item {
         property bool betoltve: false
         active: workspace.hostWindow.viewerOpen || betoltve
         visible: workspace.hostWindow.viewerOpen
+                 && !workspace.hostWindow.importPanelOpen
         onActiveChanged: if (active) betoltve = true
         sourceComponent: Component {
             PhotoViewer {
@@ -82,6 +90,7 @@ Item {
                 objectName: "photoViewer"
                 anchors.fill: parent
                 visible: workspace.hostWindow.viewerOpen
+                         && !workspace.hostWindow.importPanelOpen
         // #305: null-őr
         photosModel: hostController ? hostController.photos : null
         // #422: a mentés-parancsok a nézőből — ugyanazok a megerősítések,
@@ -213,6 +222,7 @@ Item {
         // látsszon, se ne foglaljon helyet (a komponens `height`-kötését
         // ezért írjuk felül, nem csak a `visible`-t).
         visible: documentTabStrip.hasProjectTabs
+                 && !hostWindow.importPanelOpen
                  && !hostWindow.viewerOpen && !hostWindow.timelineOpen
         height: documentTabStrip.visible ? documentTabStrip.savMagassag : 0
 
@@ -260,7 +270,8 @@ Item {
         // #1026: a KERET közös kapcsolójára kötve (a `libraryFrameVisible`
         // a `documentTabStrip.libraryActive`-ot hordozza) — így a könyvtár
         // tartalma, az eszközsáv és az alsó sáv EGYSZERRE megy.
-        visible: !hostWindow.viewerOpen && !hostWindow.timelineOpen
+        visible: !hostWindow.importPanelOpen
+                 && !hostWindow.viewerOpen && !hostWindow.timelineOpen
                  && hostWindow.libraryFrameVisible
         orientation: Qt.Horizontal
 
@@ -334,6 +345,7 @@ Item {
 
     MainRightDrawer {
         id: jobbFiok
+        visible: mainSplit.visible
         hostWindow: workspace.hostWindow
         hostController: workspace.hostController
         hostToolbar: hostRefs.toolbar
@@ -393,7 +405,7 @@ Item {
         property bool betoltve: false
         onKelleneChanged: if (kellene) betoltve = true
         active: kellene || betoltve
-        visible: kellene
+        visible: kellene && !hostWindow.importPanelOpen
         sourceComponent: collagePanelKomponens
     }
 
@@ -426,6 +438,25 @@ Item {
         target: hostController
         function onCollageEditRequested(path) {
             hostWindow.openCollageNodeInEditor(path)
+        }
+    }
+
+    // #7206: az Import panel a teljes központi munkaterületet foglalja el.
+    // Halasztva épül fel, és első megnyitás után megmarad, így a forráslista,
+    // a válogatás és az import állapota bezárás/újranyitás között sem vész el.
+    Loader {
+        id: importSourcePanelLoader
+        objectName: "importSourcePanelLoader"
+        anchors.fill: parent
+        z: 500
+        property bool betoltve: false
+        active: workspace.hostWindow.importPanelOpen || betoltve
+        visible: workspace.hostWindow.importPanelOpen
+        onActiveChanged: if (active) betoltve = true
+        sourceComponent: Component {
+            ImportSourceDialog {
+                hostWindow: workspace.hostWindow
+            }
         }
     }
 

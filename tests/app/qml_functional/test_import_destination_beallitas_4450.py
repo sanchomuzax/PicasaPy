@@ -26,7 +26,7 @@ def _kattint(ablak, elem, qt_app):
     )
     kozep = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2))
     QTest.mouseClick(
-        ablak,
+        elem.window(),
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),

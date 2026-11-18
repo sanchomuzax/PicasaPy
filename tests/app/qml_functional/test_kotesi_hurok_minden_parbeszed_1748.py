@@ -225,6 +225,16 @@ _KOTELEZO_VALTOZATOK = {
     "MainWindowLibraryActions": (
         "hostWindow: ({}); hostController: ({}); hostPhotoViewer: ({}); hostToolbar: ({}); hostOperationInfoDialog: ({})",
     ),
+    # #7206: az import- és kilépési kérdés a főablak állapotát és párbeszédeit kapja.
+    "MainWindowImportActions": (
+        "hostWindow: ({ importPanelOpen: false, kilepesMegerositve: false, "
+        "aaKapu: function() { return true }, kilepes: function() {} }); "
+        "hostController: null; exitDialog: ({ askExit: function() {} }); "
+        "importSourceDialog: ({ item: null }); "
+        "messageText: ''; importText: ''; quitText: ''",
+    ),
+    # #7206: az importpanel a főablak állapotából tudja követni a nyitását.
+    "ImportSourceDialog": ("hostWindow: ({ importPanelOpen: false })",),
     "MainWindowPeripheralLayers": (
         "hostWindow: ({}); hostController: ({}); hostRefs: ({})",
     ),

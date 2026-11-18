@@ -2,7 +2,7 @@
 
 A #3463 a főablak paneljeit és a főablak rétegében nyíló párbeszédeket kötötte
 be. A külön ablakos, ALKALMAZÁS-MODÁLIS párbeszédekben (Nyomtatás,
-Mappakezelő, Beállítások, Importálás forrásból, Exportálás weboldalként) a
+Mappakezelő, Beállítások, Exportálás weboldalként) a
 Shift+F1 nem nyitott semmit: a főablak gyorsbillentyűje ott nem él, a súgó
 pedig a főablak rétegében élő `Dialog` — onnan nyitva a modális párbeszéd
 MÖGÉ kerülne, és kezelni sem lehetne.
@@ -11,16 +11,21 @@ A javítás: a párbeszéd saját, ablakszintű Shift+F1-e egy KÜLÖN súgóabl
 nyit (`HelpWindow.qml`), amely a párbeszéd fölött, maga is modálisan áll.
 Ez a fájl a VALÓDI billentyűeseményt küldi a párbeszéd ablakára, és azt méri,
 hogy a súgóablak látszik, a párbeszédhez tartozik (fölötte áll), és a
-párbeszéd saját fejezetét mutatja.
+párbeszéd saját fejezetét mutatja. Az ImportSourceDialog már főablak-panel;
+annak súgóútját külön próba ellenőrzi.
 """
 
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
+from tests.app.qml_functional.test_import_menupont_1615 import (
+    _kattint_menupontra,
+    _megnyit_file_menu,
+)
 
 
 def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
@@ -33,7 +38,6 @@ PARBESZEDEK = [
     ("printDialog", "openPrint", "features/nyomtatas.md"),
     ("folderManagerDialog", "menu:menuToolsFolderManager", "features/mappakezelo.md"),
     ("optionsDialog", "menu:menuToolsOptions", "features/beallitasok.md"),
-    ("importSourceDialog", "menu:menuFileImportFrom", "features/importalas.md"),
     ("webExportDialog", "openWebExport", "features/exportalas.md"),
 ]
 
@@ -117,6 +121,50 @@ def test_f1_a_parbeszedbol_a_tartalomjegyzeket_nyitja(qml_app, qt_app):
     assert _var(qt_app, lambda: _belso() is not None), "az F1 nem nyitott súgót"
     assert _belso().property("topic") == controller.property("helpHomeTopic")
     parbeszed.setProperty("visible", False)
+    qt_app.processEvents()
+
+
+@pytest.mark.parametrize("height_delta", (-5, 0, 5))
+def test_shift_f1_az_importpanelen_a_panel_sajat_fejezetet_nyitja(
+    qml_app, qt_app, height_delta
+):
+    window, _controller, _engine = qml_app
+    window.resize(1280, 800)
+    _megnyit_file_menu(window, qt_app)
+    _kattint_menupontra(window, qt_app, "menuFileImportFrom")
+
+    def _import_panel():
+        panel = window.findChild(QObject, "importSourceDialog")
+        return panel if panel is not None and panel.property("visible") else None
+
+    assert _var(qt_app, lambda: _import_panel() is not None), (
+        "az importpanel nem nyílt meg"
+    )
+    panel = _import_panel()
+    window.setProperty("height", 800 + height_delta)
+    qt_app.processEvents()
+    panel_window = panel.window()
+    panel_window.requestActivate()
+    assert QTest.qWaitForWindowActive(panel_window, 3000)
+    cursor = panel.mapToItem(
+        panel_window.contentItem(),
+        QPointF(panel.width() / 2, panel.height() / 2),
+    ).toPoint()
+    QTest.mouseMove(panel_window, cursor)
+    qt_app.processEvents()
+    QTest.keyClick(
+        panel_window, Qt.Key.Key_F1, Qt.KeyboardModifier.ShiftModifier
+    )
+
+    def _import_help():
+        dialog = panel_window.findChild(QObject, "helpDialog")
+        return dialog if dialog is not None and dialog.property("visible") else None
+
+    assert _var(qt_app, lambda: _import_help() is not None), (
+        "az importpanel Shift+F1 billentyűje nem nyitotta meg a súgót"
+    )
+    assert _import_help().property("topic") == "features/importalas.md"
+    panel.setProperty("visible", False)
     qt_app.processEvents()
 
 

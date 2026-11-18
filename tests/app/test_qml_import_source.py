@@ -18,7 +18,7 @@ from PySide6.QtCore import (
     QStandardPaths,
     Qt,
 )
-from PySide6.QtQuick import QQuickWindow
+from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 from support.halasztott_parbeszed import nyisd_meg
 
@@ -44,7 +44,7 @@ def _click_center(dialog, item, qt_app):
     elemen a kattintás hatástalan, mint a felhasználónál)."""
     centre = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
     QTest.mouseClick(
-        dialog, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
+        item.window(), Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
         centre.toPoint(),
     )
     qt_app.processEvents()
@@ -54,8 +54,9 @@ def _dialog_window(window):
     # #1720: a párbeszéd HALASZTOTT — ha még nem áll, a valódi
     # menüponttal nyitjuk meg (support/halasztott_parbeszed.py).
     nyisd_meg(window, "importSourceDialog")
-    dialog = window.findChild(QQuickWindow, "importSourceDialog")
-    assert dialog is not None, "importSourceDialog nem található Window-ként"
+    dialog = window.findChild(QQuickItem, "importSourceDialog")
+    assert dialog is not None, "importSourceDialog nem található panelként"
+    assert dialog.window() == window, "az importpanel külön ablakban nyílt meg"
     return dialog
 
 
@@ -121,23 +122,20 @@ class TestToolbarEntryPoint:
             "halasztása elromlott"
         )
 
-        QMetaObject.invokeMethod(
-            button, "clicked", Qt.ConnectionType.DirectConnection
-        )
-        qt_app.processEvents()
+        _click_center(None, button, qt_app)
 
         dialog = window.findChild(QObject, "importSourceDialog")
         assert dialog is not None, "az Import gomb nem hozta létre az ablakot"
         assert dialog.property("visible") is True
 
 
-class TestDialogWindow:
-    def test_is_a_standalone_resizable_window(self, qml_app):
+class TestEmbeddedPanel:
+    def test_import_interface_is_embedded_in_the_main_window(self, qml_app):
         window, _controller, _lib, _engine = qml_app
         dialog = _dialog_window(window)
-        assert dialog.property("minimumWidth") is not None
-        assert dialog.property("minimumWidth") >= 400
-        assert dialog.property("minimumHeight") is not None
+        assert isinstance(dialog, QQuickItem)
+        assert dialog.window() == window
+        assert dialog.property("width") >= 400
 
     def test_close_button_hides_the_window(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
@@ -421,7 +419,7 @@ class TestRunImport:
         field = _child(window, "importSourceManualNameField")
         _click_center(dialog, field, qt_app)
         for char in "Nyaralas":
-            QTest.keyClick(dialog, char)
+            QTest.keyClick(dialog.window(), char)
         qt_app.processEvents()
 
         assert field.property("text") == "Nyaralas"
@@ -481,7 +479,7 @@ class TestRunImport:
         field = _child(window, "importSourceManualNameField")
         _click_center(dialog, field, qt_app)
         for char in "../x":
-            QTest.keyClick(dialog, char)
+            QTest.keyClick(dialog.window(), char)
         qt_app.processEvents()
 
         assert field.property("text") == "../x"
