@@ -5170,14 +5170,60 @@ egy korábbi állítást, kimondom.
 | A `tag:`/`címke:` előtag hatása (`[szűrő+0xc]`) | (b) M3 két keresése (`címke:zqkw1` és `zqkw1`) eldönti, van-e mezőszűrés | **nem blokkoló**; addig az előtag csak leválik (mai viselkedés) |
 | Szöveg és film/online/másodpéldány gomb/kor-csúszka kapcsolata (E1) | (b) M6 | **nem blokkoló** a szöveg és a csillag/arc/geocímke gomb ÉS-kapcsolatára |
 
-Egyetlen célzott Ghidra-kör marad (az E8-hoz), a korábbi `0x00682c00` kérés
-helyett:
+#### K2 statikus eredmény (#7196)
 
-- Ghidra-kör kell: 0x00456610 - a `.picasa.ini` és a képmezők szóindexbe írása (17 276 bájt, `caption`, `keywords`, `rating`, `hidden`, `geotag`, `faces`, `filters`, `albumlist` sztringek; a szóbeszúrót `0x004d9aa0`-t hívja): mely mezőből milyen szavak kerülnek az indexbe (a felirat és a kulcsszó szavanként bontva?), és a fájlnév-, kiterjesztés-, EXIF-, dátum- és helyszavak innen vagy más ágból jönnek-e (a `0x00439a80` és a `0x00437550` a következő jelölt). [blokkoló az E8 fejlesztői jegyre, nem blokkoló a #7072 lezárására]
+A `0x00456610`-hoz már volt archivált Ghidra-kimenet; ezt a függvény méretre
+korlátozott helyi disassemblyjével és a bináris-index xrefjeivel ellenőriztem.
+Az alábbi eredmény a közvetlen hívásokat rögzíti. A `0x004d9aa0` kulcsot és
+rekordazonosító-listát frissít; önmagában nem bont szöveget szavakra.
 
-#### Futtatott mérés az eredeti Picasán (a hívó adja fel a Colab-végrehajtón)
+| `.picasa.ini` mező (string-xref) | Utasításút a `0x00456610`-ban | Közvetlen szóindex-hatás | Bizonyítottság |
+|---|---|---|---|
+| `caption` (`0x00c7fad0`) | A mezőág `0x00458946`/`0x00458984`; a teljes mezőértéket a `+0x50` virtuális helyre adja át (`0x00458991`). | Nem a `0x004d9aa0`-t hívja közvetlenül. Helyi szóköz-/szókarakter-darabolás nincs; a callback utáni szóhatár **NINCS MEG**. | megerősített: a közvetlen átadás; nyitott: a callback végső feldolgozása |
+| `keywords` (`0x00c81848`) | A `0x004588d7` a `0x009881d0`-t hívja `0x2c` (vessző) elválasztóval; az eredmény elemei egyenként a `+0x5c` virtuális helyre jutnak (`0x00458904`). | Vesszőnkénti elembontás bizonyított; szóközön belüli vagy további szóhatár **NINCS MEG**, mert a callback célja nincs feloldva. Nincs közvetlen `0x004d9aa0` hívás. | megerősített: a vesszőtagolás; nyitott: a végső szóhatár |
+| `rating` (`0x00c81448`) | Az `atol` a `0x00458a33` címen olvassa az értéket; nem nulla értéknél a `0x00458b1d` hívja a beszúrót. | A `]star` jelölő kerül be (`0x00c811d4`); a numerikus érték nem indexkulcs. | megerősített |
+| `hidden` (`0x00c81860`) | A `yes` ág a `0x00458ee5` címen hívja a beszúrót; a másik ág `0x004da1d0`-t használ. | A `yes` értékhez `]hidden` jelölő tartozik (`0x00c811f4`). | megerősített |
+| `geotag` (`0x00c81874`) | A `0x00459344` körüli ág `sscanf("%lf,%lf")`-fel két koordinátát olvas. | Ebben az ágban nincs közvetlen `0x004d9aa0` hívás; a koordinátaszöveg indexelése nem igazolt. | megerősített: a parse-út; nyitott: downstream hatás |
+| `faces` (`0x00c81884`) | Külön rekordág indul `0x0045944a`-nél. | Ebben az ágban nincs közvetlen `0x004d9aa0` hívás; a rekord későbbi hatása nem igazolt. | megerősített: a külön ág; nyitott: downstream hatás |
+| `filters` (`0x00c80b04`) | Külön szűrőfeldolgozó ág indul `0x00457704`-től. | Ebben az ágban nincs közvetlen `0x004d9aa0` hívás; az effektadatok későbbi hatása nem igazolt. | megerősített: a külön ág; nyitott: downstream hatás |
+| `albumlist` (`0x00c8188c`) | Ha a `param_6` engedi, az értéket a `0x005c2100` kapja a `0x00459984` címen. | Nincs közvetlen `0x004d9aa0` hívás. | megerősített: a közvetlen hívási út |
 
-- Colab-feladat kell: M1-M6, a lépések alább. Minden lépésnél képernyőkép és a megnevezett állapotok szöveges rögzítése; az eredeti Picasa 3.9.141.259, magyar felülettel. A mérések egymástól függetlenek, külön is futtathatók.
+A `0x00456610` négy közvetlen `0x004d9aa0` hívása: `0x00458b1d`
+(`rating` → `]star`), `0x00458ce9` (`star` igen → `]star`), `0x00458ee5`
+(`hidden` igen → `]hidden`) és `0x0045907a` (`screensaver` → `]screensaver`).
+Ez a közvetlen híváslista a disassemblyvel, az archivált dekompilációval és az
+index hívás-xrefjeivel egyezik.
+
+A másik két jelölt sem dönti el a fájlmezők forrását. A `0x00439a80` a
+`0x0043b4f4` körüli rekordgyűjtés után `0x0044bdf0`-t hív, majd a
+`0x0043b51d` címen a `0x004d9aa0`-t; a kulcs dinamikus (`param_1 + 0x1a`),
+jelentése **NINCS MEG**. A `0x00437550` teljes függvénytestében a vesszőtagolás
+után `0x004d9570`-t hív (`0x004378f9`, `0x0043791a`), közvetlen
+`0x004d9aa0` hívása nincs. Ebből nem következik, hogy fájlnév, kiterjesztés,
+EXIF, dátum vagy helyszavak egyik ágban sincsenek: e források hozzárendelése
+**NINCS MEG**.
+
+**Cáfoló kör:** ellenőriztem azt a lehetőséget, hogy a `caption`/`keywords`
+mezőt maga a `0x00456610` bontja általános szavakra. A teljes érintett
+utasításlánc ezt cáfolja: a caption egyben callbacket kap, a keywords csak
+vesszőnként tagolódik. Ez nem cáfolja, hogy a feloldatlan callback később
+szavakra bont.
+
+**M3 futásidejű kiegészítése (#7195):** az eredeti `.picasa.ini`-felirat
+kereshető (`j706/13`), és az ini-kulcsszó szavanként is kereshető
+(`AI image` → `image`, `j706/16`, `j704/40`). Ezzel a két viselkedéssel
+kapcsolatos nyitott mérési pont eldőlt. A komment nem igazol külön IPTC-
+feliratot/kulcsszót, többtagú ini-feliratot, EXIF make/modelt, dátumot vagy
+geotaget; ezek adatforrás-hozzárendelése továbbra is nyitott.
+
+**Bizonyítottság:** a közvetlen mezőágak és híváshelyek megerősítettek a
+disassembly, a Ghidra-kimenet és az xrefek egyezése alapján. A végső
+caption-/keyword-szóhatár, a callbackek szemantikája, valamint a fájlnév-,
+EXIF-, dátum- és helyszavak forrása nyitott; ezekhez M3 szükséges.
+
+#### A futtatott M1-M6 mérés eljárása (#7195)
+
+- A hívó a Colab-végrehajtón futtatta a #7195 részfeladatait. Az alábbiak a reprodukciós tervet őrzik; a mért és nyitva maradt eredmények a szakasz végén, a „Mért eredmény (#7195) és jegytörzsek” alatt vannak. Minden lépéshez képernyőkép és a megnevezett állapotok szöveges rögzítése tartozik; az eredeti Picasa 3.9.141.259 magyar felülettel.
 
 - **M1: a bal hasáb és a nézethelyzet a keresés után (E2, E9 mellékkérdés).**
   Előkészítés: három mappa (`AA` 6 kép, `BB` 6 kép, `CC` 3 kép); az `AA` és a `CC`
@@ -5232,24 +5278,20 @@ helyett:
 
 ### Zárási döntés
 
-**A #7072 mint vizsgálati jegy lezárható**, ha a hívó két követő jegyet felvesz;
-mindkettő megnevezett és felvehető (nem parkolás):
+**A #7072 vizsgálati jegyhez szükséges K1 és K2 bizonyíték rendelkezésre áll.**
+A K1 eredeti futásidejű mérése a #7195 Colab-feladataiból származik; a K2
+statikus eredménye a fenti „K2 statikus eredmény (#7196)” szakasz. Az új
+fejlesztői jegytörzsek és az egyező viselkedések a #7195-ös összefoglalóban
+szerepelnek. Nyitott marad az E1 második üteme (M6 hiányzik), az E8 nem mért
+mezőforrásai, valamint a lejjebb felsorolt M1/M4 részletkérdések; ezek külön
+követő munkák, nem a két mérési kör függő eredményei.
 
-- **K1: „A keresés futásidejű felületi mérése az eredeti Picasán (M1-M6)”**: a hívó
-  adja fel a Colab-végrehajtón; nem vár a felhasználóra. Eredményére vár az E2 és
-  az E11 jegytörzs, az E1 második üteme (E1b) és a `tag:` előtag hatása.
-- **K2: „A keresőindex mező-hozzárendelése”**: a fenti egyetlen Ghidra-kör
-  (`0x00456610`) és az M3. Eredményére vár az E8 fejlesztői jegytörzs.
-
-Az egyetlen akadály a teljes paritásig a K1 és a K2 eredménye; a #7072 lezárását
-egyik sem akadályozza, mert a jegy kérdése (a keresés belépő pontjai, viselkedése
-és hatása az eredetiben) a statikus olvasással és a referenciaképpel megválaszolt,
-a megmaradt tételek pedig megnevezett mérések vagy nem látható viselkedést érintő
-(nem blokkoló) kérdések.
-
-A lezáráskor megmaradó fejlesztői jegytörzsek. Most felvehető: E1 (első ütem),
-E3, E6/E7, E10. Mérés után: E2 (K1), E11 (K1), E8 (K2). Visszavonva: E9. Nem kell
-jegy: E5 (kész, #7081).
+**A #7195-ből négy fejlesztői jegytörzs készíthető elő:** (1) Esc a keresőmezőben;
+(2) keresésből kilépés és bal hasáb; (3) javaslatlista; (4) `tag:` mezőszűkítés.
+Az E6/E7 (`ÉS`, `-` kizárás, előtag-illesztés), a `.` szóhatár, a fájlnév,
+felirat, kulcsszó és mappanév kereshetősége egyezik, ezért ezekhez nincs új jegy.
+Az E1 második üteméhez és az instabil, pusztán kizáró kereséshez elvárást nem
+vezetünk be.
 
 **E1: a keresőszöveg és a csillag, az arc és a geocímke szűrő együtt**
 
@@ -5281,21 +5323,10 @@ Kész, ha:
 - az ékezetes betű (`á`, `ő`, `ű`) a rácson és a mappalistán sem ugrik a mezőbe;
 - a `Ctrl`-os és az `Alt`-os billentyűk nem indítanak keresést.
 
-**E6/E7: a keresőszavak külön, ÉS kapcsolattal, kizárással és előtag-egyezéssel**
-
-Eredeti: a `0x006c0fc0` pozitív és kizárt (`-` előtagú) szólistába bontja a szöveget; a `0x0043f9a0` a pozitív szavak találati bitképeit metszi (`0x00413290`), a kizárt szavak képeit törli az eredményből; az egyezés a szó elejére szól (`0x004dc690` a keresőszó hosszával hasonlít). A `tag:`/`címke:` előtagot a `0x006622aa` levágja.
-
-Nálunk: a tisztítás, az előtag levágása és a szóhatár-bontás kész (`index/queries.py:21-50`, #7081); a szavak viszont egyetlen idézett frázisba kerülnek (`queries.py:555`), a `-` elválasztó, előtag-egyezés nincs.
-
-Teendő: a szavak külön, egymástól függetlenül (ÉS) kerüljenek a lekérdezésbe, a `-` előtagú szó kizárás legyen, az egyezés a szó elejére szóljon (a mappanév-ág is szavanként). A `címke:` előtag mezőszűrő hatását nem találgatjuk (K1); addig az előtag csak leválik, a mezőkészlet nem változik.
-
-Kész, ha:
-
-- `zqa zqb` a mindkét szót tartalmazó képet adja, sorrendtől és távolságtól függetlenül;
-- `zqa -zqb` kizárja a `zqb` szót tartalmazó képeket;
-- `zqa` megtalálja a `zqab...` szóval kezdődő képet, a szó belsejében álló részletre nem talál;
-- a PicasaPy mezőkészlete (név, felirat, kulcsszó, mappanév, szín) nem csökken, a `color:` keresés változatlan;
-- a találatok az M3 mért eredményeivel egyeznek.
+**E6/E7: a korábbi fejlesztői tervezetet visszavonja a #7193 és a #7195.**
+A szavankénti ÉS, a vegyes keresésben használt `-` kizárás, az előtag-egyezés
+és a szóhatárbontás jelenlegi állapota egyezik az eredeti méréssel; lásd a
+„Mért eredmény (#7195) és jegytörzsek” egyezési sorát. Új jegytörzs nem kell.
 
 **E10: a rejtett találatok ne torzítsák a darabszámot**
 
@@ -5312,33 +5343,16 @@ Kész, ha:
 - a kapcsoló átváltása után a számok frissülnek;
 - a hasáb, a sáv és a rács ugyanazt a látható halmazt mutatja.
 
-**E2: a keresés előtti nézethelyzet visszaállítása (K1 után vehető fel)**
+**E2: a keresés előtti nézethelyzet visszaállítása.**
+A K1 előtti tervezetet a #7195 mérése felülírta: az X és a „Back to View All”
+is visszaállítja a keresés előtti mappát és képet; a második `Ctrl+F` mért
+viselkedése eltér. A friss jegytörzs a „Mért eredmény (#7195) és jegytörzsek”
+2. pontjában van.
 
-Eredeti: az első nem üres szövegváltozáskor a program elmenti a bal hasáb kijelölt sorát, a kijelölt vagy aktuális kép sorszámát és egy jelzőbájtot (`0x0065ba5c`-`0x0065bb0c`); a „Back to View All” és a második `Ctrl+F`/`F3` visszaállít (`0x005d47e0(1, 1)` -> `0x005fa430`), az X nem (`0x005d47e0(1, 0)`).
-
-Nálunk: nincs mentett állapot (`grep` a kereső- és szűrőkódban találat nélkül); a kilépés a `clearFilter()`-rel az aktuális mappa újratöltése (`controller_filter_mixin.py:153-165`), a gépelés törli a kijelölést (`MainWindowToolbar.qml:82-88`).
-
-Teendő: az M1 (K1) eredménye szerint: mentés az első szövegváltozáskor, visszaállítás a két kilépő úton, az X maradjon törlő út. A mentett mezők és az útvonalak ismertek, a visszaállított látható állapot (kijelölés, görgetés, fókusz, kor-csúszka) az M1-ből jön.
-
-Kész, ha:
-
-- az M1 a), b), c) és d) soraiban mért állapotot adja a „Back to View All” és a második `Ctrl+F`/`F3`;
-- az X nem állítja vissza a keresés előtti állapotot;
-- keresés nélkül egyik kilépő út sem változtatja a kijelölést.
-
-**E11: a javaslatlista szósorai (K1 M4 után vehető fel)**
-
-Eredeti: `ai` begépelésekor a legördülő tíz szósora darabszámmal jelenik meg (`ai (332)`, `ai2 (2)`...), darabszám szerint csökkenően, előtag-egyezéssel; a kirajzoló négy ikontípust ismer (címke, album, mappa, képtalálat: `0x0077e2e0`, `0x0077eee0`); a bevitt szöveget szóhatáron emeli ki.
-
-Nálunk: csak mappa- és albumjavaslat van (`index/queries.py:605-`, `search_controller.py:118-`, `SearchSuggestions.qml:16,90,96`).
-
-Teendő: az M4 mérése szerint felvenni a szósorokat (és a mérésben igazolt további típusokat), a sorrenddel, a felső korláttal és a kiemeléssel. Ha új felületi szöveg kerül be, a fordítás minden nyelvre kell (a `picasapy_*.ts` fájlok mindegyikébe), nem csak magyarra.
-
-Kész, ha:
-
-- az M4 szerinti sorok, sorrend és felső korlát jelenik meg;
-- a kiemelés a szóhatárt és a kisbetű-érzéketlenséget követi;
-- minden új felületi szöveg minden nyelven le van fordítva.
+**E11: a javaslatlista.**
+A K1 előtti tervezetet a #7195 M4 mérése pontosította; a friss, korlátozott
+jegytörzs a „Mért eredmény (#7195) és jegytörzsek” 3. pontjában van. A nem
+mért szó-/albumsor-kattintás és a nyitott sorrendi részlet nem kerül elvárásba.
 
 **E8: a kereshető képmezők bővítése (K2 után vehető fel)**
 
@@ -5352,6 +5366,114 @@ Kész, ha:
 
 - minden felvett mező egyedi próbaértékkel, az eredetin mérve igazolt;
 - találgatott mező nincs.
+
+#### Mért eredmény (#7195) és jegytörzsek
+
+Az eredeti Picasa 3.9.141.259 futásidejű mérését a Colab-végrehajtó végezte
+(`picasa-colab-jobs` #702-#709). A feliratot és a kulcsszót `.picasa.ini`-ből
+adták meg, majd újraindították a Picasát. Az alábbi mért megfigyelések és a
+PicasaPy forráskódjának összevetése a két független bizonyítékút; a névvel
+azonosított M1-M4 mérési lépések és naplósorok a táblában szerepelnek.
+
+##### Mért állítások és jelenlegi kódbeli viselkedés
+
+| Funkció | Eredeti Picasa (mérés; bináris cím) | PicasaPy a főágon | Eredmény |
+|---|---|---|---|
+| `Esc`, nyitott javaslatlista | Csak a lista zárul be; a mező és a keresés megmarad (M2, `j707/32`, `j708/19`; a szerkesztő útja a #7072-ben: `0x0077d380`, `0x0060f1b0`, `0x00610040`). | A `MainToolbar.qml:540-550` és `MainWindowToolbar.qml:72-81` csak a látható listát zárja. | **Egyezik.** |
+| `Esc`, zárt lista, aktív keresés | Törli a keresőmezőt és kilép a keresésből; a fókusz a mezőben marad (M2, `j703/25`, `j703/27`; a fenti szerkesztő/bázisosztály címek). | A `MainToolbar.qml:540-550` nem ad zárt listás műveletet; a `SearchGridKeys.qml:54-69` Esc-kezelője a rács billentyűútja. | **Eltér:** nincs a keresőmezőre kötött megfelelő kilépő ág. |
+| `Delete` a mezőben | Szokásos szerkesztés, a kurzor utáni karakter törlése (M2, `j703/11`). | A keresőmező nem írja felül a `Delete`-et; a szövegszerkesztés natív útján marad (`MainToolbar.qml:530-551`). | **Egyezik.** |
+| Kilépés és előzményállapot | X és „Back to View All” után a keresés előtti mappa és kép kijelölt, a kép látható; a pontos előző görgetés nem áll vissza (M1, `j707/16`, `j707/24`). Másik mappára váltás után is az eredeti mappa és kép tér vissza (M1, `j709/38`). A mentés és visszaállítás útjai: `0x0065ba5c`-`0x0065bb0c`, `0x005d47e0`, `0x005fa430`. | Gépeléskor törlődik a kijelölés (`MainWindowToolbar.qml:82-87`); a `clearFilter()` az aktuális mappát tölti újra (`controller_filter_mixin.py:199-212`); keresés közbeni mappaválasztás felülírja az aktuális mappát (`search_controller.py:138-163`); a „Back to View All” is törli a kijelölést (`MainLibraryCanvas.qml:59-73`). | **Eltér:** nincs keresés előtti mappa/kép mentés és visszaállítás. A pontos görgetési pozíciót az eredeti sem állítja vissza. |
+| Keresés alatti bal hasáb | A találatos mappákra szűkül; az `Albums` és `People` kategória csak találatnál jelenik meg, az `Other Stuff` nem évszám-csoportként (M1, `j707/14`, `j708/16`). A keresés fő útja `0x0065b840`; a `]search` felirat címe `0x004ad430`. A kategóriafeltétel futásidejű, **mérve, cím nélkül**. | A találatos mappákat `search_controller.py:124-129` és `folder_list_model.py:209-228` mutatja; az Album és People elemek külön UI-adatúton jelennek meg (`FolderPaneContent.qml:34-74`, `AlbumsSection.qml:72-115`). | **Részben egyezik:** a mappákra szűkítés és az évszám-elválasztó nélküli találati lista egyezik; a mért kategóriafeltételt külön kezelni kell. |
+| A keresés előtti mappa nincs a találati listában | Nincs kijelölt mappasor, ha az előző mappa nem találatos (M1, `j707/14`). | A keresési modell csak a találatos mappák sorait tölti (`folder_list_model.py:209-228`). | **Egyezik** a mért M1-helyzetben. |
+| `Ctrl+F` kétszer, nyitott listával | Nem történik művelet; a fókusz a mezőben, a lista nyitva marad (M1, `j709/18`). | Aktív keresésnél a második `Ctrl+F` kilép (`SearchGridKeys.qml:22-34`; gyorsbillentyű-út: `MainKeyboardShortcuts.qml:39-53`). | **Eltér.** |
+| Javaslatlista: típusok, sorrend, felső korlát | 10 sor; a mappa elöl, utána szó-javaslatok; a sorokon azonos ikon (M4, `j708/16`). A szósorok belső sorrendje nem dőlt el. | Alapértelmezett korlát 8; az albumok előzik meg a mappákat; szójavaslat nincs (`index/queries.py:660-711`, `search_controller.py:165-176`). | **Eltér.** A 10 sor, mappa-előrehelyezés és mért szósorok indokoltak; további sorrendi szabály nem. |
+| Javaslatlista: mappasor kattintása | A név és egy záró szóköz kerül a keresőmezőbe, és a mappa kijelölődik (M4, `j708/28`); az eseménykezelő címe az indexben nem azonosítható, **mérve, cím nélkül**. | A `MainWindowCommands.qml:756-760` törli a keresést és közvetlenül mappára lép. | **Eltér.** |
+| Mezők és szavak | Az ini-felirat kereshető (`j706/13`); az ini-kulcsszó szavanként is (`AI image` → `image`, `j706/16`, `j704/40`); a fájlnév a kiterjesztéssel (`jpg`, 23 kép; `j702/34`, `j704/34`), a mappanév (`j708/40`), az előtag (`j706/19`, `j708/23`), a `.` szóhatár (`j706/37`), az ÉS és a sorrendfüggetlenség (`j706/25`, `/28`), valamint a vegyes `-` kizárás (`j706/31`) igazolt. A `tag:` leválik és kulcsszóra szűkít (`tag:zqcap1` = 0, `tag:zqkw1` = 2; `j708/31`, `j706/40`). | Az FTS mind a fájlnevet, ini- és fájlfeliratot/kulcsszót tartalmazza (`index/schema.py:121-125`); a normalizálás előtagot választ le és pontnál bont (`index/queries.py:21-70`); kereséskor a pozitív szavak külön prefix-ÉS lekérdezések, a `-` szavak kizártak (`index/queries.py:559-627`); a mappanevet külön ág keresi (`index/queries.py:575-605`). A `tag:` is csak leválik, mezőszűkítés nélkül (`index/queries.py:21-37`, `515-556`). | **Egyezik** az általános mező-/szóillesztés; **eltér** a mért `tag:` kulcsszó-szűkítés. |
+
+PicasaPy-oldali fájl:sor hivatkozásokat a fenti sorok adják meg. A javaslatlista
+mappasor-kattintásához és a bal hasáb külön `Albums`/`People` feltételéhez a
+célzott `string_xrefs`-keresés nem adott külön kezelőcímet; ezeket a táblában
+`mérve, cím nélkül` jelöltem, nem állítom, hogy a binárisban nincs ilyen kód.
+
+##### Jegytörzsek
+
+**1. Esc a keresőmezőben**
+
+Eredeti: a keresőmező szerkesztőútja (`0x0077d380`, `0x0060f1b0`, `0x00610040`; #7072) M2-ben mérve: nyitott listánál az Esc csak a listát zárja (`j707/32`, `j708/19`); zárt listás, aktív keresésnél törli a szöveget, kilép a keresésből, a fókuszt a mezőben hagyja (`j703/25`, `j703/27`). A `Delete` szokásos szerkesztés (`j703/11`).
+
+Nálunk: nyitott listánál az út egyezik (`MainToolbar.qml:540-550`, `MainWindowToolbar.qml:72-81`); zárt listás Esc-kezelés nincs a keresőmezőn (`MainToolbar.qml:540-550`), a rács kezelője külön út (`SearchGridKeys.qml:54-69`).
+
+Teendő: a keresőmező Esc-kezelése kövesse a mért két állapotot: nyitott listánál zárja a listát és őrizze meg a keresést; zárt listás aktív keresésnél ürítse a mezőt, lépjen ki, és tartsa a fókuszt a mezőn.
+
+Kész, ha:
+
+- nyitott javaslatlistán az Esc csak bezárja a listát, a szöveg és a találati állapot változatlan;
+- zárt lista és aktív keresés mellett az Esc törli a szöveget, kilép a keresésből, a fókusz a mezőben marad;
+- a `Delete` továbbra is a kurzor utáni karaktert törli.
+
+**2. Kilépés a keresésből és a bal hasáb találati állapota**
+
+Eredeti: az első nem üres kereséskor a mappa-/képkijelölés mentési útja `0x0065ba5c`-`0x0065bb0c`; a kilépéshez `0x005d47e0` és `0x005fa430` tartozik (#7072). M1 szerint az X és a „Back to View All” a keresés előtti mappát és képet állítja vissza, a kép látható (`j707/16`, `j707/24`); mappaváltás után is a keresés előtti mappa és kép áll vissza (`j709/38`). A pontos görgetési pozíció nem áll vissza. A találatos mappákra szűkítés a `0x0065b840` keresési út mellett M1-ben mérve; az `Albums`/`People` találatfeltétel külön kezelőcíme nincs meg a statikus indexben.
+
+Nálunk: a gépelés törli a kijelölést (`MainWindowToolbar.qml:82-87`); a kilépő `clearFilter()` az aktuális mappát tölti újra (`controller_filter_mixin.py:199-212`); a keresés közbeni mappaváltás felülírja az aktuális mappát (`search_controller.py:138-163`); a „Back to View All” törli a kijelölést (`MainLibraryCanvas.qml:59-73`). A találatos mappák listája már szűkül (`search_controller.py:124-129`, `folder_list_model.py:209-228`), de az Album/People kategória külön UI-útját a keresési találatok nem vezérlik (`FolderPaneContent.qml:34-74`, `AlbumsSection.qml:72-115`). A második `Ctrl+F` keresésből kilép (`SearchGridKeys.qml:22-34`), míg az eredetin M1-ben nyitott lista mellett nem történt semmi (`j709/18`).
+
+Teendő: az első keresés kezdetekor őrizzük meg a kijelölt mappát és képet; az X és a „Back to View All” állítsa vissza ezeket akkor is, ha keresés közben másik mappára váltottunk. A bal hasáb a találatos mappákat mutassa, és az `Albums`/`People` találati sorokat csak akkor jelenítse meg, ha azokhoz van találat. A második `Ctrl+F`-et a mért, nyitott listás állapotban ne alakítsuk kereséskilépéssé. A görgetés pontos visszaállítása ne legyen követelmény.
+
+Kész, ha:
+
+- X és „Back to View All” után a keresés előtti mappa és kép kijelölt, a kép látható;
+- a mappaváltás nem cseréli le a keresés előtti visszaállítási állapotot;
+- a bal hasábban csak találatos mappák szerepelnek, az `Albums` és `People` találati sorai csak egyezésnél látszanak, és a találati mappák között nincs évszám-csoportosítás;
+- a keresőmezőben nyitott javaslatlista mellett a második `Ctrl+F` nem léptet ki a keresésből;
+- a pontos előző görgetési helyzetet a megvalósítás nem ígéri.
+
+**3. Javaslatlista korlátja és mappasorának kiválasztása**
+
+Eredeti: M4-ben legfeljebb 10 sort mértek, a mappasor a szó-javaslatok előtt állt (`j708/16`); mappasorra kattintáskor a mappanév és záró szóköz került a mezőbe, a mappa kijelölődött (`j708/28`). A rajzoló/ikon címek a #7072-ből: `0x0077e2e0`, `0x0077eee0`. A kattintási kezelőcímet az index-keresés nem azonosította: `mérve, cím nélkül`.
+
+Nálunk: 8 a lekérdezés alapértelmezett korlátja, a sorrend album aztán mappa, és szó-javaslat nincs (`index/queries.py:660-711`, `search_controller.py:165-176`). A mappasorra kattintás törli a keresést és mappára lép (`MainWindowCommands.qml:756-760`).
+
+Teendő: a listát legfeljebb 10 sorra korlátozzuk, az eredetivel mért mappa-előrehelyezéssel és szó-javaslatokkal; mappasor kiválasztásakor a mappanév kerüljön a mezőbe záró szóközzel, maradjon aktív a keresés, és a bal hasáb válassza ki a mappát.
+
+Kész, ha:
+
+- az M4-ben igazolt tíz soros felső korlát érvényesül és a mappajavaslat a szó-javaslatok előtt áll;
+- a javaslatlista legalább a mért szó- és mappasorokat mutatja, 10 sornál nem többet;
+- a mért mappa- és szójavaslat-sorok az eredetivel egyező ikont használják;
+- mappasor választása a mezőbe írja a mappanevet és a záró szóközt, aktív keresésben tart, és kijelöli a mappát;
+- nem rögzítünk nem mért holtverseny-szabály, kis-/nagybetűsorrend vagy darabszám-szabályt.
+
+**4. A `tag:` előtag kulcsszóra szűkít**
+
+Eredeti: a `0x006622aa` leválasztja a `tag:` előtagot (#7072); M3 igazolta, hogy utána a keresés kulcsszóra szűkül: `tag:zqcap1` nulla, `tag:zqkw1` két találat (`j708/31`, `j706/40`). A `címke:` mérését a beviteli hiba miatt nem vesszük elvárásnak (`j708/34`).
+
+Nálunk: az `index/queries.py:21-37` a `tag:` és `címke:` előtagot egyaránt eltávolítja, majd a `search_photos()` az általános FTS-mezőkön keres (`index/queries.py:515-556`, `schema.py:121-125`).
+
+Teendő: a mért `tag:` előtag csak a kulcsszómezőben keressen; a sima lekérdezés globális mezőkészlete maradjon változatlan. A `címke:` lokalizált előtagot ne tekintsük igazoltnak ebből a mérésből.
+
+Kész, ha:
+
+- `tag:zqkw1` csak az `zqkw1` kulcsszóval jelölt képeket adja;
+- `tag:zqcap1` nem talál feliratban vagy fájlnévben szereplő `zqcap1` értékre;
+- előtag nélkül a név, felirat, kulcsszó és mappanév keresése továbbra is működik;
+- a `címke:` viselkedéshez nem kerül be nem mért elvárás.
+
+##### Egyező viselkedések és elvárás nélkül hagyott mérés
+
+- **Egyezik (#7193 / M3):** külön szavak közötti ÉS, sorrendfüggetlenség, vegyes `-` kizárás, előtag-egyezés, `.` szóhatár, fájlnév a kiterjesztéssel, ini-felirat/-kulcsszó, mappanév és a szó belseji részlet elutasítása. Ezekhez nincs jegytörzs.
+- **Nincs elvárás:** a pusztán kizáró keresés darabszáma instabil volt (`j702/28`, `j704/31`, `j706/34`); erre nem írunk specifikációt.
+- **Nyitott:** EXIF make/model, dátum, IPTC-felirat/-kulcsszó, idézőjeles frázis, `címke:` és ékezetmentes keresés (`j708/34`, `j708/37` vagy hiányzó minta); M1 d) kijelölés utáni kilépés, kor-csúszka, M1 e) csúszkás változat, Esc utáni görgetés többmappás állapotban; M4 szósor-/albumsor-kattintás, kis-/nagybetű és a `(37)` darabszám eredete; az M6 szűrőgombok és kor-csúszka kombinációi.
+
+##### A két független út és a cáfoló kísérlet
+
+- **A - eredeti futásidejű mérés:** M1-M4, a fenti `j702`-`j709` naplósorokkal. Ez adja az eredeti Picasa tényleges fókusz-, kijelölés-, találat- és javaslatállapotát.
+- **B - PicasaPy-forrás:** külön végigkövetve a keresőmező QML-billentyűútját, a keresővezérlő és indexlekérdezés útját, a javaslatlistát és a mappasor `onChosen` ágát (a fenti fájl:sor hivatkozások). Az ágakból következik a 8-as korlát, az album-előresorolás, a minden mezőre érvényes `tag:` és a mentett előzményállapot hiánya.
+- **Egyezés:** a nyitott listás Esc, a `Delete`, a találatos mappákra szűkítés, az M3 által mért általános mező-/szóillesztések mindkét útja egyezik; a zárt listás Esc, a kilépés/visszaállítás, a javaslatlista és a `tag:` eltérései egymástól függetlenül látszanak a mérésben és a kódban.
+- **Cáfoló kísérlet:** megvizsgáltam, hogy a keresőmező zárt listás Esc-je vagy a visszaállítás egy másik UI-ágon mégis megvalósul-e. A `MainToolbar.qml:540-550` zárt lista esetén nem kezeli az Esc-et; a rács saját `SearchGridKeys.qml:54-69` útja nem állít vissza előző mappát/képet. Az X/Back ágak a kijelölést törlik, a mappaválasztó pedig felülírja az aktuális mappát (`MainWindowToolbar.qml:89-102`, `MainLibraryCanvas.qml:59-73`, `search_controller.py:138-163`). A cáfoló ugyanazt a kódút-mércét teljesíti, mint az első olvasás: nem találtam alternatív mentési vagy mező-Esc-kezelőt; az eltérések fennmaradnak.
+
+**Bizonyítottság:** a mért és a PicasaPy-oldali viselkedés-összevetés megerősített, mert a két külön út az egyező és eltérő állításokra ugyanazt adja. A kattintásra vonatkozó eredeti eseménykezelő címe nincs meg, ezért azt külön `mérve, cím nélkül` jelöltem; új Ghidra-kör nem szükséges a négy jegytörzs elkészítéséhez.
+
+**Nyitott:** a fenti, „elvárás nélkül hagyott mérés” sorai; a megadott bizonyítékok alapján újabb bináris cím-kérés nem indokolt.
 
 ## #7083: Az importálás teljes folyamata az eredeti Picasával összevetve
 
