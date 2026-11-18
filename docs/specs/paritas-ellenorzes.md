@@ -506,17 +506,17 @@ Nyitott kérdések mérlege (az „Az eddig nyitott tételek eldöntése” táb
 
 ### #7235-kiegészítés (2026-11-18): Tags-panel, OneUp-kapu és FileTagger
 
-#### #478 — Tags-panel építő 0x00639c00
+#### #478 - Tags-panel építő 0x00639c00
 
 A 0x00639c00 dekompiláció (2026-11-18-koteg-466-495.txt:2724-2875) a Preferences/quicktags::enable_recents értéket olvassa, meghívja a 0x00437380 listafeltöltőt param_1+0xb0 argumentummal (a panel objektumán +0x2c0), majd a `taglist` erőforrásból panelkomponenseket hoz létre. A TagPanel::vftable 32. bejegyzése (byte-eltolás +0x80) erre a függvényre mutat. Ez a hívási szerződés két külön adatutat igazol: a builder-kódot és a vtable-adatot. Azt nem dönti el, hogy az építő csak panel-létrehozáskor vagy minden megjelenítéskor fut-e. A 0x009ccc50 xrefjei (0x0040bf70, 0x009c3860) és az erőforrás-betöltő regisztrációs hurok nem azonosítják a megjelenítési életciklust. Nyitott következő cím: 0x009ccc50 hívóinak és a Tags-panel láthatósági/callback útjának célzott feltárása. PicasaPy TagsPanel.qml és keywords_controller.py:283-506 külön kezeli a panelt és a quick-tag adatokat; a futási gyakoriság összevetése még nyitott.
 
-#### #479 — 0x0057c3b0, +0x9c, +0x34a4, OneUp Ctrl+K
+#### #479 - 0x0057c3b0, +0x9c, +0x34a4, OneUp Ctrl+K
 
 A 0x0057c3b0 (2026-11-18-koteg-466-495.txt:2876-2912) a window+0x16c panel-listán megy végig, kihagyja a panel+0x20c != 0 elemeket, ytBasePanel-típusra castol, majd a +0x9c virtuális metódust kérdezi. Független RTTI/vtable-adat és nyers utasítás alapján a ytBasePanel alapcél 0x004bdeb0 hamis (xor al,al; ret); a CollagePanel és MakeMoviePanel célja 0x007a5240 igaz (mov al,1; ret).
 
 A +0x34a4 eltolású hivatkozások teljes .text-pásztázása a paszta.py memóriakapuján keresztül 67 találatot adott; releváns író a 0x00564c6e (mov [ebp+0x34a4], ebx), az olvasók a menüágakban szerepelnek. OneUp saját PreviewHandler-e (0x005c24c0) a WM_CHAR-útban Ctrl nélküli karaktereket kezel, ezért a saját karakterkezelője nem bizonyít Ctrl+K parancsot. A főablak 0x005e60d0 kezelőjében külön Ctrl+K ág van, amely a 0x0065ab00-ra vezet; a teljes képernyős saját kezelő és a globális út egymásra hatása továbbra is külön kérdés. Következő vizsgálat: a meglévő 0x005e60d0 kimenet globális útjának összevetése a OneUp 0x005c24c0 visszatérési/üzenet-útjával, és a 0x00564c6e pontos menüállapotának megnevezése.
 
-#### #480 — FileTagger/KeywordJob 0x00496d80
+#### #480 - FileTagger/KeywordJob 0x00496d80
 
 A 0x00496d80 (2026-11-18-koteg-466-495.txt:2913-3115) a ytAsyncQueue<KeywordJob> worker-ciklusa; a 0x00c82960 vtable harmadik célja ez a függvény. A 0x00496f08 indirekt hívása a sorból kivett job-objektum vtable +0x64 slotját hívja. A konkrét implementáció és az általa írt IPTC/XMP/.picasa.ini mezők ebből a ciklusból nem látszanak. A 0x0041ba40 ürítő és 0x00455e30 várakozó címek nem queue-producerek. A worker xrefjei a sor feltöltését sem azonosítják. Nyitott következő célok: a nested KeywordJob vtable +0x64 konkrét célja, a sorba állító hívások és a job példányosítási pontjai. A PicasaPy keywords_controller.py:183-206 címkefolyamatot ír le, de az eredeti háttérmunka írói még nincsenek hozzárendelve.
 
@@ -804,15 +804,15 @@ Nem blokkoló, külön nem jegyzett tételek (ebben a körben eldöntve): a `Scr
 
 ### #7235-kiegészítés (2026-11-18): AlbumNotification, albumíró és képernyővédő-sor
 
-#### #481 — AlbumNotificationManager / AlbumSync
+#### #481 - AlbumNotificationManager / AlbumSync
 
 A 0x00c7f540 AlbumNotificationManager::vftable második bejegyzése 0x004d3080; a 0x004d3080 dekompiláció (2026-11-18-koteg-466-495.txt:3116-3170) zárolás alatt másolja az értesítési adatokat, majd 0x004d3660-at hív. A 0x00c7f580 AlbumSync::vftable második bejegyzése 0x00556ff0 (+0x8). A korábbi 0x00556ff0 kimenet (2026-11-16-koteg-438-465.txt:1537-1694) album-metaadat-listát jár be és callbackeket futtat, de nem bizonyítja a hívás szálát vagy időzítését. A 0x00556920 xrefjei (0x004039f0, 0x00576a20) a sorba tétel környezetét adják, nem a végrehajtási időpontot. Nyitott következő címek: 0x004d3010, 0x004d31c0, 0x004d3150, 0x004d3260, 0x00556920 hívói, valamint a 0x00556ff0 hívásának timer-/kilépési útja. A jegyszöveg e pont után csonka (0x00…), ezért a hiányzó további hívólistát nem pótolom.
 
-#### #482 — album-INI író 0x0052a810
+#### #482 - album-INI író 0x0052a810
 
 A 0x0052a810 dekompiláció (2026-11-18-koteg-466-495.txt:3171-3367) új [.album:token] szakaszban ebben a sorrendben ír: name, token, description, location, date, majd a dinamikus mezőpárokat. A kulcsnevek PE-adatainak olvasása (0x00c7e8d0, 0x00c7e8d8, 0x00c7e8f8 és a literálok) a hívási sorrendtől külön ellenőrzi a megnevezést. A 0x0052b220 a PicasaIniManager::vftable +0xc slotja, és 4245 bájtos fájlrészt kezel, de e köteg nem tartalmazza a törzsét vagy hívóját. A 0x005578e0 a 0x00556a60 és 0x00556ff0 útból is hívódik; a mappalista forrása és sorrendje nem következik a hívásból. A 0x0052cc80/0x0052ca50 tokenútjának hívója (0x0052c350) szintén külön feloldandó. A meglévő 0x0052c350 dekompiláció már megadja a két segéd hívási feltételeit; nyitva marad a 0x0052b220 (+0xc slot) hívója/szerepe, a 0x005578e0 mappalista-forrása/sorrendje és a két tokensegéd közvetlen transzformációja. A feladat csonka vége a token kivételének/hozzáadásának pontos műveletét nem tartalmazza.
 
-**Eredeti / PicasaPy / teendő — új album-INI kulcssorrend.**
+**Eredeti / PicasaPy / teendő - új album-INI kulcssorrend.**
 
 | Eredeti (bináris 0x0052a810) | PicasaPy (fájl:sor) | Teendő |
 |---|---|---|
@@ -820,7 +820,7 @@ A 0x0052a810 dekompiláció (2026-11-18-koteg-466-495.txt:3171-3367) új [.album
 
 **Kész, ha:** egy új, kitöltött album után a .picasa.ini [.album:token] szakaszának első öt mezője pontosan name, token, description, location, date sorrendben jelenik meg, az értékek változatlanok; az üres mezők/zenekulcsok viselkedését ez a sor nem módosítja; meglévő album tulajdonságainak mentése és más szakaszok sorrendje változatlan.
 
-#### #483 — időzített screensaver-sor 0x004a82d0
+#### #483 - időzített screensaver-sor 0x004a82d0
 
 A 0x004a82d0 (2026-11-18-koteg-466-495.txt:3368-3477) az eltelt időt a DAT_00cf3b28 értékével veti össze. A PE-adat 0x00cf3b28 négy bájtja 00 00 20 41, azaz little-endian IEEE-754 10.0; ez a 10 másodperces küszöböt a dekompilációtól külön igazolja. Sorkiürítéskor a rekord 5. mezőjének 1 értéke a 0x004753b0-hoz és a #db3\\saverlist.txt ]screensaver bejegyzéséhez vezet; a 0 érték a DAT_00c811d4 karakterláncot írja. A korábbi #7012-kiegészítés szerint a queue a CAlbumState +0x17c mezőjű ytList<TokenBackup>; a 0x004a51f0 fűz bele, 1-es típussal a ]screensaverhez, 0-s típussal a ]starhoz, és a 0x004a82d0 üríti.
 
@@ -1173,7 +1173,7 @@ Nyitott kérdések mérlege (az „Az eddig nyitott tételek eldöntése” táb
 
 ### #7235-kiegészítés (2026-11-18): kivágott elemek jelzője és sikeres beillesztés
 
-#### #484 — 0x005feab0
+#### #484 - 0x005feab0
 
 A 0x005feab0 dekompiláció (2026-11-18-koteg-466-495.txt:3478-3515) a sikeres 0x005791d0 után felszabadítja és nullázza a [this+0x319c] belső fájllistát; ha a [this+0x31a4] kivágásjelző igaz, azt is törli és meghívja a 0x00577fd0-at. A visszatérési/no-op ágon a függvény korábban kilép, a lista és jelző megmarad. A korábbi teljes .text-pásztázás a +0x31a4 olvasóit a kivágás/beillesztés útjaira, nem a rácsrajzolóra kötötte; az A2 szakasz a +0x319c listaolvasóit is felsorolja, köztük nincs bélyegkép-rajzoló. Ez a két külön adatút együtt támasztja alá, hogy nincs rácsszintű kivágásjelzés. Így a belső kivágott elemeknek a sikeres beillesztés után nincs rácsszintű halványító jelzése. PicasaPy fileops_controller_clipboard_mixin.py:208-217,235-300 a saját vágólapját a sikeres beillesztés után üríti; ez a régi Picasa belső állapotának megfelelő irány. Az A2 meglévő jegytörzs-bővítése a részletes PicasaPy-egyezést/eltérést és a „Kész, ha” feltételt tartalmazza.
 
@@ -2753,7 +2753,7 @@ után (M1 3. rész).
 
 ### #7235-kiegészítés (2026-11-18): az INI setter és az 1-es típusú parancs
 
-#### #485 — 0x0099b5b0, 0x005a8d60
+#### #485 - 0x0099b5b0, 0x005a8d60
 
 A 0x0099b5b0 dekompiláció (2026-11-18-koteg-466-495.txt:3516-…) üres értéknél null pointert ad tovább; a "0.000000" nem üres, ezért ezen a setter-rétegen nullázás nélkül jut a 0x009bef50 íróhoz. Ha a beállítóobjektum +0xc jelzője nulla, korán visszatér. Ez a réteg önmagában nem dönti el, hogy az alacsonyabb író törli-e a kulcsot, üres sort ír-e, illetve hová kerül új kulcs a szakaszon belül. Nyitott következő cím: 0x009bef50 és a hívott INI-sorosító, továbbá az azonos kulcs frissítési/új kulcs beszúrási ága.
 
@@ -4197,7 +4197,7 @@ Kész, ha: megjegyzett cél nélkül a célválasztó a mozgatott mappán áll; 
 
 ### #7235-kiegészítés (2026-11-18): a sikeres mappaáthelyezés utáni kijelölés
 
-#### #490 — 0x0053f4a0
+#### #490 - 0x0053f4a0
 
 A 0x0053f4a0 dekompiláció (2026-11-18-koteg-466-495.txt:4270-4731) a sikerágban a következőket hívja: 0x0074c050 a mozgatott mappával; a puVar10[0xb0]+0x166 jelzőt 1-re állítja; 0x0065b840(this,1,0,1) nézetfrissítést végez; majd a puVar10[0xa9] objektum +0x44 virtuális tagját hívja (mappa,1,1,0) argumentumokkal. A 0x0074c050 nyers disassemblyje az `albumheader/%x/%d/folderbutton` UI-azonosítóval dolgozik, de nem bizonyítja önmagában, melyik mappa marad kijelölve, illetve melyik képkészletet hagyja a rácsban. Nyitott következő címek: a +0x44 virtuális slot konkrét célja/típusa és a 0x0065b840 utáni kijelölés-/rácsfrissítő. A feladat szövegének vége is csonka („az áthelyezett mappa … vagy a régi helyén …”); a hiányzó alternatívát nem egészítem ki.
 
@@ -4540,7 +4540,7 @@ Nem szabad: a bal hasáb album- és személyalbum-helyi menüjének törlése, a
 
 ### #7235-kiegészítés (2026-11-18): Cancel és újranyitás
 
-#### #491 — 0x006dc030
+#### #491 - 0x006dc030
 
 A 0x006dc030 dekompiláció (2026-11-18-koteg-466-495.txt:4720-4780) szerint a dialog objektum +0x40 virtuális művelete a modális eredmény vizsgálata előtt fut, majd csak az iStack_58 == 0 (elfogadás) ág hívja a 0x0065b840 frissítőt és tér vissza 1-gyel; a Cancel (nem nulla) ág a 0x00849d00 után 0-val tér vissza. A két vizsgált hívó, 0x005eb810 és 0x006db580 csak igaz visszatérés után indítja el az album létrehozását, illetve mentését. Ez alátámasztja, hogy a hívó oldali elfogadási/mentési művelet Cancel után kimarad, de a vtable +0x40 adatátadásának pontos hatását és a felhasználó által beírt mezők újranyitáskori értékét nem dönti el.
 
