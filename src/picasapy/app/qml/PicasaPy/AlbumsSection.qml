@@ -22,6 +22,7 @@ ColumnLayout {
     property bool recentlyUpdatedActive: false
     property int recentlyUpdatedCount: 0
     property string searchResultsText: ""
+    property bool searchActive: false
     // #730: a hasáb egységes sormagassága — egyetlen forrásból
     property int rowHeight: 22
 
@@ -51,9 +52,11 @@ ColumnLayout {
         // #9, #6851, #6892: a nem üres Recently Updated + a csillagozott sor
         // + a virtuális albumok;
         // #5194: kereséskor az új találatsor is a csoport része.
-        itemCount: 1 + (section.recentlyUpdatedCount > 0 ? 1 : 0)
-                   + section.albumsModel.length
-                   + (section.searchResultsText.length > 0 ? 1 : 0)
+        itemCount: section.searchActive
+            ? section.albumsModel.length
+              + (section.searchResultsText.length > 0 ? 1 : 0)
+            : 1 + (section.recentlyUpdatedCount > 0 ? 1 : 0)
+              + section.albumsModel.length
         labelObjectName: "albumsHeader"
         collapsed: section.collapsed
         onToggled: section.toggled()
@@ -69,7 +72,7 @@ ColumnLayout {
     // súgó most az eredeti feltételét követi.
     Text {
         objectName: "albumDropHintText"
-        visible: !section.collapsed && section.searchResultsText.length === 0
+        visible: !section.collapsed && !section.searchActive
                  && section.albumsModel.length === 0
         Layout.fillWidth: true
         Layout.leftMargin: 16
@@ -111,7 +114,8 @@ ColumnLayout {
 
     Rectangle {
         objectName: "searchResultsAlbumRow"
-        visible: !section.collapsed && section.searchResultsText.length > 0
+        visible: !section.collapsed && section.searchActive
+                 && section.searchResultsText.length > 0
         Layout.fillWidth: true
         Layout.preferredHeight: section.rowHeight
         color: "transparent"
@@ -143,7 +147,8 @@ ColumnLayout {
     Rectangle {
         id: recentlyUpdatedItem
         objectName: "recentlyUpdatedItem"
-        visible: !section.collapsed && section.recentlyUpdatedCount > 0
+        visible: !section.collapsed && !section.searchActive
+                 && section.recentlyUpdatedCount > 0
         Layout.fillWidth: true
         Layout.preferredHeight: section.rowHeight
         color: section.recentlyUpdatedActive ? Theme.panelSelectionActive
@@ -186,7 +191,7 @@ ColumnLayout {
     Rectangle {
         id: starredItem
         objectName: "starredItem"
-        visible: !section.collapsed
+        visible: !section.collapsed && !section.searchActive
         Layout.fillWidth: true
         Layout.preferredHeight: section.rowHeight
         // #384: hover ≠ kijelölés — a hover a korábbi jelölő tónust

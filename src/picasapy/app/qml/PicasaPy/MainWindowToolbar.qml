@@ -53,6 +53,70 @@ MainToolbar {
     // leütések EGY keresést adnak, a gépelés szünetében pedig azonnal fut.
     property string pendingSearchText: ""
     property bool searchPending: false
+
+    // #7216: a keresés előtti mappa- és képkijelölés pillanatképe. Sorindex
+    // helyett fotóazonosítókat tárolunk, mert a keresés és a mappaváltás
+    // közben a modell új sorrendet kap.
+    property var _searchOrigin: null
+    property bool _restoringSearchOrigin: false
+
+    function captureSearchOrigin() {
+        if (_searchOrigin !== null || !hostWindow || !controller
+                || !controller.photos)
+            return
+        var photoIds = []
+        var selected = hostWindow.selectedIndexes || []
+        for (var i = 0; i < selected.length; ++i) {
+            var id = controller.photos.idAt(Number(selected[i]))
+            if (id.length > 0)
+                photoIds.push(id)
+        }
+        var anchorId = hostWindow.selectedIndex >= 0
+            ? controller.photos.idAt(hostWindow.selectedIndex) : ""
+        _searchOrigin = {
+            folder: controller.currentFolder,
+            photoIds: photoIds,
+            anchorId: anchorId
+        }
+    }
+
+    function restoreSearchOrigin() {
+        var origin = _searchOrigin
+        _restoringSearchOrigin = true
+        hostWindow.clearSelection()
+        if (typeof controller !== "undefined" && controller) {
+            if (typeof controller.clearFilter === "function")
+                controller.clearFilter()
+            else
+                controller.search("")
+            if (origin && origin.folder
+                    && controller.currentFolder !== origin.folder)
+                controller.selectFolder(origin.folder)
+        }
+        if (origin && controller && controller.photos) {
+            var rows = []
+            for (var i = 0; i < origin.photoIds.length; ++i) {
+                var row = controller.photos.rowOfId(Number(origin.photoIds[i]))
+                if (row >= 0)
+                    rows.push(row)
+            }
+            rows.sort(function (a, b) { return a - b })
+            var anchor = origin.anchorId.length > 0
+                ? controller.photos.rowOfId(Number(origin.anchorId)) : -1
+            hostWindow.selectedIndexes = rows
+            hostWindow.selectedIndex = anchor >= 0
+                ? anchor : (rows.length > 0 ? rows[0] : -1)
+            if (hostWindow.selectedIndex >= 0 && hostRefs.revealSearchPhoto) {
+                var selectedRow = hostWindow.selectedIndex
+                Qt.callLater(function () {
+                    hostRefs.revealSearchPhoto(selectedRow)
+                })
+            }
+        }
+        _searchOrigin = null
+        _restoringSearchOrigin = false
+    }
+
     function runPendingSearch() {
         if (!searchPending)
             return
@@ -80,6 +144,8 @@ MainToolbar {
             hostRefs.searchSuggestionsBox.dismiss()
     }
     onSearchEdited: function(text) {
+        if (text.trim().length > 0)
+            toolbar.captureSearchOrigin()
         hostWindow.clearSelection()
         pendingSearchText = text
         searchPending = true
@@ -89,16 +155,18 @@ MainToolbar {
     onSearchCleared: {
         searchPending = false
         pendingSearchText = ""
-        hostWindow.clearSelection()
-        if (typeof controller !== "undefined" && controller) {
-            if (typeof controller.clearFilter === "function")
-                controller.clearFilter()
-            else
-                controller.search("")
-        }
+        toolbar.restoreSearchOrigin()
         if (hostRefs.suggestionsTimer)
             hostRefs.suggestionsTimer.stop()
         hostRefs.searchSuggestionsBox.suggestions = []
+    }
+    Connections {
+        target: typeof controller !== "undefined" ? controller : null
+        function onStatusChanged() {
+            if (!toolbar._restoringSearchOrigin && !toolbar.searchPending
+                    && controller && !controller.searchActive)
+                toolbar._searchOrigin = null
+        }
     }
     // #7206: az "Import" gomb a főablak Import paneljét nyitja meg.
     onImportRequested: hostRefs.importSourceDialog.openImportSourcePanel()

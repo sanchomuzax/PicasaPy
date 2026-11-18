@@ -46,6 +46,11 @@ Item {
         return timelineViewLoader.item
     }
 
+    function revealSearchPhoto(row) {
+        if (row >= 0 && mainLibraryCanvas && mainLibraryCanvas.grid)
+            mainLibraryCanvas.grid.scrollToRow(Number(row))
+    }
+
     function openImportSourcePanel() {
         importSourcePanelLoader.active = true
         if (importSourcePanelLoader.item)

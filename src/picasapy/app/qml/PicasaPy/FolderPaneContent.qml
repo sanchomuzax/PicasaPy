@@ -34,9 +34,14 @@ Flickable {
         // Az Albumok gyűjtemény (fejléc + súgó + csillagozott sor +
         // album-sorok) önálló komponensben él — ld. AlbumsSection.qml.
         AlbumsSection {
+            visible: !folderPane.searchActive
+                     || folderPane._searchAlbumsModel.length > 0
+                     || folderPane.searchResultCount > 0
             Layout.fillWidth: true
             collapsed: folderPane.albumsCollapsed
-            albumsModel: folderPane.albumsModel
+            searchActive: folderPane.searchActive
+            albumsModel: folderPane.searchActive
+                ? folderPane._searchAlbumsModel : folderPane.albumsModel
             selectedAlbumToken: folderPane.selectedAlbumToken
             starredActive: folderPane.starredActive
             recentlyUpdatedActive: folderPane.recentlyUpdatedActive
@@ -61,13 +66,19 @@ Flickable {
 
         CollectionHeader {
             Layout.fillWidth: true
+            visible: !folderPane.searchActive
+                     || folderPane._searchPeopleModel.length > 0
             label: qsTr("People")
             // #5190: a látható sorok száma, a „Névtelenek" albumot is
             // beleszámítva, ha van névtelen arc vagy folyik a keresés.
             // #5341: a mellőzött sort is, ha látszik.
-            itemCount: folderPane.peopleModel.length
-                       + (folderPane.unnamedSlotShown ? 1 : 0)
-                       + (folderPane.ignoredSlotShown ? 1 : 0)
+            itemCount: (folderPane.searchActive
+                        ? folderPane._searchPeopleModel.length
+                        : folderPane.peopleModel.length)
+                       + (!folderPane.searchActive
+                          && folderPane.unnamedSlotShown ? 1 : 0)
+                       + (!folderPane.searchActive
+                          && folderPane.ignoredSlotShown ? 1 : 0)
             labelObjectName: "peopleHeader"
             collapsed: folderPane.peopleCollapsed
             onToggled: folderPane.toggleCollection("people")
@@ -79,7 +90,8 @@ Flickable {
             id: unnamedFacesItem
             objectName: "unnamedFacesItem"
             // Beolvasás közben a sor akkor is látszik, ha még nincs találat.
-            visible: !folderPane.peopleCollapsed && folderPane.unnamedSlotShown
+            visible: !folderPane.searchActive && !folderPane.peopleCollapsed
+                     && folderPane.unnamedSlotShown
             Layout.fillWidth: true
             Layout.preferredHeight: 22
             color: folderPane.unnamedFacesActive ? Theme.panelSelectionActive
@@ -130,7 +142,8 @@ Flickable {
         Repeater {
             id: peopleRepeater
             objectName: "peopleRepeater"
-            model: folderPane.peopleModel
+            model: folderPane.searchActive
+                ? folderPane._searchPeopleModel : folderPane.peopleModel
             delegate: Rectangle {
                 id: personItem
                 required property var modelData
@@ -201,7 +214,8 @@ Flickable {
         // csak a mellőzött nézetben látszik, a Névtelenek sora helyén.
         Rectangle {
             objectName: "ignoredFacesItem"
-            visible: !folderPane.peopleCollapsed && folderPane.ignoredSlotShown
+            visible: !folderPane.searchActive && !folderPane.peopleCollapsed
+                     && folderPane.ignoredSlotShown
             Layout.fillWidth: true
             Layout.preferredHeight: 22
             color: folderPane.ignoredFacesActive ? Theme.panelSelectionActive

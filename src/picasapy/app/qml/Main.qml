@@ -690,6 +690,9 @@ ApplicationWindow {
             ? controller.activityCancellable : false
         onActivityCancelRequested: window.activityCancelConfirm.ask()
         hostRefs: ({
+            revealSearchPhoto: function(row) {
+                mainWindowWorkspace.revealSearchPhoto(row)
+            },
             searchSuggestionsBox: searchSuggestionsBox,
             suggestionsTimer: suggestionsTimer,
             picasaMenuBar: picasaMenuBar,

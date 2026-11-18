@@ -64,9 +64,7 @@ Rectangle {
                         onTapped: {
                             if (hostToolbar.searchText.trim().length > 0) {
                                 hostToolbar.clearSearch()
-                                hostWindow.clearSelection()
-                                hostController.search("")
-                                hostSearchSuggestionsBox.suggestions = []
+                                hostToolbar.searchCleared()
                             } else {
                                 hostController.clearFilter()
                             }

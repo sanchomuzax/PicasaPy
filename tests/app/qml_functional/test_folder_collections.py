@@ -103,7 +103,7 @@ class TestCollectionToggle:
 
 
 class TestFolderContentUnaffected:
-    def test_search_result_row_precedes_starred_and_existing_albums(
+    def test_search_result_row_precedes_matching_album_and_hides_starred(
         self, qml_app, qt_app
     ):
         window, controller, _ = qml_app
@@ -121,7 +121,6 @@ class TestFolderContentUnaffected:
             [{"token": "existing-album", "name": "Existing album", "count": 2}],
         )
         qt_app.processEvents()
-        album_count_before_search = albums_header.property("itemCount")
 
         controller.search("a")
         qt_app.processEvents()
@@ -137,12 +136,13 @@ class TestFolderContentUnaffected:
         assert search_row is not None and search_row.isVisible()
         assert search_text is not None
         assert search_text.property("text") == 'Search results for "a" (1)'
-        assert starred_row is not None and starred_row.isVisible()
+        assert starred_row is not None and not starred_row.isVisible()
         search_y = search_row.mapToScene(QPointF(0, 0)).y()
-        starred_y = starred_row.mapToScene(QPointF(0, 0)).y()
         existing_album_y = existing_album_row.mapToScene(QPointF(0, 0)).y()
-        assert search_y < starred_y < existing_album_y
-        assert albums_header.property("itemCount") == album_count_before_search + 1
+        assert search_y < existing_album_y
+        assert albums_header.property("itemCount") == 2, (
+            "a keresési fejléc csak a fotótalálati és az egyező albumsort számolja"
+        )
 
         controller.search("")
         qt_app.processEvents()

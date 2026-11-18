@@ -26,7 +26,40 @@ Rectangle {
     property bool searchActive: false
     property string searchQuery: ""
     property int searchResultCount: 0
-    readonly property string searchResultsAlbumText: searchActive
+    function _matchesSearchName(name) {
+        var query = searchQuery.trim().toLocaleLowerCase()
+        if (!searchActive || query.length === 0)
+            return false
+        var words = query.split(/\s+/)
+        var candidate = String(name || "").toLocaleLowerCase()
+        for (var i = 0; i < words.length; ++i) {
+            if (candidate.indexOf(words[i]) < 0)
+                return false
+        }
+        return true
+    }
+    readonly property var _searchAlbumsModel: {
+        if (!searchActive)
+            return albumsModel
+        var matches = []
+        for (var i = 0; i < albumsModel.length; ++i) {
+            if (pane._matchesSearchName(albumsModel[i].name))
+                matches.push(albumsModel[i])
+        }
+        return matches
+    }
+    readonly property var _searchPeopleModel: {
+        if (!searchActive)
+            return peopleModel
+        var matches = []
+        for (var i = 0; i < peopleModel.length; ++i) {
+            if (pane._matchesSearchName(peopleModel[i].name))
+                matches.push(peopleModel[i])
+        }
+        return matches
+    }
+    readonly property string searchResultsAlbumText:
+        searchActive && searchResultCount > 0
         ? qsTr("Search results for \"%1\" (%2)")
             .arg(searchQuery).arg(searchResultCount)
         : ""
