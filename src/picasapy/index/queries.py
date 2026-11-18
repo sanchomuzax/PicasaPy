@@ -671,8 +671,8 @@ _full_path = full_path
 class SearchSuggestion:
     """Egy sor a kereső legördülőjében (#7).
 
-    kind: "folder" | "album"; param: mappánál a teljes útvonal,
-    albumnál az album-token (a kiválasztás paramétere)."""
+    kind: "folder" | "album" | "word"; param: mappánál a teljes útvonal,
+    albumnál az album-token, szónál maga a javasolt kulcsszó."""
 
     kind: str
     name: str
@@ -683,16 +683,17 @@ class SearchSuggestion:
 def search_suggestions(
     conn: sqlite3.Connection,
     text: str,
-    limit: int = 8,
+    limit: int = 10,
     *,
     include_albums: bool = False,
 ) -> tuple[SearchSuggestion, ...]:
-    """Név-egyező mappa- és album-javaslatok az indexelt adatokból.
+    """Mappa-, album- és kulcsszó-javaslatok az indexelt adatokból.
 
     A részszó-egyezés kisbetűfüggetlen. Ha az album-ág engedélyezett,
-    albumok jönnek előbb a már indexelt `.picasa.ini` adatokból, aztán a
-    mappák; mindkét típus névsorban, darabszámmal. A javaslatkérés nem nyit
-    `.picasa.ini` fájlt, így gépelés közben sem indul lemezolvasás.
+    albumok jönnek előbb, majd a mappák és a kulcsszavak. A mappa- és
+    szósorok egymáshoz képesti sorrendje mért; a szavak belső sorrendjét
+    nem rögzítjük. A javaslatkérés nem nyit `.picasa.ini` fájlt, így gépelés
+    közben sem indul lemezolvasás.
 
     Az album-ág opt-in marad a meglévő hívók kompatibilitása miatt.
     """
@@ -731,7 +732,24 @@ def search_suggestions(
             for album in albums_in_index(conn)
             if album.name and query in album.name.casefold()
         )
-    return (albums + folders)[:limit]
+    words: list[SearchSuggestion] = []
+    seen_words: set[str] = set()
+    for row in conn.execute(
+        "SELECT COALESCE(p.keywords_file, p.keywords_ini) AS keywords "
+        "FROM photos p JOIN folders f ON f.id = p.folder_id "
+        f"WHERE {visible_folder_sql(conn)}"
+    ):
+        for raw_word in (row["keywords"] or "").split(","):
+            word = raw_word.strip()
+            if word and word not in seen_words and query in word.casefold():
+                seen_words.add(word)
+                # Az M4 nem rögzített szó-darabszám-szabályt. A mező a
+                # meglévő modell miatt marad jelen, a QML a szósornál elrejti.
+                words.append(
+                    SearchSuggestion(kind="word", name=word, count=0, param=word)
+                )
+    max_rows = max(0, min(limit, 10))
+    return (albums + folders + tuple(words))[:max_rows]
 
 
 def _optional_count(row: sqlite3.Row, key: str) -> int:

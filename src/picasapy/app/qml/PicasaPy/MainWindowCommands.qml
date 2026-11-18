@@ -754,9 +754,11 @@ Item {
                  && !hostWindow.viewerOpen && hostWindow.libraryFrameVisible
         onChosen: function(kind, name, param) {
             if (kind === "folder") {
-                hostRefs.toolbar.clearSearch()
-                hostWindow.clearSelection()
-                hostController.selectFolder(param)
+                // #7217: a mappanév és egy szóköz a keresésben marad.
+                hostRefs.toolbar.keresesSzoveggel(name + " ")
+                suggestionsTimer.stop()
+                hostController.search(name + " ")
+                hostController.selectFolderKeepSearch(param)
             } else if (kind === "album") {
                 hostRefs.toolbar.clearSearch()
                 hostWindow.clearSelection()
