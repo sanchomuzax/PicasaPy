@@ -58,7 +58,7 @@ _EREDETI_FORRAS_SHA256 = {
     "_on_photo_write_failed": "00b6e8a4a02d81334ad496dffbd2d0da8f76098bc8245911e637b929379e71e8",
     "_run_photo_write": "58c3b4176a38f675bdcf1b8e533b12fc48dbc2cfe1f1fe942376b11a31517935",
     "_run_photo_writes": "4889d5ad6db6ff50db6280f464e3d7ffe143058fbdbbfb4736df3e8db64f85bd",
-    "_refresh_if_star_filtered": "dfeb8f6caa803a13df0a8143c05014c51d7fbc8b735b02f910e01c2e6485a218",
+    "_refresh_if_star_filtered": "b793d30515529d4d828988b33edaae38e386070b512cddfdf3c2f005b26b7e4d",
     "_refresh_if_dropped_from_search": "ad1944a77a9db8677d34b47aaafb4712f749a0af1ed18f745382aba4425dcd27",
     "toggleStar": "4b3e698bf19d889dff8da1f79f833d9b3398aeb5a1e48cc82b11cf09c42c4ebe",
     "_ensure_text_layer_clipboard": "6919ff5b531eaf9a7364df911c9080f87c4266e9eafb797f37d4718e10c197da",
