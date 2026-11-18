@@ -45,17 +45,26 @@ def serialize_album_refs(refs: tuple[str, ...]) -> str:
 def albums_of(document: IniDocument) -> tuple[Album, ...]:
     """A dokumentum összes virtuális albuma, definíciós sorrendben."""
     albums = []
+    # #7208: a törölt album csak `token=` sorral marad meg, tag nélkül; ezt nem
+    # mutatjuk albumként. A tagokkal bíró, név nélküli album viszont látszik.
+    hivatkozott = {
+        token
+        for kep in document.file_sections()
+        for token in parse_album_refs(kep.get("albums") or "")
+    }
     for section in document.sections:
         if not section.name.startswith(ALBUM_SECTION_PREFIX):
             continue
         name = section.get("name")
-        if not name or not name.strip():
+        token = section.name[len(ALBUM_SECTION_PREFIX) :]
+        if (not name or not name.strip()) and {k for k, _ in section.items()} <= {"token"} \
+                and token not in hivatkozott:
             continue
         use_music, music_file = read_music_settings(document, section.name)
         albums.append(Album(
             # A szekciónévbeli token az azonosító, a token= kulcs redundáns.
-            token=section.name[len(ALBUM_SECTION_PREFIX) :],
-            name=name,
+            token=token,
+            name=section.get("name"),
             date=section.get("date"),
             description=section.get("description"),
             location=section.get("location"),

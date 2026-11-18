@@ -72,7 +72,7 @@ _EREDETI_FORRAS_SHA256 = {
     "_album_membership_mutator": "912803685d40a02ebb4095811e6c019ca0f8c685a643aae6a3faa8780f67e672",
     "_known_album_fields": "e47fc1c0bc094ed874334b957274d794cd37957d0fc328e5cb8a2296db6b4874",
     "removeRowsFromAlbum": "6ece39f95ddb1d0fc0a5590d3c256139b2b5937e55210112a1a4402f7e025be1",
-    "deleteAlbum": "82152426a235bc13e9dc864f9e7253362ebe481eaf18870b66854da553ae5ffa",
+    "deleteAlbum": "91557d7d3eb5e39c386f3b0e170c38acf4243dfb379cf4a07f157dfeb4db8785",
     "sortAlbum": "d037c31c30de643224579a7f939e1d26c2c266416472cb22cb9802e961637869",
     "sortAlbumBy": "4f7d5e4f254cb6991799344c0821f7572eb5d6e1ca901733a85be4f21b61911a",
     "reorderAlbumPhotos": "43ca046e9e47d948a784028d53e11b4f15d994026992dd18dc88e4720e6084bd",

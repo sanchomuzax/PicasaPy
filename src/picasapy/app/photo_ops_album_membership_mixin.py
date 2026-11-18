@@ -215,6 +215,17 @@ class PhotoOpsAlbumMembershipMixin:
             self.albumWriteFailed.emit(str(error))
             return False
 
+        if getattr(self, "_view_mode", None) == ("album", token):
+            # #7208: a megnyitott album törlése után a bal hasábban semmi ne
+            # legyen kijelölve, és a rács a könyvtár elejét mutassa (mérve: #7179).
+            self._current_folder = ""
+            self._view_mode = ("folder", "")
+            self._filter_active = False
+            self._filter_status = ""
+            with open_index(self._db_path) as conn:
+                self._show(self._feed_records(conn))
+            self.statusChanged.emit()
+            return True
         self._refresh_view()
         return True
 
