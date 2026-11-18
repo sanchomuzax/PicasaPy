@@ -145,7 +145,14 @@ class PhotoOpsWriteCoreMixin:
         Szándékosan lekérdezés (`_refresh_view`) és nem sor-eltávolítás: így
         a visszacsillagozás is magától bekerül, és a zöld eredménysáv
         darabszáma is követ."""
-        if self._view_mode[0] in self._CSILLAG_SZURT_NEZETEK:
+        # #7191: a keresés mellé kötött ★ gomb is a csillagtól függ
+        if (
+            self._view_mode[0] in self._CSILLAG_SZURT_NEZETEK
+            or (
+                self._view_mode[0] in self._KERESES_SZURT_NEZETEK
+                and self._search_button == "starred"
+            )
+        ):
             self._refresh_view()
 
     def _refresh_if_dropped_from_search(self, photo_id: int) -> None:

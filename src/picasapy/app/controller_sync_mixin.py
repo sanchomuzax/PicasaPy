@@ -9,7 +9,6 @@ from picasapy.index import (
     geotagged_photos,
     open_index,
     recently_updated_photos,
-    search_photos,
     starred_photos,
     video_photos,
 )
@@ -68,7 +67,7 @@ class AppControllerSyncMixin:
         if mode == "search":
             started = time.perf_counter()
             with open_index(self._db_path) as conn:
-                records = search_photos(conn, param)
+                records = self._search_matches(conn, param)
             records = self._filter_search_hidden(records)
             self._show_search_pane(records)
             # #4531: a zöld sáv (és a visszalépő gomb) a frissítésnél sem tűnhet el
@@ -77,7 +76,7 @@ class AppControllerSyncMixin:
             query, folder = param
             started = time.perf_counter()
             with open_index(self._db_path) as conn:
-                all_matches = search_photos(conn, query)
+                all_matches = self._search_matches(conn, query)
             all_matches = self._filter_search_hidden(all_matches)
             self._show_search_pane(all_matches)
             self._show_search_results(

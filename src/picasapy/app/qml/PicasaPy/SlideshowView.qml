@@ -209,6 +209,23 @@ Rectangle {
         return -1
     }
 
+    // #7190: a kézi előre lépés a lista végén mindig visszafordul, a kézi
+    // hátra lépés az első képnél megáll. Ez független a vetítés ismétlésétől;
+    // az időzítő továbbra is a nextPhotoIndex() LoopSlideshow-ágát használja.
+    function manualPhotoIndex(fromIndex, step) {
+        var n = count()
+        if (n === 0) return -1
+        var idx = fromIndex
+        for (var i = 0; i < n; ++i) {
+            var next = idx + step
+            if (next < 0) return -1
+            if (next >= n) next = 0
+            idx = next
+            if (!photosModel.isVideoAt(idx)) return idx
+        }
+        return -1
+    }
+
     // az induló index fotóra igazítása (videón álló kijelölésről indítva
     // a következő fotóra ugrunk)
     function clampToPhoto(index) {
@@ -282,8 +299,13 @@ Rectangle {
         currentIndex = target
     }
 
+    function manualAdvance() {
+        var target = manualPhotoIndex(currentIndex, 1)
+        if (target >= 0) currentIndex = target
+    }
+
     function goBack() {
-        var target = nextPhotoIndex(currentIndex, -1)
+        var target = manualPhotoIndex(currentIndex, -1)
         if (target >= 0) currentIndex = target
     }
 
@@ -673,7 +695,7 @@ Rectangle {
     Keys.onRightPressed: {
         if (show.screensaverMode) {
             if (show.screensaverInputArmed) show.stop()
-        } else show.advance()
+        } else show.manualAdvance()
     }
     Keys.onLeftPressed: {
         if (show.screensaverMode) {
@@ -691,7 +713,7 @@ Rectangle {
     Keys.onDownPressed: {
         if (show.screensaverMode) {
             if (show.screensaverInputArmed) show.stop()
-        } else show.advance()
+        } else show.manualAdvance()
     }
     //: #7189: az `Enter` és a `Ctrl+R`/`Ctrl+Shift+R` normál vetítésben nem
     //: kap kezelőt (`0x00760970`, `0x005e6710`, `0x005e60d0`); a főablak
