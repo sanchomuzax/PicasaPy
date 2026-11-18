@@ -107,28 +107,15 @@ ApplicationWindow {
         onPointChanged: window.helpCursor = point.position
     }
     visible: true
-    //: #671: az ablak „X"-e UGYANAZT az utat járja, mint a Fájl ▸ Kilépés.
-    //: Ha háttérmunka fut, a bezárást visszavonjuk, és a kérdés dönt;
-    //: egyébként a Qt zárja az ablakot, ahogy eddig.
+    //: #7206: az ablak „X"-e és a menü egy helyen dönt az import- és
+    //: háttérmunka-kérdésről. Ha kérdés nyílik, a bezárási kérést visszavonjuk.
     onClosing: function (close) {
-        if (!window.aaKapu(window.kilepes)) {   // #3644
+        mainWindowCommands._windowCloseRequest = true
+        var bezarasElfogadva = window.kilepes()
+        mainWindowCommands._windowCloseRequest = false
+        if (!bezarasElfogadva) {
             window.kilepesMegerositve = false
             close.accepted = false
-            return
-        }
-        if (window.importPanelOpen
-                && window.importSourceDialog
-                && window.importSourceDialog.item
-                && window.importSourceDialog.item.visible
-                && window.importSourceDialog.item.canImportAll) {
-            close.accepted = false
-            mainWindowCommands.askImportBeforeClose()
-            return
-        }
-        if (!window.kilepesMegerositve
-                && controller && controller.backgroundWorkRunning()) {
-            close.accepted = false
-            kilepesDialog.askExit()
             return
         }
         // #6387: a főablakból nyitott súgó nem modális, ezért a főablakkal
@@ -615,7 +602,7 @@ ApplicationWindow {
     function helpTopicUnderCursor() { return mainWindowCommands.helpTopicUnderCursor() }
     function mentsdAKeresest() { mainWindowCommands.mentsdAKeresest() }
     function aaKapu(folytatas) { return mainWindowCommands.aaKapu(folytatas) }
-    function kilepes() { mainWindowCommands.kilepes() }
+    function kilepes() { return mainWindowCommands.kilepes() }
     function masoldASzovegreteget() { mainWindowCommands.masoldASzovegreteget() }
     function illeszdBeASzovegreteget() { mainWindowCommands.illeszdBeASzovegreteget() }
     function beillesztAVagolaprol() { mainWindowCommands.beillesztAVagolaprol() }

@@ -179,6 +179,6 @@ def test_main_window_close_prompts_before_importing_scanned_photos(
     assert window.isVisible(), "a főablak kérdés nélkül bezárult"
     confirm = _elem(window, "importBeforeCloseDialog")
     assert confirm.property("visible") is True
-    assert confirm.property("message") == "Import images before closing Picasa?"
+    assert confirm.property("message") == "Import images before closing PicasaPy?"
     assert confirm.property("yesText") == "Import Images"
     assert confirm.property("noText") == "Quit"

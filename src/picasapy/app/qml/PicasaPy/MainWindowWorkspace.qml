@@ -345,7 +345,7 @@ Item {
 
     MainRightDrawer {
         id: jobbFiok
-        visible: !hostWindow.importPanelOpen
+        visible: mainSplit.visible
         hostWindow: workspace.hostWindow
         hostController: workspace.hostController
         hostToolbar: hostRefs.toolbar

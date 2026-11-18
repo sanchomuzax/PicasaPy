@@ -9769,10 +9769,10 @@ picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
     <context>
         <name>MainWindowCommands</name>
         <message>
-            <source>Import images before closing Picasa?</source>
+            <source>Import images before closing PicasaPy?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_WARNCLOSEACQUIRE</extracomment>
-            <translation>Picasa를 닫기 전에 이미지를 가져오시겠습니까?</translation>
+            <translation>PicasaPy를 닫기 전에 이미지를 가져오시겠습니까?</translation>
         </message>
         <message>
             <source>Import Images</source>

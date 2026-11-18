@@ -19,6 +19,7 @@ Item {
     //: vissza is vonná (újra feltenné a kérdést). A jelző azt mondja meg neki,
     //: hogy a kérdésre a felhasználó már válaszolt: a kilépés végigmehet.
     property bool kilepesMegerositve: false
+    property bool _windowCloseRequest: false
     readonly property var exportImportSourceDialog: hostRefs.importSourceDialog
 
     property alias exportConfigureButtonsContextMenu: configureButtonsContextMenu
@@ -157,6 +158,17 @@ Item {
         hostTrayBar: hostRefs.trayBar
     }
 
+    MainWindowImportActions {
+        id: importActions
+        hostWindow: commandSurface.hostWindow
+        hostController: commandSurface.hostController
+        exitDialog: kilepesDialog
+        importSourceDialog: commandSurface.exportImportSourceDialog
+        messageText: qsTr("Import images before closing PicasaPy?")
+        importText: qsTr("Import Images")
+        quitText: qsTr("Quit")
+    }
+
     //: #3544: amíg egy külön ablakos párbeszéd látszik, a főablak két
     //: súgó-billentyűje HALLGAT. A Qt 6 az ablakszintű gyorsbillentyűt a
     //: főablak TRANZIENS gyermekablakaiban is illeszti (és a főablak `active`-ja
@@ -164,7 +176,7 @@ Item {
     //: (`WindowHelp`) áll: a kettő kétértelmű, és MEGMÉRVE egyik sem sül el.
     //: A párbeszédek alkalmazás-modálisak, a főablak addig úgysem kezelhető.
     readonly property bool _kulonAblakosParbeszedNyitva:
-        [folderManager, importBeforeCloseDialog, hostWindow.optionsDialog, webExportDialog,
+        [folderManager, importActions.confirmationDialog, hostWindow.optionsDialog, webExportDialog,
          printDialog].some(function (d) { return d.item !== null && d.item.visible })
 
     //: #2054: a mutató alatti elemtől FELFELÉ sétálunk a szülőláncon az
@@ -302,47 +314,7 @@ Item {
     //: Egy helyen fut: a Fájl ▸ Kilépés menütétel és az ablak „X"-e is ezt
     //: hívja — különben az egyik út megkérdezné, a másik nem.
     function kilepes() {
-        if (!hostWindow.aaKapu(hostWindow.kilepes)) return   // #3644
-        //: #305: null-őr — a leépülő motor is újraértékelheti a kötést
-        if (!commandSurface.kilepesMegerositve
-                && hostController && hostController.backgroundWorkRunning()) {
-            kilepesDialog.askExit()
-            return
-        }
-        Qt.quit()
-    }
-
-    function askImportBeforeClose() {
-        importBeforeCloseDialog.ensure().ask(
-            "", qsTr("Import images before closing Picasa?"))
-    }
-
-    // #7206: a panel bezárásakor a már beolvasott, importálható képek előtt
-    // megkérdezzük, hogy induljon-e az import; a másik gomb a kilépést kéri.
-    DeferredDialog {
-        id: importBeforeCloseDialog
-        objectName: "importBeforeCloseDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                objectName: "importBeforeCloseDialog"
-                namePrefix: "importBeforeClose"
-                cancelVisible: false
-                rememberVisible: false
-                yesText: qsTr("Import Images")
-                noText: qsTr("Quit")
-                onConfirmed: {
-                    var panel = commandSurface.hostWindow.importSourceDialog
-                        ? commandSurface.hostWindow.importSourceDialog.item : null
-                    if (panel)
-                        panel.importBeforeClosing()
-                }
-                onDenied: {
-                    commandSurface.hostWindow.importPanelOpen = false
-                    commandSurface.hostWindow.kilepes()
-                }
-            }
-        }
+        return importActions.kilepes(commandSurface._windowCloseRequest)
     }
 
     //: #1720: halasztott — a legtöbb munkamenetben fel sem épül.
