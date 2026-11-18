@@ -13,10 +13,13 @@ from PySide6.QtCore import Signal, Slot
 
 from picasapy.index import open_index, sync_tree, update_photo_fields
 from picasapy.metadata.tiff_helyben import (
+    UNDEFINED,
+    Ertek,
     Valtozas,
     ascii_ertek,
     frissitett_tiff,
 )
+from picasapy.metadata.timestamp_metadata import update_timestamp_app_metadata
 
 
 _log = logging.getLogger(__name__)
@@ -96,7 +99,13 @@ def _write_exif_datetime_original(path: str | Path, target: datetime) -> None:
                 "Exif",
                 0x9003,
                 ascii_ertek(target.strftime("%Y:%m:%d %H:%M:%S")),
-            )
+            ),
+            Valtozas(
+                "Exif",
+                0x9000,
+                Ertek(UNDEFINED, b"0220"),
+                csak_ha_hianyzik=True,
+            ),
         ]
         updated_segment = _exif_app1(frissitett_tiff(exif_tiff, changes))
         if exif_index is None:
@@ -110,6 +119,8 @@ def _write_exif_datetime_original(path: str | Path, target: datetime) -> None:
             )
         else:
             segments[exif_index] = (0xE1, updated_segment)
+
+        segments = update_timestamp_app_metadata(segments, target)
 
         with temp.open("wb") as output:
             output.write(_JPEG_SOI)

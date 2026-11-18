@@ -12,6 +12,7 @@ egész APP13) eltávolítása — így a fel-le művelet bitre pontos round-trip
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 from picasapy.ioutil import write_atomic
@@ -56,6 +57,82 @@ def write_iptc_keywords(path: str | Path, keywords: tuple[str, ...]) -> bool:
         if keyword
     ]
     return _write_datasets(path, _KEYWORDS_KEY, values)
+
+
+def _replace_timestamp_iptc_segments(
+    segments: list[tuple[int, bytes]], created_date: bytes, created_time: bytes
+) -> list[tuple[int, bytes]]:
+    """A DateCreated/TimeCreated és a Photoshop IPTC-MD5 frissítése.
+
+    A bemeneti APP-szegmensek más része változatlan marad. Az IPTC-erőforrás
+    nem célzott rekordjai bájtra megmaradnak.
+    """
+    photoshop_indices: set[int] = set()
+    payloads: list[bytes] = []
+    for index, (marker, segment) in enumerate(segments):
+        if marker == _APP13 and segment[4 : 4 + len(_PHOTOSHOP)] == _PHOTOSHOP:
+            photoshop_indices.add(index)
+            payloads.append(segment[4 + len(_PHOTOSHOP) :])
+
+    resources, resource_tail = _parse_resources(b"".join(payloads))
+    iptc_resources = [resource for resource in resources if resource[0] == _IPTC_RESOURCE]
+    md5_resources = [resource for resource in resources if resource[0] == 0x0425]
+    iptc_data = b"".join(resource[2] for resource in iptc_resources)
+    datasets, dataset_tail = _parse_datasets(iptc_data)
+    kept = [
+        raw
+        for record, dataset, _value, raw in datasets
+        if (record, dataset) not in {_CHARSET_KEY, (2, 55), (2, 60)}
+    ]
+    new_iptc_data = b"".join(
+        [
+            _encode_dataset(*_CHARSET_KEY, _UTF8_MARKER),
+            *kept,
+            _encode_dataset(2, 55, created_date),
+            _encode_dataset(2, 60, created_time),
+            dataset_tail,
+        ]
+    )
+    iptc_name = iptc_resources[0][1] if iptc_resources else b"\x00\x00"
+    md5_name = md5_resources[0][1] if md5_resources else b"\x00\x00"
+    new_resources = [
+        resource
+        for resource in resources
+        if resource[0] not in {_IPTC_RESOURCE, 0x0425}
+    ]
+    target_indices = [
+        index
+        for index, resource in enumerate(resources)
+        if resource[0] in {_IPTC_RESOURCE, 0x0425}
+    ]
+    insert_at = sum(
+        resource[0] not in {_IPTC_RESOURCE, 0x0425}
+        for resource in resources[: min(target_indices)]
+    ) if target_indices else len(new_resources)
+    checksum = hashlib.md5(new_iptc_data, usedforsecurity=False).digest()
+    new_resources[insert_at:insert_at] = [
+        (_IPTC_RESOURCE, iptc_name, new_iptc_data),
+        (0x0425, md5_name, checksum),
+    ]
+    encoded = _serialize_app13(new_resources, resource_tail)
+    replacement: list[tuple[int, bytes]] = []
+    pos = 0
+    while pos < len(encoded):
+        length = int.from_bytes(encoded[pos + 2 : pos + 4], "big")
+        end = pos + length + 2
+        replacement.append((encoded[pos + 1], encoded[pos:end]))
+        pos = end
+
+    out: list[tuple[int, bytes]] = []
+    first = min(photoshop_indices) if photoshop_indices else None
+    for index, segment in enumerate(segments):
+        if index == first:
+            out.extend(replacement)
+        if index not in photoshop_indices:
+            out.append(segment)
+    if first is None:
+        out.extend(replacement)
+    return out
 
 
 def _utf8_truncated(text: str, limit: int) -> bytes:
