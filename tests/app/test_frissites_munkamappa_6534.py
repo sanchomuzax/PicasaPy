@@ -77,9 +77,16 @@ def test_a_qml_elomelegitesek_is_indulokep_nelkul_futnak(monkeypatch):
                         lambda _p, env, **_k: kornyezetek.append(env) or "")
     monkeypatch.setattr(qml_cache_warmup, "melegitsd_qml_grafikat",
                         lambda _p, env, **_k: kornyezetek.append(env) or "")
-    update_swap_helper._qml_elofordit(Path("PicasaPy.exe"))
+    progress_status = Path("status.json")
+    update_swap_helper._qml_elofordit(
+        Path("PicasaPy.exe"), progress_status=progress_status
+    )
     update_swap_helper._qml_grafika_melegites(Path("PicasaPy.exe"))
     assert [env["PYINSTALLER_SUPPRESS_SPLASH_SCREEN"] for env in kornyezetek] == ["1", "1"]
+    assert Path(
+        kornyezetek[0][update_swap_helper.update_ablak._QML_HALADAS_STATUS_ENV]
+    ) == progress_status
+    assert update_swap_helper.update_ablak._QML_HALADAS_STATUS_ENV not in kornyezetek[1]
 
 
 def test_az_uj_program_ugy_indul_mint_az_intezobol(monkeypatch, tmp_path):

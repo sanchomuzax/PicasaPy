@@ -296,6 +296,8 @@ def test_a_frissitesi_ablak_hibaja_es_lepese_olvashato_allapotot_ir(monkeypatch,
     assert allapot["stage"] == "csere"
     assert "failed its startup check" in allapot["error"]
     assert update_ablak.felirat("elapsed", "en").format(seconds=12) == "Elapsed: 12 s"
+    assert update_ablak.lepes_szovege("qml_cache", "hu") == "Az indulás előkészítése"
+    assert update_ablak.lepes_szovege("qml_cache", "en") == "Preparing startup"
     status_ut.unlink(missing_ok=True)
 
 
@@ -324,12 +326,14 @@ def test_a_seged_a_teljes_munkat_az_ablakban_vegzi(tmp_path, monkeypatch):
 def test_a_seged_lepesei_a_valos_sorrendben_jelennek_meg(tmp_path, monkeypatch):
     """A felhasználó látja, hogy a segéd éppen melyik műveletnél tart."""
     lepesek = []
+    qml_halas_ut = tmp_path / "ablak-allapot.json"
+    qml_halas_utak = []
 
     class _JelzoAblak:
         van_hibaja = False
 
         def __init__(self, **_kwargs):
-            pass
+            self._status_ut = qml_halas_ut
 
         def __enter__(self):
             return self
@@ -358,7 +362,12 @@ def test_a_seged_lepesei_a_valos_sorrendben_jelennek_meg(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(update_swap_helper, "_onellenorzes", lambda _exe: True)
     monkeypatch.setattr(update_swap_helper, "_rendszergazda", lambda: False)
-    monkeypatch.setattr(update_swap_helper, "_qml_elofordit", lambda *_a, **_k: True)
+
+    def _qml_elofordit(_exe, **kwargs):
+        qml_halas_utak.append(kwargs.get("progress_status"))
+        return True
+
+    monkeypatch.setattr(update_swap_helper, "_qml_elofordit", _qml_elofordit)
     monkeypatch.setattr(update_swap_helper, "_qml_grafika_melegites", lambda *_a, **_k: True)
     monkeypatch.setattr(update_eredmeny, "ird", lambda *_a, **_k: None)
     monkeypatch.setattr(update_swap_helper, "inditsd_a_felhasznalonak", lambda *_a, **_k: None)
@@ -380,6 +389,7 @@ def test_a_seged_lepesei_a_valos_sorrendben_jelennek_meg(tmp_path, monkeypatch):
         "inditas",
         "ablak_varakozas",
     ]
+    assert qml_halas_utak == [qml_halas_ut]
     assert [update_ablak.lepes_szovege(k, "hu") for k in lepesek] == [
         "A régi program kilépésére vár",
         "A frissítési fájlok kicsomagolása",
