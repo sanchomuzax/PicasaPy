@@ -754,8 +754,7 @@ Item {
                  && !hostWindow.viewerOpen && hostWindow.libraryFrameVisible
         onChosen: function(kind, name, param) {
             if (kind === "folder") {
-                // #7217: a mappanév és egy szóköz a keresésben marad;
-                // előbb a keresés frissül, azon belül jelöljük ki a mappát.
+                // #7217: a mappanév és egy szóköz a keresésben marad.
                 hostRefs.toolbar.keresesSzoveggel(name + " ")
                 suggestionsTimer.stop()
                 hostController.search(name + " ")
