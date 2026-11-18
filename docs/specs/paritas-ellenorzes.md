@@ -6485,6 +6485,78 @@ Ha a felvétel a bal hasábban, a rácson, a kijelölésben és az állapotsorba
 
 **Helyesbítések a korábbi szövegre (a régi szöveg érintetlen, a helyesbítések itt vannak):** a „Nyitott” első sora és a „Cáfoló kísérlet” utolsó bekezdése a `0x0055ff50` rekeszre épített láncot állította, ez téves (Zárókör 1. pont); a „Nálunk” oszlop több hivatkozásának sorszáma elavult (Zárókör 5. pont, utolsó pont); a „Nyitott” harmadik sorában említett hálózati út a #6391 hatóköre; a `picasa-mappakezelo.md` 17.2 szakaszának „kizárólag a 0x004f54b0 és a 0x004183c0 felől hívódik” mondata pontosítandó: az olvasót a `0x004183c0`, az írót csak a `0x004f54b0` hívja, és az utóbbi a beolvasó leállítási mentése (a hívó vezesse át).
 
+### Mért eredmény (#7163, 2026-11-18)
+
+#### Következtetés
+
+Az eredeti Picasa 3.9-ben a Scan Always és Scan Once OK-ja nem változtatja meg a főablakot, ha a megadott mappa nem tartalmaz új képet; egy másik, megjelenített mappa eltávolítása viszont azonnal kiveszi a sort és a szakaszt, miközben a kijelölt mappa, a három kép kijelölése, az állapotsor és a rács képpontbeli görgetési helye megmarad (a rövidülő tartalom a végén természetesen korlátozhatja az eltolást). Ha a képek visszakerülnek az indexbe, a szakasz ugrás nélkül tér vissza. PicasaPy ugyanezeket a kijelöléseket és a lista tartalmi frissítését megtartja, de a Mappakezelő OK-ja a rácsot a kijelölt mappa szakaszának elejére görgeti; ez az egy igazolt, fejlesztői teendőt indokló eltérés.
+
+#### Bizonyítottsági fok
+
+**Megerősített** a görgetési eltérésre, a kijelölés megmaradására és a Remove lista-hatására: az eredeti oldalt a #712-#717 mérési esetek, a PicasaPy oldalt a teljes OK→újratöltés→QML-görgetés kódút igazolja. A mérőadat-archívumban nincs benne a hivatkozott képkocka vagy videó, ezért a feladatban megadott mérési leírásra és fájlazonosítókra támaszkodom; a nyers képeket nem ellenőriztem újra. Az eredeti bináris lánca külön, utasításszintű bizonyíték.
+
+#### Bizonyíték
+
+| Állítás | Eredeti Picasa 3.9 | PicasaPy (forráskód) |
+|---|---|---|
+| Scan Always OK után, kép nélküli mappán a főablak 45 másodpercig képpontra azonos. | mérés (#712, `kepernyo__10` ↔ `kepernyo__23-29`, `video__21.mp4`) | A mentési callback `_reload()`-ot hív; a folder-módú újratöltés alapértelmezetten újraaktiválja a mappát, ezért a QML `folderActivated` jelet kap (`folder_manager_save_controller.py:116-119`, `controller_sync_mixin.py:169-207`). |
+| Scan Once OK után a rács, a kijelölés, a bal hasáb és az állapotsor változatlan marad. | mérés (#713, `kepernyo__11` ↔ `kepernyo__24-30`) | A kijelölt képsorok azonosító alapján állnak vissza (`MainWindowCommands.qml:81-96`); a bal hasáb kijelölt útvonala a `currentFolder` (`MainFolderPane.qml:41`, `FolderPaneTreeRow.qml:49-51`). A három kijelölt képnél az alsó sáv kijelölés-összesítést mutat (`TrayInfoBar.qml:121-130`). |
+| Másik megjelenített mappa Remove-ja bezárás előtt kiveszi a sort és szakaszt, csökkenti a mappaszámot; a kijelölés, a kijelölt mappa, az állapotsor és a görgetési eltolás megmarad. | mérés (#714-#715, `kepernyo__24-30`, `j714/v/f_011.png`) | A Remove törli a gyökeret az indexből és újratölt (`library_controller_folders.py:472-495`, figyelt gyökérnél `:498-531`); a mentési út is újratölt a dialógus bezárása előtt (`FolderManagerDialog.qml:107-129`). A mappalista új soraiból eltűnik a célmappa (`controller_sync_mixin.py:186-194`). A görgetés viszont a kijelölt szakasz elejére ugrik (lásd alább). |
+| A Scan Always visszavétele után a szakasz és a sor visszatér ugrás nélkül, a kijelölés megmarad; rövid „Picasa Notifier” értesítés látható, folyamatjelző nincs. | mérés (#717, `kepernyo__37-41`, `video__35.mp4`); az értesítés csak megfigyelés, nem elvárás | A scan befejezésének görgetésmegőrző útja létezik (`controller_sync_mixin.py:146-155`), de a Mappakezelő OK gombjának saját újratöltése előtte a mappa elejére görget. A PicasaPy kék háttérmunka-hulláma meglévő, szándékos saját UX-kiegészítés (#70; `TrayInfoBar.qml:13-16`, `docs/decisions/vedett-sajat-funkciok.md:134-138`), nem új paritási jegy. |
+| Mégse után a főablak változatlan. | mérés (#716, `kepernyo__11` ↔ `kepernyo__24-30`) | A Mégse visszaállítja a piszkozatot és bezárja a dialógust, mentést nem indít (`FolderManagerDialog.qml:78-80, 336, 481`). |
+| `watchedfolders.txt` módosítási ideje minden OK-kor az OK másodpercére változik, tartalomváltozás nélkül is. | mérés (#712, #715) | PicasaPy minden mentésnél kiírja (`folder_manager_save_controller.py:93-99`, `folder_manager_save.py:148-159`). |
+| A Scan Once-nál megfigyelt `frexcludefolders.txt` tartalma `C:\Users\felhasznalo\Pictures\Picasa\`; a `scanlist.txt` `+C:\` sora a teljes adatbázis-kiírással együtt jelent meg. | mérés (#713, #714, #716, #717) | A `+` befoglaló gyökeret jelöl (`picasa-mappakezelo.md:1292-1328`); a mérés időbeli együttállása önmagában nem írót bizonyít. A már feltárt bináris út szerint a Mappakezelő közvetlen OK-lánca nem írja a `scanlist.txt`-t; a leállítási író és az OK-út különbségét a `picasa-mappakezelo.md:2930-2935` és e szakasz korábbi záróköre rögzíti. Nálunk az állapotváltó `setFolderManagerState` írja a fájlt (`library_controller_folders.py:104-133`); a különbség a korábbi specifikációban tudatos eltérésként szerepel (`picasa-mappakezelo.md:2963-2979`). |
+
+#### A két független út
+
+- **A - eredeti mérés:** a #712-#717 Colab-felvételek a Picasa 3.9 futásidejű képernyőjét és a fájlok időbélyegeit rögzítik. Ezek szerint a Remove megőrzi a képpontbeli görgetést.
+- **B - PicasaPy kódút:** a `FolderManagerDialog.qml:107-125` a Remove-ot a mentési zárójelen belül hajtja végre; a `folder_manager_save_controller.py:116-119` végül argumentum nélküli `_reload()`-ot hív. A `_reload` alapértéke `preserve_scroll=False` (`controller_sync_mixin.py:169-170`), és folder-módban `selectFolder(self._current_folder)`-re jut (`:195-207`). A `selectFolder` `folderActivated`-et bocsát ki (`controller.py:328-336`); a `LightboxFeed.qml:549-558` ezt `positionViewAtIndex(i, ListView.Beginning)` hívással, vagyis a csoport elejére görgetéssel kezeli (`:560-569`).
+- **Egyezés:** a két út a görgetésre eltér, tehát egy fejlesztői jegyet indokol; a kiválasztott képek és mappa megtartására, illetve a Remove utáni sor-/szakaszfrissítésre egyezik.
+
+#### Cáfoló kísérlet
+
+Megpróbáltam cáfolni, hogy az OK minden esetben a szakasz elejére görget: megkerestem az összes `_reload()`-hívót és a `preserve_scroll` alternatívát. Háttér-szinkron és újraszinkronizálás valóban hív `preserve_scroll=True`-t (`controller_sync_mixin.py:143,151,167`, `library_controller_activity.py:100`, `library_controller_resync.py:135`), de a Mappakezelő záró callbackje egyiket sem használja; a Remove közben előforduló `removeFolder` és `removeWatchedFolder` újratöltései szintén alapértelmezettek (`library_controller_folders.py:495,531`). A cáfolatot ugyanezekkel a fájl- és sorszintű hivatkozásokkal ellenőriztem; a görgetési eltérés fennmarad.
+
+#### A jegy „Kész, ha” pontjai
+
+- ✅ Scan Always, kép nélküli mappán: az eredeti főablak változatlan marad 45 másodpercig (#712).
+- ✅ Scan Once, kép nélküli mappán: az eredeti rács, kijelölés, bal hasáb és állapotsor változatlan (#713).
+- ✅ Másik megjelenített mappa Remove-ja: az eredeti sor/szakasz azonnal eltűnik és a mappaszám csökken; kijelölés, állapotsor és görgetési eltolás megmarad (#714-#715).
+- ✅ Scan Always után újra megjelenő képek: az eredeti sor/szakasz ugrás nélkül tér vissza; Cancel-kontroll nem változtat a főablakon (#716-#717).
+- ✅ Az eredmény bekerült ebbe a #7082 szakaszba; a görgetési eltéréshez egy külön, teljes fejlesztői jegytörzs következik. A fájltartalom és a rendes leállítás utáni állapot nem teljesült, ezeket nyitva hagyom.
+
+#### Javasolt fejlesztői jegytörzs
+
+##### A Mappakezelő OK-ja tartsa meg a rács görgetési helyét
+
+**Eredeti:** A #7163 mérése (#712-#717) szerint a Picasa 3.9-ben a Scan Always/Scan Once OK nem mozdítja el a főablakot kép nélküli mappa esetén; másik megjelenített mappa Remove-ja után a rács képpontbeli eltolása megmarad (a rövidebb lista a végén korlátozhatja), és Scan Always újraindexelésekor az új szakasz ugrás nélkül jelenik meg. Az eredeti OK-lánc: `0x005cf535` → `0x0065b840` → `0x00662b20`; az első hívás a `0x005cf52e-0x005cf535` utasításokban a kényszerítő `1` argumentummal látszik, a végrehajtó hívása `0x0065bb12-0x0065bb1b`. Bizonyíték: #712-#717 képkockák és videók; a lánc utasításszinten a helyi `annot_disasm.py` kimenetével ellenőrizve.
+
+**Nálunk:** `folder_manager_save_controller.py:116-119` a mentés végén `_reload()`-ot hív; a `controller_sync_mixin.py:169-207` alapértelmezett folder-ágán ez `selectFolder(currentFolder)`, majd `folderActivated`. A `LightboxFeed.qml:549-558, 560-569` a csoport elejére görget. A Remove-ot végző `removeFolder`/`removeWatchedFolder` közben is lefuthat ilyen alapértelmezett újratöltés (`library_controller_folders.py:472-495, 498-531`), még a záró callback előtt. A kijelölt képeket és mappát a jelenlegi kód megtartja; ezt a jegy nem változtathatja meg.
+
+**Teendő:** a Mappakezelő OK-zárójelen belül a Remove ne végezzen köztes, görgetést visszaállító nézetfrissítést; a végső frissítés őrizze meg a rács aktuális görgetési helyét, és ne bocsásson ki olyan mappaaktiválást, amely a kijelölt csoport elejére ugrik. A közvetlen, Mappakezelőn kívüli Remove út viselkedése maradjon külön kezelve.
+
+**Kész, ha:**
+
+- Mappakezelő OK után, másik kép nélküli mappán Scan Always és Scan Once esetén a kiválasztott mappa, a három kijelölt kép és a rács görgetési helye változatlan marad az 1/5/30 másodperces ellenőrzéskor.
+- Másik megjelenített mappa Remove-ja után a sor/szakasz eltűnik és a darabszám csökken, miközben a kiválasztott mappa, képek, állapotsor és a görgetési eltolás megmarad; csak a rövidebb tartalom által kikényszerített végpozíció-korlát alkalmazható.
+- Ha a Scan Always új képeket indexel, az új mappaszakasz megjelenik úgy, hogy a meglévő nézetpozíció és kijelölés megmarad.
+- A Mappakezelő Cancel továbbra sem írja át a nézetet.
+
+#### Új kutatási jegyjavaslatok
+
+- **A Mappakezelő fájljainak tartalma és rendes kilépés utáni állapota** - pontosan mi van a `watchedfolders.txt` és `frexcludefolders.txt` fájlban Scan Once, Remove, Cancel és visszakeresés után, illetve milyen a Scan Always/Once fájlállapota rendes kilépés után? Keresd a #712-#717 Colab-kimenetekben; ha a fájl eltűnése miatt nem gyűjthető ki, javítsd célzottan a végrehajtó kimenetgyűjtését vagy indíts külön mintamérést.
+- **A kijelölt mappa eltávolítása** - mit mutat az eredeti Picasa, ha a Remove az aktuálisan kijelölt mappát vagy a kijelölt képeket tartalmazó mappát éri? Keresd egy külön Colab-mérésben, mert a #714-#715 másik, nem kijelölt mappát távolított el.
+- **Első beolvasás még nem indexelt képekkel** - mikor jelenik meg az új mappaszakasz Scan Always és Scan Once esetén? Keresd olyan Colab-mintakönyvtárban, amelynek képei a beolvasás előtt még nincsenek az indexben.
+
+#### Nyitott
+
+- `watchedfolders.txt` és `frexcludefolders.txt` pontos tartalma Scan Once, Remove, Cancel és visszakeresés után: **NINCS MEG**; a #712-#717 nyers kimenet hiányzik a helyi archívumból, a felsorolt Colab-eredmények vagy új célzott mérés szükséges.
+- Scan Always és Scan Once rendes Picasa-kilépés utáni fájlállapota: **NINCS MEG**; a mérési csomagban rendes kilépés csak a Cancel-kontrollnál történt.
+- Még nem indexelt képeket tartalmazó mappa első Scan Always/Once beolvasásának látható eredménye: **NINCS MEG**; a megadott mintában ilyen eset nem volt.
+- Az aktuálisan kijelölt mappa, illetve a kijelölt képeket tartalmazó mappa Remove-ja: **NINCS MEG**; külön eredeti-Picasa mérés szükséges.
+- A képkockák videó szerinti pontos időrendje és a „Picasa Notifier” pontos megjelenési hossza: **NINCS MEG** helyben; a videók hiányoznak az archívumból. Az értesítés rövid megjelenése csak megfigyelés, nem elvárás.
+- A `scanlist.txt` `+` előtagjának jelentése és a Mappakezelő közvetlen OK-útjának írása nem marad nyitva: a `+` befoglaló gyökeret jelöl (`picasa-mappakezelo.md:1292-1328`), az OK közvetlen lánca nem hívja a fájlírót (`:2930-2935`; e lap korábbi záróköre).
+
 ## #7084: A kötegelt szerkesztés teljes folyamata az eredeti Picasával összevetve: belépési pontok, viselkedés, hatás
 
 Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
