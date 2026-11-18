@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.151] - 2026-11-18
+
+- Az Eszközök menü dátummódosítója nézőben az aktuális képre, mappanézetben pedig az adott mappa képeire nyílik meg. (#7230).
+
 ## [1.0.150] - 2026-11-18
 
 - Az első Esc bezárja a keresési javaslatokat, a következő pedig törli a keresést, miközben a fókusz a mezőben marad (#7215).
