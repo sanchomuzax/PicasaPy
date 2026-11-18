@@ -2983,6 +2983,10 @@ a létrehozási időt nem változtatja.
 és módosítási idő
 az újraírt `DateTime` értékét kapja, a létrehozási idő pedig nem változik.
 
+> **Mérés, 2026-11-18 (#7154, Colab, Wine, angol 3.9.141).** Egy EXIF nélküli JPEG dátummódosítása után a fájl 727 bájttal nő: EXIF (`Software`=`Picasa`, `ExifVersion`=`0220`, `DateTimeOriginal`), XMP (`exif:DateTimeOriginal`) és IPTC (`DateCreated`, `TimeCreated`, `0x0425` MD5) szegmens keletkezik. `DateTime` (`0x0132`) és `DateTimeDigitized` nem íródik. A második módosítás az így EXIF-essé vált fájlon is lefut (előre és visszafelé), mindhárom helyet frissíti, a méret nem változik. A módosítási idő mindkét módosítás után a régi marad; a hozzáférési idő egy módosítás után a régi, a második után az írás ideje (= ctime); az állapotváltozási idő a módosítás ideje. A fájlidő tehát nem az új dátumra és nem a `DateTime`-ra áll. Az `idorend` minta `DateTime`-os, szintetikus EXIF-es JPEG-jein a módosítás nem érvényesül (fájl, EXIF, ctime, megjelenítés változatlan; négy kép, összesen tíz próba), az oka ismeretlen, ezért a `DateTime`-ra állító (`0x00ab35e0`) ág nem megfigyelt. Írásvédett (Linux 0444) EXIF nélküli JPEG módosítása hibaüzenet nélkül lefut, a fájl végül nem írásvédett (Wine; Windowsra nem általánosítható). Időzóna: UTC.
+
+**Következtetés (#7154).** A megfigyelhető esetben a fájlidő nem követi az új dátumot: a módosítási idő megmarad, ahogy a #4927 állította, és ahogy a PicasaPy `timestamp_controller.py:197-208` visszaállítása csinálja. A fenti „kövesse a `DateTime`-ot” jelölt ezért **nem nyit jegyet**. A `DateTime`-os ág oka Ghidra-kérdésként a várólistán van (`0x009eb290`). Mért eltérés: az eredeti az EXIF mellett XMP és IPTC dátumot is ír, a PicasaPy csak az EXIF `DateTimeOriginal`-t; erre nyílt a #7237.
+
 ### 9. Új kutatási jegyjavaslatok
 
 Nincs külön kutatási jegyjavaslat; a lent felsorolt nyitott pontok a 7033
@@ -3260,6 +3264,8 @@ olvasható, a `0x00ab35e0` a fájl hozzáférési és módosítási idejét erre
 idő az új EXIF `DateTime` értéke, a létrehozási idő pedig az eredeti marad.
 
 **Ellentmondás, ezért a jelölt most nem indítható (a hívó megjegyzése, 2026-11-17).** A #4927 kiadásban rögzített korábbi állítás szerint a dátummódosító munkafolyamat objektumában nincs `0x1c` (EXIF `DateTime`) mező, így a `0x009f05c0` keresés nem talál, a `0x00ab35e0` nem fut, és a mentett eredeti fájlidő-hármas áll vissza; a jelenlegi PicasaPy (`timestamp_controller.py:197-208`) ezt követi. A fenti jelölt ennek az ellenkezőjét állítja. A két állítás közül a fenti Windows-mérési sorozat fájlidő-pontja dönt; addig fejlesztői jegy nem nyílik.
+
+**Eldöntve (#7154, 2026-11-18):** a mérés a #4927 állítását igazolta (a módosítási idő megmarad), ez a jelölt nem nyit jegyet; részletek a „fájlideje kövesse az eredeti Picasát” szakasz alatti mérésnél.
 
 ## #7060: A diavetítés teljes folyamata az eredeti Picasával összevetve
 
