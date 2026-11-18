@@ -23,8 +23,9 @@ def _normalize_search_query(query: str) -> str:
 
     Az ASCII betűk és számjegyek, a kettőspont, illetve minden nem-ASCII
     karakter egy szó része. A többi ASCII karakter, így a pont és az
-    aláhúzás is, szóelválasztó. Az eredmény egy szóközökkel összefűzött
-    szólista, amelyet a keresés továbbra is egyetlen FTS5-frázisként használ.
+    aláhúzás is, szóelválasztó. A szó elején álló mínusz megmarad kizáró
+    jelként. Az eredmény szóközökkel összefűzött, pozitív és kizárt szavakból
+    álló lista.
     """
     cleaned = (query or "").strip(_SEARCH_EDGE_CHARS).lower()
     prefix = next(
@@ -36,18 +37,36 @@ def _normalize_search_query(query: str) -> str:
 
     words: list[str] = []
     current: list[str] = []
-    for character in cleaned:
+    excluded = False
+    for index, character in enumerate(cleaned):
         if (
             character == ":"
             or ord(character) > 0x7F
             or (character.isascii() and character.isalnum())
         ):
             current.append(character)
-        elif current:
-            words.append("".join(current))
-            current.clear()
+        else:
+            if current:
+                word = "".join(current)
+                words.append(f"-{word}" if excluded else word)
+                current.clear()
+                excluded = False
+            if (
+                character == "-"
+                and index + 1 < len(cleaned)
+                and (
+                    cleaned[index + 1] == ":"
+                    or ord(cleaned[index + 1]) > 0x7F
+                    or cleaned[index + 1].isascii()
+                    and cleaned[index + 1].isalnum()
+                )
+            ):
+                excluded = True
+            else:
+                excluded = False
     if current:
-        words.append("".join(current))
+        word = "".join(current)
+        words.append(f"-{word}" if excluded else word)
     return " ".join(words)
 
 # A hatásos caption/keywords: JPEG-nél az IPTC (caption_file) az elsődleges,
@@ -540,34 +559,70 @@ def search_photos(
 def _text_search(
     conn: sqlite3.Connection, query: str, *, only_id: int | None = None
 ) -> tuple[PhotoRecord, ...]:
-    """A korábbi (#383 előtti) szöveges keresés-logika, változatlanul —
-    idézett FTS-kifejezés + casefold-os mappanév-egyezés.
+    """Szavankénti FTS5-prefix keresés és mappanév-egyezés (#7193).
 
     #1515: az `only_id` egyetlen képre szűkít. A meglévő feltétel emiatt
-    ZÁRÓJELBE került: az FTS-egyezés és a mappanév-egyezés VAGY-a továbbra
-    is EGY egységként áll, a szűkítés pedig ÉS-sel jön rá. Zárójel nélkül a
-    mappanév-ág kibújna a szűkítés alól.
+    ugyanarra a közös feltételre kerül, mint az FTS-egyezés és a mappanév-
+    egyezés VAGY-a. A kizárt szavak mindkét ágból eltávolítják a képeket.
     """
-    # #7081: a szóhatárokat normalizáljuk, de a meglévő keresést egyetlen
-    # idézett frázisként tartjuk meg. Az AND/OR, a mínuszos kizárás és a
-    # címke szerinti mezőszűrés a nyitott 0x0043F9A0/0x0043C410 mérésig nem
-    # része ennek a lekérdezésnek.
-    phrase = '"' + query.replace('"', '""') + '"'
-    folded = query.lower()
-    folder_ids = [
-        row["id"]
-        for row in conn.execute("SELECT id, path FROM folders")
-        if folded in _normalize_search_query(_PATH_SEP.split(row["path"])[-1])
-    ]
-    placeholders = ",".join("?" * len(folder_ids))
-    folder_clause = f" OR p.folder_id IN ({placeholders})" if folder_ids else ""
-    scope_clause = " AND p.id = ?" if only_id is not None else ""
-    scope_params = () if only_id is None else (only_id,)
+    terms = query.split()
+    positive_terms = [term for term in terms if not term.startswith("-")]
+    excluded_terms = [term[1:] for term in terms if term.startswith("-")]
+
+    def prefix_query(term: str) -> str:
+        return '"' + term.replace('"', '""') + '"*'
+
+    folder_ids: list[int] = []
+    excluded_folder_ids: set[int] = set()
+    for row in conn.execute("SELECT id, path FROM folders"):
+        folder_terms = {
+            term.removeprefix("-")
+            for term in _normalize_search_query(
+                _PATH_SEP.split(row["path"])[-1]
+            ).split()
+        }
+        if positive_terms and all(
+            any(folder_term.startswith(term) for folder_term in folder_terms)
+            for term in positive_terms
+        ):
+            folder_ids.append(row["id"])
+        if any(
+            folder_term.startswith(term)
+            for term in excluded_terms
+            for folder_term in folder_terms
+        ):
+            excluded_folder_ids.add(row["id"])
+
+    where: list[str] = []
+    params: list[str | int] = []
+    if positive_terms:
+        fts_query = " AND ".join(prefix_query(term) for term in positive_terms)
+        match_clause = "p.id IN (SELECT rowid FROM photos_fts WHERE photos_fts MATCH ?)"
+        params.append(fts_query)
+        if folder_ids:
+            placeholders = ",".join("?" * len(folder_ids))
+            match_clause += f" OR p.folder_id IN ({placeholders})"
+            params.extend(folder_ids)
+        where.append(f"({match_clause})")
+
+    for term in excluded_terms:
+        where.append(
+            "p.id NOT IN (SELECT rowid FROM photos_fts "
+            "WHERE photos_fts MATCH ?)"
+        )
+        params.append(prefix_query(term))
+    if excluded_folder_ids:
+        placeholders = ",".join("?" * len(excluded_folder_ids))
+        where.append(f"p.folder_id NOT IN ({placeholders})")
+        params.extend(sorted(excluded_folder_ids))
+
+    if only_id is not None:
+        where.append("p.id = ?")
+        params.append(only_id)
+    where_clause = " AND ".join(where) if where else "1"
     rows = conn.execute(
-        f"{_select(conn)} WHERE (p.id IN "
-        "(SELECT rowid FROM photos_fts WHERE photos_fts MATCH ?)"
-        f"{folder_clause}){scope_clause} ORDER BY f.path, p.name",
-        (phrase, *folder_ids, *scope_params),
+        f"{_select(conn)} WHERE {where_clause} ORDER BY f.path, p.name",
+        params,
     )
     return _records(rows)
 
