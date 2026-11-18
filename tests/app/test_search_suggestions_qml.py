@@ -75,6 +75,18 @@ class TestSearchSuggestions:
         ]
         assert "(6)" in counts
 
+    def test_word_suggestion_count_is_shown(self, component):
+        item, app = component
+        item.setProperty("query", "ai")
+        item.setProperty("suggestions", [
+            {"kind": "word", "name": "ai", "count": 37, "param": "ai"}
+        ])
+        app.processEvents()
+        counts = [
+            ch.property("text") for ch in _by_object_name(item, "suggestionCount")
+        ]
+        assert counts == ["(37)"]
+
     def test_count_follows_the_name_instead_of_sitting_at_row_edge(self, component):
         item, app = component
         item.setProperty("query", "logo")
