@@ -103,7 +103,7 @@ class TestSlideshowBasics:
         _invoke(qt_app, show, "advance")   # 2 fotó: körbefordul
         assert show.property("currentIndex") == 0
         _invoke(qt_app, show, "goBack")
-        assert show.property("currentIndex") == 1
+        assert show.property("currentIndex") == 0  # kézi hátra az elsőn marad (#7190)
         _invoke(qt_app, show, "stop")
 
     def test_exit_syncs_grid_selection(self, qml_app, qt_app):

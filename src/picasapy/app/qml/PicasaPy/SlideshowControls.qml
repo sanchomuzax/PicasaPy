@@ -207,7 +207,7 @@ Item {
                 text: "▶▶"; width: 38
                 height: controlsRow.buttonHeight
                 lenyomasra: true
-                onClicked: slideshow.advance()
+                onClicked: slideshow.manualAdvance()
             }
             PicasaButton {
                 objectName: "slideshowRotateLeftButton"
