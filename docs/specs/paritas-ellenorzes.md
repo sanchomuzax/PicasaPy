@@ -5473,7 +5473,7 @@ A mérés a `picasa-colab-jobs` #740, #741 és #742 feladata (eredeti Picasa 3.9
 - **Ékezetes bevitel (mérve):** a végrehajtó `gepel` lépése karaktereket ejt (`áéíóöőúüű` -> `éíü`, `tükörfúrógép` -> `tkörfúrógép`), az `ő`/`ű` `o`/`u` lesz (CP1252 ANSI mező). Az idézőjel nem gépelhető. A `címke:` és az idézőjeles frázis ezért nem mérhető (a végrehajtó szövegbevitele javul).
 - **Ékezet nélküli keresés (mérve, kontroll nélkül):** az `arvizturo` 0 találatot ad a `árvíztűrő tükörfúrógép` feliratra; a pozitív kontroll hiányzik. Eltérés csak a kontroll után (a kontroll a #7220 folytatásában).
 - **Javaslatlista (mérve, #708/16 és #741):** a szósorok `szó (N)` darabszámot mutatnak (`ai (37)`, `ai1 (3)`..., az `ai1..ai8` az ini-vel egyező), a szósorok közt dátumszavak is vannak (`2019:03:08 (28)`: 7 kép x 4 dátummező), és a mért listákon a darabszám szerint csökkenő sorrendben állnak a mappasor után. PicasaPy: darabszám rejtett (`SearchSuggestions.qml:140-141`), forrás csak teljes kulcsszó, sorrend előfordulási. **Eltér** (#7242). Ezzel a „`(37)` darabszám eredete" kérdés eldőlt.
-- **Nem mért (keret):** M6 szűrőgombok és kor-csúszka a szöveggel, szósor-/albumsor-kattintás, javaslat kis-/nagybetű, kombinalt k01-k10 EXIF.
+- **Nem mért (keret):** M6 szűrőgombok és kor-csúszka a szöveggel, szósor-/albumsor-kattintás, javaslat kis-/nagybetű, a `kombinalt` mintakészlet k01-k10 képeinek EXIF-je.
 
 ##### Egyező viselkedések és elvárás nélkül hagyott mérés
 
