@@ -164,10 +164,10 @@ class SearchMixin:
 
     @Slot(str, result="QVariantList")
     def searchSuggestions(self, text: str) -> list:
-        """Mappa- és album-javaslatok a legördülőnek — dict-lista a QML-nek.
+        """Mappa-, album- és kulcsszó-javaslatok a legördülőnek.
 
-        Az albumnevek és tagsági darabszámok az indexből jönnek; gépeléskor
-        nem olvassuk be újra a mappák `.picasa.ini` fájljait.
+        Minden adat az indexből jön; gépeléskor nem olvassuk be újra a
+        mappák `.picasa.ini` fájljait.
         """
         with open_index(self._db_path) as conn:
             return [

@@ -755,9 +755,13 @@ Item {
                  && !hostWindow.viewerOpen && hostWindow.libraryFrameVisible
         onChosen: function(kind, name, param) {
             if (kind === "folder") {
-                hostRefs.toolbar.clearSearch()
-                hostWindow.clearSelection()
-                hostController.selectFolder(param)
+                // #7217: a mappasor neve és a záró szóköz a keresésben
+                // marad. A keresési módot előbb frissítjük, majd azon belül
+                // jelöljük ki a mappát.
+                hostRefs.toolbar.keresesSzoveggel(name + " ")
+                suggestionsTimer.stop()
+                hostController.search(name + " ")
+                hostController.selectFolderKeepSearch(param)
             } else if (kind === "album") {
                 hostRefs.toolbar.clearSearch()
                 hostWindow.clearSelection()

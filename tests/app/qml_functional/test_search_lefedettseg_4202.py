@@ -167,11 +167,14 @@ def test_keresesi_elemlista_es_valodi_felhasznaloi_ut(
     assert rows_in_popup, "a kereső-javaslat nem jelent meg"
     target_folder = controller.currentFolder
     _click_item(window, rows_in_popup[0], qt_app)
-    assert _wait_until(qt_app, lambda: field.property("text") == "")
+    assert _wait_until(qt_app, lambda: field.property("text") == "kepek ")
     assert _wait_until(qt_app, lambda: suggestions.property("visible") is False)
+    assert controller.searchActive is True
+    assert controller.searchQuery == "kepek"
     assert controller.currentFolder == target_folder
 
     _click_item(window, field, qt_app)
+    QTest.keyClick(window, Qt.Key.Key_A, Qt.KeyboardModifier.ControlModifier)
     _send_text(field, "a", qt_app)
     assert _wait_until(
         qt_app,

@@ -95,7 +95,9 @@ def test_search_suggestions_keyboard_and_click_at_height_variations(qml_app, qt_
         QTest.keyClick(window, Qt.Key.Key_Enter)
         qt_app.processEvents()
         assert chosen and chosen[-1][:2] == ("folder", "kepek-masodik")
-        assert field.property("text") == ""
+        assert field.property("text") == "kepek-masodik "
+        assert controller.searchActive is True
+        assert controller.searchQuery == "kepek-masodik"
         assert popup.property("visible") is False
         assert field.property("activeFocus") is True
 

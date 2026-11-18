@@ -9,8 +9,8 @@ Rectangle {
     id: box
 
     property string query: ""
-    // [{kind: "folder"|"album", name, count, param}] — a controller
-    // search_suggestions() eredménye
+    // [{kind: "folder"|"album"|"word", name, count, param}] — a
+    // controller search_suggestions() eredménye
     property var suggestions: []
     property int selectedIndex: -1
     signal chosen(string kind, string name, string param)
@@ -86,8 +86,16 @@ Rectangle {
                     ? keyboardSelectionColor : "transparent"
 
                 FolderIcon {
+                    objectName: "suggestionFolderIcon"
                     id: rowIcon
                     visible: modelData.kind === "folder"
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: 6
+                    size: 13
+                }
+                LabelIcon {
+                    objectName: "suggestionWordIcon"
+                    visible: modelData.kind === "word"
                     anchors.verticalCenter: parent.verticalCenter
                     x: 6
                     size: 13
@@ -129,7 +137,8 @@ Rectangle {
                     Text {
                         id: countText
                         objectName: "suggestionCount"
-                        text: "(" + modelData.count + ")"
+                        text: modelData.kind === "word"
+                            ? "" : "(" + modelData.count + ")"
                         color: Theme.placeholderText
                         font.pixelSize: Theme.fontSize
                     }

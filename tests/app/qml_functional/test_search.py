@@ -44,7 +44,9 @@ class TestSearchSuggestionsWiring:
             box, "choose", Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 0)
         )
         qt_app.processEvents()
-        assert field.property("text") == ""
+        assert field.property("text") == "kepek "
+        assert controller.searchActive is True
+        assert controller.searchQuery == "kepek"
         assert controller.currentFolder == target
         value = box.property("suggestions")
         if hasattr(value, "toVariant"):
