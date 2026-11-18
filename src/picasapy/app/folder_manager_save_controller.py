@@ -115,7 +115,10 @@ class FolderManagerSaveMixin:
 
     def _finish_folder_manager_save(self) -> None:
         """4. lépés (`0x005cf535`): záró lépés — a nézet frissítése."""
-        self._reload()
+        # #7224: az OK-kori frissítés csak a feedet töltse újra; a
+        # `selectFolder()` által kibocsátott `folderActivated` a rácsot
+        # visszagörgetné a kiválasztott csoport elejére.
+        self._reload(preserve_scroll=True)
         self.statusChanged.emit()
 
     def _add_tombstone(self, path: str) -> None:
