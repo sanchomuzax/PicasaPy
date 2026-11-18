@@ -74,11 +74,24 @@ class SearchMixin:
                 self._note_color_search(conn, matching)
                 records = self._search_matches(conn, query)
         if query:
+            records = self._filter_search_hidden(records)
             self._show_search_pane(records)
             self._show_search_results(records, time.perf_counter() - started)
         else:
             self._restore_full_folder_pane()
             self._show(records)
+
+    def _filter_search_hidden(self, records: tuple | list) -> tuple:
+        """A rejtett képek szűrése a keresési találatokból (#7194).
+
+        Az eredetiben a keresés eleve kizárja a rejtett képeket
+        (`Preferences\\ShowHidden` hiányában, 0x00660ca2). A bal hasáb, a
+        darabszám és a zöld sáv előtt szűrünk, hogy mind ugyanazt a látható
+        halmazt mutassa.
+        """
+        if not self.showHidden:
+            return tuple(r for r in records if not r.hidden)
+        return tuple(records)
 
     def _show_search_results(self, records, elapsed: float) -> None:
         """Keresési találatok a ZÖLD SÁVVAL (#4531).
@@ -140,6 +153,7 @@ class SearchMixin:
         started = time.perf_counter()
         with open_index(self._db_path) as conn:
             all_matches = self._search_matches(conn, query)
+        all_matches = self._filter_search_hidden(all_matches)
         # a hasáb az ÖSSZES találatos mappát mutatja tovább (#49), hogy
         # át lehessen kattintani a többibe; a rács a mappára szűkül
         self._show_search_pane(all_matches)

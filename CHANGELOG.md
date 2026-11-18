@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.143] - 2026-11-18
+
+- A mappalistán gépelt betű, szám vagy jel a keresőmezőbe kerül és elindítja a keresést, mint a bélyegképrácson; az ékezetes betű, a Ctrl és az Alt nem indít keresést (#7192).
+- A keresőszavak külön, ÉS kapcsolatban keresnek, a mínuszjeles szavak kizárják a találatokat (#7193).
+
+## [1.0.142] - 2026-11-18
+
+- Az importablak megjegyzi az almappa-módot, a törlési módot és az öt legutóbbi célmappát (az import indításakor mentve, üres profilban kézi cím és Leave card alone), a törlési mód pedig csak DCIM mappás csatolt kártyánál aktív (#7183).
+- A normál diavetítésben az Enter, a Ctrl+R és a Ctrl+Shift+R nem csinál semmit, mint az eredetiben: nem léptet és nem forgat, a Fel/Le, a számjegyek és a Pause/Play a megszokott módon működik (#7189).
+
 ## [1.0.141] - 2026-11-18
 
 - Ha importáláskor egy kép másolása nem sikerül, a törlési módok a forrásból semmit nem törölnek, és a forrás törlésének hibája sem akasztja meg az importablakot (#7172).

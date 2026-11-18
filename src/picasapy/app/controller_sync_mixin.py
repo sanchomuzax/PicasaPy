@@ -68,6 +68,7 @@ class AppControllerSyncMixin:
             started = time.perf_counter()
             with open_index(self._db_path) as conn:
                 records = self._search_matches(conn, param)
+            records = self._filter_search_hidden(records)
             self._show_search_pane(records)
             # #4531: a zöld sáv (és a visszalépő gomb) a frissítésnél sem tűnhet el
             self._show_search_results(records, time.perf_counter() - started)
@@ -76,6 +77,7 @@ class AppControllerSyncMixin:
             started = time.perf_counter()
             with open_index(self._db_path) as conn:
                 all_matches = self._search_matches(conn, query)
+            all_matches = self._filter_search_hidden(all_matches)
             self._show_search_pane(all_matches)
             self._show_search_results(
                 tuple(r for r in all_matches if r.folder_path == folder),

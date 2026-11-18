@@ -168,6 +168,10 @@ class FolderViewMixin:
         self._refresh_view()  # a feed sorrendje követi a hasábot (#64)
 
     def _reload_folders(self) -> None:
+        # #7194: aktív keresésnél a bal hasáb a találatos mappákat mutatja
+        # (load_matches), a teljes mappafa újratöltése ezt felülírná.
+        if getattr(self, "_folders_filtered", False):
+            return
         # #321 + #461/3: a bal hasábnak SAJÁT rendezése van — a Mappa ▸
         # Rendezés (folderSort) továbbra sem nyúl hozzá, azt csak a rács
         # követi. A hasáb sorrendjét a saját jobbklikk-menüje állítja
