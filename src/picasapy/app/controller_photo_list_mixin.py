@@ -116,7 +116,12 @@ class AppControllerPhotoListMixin:
             self._age_filter_days = None
         # #17: a rejtett képek alapból sehol nem látszanak (rács, keresés,
         # csillag-szűrő) — a Nézet → Rejtett képek kapcsolóval igen
-        if not self.showHidden:
+        # #7194: a keresési nézetekben a szűrés már a hasáb, a darabszám és a
+        # sáv előtt megtörtént (_filter_search_hidden), itt nem duplikáljuk.
+        if not self.showHidden and self._view_mode[0] not in (
+            "search",
+            "search-folder",
+        ):
             records = tuple(r for r in records if not r.hidden)
         # #461: a BEZÁRT gyűjtemények képei sehol nem látszanak — rácsban,
         # keresésben, csillag-szűrőben sem. Ez az EGY pont, ahol minden
