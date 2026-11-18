@@ -4,7 +4,17 @@ import QtQuick.Layouts
 
 // -- előnézeti bélyegkép-rács -------------------------------------
 Rectangle {
+    id: previewPanelRoot
     required property var hostWindow
+    readonly property var selectedItem:
+        hostWindow.selectedPreviewIndex >= 0
+        && hostWindow.selectedPreviewIndex < hostWindow.previewItems.length
+            ? hostWindow.previewItems[hostWindow.selectedPreviewIndex] : null
+    property bool fallbackToThumbnail: false
+    readonly property string selectedPath: selectedItem ? selectedItem.path : ""
+
+    onSelectedPathChanged: fallbackToThumbnail = false
+
     function positionAt(index) {
         previewGrid.positionViewAtIndex(index, GridView.Contain)
     }
@@ -13,6 +23,11 @@ Rectangle {
     Layout.minimumHeight: 110
     color: Theme.contentPanel
     border.color: Theme.chromeBorder
+
+    RowLayout {
+        anchors.fill: parent
+        anchors.margins: 4
+        spacing: 8
 
     // #7178: a bélyegkép helyi menüje. Az eredetiben (`0x00733c70`, 20 bájtos
     // rekordok) négy parancs áll, ebben a sorrendben: Include File, Exclude
@@ -53,8 +68,8 @@ Rectangle {
     GridView {
         id: previewGrid
         objectName: "importSourcePreviewGrid"
-        anchors.fill: parent
-        anchors.margins: 4
+        Layout.preferredWidth: 168
+        Layout.fillHeight: true
         clip: true
         cellWidth: 76
         cellHeight: 92
@@ -220,5 +235,119 @@ Rectangle {
             }
         }
         ScrollBar.vertical: PicasaScrollBar {}
+    }
+
+    Rectangle {
+        id: largePreviewPane
+        objectName: "importSourceLargePreviewPane"
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        color: Theme.canvasBg
+        border.color: Theme.thumbBorder
+
+        Row {
+            objectName: "importSourceLargePreviewControls"
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.margins: 6
+            spacing: 3
+            visible: previewPanelRoot.selectedItem !== null
+            z: 1
+
+            PicasaButton {
+                objectName: "importSourceLargePreviousButton"
+                text: "‹"
+                enabled: previewPanelRoot.selectedItem !== null
+                         && hostWindow.selectedPreviewIndex > 0
+                onClicked: hostWindow.stepPreview(-1)
+            }
+            PicasaButton {
+                objectName: "importSourceLargeNextButton"
+                text: "›"
+                enabled: previewPanelRoot.selectedItem !== null
+                         && hostWindow.selectedPreviewIndex
+                                < hostWindow.previewItems.length - 1
+                onClicked: hostWindow.stepPreview(1)
+            }
+            PicasaButton {
+                objectName: "importSourceLargeRotateLeftButton"
+                text: "↺"
+                enabled: previewPanelRoot.selectedItem !== null
+                onClicked: importSourceController.rotateFile(
+                    previewPanelRoot.selectedItem.path, -1)
+            }
+            PicasaButton {
+                objectName: "importSourceLargeRotateRightButton"
+                text: "↻"
+                enabled: previewPanelRoot.selectedItem !== null
+                onClicked: importSourceController.rotateFile(
+                    previewPanelRoot.selectedItem.path, 1)
+            }
+            PicasaButton {
+                objectName: "importSourceLargeStarButton"
+                text: previewPanelRoot.selectedItem
+                    && previewPanelRoot.selectedItem.starred ? "★" : "☆"
+                enabled: previewPanelRoot.selectedItem !== null
+                onClicked: importSourceController.toggleStar(
+                    previewPanelRoot.selectedItem.path)
+            }
+            PicasaButton {
+                objectName: "importSourceLargeExcludeButton"
+                text: previewPanelRoot.selectedItem
+                    && previewPanelRoot.selectedItem.excluded
+                        ? qsTr("Include") : qsTr("Exclude")
+                enabled: previewPanelRoot.selectedItem !== null
+                onClicked: {
+                    if (previewPanelRoot.selectedItem.excluded)
+                        importSourceController.includeFile(
+                            previewPanelRoot.selectedItem.path)
+                    else
+                        importSourceController.excludeFile(
+                            previewPanelRoot.selectedItem.path)
+                }
+            }
+        }
+
+        Image {
+            objectName: "importSourceLargePreviewImage"
+            anchors.fill: parent
+            anchors.margins: 8
+            z: -1
+            source: previewPanelRoot.selectedItem
+                ? (previewPanelRoot.fallbackToThumbnail
+                   || !previewPanelRoot.selectedItem.imageUrl
+                   ? previewPanelRoot.selectedItem.thumbUrl
+                   : previewPanelRoot.selectedItem.imageUrl)
+                : ""
+            sourceSize.width: width
+            sourceSize.height: height
+            smooth: true
+            mipmap: true
+            fillMode: Image.PreserveAspectFit
+            asynchronous: Qt.platform.pluginName !== "offscreen"
+            rotation: previewPanelRoot.selectedItem
+                ? 90 * (previewPanelRoot.selectedItem.rotation || 0) : 0
+            onStatusChanged: {
+                if (status === Image.Error
+                        && !previewPanelRoot.fallbackToThumbnail
+                        && previewPanelRoot.selectedItem
+                        && previewPanelRoot.selectedItem.thumbUrl)
+                    previewPanelRoot.fallbackToThumbnail = true
+            }
+        }
+
+        Text {
+            objectName: "importSourceFileInfoText"
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: 8
+            elide: Text.ElideMiddle
+            text: previewPanelRoot.selectedItem
+                ? previewPanelRoot.selectedItem.path : ""
+            color: Theme.textGray
+            font.pixelSize: Theme.fontSize - 1
+        }
+    }
     }
 }

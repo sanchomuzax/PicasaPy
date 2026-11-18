@@ -5,59 +5,38 @@ import QtQuick.Layouts
 
 // Import forrásból (#23/#441): külső mappa (pl. fényképezőgép/kártya
 // csatolt mappája, vagy bármely más mappa) képeinek/videóinak másolása a
-// könyvtárba — a Mappakezelő/DedupDialog mintájára ÖNÁLLÓ, mozgatható/
-// átméretezhető ablak (nem a főablakba ékelt Dialog).
+// könyvtárba — a főablak központi munkaterületén, a könyvtár helyén.
 //
 // #441 — a mai szabad szöveges mappa-sablon mező helyett HÁROM célmappa-
 // elnevezési mód (namingMode: "manual" | "date" | "today"), duplikátum-
 // kizárás (autoExclude, a jelölt-előnézetben "duplicate"/"excluded"
 // zászlókkal), egyenkénti válogatás, és háromállapotú, kétlépcsős
 // megerősítésű forrás-törlés ("After Copying:").
-Window {
+Rectangle {
     id: importSourceWindow
     objectName: "importSourceDialog"
-    title: qsTr("Import from Source")
-    modality: Qt.ApplicationModal
-
-    //: #3544: a Shift+F1 fejezete. Külön ablakos, modális párbeszéd: a
-    //: főablak súgója mögé kerülne, ezért a `WindowHelp` a párbeszéd FÖLÖTT,
-    //: külön ablakban nyitja.
-    property string helpTopic: "features/importalas.md"
-    WindowHelp { tema: importSourceWindow.helpTopic }
-    width: 640
-    // #7185: a tartalom görgetés nélküli oszlop; az előnézeti rács a legkisebb
-    // magasságán is elfér, de a többi sáv nem zsugorodik. A legkisebb
-    // magasság ezért a tartalom legkisebb magasságát követi, különben az
-    // alsó gombsor (Import All, Import Selected, Close) kilóg az ablakból.
-    height: Math.max(680, minimumHeight)
-    minimumWidth: 480
-    minimumHeight: Math.max(480, Math.ceil(importSourceContent.implicitHeight)
-                                 + 2 * importSourceContent.anchors.margins)
+    required property var hostWindow
+    anchors.fill: parent
     color: Theme.canvasBg
-    //: #3575: a külön `Window` NEM örökli a főablak `palette`-jét — enélkül
-    //: a célmappa-módok rádiófeliratai olvashatatlanok (mint a #3593-ban).
-    palette {
-        window: Theme.canvasBg
-        active.windowText: Theme.ink
-        inactive.windowText: Theme.ink
-        base: Theme.controlBase
-        alternateBase: Theme.panelBg
-        active.text: Theme.ink
-        inactive.text: Theme.ink
-        button: Theme.buttonBg
-        active.buttonText: Theme.ink
-        inactive.buttonText: Theme.ink
-        highlight: Theme.selectionBlue
-        highlightedText: Theme.panelSelectionText
-        placeholderText: Theme.placeholderText
-        mid: Theme.chromeBorder
-        light: Theme.shadeLight
-        dark: Theme.shadeDark
-        // #5874: ez az önálló ablak saját palettát használ; az aktív/inaktív
-        // tinták nem írják felül a disabled csoportot.
-        disabled.windowText: Theme.textGray
-        disabled.text: Theme.textGray
-        disabled.buttonText: Theme.textGray
+    implicitWidth: 900
+    implicitHeight: importSourceContent.implicitHeight
+                     + 2 * importSourceContent.anchors.margins
+
+    //: A Shift+F1 fejezete a főablak saját súgóján keresztül nyílik.
+    property string helpTopic: "features/importalas.md"
+    property bool closeAfterNextImport: false
+    property bool closeAfterImport: false
+
+    onVisibleChanged: {
+        if (hostWindow && hostWindow.importPanelOpen !== visible)
+            hostWindow.importPanelOpen = visible
+        if (visible)
+            importSourceWindow.loadStoredImportChoices()
+        if (visible
+                && typeof importSourceController !== "undefined"
+                && importSourceController
+                && importSourceController.refreshMountedSources !== undefined)
+            importSourceController.refreshMountedSources()
     }
 
     // a forrás/cél FolderDialog `selectedFolder.toString()`-ja (file:// URL
@@ -216,16 +195,6 @@ Window {
 
     Component.onCompleted: importSourceWindow.loadStoredImportChoices()
 
-    onVisibleChanged: {
-        if (visible)
-            importSourceWindow.loadStoredImportChoices()
-        if (visible
-                && typeof importSourceController !== "undefined"
-                && importSourceController
-                && importSourceController.refreshMountedSources !== undefined)
-            importSourceController.refreshMountedSources()
-    }
-
     //: #1629: a megjelenített útvonal OS-NATÍV alakban. A szöveges
     //: `file://`-levágás Windowson `/C:/Users/…`-t hagyott maga után; a
     //: helyes átalakítás csak Python-oldalon végezhető el (`to_local_path`,
@@ -253,7 +222,24 @@ Window {
             && importSourceController
             && importSourceController.defaultDestination !== undefined)
             importSourceWindow.destFolder = importSourceController.defaultDestination
+        if (importSourceWindow.hostWindow)
+            importSourceWindow.hostWindow.importPanelOpen = true
         importSourceWindow.visible = true
+        if (typeof importSourceController !== "undefined"
+                && importSourceController
+                && importSourceController.refreshMountedSources !== undefined)
+            importSourceController.refreshMountedSources()
+    }
+
+    function closePanel() {
+        if (importSourceWindow.hostWindow)
+            importSourceWindow.hostWindow.importPanelOpen = false
+        importSourceWindow.visible = false
+    }
+
+    function importBeforeClosing() {
+        importSourceWindow.closeAfterNextImport = true
+        importSourceWindow.requestImport()
     }
 
     function stepPreview(delta) {
@@ -333,6 +319,9 @@ Window {
     // lent, `requestImport`) UTÁN hívódik.
     function runImportNow() {
         importSourceWindow.lastError = ""
+        importSourceWindow.closeAfterImport =
+            importSourceWindow.closeAfterNextImport
+        importSourceWindow.closeAfterNextImport = false
         if (importSourceWindow.pendingSelectedOnly) {
             importSourceController.runSelectedImport(
                 importSourceWindow.destFolder,
@@ -425,6 +414,15 @@ Window {
             importSourceWindow.pendingSelectedOnly = false
             importSourceWindow.lastCopiedCount = copied
             importSourceWindow.lastFailedCount = failed
+            if (importSourceWindow.closeAfterImport) {
+                importSourceWindow.closeAfterImport = false
+                if (copied > 0 && failed === 0) {
+                    importSourceWindow.closePanel()
+                    importSourceWindow.hostWindow.kilepes()
+                } else {
+                    importSourceWindow.closeAfterNextImport = false
+                }
+            }
         }
     }
 
@@ -447,7 +445,7 @@ Window {
         sequence: "Escape"
         context: Qt.WindowShortcut
         enabled: importSourceWindow.visible
-        onActivated: importSourceWindow.visible = false
+        onActivated: importSourceWindow.closePanel()
     }
 
     ColumnLayout {
@@ -533,6 +531,7 @@ Window {
         noVisible: false
         yesText: importSourceWindow.effectiveAfterCopying === "delete_all"
             ? qsTr("Remove All Files") : qsTr("Remove Imported Files")
+        onCanceled: importSourceWindow.closeAfterNextImport = false
         onConfirmed: importSourceWindow.runImportNow()
     }
 }

@@ -45,6 +45,7 @@ ApplicationWindow {
     property alias _pendingSelectedIds: mainWindowCommands._pendingSelectedIds
     property alias _pendingAnchorId: mainWindowCommands._pendingAnchorId
     readonly property alias _kulonAblakosParbeszedNyitva: mainWindowCommands._kulonAblakosParbeszedNyitva
+    property bool importPanelOpen: false
     property point helpCursor: Qt.point(-1, -1)
     readonly property alias _szovegmezoneVanFokusz: mainWindowCommands._szovegmezoneVanFokusz
     readonly property alias _konyvtariGyorsbillentyuEngedelyezve: mainWindowCommands._konyvtariGyorsbillentyuEngedelyezve
@@ -84,8 +85,15 @@ ApplicationWindow {
     // `implicitHeight`-jét már kiszámolta, de a garanciát egy
     // `Layout.minimumHeight`-re bízta, amit semmi nem érvényesít az ablak
     // szintjén — ez az a hely, ahol érvényesíteni kell.
-    minimumHeight: (photoViewer ? photoViewer.requiredHeight : 0)
-                   + (window.menuBar ? window.menuBar.height : 0)
+    minimumHeight: Math.max(
+        (photoViewer ? photoViewer.requiredHeight : 0)
+            + (window.menuBar ? window.menuBar.height : 0),
+        importPanelOpen && importSourceDialog && importSourceDialog.item
+            ? importSourceDialog.item.implicitHeight
+                + (window.header ? window.header.height : 0)
+                + (window.footer ? window.footer.height : 0)
+                + (window.menuBar ? window.menuBar.height : 0)
+            : 0)
     // #1367: az ablak nem mehet olyan keskenyre, hogy az alsó
     // műveletsáv kilógjon — a #1345 fix gombcellái óta a sáv nem
     // zsugorodik tovább. Az igény MÉRT (ld. `TrayBar.requiredWidth`),
@@ -106,6 +114,15 @@ ApplicationWindow {
         if (!window.aaKapu(window.kilepes)) {   // #3644
             window.kilepesMegerositve = false
             close.accepted = false
+            return
+        }
+        if (window.importPanelOpen
+                && window.importSourceDialog
+                && window.importSourceDialog.item
+                && window.importSourceDialog.item.visible
+                && window.importSourceDialog.item.canImportAll) {
+            close.accepted = false
+            mainWindowCommands.askImportBeforeClose()
             return
         }
         if (!window.kilepesMegerositve
@@ -578,6 +595,7 @@ ApplicationWindow {
         hostController: typeof controller !== "undefined" ? controller : null
         hostRefs: ({
             documentTabStrip: documentTabStrip,
+            importSourceDialog: mainWindowWorkspace.exportImportSourceDialog,
             operationInfoDialog: mainWindowPeripheralLayers.exportDialogStack,
             photoViewer: photoViewer,
             picasaMenuBar: picasaMenuBar,
@@ -645,7 +663,7 @@ ApplicationWindow {
         hostFolderPane: folderPane
         hostGiftCdHost: mainWindowPeripheralLayers.exportGiftCdHost
         hostHelpDialog: helpDialog
-        hostImportSourceDialog: importSourceDialog
+        hostImportSourceDialog: mainWindowWorkspace
         hostMainDialogs: mainDialogs
         hostMoveDatabaseDialog: moveDatabaseDialog
         hostOptionsDialog: optionsDialog
@@ -688,7 +706,7 @@ ApplicationWindow {
             searchSuggestionsBox: searchSuggestionsBox,
             suggestionsTimer: suggestionsTimer,
             picasaMenuBar: picasaMenuBar,
-            importSourceDialog: importSourceDialog,
+            importSourceDialog: mainWindowWorkspace,
             fileOpsDialogs: fileOpsDialogs
         })
     }

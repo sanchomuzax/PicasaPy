@@ -19,6 +19,7 @@ Item {
     //: vissza is vonná (újra feltenné a kérdést). A jelző azt mondja meg neki,
     //: hogy a kérdésre a felhasználó már válaszolt: a kilépés végigmehet.
     property bool kilepesMegerositve: false
+    readonly property var exportImportSourceDialog: hostRefs.importSourceDialog
 
     property alias exportConfigureButtonsContextMenu: configureButtonsContextMenu
     property alias exportKilepesDialog: kilepesDialog
@@ -38,7 +39,6 @@ Item {
     property alias exportScreensaverAlbumConfirmLoader: screensaverAlbumConfirmLoader
     property alias exportPhotoViewerSettingsDialog: photoViewerSettingsDialog
     property alias exportPicasaImportDialog: picasaImportDialog
-    property alias exportImportSourceDialog: importSourceDialog
     property alias exportAddFileDialog: addFileDialog
     property alias exportTesztuzemNaploDialog: tesztuzemNaploDialog
 
@@ -164,7 +164,7 @@ Item {
     //: (`WindowHelp`) áll: a kettő kétértelmű, és MEGMÉRVE egyik sem sül el.
     //: A párbeszédek alkalmazás-modálisak, a főablak addig úgysem kezelhető.
     readonly property bool _kulonAblakosParbeszedNyitva:
-        [folderManager, importSourceDialog, hostWindow.optionsDialog, webExportDialog,
+        [folderManager, importBeforeCloseDialog, hostWindow.optionsDialog, webExportDialog,
          printDialog].some(function (d) { return d.item !== null && d.item.visible })
 
     //: #2054: a mutató alatti elemtől FELFELÉ sétálunk a szülőláncon az
@@ -310,6 +310,39 @@ Item {
             return
         }
         Qt.quit()
+    }
+
+    function askImportBeforeClose() {
+        importBeforeCloseDialog.ensure().ask(
+            "", qsTr("Import images before closing Picasa?"))
+    }
+
+    // #7206: a panel bezárásakor a már beolvasott, importálható képek előtt
+    // megkérdezzük, hogy induljon-e az import; a másik gomb a kilépést kéri.
+    DeferredDialog {
+        id: importBeforeCloseDialog
+        objectName: "importBeforeCloseDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "importBeforeCloseDialog"
+                namePrefix: "importBeforeClose"
+                cancelVisible: false
+                rememberVisible: false
+                yesText: qsTr("Import Images")
+                noText: qsTr("Quit")
+                onConfirmed: {
+                    var panel = commandSurface.hostWindow.importSourceDialog
+                        ? commandSurface.hostWindow.importSourceDialog.item : null
+                    if (panel)
+                        panel.importBeforeClosing()
+                }
+                onDenied: {
+                    commandSurface.hostWindow.importPanelOpen = false
+                    commandSurface.hostWindow.kilepes()
+                }
+            }
+        }
     }
 
     //: #1720: halasztott — a legtöbb munkamenetben fel sem épül.
@@ -705,12 +738,6 @@ Item {
                      && !hostWindow._szovegmezoneVanFokusz
             onActivated: hostWindow.nyisdASugot(picasaImportDialog.helpTopic)
         }
-    }
-    // Import forrásból (#23): az eszköztár "Import" gombja nyitja
-    DeferredDialog {
-        id: importSourceDialog
-        anchors.fill: parent
-        sourceComponent: Component { ImportSourceDialog { } }
     }
     // #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O — natív fájlválasztó
     AddFileDialog { id: addFileDialog }

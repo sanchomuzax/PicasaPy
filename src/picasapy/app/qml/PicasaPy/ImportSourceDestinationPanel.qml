@@ -284,7 +284,7 @@ ColumnLayout {
         PicasaButton {
             objectName: "importSourceCloseButton"
             text: qsTr("Close")
-            onClicked: hostWindow.visible = false
+            onClicked: hostWindow.closePanel()
         }
     }
 }
