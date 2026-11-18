@@ -1478,6 +1478,14 @@ A 0x00993650 dekompilációja (2026-11-18-koteg-466-495.txt:7099-7397) szerint a
 
 PicasaPy oldalon a Save a Copy az src/picasapy/app/save_as_copy.py:61-73 útján az src/picasapy/edit/save_copy.py next_copy_path függvényét hívja, de a megadott eredeti wrapper és e forrásút azonossága nincs bizonyítva. Paritás: az általános -001 névminta hasonló, a harmadik paraméter hossz-küszöbhatásának mai forrásbeli megfelelője NINCS MEG. A jegyszöveg itt a harmadik argumentum után szintén csonka; a megmaradt részre adott válasz a kapcsoló pontos küszöbhatása, a hiányzó kért összevetést nem egészítem ki.
 
+**Eredeti / PicasaPy / teendő — a névütközési keresés felső határa.** Ez a #495 cím alatt bizonyítható, közvetlenül a névképzőhöz tartozó eltérés; nem pótolja a csonka kérdés végét.
+
+| Eredeti (bináris) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x00993650` a `"%s-%03lu"` névütközési jelölteket 1-től próbálja; a ciklus `0x00993b52-0x00993b63` utasításai növelnek, `0x1000`-hez hasonlítanak és csak kisebb értéknél ugranak vissza, tehát legfeljebb `-001`…`-4095`. A `0x00994580` a harmadik argumentumként 1-et ad át (Ghidra-köteg: 7099–7397; közvetlen hívóutasítás: `0x009945c8-0x009945cc`). | `next_copy_path` a `_MAX_COPY_NUMBER = 100_000` értékkel `-001`…`-100000` jelölteket próbálja (`src/picasapy/edit/save_copy.py:79-82,118-135`). | A Save a Copy névütközési keresése álljon meg `-4095` után; ha mind a 4095 jelölt foglalt, ne ajánljon `-4096` vagy későbbi nevet. A korábbi szabad jelölt kiválasztása és a `%s-%03lu` minta maradjon. |
+
+**Kész, ha:** ha `-001`…`-4094` foglalt és `-4095` szabad, a `-4095` nevet adja; ha `-001`…`-4095` mind foglalt, nincs célútvonal és `-4096` nem kerül felajánlásra; ha korábbi jelölt szabad, továbbra is a legkisebb szabad sorszámot választja. A hosszú név 0xfe/0x103 ágának részletes viselkedését ez a jegy nem módosítja.
+
 ## #6963: Delete from Disk teljes folyamata
 
 Az eredeti `ID_FILE_DELETEFROMDISK` azonosítója `0x9c9a`, de nem minden
