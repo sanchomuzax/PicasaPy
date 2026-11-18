@@ -166,7 +166,10 @@ def test_user_album_delete_click_removes_album_and_preserves_photos(
     assert (library / "b.jpg").is_file()
     ini = (library / ".picasa.ini").read_text(encoding="utf-8")
     assert f"faces=rect64({_FACE_RECT}),{_PERSON_ID};" in ini
-    assert _ALBUM_TOKEN not in ini
+    # #7208: a [.album:<token>] szakasz megmarad, csak a token= sorral
+    assert f"[.album:{_ALBUM_TOKEN}]" in ini
+    assert f"token={_ALBUM_TOKEN}" in ini
+    assert f"albums={_ALBUM_TOKEN}" not in ini
 
 
 def test_empty_user_album_delete_click_removes_album(qml_app, qt_app):

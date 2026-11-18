@@ -115,6 +115,19 @@ class AppControllerSyncMixin:
             # a mappa-nézetbe (a film-szűrőnek is ezért van ága, #1830).
             self._show_filtered(self._similar_records(param), 0.0)
         elif mode == "album":
+            # #7208: ha a törölt album volt megnyitva, a bal hasábban semmi
+            # ne legyen kijelölve, és a rács a könyvtár elejét mutassa.
+            if not param.startswith("]") and not any(
+                a["token"] == param for a in getattr(self, "_albums", [])
+            ):
+                self._current_folder = ""
+                self._view_mode = ("folder", "")
+                self._filter_active = False
+                self._filter_status = ""
+                with open_index(self._db_path) as conn:
+                    self._show(self._feed_records(conn))
+                self.statusChanged.emit()
+                return
             started = time.perf_counter()
             with open_index(self._db_path) as conn:
                 records = album_photos(conn, param)

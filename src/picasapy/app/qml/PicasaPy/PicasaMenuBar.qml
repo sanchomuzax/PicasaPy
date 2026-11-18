@@ -639,16 +639,26 @@ MenuBar {
                 bar.folderLocateRequested()
         }
     }
+    // #7208: a megnyitott, tag nélküli album Delete billentyűvel megerősítés nélkül törölhető
+    property bool canDeleteOpenEmptyAlbum: false
+    signal deleteOpenEmptyAlbumRequested()
+
     Shortcut {
         id: shortcutDeleteFromDisk
         objectName: "shortcutDeleteFromDisk"
         sequence: "Delete"
         // A menüpont a nézőben is aktív, de a néző saját gyorsbillentyűje
         // Ctrl+Delete (#1418). A sima Delete csak a könyvtári belépő.
-        enabled: bar.photoActionsEnabled && !bar.editorActive
-                 && !bar.textEntryHasFocus
+        // #7208: megnyitott üres albumnál kijelölés nélkül is aktív a Delete.
+        enabled: !bar.editorActive && !bar.textEntryHasFocus
+                 && (bar.photoActionsEnabled || bar.canDeleteOpenEmptyAlbum)
         // #1608: nézetfüggő — albumban NEM töröl lemezről
-        onActivated: bar.activateDeleteCommand()
+        onActivated: {
+            if (bar.photoActionsEnabled)
+                bar.activateDeleteCommand()
+            else if (bar.canDeleteOpenEmptyAlbum)
+                bar.deleteOpenEmptyAlbumRequested()
+        }
     }
     // #6969: a `Shift+Delete` a rácsban - ugyanaz a belépő és feltétel,
     // mint a `Delete`-nél, de a végleges törlés ágát választja.
