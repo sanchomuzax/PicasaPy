@@ -71,7 +71,10 @@ def test_torles_minden_erintett_mappaban_megorizve_a_tobbi_adatot(albumok):
         document = parse_document(
             (mappa / ".picasa.ini").read_text(encoding="utf-8")
         )
-        assert document.section(f".album:{_TOKEN}") is None
+        # #7208: a [.album:<token>] szakasz megmarad, csak a token= sorral
+        szakasz = document.section(f".album:{_TOKEN}")
+        assert szakasz is not None
+        assert szakasz.items() == (("token", _TOKEN),)
         assert document.section(f".album:{_OTHER}") is not None
         kep_szekcio = document.section(f"{nev}.jpg")
         assert kep_szekcio is not None

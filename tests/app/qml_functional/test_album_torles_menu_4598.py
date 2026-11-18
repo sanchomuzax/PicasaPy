@@ -136,7 +136,10 @@ def test_kattintas_utan_megerositve_torol_es_mas_adatot_meghagy(
     )
     for ini_path in (root / ".picasa.ini", masodik / ".picasa.ini"):
         document = parse_document(ini_path.read_text(encoding="utf-8"))
-        assert document.section(f".album:{_TOKEN}") is None
+        # #7208: a [.album:<token>] szakasz megmarad, csak a token= sorral
+        szakasz = document.section(f".album:{_TOKEN}")
+        assert szakasz is not None
+        assert szakasz.items() == (("token", _TOKEN),)
         assert document.section(f".album:{_OTHER}") is not None
         for section in document.file_sections():
             assert _TOKEN not in parse_album_refs(section.get("albums") or "")
