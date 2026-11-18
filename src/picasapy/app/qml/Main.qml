@@ -529,9 +529,8 @@ ApplicationWindow {
     function openWebExport() { webExportDialog.open() }
     // #1472: nyomtatás — HÁROM belépési pont vezet ide (Fájl ▸ Nyomtatás…,
     // Ctrl+P, és a képtálca „Nyomtatás" gombja), ahogy az exportnál is.
-    // A célpont ugyanaz a HÁROM ág, mint a `rotateTargetRows()`-nál:
-    // diavetítés közben a VETÍTETT kép, a nézőben a MEGJELENÍTETT kép, a
-    // rácsban a kijelölés.
+    // A célpont HÁROM ág: diavetítés közben a VETÍTETT kép, a nézőben a
+    // MEGJELENÍTETT kép, a rácsban a kijelölés.
     //
     // ⚠️ A diavetítés ága nem elhagyható: a `startSlideshow()` NEM állítja
     // a `viewerOpen`-t, tehát a menü és a Ctrl+P vetítés közben is

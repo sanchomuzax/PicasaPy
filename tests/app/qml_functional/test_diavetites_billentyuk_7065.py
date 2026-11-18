@@ -242,14 +242,16 @@ class TestMeglevoBillentyukValtozatlanok:
         _kulcs(window, qt_app, Qt.Key.Key_Left)
         assert show.property("currentIndex") == 0
 
-    def test_enter_tovabbra_elore_lep(self, qml_app, qt_app):
+    def test_enter_nem_lep(self, qml_app, qt_app):
+        """#7189: az eredeti normál vetítésében az Enter nem léptet
+        (`0x00760970`); a részletes próbák: `test_diavetites_enter_ctrl_r_7189.py`."""
         window, controller, _engine = qml_app
         controller.setSlideshowLoop(False)
         show = _indit(window, qt_app, 0, paused=True)
 
         _kulcs(window, qt_app, Qt.Key.Key_Return)
 
-        assert show.property("currentIndex") == 1
+        assert show.property("currentIndex") == 0
 
     def test_escape_bezarja_a_vetitest(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
