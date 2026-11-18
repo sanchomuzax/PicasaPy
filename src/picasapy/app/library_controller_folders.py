@@ -492,7 +492,10 @@ class _LibraryFoldersMixin:
         with open_index(self._db_path) as conn:
             remove_root(conn, path)
         self._add_tombstone(path)
-        self._reload()
+        # #7224: a Mappakezelő OK-zárójelének végén egyszer, görgetést
+        # megőrizve frissít a mentési út; a közvetlen Remove frissítsen itt.
+        if self._folder_manager_draft() is None:
+            self._reload()
 
     @Slot(str)
     def removeWatchedFolder(self, path: str) -> None:
@@ -528,7 +531,10 @@ class _LibraryFoldersMixin:
             self._current_folder = ""
             self._view_mode = ("folder", "")
             self._show(())
-        self._reload()
+        # #7224: OK közben a végső mentési callback tölti újra a feedet;
+        # a párbeszéden kívüli Remove út továbbra is azonnal frissít.
+        if self._folder_manager_draft() is None:
+            self._reload()
 
     # -- Arcfelismerés-kizárás (#449, NEGYEDIK, a Scan Always/Once/Remove
     # hármastól FÜGGETLEN kapcsoló) -------------------------------------

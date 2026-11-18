@@ -17,6 +17,8 @@ sorrendet és a kaput állítja — nem csak azt, hogy a fájlok elkészülnek.
 Levezetés: `docs/specs/picasa-mappakezelo.md` 17. szakasz.
 """
 
+from pathlib import Path
+
 import pytest
 from support.halasztott_parbeszed import nyisd_meg
 
@@ -212,6 +214,111 @@ def _naplozo(monkeypatch, naplo):
 
 class TestVezerloOkUtja:
     """A vezérlő OK-útja: egyetlen mentés, a mért sorrendben."""
+
+    def test_ok_remove_kozben_nem_frissit_es_a_vegen_megorzi_a_nezetet(
+        self, vezerlo, monkeypatch
+    ):
+        ctl, lib, tmp_path = vezerlo
+        from picasapy.index import open_index, sync_tree
+
+        masik = tmp_path / "masik"
+        masik.mkdir()
+        make_jpeg(masik / "b.jpg", size=(32, 24))
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, masik)
+        ctl._reload()
+        ctl.selectFolder(str(lib))
+
+        reload_calls = []
+        original_reload = ctl._reload
+
+        def record_reload(*args, **kwargs):
+            reload_calls.append((args, kwargs))
+            return original_reload(*args, **kwargs)
+
+        monkeypatch.setattr(ctl, "_reload", record_reload)
+        activated = []
+        ctl.folderActivated.connect(activated.append)
+
+        ctl.beginFolderManagerSave()
+        ctl.removeFolder(str(masik))
+
+        assert reload_calls == [], "a Remove nem frissítheti a nézetet az OK-zárójelen belül"
+        assert activated == [], "a köztes frissítés nem aktiválhatja újra a kijelölt mappát"
+
+        ctl.commitFolderManagerSave()
+
+        assert reload_calls == [((), {"preserve_scroll": True})]
+        assert activated == [], "a záró frissítés nem bocsáthat ki mappaaktiválást"
+        assert Path(ctl.currentFolder) == lib
+
+    def test_kozvetlen_remove_a_mappakezelon_kivul_tovabbra_is_azonnal_frissit(
+        self, vezerlo, monkeypatch
+    ):
+        ctl, _lib, tmp_path = vezerlo
+        from picasapy.index import open_index, sync_tree
+
+        masik = tmp_path / "kozvetlen"
+        masik.mkdir()
+        make_jpeg(masik / "b.jpg", size=(32, 24))
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, masik)
+
+        reload_calls = []
+        original_reload = ctl._reload
+
+        def record_reload(*args, **kwargs):
+            reload_calls.append((args, kwargs))
+            return original_reload(*args, **kwargs)
+
+        monkeypatch.setattr(ctl, "_reload", record_reload)
+
+        ctl.removeFolder(str(masik))
+
+        assert reload_calls == [((), {})]
+
+    def test_ures_ok_zaro_frissitese_megorzi_a_gorgetest_es_nem_aktivalt_mappat(
+        self, vezerlo, monkeypatch
+    ):
+        ctl, lib, _tmp_path = vezerlo
+        ctl.selectFolder(str(lib))
+        reload_calls = []
+        original_reload = ctl._reload
+
+        def record_reload(*args, **kwargs):
+            reload_calls.append((args, kwargs))
+            return original_reload(*args, **kwargs)
+
+        monkeypatch.setattr(ctl, "_reload", record_reload)
+        activated = []
+        ctl.folderActivated.connect(activated.append)
+        ctl.beginFolderManagerSave()
+
+        ctl.commitFolderManagerSave()
+
+        assert reload_calls == [((), {"preserve_scroll": True})]
+        assert activated == []
+        assert Path(ctl.currentFolder) == lib
+
+    def test_ok_figyelt_gyoker_remove_kozben_is_csak_a_zaro_lepes_frissit(
+        self, vezerlo, monkeypatch
+    ):
+        ctl, lib, _tmp_path = vezerlo
+        reload_calls = []
+        original_reload = ctl._reload
+
+        def record_reload(*args, **kwargs):
+            reload_calls.append((args, kwargs))
+            return original_reload(*args, **kwargs)
+
+        monkeypatch.setattr(ctl, "_reload", record_reload)
+        ctl.beginFolderManagerSave()
+
+        ctl.removeWatchedFolder(str(lib))
+
+        assert reload_calls == [], "a figyelt gyökér Remove-ja is várjon az OK-záró lépéséig"
+        ctl.commitFolderManagerSave()
+        assert reload_calls == [((), {"preserve_scroll": True})]
 
     def test_a_valodi_iras_sorrendje(self, vezerlo, monkeypatch, qt_app):
         ctl, lib, tmp_path = vezerlo
