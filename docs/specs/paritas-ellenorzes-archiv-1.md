@@ -1465,6 +1465,19 @@ A mérés célja annak rögzítése, hogy az Indexképek frissítése parancs mi
      - A Picasa profilkönyvtárában található `thumbs.db` fájl nem törlődik a lemezről (mérete a parancs futásakor nem esik nullára).
      - A könyvtárnézeti rácsban a bélyegképek a memóriából való ürülés után a háttérben egymás után újra elkészülnek és frissülnek.
 
+
+### #7235-kiegészítés (2026-11-18): a csonka névkezelési kérdések
+
+#### #494 — 0x0070b1e0
+
+A jegyben olvasható kérdés vége hiányzik: „a meglévő 2026-11-16-os kimenet a címet csak …”. A 2026-11-18-as köteg tartalmazza a 0x0070b1e0 dekompilációját és a 0x00994580 névképző hívását, de a kérdezett hiányzó cím/mező/ág nem állapítható meg a jegy megmaradt szövegéből. Ezért az eredeti kérdésre nincs igazolható válasz, és a PicasaPy-oldali összevetés sincs megadva. Következő lépés: a teljes kérdésmondat visszaszerzése; utána a már meglévő 0x0070b1e0 kimenetből csak a hiányzó ágat/mezőt célzottan összevetni.
+
+#### #495 — 0x00993650, 0x00994580
+
+A 0x00993650 dekompilációja (2026-11-18-koteg-466-495.txt:7099-7397) szerint a harmadik paraméter logikai kapcsoló: nulla esetén a bemeneti null-terminált név hosszát a 0x103 küszöbhöz, nem nulla esetén a 0xfe küszöbhöz hasonlítja. A küszöb alatti névnél a névütközési keresés a „%s-%03lu” alakú jelölteket próbálja. A 0x00994580 hívó disassemblyje (annot_disasm.py 0x00994580, 0x009945c8-0x009945cc) a harmadik argumentumnak 1-et ad át; a 0x00994620 wrapper is 1-et ad. A többi hívó nem egységesen 1-es, a függvénynek összesen 23 hívója van.
+
+PicasaPy oldalon a Save a Copy az src/picasapy/app/save_as_copy.py:61-73 útján az src/picasapy/edit/save_copy.py next_copy_path függvényét hívja, de a megadott eredeti wrapper és e forrásút azonossága nincs bizonyítva. Paritás: az általános -001 névminta hasonló, a harmadik paraméter hossz-küszöbhatásának mai forrásbeli megfelelője NINCS MEG. A jegyszöveg itt a harmadik argumentum után szintén csonka; a megmaradt részre adott válasz a kapcsoló pontos küszöbhatása, a hiányzó kért összevetést nem egészítem ki.
+
 ## #6963: Delete from Disk teljes folyamata
 
 Az eredeti `ID_FILE_DELETEFROMDISK` azonosítója `0x9c9a`, de nem minden
@@ -2809,6 +2822,25 @@ szürke; ahol az első szűrőláncos, élő; valódi menü-kattintásos teszt (
 - `NINCS MEG`: az Undo All Edits futásidejű végállapota (ini, fájl SHA-256, bélyegkép, rács, kijelölés, `-1` cache után a menü). Megszerzés: Colab-feladat `colab_felmero.py` szerint, Picasa 3.9: szerkesztett (filters, crop, flipped, text, elforgatott) képek, majd Kép menü, Undo All Edits, `Remove Edits`; előtte/utána az ini, a fájl kivonata és képernyőkép; külön futás csak elforgatott képpel (a tétel szürke-e) és vegyes kijelöléssel.
 - `NINCS MEG`: írásvédett `.picasa.ini` vagy lemezhiba alatti viselkedés. Megszerzés: ugyanez a Colab-futás mappaszinten írásvédett ini-vel; rögzítendő a megjelenő üzenet és az ini.
 
+
+### #7235-kiegészítés (2026-11-18): az eredeti fájlút és a tokenes ág
+
+#### #471 — 0x00462ba0, 0x0046d7d0, 0x00477210, 0x00462790
+
+A 0x00462ba0 Ghidra-kimenete (2026-11-18-koteg-466-495.txt:1604-1947) a képrekord +0xf8 mezőiből beolvasott típuskódot ellenőrzi. Elfogadott kódjai: 2, 3, 6–18, 21–24, 26, 27–29, 31 és 0x3e9; az ezen kívüliek a 0x00412790 ágra jutnak. Az eredeti mappája alatt előbb .picasaoriginals-t próbál, ha az nem létezik, Originals-t, és ha az sem létezik, visszaállítja a .picasaoriginals útvonalat. A sorszámozott jelöltek formátuma: 9-es típusnál %s.%d.mov; 8, 10, 11, 12, 0x17 és 0x1d kódnál %s.%d.wmv; a többi elfogadott kódnál %s.%d.jpg. A ciklus 0-tól 99-ig vizsgál jelöltet (0x00462ba0, local_a6c < 100). A 0. elem az alapfájlnév; a továbbiak a fenti sorszámozott mintát használják.
+
+A 0x0046d7d0 utasításszintű olvasása (annot_disasm.py 0x0046d7d0, 0x0046d8e8-0x0046d900) a 0x00462ba0 után EAX-et teszteli: nulla esetén a közvetlen .picasa.ini/moddate ág folytatódik; nem nulla esetén 0x00477210 fut. A hívott függvény gépi kódja nem egységes logikai igaz/hamis értéket ad: a sentinel param_3 == -1 ága 3-at, a nem támogatott típuskód ága 2-t, a normál ciklus vége 9-et állít EAX-be, a rekordolvasási hiba pedig az olvasó eredményét viszi tovább. Ezért a hívó nem nulla ága bizonyított, de a „nem nulla = a fájl visszamásolása sikerült” értelmezés nem következik belőle önmagában.
+
+A 0x00477210 tételenként hívja a 0x00462ba0-t, majd a 0x00476ec0-at (annot_disasm.py 0x00477210); az utóbbi utómunka pontos szerepe és a 0x004082f0 másolási segéd forrás-/célparamétere ebből a körből nem lett feloldva. A 0x00462790 nyers disassemblyje a 2-es típust külön ágra küldi, más kódnál 9-et ad, de a teljes rotate-predikátum nem azonosítható a mostani kimenetből. Nyitott következő címek: 0x00476ec0 (a 0x00477210 utóhívása); 0x004082f0 (az Undo-Save hívó paraméterei); 0x00462790 (rotate-feltétel). A meglévő 2026-11-18-as 0x00462ba0 kimenet csak a típusszűrést, útvonalakat és névmintákat mutatja, a tényleges másolási irányt nem.
+
+PicasaPy-oldal: src/picasapy/edit/save_operations.py:313-365 mindkét ismert eredetimappa-nevet keresi, majd a meglévő mentett képet állítja vissza. Az eredeti tokenes fájlágának pontos másolási iránya nélkül a paritás nem minősíthető.
+
+#### #472 — 0x005ef6b0, 0x005f3e10, 0x00477210
+
+A 0x005ef6b0 Ghidra-kimenete (2026-11-18-koteg-466-495.txt:1948-2072) a filters láncban a redeye, retouch és picnik neveket külön keresi. Találatnál meghívja a 0x005f3e10-et; a nem nulla eredmény azonnali visszatérés, a folytató ág a 0x00477210-et is meghívja. A korábbi Ghidra-kimenet (2026-11-15-7006-7008-7009-7012-colab-decomp.txt:7443-7481) szerint a 0x005f3e10 az 0x0046d7d0 eredményét adja tovább, és siker esetén frissít gyorsítótárat.
+
+A közvetlen út nem tölti be az IDS_CONFIRM_REDEYE_REVERT (0x119) erőforrást, és nem tartalmaz közvetlen felhasználói hibaüzenetet. A már meglévő 0x005ef520 kimenet az általános többes megerősítést (IDS_CONFIRMREVERT_MULTIPLE, 0xdc) írja le, nem a 0x119 ágat. A redeye-specifikus kérdés és a visszaállítási hiba felhasználói jelzése így nyitott; a 2026-11-15-ös kimenet meglevő általános kezelője nem válaszolja meg. Következő célzott vizsgálat: a 0x005ef3e0 megerősítési út új kérdése az 0x119 xref-fogyasztójáról, valamint a 0x005f3e10 hibavisszatérésének hívói. PicasaPy MainDialogs.qml:331-345 redeye-figyelmeztetése nem elég az eredetivel való paritás kimondásához.
+
 ## #7001: A csillagozás teljes folyamata az eredeti Picasával összevetve: belépési pontok és hatás
 
 Vizsgálati tárgy: Picasa 3.9.141.259, `Picasa3.exe` SHA-256
@@ -3354,4 +3386,27 @@ Nyitott kérdések: 7 nyílt · 25 lezárva · 0 blokkolt · 0 hatókörön kív
 ### 12. Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7024 alszakasz.
+
+
+### #7235-kiegészítés (2026-11-18): rekordtípus, módváltás és szövegfeldolgozás
+
+#### #473 — 0x004e3ab0, 0x004e40c0, 0x004e5070
+
+A 0x004e3ab0 kimenete (2026-11-18-koteg-466-495.txt:2073-2164) a +0x3f0 vektor rekordjának +0x18 mezőjében a 0x3e9 értéket hivatkozó rekordként kezeli, és a célindexre lép; ez nem azonosítja az 1, 2 és 5 kódhoz tartozó fájlformátumot. A 0x004e5070 korábbi kimenete (2026-10-21-idorend-34.txt:4507-4624) rekordot foglal és inicializál, a 0x004e40c0 annotált disassemblyje pedig a vektort olvassa és a +0x1e jelzőt vizsgálja, nem a +0x18 típuskódot írja. Nyitott következő cím: 0x00467ca0 és a +0x18 mezőt író hívói. A meglévő 0x00467ca0 dekompiláció (2026-10-21-idorend-34.txt) nem sorolja fel a tényleges formátumíró ágakat; az új kérdés kifejezetten az 1/2/5/0x3e9 kódok íróinak hozzárendelése.
+
+#### #474 — 0x0076b110 és közvetlen hívói
+
+A 0x0076b110 dekompiláció (2026-11-18-koteg-466-495.txt:2165-2318) a csomópont +0x2c5 állapotbájtját állítja, majd a belső vezérlő +0x4c virtuális metódusával vált szerkeszthetőséget, a +0x80 callbackkel értesít és újrarajzol. Közvetlen hívói: 0x0067f580, 0x0067f5a0, 0x0076b0c0, 0x0076b0e0. A jelenlegi #7024 szakasz már bizonyítja a néző kattintás-, közvetlen gépelés-, Enter- és Esc-eseményeit; az új kimenet önmagában nem köti a négy setterhívót ezekhez az eseményekhez. Nyitott következő címek: a négy hívó és belépési eseménylánca. A PicasaPy mezője a PhotoViewerOverlayControls.qml:509-569 szerinti TextInput; ez önmagában nem azonosítja az eredeti módváltásokkal való teljes egyezést.
+
+#### #475 — 0x005f8520 és 0x0057bb50
+
+A 0x005f8520 dekompiláció (2026-11-18-koteg-466-495.txt:2319-2464) a puck-objektumot adja át a 0x0057bb50-nek; a puck +4 mezőjén a 4-es és 5-ös ág eltér, és az 5-ös a 0x00565f30-at hívja. A rainbow név is feltétel a 4-es ágon. A kimenet nem rendeli a konkrét eszközöket a 0x0057bb50 módparaméterének 4-es vagy 6-os értékéhez. Nyitott következő vizsgálat: a puck létrehozó/kitöltő hívói, amelyek a +4 kódot beállítják; a meglévő 0x005f8520 dekompiláció csak a már beolvasott kódágakat, nem az eszköz→mód leképezést adja.
+
+#### #476 — 0x00989f80, 0x009869a0
+
+A 0x00989f80 dekompiláció (2026-11-18-koteg-466-495.txt:2465-2592) a null-terminált UTF-8 bemenetet a MultiByteToWideChar(65001, ..., -1, ...) segítségével UTF-16-ra alakítja; előbb lekéri a szükséges méretet, majd annak megfelelő buffert foglal. Ebben a függvényben nincs eleji/végi szóköz- vagy újsorlevágás, és nincs külön hosszlimit. A 0x00437cf0 és a 0x0067f2a0 útja a 0x009869a0-t is meghívja, amely a jelenlegi kötegben nincs dekompilálva. Nyitott következő cím: 0x009869a0, a bemeneti trim és sorvég-átalakítás pontos sorrendjével. PicasaPy oldalon a Caption TextInput forrása PhotoViewerOverlayControls.qml:509-569; a végső karakter-/hosszkorlátra ebből az összevetésből nem következtetek.
+
+#### #477 — 0x0076ace0
+
+A 0x0076ace0 kimenet (2026-11-18-koteg-466-495.txt:2593-2723) koordináta-/eseményút-kezelő: az 1, 0x0d, 0x15 és 0x17 eseménykódokat kezeli; a törzsben nincs WM_UNDO (0x0304) ág. A kérdezett függvény tehát nem bizonyít Ctrl+Z-kezelést a Caption mezőben. Nyitott következő cím: 0x0067eca0 és a szerkesztőmező ablaküzenet-kezelőjének tényleges virtuális/natív célja, beleértve a WM_UNDO továbbítását. A meglévő 0x0076ace0 kimenet nem válaszolja meg a mező saját undo-veremét.
 
