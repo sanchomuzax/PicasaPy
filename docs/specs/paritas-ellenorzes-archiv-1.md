@@ -2498,10 +2498,29 @@ alfejezetében szerepel.
 **Nyitott, célzott következő címek:**
 
 - Ghidra-kör kell: 0x005cb180 — a visszaadott `+0x3c0` mező azonosítója mely mappa/album és hogyan képződik [blokkoló]
-- Ghidra-kör kell: 0x00745980 — a printpanel frissítése és a Cancel esemény threadhez kötése; mely helyen jut a hívás a `0x00743650` vtable-slothoz [blokkoló]
-- Ghidra-kör kell: 0x007434d0 — a `CPrintJobThread` worker/rajzoló ciklusában hol szűr videót, hiányzó vagy olvashatatlan képet, és milyen hibajelzést ad [blokkoló]
+- Ghidra-kör kell: 0x004b0190 — a meglévő kimenet a paraméterezett iterátorokat rögzíti, de nem dönti el, hogy a `0x00744ee0` ágban kapott album/mappa iterátorai az összes képet adják-e, és milyen sorrendben [blokkoló; új kérdés a meglévő törzshöz]
+- Ghidra-kör kell: 0x00cb0d20 — oldja fel a `CPrintJobThread` vtable worker-slotját a pointerlistából, majd a workerben a videó-, hiányzó- és olvashatatlan-kép szűrését [blokkoló]
+- Ghidra-kör kell: 0x00745980 — a státuszfrissítés már disassemblyvel feltárt; a Cancel esemény threadhez kötése és a `0x00743650` vtable-slot hívóhelye maradt nyitott [blokkoló]
 - Ghidra-kör kell: 0x00d67904 — a globális manager `+0x20` slotjának implementációja; a globális objektum vtable-jének futásidejű konstrukciója nincs feltárva [nem blokkoló]
 - Ghidra-kör kell: 0x005d78d0 — a `0x005f8160` által hívott editorpanel-segéd közvetett layout- vagy kijelölési hatása [nem blokkoló]
+
+**#467 státusz-kiegészítés.** A helyi, cím szerinti disassembly a `0x00745980`
+függvényben kiszámolja a legkisebb DPI-t és a küszöb alatti képek darabszámát
+(`0x00745cee-0x00745d15`), majd a `printpanel/statustext` mezőbe ír
+(`0x00745e01-0x00745e06`). Nulla kis kép esetén a `ThumbUIPrint::ReadyPrompt`
+„You are ready to print.”, ellenkező esetben a `ThumbUIPrint::ReviewPrompt`
+„Please review before printing.\n%d small %s found.” erőforrást választja
+(`0x00745da4`, `0x00745dd9`). A legkisebb DPI-sor az 1 000 000-es
+üres-listaértéknél kimarad (`0x00745d15`). Ez az állapotszöveg-feladatot
+megválaszolja, de a virtuális Cancel-hívókat nem azonosítja.
+
+**#466 lista-kiegészítés.** A már meglévő `0x007166c0` kimenet index szerint
+bejárja az aktuális nézet elemeit, és a `+0xb4` rekordazonosítót hozzáfűzi,
+ha a `+0x5d` jelző nem nulla és a `+0x5a` jelző nulla; így ennek a nézetlistának
+a sorrendje stabil (`2026-11-16-7022-7031-7033-colab-decomp.txt:2011-2208`).
+Ez a `0x00744ee0` előzetes nézet-/kijelölés-gyűjtője, nem a következő
+`0x004b0190(param_2)`-es albumiterátor tartalmának bizonyítéka. A teljes
+mappa/album-készlet és a `0x005cb180` `+0x3c0` mező jelentése nyitott marad.
 
 
 

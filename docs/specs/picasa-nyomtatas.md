@@ -453,6 +453,48 @@ bináris `0x007451a0`); rekordfelvétel `0x0085c640`
 ezzel szemben az összes Review-sort egzakt DPI szerint növekvőre rendezi.
 Az osztálysorrend megegyezik, a csoporton belüli sorrend eltérhet.
 
+### #7234 állapotszöveg és Review-sorrend eltérése
+
+A `0x00745980` a legkisebb effektív DPI-t és a kis képek számát használja.
+Ha a lista nem üres, a legkisebb DPI-t kiírja; nulla kis kép esetén a
+`ThumbUIPrint::ReadyPrompt` („You are ready to print.”), egyébként a
+`ThumbUIPrint::ReviewPrompt` („Please review before printing.\n%d small %s found.”)
+kerül a `printpanel/statustext` mezőbe. Üres lista esetén a
+legkisebb-DPI sor kimarad. Forrás: bináris `0x00745980`, különösen
+`0x00745cee-0x00745d15`, `0x00745da4`, `0x00745dd9`, `0x00745e01-0x00745e06`;
+a sztring-xrefek a `ThumbUIPrint` erőforrásneveket adják.
+
+Nálunk ugyanezeket a három állapotmondatot a `PrintDialogContent.qml:110-130`
+állítja elő a `printQuality()` `smallest`, `small`, `total`, `ready` mezőiből
+(`print_controller_quality_mixin.py:17-44`), ezért a szövegágak egyeznek.
+A Review-lista sorrendje viszont eltérhet: az eredeti minőségi csoportonként
+bejárási sorrendet őriz, nálunk `sorted(..., key=dpi)` van
+(`print_controller_quality_mixin.py:75-103`).
+
+#### Eredeti / nálunk / teendő
+
+**Review-elemek sorrendje**
+
+Eredeti: a `0x007451a0` három minőségi csoportban, `Low → Good → Best`
+sorrendben jeleníti meg a képeket; azonos csoporton belül a bemeneti lista
+sorrendje marad (`2026-11-15-6988-colab-decomp.txt:440-729`). A `0x0085c640`
+beszúr, nem rendez (`2026-11-18-koteg-466-495.txt:1482-1601`).
+
+Nálunk: a `print_controller_quality_mixin.py:75-103` az egész listát egzakt
+DPI szerint növekvőre rendezi; ez azonos minőségi csoporton belül felcserélheti
+az elemeket.
+
+Teendő: a Review-listát minőségi kód szerint csoportosítsd `Low`, `Good`,
+`Best` sorrendbe, és a csoporton belül őrizd meg az eredeti nyomtatási lista
+sorrendjét.
+
+Kész, ha:
+
+- a három csoport sorrendje `Low → Good → Best`;
+- minden csoporton belül a forráslista sorrendje változatlan;
+- a Review-elemek eltávolítása továbbra is rekordazonosító alapján történik,
+  és a megmaradt nyomtatási lista sorrendje stabil.
+
 ---
 
 ## A „kis kép" KÜSZÖBE: `Preferences\DPIWarning`, alapérték **150** (2026-09-04)
