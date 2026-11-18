@@ -1284,7 +1284,7 @@ class TestLiveWatch:
         original = threading.Thread
 
         def counting_thread(*args, **kwargs):
-            started.append(1)
+            started.append(kwargs.get("name"))
             return original(*args, **kwargs)
 
         monkeypatch.setattr(worker_thread, "_Thread", counting_thread)
@@ -1293,7 +1293,7 @@ class TestLiveWatch:
             [str(library / "nyaralas"), str(library / "nyaralas")]
         )
         loop.exec()
-        assert started == [1]
+        assert started.count("picasapy-sync-dirty") == 1
 
     def test_dirty_folder_operational_error_reported_not_swallowed(
         self, controller, library, monkeypatch, caplog

@@ -9,6 +9,7 @@ import pytest
 from picasapy.ini.rect64 import encode_rect64
 from picasapy.app.histogram_helper import EMPTY_HISTOGRAM
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import varj_feltetelre
 
 # rontás-kontroll: picasapy.ini.backuphash.backuphash_for_local_datetime = 65536 → 1 failed
 
@@ -2481,9 +2482,14 @@ class TestASzovegStilusaAFAJLBA_KERUL:
         assert _text_ertek(photo) != felkover
 
     def test_a_valasztott_BETUTIPUS_kerul_a_blokkba(
-        self, legalabb_ket_betucsalad, controller, photo
+        self, legalabb_ket_betucsalad, controller, photo, qt_app
     ):
         # a lista `{key, label}` szótárakból áll (a lenyíló adata)
+        assert varj_feltetelre(
+            qt_app,
+            lambda: len(controller.textFontFamilies) >= 2,
+            5.0,
+        ), "a háttérben töltött betűcsalád-lista nem készült el"
         kulcsok = [cs["key"] for cs in controller.textFontFamilies]
         mas = next((cs for cs in kulcsok if cs != "Arial"), None)
         assert mas is not None, "a panel csak egy betűtípust kínál — a próba tárgytalan"
