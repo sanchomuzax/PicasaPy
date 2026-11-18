@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.144] - 2026-11-18
+
+- A keresési találatok darabszáma, a bal oldali mappalista és a találati sáv sem számolja a rejtett képeket, ha a rejtett képek megjelenítése ki van kapcsolva (#7194).
+
 ## [1.0.143] - 2026-11-18
 
 - A mappalistán gépelt betű, szám vagy jel a keresőmezőbe kerül és elindítja a keresést, mint a bélyegképrácson; az ékezetes betű, a Ctrl és az Alt nem indít keresést (#7192).
