@@ -326,7 +326,23 @@ def _fasor(window, ut: Path):
 
 
 def _jobbklikk_fasor(window, qt_app, ut: Path):
-    kattints(window, qt_app, _fasor(window, ut), Qt.MouseButton.RightButton)
+    elem = _fasor(window, ut)
+    gorgeto = _objektum(window, "folderPaneFlickable")
+    tartalom = gorgeto.property("contentItem")
+    sor_y = elem.mapToItem(tartalom, QPointF(0, 0)).y()
+    content_y = gorgeto.property("contentY")
+    viewport_height = gorgeto.height()
+    if sor_y < content_y:
+        content_y = sor_y
+    elif sor_y + elem.height() > content_y + viewport_height:
+        content_y = sor_y + elem.height() - viewport_height
+    max_y = max(0, gorgeto.property("contentHeight") - viewport_height)
+    gorgeto.setProperty("contentY", max(0, min(content_y, max_y)))
+    qt_app.processEvents()
+    # A fasor itemje a görgetésnél újraköthető; a kattintás pillanatában
+    # frissen kérjük le a cél sort.
+    elem = _fasor(window, ut)
+    kattints(window, qt_app, elem, Qt.MouseButton.RightButton)
     menu = _objektum(window, "hierFolderContextMenu")
     assert varj(qt_app, lambda: menu.property("visible") is True), (
         f"a fanézet sorának jobbklikkje nem nyitotta meg a HierFolder menüt: {ut}"
@@ -356,18 +372,26 @@ class TestHierFolderMenu:
         lib = _lib(koztes_app)
         _fanezetbe(window, qt_app, engine, lib)
 
-        for nev in ISMERT_NEVEK:
-            menu = _jobbklikk_fasor(window, qt_app, lib / nev)
-            tetel = gyerek(menu, "hierMenuMoveFolder")
+        alapmagassag = window.height()
+        for elteres in (-5, 0, 5):
+            window.resize(window.width(), alapmagassag + elteres)
+            assert varj(
+                qt_app,
+                lambda elteres=elteres: window.height()
+                == alapmagassag + elteres,
+            )
+            for nev in ISMERT_NEVEK:
+                menu = _jobbklikk_fasor(window, qt_app, lib / nev)
+                tetel = gyerek(menu, "hierMenuMoveFolder")
 
-            assert tetel.property("enabled") is False, (
-                f"a HierFolder menü Move Folder tétele az ismert {nev} mappán nem szürke (#7108)"
-            )
-            kattints(window, qt_app, tetel)
-            assert not nyitott(_objektum(window, "moveFolderDialog")), (
-                f"a szürke Move Folder megnyitotta a mappaválasztót: {nev}"
-            )
-            _escape(window, qt_app)
+                assert tetel.property("enabled") is False, (
+                    f"a HierFolder menü Move Folder tétele az ismert {nev} mappán nem szürke (#7108)"
+                )
+                kattints(window, qt_app, tetel)
+                assert not nyitott(_objektum(window, "moveFolderDialog")), (
+                    f"a szürke Move Folder megnyitotta a mappaválasztót: {nev}"
+                )
+                _escape(window, qt_app)
 
     @pytest.mark.parametrize(
         "mappa", [_HETKOZNAPI, "Documents/koztes"], ids=["hetkoznapi", "ismert-alatt"]

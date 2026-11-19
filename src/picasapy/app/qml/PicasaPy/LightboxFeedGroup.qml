@@ -224,15 +224,15 @@ Column {
         readonly property int windowCount: Math.max(0, Math.min(
             groupCol.modelData.count - windowStart,
             (lastRow - firstRow + 1) * feed.columns))
-        // A látható rács egyszerre akár több tucat QML-delegátumot is
-        // létrehozna. A rövid adagok között az eseményhurok kiszolgálja a
-        // görgetést és a menüket, miközben a cellák néhány képkocka alatt
-        // megjelennek.
-        // Az első kép azonnal kattintható legyen (pl. a kontextusmenü
-        // közvetlenül a mappa betöltése után is); a további cellák külön
-        // eseményköri lépésekben készülnek el.
-        property int materializedWindowCount:
-            Math.min(windowCount, 1)
+        // A kezdő látható képernyő cellái egyszerre készülnek el, hogy a
+        // mappa megnyitása után rögtön kattintható legyen a teljes első
+        // sor. A képernyőn túli cellák külön eseményköri lépésekben jönnek
+        // létre; így a nagy feed mellett is reagál a görgetés és a menü.
+        readonly property int initialMaterializedCount: Math.min(
+            windowCount,
+            Math.ceil(feed.height / Math.max(1, feed.cellHeight))
+                * feed.columns)
+        property int materializedWindowCount: initialMaterializedCount
         Timer {
             id: materializeWindowTimer
             interval: 16
@@ -251,11 +251,22 @@ Column {
             }
         }
         onWindowCountChanged: {
+            if (materializedWindowCount < initialMaterializedCount)
+                materializedWindowCount = initialMaterializedCount
+            if (materializedWindowCount < windowCount
+                    && !materializeWindowTimer.running)
+                materializeWindowTimer.start()
+        }
+        onInitialMaterializedCountChanged: {
+            if (materializedWindowCount < initialMaterializedCount)
+                materializedWindowCount = initialMaterializedCount
             if (materializedWindowCount < windowCount
                     && !materializeWindowTimer.running)
                 materializeWindowTimer.start()
         }
         Component.onCompleted: {
+            if (materializedWindowCount < initialMaterializedCount)
+                materializedWindowCount = initialMaterializedCount
             if (materializedWindowCount < windowCount)
                 materializeWindowTimer.start()
         }
