@@ -14,6 +14,7 @@ from .hidden_scope import visible_folder_sql
 from .search_color import parse_color_terms
 
 _PATH_SEP = re.compile(r"[/\\]")
+_TAKEN_AT_SEARCH_PREFIX = re.compile(r"\d{1,4}(?::\d{1,2}){0,2}\Z")
 _SEARCH_EDGE_CHARS = " ,./\\"
 _SEARCH_TAG_PREFIXES = ("tag:", "címke:")
 _SEARCH_KEYWORD_COLUMNS = ("keywords_ini", "keywords_file")
@@ -516,9 +517,9 @@ def geotagged_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
 def search_photos(
     conn: sqlite3.Connection, query: str, *, only_id: int | None = None
 ) -> tuple[PhotoRecord, ...]:
-    """Keresés MINDENBEN (Picasa): fájlnév/felirat/kulcsszó (FTS5) ÉS
-    mappanév — az egyező nevű mappák teljes tartalma is találat. A `tag:`
-    előtag csak a kulcsszómezőkre szűkíti a keresést (#7218).
+    """Keresés MINDENBEN (Picasa): fájlnév/felirat/kulcsszó (FTS5),
+    felvételi dátum és mappanév — az egyező nevű mappák teljes tartalma is
+    találat. A `tag:` előtag csak a kulcsszómezőkre szűkíti a keresést (#7218).
 
     #383: a `color:`/`szín:` tokenek (pl. `color:blue nyaralás`) a
     szabadszavas résztől ELVÁLNAK — a színszűrés a maradék szöveges
@@ -574,7 +575,9 @@ def _text_search(
 
     #1515: az `only_id` egyetlen képre szűkít. A meglévő feltétel emiatt
     ugyanarra a közös feltételre kerül, mint az FTS-egyezés és a mappanév-
-    egyezés VAGY-a. A kizárt szavak mindkét ágból eltávolítják a képeket.
+    egyezés VAGY-a. #7241: az év- és dátum-előtag a felvételi dátummal is
+    egyezhet, a FTS-kereséssel azonos előtaglogikával. A kizárt szavak minden
+    érintett ágból eltávolítják a képeket.
     """
     terms = query.split()
     positive_terms = [term for term in terms if not term.startswith("-")]
@@ -589,6 +592,13 @@ def _text_search(
             for column in _SEARCH_KEYWORD_COLUMNS
         )
         return f"({scoped_terms})"
+
+    def taken_at_prefix_clause() -> str:
+        """A dátum mező első tíz ISO-karaktere YYYY:MM:DD alakú."""
+        return "replace(substr(p.taken_at, 1, 10), '-', ':') LIKE ?"
+
+    def is_taken_at_prefix(term: str) -> bool:
+        return bool(_TAKEN_AT_SEARCH_PREFIX.fullmatch(term))
 
     folder_ids: list[int] = []
     excluded_folder_ids: set[int] = set()
@@ -617,12 +627,32 @@ def _text_search(
     if positive_terms:
         build_query = keyword_prefix_query if keyword_only else prefix_query
         fts_query = " AND ".join(build_query(term) for term in positive_terms)
-        match_clause = "p.id IN (SELECT rowid FROM photos_fts WHERE photos_fts MATCH ?)"
+        fts_clause = "p.id IN (SELECT rowid FROM photos_fts WHERE photos_fts MATCH ?)"
         params.append(fts_query)
+        matches = [fts_clause]
+        if not keyword_only:
+            for index, term in enumerate(positive_terms):
+                if not is_taken_at_prefix(term):
+                    continue
+                other_terms = positive_terms[:index] + positive_terms[index + 1 :]
+                date_clause = taken_at_prefix_clause()
+                date_params = [f"{term}%"]
+                if other_terms:
+                    other_query = " AND ".join(
+                        prefix_query(other_term) for other_term in other_terms
+                    )
+                    date_clause = (
+                        f"({date_clause} AND p.id IN "
+                        "(SELECT rowid FROM photos_fts WHERE photos_fts MATCH ?))"
+                    )
+                    date_params.append(other_query)
+                matches.append(f"({date_clause})")
+                params.extend(date_params)
         if folder_ids:
             placeholders = ",".join("?" * len(folder_ids))
-            match_clause += f" OR p.folder_id IN ({placeholders})"
+            matches.append(f"p.folder_id IN ({placeholders})")
             params.extend(folder_ids)
+        match_clause = "(" + " OR ".join(matches) + ")"
         where.append(f"({match_clause})")
 
     for term in excluded_terms:
@@ -634,6 +664,9 @@ def _text_search(
             "WHERE photos_fts MATCH ?)"
         )
         params.append(excluded_query)
+        if not keyword_only and is_taken_at_prefix(term):
+            where.append(f"NOT COALESCE({taken_at_prefix_clause()}, 0)")
+            params.append(f"{term}%")
     if excluded_folder_ids:
         placeholders = ",".join("?" * len(excluded_folder_ids))
         where.append(f"p.folder_id NOT IN ({placeholders})")
