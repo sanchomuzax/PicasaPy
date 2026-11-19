@@ -1189,3 +1189,15 @@ eltávolítás rákérdez” értelmezés ezért nem áll meg. Élő UI-futtatá
 - **NINCS MEG:** a GDI és QPrinter kimenet pontos raszteregyezése, ezen belül a Normál `2/0` és Optimalizált `1/1` mód PDF-kimenete; út: ugyanaz a tesztkép, méret, papír, felbontás, Crop to Fit és példányszám mellett mindkét mód eredeti/PicasaPy PDF-raszterének és célgeometriájának összevetése.
 - **NINCS MEG:** a Beállítások-lap globális `PrinterQuality=3` („High Quality (full-res)”) értékének tényleges kimeneti felbontása: a renderer statikusan `1/q` koordináta-skálát alkalmaz, ami `q=3`-nál nem magyarázza a feliratot. Ez külön kérdés a per-job `q=2/1` módtól; megszerzés: ugyanazon tesztképet `q=2` és `q=3` beállítással PDF-nyomtatóra küldeni, majd összevetni a kimeneti rasztert és a célgeometriát.
 - **NINCS MEG:** a `printoptions` „Mégse” gomb ténylegesen visszaállítja-e a tartós értékeket az eredeti programban. A bináris a `0x0085f7a0` betöltőt hívja (`0x0085e8a1`-`0x0085e8e5`), de a vezérlők korábbi azonnali írása miatt a nettó hatás **NINCS MEG**. Út: eredeti Windows futásban állíts egy beállítást, kattints a Mégse gombra, majd olvasd vissza a Preferences értékét.
+
+## #7266-kiegészítés: nyomtatási ágak (#497-500, 2026-11-19)
+
+A kevesebb mint két kijelölt kép ágában a 0x004b0190 iterátorokat köt az album-/mappatárolókhoz, de önmagában nem bizonyítja, hogy minden albumképet a nyomtatási vektorba vesz-e. A korábban azonosított 0x006cab20 a kapott vektort annak eredeti sorrendjében járja; a vektor teljessége és forrássorrendje nyitott. Következő címek: 0x00744ee0, 0x004133e0 és a vektor előállítója.
+
+A 0x005cb180 a [belső objektum+0x3c0] értéket adja vissza, ha a [külső objektum+0xeac] mutató létezik, egyébként -1-et. A +0x3c0 jelentését a mostani kimenet nem nevezi meg; a 0x005cb990 objektumépítő/mezőíró ágát kell követni.
+
+A 0x00d67904 adatcím, nem függvénycím. A CPrintJobThread RTTI-vtáblájában a +0x20 slot célja 0x00709430, a +0x2c slot célja 0x007434d0. A slotcélok szerepe és a videó/hiányzó fájl szűrésének helye nincs megállapítva; ehhez a két célfüggvény és a thread-hívók kimenete kell.
+
+A szerkesztőpanel-visszaállító 0x005d78d0 közvetlenül tab- és effektpanel-állapotot kezel. A törzsben nem látszik nyomtatópanel- vagy kijelölésírás; a közvetett hatás a 0x005d7c20 és 0x005d7680 útjának olvasása nélkül nyitott.
+
+Ezekből a részleges leletekből jelenleg nem készül fejlesztési eltérésjegy: a nyomtatási vektor teljessége, a szűrők és a közvetett felületi hatás nem bizonyított.
