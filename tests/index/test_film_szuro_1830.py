@@ -55,3 +55,31 @@ class TestAFilmSzuro:
         with open_index(tmp_path / "i.db") as kapcsolat:
             sync_tree(kapcsolat, gyoker)
             assert video_photos(kapcsolat) == ()
+
+
+def test_a_video_gomb_szoveges_keresettel_metszetet_ad(tmp_path):
+    """#7264: a film gomb a keresés eredményével metszi a videók halmazát."""
+    from picasapy.app.search_button_filter import intersect_with_button
+    from picasapy.index import search_photos
+
+    gyoker = tmp_path / "videok"
+    gyoker.mkdir()
+    (gyoker / "feliratos.mp4").write_bytes(b"video")
+    (gyoker / "felirat_nelkuli.avi").write_bytes(b"video")
+    (gyoker / ".picasa.ini").write_text(
+        "[feliratos.mp4]\ncaption=zqvid\n", encoding="utf-8"
+    )
+
+    with open_index(tmp_path / "index.db") as kapcsolat:
+        sync_tree(kapcsolat, gyoker)
+
+        videok = video_photos(kapcsolat)
+        szoveges_talalatok = search_photos(kapcsolat, "zqvid")
+        metszet = intersect_with_button(kapcsolat, szoveges_talalatok, "videos")
+
+    assert {kep.name for kep in videok} == {
+        "feliratos.mp4",
+        "felirat_nelkuli.avi",
+    }
+    assert [kep.name for kep in szoveges_talalatok] == ["feliratos.mp4"]
+    assert [kep.name for kep in metszet] == ["feliratos.mp4"]

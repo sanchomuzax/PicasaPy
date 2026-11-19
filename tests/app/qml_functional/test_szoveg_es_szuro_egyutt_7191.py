@@ -1,4 +1,4 @@
-"""#7191: a keresőszöveg és a csillag, arc, geocímke szűrő EGYÜTT szűkít.
+"""#7191/#7264: a keresőszöveg és a csillag, arc, geocímke, film szűrő együtt szűkít.
 
 Az eredetiben a szöveg szavai és a gombok belső szójelei (`]star`, `]face`,
 `]geo`) egyetlen pozitív szólistában vannak, a találat a lista minden
@@ -10,8 +10,8 @@ Minden próba VALÓDI felületi eseménnyel megy: a szűrőgombra valódi egérk
 a keresőmezőbe valódi billentyűleütés. A vezérlő függvényeit csak a
 visszaolvasáshoz (találatlista, darabszám, bal hasáb) hívjuk.
 
-A film, az online, a másodpéldány gomb és a kor-csúszka viselkedése a mai
-marad (E1b, az M6 mérése dönt): ezt az utolsó osztály rögzíti.
+Az online, a másodpéldány gomb és a kor-csúszka továbbra is külön nézet- vagy
+szűrőmód; a filmgomb a #7264 szerint a szöveggel közös állapotot használja.
 """
 
 from __future__ import annotations
@@ -326,18 +326,35 @@ class TestAXGombMindentTorol:
 
 
 class TestAMaiViselkedesMarad:
-    """A film, a másodpéldány gomb és a kor-csúszka a mai marad (E1b)."""
+    """A filmgomb közös keresési állapota, a többi külön szűrő marad."""
 
-    def test_a_film_gomb_ma_is_felulirja_a_keresest(self, app):
+    def test_a_film_gomb_a_szoveggel_metsz_es_torleskor_visszater(self, app):
         window, controller, qt_app = app
-        _gepel(window, controller, qt_app, KULCS)
-        _kattint(window, qt_app, _elem(window, "starFilterButton"))
+        film_gomb = _elem(window, "movieFilter")
+        alap_magassag = int(window.height())
+        for elteres in (-5, 0, 5):
+            window.resize(int(window.width()), alap_magassag + elteres)
+            qt_app.processEvents()
+            assert int(window.height()) == alap_magassag + elteres
 
-        _kattint(window, qt_app, _elem(window, "movieFilter"))
+            _kattint(window, qt_app, film_gomb)
+            assert controller.viewModeName == "videos"
+            assert controller.buttonFilterName == "videos"
+            assert _nevek(controller) == set()
 
-        assert controller.viewModeName == "videos"
-        assert controller.searchActive is False
-        assert controller.buttonFilterName == ""
+            _gepel(window, controller, qt_app, KULCS)
+            assert controller.searchQuery == KULCS
+            assert controller.buttonFilterName == "videos"
+            assert _nevek(controller) == set()
+
+            _kattint(window, qt_app, film_gomb)
+            assert controller.viewModeName == "search"
+            assert controller.searchQuery == KULCS
+            assert controller.buttonFilterName == ""
+            assert _nevek(controller) == _CSAK_SZOVEG
+
+            _kattint(window, qt_app, _elem(window, "searchClear"))
+            assert _varj(qt_app, lambda: controller.viewModeName == "folder")
 
     def test_a_kor_csuszka_ma_is_felulirja_a_keresest(self, app):
         window, controller, qt_app = app

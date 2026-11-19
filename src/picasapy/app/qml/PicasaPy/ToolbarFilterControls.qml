@@ -80,7 +80,7 @@ import QtQuick.Window
                     // leépítésekor átmenetileg null lehet
                     // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
                     // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
-                    // #7191: a három gomb a keresőszöveggel KÖZÖS állapotban
+                    // #7191: a keresőgombok a keresőszöveggel KÖZÖS állapotban
                     // van, ezért a be/ki állapotuk a `buttonFilterName`-ből
                     // jön (keresés közben a `viewModeName` `search`)
                     readonly property bool ctlFilterActive:
@@ -183,7 +183,7 @@ import QtQuick.Window
 
                     PressFeedbackOverlay { pressSource: _pressFeedbackTap32 }
                 }
-                Item {   // #1830: „csak filmek" — az eredeti `moviesearch`
+                Item {   // #1830/#7264: „csak filmek”: az eredeti `moviesearch`
                     objectName: "movieFilter"
                     //: #885: LENYOMÁSRA sül el (`Property mousedown 1`) — az
                     //: eredetiben a nézetváltók és a szűrők azonnal hatnak.
@@ -191,8 +191,8 @@ import QtQuick.Window
                     width: 22; height: 20
                     readonly property bool aktiv:
                         (typeof controller !== "undefined" && controller
-                         && controller.viewModeName !== undefined)
-                            ? controller.viewModeName === "videos" : false
+                         && controller.buttonFilterName !== undefined)
+                            ? controller.buttonFilterName === "videos" : false
                     Rectangle {
                         anchors.fill: parent
                         radius: 2
@@ -222,7 +222,7 @@ import QtQuick.Window
                                               && typeof controller !== "undefined"
                                               && controller) {
                             parent.aktiv
-                                ? controller.clearFilter()
+                                ? controller.clearButtonFilter()
                                 : controller.showVideosOnly()
                         }
                     }
