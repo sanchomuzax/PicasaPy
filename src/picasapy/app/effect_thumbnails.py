@@ -358,8 +358,15 @@ class _EffectThumbJob(QRunnable):
         self._response = response
 
     def run(self) -> None:  # pool-szálon fut
+        from .edit_controller_preview_mixin import _preview_gil_fairness
+
         try:
-            image = self._provider.requestImage(self._id, None, None)
+            # Az első csempe-render a `picasapy.render` lánc több tucat
+            # Python-modulját töltheti be. A háttérszálas import a fő
+            # szálat is éheztetheti a GIL-ből, ezért ugyanazt az 1 ms-os
+            # váltási időt használjuk, mint a szerkesztő előnézeti renderje.
+            with _preview_gil_fairness():
+                image = self._provider.requestImage(self._id, None, None)
         except Exception:  # noqa: BLE001 — védőháló, elvileg elérhetetlen
             _log.exception("effekt-bélyegkép job hiba: %s", self._id)
             image = _placeholder()

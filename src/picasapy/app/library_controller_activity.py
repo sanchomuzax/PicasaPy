@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QTimer, Slot
 from picasapy.index import open_index
 from picasapy.index.dedup_folders import merge_duplicate_folders
 from picasapy.paths import normalize_path, path_key
@@ -80,7 +80,8 @@ class _LibraryActivityMixin:
         frissítése ritkított (max ~1,5 mp-enként), és a meglévő
         megőrzött-görgetésű újratöltési úton fut, nem kötegenkénti
         modell-resettel."""
-        if self._root_for_folder(folder) is None:
+        root = self._root_for_folder(folder)
+        if root is None:
             return  # #216: eltávolított gyökér késői jelzése — ignorálva
         self._import_folder = folder
         self._import_done = done
@@ -90,6 +91,21 @@ class _LibraryActivityMixin:
             self._import_visible = True
         self.importChanged.emit()
         now = time.monotonic()
+        current_root = self._root_for_folder(
+            getattr(self, "_current_folder", "")
+        )
+        if (
+            getattr(self, "_sync_reload_grace_until", 0.0) > 0
+            and current_root == root
+        ):
+            # A mappába belépés után a teljes szkennelés percekig tarthat;
+            # a záró feed-újraépítés ne versenyezzen a felhasználóval, aki az
+            # első megjelent képet nyitja meg. A progressz újraindítja a
+            # 3 másodperces türelmi időt, így a tényleges befejezés után is
+            # megmarad egy eseményköri rés a néző megnyitására.
+            self._sync_reload_grace_until = now + 3.0
+            if getattr(self, "_deferred_sync_reload", False):
+                QTimer.singleShot(3000, self._finish_sync_reload_grace)
         if (
             done != total
             and new_photos > self._import_new_at_reload

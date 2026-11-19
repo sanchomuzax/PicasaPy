@@ -269,6 +269,7 @@ def test_folder_select_during_sync_reuses_visible_photos(monkeypatch, tmp_path):
 
     class Host:
         def __init__(self, folder):
+            self._root = folder
             self._view_mode = ("folder", "previous-folder")
             self._feed_stamp = None
             self._db_path = str(tmp_path / "index.sqlite")
@@ -284,6 +285,9 @@ def test_folder_select_during_sync_reuses_visible_photos(monkeypatch, tmp_path):
 
         def _get_settings(self):
             return SimpleNamespace(setValue=lambda *_args: None)
+
+        def _root_for_folder(self, path):
+            return self._root if path == self._root else None
 
         def _folder_description_for_open(self, _folder):
             return ""
@@ -314,6 +318,111 @@ def test_folder_select_during_sync_reuses_visible_photos(monkeypatch, tmp_path):
 
     assert host._current_folder == folder
     assert host.folderActivated.calls == [(folder,)]
+
+
+def test_empty_folder_select_during_sync_skips_feed_load_and_starts_grace(
+    monkeypatch, tmp_path
+):
+    import picasapy.app.controller as controller_module
+
+    class SignalRecorder:
+        def __init__(self):
+            self.calls = []
+
+        def emit(self, *args):
+            self.calls.append(args)
+
+    folder = str(tmp_path / "slow-network-root")
+
+    class Host:
+        def __init__(self):
+            self._view_mode = ("folder", "previous-folder")
+            self._feed_stamp = None
+            self._db_path = str(tmp_path / "index.sqlite")
+            self._current_folder = "previous-folder"
+            self._filter_active = False
+            self._filter_status = ""
+            self._import_visible = False
+            self._import_forced = True
+            self._photos = SimpleNamespace(photos=())
+            self._folders = SimpleNamespace(offline_paths=lambda: ())
+            self.folderActivated = SignalRecorder()
+            self.statusChanged = SignalRecorder()
+            self.folderUnavailable = SignalRecorder()
+
+        def _root_for_folder(self, path):
+            return folder if path == folder else None
+
+        def _get_settings(self):
+            return SimpleNamespace(setValue=lambda *_args: None)
+
+        def _folder_description_for_open(self, _folder):
+            return ""
+
+        def _clear_unread(self, _folder):
+            pass
+
+        def _restore_full_folder_pane(self):
+            pass
+
+        def _feed_records(self, _conn):
+            raise AssertionError("az üres, szinkronizált mappa feedet olvasott")
+
+    class UnexpectedIndexRead:
+        def __enter__(self):
+            raise AssertionError("az üres, szinkronizált mappa indexet olvasott")
+
+        def __exit__(self, *_args):
+            return False
+
+    host = Host()
+    monkeypatch.setattr(
+        controller_module, "open_index", lambda *_args: UnexpectedIndexRead()
+    )
+
+    controller_module.AppController.selectFolder(host, folder)
+
+    assert host._current_folder == folder
+    assert host.folderActivated.calls == [(folder,)]
+    assert host._sync_reload_grace_until > time.monotonic()
+
+
+def test_sync_progress_keeps_selected_folder_open_grace_alive(monkeypatch):
+    queued = []
+
+    monkeypatch.setattr(
+        QTimer,
+        "singleShot",
+        lambda delay, callback: queued.append((delay, callback)),
+    )
+
+    class SignalRecorder:
+        def emit(self):
+            pass
+
+    folder = "/slow-network-root"
+    host = SimpleNamespace(
+        _root_for_folder=lambda path: folder if path.startswith(folder) else None,
+        _current_folder=folder,
+        _sync_reload_grace_until=time.monotonic() + 1,
+        _deferred_sync_reload=True,
+        _import_visible=True,
+        _import_forced=False,
+        _import_folder="",
+        _import_done=0,
+        _import_total=0,
+        _import_new=0,
+        _import_new_at_reload=0,
+        _import_last_reload=time.monotonic(),
+        _finish_sync_reload_grace=lambda: None,
+        importChanged=SignalRecorder(),
+    )
+    previous_grace = host._sync_reload_grace_until
+
+    _LibraryActivityMixin._on_sync_progress(host, folder + "/album", 1, 2, 0)
+
+    assert host._sync_reload_grace_until > previous_grace + 2
+    assert queued and 2500 <= queued[0][0] <= 3000
 
 
 def _event_loop_max_gap_ms(qt_app, action, duration_ms=900):
@@ -851,6 +960,8 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
         "_apply_network_edit_state",
         "_tool_property_values",
         "_emit_changed_tool_properties",
+        "_preview_request",
+        "_start_preview_worker",
         "_bump_revision",
         "_register_preview",
         "_restore_text_overlay_state",
@@ -1077,7 +1188,20 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
 
     QTimer.singleShot(0, lambda: controller.addWatchedFolder(str(slow_root)))
     QTimer.singleShot(0, poll)
-    QTimer.singleShot(30000, lambda: finish(TimeoutError("a néző-útvonal nem fejeződött be")))
+    QTimer.singleShot(
+        30000,
+        lambda: finish(
+            TimeoutError(
+                "a néző-útvonal nem fejeződött be "
+                f"(szakasz: {state['stage']}, "
+                f"sync: {controller._sync_running}, "
+                f"import: {controller._import_visible}, "
+                f"rows: {sum(photo.folder_path == str(slow_root) for photo in controller.photos.photos)}, "
+                f"grace: {getattr(controller, '_sync_reload_grace_until', 0.0):.1f}, "
+                f"deferred: {getattr(controller, '_deferred_sync_reload', False)})"
+            )
+        ),
+    )
     loop.exec()
     beat_timer.stop()
     watchdog_stop.set()
