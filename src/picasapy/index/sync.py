@@ -157,6 +157,67 @@ logger = logging.getLogger(__name__)
 _ALBUM_PRUNE_DEFERRED: ContextVar[bool] = ContextVar(
     "picasapy_album_prune_deferred", default=False
 )
+_MANUAL_RESCAN_FILE_CHECK: ContextVar[bool] = ContextVar(
+    "picasapy_manual_rescan_file_check", default=False
+)
+
+
+@contextmanager
+def _manual_rescan_file_check() -> Iterator[None]:
+    """A kézi Frissítés azonos mappa-mtime mellett is ellenőrzi a fájlokat."""
+    token = _MANUAL_RESCAN_FILE_CHECK.set(True)
+    try:
+        yield
+    finally:
+        _MANUAL_RESCAN_FILE_CHECK.reset(token)
+
+
+def _scan_matches_index(
+    conn: sqlite3.Connection,
+    scan: FolderScan,
+    filetype_signature: str | None,
+) -> bool:
+    """A háttérben bejárt mappa rekordjai egyeznek-e az aktuális indexszel."""
+    folder = conn.execute(
+        "SELECT f.id, f.has_ini, f.offline, f.hidden, s.mtime_ns,"
+        " s.ini_mtime_ns, s.filetype_signature"
+        " FROM folders f LEFT JOIN folder_scan_state s ON s.path = f.path"
+        " WHERE f.path = ?",
+        (str(scan.path),),
+    ).fetchone()
+    if (
+        folder is None
+        or folder["mtime_ns"] is None
+        or bool(folder["has_ini"]) != scan.has_ini
+        or folder["offline"]
+        or folder["hidden"] == HIDDEN_INI_PENDING
+        or folder["mtime_ns"] != scan.mtime_ns
+        or folder["ini_mtime_ns"] != scan.ini_mtime_ns
+        or folder["filetype_signature"] != filetype_signature
+    ):
+        return False
+
+    pending = conn.execute(
+        "SELECT 1 FROM photos WHERE folder_id = ? AND ("
+        "(kind = 'video' AND movie_format IS NULL) OR"
+        "(kind = 'photo' AND exif_words_pending = 1)) LIMIT 1",
+        (folder["id"],),
+    ).fetchone()
+    if pending is not None:
+        return False
+
+    indexed = {
+        row["name"]: (row["kind"], row["size"], row["mtime_ns"])
+        for row in conn.execute(
+            "SELECT name, kind, size, mtime_ns FROM photos WHERE folder_id = ?",
+            (folder["id"],),
+        )
+    }
+    scanned = {
+        media.name: (media.kind, media.size, media.mtime_ns)
+        for media in scan.files
+    }
+    return indexed == scanned
 
 
 @contextmanager
@@ -257,7 +318,12 @@ def sync_tree(
     # #1249: a sírkövek mindig kizárnak — a hívónak nem kell tudnia róluk
     exclude = tuple(exclude) + removed_folder_paths(conn)
     filetype_signature = _filetype_signature(enabled_filetypes)
-    skip = _make_skip(conn, filetype_signature) if incremental else None
+    manual_file_check = _MANUAL_RESCAN_FILE_CHECK.get()
+    skip = (
+        (lambda _path, _mtime_ns, _ini_mtime_ns: False)
+        if manual_file_check
+        else (_make_skip(conn, filetype_signature) if incremental else None)
+    )
     # #358: az `excluded_names` a #349 NÉV-kizárólista miatt kihagyott
     # mappákat gyűjti — ha ez nem üres, a gyökér scandirje bizonyíthatóan
     # lefutott (a gyökér tehát elérhető), csak minden talált tartalom
@@ -296,7 +362,10 @@ def sync_tree(
             cancelled = True
             break
         done += 1
-        if scan.skipped:
+        if scan.skipped or (
+            manual_file_check
+            and _scan_matches_index(conn, scan, filetype_signature)
+        ):
             # változatlan mappa: az indexbeli állapot érvényes; a haladás-
             # számláló ettől még lép (a hívó ritkítja a jelzés-árat)
             if progress is not None and progress(str(scan.path), done, len(scans), new_total):

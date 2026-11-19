@@ -105,12 +105,22 @@ class TestVegponttolVegpontig:
         )
         provider = ThumbnailProvider(ThumbnailCache(tmp_path / "th", size=32))
         controller = AppController(db, (str(lib),), provider, settings=beallitasok)
+        controller.syncFinished.connect(
+            lambda: print(
+                "DEBUG syncFinished",
+                controller._last_sync_changed,
+                controller.photos.rowCount(),
+                controller._sync_running,
+            )
+        )
+        controller.syncFailed.connect(lambda error: print("DEBUG syncFailed", error))
         controller.rescan()
         for _ in range(200):
             qt_app.processEvents()
             if controller.waitForBackgroundWorkers(0.05):
                 break
         qt_app.processEvents()
+        print("DEBUG final", controller._last_sync_changed, controller.photos.rowCount(), controller._sync_running)
         assert controller.photos.rowCount() == 1
         elotte = controller.photos.thumbUrlAt(0)
 

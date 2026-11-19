@@ -108,7 +108,8 @@ ListView {
     // Hálózati gyökérnél a néző mögötti feed delegátumai ne épüljenek újra;
     // helyi mappán a főági, azonnali modellkapcsolat marad érvényben.
     readonly property bool slowNetworkFolder:
-        !!grid.ctl && grid.ctl.currentFolderOnNetwork
+        (grid.ctl && grid.ctl.currentFolderOnNetwork !== undefined)
+            ? grid.ctl.currentFolderOnNetwork === true : false
     property bool feedActivationReady: true
     property int feedCacheBuffer: 600
     model: grid.ctl && (!grid.slowNetworkFolder

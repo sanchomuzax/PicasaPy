@@ -90,6 +90,8 @@ Item {
     }
 
     function frissitGeometria() {
+        if (!parent || !photoArea || !photoArea.fokuszKep)
+            return
         var kep = photoArea.fokuszKep
         if (kep.paintedWidth <= 0 || kep.paintedHeight <= 0)
             return
