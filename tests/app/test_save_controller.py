@@ -350,7 +350,7 @@ class TestRevertAndUndoSave:
         assert controller.hasSavedBackup([0]) is False
         heartbeat.append(time.monotonic())
         max_gap_ms = max(
-            ((right - left) * 1000 for left, right in zip(heartbeat, heartbeat[1:])),
+            ((right - left) * 1000 for left, right in zip(heartbeat, heartbeat[1:], strict=False)),
             default=0,
         )
         assert directory_reads, "a próba nem érte el a mentés-előtti mappákat"

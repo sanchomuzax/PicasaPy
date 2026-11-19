@@ -715,7 +715,7 @@ def test_nezo_kepolvasasa_aszinkron_es_a_rejtett_fak_lustak(qml_app, qt_app):
     image.setProperty("source", previous_source)
 
     max_gap_ms = max(
-        ((right - left) * 1000 for left, right in zip(heartbeat, heartbeat[1:])),
+        ((right - left) * 1000 for left, right in zip(heartbeat, heartbeat[1:], strict=False)),
         default=0,
     )
     assert provider_threads and all(
