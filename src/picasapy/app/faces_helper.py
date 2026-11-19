@@ -18,9 +18,10 @@ ini-írás önmagában is gyors (kis fájl), a szinkron hívás itt egyszerűbb.
 from __future__ import annotations
 
 import sqlite3
+import threading
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QMetaObject, QObject, Qt, Signal, Slot
 
 from picasapy.ini import (
     UNIDENTIFIED_CONTACT,
@@ -50,13 +51,17 @@ from picasapy.index import open_index
 from picasapy.scanner import PICASA_INI_NAME
 
 from .face_ignore_ini import match_named_regions
+from .worker_thread import BackgroundWorkerMixin
+import picasapy.halozati_ut as _network_paths
 
 # a csillag/album-írás mintája (photo_ops_controller.py): a tartós
 # ütközés is kezelt hiba, nem néma adatvesztés/omlás
 _WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
+_NETWORK_INI_LOCK = threading.Lock()
+_NETWORK_FACES_LOCK = threading.Lock()
 
 
-class FacesHelper(QObject):
+class FacesHelper(BackgroundWorkerMixin, QObject):
     """QML-nek kitett lekérdező/író: fotó-útvonal → arc-régiók."""
 
     def __init__(self, index_path: str | Path | None = None, parent=None) -> None:
@@ -66,6 +71,7 @@ class FacesHelper(QObject):
     # a szerkesztő overlay ezt figyeli hibaüzenethez (a albumWriteFailed
     # mintája, photo_ops_controller.py)
     faceWriteFailed = Signal(str)
+    networkFolderCacheChanged = Signal(str)
 
     @Slot(str, result="QVariantList")
     def facesFor(self, image_path: str) -> list[dict]:
@@ -80,7 +86,15 @@ class FacesHelper(QObject):
         jön. A hibás egyedi `faces=` bejegyzést a parser önállóan kihagyja."""
         if not image_path:
             return []
-        document, path = self._load(image_path)
+        if _network_paths.fajlrendszer_gyoker(image_path) is not None:
+            cache = getattr(self, "_network_faces_cache", None)
+            if cache is not None and image_path in cache:
+                return list(cache[image_path])
+            document, path = self._document_for_image_path(image_path)
+            if document is not None:
+                self._queue_network_faces_result(image_path, document, path)
+            return []
+        document, path = self._document_for_image_path(image_path)
         ini_faces = []
         named_faces = ()
         if document is not None:
@@ -103,6 +117,69 @@ class FacesHelper(QObject):
                     if face.is_identified
                 ]
         return ini_faces + self._unnamed_detected_faces(path, named_faces)
+
+    def _queue_network_faces_result(self, image_path, document, path) -> None:
+        cache = getattr(self, "_network_faces_cache", None)
+        if cache is None:
+            cache = self._network_faces_cache = {}
+            self._network_faces_pending = set()
+            self._network_faces_results = {}
+        with _NETWORK_FACES_LOCK:
+            if image_path in cache or image_path in self._network_faces_pending:
+                return
+            self._network_faces_pending.add(image_path)
+
+        def worker() -> None:
+            try:
+                ini_faces, named_faces = self._faces_from_ini_document(
+                    document, path
+                )
+                result = ini_faces + self._unnamed_detected_faces(
+                    path, named_faces
+                )
+            except Exception:
+                result = []
+            with _NETWORK_FACES_LOCK:
+                self._network_faces_results[image_path] = result
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_network_faces_results",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        self._start_background(
+            worker, name="picasapy-network-face-query", busy=False
+        )
+
+    def _faces_from_ini_document(self, document, path: Path):
+        if document is None:
+            return [], ()
+        section = document.section(path.name)
+        raw_faces = section.get("faces") if section is not None else None
+        if not raw_faces:
+            return [], ()
+        try:
+            faces = parse_faces(raw_faces)
+        except ValueError:
+            faces = ()
+        named_faces = tuple(face for face in faces if face.is_identified)
+        names = self._contact_name_resolver().names_by_id(document)
+        ini_faces = [
+            _face_to_dict(face, names) for face in faces if face.is_identified
+        ]
+        return ini_faces, named_faces
+
+    @Slot()
+    def _apply_network_faces_results(self) -> None:
+        with _NETWORK_FACES_LOCK:
+            results = getattr(self, "_network_faces_results", None)
+            if not results:
+                return
+            self._network_faces_cache.update(results)
+            self._network_faces_pending.difference_update(results)
+            self._network_faces_results = {}
+        for image_path in results:
+            self.networkFolderCacheChanged.emit(image_path)
 
     def _unnamed_detected_faces(
         self,
@@ -171,7 +248,7 @@ class FacesHelper(QObject):
         (meglévő személy kiválasztása új helyett)."""
         if not image_path:
             return []
-        document, _path = self._load(image_path)
+        document, _path = self._document_for_image_path(image_path)
         resolver = self._contact_name_resolver()
         names = (
             set(resolver.central_names())
@@ -299,6 +376,65 @@ class FacesHelper(QObject):
         if not has_ini_source(ini_path):
             return None, path
         return load_or_empty(ini_path), path
+
+    def _document_for_image_path(self, image_path: str):
+        """Hálózati mappánál cache-t ad; a hiányt egy worker tölti be."""
+        path = Path(image_path)
+        folder = str(path.parent)
+        if _network_paths.fajlrendszer_gyoker(path) is None:
+            return self._load(image_path)
+        cache = getattr(self, "_network_ini_documents", None)
+        if cache is None:
+            cache = self._network_ini_documents = {}
+            self._network_ini_pending = set()
+            self._network_ini_waiters = {}
+            self._network_ini_results = {}
+        with _NETWORK_INI_LOCK:
+            if folder in cache:
+                return cache[folder], path
+            self._network_ini_waiters.setdefault(folder, set()).add(image_path)
+            if folder not in self._network_ini_pending:
+                self._network_ini_pending.add(folder)
+
+                def worker() -> None:
+                    ini_path = Path(folder) / PICASA_INI_NAME
+                    try:
+                        document = (
+                            load_or_empty(ini_path)
+                            if has_ini_source(ini_path)
+                            else None
+                        )
+                    except (OSError, UnicodeError):
+                        document = None
+                    with _NETWORK_INI_LOCK:
+                        self._network_ini_results[folder] = document
+                    QMetaObject.invokeMethod(
+                        self,
+                        "_apply_network_ini_documents",
+                        Qt.ConnectionType.QueuedConnection,
+                    )
+
+                self._start_background(
+                    worker, name="picasapy-network-face-ini", busy=False
+                )
+        return None, path
+
+    @Slot()
+    def _apply_network_ini_documents(self) -> None:
+        with _NETWORK_INI_LOCK:
+            results = getattr(self, "_network_ini_results", None)
+            if not results:
+                return
+            self._network_ini_documents.update(results)
+            self._network_ini_pending.difference_update(results)
+            waiters = {
+                path
+                for folder in results
+                for path in self._network_ini_waiters.pop(folder, ())
+            }
+            self._network_ini_results = {}
+        for path in waiters:
+            self.networkFolderCacheChanged.emit(path)
 
     def _resolve_contact_id(self, document, name: str) -> tuple[object, str]:
         """A `name` személy contact_id-ja EBBEN a dokumentumban — meglévőt

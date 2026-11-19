@@ -9,6 +9,7 @@ from PySide6.QtCore import Property, Signal, Slot
 from picasapy.app.movie_preview import MovieTransitionPreviewProvider
 from picasapy.movie import MovieSettings
 from picasapy.movie.mxf import MxfProjekt
+from .network_folder_file_cache import network_folder_file_names
 
 class _LegacyMovieCall:
     """A régi modul patchpontjának futásidejű továbbítása."""
@@ -288,6 +289,15 @@ class _CreateMovieMixin:
 
         A `hasCollageProject` ikerpárja: nem a létrehozás emléke kapcsolja
         be a gombot, hanem a fájl mellett álló projektfájl."""
+        network, names = network_folder_file_names(self, video_path)
+        if network:
+            if names is None:
+                return False
+            video = Path(video_path)
+            return (
+                video.name.casefold() in names
+                and video.with_suffix(".mxf").name.casefold() in names
+            )
         return _movie_call("hasMovieProject", self, video_path)
 
     @Slot(str, result="QVariantMap")

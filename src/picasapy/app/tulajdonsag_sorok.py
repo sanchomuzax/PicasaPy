@@ -16,6 +16,7 @@ from datetime import datetime
 from PySide6.QtCore import QDate, QDateTime, QLocale, QTime
 
 from picasapy.ini import load_existing, parse_faces
+import picasapy.halozati_ut as _network_paths
 
 from .contact_names import contact_names_by_id
 from .photo_sort import photo_date
@@ -29,7 +30,12 @@ def file_date_text(photo, locale: QLocale) -> str | None:
     hívó területi beállításával: rövid dátum + másodperces idő, éjfélkor
     csak a dátum (`VarBstrFromDate` szerződése). Elérhetetlen fájlnál None
     (az eredetinél a `GetFileAttributesEx` sikere a feltétel)."""
-    if not (Path(photo.folder_path) / photo.name).is_file():
+    if _network_paths.fajlrendszer_gyoker(photo.folder_path) is None:
+        if not (Path(photo.folder_path) / photo.name).is_file():
+            return None
+    elif not photo.size:
+        # A hálózati fájl jelenlétét a szkenner már bejegyezte; a QML-kötés
+        # nem végezhet újabb hálózati `stat`-ot.
         return None
     if not photo.taken_at and not photo.sort_mtime_ns:
         return None  # a 0 ns „nincs adat", nem 1970
@@ -59,12 +65,16 @@ def _masodperces_formatum(locale: QLocale) -> str:
 
 
 def person_tags_text(
-    photo, xmp_people: tuple[str, ...], contacts_xml=None
+    photo, xmp_people: tuple[str, ...], contacts_xml=None, ini_document=None
 ) -> str | None:
     """A „Személycímkék": a kép megnevezett arcai (`.picasa.ini` `faces=` +
     `[Contacts2]`); ha nincs, a fájl XMP-régióinak nevei. Azonos név N-szer:
     „Név (N)"; több név vesszővel (a Kulcsszavak-sor mintája)."""
-    nevek = ini_person_names(photo, contacts_xml) or xmp_people
+    nevek = (
+        ini_person_names(photo, contacts_xml, ini_document)
+        if ini_document is not None
+        else ini_person_names(photo, contacts_xml)
+    ) or xmp_people
     if not nevek:
         return None
     szamlalo = Counter(nevek)
@@ -74,13 +84,14 @@ def person_tags_text(
     )
 
 
-def ini_person_names(photo, contacts_xml=None) -> tuple[str, ...]:
+def ini_person_names(photo, contacts_xml=None, document=None) -> tuple[str, ...]:
     """A kép nevesített arcainak nevei az ini-ből, az arclista sorrendjében;
     a meg nem nevezett (üres nevű) arc kimarad. A nevet a központi
     `contacts_xml` és a mappa `[Contacts2]`-je adja (`contact_names`).
     Olvasási hibára ()."""
     try:
-        document = load_existing(Path(photo.folder_path) / _INI_NEV)
+        if document is None:
+            document = load_existing(Path(photo.folder_path) / _INI_NEV)
         section = document.section(photo.name)
         raw = section.get("faces") if section is not None else None
         if not raw:

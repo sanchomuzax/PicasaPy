@@ -103,7 +103,18 @@ class FolderPhotoSortMixin:
         """
         prioritasok: dict = {}
         for mappa in dict.fromkeys(r.folder_path for r in records):
-            for nev, ertek in mappa_prioritasai(mappa).items():
+            from .network_ini_document_cache import network_ini_document
+
+            network, document = network_ini_document(self, mappa)
+            if network:
+                if document is None:
+                    continue
+                from picasapy.ini.priority import olvasd_a_prioritasokat
+
+                values = olvasd_a_prioritasokat(document)
+            else:
+                values = mappa_prioritasai(mappa)
+            for nev, ertek in values.items():
                 prioritasok[(mappa, nev)] = ertek
         return prioritasok
 

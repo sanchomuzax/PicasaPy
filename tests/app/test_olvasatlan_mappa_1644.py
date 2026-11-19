@@ -131,7 +131,7 @@ class TestAVisszaallas:
         yield ctl
         assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le"
 
-    def test_a_mappa_megnyitasa_TORLI(self, controller, tmp_path, library):
+    def test_a_mappa_megnyitasa_TORLI(self, qt_app, controller, tmp_path, library):
         mappa = library / "nyaralas"
         # ⚠️ A jelölőt ITT állítjuk vissza 1-re, nem a fixture-re hagyjuk:
         # a vezérlő indulása MAGA is megnyit egy mappát (session/lastFolder),
@@ -145,6 +145,8 @@ class TestAVisszaallas:
         assert _unread(tmp_path / "index.db", mappa) is True
 
         controller.selectFolder(str(mappa))
+        assert controller.waitForBackgroundWorkers(5.0)
+        qt_app.processEvents()
 
         assert _unread(tmp_path / "index.db", mappa) is False
 

@@ -10,6 +10,8 @@ class EditControllerSignalsMixin:
 
     toolsChanged = Signal()
 
+    textFontCatalogueChanged = Signal()
+
     pickerRecentColorsChanged = Signal()
 
     gpuRevisionChanged = Signal()

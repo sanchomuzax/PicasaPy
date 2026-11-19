@@ -116,7 +116,7 @@ def properties_entries(photo, locale: QLocale, tr, contacts_xml=None) -> list:
 
 
 def _properties_entries_with_details(
-    photo, locale: QLocale, tr, contacts_xml, details
+    photo, locale: QLocale, tr, contacts_xml, details, ini_document=None
 ) -> list:
     """A tulajdonságpanel sorai már beolvasott EXIF-adatokkal."""
     entries: list = [
@@ -130,7 +130,7 @@ def _properties_entries_with_details(
         return entries
     entries.extend(
         _exif_entries_with_details(
-            photo, locale, tr, contacts_xml, details
+            photo, locale, tr, contacts_xml, details, ini_document
         )
     )
     return entries
@@ -187,7 +187,9 @@ def exif_entries(photo, locale: QLocale, tr, contacts_xml=None) -> list:
     return _exif_entries_with_details(photo, locale, tr, contacts_xml, details)
 
 
-def _exif_entries_with_details(photo, locale: QLocale, tr, contacts_xml, details) -> list:
+def _exif_entries_with_details(
+    photo, locale: QLocale, tr, contacts_xml, details, ini_document=None
+) -> list:
     """EXIF-sorok előállítása lemezolvasás nélkül."""
     entries: list = []
 
@@ -271,7 +273,10 @@ def _exif_entries_with_details(photo, locale: QLocale, tr, contacts_xml, details
             if keyword.strip()
         )
         add("Keywords", ", ".join(keywords))
-    add("People Tags", person_tags_text(photo, details.xmp_people, contacts_xml))
+    add(
+        "People Tags",
+        person_tags_text(photo, details.xmp_people, contacts_xml, ini_document),
+    )
     # a koordináta a Picasában is mindig pontos (`.picasa.ini`
     # `geotag=33.770556,-84.293055`, KML `<longitude>%f`): vesszős
     # tizedesjellel egy koordinátapár olvashatatlan volna

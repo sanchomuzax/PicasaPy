@@ -6,6 +6,14 @@ RowLayout {
     id: viewerRightPanels
     property var hostViewer: null
     readonly property var viewer: hostViewer
+    property int networkCacheRevision: 0
+    Connections {
+        target: typeof controller !== "undefined" ? controller : null
+        ignoreUnknownSignals: true
+        function onNetworkPropertiesChanged() {
+            viewerRightPanels.networkCacheRevision += 1
+        }
+    }
     spacing: 0
     visible: viewer.propertiesOpen || viewer.tagsOpen
              || viewer.placesOpen || viewer.peopleOpen
@@ -32,6 +40,7 @@ RowLayout {
         entries: (viewer.propertiesOpen && viewer.photosModel
                   && typeof controller !== "undefined" && controller)
             ? (viewer.photosModel.revision,
+               viewerRightPanels.networkCacheRevision,
                controller.propertiesOf(viewer.currentIndex))
             : []
         onCloseRequested: viewer.zarjaAFiokot()
@@ -175,6 +184,7 @@ RowLayout {
             peopleHere: (viewer.photosModel && viewer.controllerReady)
                 ? (viewer.appWindow
                    ? viewer.appWindow.peopleFaceRevision : 0,
+                   viewerRightPanels.networkCacheRevision,
                    viewer.photosModel.revision,
                    controller.peopleOfRows(viewer.drawerRows))
                 : []

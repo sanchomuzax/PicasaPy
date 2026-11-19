@@ -170,7 +170,16 @@ class PhotoOpsWriteMixin(_PhotoOpsWriteCoreMixin, _PhotoOpsWriteTextMixin):
     def hasTextLayerInSelection(self, rows) -> bool:  # noqa: N802
         """A kijelölés első képén van-e nem üres Text eszközös réteg."""
         photos = self._rows_to_photos(rows or ())
-        return bool(photos and self._text_layer_value(photos[0]) is not None)
+        if not photos:
+            return False
+        from .network_text_layer_cache import has_network_text_layer
+
+        cached = has_network_text_layer(self, photos[0])
+        return (
+            cached
+            if cached is not None
+            else self._text_layer_value(photos[0]) is not None
+        )
 
     @Property(bool, notify=textLayerClipboardChanged)
     def hasTextLayerClipboard(self) -> bool:  # noqa: N802

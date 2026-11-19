@@ -16,6 +16,15 @@ RightDrawer {
     property string peopleLabel: ""
     property string placesLabel: ""
     property alias peoplePanel: peoplePanelItem
+    property int networkCacheRevision: 0
+
+    Connections {
+        target: drawerRoot.hostController
+        ignoreUnknownSignals: true
+        function onNetworkPropertiesChanged() {
+            drawerRoot.networkCacheRevision += 1
+        }
+    }
 
     //: #3035: a fiók ANIMÁLVA tolódik be és ki (`thumbui.tre:700`:
     //: `varbutton RIGHTDRAWEROFFSET -280 0 1` — a harmadik érték az
@@ -72,6 +81,7 @@ TagsPanel {
     readOnlySelection: (drawerRoot.hostController
                         && drawerRoot.hostController.selectionReadOnly !== undefined)
         ? (drawerRoot.hostController.photos.revision,
+           drawerRoot.networkCacheRevision,
            drawerRoot.hostController.selectionReadOnly(drawerRoot.hostWindow.selectedRows()))
         : false
     // a photos.revision-nel együtt kötve: címke-írás után frissül
@@ -143,6 +153,7 @@ PropertiesPanel {
     // #305: null-őr
     entries: drawerRoot.hostController
         ? (drawerRoot.hostController.photos.revision,
+           drawerRoot.networkCacheRevision,
            drawerRoot.hostController.propertiesOf(drawerRoot.hostWindow.selectedIndex))
         : []
     onCloseRequested: drawerRoot.hostWindow.ureseidAFiokot()
@@ -203,11 +214,13 @@ PeoplePanel {
         ? drawerRoot.hostController.currentPersonName : ""
     // a photos.revision-nel együtt kötve: arc-írás után frissül
     peopleHere: drawerRoot.hostController
-        ? (drawerRoot.hostWindow.peopleFaceRevision, drawerRoot.hostController.photos.revision,
+        ? (drawerRoot.hostWindow.peopleFaceRevision, drawerRoot.networkCacheRevision,
+           drawerRoot.hostController.photos.revision,
            drawerRoot.hostController.peopleOfRows(drawerRoot.hostWindow.selectedRows()))
         : []
     unnamedFacesHere: drawerRoot.hostController && !drawerRoot.hostWindow.unnamedFacesOpen
         ? (drawerRoot.hostWindow.peopleFaceRevision, drawerRoot.hostWindow.unnamedFaceRevision,
+           drawerRoot.networkCacheRevision,
            drawerRoot.hostController.photos.revision,
            drawerRoot.hostController.unnamedFacesOfRows(drawerRoot.hostWindow.selectedRows()))
         : []

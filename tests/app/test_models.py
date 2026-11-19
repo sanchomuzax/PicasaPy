@@ -386,6 +386,25 @@ class TestPhotoGridModel:
         assert resets == []
         assert model.revision == revision_before
 
+    def test_set_photos_imported_rows_appends_without_reset(self, qt_app, conn, library):
+        from picasapy.app.models import PhotoGridModel
+
+        folder = library / "nyaralas"
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, folder))
+        resets = []
+        inserts = []
+        model.modelAboutToBeReset.connect(lambda: resets.append(1))
+        model.rowsInserted.connect(lambda _parent, first, last: inserts.append((first, last)))
+
+        make_jpeg(folder / "IMG_0003.jpg")
+        sync_folder(conn, library, folder)
+        model.set_photos(photos_in_folder(conn, folder))
+
+        assert model.rowCount() == 3
+        assert resets == [], "az importált sorok nem dobhatják el a teljes rácsot"
+        assert inserts == [(2, 2)]
+
     def test_set_photos_resets_on_changed_tuple(self, qt_app, conn, library):
         # #142 ellenpróba: valódi változásnál a reset és a revision-bump
         # továbbra is megtörténik.

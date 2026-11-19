@@ -21,6 +21,17 @@ Item {
     readonly property var drawerShortcutSequence:
         toggleEditorDrawerShortcut.sequence
 
+    Connections {
+        target: editWorkflow.hostEditController
+        function onTextFontCatalogueChanged() {
+            if (editWorkflow.editorPanel.fontFamilyCatalogue.length === 0)
+                editWorkflow.editorPanel.fontFamilyCatalogue =
+                        editWorkflow.hostEditController.textFontFamilies.slice()
+            editWorkflow.editorPanel.textFontFamily =
+                    editWorkflow.hostEditController.textFontFamily
+        }
+    }
+
     function toggleEditorDrawer() {
         if (typeof controller !== "undefined" && controller
                 && controller.setEditorControlsVisible !== undefined) {

@@ -5,11 +5,13 @@ a `controller.keywordsOfRows(...)` felületet hívják."""
 
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Property, QMetaObject, Qt, Signal, Slot
 
 from picasapy.fileops import is_folder_writable
+import picasapy.halozati_ut as _network_paths
 from picasapy.index import all_photos, open_index
 from picasapy.ini import update_document, with_backuphash
 from picasapy.metadata import write_iptc_keywords
@@ -48,6 +50,7 @@ _ASCII_CASE_FOLD = str.maketrans(
 #: tesztek ezt cserélik ki — `chmod`-ra épülő próba a windows-lábon némán
 #: zölden állna (#1560: a `chmod` ott mappára hatástalan).
 _irhato_e = is_folder_writable
+_NETWORK_READONLY_LOCK = threading.Lock()
 
 
 def _split_keywords(raw: str | None) -> tuple[str, ...]:
@@ -162,6 +165,8 @@ class KeywordsMixin:
         return any(not self._mappa_irhato(mappa) for mappa in mappak)
 
     def _mappa_irhato(self, mappa: str) -> bool:
+        if _network_paths.fajlrendszer_gyoker(mappa) is not None:
+            return self._network_mappa_irhato(mappa)
         gyorstar = getattr(self, "_irhatosag_gyorstar", None)
         if gyorstar is None:
             gyorstar = self._irhatosag_gyorstar = {}
@@ -169,9 +174,65 @@ class KeywordsMixin:
             gyorstar[mappa] = bool(_irhato_e(Path(mappa)))
         return gyorstar[mappa]
 
+    def _network_mappa_irhato(self, mappa: str) -> bool:
+        cache = getattr(self, "_network_irhatosag_gyorstar", None)
+        if cache is None:
+            cache = self._network_irhatosag_gyorstar = {}
+            self._network_irhatosag_fuggoben = set()
+            self._network_irhatosag_eredmenyek = {}
+            self._network_irhatosag_generacio = 0
+        with _NETWORK_READONLY_LOCK:
+            if mappa in cache:
+                return cache[mappa]
+            pending = self._network_irhatosag_fuggoben
+            if mappa in pending:
+                return False
+            pending.add(mappa)
+            generation = self._network_irhatosag_generacio
+
+        def worker() -> None:
+            try:
+                irhato = bool(_irhato_e(Path(mappa)))
+            except OSError:
+                irhato = False
+            with _NETWORK_READONLY_LOCK:
+                self._network_irhatosag_eredmenyek[mappa] = (generation, irhato)
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_network_irhatosag",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        self._start_background(
+            worker, name="picasapy-network-folder-writability", busy=False
+        )
+        # Ismeretlen állapotban a felület marad használható; a próba eredménye
+        # a hálózati tulajdonság-jelzéssel frissíti a kötést.
+        return False
+
+    @Slot()
+    def _apply_network_irhatosag(self) -> None:
+        with _NETWORK_READONLY_LOCK:
+            results = getattr(self, "_network_irhatosag_eredmenyek", None)
+            if not results:
+                return
+            generation = self._network_irhatosag_generacio
+            for mappa, (eredmeny_generacio, irhato) in results.items():
+                if eredmeny_generacio == generation:
+                    self._network_irhatosag_gyorstar[mappa] = irhato
+            self._network_irhatosag_fuggoben.difference_update(results)
+            self._network_irhatosag_eredmenyek = {}
+
     def uritsd_az_irhatosag_gyorstarat(self) -> None:
         """A jogosultság menet közben változhat (csatolás, hálózati kötet)."""
         self._irhatosag_gyorstar = {}
+        with _NETWORK_READONLY_LOCK:
+            self._network_irhatosag_generacio = (
+                getattr(self, "_network_irhatosag_generacio", 0) + 1
+            )
+            self._network_irhatosag_gyorstar = {}
+            self._network_irhatosag_fuggoben = set()
+            self._network_irhatosag_eredmenyek = {}
 
     @Slot(list, str, result=bool)
     def addKeywordToRows(self, rows, keyword: str) -> bool:

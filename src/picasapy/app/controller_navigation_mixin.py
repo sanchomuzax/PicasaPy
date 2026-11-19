@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QObject, Qt, Signal, Slot
 from picasapy.index import open_index
 from picasapy.index.hidden_scope import visible_folder_sql
+
+
+class _UnreadClearSignals(QObject):
+    finished = Signal(int, str, bool)
+
 
 class FolderNavigationMixin:
     """A mappanavigáció és az index állapotának segédei."""
@@ -65,20 +70,55 @@ class FolderNavigationMixin:
 
         Csak akkor ír, ha a jelölő tényleg fent van: a mappaváltás gyakori
         művelet, és egy feltétel nélküli UPDATE minden kattintásra
-        WAL-bejegyzést szülne (a #139 azonos megfontolása)."""
+        WAL-bejegyzést szülne (a #139 azonos megfontolása). Az SQLite
+        írása háttérben fut, mert a szinkron írózárára várakozás a GUI-szálat
+        is megállíthatja."""
         if not folder_path:
             return
-        with open_index(self._db_path) as conn:
-            kurzor = conn.execute(
-                "UPDATE folders SET unread = 0 WHERE path = ? AND unread = 1",
-                (str(folder_path),),
-            )
-            if not kurzor.rowcount:
-                return
-            conn.commit()
-        # A bal hasáb kövér szedése ebből a mezőből él — újratöltés nélkül
-        # a mappa megnyitás után is kövér maradna.
-        self._reload_folders()
+        sequence = getattr(self, "_unread_clear_sequence", 0) + 1
+        self._unread_clear_sequence = sequence
+        signals = _UnreadClearSignals(self)
+        pending = getattr(self, "_unread_clear_signals", None)
+        if pending is None:
+            pending = self._unread_clear_signals = {}
+        pending[sequence] = signals
+        signals.finished.connect(
+            self._on_unread_clear_finished,
+            Qt.ConnectionType.QueuedConnection,
+        )
+
+        def worker() -> None:
+            changed = False
+            try:
+                with open_index(self._db_path) as conn:
+                    cursor = conn.execute(
+                        "UPDATE folders SET unread = 0 WHERE path = ? AND unread = 1",
+                        (str(folder_path),),
+                    )
+                    changed = bool(cursor.rowcount)
+                    if changed:
+                        conn.commit()
+            except Exception:  # noqa: BLE001 — a megnyitás ne várjon az indexre
+                import logging
+
+                logging.getLogger(__name__).exception(
+                    "Az olvasatlan mappajelölő nem törölhető: %s", folder_path
+                )
+            signals.finished.emit(sequence, str(folder_path), changed)
+
+        self._start_background(worker, name="picasapy-clear-unread", busy=False)
+
+    @Slot(int, str, bool)
+    def _on_unread_clear_finished(
+        self, sequence: int, _folder_path: str, changed: bool
+    ) -> None:
+        signals = getattr(self, "_unread_clear_signals", {}).pop(sequence, None)
+        if signals is not None:
+            signals.deleteLater()
+        if changed:
+            # A bal hasáb kövér szedése ebből a mezőből él — újratöltés
+            # nélkül a mappa megnyitás után is kövér maradna.
+            self._reload_folders()
 
     def _index_stamp(self) -> tuple:
         """Az index-adatbázis olcsó változás-pecsétje (#142): a db és a

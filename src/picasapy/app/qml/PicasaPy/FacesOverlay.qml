@@ -45,6 +45,12 @@ Item {
     }
     onImagePathChanged: refreshKnownNames()
     onEditModeChanged: if (editMode) refreshKnownNames()
+    Connections {
+        target: overlay.hasHelper ? facesHelper : null
+        function onNetworkFolderCacheChanged(imagePath) {
+            if (imagePath === overlay.imagePath) overlay.refreshKnownNames()
+        }
+    }
 
     function cancelManualAdd() {
         overlay.closeEditor()

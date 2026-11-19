@@ -164,7 +164,7 @@ class EditControllerTextMixin:
         return self._text_opacity
 
 
-    @Property("QVariant", notify=_Signals.toolsChanged)
+    @Property("QVariant", notify=_Signals.textFontCatalogueChanged)
     def textFontFamilies(self):
         """A betűtípus-lenyíló adata: `key` + megjelenő `label`.
 
@@ -229,7 +229,7 @@ class EditControllerTextMixin:
         self._text_font_families_pending = False
         if self._text_family_value is None:
             self._text_family_value = self._preferred_text_family(families)
-        self.toolsChanged.emit()
+        self.textFontCatalogueChanged.emit()
 
 
     @Property(str, notify=_Signals.toolsChanged)
