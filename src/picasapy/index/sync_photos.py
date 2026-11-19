@@ -69,6 +69,7 @@ _PHOTO_UPSERT_SQL = (
     "movie_format = excluded.movie_format, "
     "frame_rate = excluded.frame_rate, "
     "duration_seconds = excluded.duration_seconds, "
+    "exif_words_pending = 0, "
     "exif_lat = excluded.exif_lat, exif_lon = excluded.exif_lon"
 )
 
@@ -112,11 +113,12 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResul
                 row["geotag_ini"],
             ),
             row["movie_format"],
+            row["exif_words_pending"],
         )
         for row in conn.execute(
             "SELECT name, mtime_ns, size, star, hidden, caption_ini,"
             " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
-            " movie_format"
+            " movie_format, exif_words_pending"
             " FROM photos WHERE folder_id = ?",
             (folder_id,),
         )
@@ -147,9 +149,11 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResul
             # fájl-metaadat oszlopok maradnak. UPDATE csak akkor fut, ha
             # az ini-mezők ténylegesen eltérnek (#139) — különben a sor
             # érintetlen, az FTS-trigger sem sül el.
-            if media.kind == "video" and current[2] is None:
-                # #4580: a v20-ról migrált sorokból a fájl újraolvasása tölti
-                # fel a videómezőket.
+            if (media.kind == "video" and current[2] is None) or (
+                media.kind == "photo" and current[3]
+            ):
+                # #4580: a v20-ról migrált sorok videómezőit, #7254: a régi
+                # index képeinek EXIF-szavait tölti fel újraolvasással.
                 upserts.append((media, ini_fields))
             elif current[1] != ini_fields:
                 conn.execute(

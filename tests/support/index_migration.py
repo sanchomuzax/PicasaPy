@@ -40,7 +40,7 @@ def downgrade_search_schema_to_v28(conn):
         "DROP TABLE photos_fts;"
     )
     columns = {row[1] for row in conn.execute("PRAGMA table_info(photos)")}
-    for column in ("artist_file", "copyright_file"):
+    for column in ("artist_file", "copyright_file", "exif_words_pending"):
         if column in columns:
             conn.execute(f"ALTER TABLE photos DROP COLUMN {column}")
     conn.executescript(_V28_FTS_DDL)

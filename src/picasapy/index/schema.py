@@ -550,6 +550,7 @@ CREATE TABLE IF NOT EXISTS photos (
     keywords_file TEXT,
     artist_file TEXT,
     copyright_file TEXT,
+    exif_words_pending INTEGER NOT NULL DEFAULT 0,
     geotag_ini TEXT,
     exif_lat REAL,
     exif_lon REAL,
@@ -768,11 +769,13 @@ DELETE FROM folder_scan_state WHERE path IN (
     # a dátum a további tagságváltozásoktól független marad.
     27: _ALBUM_TIMELINE_DATES_MIGRATION,
     # #7254: Artist és Copyright EXIF-szavak kerülnek az FTS-szótárba. A
-    # meglévő fájlokat a migráció kódja az `metadata.read_file_metadata`
-    # olvasón át tölti fel, így nincs szükség teljes index-újraépítésre.
+    # migráció csak a sémát állítja át; a régi képsorok pending jelölője
+    # arra kéri a háttérszinkront, hogy változatlan fájlból is töltse fel őket.
     28: f"""
 ALTER TABLE photos ADD COLUMN artist_file TEXT;
 ALTER TABLE photos ADD COLUMN copyright_file TEXT;
+ALTER TABLE photos ADD COLUMN exif_words_pending INTEGER NOT NULL DEFAULT 0;
+UPDATE photos SET exif_words_pending = 1 WHERE kind = 'photo';
 
 DROP TRIGGER IF EXISTS photos_fts_insert;
 DROP TRIGGER IF EXISTS photos_fts_delete;
