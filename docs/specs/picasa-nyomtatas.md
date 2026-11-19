@@ -1201,3 +1201,11 @@ A 0x00d67904 adatcím, nem függvénycím. A 0x00745770 a CPrintJobThread péld�
 A szerkesztőpanel-visszaállító 0x005d78d0 közvetlenül tab- és effektpanel-állapotot kezel. A közvetlen törzsben nincs nyomtatópanel- vagy kijelölésírás. A 0x005d7c20 az effekt-előnézeti, címke- és fülállapotot kezeli; a közvetett hatás az effektfrissítő 0x005d7680 és annak esetleges dinamikus céljai nélkül nyitott.
 
 Ezekből a részleges leletekből jelenleg nem készül fejlesztési eltérésjegy: a nyomtatási vektor teljessége, a szűrők és a közvetett felületi hatás nem bizonyított.
+
+## #7266 folytatás: rekordszintű nyomtatási ellenőrzés (#499, 2026-11-19)
+
+A 0x007774b0 a nyomtatási rekordot és az elrendezést dolgozza fel; a speciális 0x1c == 0x10 rekordágon 0x00861630-at, a nulla rekord +0xfc mezőn 0x008613b0-et hívja. A látható törzsben nincs videó- vagy fájllétezés-vizsgálat. A 0x00861bb0 StartDocA után a csoportok rekordjait 0x00861f50-nek, az oldalakat 0x00862000-nek adja; nem nulla oldaleredmény AbortDoc-ra visz, sikeres oldalbejárás után EndDoc fut. Közvetlen fájlellenőrzés itt sem látható.
+
+**Bizonyítottság: feltételes.** A két rekordszintű függvényben nem látható közvetlen video-/fájlteszt. A mélyebb képfestés és fájlbetöltés következő címe 0x008623c0; a 0x007774b0 vtable-rajzolója is dinamikus.
+
+**Forrás:** 2026-11-19-koteg-549-561.txt:824-1110.
