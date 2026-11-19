@@ -939,7 +939,7 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
 
     beat_gaps = [
         ((right[0] - left[0]) * 1000, left, right)
-        for left, right in zip(heartbeat, heartbeat[1:])
+        for left, right in zip(heartbeat, heartbeat[1:], strict=False)
     ]
     max_gap_ms, gap_before, gap_after = max(beat_gaps, default=(0.0, (), ()))
     if violations:
