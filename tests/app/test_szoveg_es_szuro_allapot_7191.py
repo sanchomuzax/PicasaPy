@@ -1,4 +1,4 @@
-"""#7191: a keresőszöveg és a csillag/arc/geocímke gomb KÖZÖS állapota.
+"""#7191/#7264: a keresőszöveg és a csillag/arc/geocímke/film gomb közös állapota.
 
 A vezérlő-szintű széljárások: a gomb nem szivároghat át egy másik nézetmódba,
 a szöveg törlése a gombot megtartja, a mappára szűkített keresés és a
@@ -53,23 +53,45 @@ def controller(qt_app, tmp_path, library):
     )
 
 
+@pytest.fixture
+def video_controller(qt_app, tmp_path):
+    from picasapy.app.controller import AppController
+    from picasapy.app.thumbnail_provider import ThumbnailProvider
+    from picasapy.thumbs import ThumbnailCache
+
+    library = tmp_path / "videok"
+    library.mkdir()
+    (library / "feliratos.mp4").write_bytes(b"video")
+    (library / "felirat_nelkuli.avi").write_bytes(b"video")
+    (library / ".picasa.ini").write_text(
+        "[feliratos.mp4]\ncaption=zqvid\n", encoding="utf-8"
+    )
+    db = tmp_path / "video-index.db"
+    with open_index(db) as conn:
+        sync_tree(conn, library)
+    provider = ThumbnailProvider(
+        ThumbnailCache(tmp_path / "video-thumbs", size=32)
+    )
+    settings = QSettings(
+        str(tmp_path / "video-settings.ini"), QSettings.Format.IniFormat
+    )
+    return AppController(db, (str(library),), provider, settings=settings)
+
+
 def _nevek(controller) -> set[str]:
     return {foto.name for foto in controller.photos.photos}
 
 
 class TestAGombNemSzivarog:
-    def test_a_film_gomb_utan_a_regi_gomb_nem_szuri_az_uj_keresest(
-        self, controller
-    ):
-        controller.search(KULCS)
-        controller.showStarred()
-        assert _nevek(controller) == {"x1.jpg", "y1.jpg"}
-
+    def test_a_film_gomb_aktiv_marad_a_kereses_kozben(self, controller):
         controller.showVideosOnly()
-        controller.search(KULCS)
+        assert controller.buttonFilterName == "videos"
+        controller.search("zqvid")
 
-        assert controller.buttonFilterName == ""
-        assert _nevek(controller) == {"x1.jpg", "x2.jpg", "y1.jpg"}
+        assert controller.viewModeName == "search"
+        assert controller.searchQuery == "zqvid"
+        assert controller.buttonFilterName == "videos"
+        assert _nevek(controller) == set()
 
     def test_a_csillagozott_album_nem_visz_gombot_a_keresesbe(self, controller):
         controller.showStarredAlbum()
@@ -198,3 +220,31 @@ class TestAMetszetSegedfuggveny:
         assert [r.name for r in metszet] == [
             r.name for r in talalatok if r.star
         ]
+
+
+class TestAFilmGombMetszete:
+    def test_film_nezet_es_szoveg_metszete_torles_es_kikapcsolas(
+        self, video_controller
+    ):
+        controller = video_controller
+
+        controller.showVideosOnly()
+        assert controller.buttonFilterName == "videos"
+        assert _nevek(controller) == {"feliratos.mp4", "felirat_nelkuli.avi"}
+
+        controller.search("zqvid")
+        assert controller.searchQuery == "zqvid"
+        assert controller.buttonFilterName == "videos"
+        assert _nevek(controller) == {"feliratos.mp4"}
+
+        controller.clearButtonFilter()
+        assert controller.viewModeName == "search"
+        assert controller.searchQuery == "zqvid"
+        assert controller.buttonFilterName == ""
+        assert _nevek(controller) == {"feliratos.mp4"}
+
+        controller.showVideosOnly()
+        controller.search("")
+        assert controller.viewModeName == "videos"
+        assert controller.buttonFilterName == "videos"
+        assert _nevek(controller) == {"feliratos.mp4", "felirat_nelkuli.avi"}

@@ -40,10 +40,10 @@ class SearchMixin:
         BEÍRT szöveget őrzi; az eredeti tisztítás és szóhatár-bontás csak az
         illesztéshez (`matching`) kell, és a `search_photos` maga is ezt
         végzi.
-        #7191: a csillag-, arc- és geocímke-gomb a szöveggel KÖZÖS állapot
-        (az eredetiben a szöveg és a gomb szava egy listában van, a találat a
-        metszet). A bekapcsolt gomb ezért a keresés közben is él, és a szöveg
-        törlése (üres `text`) a gombot megtartja: a gomb nézetére lépünk."""
+        #7191/#7264: a csillag-, arc-, geocímke- és filmgomb a szöveggel KÖZÖS
+        állapot (a film mérése a két találati halmaz metszetét mutatja). A
+        bekapcsolt gomb a keresés közben is él, és a szöveg törlése (üres
+        `text`) a gombot megtartja: a gomb nézetére lépünk."""
         self._search_selected_album_token = ""
         query = text.strip()
         matching = _normalize_search_query(query)
@@ -104,7 +104,7 @@ class SearchMixin:
         self._show_filtered(records, elapsed)
 
     def _active_button_filter(self) -> str:
-        """A most bekapcsolt csillag-/arc-/geocímke-gomb neve, vagy üres (#7191).
+        """A most bekapcsolt csillag-/arc-/geocímke-/filmgomb neve, vagy üres.
 
         Keresés közben a keresés mellé kötött gomb (`_search_button`), egyébként
         a gomb saját nézetmódja. Mindig a pillanatnyi nézetmódból számolódik,
