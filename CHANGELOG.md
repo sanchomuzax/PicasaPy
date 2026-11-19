@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.159] - 2026-11-19
+
+- A filmek gomb a keresőszöveggel együtt szűr, kikapcsolásakor megmarad a keresés, a szöveg törlésekor pedig visszatér a filmnézet. (#7264).
+
 ## [1.0.158] - 2026-11-19
 
 ## [1.0.157] - 2026-11-19
