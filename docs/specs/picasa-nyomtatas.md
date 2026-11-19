@@ -1192,12 +1192,12 @@ eltávolítás rákérdez” értelmezés ezért nem áll meg. Élő UI-futtatá
 
 ## #7266-kiegészítés: nyomtatási ágak (#497-500, 2026-11-19)
 
-A kevesebb mint két kijelölt kép ágában a 0x004b0190 iterátorokat köt az album-/mappatárolókhoz, de önmagában nem bizonyítja, hogy minden albumképet a nyomtatási vektorba vesz-e. A korábban azonosított 0x006cab20 a kapott vektort annak eredeti sorrendjében járja; a vektor teljessége és forrássorrendje nyitott. Következő címek: 0x00744ee0, 0x004133e0 és a vektor előállítója.
+A kevesebb mint két kijelölt kép ágában a 0x004b0190 album- és mappatárolók iterátorait köti össze; nem maga állítja elő a teljes képlistát. A 0x004133e0 csak a tárolóvektort hozza létre. A 0x00744ee0 gyűjtőút 0x006cab20-nak adja át a vektort, a 0x006cab20 pedig a kapott elemeket bemeneti sorrendben járja be. Az nem bizonyított, hogy a forrásvektor minden képet tartalmaz-e és milyen sorrendben: ehhez a 0x00744ee0 által a 0x004b0190-en át hívott virtuális +0x2c visszahívás célját és a vektor előállítóját kell azonosítani.
 
-A 0x005cb180 a [belső objektum+0x3c0] értéket adja vissza, ha a [külső objektum+0xeac] mutató létezik, egyébként -1-et. A +0x3c0 jelentését a mostani kimenet nem nevezi meg; a 0x005cb990 objektumépítő/mezőíró ágát kell követni.
+A 0x005cb180 a [belső objektum+0x3c0] dwordöt adja vissza, ha a [külső objektum+0xeac] mutató létezik, egyébként -1-et. A 0x005cb990 hívói ezt az értéket azonosítóként adják tovább a tároló- és albumkezelő utaknak. A pontos azonosítófajta és a +0x3c0 mező írója nincs azonosítva; a 0x005cb990 kimenete ehhez nem elég.
 
-A 0x00d67904 adatcím, nem függvénycím. A CPrintJobThread RTTI-vtáblájában a +0x20 slot célja 0x00709430, a +0x2c slot célja 0x007434d0. A slotcélok szerepe és a videó/hiányzó fájl szűrésének helye nincs megállapítva; ehhez a két célfüggvény és a thread-hívók kimenete kell.
+A 0x00d67904 adatcím, nem függvénycím. A 0x00745770 a CPrintJobThread példány létrehozása után a [DAT_00d67904+0x20] indítóhelyet hívja a szálobjektummal. A CPrintJobThread saját vtáblájában a +0x20 hely célja 0x00709430, amely azonnal nullával tér vissza; a munkát végző +0x2c hely célja 0x007434d0. Ez a +0x60 listát járja, az aktuális rekord +0xec mezőjébe beírja a nyomtatási feladatot, majd a 0x00777470-et hívja. Nem nulla eredménynél a nyomtató nevét tartalmazó hibaüzenetet jeleníti meg. A 0x00777470 a 0x007774b0 ellenőrző út után, nulla visszatérésnél a 0x00861bb0-et hívja. A videó és hiányzó fájl kiszűrése a 0x007774b0 és 0x00861bb0 címekből még nincs megállapítva.
 
-A szerkesztőpanel-visszaállító 0x005d78d0 közvetlenül tab- és effektpanel-állapotot kezel. A törzsben nem látszik nyomtatópanel- vagy kijelölésírás; a közvetett hatás a 0x005d7c20 és 0x005d7680 útjának olvasása nélkül nyitott.
+A szerkesztőpanel-visszaállító 0x005d78d0 közvetlenül tab- és effektpanel-állapotot kezel. A közvetlen törzsben nincs nyomtatópanel- vagy kijelölésírás. A 0x005d7c20 az effekt-előnézeti, címke- és fülállapotot kezeli; a közvetett hatás az effektfrissítő 0x005d7680 és annak esetleges dinamikus céljai nélkül nyitott.
 
 Ezekből a részleges leletekből jelenleg nem készül fejlesztési eltérésjegy: a nyomtatási vektor teljessége, a szűrők és a közvetett felületi hatás nem bizonyított.
