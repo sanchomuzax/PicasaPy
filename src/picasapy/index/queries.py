@@ -517,8 +517,8 @@ def search_photos(
     conn: sqlite3.Connection, query: str, *, only_id: int | None = None
 ) -> tuple[PhotoRecord, ...]:
     """Keresés MINDENBEN (Picasa): fájlnév/felirat/kulcsszó (FTS5) ÉS
-    mappanév — az egyező nevű mappák teljes tartalma is találat. A `tag:`
-    előtag csak a kulcsszómezőkre szűkíti a keresést (#7218).
+    mappa- és albumnév: az egyező nevű mappák és albumok teljes tartalma is
+    találat. A `tag:` előtag csak a kulcsszómezőkre szűkíti a keresést (#7218).
 
     #383: a `color:`/`szín:` tokenek (pl. `color:blue nyaralás`) a
     szabadszavas résztől ELVÁLNAK — a színszűrés a maradék szöveges
@@ -592,6 +592,8 @@ def _text_search(
 
     folder_ids: list[int] = []
     excluded_folder_ids: set[int] = set()
+    album_tokens: list[str] = []
+    excluded_album_tokens: set[str] = set()
     if not keyword_only:
         for row in conn.execute("SELECT id, path FROM folders"):
             folder_terms = {
@@ -611,6 +613,24 @@ def _text_search(
                 for folder_term in folder_terms
             ):
                 excluded_folder_ids.add(row["id"])
+        for row in conn.execute(
+            "SELECT token, max(name) AS name FROM albums "
+            "GROUP BY token ORDER BY token"
+        ):
+            if not row["name"]:
+                continue
+            album_terms = set(_normalize_search_query(row["name"]).split())
+            if positive_terms and all(
+                any(album_term.startswith(term) for album_term in album_terms)
+                for term in positive_terms
+            ):
+                album_tokens.append(row["token"])
+            if any(
+                album_term.startswith(term)
+                for term in excluded_terms
+                for album_term in album_terms
+            ):
+                excluded_album_tokens.add(row["token"])
 
     where: list[str] = []
     params: list[str | int] = []
@@ -623,6 +643,13 @@ def _text_search(
             placeholders = ",".join("?" * len(folder_ids))
             match_clause += f" OR p.folder_id IN ({placeholders})"
             params.extend(folder_ids)
+        if album_tokens:
+            placeholders = ",".join("?" * len(album_tokens))
+            match_clause += (
+                " OR p.id IN (SELECT photo_id FROM photo_albums "
+                f"WHERE token IN ({placeholders}))"
+            )
+            params.extend(album_tokens)
         where.append(f"({match_clause})")
 
     for term in excluded_terms:
@@ -638,6 +665,13 @@ def _text_search(
         placeholders = ",".join("?" * len(excluded_folder_ids))
         where.append(f"p.folder_id NOT IN ({placeholders})")
         params.extend(sorted(excluded_folder_ids))
+    if excluded_album_tokens:
+        placeholders = ",".join("?" * len(excluded_album_tokens))
+        where.append(
+            "p.id NOT IN (SELECT photo_id FROM photo_albums "
+            f"WHERE token IN ({placeholders}))"
+        )
+        params.extend(sorted(excluded_album_tokens))
 
     if only_id is not None:
         where.append("p.id = ?")
@@ -730,7 +764,8 @@ def search_suggestions(
                 param=album.token,
             )
             for album in albums_in_index(conn)
-            if album.name and query in album.name.casefold()
+            if album.name and album.photo_count > 0
+            and query in album.name.casefold()
         )
     word_counts: dict[str, int] = {}
     for row in conn.execute(
