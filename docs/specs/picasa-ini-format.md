@@ -4073,4 +4073,4 @@ mindig előbb** fut. ⇒ A növekményes és a teljes út sorrendje **egyezik**.
 
 ## #7266-kiegészítés: üres INI-érték írása (#515, 2026-11-19)
 
-A 0x009bef50 wrapper a 0x009bd390 parancs-előkészítőt hívja, majd a 0x009bd640 serializernek adja át a célt és két környezeti argumentumot. A jelenlegi címzett kimenet nem dönti el, hogy üres értéknél kulcsot töröl, üres sort szúr be vagy más szerializálási ágat választ; a típus-1 parancs célobjektuma sem azonosított. Következő cím: 0x009bd640 típuságai és a 0x009bf000 testvérút.
+A 0x009bef50 wrapper a 0x009bd390 parancs-előkészítőt hívja, majd a 0x009bd640 sorosítónak adja át a célt és két környezeti argumentumot. A jelenlegi címzett kimenet nem dönti el, hogy üres értéknél kulcsot töröl, üres sort szúr be vagy más szerializálási ágat választ; a típus-1 parancs célobjektuma sem azonosított. Következő cím: 0x009bd640 típuságai és a 0x009bf000 testvérút.
