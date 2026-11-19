@@ -191,9 +191,24 @@ def _qml_cache_nev(fajl: Path) -> str:
     return _qml_cache_nev_utbol(fajl.resolve())
 
 
+def _jelentsd_a_qml_haladast(kesz: int, osszes: int) -> None:
+    """Az önfrissítő ablaka felé is továbbítja az előfordító fájlszámlálóját."""
+    try:
+        from .update_ablak import _QML_HALADAS_STATUS_ENV, _qml_halas_frissitese
+
+        status_ut = os.environ.get(_QML_HALADAS_STATUS_ENV)
+        if not status_ut:
+            return
+        _qml_halas_frissitese(Path(status_ut), kesz, osszes)
+    except OSError:
+        # A kijelzés elmaradhat, de a cache-előkészítés ettől folytatódik.
+        pass
+
+
 def _forditsd_le(cache_konyvtar: Path, fajlok: list[Path]) -> int:
     """A Qt saját cachegen eszközével készít futásidőben is használható bytecode-ot."""
     hibas = 0
+    kesz = 0
     cache_konyvtar.mkdir(parents=True, exist_ok=True)
     eszkoz = _qmlcachegen_exe()
     kornyezet = os.environ.copy()
@@ -209,6 +224,7 @@ def _forditsd_le(cache_konyvtar: Path, fajlok: list[Path]) -> int:
         hatarido_mp = ALAP_HATARIDO_MP
     hatarido = time.monotonic() + max(0.0, hatarido_mp)
     import_path = _qml_import_path()
+    _jelentsd_a_qml_haladast(0, len(fajlok))
     for fajl in fajlok:
         _naplozz(f"fordítás: {fajl}")
         cel = cache_konyvtar / _qml_cache_nev(fajl)
@@ -250,6 +266,8 @@ def _forditsd_le(cache_konyvtar: Path, fajlok: list[Path]) -> int:
             reszlet = (eredmeny.stderr or "").strip()
             if reszlet:
                 _naplozz(f"hiba: {fajl}: {reszlet[-800:]}")
+        kesz += 1
+        _jelentsd_a_qml_haladast(kesz, len(fajlok))
     return hibas
 
 

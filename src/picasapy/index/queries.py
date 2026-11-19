@@ -765,24 +765,36 @@ def search_suggestions(
             for album in albums_in_index(conn)
             if album.name and query in album.name.casefold()
         )
-    words: list[SearchSuggestion] = []
-    seen_words: set[str] = set()
+    word_counts: dict[str, int] = {}
     for row in conn.execute(
         "SELECT COALESCE(p.keywords_file, p.keywords_ini) AS keywords "
         "FROM photos p JOIN folders f ON f.id = p.folder_id "
         f"WHERE {visible_folder_sql(conn)}"
     ):
-        for raw_word in (row["keywords"] or "").split(","):
-            word = raw_word.strip()
-            if word and word not in seen_words and query in word.casefold():
-                seen_words.add(word)
-                # Az M4 nem rögzített szó-darabszám-szabályt. A mező a
-                # meglévő modell miatt marad jelen, a QML a szósornál elrejti.
-                words.append(
-                    SearchSuggestion(kind="word", name=word, count=0, param=word)
-                )
+        raw_keywords = row["keywords"]
+        if not raw_keywords:
+            continue
+        photo_words = {
+            piece.casefold()
+            for chunk in raw_keywords.split(",")
+            for piece in chunk.split()
+            if piece
+        }
+        for word in photo_words:
+            if query in word:
+                word_counts[word] = word_counts.get(word, 0) + 1
+    # #7242: a szósorok a szót tartalmazó képek száma szerint csökkenő sorrendben
+    # állnak; egyenlő darabszámnál nincs rögzített sorrend.
+    sorted_words = sorted(
+        (
+            SearchSuggestion(kind="word", name=word, count=count, param=word)
+            for word, count in word_counts.items()
+        ),
+        key=lambda s: s.count,
+        reverse=True,
+    )
     max_rows = max(0, min(limit, 10))
-    return (albums + folders + tuple(words))[:max_rows]
+    return (albums + folders + tuple(sorted_words))[:max_rows]
 
 
 def _optional_count(row: sqlite3.Row, key: str) -> int:
