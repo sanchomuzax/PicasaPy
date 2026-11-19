@@ -48,7 +48,7 @@ def test_a_csukott_fiok_bezaro_jele_nem_rajzolodik_ki(qml_app, qt_app):
     gomb.setProperty("opacity", 1.0)
 
     assert lathato, "a gomb helye a képen kívül esik"
-    elter = sum(a != b for a, b in zip(lathato, rejtett))
+    elter = sum(a != b for a, b in zip(lathato, rejtett, strict=True))
     assert elter == 0, (
         f"a csukott fiók bezáró jele kirajzolódott (x {x0}..{x0 + szel}, y {y0}..{y0 + mag}, "
         f"{elter} eltérő képpont)"
