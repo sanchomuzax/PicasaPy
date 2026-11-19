@@ -261,7 +261,14 @@ class PhotoOpsAlbumMembershipMixin:
         clean_name = (name or "").strip() or None
 
         def mutate(document, photo):
-            document = ensure_album(document, token, clean_name)
+            document = ensure_album(
+                document,
+                token,
+                clean_name,
+                description=description,
+                location=location,
+                date=date,
+            )
             document = with_album_fields(
                 document,
                 token,
