@@ -451,3 +451,15 @@ A képaláírás módváltó 0x0067f580 wrapper a 0x0076b110-et hívja a panelal
 A 0x009869a0 UTF-8 bájtsorozatában ASCII whitespace-t vizsgál és a vezető whitespace bájthosszát adja át a 0x00986120 részsztring-segédnek. A segédnek átadott eltolás és a látható feldolgozási hívás alapján a pontos záróvágás nem dől el. Ebben a két rutinban nincs látható maximális hosszkonstans; a záró whitespace vizsgálata önmagában nem bizonyít záróvágást. Felsőbb hívóban vagy vezérlőkorlátban lévő hosszlimit nyitott.
 
 A 0x0067eca0 a Ctrl+V/C/X billentyűkódokhoz tartalmaz explicit ágat, más üzenetet a 0x0076ace0-hoz továbbít. A 0x0076ace0 látható törzsében nincs WM_UNDO ág; a fel nem ismert eseményt a 0x00a68c00 általános kezelőnek adja át. A natív visszavonás útja ezért a 0x00a68c00 és a natív szerkesztőmező eljárás további vizsgálatáig nyitott.
+
+## #7266 folytatás: visszavonás és feliratmező (#508-513, 2026-11-19)
+
+**#508 - a másolási eredményből képzett állapot.** A 0x00477210 a 0x00462ba0 EAX-visszatérését teszteli, és a 0x00476ec0 hívásának harmadik argumentumaként (eredmény == 0) értéket ad. Így nulla → 1, bármely nem nulla → 0. A 0x00462ba0 célzott gépi kódja 2, 3 és 9 közvetlen visszatérési értéket, továbbá a 0x004edf60 nem nulla eredményének továbbadását mutatja. E számok szemantikai címkéje nem állapítható meg a jelenlegi forrásból; a dekompilált void aláírás nem írja felül a gépi kódot.
+
+**#509 - vörösszem-visszavonás.** A 0x00752ae0 “redeye” műveletág a 0x11b / IDS_CONFIRM_UNDO_REDEYE erőforrást adja a 0x009ae710-nek, majd megerősítő dialógust nyit. Ez az egy vörösszem-visszavonási esemény. A 0x119 / IDS_CONFIRM_REDEYE_REVERT nem ebben a függvényben fogy el. A memóriakapus paszta.py-pásztázás 150 közvetlen 0x009ae710 hívás előtt sem talált 0x119 argumentumot az előző 12 utasításban; más, távolabbi vagy regiszteres argumentumút ettől még nyitva marad.
+
+**#512 - felső hosszhatár.** A 0x0067f2a0 bemeneti sztringet a 0x009869a0-nek adja, a saját törzsében nincs felső hosszhatár. A már meglévő 0x0067eca0 útján a 0x58 eseményhez tartozó szerkesztési/illesztési ág sem ad látható felső korlátot. A két további közvetlen hívó, 0x00565cf0 és 0x00568010 korlátozása nyitott.
+
+**#513 - WM_UNDO továbbítása.** A 0x0067eca0 a felismeretlen eseményt a 0x0076ace0-hoz küldi; annak általános útja a 0x00a68c00-hoz jut. A 0x00a68c00 a belső 0x15 típusú eseményt külön kezeli, egyébként a 0x009e3c70-hez továbbít. A kimenet nem bizonyítja, hogy a natív WM_UNDO hogyan kódolódik ebben az útban; a következő pontos cím 0x009e3c70.
+
+**Forrás:** 2026-11-19-koteg-549-561.txt:1250-1417, 1534-1908, 1911-1985; a 0x0067eca0 korábbi kimenete: 2026-11-19-koteg-496-517.txt:8546-8750; a visszavonhatósági bájtok: ugyanott 3617-3650.
