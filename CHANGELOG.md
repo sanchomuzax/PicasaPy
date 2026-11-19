@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.156] - 2026-11-19
+
+- A telepítés utáni újraindításkor százalékos folyamatjelző mutatja az indulás előkészítésének előrehaladását (#7245).
+- A keresési javaslatok szósorára kattintva a mezőbe a szó és egy szóköz kerül, és a keresés lefut (#7253).
+
 ## [1.0.155] - 2026-11-19
 
 ## [1.0.154] - 2026-11-18
