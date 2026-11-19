@@ -7412,12 +7412,12 @@ Forrás: a privát kutatási tár 2026-11-19-koteg-496-517.txt állományának c
 
 **Fejlesztési jegytörzs:** a jelen körből új paritásjegy nem indokolt. Az ellenőrzött viselkedéskülönbséghez még nincs eredeti/nálunk pár; különösen az MP3 bejárási sorrend, a print worker szűrői és a Cancel utáni albummezők nyitottak. A 0x009a5fa0 enumerálási sorrendjének feloldása után lehet a PicasaPy rendezését az eredetivel összevetni.
 
-**Nyitott Ghidra-körök:** 0x00709430 / 0x007434d0; 0x00717420; 0x00462ba0; 0x005ef520 / 0x005ef6b0; 0x004e3ab0 / 0x004e40c0 / 0x004e5070 releváns íróágai; 0x0076b110; 0x0076ace0; 0x009bd640; a mappamozgatás +0x44 vtable-célja; az albumdialog +0x40 vtable-célja. A már meglévő dekompilációt nem kérem újra változatlan kérdéssel.
+**Nyitott Ghidra-körök:** 0x00709430 / 0x007434d0; 0x00717420; 0x00462ba0; 0x005ef520 / 0x005ef6b0; 0x004e3ab0 / 0x004e40c0 / 0x004e5070 releváns íróágai; 0x0076b110; 0x0076ace0; 0x009bd640; a mappamozgatás +0x44 vtable-célja; az albumpárbeszéd +0x40 vtable-célja. A már meglévő dekompilációt nem kérem újra változatlan kérdéssel.
 
 ### Módosított fájlok
 
 - docs/specs/paritas-ellenorzes.md: a 22 kérdés válasz-/következő-cím táblája; #496 fájlidő-jelölt és #517 régi Z4 állítás helyesbítése; slideshow, keresés, mappaáthelyezés és Album Properties kiegészítése.
 - docs/specs/picasa-nyomtatas.md: #497-500 részleges válaszai és nyitott célcímek.
 - docs/specs/picasa-beviteli-mezok.md: #508-513 revert, Undo, képaláírás és natív Undo útja.
-- docs/specs/picasa-ini-format.md: #515 serializer-kérdés és nyitva maradó címek.
+- docs/specs/picasa-ini-format.md: #515 sorosítókérdés és nyitva maradó címek.
 - docs/specs/picasa-keptalca.md: #514 albumtagság-értesítő feltétele és vtable-slotja.
