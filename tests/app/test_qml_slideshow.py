@@ -9,7 +9,15 @@ bekötése — a közös qml_app fixture-ön (Main.qml betöltve offscreen).
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import Q_ARG, QEventLoop, QMetaObject, QObject, Qt, QTimer
+from PySide6.QtCore import (
+    Q_ARG,
+    QEventLoop,
+    QMetaObject,
+    QObject,
+    Q_RETURN_ARG,
+    Qt,
+    QTimer,
+)
 
 from support.qt_wait import varj_feltetelre, wait_for_photo_op
 
@@ -33,6 +41,20 @@ def _invoke(qt_app, obj, name, *args):
         *[Q_ARG("QVariant", a) for a in args],
     )
     qt_app.processEvents()
+
+
+def _ret(qt_app, obj, name, *args):
+    result = QMetaObject.invokeMethod(
+        obj,
+        name,
+        Qt.ConnectionType.DirectConnection,
+        Q_RETURN_ARG("QVariant"),
+        *[Q_ARG("QVariant", arg) for arg in args],
+    )
+    qt_app.processEvents()
+    if hasattr(result, "toVariant"):
+        result = result.toVariant()
+    return result
 
 
 def _start(window, qt_app, index=-1):
@@ -155,14 +177,15 @@ class TestSlideshowBasics:
         _invoke(qt_app, show, "stop")
 
 
-class TestSlideshowVideoSkip:
-    """A vetítés kihagyja a videókat.
+class TestSlideshowVideoIndexes:
+    """A videók a diavetítés listájának rendes elemei.
 
     #664: EZ A KÉT TESZT az egyetlen, amelyik videó-sort tesz a
     könyvtárba, ezért csak ez a kettő futtatja a bélyegkép-pool
-    videó-dekódolását — a fájl többi tesztje változatlanul fut."""
+    videó-dekódolását — a fájl többi tesztje változatlanul fut. A valódi
+    VideoPlayerView-életciklust az alfolyamat-próba méri."""
 
-    def test_videos_are_skipped(self, qml_app, qt_app):
+    def test_a_kovetkezo_elem_videora_lep(self, qml_app, qt_app):
         window, controller, lib, _engine = qml_app
         (lib / "c.mp4").write_bytes(b"\x00" * 64)
         from picasapy.index import open_index, sync_tree
@@ -172,13 +195,10 @@ class TestSlideshowVideoSkip:
         controller._reload()
         qt_app.processEvents()
         assert controller.photos.isVideoAt(2) is True
-        controller.setSlideshowLoop(True)   # az ismétlés alapból ki (#4377)
-        show = _start(window, qt_app, 1)
-        _invoke(qt_app, show, "advance")   # a 2-es (videó) kimarad
-        assert show.property("currentIndex") == 0
-        _invoke(qt_app, show, "stop")
+        show = _child(window, "slideshowView")
+        assert _ret(qt_app, show, "nextPhotoIndex", 1, 1) == 2
 
-    def test_start_on_video_clamps_to_photo(self, qml_app, qt_app):
+    def test_a_vetites_video_indexen_is_elindithato(self, qml_app, qt_app):
         window, controller, lib, _engine = qml_app
         (lib / "c.mp4").write_bytes(b"\x00" * 64)
         from picasapy.index import open_index, sync_tree
@@ -187,11 +207,9 @@ class TestSlideshowVideoSkip:
             sync_tree(conn, lib)
         controller._reload()
         qt_app.processEvents()
-        controller.setSlideshowLoop(True)   # az ismétlés alapból ki (#4377)
-        show = _start(window, qt_app, 2)   # videó-soron indítva
-        assert show.property("visible") is True
-        assert show.property("currentIndex") == 0   # az első fotóra ugrik
-        _invoke(qt_app, show, "stop")
+        assert controller.photos.isVideoAt(2) is True
+        show = _child(window, "slideshowView")
+        assert _ret(qt_app, show, "clampToPhoto", 2) == 2
 
 
 class TestSlideshowActions:

@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 
 // Diavetítés (#8) — a Picasa Ctrl+4-es teljes képernyős vetítése.
-// Időzített léptetés (videókat kihagyva, körbefordulással), szóköz =
+// Időzített léptetés, a videókat a saját lejátszójukkal mutatja; szóköz =
 // szünet, Esc = kilépés, nyilak = kézi léptetés. A forgatás a
 // vezérlősáv gombjaival megy; az Enter és a Ctrl+R nem vetítésbillentyű.
 // A léptetés-logika a controllertől független (csak a photosModel-t
@@ -184,7 +184,7 @@ Rectangle {
         return photosModel ? photosModel.rowCount() : 0
     }
 
-    // a következő FOTÓ indexe (a videókat kihagyjuk, #8/#14); -1, ha nincs
+    // a következő vetített elem indexe; -1, ha nincs további elem
     function nextPhotoIndex(fromIndex, step) {
         var n = count()
         if (n === 0) return -1
@@ -196,13 +196,13 @@ Rectangle {
                 next = ((next % n) + n) % n
             }
             idx = next
-            if (!photosModel.isVideoAt(idx)) return idx
+            return idx
         }
         return -1
     }
 
     // #7190: a kézi előre lépés a lista végén mindig visszafordul, a kézi
-    // hátra lépés az első képnél megáll. Ez független a vetítés ismétlésétől;
+    // hátra lépés az első elemen megáll. Ez független a vetítés ismétlésétől;
     // az időzítő továbbra is a nextPhotoIndex() LoopSlideshow-ágát használja.
     function manualPhotoIndex(fromIndex, step) {
         var n = count()
@@ -213,16 +213,14 @@ Rectangle {
             if (next < 0) return -1
             if (next >= n) next = 0
             idx = next
-            if (!photosModel.isVideoAt(idx)) return idx
+            return idx
         }
         return -1
     }
 
-    // az induló index fotóra igazítása (videón álló kijelölésről indítva
-    // a következő fotóra ugrunk)
+    // az induló index érvényes elemre igazítása; videó is teljes értékű dia
     function clampToPhoto(index) {
-        if (photosModel && index >= 0 && index < count()
-                && !photosModel.isVideoAt(index))
+        if (photosModel && index >= 0 && index < count())
             return index
         return nextPhotoIndex(index >= 0 ? index : -1, 1)
     }
@@ -233,7 +231,7 @@ Rectangle {
         _spacePauseControls = false
         slideshowTiming.inputArmTimer.stop()
         var target = clampToPhoto(index)
-        if (target < 0) return   // nincs vetíthető fotó
+        if (target < 0) return   // nincs vetíthető elem
         var startsPaused = paused === true
         _cimkartyaFuggo = startsPaused && timelineSlideshow
         _cimkartyaFeluszas = false
@@ -318,9 +316,16 @@ Rectangle {
     //: áttűnés kimenő képe az ELSŐ kép volt, pedig a MÁSODIKAT nézte.
     onCurrentIndexChanged: {
         show._kovetettUtFrissit()
+        var videoDia = show._isVideoAt(show.currentIndex)
         var kimeno = imageLayer.currentImage.source
-        if (show.visible && kimeno !== "" && !show._resyncing)
+        if (!videoDia && show.visible && kimeno !== "" && !show._resyncing)
             show._atmenetIndit(kimeno)
+        else if (videoDia) {
+            imageLayer.transitionAnimation.stop()
+            imageLayer.previousImage.opacity = 0
+            imageLayer.currentImage.opacity = 0
+            imageLayer.veil.opacity = 0
+        }
         show._diakBetolt()
     }
     onVisibleChanged: {
@@ -382,7 +387,12 @@ Rectangle {
     //: nincs mit vetíteni
     function _diaUrl(index) {
         return show.visible && show.photosModel && index >= 0
+            && !show._isVideoAt(index)
             ? show.photosModel.displayUrlAt(index, show.displayMode) : ""
+    }
+
+    function _isVideoAt(index) {
+        return slideshowVideo.isVideoAt(index)
     }
 
     //: #3832: a forrás és a forrásméret EGYÜTT, egyetlen betöltéssel.
@@ -767,6 +777,12 @@ Rectangle {
     }
     SlideshowPreloadImage {
         id: elobetoltoSlide
+        slideshow: show
+    }
+
+    SlideshowVideo {
+        id: slideshowVideo
+        anchors.fill: parent
         slideshow: show
     }
 

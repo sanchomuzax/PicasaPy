@@ -14,6 +14,7 @@ Item {
         interval: slideshow.intervalMs
         repeat: true
         running: slideshow.visible && slideshow.playing
+                 && !slideshow._isVideoAt(slideshow.currentIndex)
         onTriggered: slideshow.advance()
     }
 

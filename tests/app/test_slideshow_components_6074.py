@@ -34,6 +34,7 @@ def test_a_belso_diavetitesi_reszek_a_qml_modulban_regisztralva_vannak():
         ("SlideshowImageLayer", "SlideshowImageLayer.qml"),
         ("SlideshowControls", "SlideshowControls.qml"),
         ("SlideshowTiming", "SlideshowTiming.qml"),
+        ("SlideshowVideo", "SlideshowVideo.qml"),
         ("SlideshowCurrentImage", "SlideshowCurrentImage.qml"),
         ("SlideshowPreviousImage", "SlideshowPreviousImage.qml"),
         ("SlideshowVeil", "SlideshowVeil.qml"),
