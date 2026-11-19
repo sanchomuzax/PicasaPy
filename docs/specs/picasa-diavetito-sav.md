@@ -165,7 +165,7 @@ Minden javaslat három részből áll: **Eredeti**, **Nálunk**, **Teendő**.
 
 A kódhoz nem nyúltam. A jegyjavaslatokat a hívó dönti el.
 
-## 5. #7284 — a vetítésben megjelenő zoomikon és csúszka
+## 5. #7284: a vetítésben megjelenő zoomikon és csúszka
 
 A felvételen Exit után látható ikon és sín nem a `0x00802c60` által betöltött
 `oneup` sáv `plusone`/`minusone` párja: azok a vetítési időt léptetik
@@ -186,7 +186,7 @@ időállító függvényt hívja. Ezt az utasításszintű `annot_disasm.py
 0x008032e0 1274` olvasata is megerősíti. A csúszkát a külön `0x005de8e0` →
 `0x005d2020` út fogadja.
 
-**Láthatóság — nyitott.** A megvizsgált `0x0075de50` belépési ág a
+**Láthatóság: nyitott.** A megvizsgált `0x0075de50` belépési ág a
 `editoneup` zoomcsomópontot a vetítés indításakor kapcsolja be; ebben az
 ágban lista-végi feltétel nem szerepel. A videó `t=10` képkockáján üres az
 Exit utáni hely, `t=98`, `100` és `116` másodpercnél pedig látszik az ikon és
