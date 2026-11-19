@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.161] - 2026-11-19
+
+- Kutatási kiadás: a program működése nem változott. Az eredeti Picasa visszafejtéséből további 13 kérdés válasza került a dokumentációba a dátumírásról, a nyomtatásról, a másolásról és a beviteli mezőkről; új eltérés a PicasaPy és az eredeti Picasa között nem derült ki (#7266).
+
 ## [1.0.160] - 2026-11-19
 
 - Kutatási kiadás: a program működése nem változott. Az eredeti Picasa visszafejtésének zárókörében további négy kérdés zárult le a diavetítésről, a keresés előzményéről és az albumtagság értesítéséről (#7266). A dátummódosításról kiderült, hogy a kép meglévő EXIF-dátummezője nem állítja le az írást. Új eltérés a PicasaPy és az eredeti Picasa között nem derült ki.

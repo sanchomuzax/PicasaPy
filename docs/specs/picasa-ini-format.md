@@ -4074,3 +4074,11 @@ mindig előbb** fut. ⇒ A növekményes és a teljes út sorrendje **egyezik**.
 ## #7266-kiegészítés: üres INI-érték írása (#515, 2026-11-19)
 
 A 0x009bd640 sorosító a kulcsszöveget kis- és nagybetűtől függetlenül keresi a megadott szakaszban. Ha a kapott értékmutató nulla, meglévő kulcs esetén az egész kulcssort kihagyja, hiányzó kulcs esetén változatlanul tér vissza; üres kulcsértéksort nem szúr be. Nem üres értéknél hiányzó kulcsot a szakasz végére ír, meglévő kulcsnál a sort lecseréli. A 0x009bf000 parancsbejáró a típus-1 rekord +0x4 mezőjét adja tovább célobjektumként, a kulcsadatot a +0x8, az értékadatot a +0x10 körüli mezőkből. Az objektum tényleges tulajdonosa és a parancsrekordot előállító hívó nincs azonosítva; a közvetlen célmező ismert, de a magasabb szintű objektumjelentés nyitott. Következő: 0x009bd390 parancs-előkészítő és a típus-1 rekord létrehozója.
+
+### Pontosítás: a típus-1 rekord +0x4 mezője (#515 folytatás, 2026-11-19)
+
+A +0x4 mező nem a dokumentumobjektum: a 0x009bf000 típus-1 ágában a rekord +0x4 szövegobjektuma a 0x009bd640 második paramétereként kerül a sorosítóhoz. Ez a szekció kiválasztó szöveg. A sorosító/dokumentum az első argumentumként külön érkezik; a +0x8 és +0x10 körüli rekordmezők a kulcs- és értékadatsorhoz tartoznak.
+
+**Bizonyítottság: feltételes.** Az argumentumút és a szekciókeresés közvetlenül látható, de a típus-1 parancsrekordot létrehozó forrás még nincs azonosítva. Következő cím: 0x0099b710.
+
+**Forrás:** 2026-11-19-koteg-549-561.txt:1988-2059; 2026-11-19-koteg-521-548.txt:10180-10225; célzott gépi kód: 0x009bf000.
