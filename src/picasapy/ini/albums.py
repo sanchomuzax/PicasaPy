@@ -238,21 +238,15 @@ def ensure_album(
     if document.section(section_name) is not None:
         return document
 
-    if any(value is not None for value in (description, location, date)):
-        result = document
-        if name is not None:
-            result = result.with_value(section_name, "name", name)
-        result = result.with_value(section_name, "token", token)
-        for key, value in (
-            ("description", description),
-            ("location", location),
-            ("date", date),
-        ):
-            if value is not None and value.strip():
-                result = result.with_value(section_name, key, value)
-        return result
-
-    result = document.with_value(section_name, "token", token)
+    result = document
     if name is not None:
         result = result.with_value(section_name, "name", name)
+    result = result.with_value(section_name, "token", token)
+    for key, value in (
+        ("description", description),
+        ("location", location),
+        ("date", date),
+    ):
+        if value is not None and value.strip():
+            result = result.with_value(section_name, key, value)
     return result
