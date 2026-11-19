@@ -907,6 +907,28 @@ class TestGpuFinetunePreview:
         assert controller.gpuPrefixSource == ""
         assert controller.gpuLutSource == ""
 
+    def test_neutral_gpu_lut_does_not_load_render_pipeline(
+        self, controller, monkeypatch
+    ):
+        """Üres láncnál az azonosság-LUT ne importálja a renderláncot."""
+        import numpy as np
+
+        from picasapy.app import edit_controller_effects_finetune_mixin
+
+        def unexpected_render_import(**_kwargs):
+            pytest.fail("az üres lánc semleges LUT-ja a renderláncot hívta")
+
+        monkeypatch.setattr(
+            edit_controller_effects_finetune_mixin,
+            "build_finetune2_lut",
+            unexpected_render_import,
+        )
+        expected = np.repeat(
+            np.arange(256, dtype=np.uint8)[:, None], 3, axis=1
+        )
+
+        assert np.array_equal(controller._gpu_lut_for(controller._session), expected)
+
     def test_begin_edit_on_empty_chain_is_gpu_eligible(self, controller, photo):
         """Üres lánc: a `set_finetune` a végére fűzné → GPU-alkalmas."""
         controller.beginEdit("1", str(photo))

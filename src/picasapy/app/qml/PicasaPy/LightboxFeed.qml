@@ -107,13 +107,19 @@ ListView {
     clip: true
     // A néző nyitva van a könyvtár fölött; ilyenkor a rejtett feedmodell
     // delegátumai ne épüljenek és ne számolják újra a cellák kötéseit.
+    // Bezáráskor a néző eltűnése és a feed nagyobb QML-modelljének
+    // felépítése külön eseményköri lépésben fusson. A várakozás alatt a
+    // néző visszajelzése és az ablak többi vezérlője már reagálhat.
+    property bool feedActivationReady: true
+    property int feedCacheBuffer: 600
     model: grid.ctl && !grid.appWindow.viewerOpen
+            && grid.feedActivationReady
         ? grid.ctl.feedGroups : []
 
     LightboxFeedEmptyState { feed: grid }
 
     spacing: 14
-    cacheBuffer: 600
+    cacheBuffer: grid.feedCacheBuffer
     // #85: kiegyenlített sor-elrendezés — az oszlopszám a
     // névleges (thumbSize alapú) cellaméretből adódik, de a
     // ténylegesen kiosztott cellaszélesség (cellWidth) a
@@ -604,6 +610,51 @@ ListView {
                 grid.restoreAnchor()
                 grid.restoring = false
             })
+        }
+    }
+
+    Connections {
+        target: grid.appWindow
+        function onViewerOpenChanged() {
+            if (grid.appWindow.viewerOpen) {
+                viewerFeedActivationTimer.stop()
+                viewerFeedCacheRamp.stop()
+                grid.feedCacheBuffer = 0
+                grid.feedActivationReady = false
+                return
+            }
+            viewerFeedActivationTimer.restart()
+        }
+    }
+
+    Timer {
+        id: viewerFeedActivationTimer
+        interval: 100
+        repeat: false
+        onTriggered: {
+            if (!grid.appWindow.viewerOpen) {
+                grid.feedCacheBuffer = 0
+                grid.feedActivationReady = true
+                viewerFeedCacheRamp.start()
+            }
+        }
+    }
+
+    Timer {
+        id: viewerFeedCacheRamp
+        interval: 16
+        repeat: true
+        onTriggered: {
+            if (grid.appWindow.viewerOpen) {
+                stop()
+                return
+            }
+            if (grid.feedCacheBuffer >= 600) {
+                stop()
+                return
+            }
+            grid.feedCacheBuffer = Math.min(
+                600, grid.feedCacheBuffer + 100)
         }
     }
 

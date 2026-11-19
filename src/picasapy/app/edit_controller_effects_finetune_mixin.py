@@ -205,10 +205,13 @@ class EditControllerEffectsFinetuneMixin:
         ha nincs finomhangolás) épített LUT (#22) — ez indítja a
         `gpuLutSource`-ot minden `_register_preview()`-nál, hogy a húzás
         KEZDETÉN (az első `previewFinetuneGpu` hívás ELŐTT is) már a
-        mentett állapotot tükrözze."""
+        mentett állapotot tükrözze. Az üres lánc semleges LUT-ja az
+        azonosság-rámpa; ezt közvetlenül állítjuk elő, hogy a kép első
+        megnyitásakor ne importálja a teljes renderláncot."""
         values = session.finetune_values()
         if values is None:
-            return build_finetune2_lut()
+            ramp = np.arange(256, dtype=np.uint8)
+            return np.repeat(ramp[:, None], 3, axis=1)
         neutral = parse_neutral_argb(values.neutral)
         return build_finetune2_lut(
             fill=values.fill,

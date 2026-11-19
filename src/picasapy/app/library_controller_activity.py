@@ -77,9 +77,9 @@ class _LibraryActivityMixin:
         A panel automatikusan akkor jelenik meg, ha a szkennelés érdemi:
         új gyökér importja (forced), vagy új fotók kerültek elő — a csendes,
         mindent-kihagyó 5 perces rescan nem villogtatja. A rács fokozatos
-        frissítése ritkított (max ~1,5 mp-enként), és a meglévő
-        megőrzött-görgetésű újratöltési úton fut, nem kötegenkénti
-        modell-resettel."""
+            frissítése ritkított (max ~1,5 mp-enként), és csak a feedet
+            frissíti. A mappafa és az oldalsáv a sync végén töltődik újra,
+            így egy progress-jelzés nem indít teljes oldalsáv-bejárást."""
         root = self._root_for_folder(folder)
         if root is None:
             return  # #216: eltávolított gyökér késői jelzése — ignorálva
@@ -113,8 +113,27 @@ class _LibraryActivityMixin:
         ):
             self._import_last_reload = now
             self._import_new_at_reload = new_photos
-            # a már feldolgozott (commitolt) mappák fotói jelenjenek meg
-            self._reload(preserve_scroll=True)
+            edit_controller = getattr(self, "_edit_controller_for_sync", None)
+            editing_photo = getattr(edit_controller, "_image_path", None)
+            editing_current_root = (
+                current_root == root
+                and edit_controller is not None
+                and bool(getattr(edit_controller, "_photo_id", ""))
+                and editing_photo is not None
+                and self._root_for_folder(str(editing_photo)) == root
+            )
+            if editing_current_root:
+                # A megnyitott képet fedő könyvtár-feed rejtett; minden
+                # progressz-jelre történő újraépítése csak a néző mellett
+                # futó GUI-munkát növelné. A végső sync-frissítés vagy a
+                # nézőből visszatérés behozza az elmaradt változást.
+                self._deferred_sync_reload = True
+            else:
+                # A már feldolgozott (commitolt) mappák fotói jelenjenek meg.
+                # A teljes _reload az oldalsáv ini-alapú tartalmát is újra
+                # bejárná minden 1,5 mp-es progresszjelre; a mappafa és az
+                # oldalsáv frissítését a sync végi útvonal végzi.
+                self._refresh_view()
 
     @Slot()
     def _on_import_finished(self) -> None:

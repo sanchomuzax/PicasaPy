@@ -203,7 +203,7 @@ class AppControllerSyncMixin:
                 QTimer.singleShot(100, self._finish_sync_reload_after_idle)
             return
         self._deferred_sync_reload = False
-        self._reload(preserve_scroll=True)
+        self._reload(preserve_scroll=True, defer_feed_refresh=True)
 
     @Slot()
     def _finish_sync_reload_after_idle(self) -> None:
@@ -224,8 +224,29 @@ class AppControllerSyncMixin:
         if getattr(self, "_deferred_sync_reload", False):
             self._reload_after_sync_if_changed()
 
+    def _schedule_sync_feed_refresh(self) -> None:
+        """A sync utáni feedfrissítés külön eseményköri lépésben fusson.
+
+        A néző bezárásakor a feed modelljének visszakapcsolása már önmagában
+        QML-munkát végez. Ha ugyanebben az eseményben olvassuk újra az indexet
+        és cseréljük le a feedet, a két költség összeadódik és megakaszthatja
+        a felületet. Az előkészítő `_reload` ezért csak egy késleltetett
+        frissítést ütemez.
+        """
+        if getattr(self, "_sync_feed_refresh_pending", False):
+            return
+        self._sync_feed_refresh_pending = True
+        QTimer.singleShot(100, self._finish_sync_feed_refresh)
+
+    def _finish_sync_feed_refresh(self) -> None:
+        self._sync_feed_refresh_pending = False
+        self._refresh_view()
+
     def _reload(
-        self, preserve_scroll: bool = False, defer_collections: bool = False
+        self,
+        preserve_scroll: bool = False,
+        defer_collections: bool = False,
+        defer_feed_refresh: bool = False,
     ) -> None:
         """#1601: `defer_collections=True` esetén a hasáb két ini-alapú
         gyűjteménye (Emberek, Projektek) NEM töltődik be itt — az indulás
@@ -253,14 +274,20 @@ class AppControllerSyncMixin:
         if mode != "folder":
             # #38: aktív keresés/szűrő a háttér-sync után is megmarad —
             # a selectFolder eldobná, ezért csak a nézetet frissítjük.
-            self._refresh_view()
+            if defer_feed_refresh:
+                self._schedule_sync_feed_refresh()
+            else:
+                self._refresh_view()
         elif self._current_folder:
             # #173: háttér-sync után csak a feedet frissítjük (folderActivated
             # nélkül) — a scroll-to-top csak explicit mappa-választásé. Induláskor
             # (preserve_scroll=False) viszont a selectFolder a visszaállított
             # mappához görget, ahogy eddig.
             if preserve_scroll:
-                self._refresh_view()
+                if defer_feed_refresh:
+                    self._schedule_sync_feed_refresh()
+                else:
+                    self._refresh_view()
             else:
                 self.selectFolder(self._current_folder)
         else:

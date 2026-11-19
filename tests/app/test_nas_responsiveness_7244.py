@@ -203,6 +203,73 @@ def test_sync_finish_defers_feed_reload_until_viewer_session_ends():
     assert host._deferred_sync_reload is False
 
 
+def test_sync_progress_skips_feed_reload_for_open_photo_in_same_root():
+    class SignalRecorder:
+        def emit(self):
+            pass
+
+    root = "/slow-network-root"
+    host = SimpleNamespace(
+        _root_for_folder=lambda path: root if path.startswith(root) else None,
+        _current_folder=root,
+        _sync_reload_grace_until=0.0,
+        _import_folder="",
+        _import_done=0,
+        _import_total=0,
+        _import_new=0,
+        _import_new_at_reload=0,
+        _import_last_reload=0.0,
+        _import_visible=True,
+        _import_forced=False,
+        _import_dismissed=False,
+        _edit_controller_for_sync=SimpleNamespace(
+            _photo_id="network-photo", _image_path=root + "/album/photo.jpg"
+        ),
+        reloads=[],
+        importChanged=SignalRecorder(),
+    )
+    host._reload = lambda **_kwargs: host.reloads.append(True)
+
+    _LibraryActivityMixin._on_sync_progress(host, root + "/album", 1, 40, 1)
+
+    assert host.reloads == []
+    assert host._deferred_sync_reload is True
+    assert host._import_new_at_reload == 1
+
+
+def test_sync_progress_refreshes_feed_without_reloading_side_pane():
+    class SignalRecorder:
+        def emit(self):
+            pass
+
+    root = "/slow-network-root"
+    host = SimpleNamespace(
+        _root_for_folder=lambda path: root if path.startswith(root) else None,
+        _current_folder=root,
+        _sync_reload_grace_until=0.0,
+        _import_folder="",
+        _import_done=0,
+        _import_total=0,
+        _import_new=0,
+        _import_new_at_reload=0,
+        _import_last_reload=0.0,
+        _import_visible=True,
+        _import_forced=False,
+        _import_dismissed=False,
+        _edit_controller_for_sync=SimpleNamespace(_photo_id=""),
+        reloads=[],
+        feed_refreshes=[],
+        importChanged=SignalRecorder(),
+    )
+    host._reload = lambda **_kwargs: host.reloads.append(True)
+    host._refresh_view = lambda: host.feed_refreshes.append(True)
+
+    _LibraryActivityMixin._on_sync_progress(host, root + "/album", 1, 40, 1)
+
+    assert host.reloads == []
+    assert host.feed_refreshes == [True]
+
+
 def test_network_folder_description_update_avoids_global_status_signal():
     class SignalRecorder:
         def __init__(self):
@@ -983,7 +1050,9 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
     slow_root = (tmp_path / "slow-network-root").resolve()
     slow_root.mkdir()
     for number in range(40):
-        make_jpeg(slow_root / f"large-{number:02}.jpg", size=(640, 480))
+        album = slow_root / f"album-{number:02}"
+        album.mkdir()
+        make_jpeg(album / "large.jpg", size=(3000, 4000))
 
     def under_slow_root(path) -> bool:
         try:
@@ -1102,7 +1171,13 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
     )
 
     loop = QEventLoop()
-    state = {"done": False, "error": None, "stage": "add"}
+    state = {
+        "done": False,
+        "error": None,
+        "stage": "add",
+        "photo_revision": -1,
+        "slow_row": None,
+    }
     heartbeat = []
     beat_timer = QTimer()
     beat_timer.setInterval(10)
@@ -1143,14 +1218,29 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
                     state["stage"] = "viewer"
             elif state["stage"] == "viewer":
                 viewer = window.findChild(QObject, "photoViewer")
-                slow_row = next(
+                slow_group = next(
                     (
-                        row
-                        for row, photo in enumerate(controller.photos.photos)
-                        if photo.folder_path == str(slow_root)
+                        group
+                        for group in controller._feed_groups
+                        if under_slow_root(group["path"])
                     ),
                     None,
                 )
+                if slow_group is not None:
+                    state["slow_row"] = int(slow_group["start"])
+                else:
+                    revision = controller.photos.revision
+                    if revision != state["photo_revision"]:
+                        state["photo_revision"] = revision
+                        state["slow_row"] = next(
+                            (
+                                row
+                                for row, photo in enumerate(controller.photos.photos)
+                                if under_slow_root(photo.folder_path)
+                            ),
+                            None,
+                        )
+                slow_row = state["slow_row"]
                 if viewer is not None and viewer.isVisible() and slow_row is not None:
                     viewer.setProperty("currentIndex", slow_row)
                     state["stage"] = "opening"
@@ -1177,7 +1267,17 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
                     window.setProperty("viewerOpen", False)
                     state["stage"] = "return"
             elif state["stage"] == "return":
-                if not window.property("viewerOpen"):
+                photo_grid = window.findChild(QObject, "photoGrid")
+                slow_root_visible = any(
+                    under_slow_root(group["path"])
+                    for group in controller._feed_groups
+                )
+                if (
+                    not window.property("viewerOpen")
+                    and photo_grid is not None
+                    and photo_grid.property("count") > 0
+                    and slow_root_visible
+                ):
                     beat_timer.stop()
                     finish()
                     return
@@ -1196,7 +1296,13 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
                 f"(szakasz: {state['stage']}, "
                 f"sync: {controller._sync_running}, "
                 f"import: {controller._import_visible}, "
-                f"rows: {sum(photo.folder_path == str(slow_root) for photo in controller.photos.photos)}, "
+                f"rows: {sum(group['count'] for group in controller._feed_groups if under_slow_root(group['path']))}, "
+                f"photo_count: {controller.photos.rowCount()}, "
+                f"photo_paths: {[photo.folder_path for photo in controller.photos.photos[:3]]}, "
+                f"current: {controller._current_folder!r}/{controller._view_mode!r}, "
+                f"import_count: {controller._import_new}/{controller._import_new_at_reload}, "
+                f"changed: {getattr(controller, '_last_sync_changed', None)!r}, "
+                f"photo_id: {edit_controller._photo_id!r}, "
                 f"grace: {getattr(controller, '_sync_reload_grace_until', 0.0):.1f}, "
                 f"deferred: {getattr(controller, '_deferred_sync_reload', False)})"
             )
@@ -1227,10 +1333,11 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
             f"a GUI-szál {len(violations)} lassú fájlműveletet végzett "
             f"({len(details)} egyedi út): " + "; ".join(details[:24])
         )
-    assert len(geo_location_reads) < 2 * len(controller.photos.photos), (
-        "a rejtett térképes kötés a látható cellák GPS-olvasásán felül a teljes "
-        f"feedet is bejárta ({len(geo_location_reads)} helyolvasás / "
-        f"{len(controller.photos.photos)} kép)"
+    visible_photo_ids = {photo.id for photo in controller.photos.photos}
+    unshown_geo_reads = set(geo_location_reads) - visible_photo_ids
+    assert not unshown_geo_reads, (
+        "a rejtett térképes kötés a látható feeden kívüli képek GPS-adatait is "
+        f"lekérdezte ({sorted(unshown_geo_reads)}; {len(visible_photo_ids)} látható kép)"
     )
     assert max_gap_ms < 200, (
         f"a mappa- és nézőút alatt {max_gap_ms:.0f} ms-re állt meg az eseményhurok; "
