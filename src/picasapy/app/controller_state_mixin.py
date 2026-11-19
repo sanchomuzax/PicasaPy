@@ -138,10 +138,10 @@ class AppControllerStateMixin:
 
     @Property(str, notify=_Signals.statusChanged)
     def buttonFilterName(self):
-        """A bekapcsolt csillag-/arc-/geocímke-gomb neve (`starred` · `faces` ·
-        `geo`), vagy üres (#7191).
+        """A bekapcsolt csillag-/arc-/geocímke-/filmgomb neve (`starred` ·
+        `faces` · `geo` · `videos`), vagy üres (#7191/#7264).
 
-        A három gomb a keresőszöveggel KÖZÖS állapotban van: keresés közben
+        A gombok a keresőszöveggel KÖZÖS állapotban vannak: keresés közben
         a `viewModeName` `search`, a gomb ettől függetlenül be lehet
         kapcsolva. A felület a gomb be/ki állapotát ebből olvassa."""
         return self._active_button_filter()

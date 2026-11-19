@@ -4,9 +4,10 @@ Az index-oldali lekérdezést a `tests/index/test_film_szuro_1830.py` méri;
 ez a fájl azt, hogy a felhasználó **el is éri**, és hogy a gomb az
 állapotot tükrözi.
 
-⚠️ A gomb aktív állapota a `viewModeName`-ből jön, NEM a `filterActive`-ból.
-Az utóbbi csak azt mondja, hogy szűrünk — azt nem, hogy MIVEL: a csillag-
-és a film-gomb egyszerre látszana bekapcsoltnak.
+⚠️ A gomb aktív állapota a `buttonFilterName`-ből jön, így keresés közben is
+látszik a bekapcsolt film-szűrő.
+A `filterActive` csak azt mondja, hogy van szűrés; a `buttonFilterName`
+azonosítja a kereséssel közös gombot.
 """
 
 from __future__ import annotations
@@ -38,9 +39,8 @@ class TestAzAllapotTukrozese:
     def test_a_gomb_a_viewModeName_bol_dolgozik(self):
         forras = _TOOLBAR.read_text(encoding="utf-8")
         blokk = blokk_horgonyra(forras, 'objectName: "movieFilter"')
-        assert "viewModeName" in blokk, (
-            "a film-gomb a `filterActive`-ból dolgozik — akkor a csillag-"
-            "szűrő bekapcsolásakor is aktívnak látszana (#1830)"
+        assert 'controller.buttonFilterName === "videos"' in blokk, (
+            "a film-gomb nem a keresés közös gombállapotából dolgozik (#7264)"
         )
 
     def test_a_vezerlo_megnevezi_a_nezetet(self, qml_app, qt_app):

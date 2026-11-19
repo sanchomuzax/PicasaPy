@@ -1,27 +1,34 @@
-"""A keresőszöveg és a csillag-, arc-, geocímke-gomb közös szűrője (#7191).
+"""A keresőszöveg és a csillag-, arc-, geocímke-, filmgomb közös szűrője.
 
 Az eredeti `0x0043f9a0` a keresőszöveg szavait és a gombok belső szójeleit
 (`]star`, `]face`, `]geo`) EGY pozitív szólistában kapja, a találat a lista
 minden szavának metszete (`0x0043fda4`, `0x00413290`): a szöveg és a gomb ÉS
 kapcsolatban van. Itt ugyanez áll: a keresés találatait a bekapcsolt gomb
-saját nézetének képeivel metsszük.
+saját nézetének képeivel metsszük. A film gomb a meglévő `video_photos`
+indexlekérdezésre épül (#7264).
 
-A három gomb ma is kizárja egymást (egyszerre egy lehet bekapcsolva); a
-film, az online és a másodpéldány gomb és a kor-csúszka nem ide tartozik, azok
-a mai nézetmódjukban maradnak (E1b).
+A csillag-, arc- és geocímke-gomb eddigi állapota változatlan; a filmgomb
+szintén a keresőszöveggel közös állapotot használ (#7264). Az online,
+másodpéldány gomb és a kor-csúszka nem tartozik ehhez a gépezethez.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
 
-from picasapy.index import geotagged_photos, photos_with_faces, starred_photos
+from picasapy.index import (
+    geotagged_photos,
+    photos_with_faces,
+    starred_photos,
+    video_photos,
+)
 
 #: a keresőszöveggel kombinálható gombok; a névsor egyben a nézetmód-nevük
 STAR = "starred"
 FACES = "faces"
 GEO = "geo"
-BUTTON_FILTERS = (STAR, FACES, GEO)
+VIDEOS = "videos"
+BUTTON_FILTERS = (STAR, FACES, GEO, VIDEOS)
 
 #: a keresés nézetmódjai (szöveges keresés, mappára szűkítve is)
 SEARCH_MODES = ("search", "search-folder")
@@ -30,6 +37,7 @@ _BUTTON_QUERIES: dict[str, Callable] = {
     STAR: starred_photos,
     FACES: photos_with_faces,
     GEO: geotagged_photos,
+    VIDEOS: video_photos,
 }
 
 

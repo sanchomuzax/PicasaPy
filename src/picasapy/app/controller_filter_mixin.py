@@ -11,7 +11,7 @@ from picasapy.index import (
 )
 from picasapy.ini import RECENT_ALBUM_TOKEN
 from . import formatting, kor_szuro
-from .search_button_filter import FACES, GEO, SEARCH_MODES, STAR
+from .search_button_filter import FACES, GEO, SEARCH_MODES, STAR, VIDEOS
 from .controller_signals import AppControllerSignalsMixin as _Signals
 
 class ViewFilterMixin:
@@ -40,10 +40,12 @@ class ViewFilterMixin:
             self._show_faces_photos()
         elif button == GEO:
             self._show_geotagged_photos()
+        elif button == VIDEOS:
+            self._show_video_photos()
 
     @Slot()
     def clearButtonFilter(self) -> None:  # noqa: N802
-        """A csillag-, arc- vagy geocímke-gomb kikapcsolása (#7191).
+        """A csillag-, arc-, geocímke- vagy filmgomb kikapcsolása.
 
         Aktív keresésnél a keresőszöveg MEGMARAD: a találat a gomb nélküli
         szöveges keresésre bővül. Keresés nélkül a szűrő kikapcsol, mint a
@@ -96,9 +98,14 @@ class ViewFilterMixin:
     def showVideosOnly(self) -> None:
         """„Csak filmek" — az eredeti `moviesearch` szűrője.
 
-        A csillag-szűrő mintáját követi: szűrt NÉZET, nem külön nézetmód,
-        a mappa-kontextus megmarad a `clearFilter`-es visszaváltáshoz.
-        A `kind` indexmezőre épül, tehát nem igényel újraindexelést."""
+        #7264: aktív kereséskor a szöveggel metsz, a szöveg törlése pedig a
+        filmnézetet állítja vissza. A `kind` indexmezőre épül, tehát nem
+        igényel újraindexelést."""
+        if self._attach_button_to_search(VIDEOS):
+            return
+        self._show_video_photos()
+
+    def _show_video_photos(self) -> None:
         self._view_mode = ("videos", "")
         started = time.perf_counter()
         with open_index(self._db_path) as conn:
