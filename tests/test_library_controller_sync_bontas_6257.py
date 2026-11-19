@@ -18,6 +18,8 @@ _APP = _GYOKER / "src" / "picasapy" / "app"
 # albumtakarítás miatt változott.
 # #6695: a dirty-adag az explicit frissítési kérést is figyelembe veszi,
 # a teljes worker pedig az index/ini változását jelzi.
+# #7244: a kézi újraolvasás a fájl-mtime-okat háttérben ellenőrzi, hogy az
+# azonos mappa-mtime mellett átírt képet is frissítse.
 _MOZGATOTT_FORRASOK = {
     # #6476: szándékos változás, a változatlan mappa célzott szinkronja kimarad
     ("library_controller_sync_dirty.py", "_LibrarySyncDirtyMixin", "_on_folders_dirty"):
@@ -43,7 +45,7 @@ _MOZGATOTT_FORRASOK = {
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_stale_feed_folders"):
         "0601d410bcca2cd082900df88b0f8edad2e0af553f2027d7e48582c1312a8209",
     ("library_controller_sync_rescan.py", "_LibrarySyncRescanMixin", "rescan"):
-        "2f1d5760ed225142b887b30c65b70d8bc5f4a352dd7fdecd78694a2634d0b02b",
+        "f617a1550fbc0b6f42dd139c0da1f8795745da3fb15bbd3bb3bc553bb28e0dd0",
     ("library_controller_sync_rescan.py", "_LibrarySyncRescanMixin", "_sync_worker"):
         "0d8b4c19b48d127012deca61a38f3dc39712cdc8107001b0d28aab88c3a28ce8",
     (

@@ -326,6 +326,7 @@ PhotoViewerCaptionFocusRelease 1.0 PhotoViewerCaptionFocusRelease.qml
 MainWindowDialogStack 1.0 MainWindowDialogStack.qml
 
 MainWindowCommands 1.0 MainWindowCommands.qml
+MainWindowPhotoSelection 1.0 MainWindowPhotoSelection.qml
 MainWindowWorkspace 1.0 MainWindowWorkspace.qml
 internal MainWindowImportActions MainWindowImportActions.qml
 MainWindowPeripheralLayers 1.0 MainWindowPeripheralLayers.qml

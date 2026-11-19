@@ -40,7 +40,9 @@ def _vezerlo(tmp_path, qt_app):
         ThumbnailProvider(ThumbnailCache(tmp_path / "th", size=32)),
         settings=beallitas,
     )
-    # a bal panel modellje az első beolvasás után töltődik
+    # Az éles indulás az első rescan előtt betölti a panelek induló modelljét.
+    # A változatlan indexű rescan ezután helyesen nem kényszerít teljes reloadot.
+    vezerlo._reload()
     vezerlo.rescan()
     _varj(vezerlo, qt_app)
     return vezerlo, gyoker

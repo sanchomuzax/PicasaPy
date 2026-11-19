@@ -65,8 +65,16 @@ class AppControllerPhotoListMixin:
             records = ()
         else:
             before, after, records = stamp
-            if before != after or after != self._index_stamp():
+            index_changed = before != after or after != self._index_stamp()
+            if index_changed and not (
+                getattr(self, "_sync_running", False)
+                or getattr(self, "_dirty_running", False)
+            ):
                 return  # a syncFinished út tölti újra a megváltozott indexet
+            # Aktív bejárás közben is mutassuk a SQLite-pillanatképet. A
+            # párhuzamos olvasatlanjelölő-törlés például megváltoztathatja a
+            # fájlpecsétet anélkül, hogy a fotólista elavult lenne; a bejárás
+            # progressz- és záró jelzése úgyis behozza az új indexállapotot.
 
         self._show(records)
         folder = getattr(self, "_deferred_folder_activation", None)

@@ -16,6 +16,7 @@ from __future__ import annotations
 import math
 
 from picasapy.ini.filters import FilterOp
+from picasapy.paint_mask_ops import PAINTABLE_MASK_OPS
 from picasapy.render import glimmer_artistic as artistic
 from picasapy.render import glimmer_creative as creative
 from picasapy.render import glimmer_focal as focal
@@ -318,11 +319,6 @@ def alkalmazd_maszkkal(kulcs: str, image, op: FilterOp, mask):
         mask=mask,
     )
 
-
-#: Festhető (ecset-)maszkos effektek — a `chain.py` `apply_filters`-e
-#: Csak a Vámpírszem festhető (`PaintOnEffectBase`). A `Boost`, `Pixelate`,
-#: `Soften` és `PicnikTint` az egész képre hatnak ecset nélkül (#3541).
-PAINTABLE_MASK_OPS = frozenset({"reanimatedeyecolor"})
 
 EMPTY_MASK_WARNING_TEMPLATE = (
     "{name}: nem érkezett ecsetmaszk, ezért a kép változatlan marad (#688)."

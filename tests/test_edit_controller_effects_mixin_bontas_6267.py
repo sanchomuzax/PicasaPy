@@ -52,6 +52,8 @@ _REGI_NYILVANOS_NEVEK = {
 
 # A #6267 előtti osztálytörzs függvényeinek forrásszöveg-lenyomata (a dekorátortól
 # a záró sorig). Az ast.dump Python-verziónként eltér, a forrás szövege nem.
+# #7244: a nézőnyitáskor a finomhangolás tulajdonságai célzott értesítést
+# használnak, az üres lánc LUT-ja pedig render-import nélkül készül.
 _EREDETI_FORRAS_SHA256 = {
     "method:recentPickerColors": "b1bcf67dea13e23b94ef9a37bd62cad42bf99d86d3bcf46dad8e47e30e4e64c2",
     "method:rememberPickerColor": "d450bef209234c18688c4455135765a27b076b788a561c021c3898c0db492830",
@@ -60,16 +62,16 @@ _EREDETI_FORRAS_SHA256 = {
     "method:oneClickEffects": "ff20a3b8265f1a950b534946d36d8933316530f3eaeb621d2e27d57136b783a2",
     "method:effectChainCounts": "3649c49fa0ac17cc1a74a621d3e78e327d397648a15b7e3163ce82b23db0738f",
     "method:effectChain": "71647ebd0d25209f9ab8bbf9f2e6d857f96434edf7685740a214e0f1e21c4b09",
-    "method:enhanceEnabled": "2171f872ee9b4ff7032ef53b462bcf3f912187e54642257b5a67912aa3f27ce0",
-    "method:autolightEnabled": "aa1db352984797e86d3d82108162ebd94d03c533a56b1070ac753332ab22e85a",
-    "method:autocolorEnabled": "026addd531629d2978aab2d6f9f8456f7fde1ee12805f653d0a105ae1f2e90d0",
-    "method:tiltParam": "99f8da3c11b94fa9bab53733905dacc7ed6402b17662e8d49d7c072c5a92bef8",
-    "method:fillLight": "94aaf55f38a43bf6940c4a3b01ffe91222b911e39c24b0b83fa1a73154b090ca",
-    "method:highlights": "3ce75f04972af3dfb998a0cf313eafe19e89e0bc57f4d09775e679701504d410",
-    "method:shadows": "b25a904a760988a5130f379027407b565f30676c3643f0aaabe4e208e867f72f",
-    "method:colorTemp": "e5bf5128bd5ab3aa73c8a4622e07ad2c307f0cfb17cdf15998f0ac8b5154d6d8",
-    "method:neutralColor": "c941d4fbd41aa30031513d6d291ea9623b64d92e7db9d0761a6cb7624128e1ef",
-    "method:hasFinetune": "eadccf1596cb8b94c7d123fe59b2a6302706adbc4c0ce04de38056ef76ded70a",
+    "method:enhanceEnabled": "05c96197115ad1f7bff04c2b907e21dbc9d880ba08111067479ef66244555ca5",
+    "method:autolightEnabled": "b763c707983e1322cb80a8d896f17e9a0d756610ca4779402e592b54a051094b",
+    "method:autocolorEnabled": "da0d9a935df126b1d4cfbf2198b7c2ad7b6874cfbde3fca93eb6f5aa84739ecf",
+    "method:tiltParam": "7e1bef898e69dde9dad1630a360089cede2e133726501b3b53c2c69ba2fce365",
+    "method:fillLight": "ed988744d8fd4b2fb671864fbab3038ec1cb8cc1b79810682309a0b735abb10e",
+    "method:highlights": "10daf37e5d133de924ac0e7d386c0887120582eb880cb6e9046479e39e91957f",
+    "method:shadows": "87b72d5c09e4daeea2562d8e060e453dcd8293dcafd76e832a32e0516492db7b",
+    "method:colorTemp": "c190cffd835daadf8e5cc9519d497bec5c27717fcecb0aad9c9a9115e7f29813",
+    "method:neutralColor": "9b86fcd386ea474f9c8c3bc30d28d1f106fa5a0ab357fe2f68d8648d489292b1",
+    "method:hasFinetune": "a1ae4e36ce02307c4f7d99c6b9b0992b106da8f07a2963fc7504727136ffdfdf",
     "method:setTilt": "9599a9d657f3d5fd6401d67f6d116cc1b6f138477596ae8a12b92be5bb505254",
     "method:previewTilt": "3ffe40fa6bd7583c71fd5c84036c1ef43dadb53089603b1056cf90e4b8ddc287",
     "method:discardTiltPreview": "9e5f4ce898d96640cff35de190c46d9a9d311d9d9e9b6e2798b3d180425a78aa",
@@ -92,7 +94,7 @@ _EREDETI_FORRAS_SHA256 = {
     "method:shiftAktiv": "5ff73952e946c6ccb49eff1afb96cecd134bcd47dd198ba2b8d1f8e2e21ccdaa",
     "method:shiftLenyomva": "a30294d1954188418f2d107f5e247e307989a6e2f3a844af021e4328bbf32f80",
     "method:applyColorWand": "a59d633fb06240f5d973e8180aebd8f39c2dc246b65ca5773b896c6f6c2dc4ac",
-    "method:_gpu_lut_for": "2126442e75f76822ff903eb4bc0d56dde56b7f4dbe61f071a35c1c0ab8442f12",
+    "method:_gpu_lut_for": "efef115f57051dc80c058c28ecbfa219b2f48b405fc68d023e47f3048d47c383",
 }
 
 # A #6267 előtti Qt-lenyomat, csak a mixincsalád saját tagjai. Szándékosan nincs
@@ -116,23 +118,23 @@ _EREDETI_QT_LENYOMAT = [
     "M|setFinetune|4",
     "M|setTilt|1",
     "M|shiftLenyomva|0",
-    "P|autocolorEnabled|toolsChanged|False",
-    "P|autolightEnabled|toolsChanged|False",
-    "P|colorTemp|toolsChanged|False",
+    "P|autocolorEnabled|autocolorEnabledChanged|False",
+    "P|autolightEnabled|autolightEnabledChanged|False",
+    "P|colorTemp|colorTempChanged|False",
     "P|effectChainCounts|revisionChanged|False",
     "P|effectChain|revisionChanged|False",
-    "P|enhanceEnabled|toolsChanged|False",
-    "P|fillLight|toolsChanged|False",
-    "P|hasFinetune|toolsChanged|False",
-    "P|highlights|toolsChanged|False",
+    "P|enhanceEnabled|enhanceEnabledChanged|False",
+    "P|fillLight|fillLightChanged|False",
+    "P|hasFinetune|hasFinetuneChanged|False",
+    "P|highlights|highlightsChanged|False",
     "P|legacyEffectsInChain|revisionChanged|False",
     "P|legacyEffects||True",
-    "P|neutralColor|toolsChanged|False",
+    "P|neutralColor|neutralColorChanged|False",
     "P|oneClickEffects||True",
     "P|recentPickerColors|pickerRecentColorsChanged|False",
-    "P|shadows|toolsChanged|False",
+    "P|shadows|shadowsChanged|False",
     "P|shiftAktiv|shiftAktivChanged|False",
-    "P|tiltParam|toolsChanged|False",
+    "P|tiltParam|tiltParamChanged|False",
 ]
 
 

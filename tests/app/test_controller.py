@@ -908,6 +908,9 @@ class TestFolderSwitchNoReload:
         # jogosan módosítja az index-pecsétet. A háttérmunka befejezése után
         # egy normál mappaválasztás rögzíti a lezárt index nyugalmi pecsétjét.
         ctl.selectFolder(str(root / "nyaralas"))
+        # A második választás is indít olvasatlan-jelölő worker-t; várjuk meg,
+        # mielőtt a következő mappaváltás gyorsútját mérjük.
+        assert _wait_until(qt_app, lambda: not ctl.backgroundWorkersRunning())
         assert ctl._feed_stamp == ctl._index_stamp()
         calls: list = []
         self._count_reads(monkeypatch, calls)

@@ -93,6 +93,7 @@ class TestVegponttolVegpontig:
         from picasapy.app.thumbnail_provider import ThumbnailProvider
         from picasapy.thumbs import ThumbnailCache
         from PySide6.QtCore import QSettings
+        from picasapy.index import open_index, sync_tree
         from support.jpeg_factory import make_jpeg
 
         lib = tmp_path / "kepek"
@@ -100,27 +101,16 @@ class TestVegponttolVegpontig:
         cel = lib / "kollazs.jpg"
         make_jpeg(cel, size=(64, 48))
         db = tmp_path / "index.db"
+        with open_index(db) as conn:
+            sync_tree(conn, lib)
         beallitasok = QSettings(
             str(tmp_path / "s.ini"), QSettings.Format.IniFormat
         )
         provider = ThumbnailProvider(ThumbnailCache(tmp_path / "th", size=32))
         controller = AppController(db, (str(lib),), provider, settings=beallitasok)
-        controller.syncFinished.connect(
-            lambda: print(
-                "DEBUG syncFinished",
-                controller._last_sync_changed,
-                controller.photos.rowCount(),
-                controller._sync_running,
-            )
-        )
-        controller.syncFailed.connect(lambda error: print("DEBUG syncFailed", error))
-        controller.rescan()
-        for _ in range(200):
-            qt_app.processEvents()
-            if controller.waitForBackgroundWorkers(0.05):
-                break
-        qt_app.processEvents()
-        print("DEBUG final", controller._last_sync_changed, controller.photos.rowCount(), controller._sync_running)
+        # A próbában előre létrehozott index az éles indulás utáni állapotot
+        # adja; a kép felülírása után célzott újraszinkron frissíti az URL-t.
+        controller._reload()
         assert controller.photos.rowCount() == 1
         elotte = controller.photos.thumbUrlAt(0)
 

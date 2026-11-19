@@ -34,6 +34,9 @@ def test_rescan_nem_tolti_elo_a_cv2_t(monkeypatch):
         _sync_running=False,
         _dirty_running=False,
         _sync_worker=lambda: None,
+        # #7244: a Frissítés külön workerje azonos mappa-mtime mellett is
+        # észreveszi a módosított fájlt; itt csak a háttérindítás a vizsgálat.
+        _manual_rescan_worker=lambda: None,
         cancelScan=lambda: None,
         _start_background=lambda worker, **kwargs: events.append("worker-start"),
     )

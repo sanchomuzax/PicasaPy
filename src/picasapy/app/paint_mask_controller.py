@@ -25,6 +25,8 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
 
+from picasapy.paint_mask_ops import PAINTABLE_MASK_OPS
+
 from .paint_mask import KEZDO_ARANY, MAX_ARANY, MaszkAllapot
 
 
@@ -60,8 +62,6 @@ class PaintMaskMixin:
             # Üres láncnál nincs mit festeni, a render csomagot sem kell
             # betölteni (#6688: induláskor a lánc mindig üres)
             return False
-        from picasapy.render.chain_glimmer_handlers import PAINTABLE_MASK_OPS
-
         return any(op.name.casefold() in PAINTABLE_MASK_OPS for op in ops)
 
     @Property(float, notify=paintMaskChanged)
