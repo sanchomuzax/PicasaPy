@@ -205,6 +205,9 @@ def _startup_step_register_qml_context(state):
     app.aboutToQuit.connect(screen_capture_controller.shutdown)
     # #6475: a mentett képernyőkép mappája a Projektek alatt is megjelenjen
     screen_capture_controller.screenCaptureSaved.connect(controller.indexScreenCapture)
+    # A syncFinished teljes feed-frissítését elhalasztjuk, amíg a néző
+    # szerkesztési munkamenete aktív; a két QObject-közti belső híd nem QML-API.
+    controller._edit_controller_for_sync = edit_controller
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty(
         "notifierScreenGeometry", notifier_screen_geometry

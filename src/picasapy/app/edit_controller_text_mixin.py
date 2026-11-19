@@ -44,9 +44,8 @@ class EditControllerTextMixin:
 
     @property
     def _text_family(self) -> str:
-        """A szöveg-eszköz betűcsaládja; az alapértelmezés háttérben töltődik."""
+        """A szöveg-eszköz betűcsaládja; katalógust csak használatkor kér."""
         if self._text_family_value is None:
-            self._queue_text_font_families()
             return DEFAULT_FAMILY
         return self._text_family_value
 

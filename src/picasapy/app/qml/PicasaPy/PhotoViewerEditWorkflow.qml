@@ -24,12 +24,28 @@ Item {
     Connections {
         target: editWorkflow.hostEditController
         function onTextFontCatalogueChanged() {
-            if (editWorkflow.editorPanel.fontFamilyCatalogue.length === 0)
-                editWorkflow.editorPanel.fontFamilyCatalogue =
-                        editWorkflow.hostEditController.textFontFamilies.slice()
-            editWorkflow.editorPanel.textFontFamily =
-                    editWorkflow.hostEditController.textFontFamily
+            editWorkflow.syncTextFontCatalogue()
         }
+    }
+
+    Connections {
+        target: editWorkflow.editorPanel
+        function onTextActiveChanged() {
+            if (editWorkflow.editorPanel.textActive)
+                editWorkflow.syncTextFontCatalogue()
+        }
+    }
+
+    function syncTextFontCatalogue() {
+        if (!hostEditController || !editorPanel || !editorPanel.textActive)
+            return
+        if (editorPanel.fontFamilyCatalogue.length === 0) {
+            var families = hostEditController.textFontFamilies
+            if (families.length === 0)
+                return
+            editorPanel.fontFamilyCatalogue = families.slice()
+        }
+        editorPanel.textFontFamily = hostEditController.textFontFamily
     }
 
     function toggleEditorDrawer() {
@@ -581,37 +597,40 @@ function syncPanelFromController() {
     editorPanel.enhanceEnabled = hostEditController.enhanceEnabled
     editorPanel.autolightEnabled = hostEditController.autolightEnabled
     editorPanel.autocolorEnabled = hostEditController.autocolorEnabled
-    // Finomhangolás-csúszkák (#20): a panel binding már frissítette a
-    // fillLight/highlights/shadows/colorTemp értékeket a kontrollerből -
-    // ez a hívás azokat suppress mellett a csúszkákba is beírja
-    editorPanel.syncFinetuneSliders()
+    // A toolsChanged gyűjtőjel a rejtett panelek kötéseit is újraértékeltetné.
+    // A Finomhangolás csúszkáit csak a saját fülükön kell szinkronizálni.
+    if (editorPanel.activeTab === 1)
+        editorPanel.syncFinetuneSliders()
     // #450: "Remove all existing text" gomb tiltási állapota
     editorPanel.hasTextOverlay = hostEditController.hasTextOverlay
     editorPanel.textOverlayVisible = hostEditController.textOverlayVisible
-    if (editorPanel.textActive)
+    if (editorPanel.textActive) {
         editorPanel.textDraftContent = hostEditController.textDraft
-    // #450: szöveg-stílus - kitöltés+körvonal szín, körvonal-vastagság,
-    // kitöltés ki/be, átlátszóság
+        // #450: szöveg-stílus - kitöltés+körvonal szín, körvonal-vastagság,
+        // kitöltés ki/be, átlátszóság
+        editorPanel.textFillColor = hostEditController.textFillColor
+        editorPanel.textOutlineColor = hostEditController.textOutlineColor
+        editorPanel.textOutlineThickness = hostEditController.textOutlineThickness
+        editorPanel.textFillEnabled = hostEditController.textFillEnabled
+        editorPanel.textOpacity = hostEditController.textOpacity
+    }
     // #464: a Finomhangolás fül pipettája melletti színminta
-    editorPanel.neutralColor = hostEditController.neutralColor
-    editorPanel.textFillColor = hostEditController.textFillColor
-    editorPanel.textOutlineColor = hostEditController.textOutlineColor
-    editorPanel.textOutlineThickness = hostEditController.textOutlineThickness
-    editorPanel.textFillEnabled = hostEditController.textFillEnabled
-    editorPanel.textOpacity = hostEditController.textOpacity
+    if (editorPanel.activeTab === 1 || editorPanel.neutralPickerActive)
+        editorPanel.neutralColor = hostEditController.neutralColor
     // #450 (2. lépcső): tipográfia - betűcsalád, méret, B/I/U, igazítás
-    // #4966: a katalógus állandó, ezért egyszer kapja meg. A másolat
-    // JS-tömböt ad: a nyers hozzárendelés Python-hoz kötött QVariant-ot
-    // tárolna, és minden későbbi olvasás újrahívná a getter-t.
-    if (editorPanel.fontFamilyCatalogue.length === 0)
-        editorPanel.fontFamilyCatalogue = hostEditController.textFontFamilies.slice()
-    editorPanel.textFontFamily = hostEditController.textFontFamily
-    editorPanel.textFontSize = hostEditController.textFontSize
-    editorPanel.fontSizeChoices = hostEditController.fontSizeChoices
-    editorPanel.textBold = hostEditController.textBold
-    editorPanel.textItalic = hostEditController.textItalic
-    editorPanel.textUnderline = hostEditController.textUnderline
-    editorPanel.textAlign = hostEditController.textAlign
+    // A betűcsalád-katalógus csak a szöveg-eszköz megnyitásakor töltődik be;
+    // a képnéző megnyitása ne építsen QML-listát az összes rendszerbetűből.
+    if (editorPanel.textActive)
+        syncTextFontCatalogue()
+    if (editorPanel.textActive) {
+        editorPanel.textFontFamily = hostEditController.textFontFamily
+        editorPanel.textFontSize = hostEditController.textFontSize
+        editorPanel.fontSizeChoices = hostEditController.fontSizeChoices
+        editorPanel.textBold = hostEditController.textBold
+        editorPanel.textItalic = hostEditController.textItalic
+        editorPanel.textUnderline = hostEditController.textUnderline
+        editorPanel.textAlign = hostEditController.textAlign
+    }
 }
 onVisibleChanged: {
     if (visible) {

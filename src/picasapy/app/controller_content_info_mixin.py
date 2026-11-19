@@ -103,7 +103,9 @@ class ContentInfoMixin:
         current = getattr(self, "_current_folder", "")
         if current in results:
             self._folder_description = results[current]
-            self.statusChanged.emit()
+            # A látható mappaleírás a feed modelljén át frissül. A globális
+            # statusChanged több tucat, a nézőben is használt kötést
+            # újraértékeltetne egy háttérből érkező szövegérték miatt.
         if results:
             self.feedChanged.emit()
 

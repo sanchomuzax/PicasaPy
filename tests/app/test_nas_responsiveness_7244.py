@@ -16,11 +16,168 @@ from picasapy.app.folder_date_controller import FolderDateMixin
 from picasapy.app.geo_controller import GeoMixin
 from picasapy.app.library_controller_activity import _LibraryActivityMixin
 from picasapy.app.library_controller_eltunt_gyoker import _LibraryEltuntGyokerMixin
+from picasapy.app.controller_sync_mixin import AppControllerSyncMixin
 from picasapy.app.worker_thread import BackgroundWorkerMixin
 from picasapy.index import PhotoRecord
 
 
 _MAIN_THREAD = threading.get_ident()
+
+
+def test_default_text_family_getter_does_not_load_font_catalogue():
+    from picasapy.app.edit_controller_text_mixin import EditControllerTextMixin
+    from picasapy.ini.text_overlay import DEFAULT_FAMILY
+
+    class FontHost(EditControllerTextMixin):
+        def __init__(self):
+            self._text_family_value = None
+            self.catalogue_loads = 0
+
+        def _queue_text_font_families(self):
+            self.catalogue_loads += 1
+
+    host = FontHost()
+
+    assert host._text_family == DEFAULT_FAMILY
+    assert host.catalogue_loads == 0
+
+
+def test_sync_finish_skips_feed_reload_when_progress_already_loaded_index():
+    class SyncHost:
+        _last_sync_changed = True
+        _view_mode = ("folder", "network-folder")
+        _feed_stamp = ("db", 4, "wal", 8)
+        backupFilterActive = False
+
+        def __init__(self):
+            self.reloads = 0
+
+        def _index_stamp(self):
+            return ("db", 4, "wal", 8)
+
+        def _reload(self, **_kwargs):
+            self.reloads += 1
+
+    host = SyncHost()
+    AppControllerSyncMixin._reload_after_sync_if_changed(host)
+    assert host.reloads == 0
+
+    host._index_stamp = lambda: ("db", 4, "wal", 9)
+    AppControllerSyncMixin._reload_after_sync_if_changed(host)
+    assert host.reloads == 1
+
+
+def test_sync_finish_defers_feed_reload_until_viewer_session_ends():
+    class SyncHost:
+        _last_sync_changed = True
+        _view_mode = ("folder", "network-folder")
+        _feed_stamp = ("db", 4, "wal", 8)
+        backupFilterActive = False
+        _edit_controller_for_sync = SimpleNamespace(_photo_id="network-photo")
+
+        def __init__(self):
+            self.reloads = 0
+
+        def _index_stamp(self):
+            return ("db", 4, "wal", 9)
+
+        def _reload(self, **_kwargs):
+            self.reloads += 1
+
+    host = SyncHost()
+    AppControllerSyncMixin._reload_after_sync_if_changed(host)
+    assert host.reloads == 0
+    assert host._deferred_sync_reload is True
+
+    host._edit_controller_for_sync._photo_id = ""
+    host._last_sync_changed = False
+    AppControllerSyncMixin._reload_after_sync_if_changed(host)
+    assert host.reloads == 1
+    assert host._deferred_sync_reload is False
+
+
+def test_network_folder_description_update_avoids_global_status_signal():
+    class SignalRecorder:
+        def __init__(self):
+            self.calls = 0
+
+        def emit(self):
+            self.calls += 1
+
+    host = SimpleNamespace(
+        _description_read_results={"/slow-root/album": "description"},
+        _description_reads_pending={"/slow-root/album"},
+        _descriptions={},
+        _current_folder="/slow-root/album",
+        _folder_description="",
+        statusChanged=SignalRecorder(),
+        feedChanged=SignalRecorder(),
+    )
+
+    ContentInfoMixin._apply_network_folder_description(host)
+
+    assert host._folder_description == "description"
+    assert host.statusChanged.calls == 0
+    assert host.feedChanged.calls == 1
+
+
+def test_folder_select_during_sync_reuses_visible_photos(monkeypatch, tmp_path):
+    import picasapy.app.controller as controller_module
+
+    class SignalRecorder:
+        def __init__(self):
+            self.calls = []
+
+        def emit(self, *args):
+            self.calls.append(args)
+
+    class Host:
+        def __init__(self, folder):
+            self._view_mode = ("folder", "previous-folder")
+            self._feed_stamp = None
+            self._db_path = str(tmp_path / "index.sqlite")
+            self._current_folder = "previous-folder"
+            self._filter_active = False
+            self._filter_status = ""
+            self._import_visible = True
+            self._photos = SimpleNamespace(photos=(_photo(folder),))
+            self._folders = SimpleNamespace(offline_paths=lambda: ())
+            self.folderActivated = SignalRecorder()
+            self.statusChanged = SignalRecorder()
+            self.folderUnavailable = SignalRecorder()
+
+        def _get_settings(self):
+            return SimpleNamespace(setValue=lambda *_args: None)
+
+        def _folder_description_for_open(self, _folder):
+            return ""
+
+        def _clear_unread(self, _folder):
+            pass
+
+        def _restore_full_folder_pane(self):
+            pass
+
+        def _feed_records(self, _conn):
+            raise AssertionError("a szinkron alatti mappaváltás új feedet olvasott")
+
+    folder = str(tmp_path / "slow-network-root")
+    host = Host(folder)
+
+    class UnexpectedIndexRead:
+        def __enter__(self):
+            raise AssertionError("a szinkron alatti mappaváltás indexet olvasott")
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(
+        controller_module, "open_index", lambda *_args: UnexpectedIndexRead()
+    )
+    controller_module.AppController.selectFolder(host, folder)
+
+    assert host._current_folder == folder
+    assert host.folderActivated.calls == [(folder,)]
 
 
 def _event_loop_max_gap_ms(qt_app, action, duration_ms=900):
@@ -384,10 +541,93 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
     import traceback
 
     from PySide6.QtCore import QObject, QEventLoop, QTimer
+    from PySide6.QtQml import QQmlExpression, qmlContext
     from tests.support.varakozas import var_feltetelre
     from support.jpeg_factory import make_jpeg
 
     window, controller, _library, _engine = qml_app
+    edit_controller = _engine.rootContext().contextProperty("editController")
+    controller._edit_controller_for_sync = edit_controller
+    reload_observations = []
+    slow_callbacks = []
+
+    def observe_method(name, original):
+        def wrapped(*args, **kwargs):
+            started = time.monotonic()
+            try:
+                return original(*args, **kwargs)
+            finally:
+                elapsed_ms = (time.monotonic() - started) * 1000
+                if elapsed_ms >= 50:
+                    edit_controller = controller._edit_controller_for_sync
+                    observation = {
+                        "method": name,
+                        "stage": state.get("stage"),
+                        "elapsed_ms": round(elapsed_ms),
+                        "photo_id": getattr(edit_controller, "_photo_id", ""),
+                        "import_visible": controller._import_visible,
+                        "grace_until": getattr(controller, "_sync_reload_grace_until", 0.0),
+                    }
+                    slow_callbacks.append(observation)
+                    if name == "_reload":
+                        observation["caller"] = traceback.extract_stack(limit=3)[-2].name
+                        reload_observations.append(observation)
+
+        return wrapped
+
+    for method_name in (
+        "_reload",
+        "_refresh_view",
+        "_show",
+        "_update_feed_groups",
+        "_update_status",
+        "_emit_network_properties_changed",
+        "_on_sync_progress",
+    ):
+        monkeypatch.setattr(
+            controller,
+            method_name,
+            observe_method(method_name, getattr(controller, method_name)),
+        )
+
+    def observe_edit_method(name, original):
+        def wrapped(*args, **kwargs):
+            started = time.monotonic()
+            try:
+                return original(*args, **kwargs)
+            finally:
+                elapsed_ms = (time.monotonic() - started) * 1000
+                if elapsed_ms >= 50:
+                    slow_callbacks.append(
+                        {
+                            "method": f"edit.{name}",
+                            "stage": state.get("stage"),
+                            "elapsed_ms": round(elapsed_ms),
+                            "photo_id": edit_controller._photo_id,
+                        }
+                    )
+
+        return wrapped
+
+    for method_name in (
+        "_bump_revision",
+        "_register_preview",
+        "_restore_text_overlay_state",
+    ):
+        monkeypatch.setattr(
+            edit_controller,
+            method_name,
+            observe_edit_method(method_name, getattr(edit_controller, method_name)),
+        )
+    viewer_image = window.findChild(QObject, "viewerImage")
+    assert viewer_image is not None
+    image_ready = QQmlExpression(
+        qmlContext(viewer_image), viewer_image, "status === Image.Ready"
+    )
+    # Az éles platformokon a néző képe aszinkron töltődik. Az offscreen Qt
+    # alapból szinkronra vált a #53-as GIL-holtpont elkerülésére; ennél a
+    # fájlútvonalas méréstesztnél visszaállítjuk az éles út viselkedését.
+    viewer_image.setProperty("asynchronous", True)
     slow_root = (tmp_path / "slow-network-root").resolve()
     slow_root.mkdir()
     for number in range(40):
@@ -515,7 +755,14 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
             elif state["stage"] == "opening":
                 image = window.findChild(QObject, "viewerImage")
                 source = image.property("source") if image is not None else None
-                if source is not None and source.toString():
+                image_is_ready, image_ready_error = image_ready.evaluate()
+                if (
+                    source is not None
+                    and source.toString()
+                    and not image_ready_error
+                    and image_is_ready
+                    and not edit_controller._network_edit_load_pending
+                ):
                     state["stage"] = "opened"
                     beat_timer.stop()
             elif state["stage"] == "opened":
@@ -561,5 +808,6 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
     assert max_gap_ms < 200, (
         f"a mappa- és nézőút alatt {max_gap_ms:.0f} ms-re állt meg az eseményhurok; "
         f"főszál-minták: {long_stall_stacks}; "
-        f"szakasz: {gap_before} → {gap_after}"
+        f"szakasz: {gap_before} → {gap_after}; újratöltések: {reload_observations}; "
+        f"lassú visszahívások: {slow_callbacks}"
     )

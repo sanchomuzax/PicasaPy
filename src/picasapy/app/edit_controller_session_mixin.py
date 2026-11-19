@@ -148,33 +148,40 @@ class EditControllerSessionMixin:
     ) -> None:
         """A hálózati kép méretét, ini-állapotát és EXIF-jét egy worker olvassa."""
         def worker() -> None:
-            error = None
-            try:
-                document = self._load_ini_document_from_disk(ini_path)
-                section = document.section(section_name)
-                crop = section.get("crop") if section is not None else None
-                crop_readable = True
-            except OSError as exc:
-                document = parse_document("")
-                crop = None
-                crop_readable = False
-                error = str(exc)
-                _log.warning("A hálózati .picasa.ini nem olvasható: %s", ini_path)
-            size = self._read_image_size(image_path)
-            details = _cached_exif_details(image_path)
-            if details is None:
-                details = read_exif_details(image_path)
-                _cache_exif_details(image_path, details)
-            result = (
-                generation,
-                str(image_path),
-                document,
-                crop,
-                crop_readable,
-                size,
-                details,
-                error,
-            )
+            # A képellenőrzés, az INI dekódolása és az EXIF feldolgozása
+            # Python-kódot is futtat. A preview-worker meglévő fairness
+            # mintája megakadályozza, hogy ezek a háttérmunkák a QML-jelzés
+            # idején hosszú időre kiszorítsák a GUI-szálat a GIL-ből.
+            from .edit_controller_preview_mixin import _preview_gil_fairness
+
+            with _preview_gil_fairness():
+                error = None
+                try:
+                    document = self._load_ini_document_from_disk(ini_path)
+                    section = document.section(section_name)
+                    crop = section.get("crop") if section is not None else None
+                    crop_readable = True
+                except OSError as exc:
+                    document = parse_document("")
+                    crop = None
+                    crop_readable = False
+                    error = str(exc)
+                    _log.warning("A hálózati .picasa.ini nem olvasható: %s", ini_path)
+                size = self._read_image_size(image_path)
+                details = _cached_exif_details(image_path)
+                if details is None:
+                    details = read_exif_details(image_path)
+                    _cache_exif_details(image_path, details)
+                result = (
+                    generation,
+                    str(image_path),
+                    document,
+                    crop,
+                    crop_readable,
+                    size,
+                    details,
+                    error,
+                )
             with _NETWORK_EDIT_STATE_LOCK:
                 self._network_edit_state_result = result
             QMetaObject.invokeMethod(

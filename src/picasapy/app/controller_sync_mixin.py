@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from PySide6.QtCore import QLocale, Slot
+from PySide6.QtCore import QLocale, QTimer, Slot
 from picasapy.index import (
     album_photos,
     geotagged_photos,
@@ -162,9 +162,50 @@ class AppControllerSyncMixin:
     @Slot()
     def _reload_after_sync_if_changed(self) -> None:
         """A syncFinished nézeteit csak tényleges index- vagy ini-változás frissíti."""
-        if getattr(self, "_last_sync_changed", True) is False:
+        edit_controller = getattr(self, "_edit_controller_for_sync", None)
+        if edit_controller is not None and getattr(edit_controller, "_photo_id", ""):
+            # A néző az indexet is használja; a teljes feed újraépítése közben
+            # a főszál a néző QML-kötéseit blokkolná. A néző lezárásakor kért
+            # mappa-resync syncFinished-je majd érvényesíti az elmaradt frissítést.
+            self._deferred_sync_reload = True
             return
+        deferred = getattr(self, "_deferred_sync_reload", False)
+        grace_until = getattr(self, "_sync_reload_grace_until", 0.0)
+        if grace_until > time.monotonic():
+            self._deferred_sync_reload = True
+            QTimer.singleShot(
+                max(1, int((grace_until - time.monotonic()) * 1000)),
+                self._finish_sync_reload_grace,
+            )
+            return
+        if getattr(self, "_last_sync_changed", True) is False and not deferred:
+            return
+        if (
+            not deferred
+            and self._view_mode[0] == "folder"
+            and not self.backupFilterActive
+            and self._feed_stamp is not None
+            and self._feed_stamp == self._index_stamp()
+        ):
+            # A ritkított progressz-frissítés már ezt az indexállapotot
+            # mutatja. A záró teljes feed-újraépítés csak újra lefuttatná a
+            # drága QML-csoportkötéseket, miközben semmi sem változott.
+            return
+        self._deferred_sync_reload = False
         self._reload(preserve_scroll=True)
+
+    @Slot()
+    def _finish_sync_reload_grace(self) -> None:
+        """A mappaváltást követő nézőnyitásnak ad egy eseménykört."""
+        if getattr(self, "_sync_reload_grace_until", 0.0) > time.monotonic():
+            return
+        self._sync_reload_grace_until = 0.0
+        edit_controller = getattr(self, "_edit_controller_for_sync", None)
+        if edit_controller is not None and getattr(edit_controller, "_photo_id", ""):
+            return
+        if getattr(self, "_deferred_sync_reload", False):
+            self._deferred_sync_reload = False
+            self._reload(preserve_scroll=True)
 
     def _reload(
         self, preserve_scroll: bool = False, defer_collections: bool = False

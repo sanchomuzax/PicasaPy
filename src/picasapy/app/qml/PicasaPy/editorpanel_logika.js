@@ -76,6 +76,12 @@ function hasEffectController() {
 // #2273 szerinti aktuális szerkesztési lánc kerül a szolgáltatóhoz, hogy
 // minden alkalmazott effekt után a csempék is az új állapotból induljanak.
 function effectThumbSource(effectName) {
+    // A néző megnyitásakor a szerkesztő első füle aktív. A rejtett
+    // effektfülek csempéi ne indítsanak effekt-előnézeteket minden
+    // revisionChanged jelre; a bélyegképek a saját fülük kiválasztásakor
+    // töltődnek be.
+    if (panel.activeTab < 2 || panel.activeTab > 5 || panel.modeToolActive)
+        return ""
     if (panel.effectThumbPhotoId === "") return ""
     var source = "image://effectthumb/" + panel.effectThumbPhotoId + "/" + effectName
     // A régi, szűk QML-tesztcsonkokon nincs effectChain property. A valódi
