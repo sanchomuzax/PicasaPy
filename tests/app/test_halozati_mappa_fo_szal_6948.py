@@ -246,9 +246,8 @@ def test_mentett_eredeti_ellenorzese_halozaton_hatterszalra_kerul(
     hivasok = []
     monkeypatch.setattr(
         save_module,
-        "halozati_gyoker",
-        lambda _path: r"\\teszt-nas\kepek",
-        raising=False,
+        "fajlrendszer_gyoker",
+        lambda _path: str(tmp_path),
     )
     monkeypatch.setattr(
         save_module,

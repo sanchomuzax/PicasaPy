@@ -638,12 +638,99 @@ def test_final_sync_progress_does_not_repeat_the_final_feed_reload(qt_app):
     assert host.reloads == 0, "a végső progressz egy második teljes feed-újratöltést kért"
 
 
+def test_nezo_kepolvasasa_aszinkron_es_a_rejtett_fak_lustak(qml_app, qt_app):
+    """A hálózati kép forrása nem fogja meg az eseményhurkot; rejtett fák nem épülnek fel."""
+    from PySide6.QtCore import QUrl
+    from PySide6.QtGui import QColor, QImage
+    from PySide6.QtQuick import QQuickImageProvider
+    from PySide6.QtQml import QQmlExpression, qmlContext
+    from tests.support.varakozas import var_feltetelre
+
+    qml_dir = Path(__file__).parents[2] / "src/picasapy/app/qml/PicasaPy"
+    grid_qml = (qml_dir / "PhotoViewerStraightenGrid.qml").read_text(encoding="utf-8")
+    photo_area_qml = (qml_dir / "PhotoViewerPhotoArea.qml").read_text(encoding="utf-8")
+    foto_image_qml = (qml_dir / "PhotoViewerFotoImage.qml").read_text(encoding="utf-8")
+    before_image_qml = (qml_dir / "PhotoViewerElotteImage.qml").read_text(
+        encoding="utf-8"
+    )
+    right_panels_qml = (qml_dir / "PhotoViewerRightPanels.qml").read_text(
+        encoding="utf-8"
+    )
+    async_binding = 'asynchronous: Qt.platform.pluginName !== "offscreen"'
+    assert async_binding in grid_qml, "a kiegyenesítő rács képei szinkron forrásbetöltők"
+    assert async_binding in foto_image_qml
+    assert async_binding in before_image_qml
+    assert photo_area_qml.count(async_binding) == 2, (
+        "a PhotoViewerPhotoArea valamelyik fájlforrású képe szinkron maradt"
+    )
+    assert "id: straightenGridLoader" in photo_area_qml
+    assert "active: photoArea.hostViewer.visible" in photo_area_qml
+    assert "PhotoViewerStraightenGrid {" in photo_area_qml
+    assert "objectName: \"viewerPropertiesPanelLoader\"" in right_panels_qml
+    assert "active: viewer.propertiesOpen && viewer.visible" in right_panels_qml
+    assert "sourceComponent: PropertiesPanel {" in right_panels_qml
+
+    window, _controller, _library, engine = qml_app
+    provider_threads = []
+
+    class SlowImageProvider(QQuickImageProvider):
+        def __init__(self):
+            super().__init__(QQuickImageProvider.ImageType.Image)
+
+        def requestImage(self, _image_id, size, _requested_size):  # noqa: N802 (Qt API)
+            provider_threads.append(threading.current_thread())
+            time.sleep(0.5)
+            image = QImage(32, 24, QImage.Format.Format_ARGB32)
+            image.fill(QColor("red"))
+            size.setWidth(image.width())
+            size.setHeight(image.height())
+            return image
+
+    provider = SlowImageProvider()
+    engine.addImageProvider("slowNas", provider)
+    window.setProperty("viewerOpen", True)
+    viewer = window.findChild(QObject, "photoViewer")
+    assert viewer is not None
+    viewer.setProperty("currentIndex", 0)
+    image = window.findChild(QObject, "viewerImage")
+    assert image is not None
+    image_ready = QQmlExpression(qmlContext(image), image, "status === Image.Ready")
+    image_ready.setSourceLocation(str(qml_dir / "PhotoViewerFotoImage.qml"), 1, 1)
+    previous_source = image.property("source")
+    image.setProperty("asynchronous", True)
+
+    heartbeat = [time.monotonic()]
+    beat_timer = QTimer()
+    beat_timer.setInterval(10)
+    beat_timer.timeout.connect(lambda: heartbeat.append(time.monotonic()))
+    beat_timer.start()
+    image.setProperty("source", QUrl("image://slowNas/large-network-image"))
+    assert var_feltetelre(
+        qt_app,
+        lambda: bool(image_ready.evaluate()[0]) and bool(provider_threads),
+        5.0,
+    ), "a lassú Image-forrás nem készült el"
+    heartbeat.append(time.monotonic())
+    beat_timer.stop()
+    image.setProperty("source", previous_source)
+
+    max_gap_ms = max(
+        ((right - left) * 1000 for left, right in zip(heartbeat, heartbeat[1:])),
+        default=0,
+    )
+    assert provider_threads and all(
+        thread is not threading.main_thread() for thread in provider_threads
+    ), "az Image szolgáltató a GUI-szálon futott"
+    assert max_gap_ms < 200, (
+        f"a lassú hálózati Image-forrás {max_gap_ms:.0f} ms-re állította meg "
+        "az eseményhurkot"
+    )
+
+
 def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
-    qml_app, qt_app, tmp_path, monkeypatch
+    qml_app, qt_app, tmp_path, monkeypatch, request
 ):
     """A teljes mappa→néző→vissza út egyetlen lassú I/O-t se végezhet a GUI-szálon."""
-    import builtins
-    import io
     import os
     import sys
     import traceback
@@ -798,36 +885,53 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
     delayed_files = set()
     callers = {}
 
-    def monitor(name, original):
-        def wrapped(path, *args, **kwargs):
-            if under_slow_root(path):
-                path_text = os.fsdecode(os.fspath(path))
-                if threading.current_thread() is main_thread:
-                    key = (name, path_text)
-                    violations.append(key)
-                    source_calls = tuple(
-                        f"{os.path.basename(frame.filename)}:{frame.lineno}:{frame.name}"
-                        for frame in traceback.extract_stack(limit=30)[:-1]
-                        if "/src/picasapy/" in frame.filename.replace("\\", "/")
-                    )
-                    callers.setdefault(key, set()).add(source_calls[-6:])
-                if Path(path_text).suffix.casefold() in {".jpg", ".jpeg"}:
-                    file_key = os.path.normcase(path_text)
-                    if file_key not in delayed_files:
-                        delayed_files.add(file_key)
-                        # A lassú megosztás olvasása fájlonként fél másodperc.
-                        # A késleltetés a worker-olvasásra is érvényes, így a
-                        # nézőút ténylegesen a beolvasás közben fut.
-                        time.sleep(0.5)
-            return original(path, *args, **kwargs)
+    def record_slow_access(name, path, frame=None):
+        if not under_slow_root(path):
+            return
+        path_text = os.fsdecode(os.fspath(path))
+        if threading.current_thread() is main_thread:
+            key = (name, path_text)
+            violations.append(key)
+            source_calls = tuple(
+                f"{os.path.basename(item.filename)}:{item.lineno}:{item.name}"
+                for item in traceback.extract_stack(frame, limit=30)
+                if frame is not None
+                and "/src/picasapy/" in item.filename.replace("\\", "/")
+            ) if frame is not None else ()
+            callers.setdefault(key, set()).add(source_calls[-6:])
+        if name == "open" and Path(path_text).suffix.casefold() in {".jpg", ".jpeg"}:
+            file_key = os.path.normcase(path_text)
+            if file_key not in delayed_files:
+                delayed_files.add(file_key)
+                # Fájlonként fél másodpercet késleltetünk; a QTimer-őr közben
+                # a GUI-szál bármely lassú hálózati hívását hibaként veszi.
+                time.sleep(0.5)
 
-        return wrapped
+    audit_active = {"enabled": True}
 
-    for name in ("stat", "open", "scandir", "listdir"):
-        monkeypatch.setattr(os, name, monitor(f"os.{name}", getattr(os, name)))
-    monkeypatch.setattr(os, "open", monitor("os.open", os.open))
-    monkeypatch.setattr(builtins, "open", monitor("open", builtins.open))
-    monkeypatch.setattr(io, "open", monitor("io.open", io.open))
+    def monitor_audit(event, args):
+        if not audit_active["enabled"] or not args:
+            return
+        if event == "open":
+            record_slow_access("open", args[0])
+        elif event in {"os.scandir", "os.listdir"}:
+            record_slow_access(event, args[0])
+
+    def monitor_stat(frame, event, called):
+        if event != "c_call" or called is not os.stat:
+            return
+        if threading.current_thread() is not main_thread:
+            return
+        for value in frame.f_locals.values():
+            if isinstance(value, (str, bytes, os.PathLike)) and under_slow_root(value):
+                record_slow_access("os.stat", value, frame)
+                break
+
+    sys.addaudithook(monitor_audit)
+    request.addfinalizer(lambda: audit_active.__setitem__("enabled", False))
+    previous_profile = sys.getprofile()
+    sys.setprofile(monitor_stat)
+    request.addfinalizer(lambda: sys.setprofile(previous_profile))
 
     # Az appablak már nyitva van, mielőtt a teljes útvonal mérését elkezdjük;
     # a startup első kirajzolása nem része a beolvasás alatti használatnak.
@@ -930,7 +1034,7 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
     loop.exec()
     beat_timer.stop()
     watchdog_stop.set()
-    watchdog.join(timeout=1)
+    watchdog.join(timeout=10)
     assert state["error"] is None, f"a teljes mappa→néző út hibázott: {state['error']}"
     assert var_feltetelre(qt_app, lambda: controller.waitForBackgroundWorkers(0.05), 30)
     assert len(delayed_files) >= 4, (

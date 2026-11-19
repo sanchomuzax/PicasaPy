@@ -50,7 +50,7 @@ from picasapy.edit.save_copy import (
 from picasapy.edit.session import EditSession
 from picasapy.ini import IniConflictError, IniSaveError, PhotoCropReader
 from picasapy.lazy_import import lazy_callable
-from picasapy.halozati_ut import halozati_gyoker
+from picasapy.halozati_ut import fajlrendszer_gyoker
 from picasapy.scanner import PICASA_INI_NAME
 
 from .paint_mask import maszk_vonasokbol, van_mentett_ecsetvonas
@@ -74,6 +74,7 @@ apply_flip = lazy_callable("picasapy.render.flip", "apply_flip")
 
 _BACKUP_CACHE_TTL_S = 2.0
 _BACKUP_CACHE_LOCK = threading.Lock()
+_is_dir = Path.is_dir
 
 
 def _konyvtar_tartalma(konyvtar: Path) -> list[Path]:
@@ -132,14 +133,14 @@ class SaveMixin(
         remote: dict[str, list[str]] = {}
         for record in self._selected_records(rows):
             mappa = str(record.folder_path)
-            if halozati_gyoker(mappa) is not None:
+            if fajlrendszer_gyoker(mappa) is not None:
                 remote.setdefault(mappa, []).append(str(record.name))
                 continue
             if mappa not in tovek:
                 nevek: set[str] = set()
                 for dir_name in ORIGINALS_DIR_NAMES:
                     konyvtar = Path(mappa) / dir_name
-                    if konyvtar.is_dir():
+                    if _is_dir(konyvtar):
                         nevek.update(
                             utvonal.name
                             for utvonal in _konyvtar_tartalma(konyvtar)
@@ -185,7 +186,7 @@ class SaveMixin(
                     try:
                         for dir_name in ORIGINALS_DIR_NAMES:
                             originals = Path(folder) / dir_name
-                            if originals.is_dir():
+                            if _is_dir(originals):
                                 names.update(
                                     path.name for path in _konyvtar_tartalma(originals)
                                 )

@@ -14,6 +14,12 @@ def _panel(window):
     return panel
 
 
+def _loader(window):
+    loader = window.findChild(QObject, "viewerPropertiesPanelLoader")
+    assert loader is not None, "viewerPropertiesPanelLoader nincs a PhotoViewer-ben"
+    return loader
+
+
 def _entries(panel) -> dict:
     value = panel.property("entries")
     if hasattr(value, "toVariant"):
@@ -34,7 +40,10 @@ class TestViewerPropertiesPanel:
     def test_hidden_by_default(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
         _open_viewer(window, qt_app)
-        assert _panel(window).property("visible") is False
+        loader = _loader(window)
+        assert loader.property("active") is False
+        assert loader.property("item") is None
+        assert window.findChild(QObject, "viewerPropertiesPanel") is None
 
     def test_follows_library_toggle(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
@@ -64,4 +73,5 @@ class TestViewerPropertiesPanel:
         panel.closeRequested.emit()
         qt_app.processEvents()
         assert window.property("propertiesPanelOpen") is False
-        assert panel.property("visible") is False
+        assert _loader(window).property("active") is False
+        assert _loader(window).property("item") is None

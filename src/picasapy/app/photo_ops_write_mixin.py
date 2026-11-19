@@ -18,6 +18,7 @@ from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
 from .ini_ujraprobalas import update_document_ujraprobalva
+from .network_text_layer_cache import has_network_text_layer
 from .photo_ops_compat import _WRITE_ERRORS, update_document
 
 
@@ -172,8 +173,6 @@ class PhotoOpsWriteMixin(_PhotoOpsWriteCoreMixin, _PhotoOpsWriteTextMixin):
         photos = self._rows_to_photos(rows or ())
         if not photos:
             return False
-        from .network_text_layer_cache import has_network_text_layer
-
         cached = has_network_text_layer(self, photos[0])
         return (
             cached
