@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.162] - 2026-11-19
+
+- A kereső megtalálja a képek EXIF szerző és szerzői jog mezőinek szavait. (#7254).
+- Az idő-csúszka a keresőszöveggel együtt szűr: a szöveg a mezőben marad, a csúszka a szöveg módosításakor és törlésekor is a helyén marad, a zöld sáv jobb szélén pedig a „Dátumtartomány:” felirattal látszik a beállított kor (#7255).
+
 ## [1.0.161] - 2026-11-19
 
 - Kutatási kiadás: a program működése nem változott. Az eredeti Picasa visszafejtéséből további 13 kérdés válasza került a dokumentációba a dátumírásról, a nyomtatásról, a másolásról és a beviteli mezőkről; új eltérés a PicasaPy és az eredeti Picasa között nem derült ki (#7266).
