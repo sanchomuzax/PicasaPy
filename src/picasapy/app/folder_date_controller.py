@@ -180,7 +180,7 @@ class FolderDateMixin:
         if cache is None:
             cache = self._folder_music_cache = {}
         cache.update(results)
-        changed = getattr(self, "statusChanged", None)
+        changed = getattr(self, "folderMusicChanged", None)
         if results and changed is not None:
             changed.emit()
 
@@ -227,7 +227,7 @@ class FolderDateMixin:
         if cache is None:
             cache = self._folder_music_urls_cache = {}
         cache.update(results)
-        changed = getattr(self, "statusChanged", None)
+        changed = getattr(self, "folderMusicChanged", None)
         if results and changed is not None:
             changed.emit()
 

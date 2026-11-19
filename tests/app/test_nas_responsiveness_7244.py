@@ -228,6 +228,35 @@ def test_network_folder_description_update_avoids_global_status_signal():
     assert host.feedChanged.calls == 1
 
 
+def test_folder_music_cache_results_use_specific_signal():
+    class SignalRecorder:
+        def __init__(self):
+            self.calls = 0
+
+        def emit(self):
+            self.calls += 1
+
+    folder = "/slow-root/album"
+    host = SimpleNamespace(
+        _folder_music_read_results={folder: (True, "music.mp3")},
+        _folder_music_pending={folder},
+        _folder_music_cache={},
+        _folder_music_url_results={folder: ("file:///music.mp3",)},
+        _folder_music_urls_pending={folder},
+        _folder_music_urls_cache={},
+        statusChanged=SignalRecorder(),
+        folderMusicChanged=SignalRecorder(),
+    )
+
+    FolderDateMixin._apply_network_folder_music_reads(host)
+    FolderDateMixin._apply_network_folder_music_urls(host)
+
+    assert host._folder_music_cache == {folder: (True, "music.mp3")}
+    assert host._folder_music_urls_cache == {folder: ("file:///music.mp3",)}
+    assert host.statusChanged.calls == 0
+    assert host.folderMusicChanged.calls == 2
+
+
 def test_folder_select_during_sync_reuses_visible_photos(monkeypatch, tmp_path):
     import picasapy.app.controller as controller_module
 
@@ -884,6 +913,8 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
     violations = []
     delayed_files = set()
     callers = {}
+    text_layer_calls = []
+    text_layer_call_starts = {}
 
     def record_slow_access(name, path, frame=None):
         if not under_slow_root(path):
@@ -918,6 +949,22 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
             record_slow_access(event, args[0])
 
     def monitor_stat(frame, event, called):
+        code = frame.f_code
+        if (
+            code.co_name == "hasTextLayerInSelection"
+            and code.co_filename.replace("\\", "/").endswith(
+                "/photo_ops_write_mixin.py"
+            )
+        ):
+            frame_id = id(frame)
+            if event == "call":
+                text_layer_call_starts[frame_id] = time.monotonic()
+            elif event == "return":
+                started = text_layer_call_starts.pop(frame_id, None)
+                if started is not None:
+                    elapsed_ms = round((time.monotonic() - started) * 1000)
+                    if elapsed_ms >= 10:
+                        text_layer_calls.append(elapsed_ms)
         if event != "c_call" or called is not os.stat:
             return
         if threading.current_thread() is not main_thread:
@@ -1064,6 +1111,7 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
     assert max_gap_ms < 200, (
         f"a mappa- és nézőút alatt {max_gap_ms:.0f} ms-re állt meg az eseményhurok; "
         f"főszál-minták: {long_stall_stacks}; "
+        f"hasTextLayerInSelection hívások (≥10 ms): {text_layer_calls}; "
         f"szakasz: {gap_before} → {gap_after}; újratöltések: {reload_observations}; "
         f"lassú visszahívások: {slow_callbacks}"
     )

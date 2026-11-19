@@ -46,6 +46,32 @@ def _wait_preview(controller, qt_app=None):
 
 
 class TestBeginEdit:
+    def test_preview_ready_tracks_async_render_availability(
+        self, controller, provider, photo, monkeypatch
+    ):
+        """A néző a nyers fájlt használja, amíg az új editpreview elkészül."""
+        from threading import Event
+
+        started = Event()
+        release = Event()
+        register = provider.register
+
+        def delayed_register(**kwargs):
+            started.set()
+            assert release.wait(5), "a teszt nem oldotta fel az előnézeti workert"
+            return register(**kwargs)
+
+        monkeypatch.setattr(provider, "register", delayed_register)
+        controller.beginEdit("1", str(photo))
+
+        try:
+            assert started.wait(5), "az előnézeti worker nem indult el"
+            assert controller.previewReady is False
+        finally:
+            release.set()
+        _wait_preview(controller)
+        assert controller.previewReady is True
+
     def test_empty_ini_gives_empty_session(self, controller, photo):
         controller.beginEdit("1", str(photo))
         assert controller.hasSavedRedeye is False  # #2393: átnevezve

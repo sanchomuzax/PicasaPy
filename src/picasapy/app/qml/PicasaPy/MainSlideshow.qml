@@ -17,6 +17,15 @@ SlideshowView {
     property int visibilityBeforeViewerFullscreen:
         hostWindow.visibilityBeforeViewerFullscreen
     property int visibilityBeforeSlideshow: hostWindow.visibilityBeforeSlideshow
+    property int folderMusicRevision: 0
+
+    Connections {
+        target: slideshow.hostController
+        ignoreUnknownSignals: true
+        function onFolderMusicChanged() {
+            slideshow.folderMusicRevision += 1
+        }
+    }
 
     // A régi, írható QML-tulajdonságokat megtartjuk a főablaki állapot mellett.
     onVisibilityBeforeViewerFullscreenChanged: {
@@ -164,7 +173,9 @@ SlideshowView {
     musicEnabled: typeof controller !== "undefined" && controller
         && !slideshow.screensaverMode && controller.slideshowMusicEnabled
     musicTrackUrls: typeof controller === "undefined" || !controller
-        || slideshow.screensaverMode ? [] : controller.slideshowMusicTrackUrls
+        || slideshow.screensaverMode ? []
+        : (slideshow.folderMusicRevision,
+           controller.slideshowMusicTrackUrls)
     onTransitionPicked: function (kulcs) {
         if (typeof controller !== "undefined" && controller)
             controller.setSlideshowTransition(kulcs)

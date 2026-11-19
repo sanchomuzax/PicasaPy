@@ -397,9 +397,12 @@ def test_forcefit_szuro_nyitasa_illesztesre_valt(
     viewer = _nezobe_lep(window, qt_app)
     panel = _item(window, "viewerEditorPanel")
     viewer.setProperty("zoomValue", 0.7)
-    for _ in range(8):
+    print("MARK zoom-set", flush=True)
+    for i in range(8):
         qt_app.processEvents()
+        print("MARK event", i, flush=True)
     assert viewer.property("zoomFactor") > 1.01, "a próbaképnek nagyítva kell lennie"
+    print("MARK zoom-ok", flush=True)
 
     _kattint(window, _item(window, tab_name), qt_app)
     if tab_name == "editTabEffects4" and button_name.startswith("legacyEffect_"):

@@ -228,7 +228,11 @@ Column {
         // létrehozna. A rövid adagok között az eseményhurok kiszolgálja a
         // görgetést és a menüket, miközben a cellák néhány képkocka alatt
         // megjelennek.
-        property int materializedWindowCount: 0
+        // Az első kép azonnal kattintható legyen (pl. a kontextusmenü
+        // közvetlenül a mappa betöltése után is); a további cellák külön
+        // eseményköri lépésekben készülnek el.
+        property int materializedWindowCount:
+            Math.min(windowCount, 1)
         Timer {
             id: materializeWindowTimer
             interval: 16

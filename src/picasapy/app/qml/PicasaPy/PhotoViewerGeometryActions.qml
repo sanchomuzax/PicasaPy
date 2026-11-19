@@ -130,9 +130,11 @@ function _photoPar(sor) {
     var url = viewer._videoE() ? ""
         : (viewer.layoutMode === "1up" || viewer.aktivOldal === "jobb"
            ? (viewer.editCtl && viewer.editCtl.previewSource !== ""
+              && viewer.editCtl.previewReady
               ? viewer.editCtl.previewSource : viewer.urlAt(sor))
            : (viewer.masodikEditCtl
               && viewer.masodikEditCtl.previewSource !== ""
+              && viewer.masodikEditCtl.previewReady
               ? viewer.masodikEditCtl.previewSource : viewer.urlAt(sor)))
     return viewer._par(sor, url)
 }

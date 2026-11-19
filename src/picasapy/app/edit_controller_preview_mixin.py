@@ -90,6 +90,12 @@ class EditControllerPreviewMixin:
         return f"image://editpreview/{self._kulcs}?rev={self._preview_revision}"
 
 
+    @Property(bool, notify=_Signals.previewRevisionChanged)
+    def previewReady(self) -> bool:
+        """Van-e már ténylegesen kirajzolható előnézet az aktív fotóhoz."""
+        return bool(self._photo_id) and self._provider.has_rendered_image(self._kulcs)
+
+
     @Property(str, notify=_Signals.gpuRevisionChanged)
     def gpuPrefixSource(self) -> str:
         """A finetune2 ELŐTTI köztes kép URL-je (#22), ha az el is érhető.
