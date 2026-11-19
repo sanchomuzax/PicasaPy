@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.156] - 2026-11-19
+
+- A telepítés utáni újraindításkor százalékos folyamatjelző mutatja az indulás előkészítésének előrehaladását (#7245).
+- A keresési javaslatok szósorára kattintva a mezőbe a szó és egy szóköz kerül, és a keresés lefut (#7253).
+
+## [1.0.155] - 2026-11-19
+
+## [1.0.154] - 2026-11-18
+
+- A keresési javaslatok szósorai mutatják, hány képen szerepel a szó, és a gyakoribb szó áll elöl, mint az eredeti Picasában. (#7242).
+
 ## [1.0.153] - 2026-11-18
 
 - A dátummódosítás az EXIF mellett az XMP- és az IPTC-dátumot is átírja, mint az eredeti Picasa. (#7237).

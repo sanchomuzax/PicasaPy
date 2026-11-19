@@ -5995,7 +5995,7 @@ szerint elágazva**:
 
 **A `0x009aecc0` burkoló (143 bájt) — mit csinál:**
 
-1. `MultiByteToWideChar(0xFDE9, 0, útvonal, -1, NULL, 0)` — a **`0xFDE9`
+1. ``MultiByteToWideChar`(0xFDE9, 0, útvonal, -1, NULL, 0)` - a **`0xFDE9`
    = 65001 = `CP_UTF8`** (`0x009aece9`); a hossz **`0xFFFF`-re vágva**
    (`0x009aecf0`–`0x009aecf7`);
 2. verem-foglalás `2 × hossz` bájtra (`0x009aed13` → `0xbf5d60`);

@@ -76,6 +76,7 @@ _SZOVEG_KULCSOK = (
 )
 #: a segéd ezzel a kapcsolóval csak az ablakot mutatja (külön folyamatként)
 ABLAK_KAPCSOLO = "--frissitesi-ablak"
+_QML_HALADAS_STATUS_ENV = "PICASAPY_QML_HALADAS_STATUS"
 
 
 def _platform() -> str:
@@ -149,6 +150,32 @@ def _status_olvasas(ut: Path) -> dict:
     return adat if isinstance(adat, dict) else {}
 
 
+def _qml_halas_szazalek(allapot: Mapping[str, object]) -> int | None:
+    """A cache-előkészítés százaléka a ténylegesen feldolgozott fájlokból."""
+    if allapot.get("stage") != "qml_cache":
+        return None
+    kesz = allapot.get("qml_done", 0)
+    osszes = allapot.get("qml_total", 0)
+    if isinstance(kesz, bool) or not isinstance(kesz, int):
+        kesz = 0
+    if isinstance(osszes, bool) or not isinstance(osszes, int) or osszes <= 0:
+        return 0
+    return min(100, max(0, kesz * 100 // osszes))
+
+
+def _qml_halas_frissitese(ut: Path, kesz: int, osszes: int) -> None:
+    """A külön előfordító-folyamat kész/összes adatát az ablak állapotába írja."""
+    allapot = _status_olvasas(ut)
+    if allapot.get("stage") != "qml_cache":
+        return
+    allapot.update(qml_done=max(0, kesz), qml_total=max(0, osszes))
+    try:
+        _status_iras(ut, allapot)
+    except OSError:
+        # A megfigyelés hibája nem állíthatja meg az alkalmazás frissítését.
+        pass
+
+
 def ablak_parancs(kod: str, status_ut: Path | None = None) -> list[str]:
     """A segéd önmaga, ablak-üzemmódban (fagyasztva és forrásból futtatva is)."""
     if getattr(sys, "frozen", False):
@@ -210,6 +237,11 @@ class FrissitesiAblak:
 
     def lepes(self, kulcs: str) -> None:
         self._statusz.update(stage=kulcs, error="", done=False)
+        if kulcs == "qml_cache":
+            self._statusz.update(qml_done=0, qml_total=0)
+        else:
+            self._statusz.pop("qml_done", None)
+            self._statusz.pop("qml_total", None)
         self._frissitsd_a_statuszt()
 
     def uzenet(self, kulcs: str, **ertekek: object) -> str:
@@ -297,7 +329,16 @@ def _tkinter_ablak(kod: str, status_ut: Path) -> int:  # pragma: no cover - Wind
     ttk.Label(frame, textvariable=stage, font=("Segoe UI", 11, "bold"), wraplength=430).pack(
         anchor="w", fill="x"
     )
-    ttk.Label(frame, textvariable=elapsed, padding=(0, 10, 0, 0)).pack(anchor="w")
+    progress_row = ttk.Frame(frame, padding=(0, 8, 0, 0))
+    progress_value = tk.DoubleVar(value=0)
+    progress_text = tk.StringVar(value="0% · 0/0")
+    progress_bar = ttk.Progressbar(
+        progress_row, variable=progress_value, maximum=100, length=350, mode="determinate"
+    )
+    progress_bar.pack(side="left", fill="x", expand=True)
+    ttk.Label(progress_row, textvariable=progress_text, padding=(8, 0, 0, 0)).pack(side="right")
+    elapsed_label = ttk.Label(frame, textvariable=elapsed, padding=(0, 10, 0, 0))
+    elapsed_label.pack(anchor="w")
     error_label = ttk.Label(frame, textvariable=error, wraplength=430, foreground="#a32020")
     close_button = ttk.Button(
         frame,
@@ -316,6 +357,22 @@ def _tkinter_ablak(kod: str, status_ut: Path) -> int:  # pragma: no cover - Wind
         allapot = _status_olvasas(status_ut)
         stage_key = str(allapot.get("stage", "varakozas"))
         stage.set(felirat(stage_key, kod, feliratok))
+        if stage_key == "qml_cache":
+            percent = _qml_halas_szazalek(allapot)
+            done = allapot.get("qml_done", 0)
+            total = allapot.get("qml_total", 0)
+            if isinstance(done, bool) or not isinstance(done, int):
+                done = 0
+            if isinstance(total, bool) or not isinstance(total, int) or total < 0:
+                total = 0
+            percent = 0 if percent is None else percent
+            progress_bar.configure(maximum=max(1, total))
+            progress_value.set(min(done, max(1, total)))
+            progress_text.set(f"{percent}% · {done}/{total}")
+            if not progress_row.winfo_manager():
+                progress_row.pack(anchor="w", fill="x", before=elapsed_label)
+        else:
+            progress_row.pack_forget()
         elapsed.set(
             felirat("elapsed", kod, feliratok).format(
                 seconds=int(max(0.0, time.monotonic() - indulasi_ido))
