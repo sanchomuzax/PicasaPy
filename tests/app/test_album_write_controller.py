@@ -14,7 +14,7 @@ import re
 
 import pytest
 
-from picasapy.ini import load_document
+from picasapy.ini import load_document, parse_document
 from support.jpeg_factory import make_jpeg
 
 _TOKEN = "604c294a68b0de9cc9222c4714f289d5"
@@ -342,6 +342,42 @@ class TestCreateAlbum:
         by_token = {a["token"]: a for a in controller.albums}
         assert by_token[token]["name"] == "Friss"
         assert by_token[token]["count"] == 1
+
+    def test_properties_album_uses_original_key_order_and_round_trips(
+        self, controller, library
+    ):
+        ini_path = library / "nyaralas" / ".picasa.ini"
+        before = load_document(ini_path)
+        existing_items = before.section(f".album:{_TOKEN}").items()
+
+        token = controller.createAlbumWithProperties(
+            "Nyaralás 2026",
+            [_row_of(controller, "b.jpg")],
+            "2026-07-14",
+            "Balaton",
+            "A nagy nyári kör",
+            True,
+            "tavasz.mp3",
+        )
+
+        document = load_document(ini_path)
+        section = document.section(f".album:{token}")
+        assert section is not None
+        assert section.items()[:5] == (
+            ("name", "Nyaralás 2026"),
+            ("token", token),
+            ("description", "A nagy nyári kör"),
+            ("location", "Balaton"),
+            ("date", "2026-07-14"),
+        )
+        assert section.items()[5:] == (
+            ("usemusic", "1"),
+            ("music", "tavasz.mp3"),
+        )
+        assert document.section(f".album:{_TOKEN}").items() == existing_items
+
+        round_trip = parse_document(document.serialize())
+        assert round_trip.section(f".album:{token}").items() == section.items()
 
 
 class TestCreateEmptyAlbum:
