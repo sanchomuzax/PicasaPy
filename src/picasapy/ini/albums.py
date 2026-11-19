@@ -216,18 +216,37 @@ def with_album_fields(
 
 
 def ensure_album(
-    document: IniDocument, token: str, name: str | None = None
+    document: IniDocument,
+    token: str,
+    name: str | None = None,
+    *,
+    description: str | None = None,
+    location: str | None = None,
+    date: str | None = None,
 ) -> IniDocument:
     """A `[.album:<token>]` definíció megléte a dokumentumban.
 
     A MEGLÉVŐ definíciót nem írja át: ha az album már szerepel az ini-ben,
     a neve marad (a Picasa oldali átnevezés a felhasználó szándéka, nem a
     miénk). Új szekciónál a `token=` kulcsot is kiírjuk, ahogy a Picasa is.
+
+    Ha az új szakasz tulajdonságokkal együtt jön létre, az alapkészlet az
+    eredeti Picasa-sorrendben kerül be: `name`, `token`, `description`,
+    `location`, `date`. A hiányzó vagy üres opcionális mezők kimaradnak.
     """
     section_name = f"{ALBUM_SECTION_PREFIX}{token}"
     if document.section(section_name) is not None:
         return document
-    result = document.with_value(section_name, "token", token)
+
+    result = document
     if name is not None:
         result = result.with_value(section_name, "name", name)
+    result = result.with_value(section_name, "token", token)
+    for key, value in (
+        ("description", description),
+        ("location", location),
+        ("date", date),
+    ):
+        if value is not None and value.strip():
+            result = result.with_value(section_name, key, value)
     return result

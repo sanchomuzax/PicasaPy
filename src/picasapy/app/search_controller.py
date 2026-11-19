@@ -11,7 +11,7 @@ import time
 
 from PySide6.QtCore import Slot
 
-from picasapy.index import open_index, search_photos, search_suggestions
+from picasapy.index import album_photos, open_index, search_photos, search_suggestions
 from picasapy.index.queries import _normalize_search_query
 
 from .search_button_filter import (
@@ -44,6 +44,7 @@ class SearchMixin:
         (az eredetiben a szöveg és a gomb szava egy listában van, a találat a
         metszet). A bekapcsolt gomb ezért a keresés közben is él, és a szöveg
         törlése (üres `text`) a gombot megtartja: a gomb nézetére lépünk."""
+        self._search_selected_album_token = ""
         query = text.strip()
         matching = _normalize_search_query(query)
         button = self._active_button_filter()
@@ -147,6 +148,7 @@ class SearchMixin:
         else:
             self.selectFolder(folder_path)
             return
+        self._search_selected_album_token = ""
         self._current_folder = folder_path  # a bal paneli kijelölés kövessen
         self._view_mode = ("search-folder", (query, folder_path))
         self._get_settings().setValue("session/lastFolder", folder_path)
@@ -159,6 +161,33 @@ class SearchMixin:
         self._show_search_pane(all_matches)
         self._show_search_results(
             tuple(r for r in all_matches if r.folder_path == folder_path),
+            time.perf_counter() - started,
+        )
+
+    @Slot(str)
+    def selectAlbumKeepSearch(self, album_token: str) -> None:
+        """Albumválasztás aktív keresés közben: a keresés megmarad, a
+        találatok az albumra szűkülnek, a bal hasáb pedig kijelöli az albumot."""
+        if not album_token:
+            return
+        mode, param = self._view_mode
+        if mode == "search-folder":
+            query = param[0]
+        elif mode == "search":
+            query = param
+        else:
+            self.showAlbum(album_token)
+            return
+
+        self._search_selected_album_token = album_token
+        started = time.perf_counter()
+        with open_index(self._db_path) as conn:
+            all_matches = self._search_matches(conn, query)
+            album_ids = {photo.id for photo in album_photos(conn, album_token)}
+        all_matches = self._filter_search_hidden(all_matches)
+        self._show_search_pane(all_matches)
+        self._show_search_results(
+            tuple(photo for photo in all_matches if photo.id in album_ids),
             time.perf_counter() - started,
         )
 

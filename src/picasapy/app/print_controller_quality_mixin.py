@@ -70,9 +70,11 @@ class PrintControllerQualityMixin:
         képek se tűnjenek el az ellenőrzésből. A sorok a legrosszabb DPI-től
         indulnak, a kód pedig a bináris két küszöbtesztjének összege.
         """
-        return self._quality_picture_rows(rows, size_name)
+        return self._quality_picture_rows(rows, size_name, quality_groups_first=True)
 
-    def _quality_picture_rows(self, rows, size_name: str) -> list[dict]:
+    def _quality_picture_rows(
+        self, rows, size_name: str, *, quality_groups_first: bool = False
+    ) -> list[dict]:
         """A közös soradat a teljes Review listához és a kis-kép szűréshez."""
         meret = NyomatMeret.__members__.get(size_name) or self._alapmeret()
         best_kuszob = self._dpi_kuszob()
@@ -100,6 +102,10 @@ class PrintControllerQualityMixin:
                     ),
                 }
             )
+        if quality_groups_first:
+            # A stabil rendezés csoportosít, és a csoporton belüli bemeneti
+            # sorrendet megőrzi. A kis-kép lista ettől továbbra is DPI szerint rendez.
+            return sorted(tetelek, key=lambda item: item["qualityCode"])
         return sorted(tetelek, key=lambda item: item["dpi"])
 
     @Slot(list)

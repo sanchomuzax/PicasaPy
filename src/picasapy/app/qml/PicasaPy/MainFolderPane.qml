@@ -46,7 +46,12 @@ FolderPane {
     searchQuery: hostController ? hostController.searchQuery : ""
     searchResultCount: hostController ? hostController.searchResultCount : 0
     albumsModel: hostController ? hostController.albums : []
-    selectedAlbumToken: hostController ? hostController.currentAlbumToken : ""
+    selectedAlbumToken: hostController
+        ? ((hostController.searchSelectedAlbumToken !== undefined
+            && hostController.searchSelectedAlbumToken !== "")
+            ? hostController.searchSelectedAlbumToken
+            : hostController.currentAlbumToken)
+        : ""
     // #26 (3. lépcső): az Emberek gyűjtemény + a „Névtelenek" sor
     peopleModel: hostController ? hostController.people : []
     selectedPersonName: hostController ? hostController.currentPersonName : ""

@@ -76,10 +76,10 @@ from picasapy.metadata.copy_signature import sign_jpeg, source_taken_at
 #: sorszám). A kiterjesztés a forrásé marad.
 COPY_NAME_PATTERN = "{stem}-{number:03d}{suffix}"
 
-#: Ennyi sorszámot próbálunk végig, mielőtt feladjuk. A minta három jegyű,
-#: de a `%03lu` nem VÁGJA a számot — csak feltölti —, ezért a felső korlát
-#: nem 999. Ez a szám a végtelen ciklus elleni vészfék, nem formátum-szabály.
-_MAX_COPY_NUMBER = 100_000
+#: Ennyi sorszámot próbálunk végig, mielőtt feladjuk. Mérve (#7251): az eredeti
+#: `0x00993650` névütközési keresője legfeljebb a `-4095` sorszámig próbálkozik
+#: (`%s-%03lu`, `0x1000`-es határ), `-4096`-ot vagy nagyobbat nem ajánl.
+_MAX_COPY_NUMBER = 4095
 
 
 class FileNameCollisionError(SaveError):
