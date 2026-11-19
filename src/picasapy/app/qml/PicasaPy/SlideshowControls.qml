@@ -177,6 +177,103 @@ Item {
                 height: controlsRow.buttonHeight
                 onClicked: slideshow.stop()
             }
+            // #7281: a mért sorrendben a képikon/csúszka helye a Kilépés
+            // után, a forgatópár előtt van. A oneup.tre nem ad meg slider-*
+            // elemet vagy működést; ez a 157 px-es hely csak tartóelem.
+            Item {
+                objectName: "slideshowImageSliderSlot"
+                width: 157
+                height: controlsRow.buttonHeight
+
+                Item {
+                    objectName: "slideshowImageSliderContent"
+                    anchors.fill: parent
+                    // Az eredetiben a lista végi szünetben itt képikon és
+                    // csúszka látszik, de a működésük nem ismert (#7284):
+                    // amíg ki nem derül, a hely üres marad, működés nélküli
+                    // vezérlőt nem rajzolunk.
+                    visible: false
+
+                    // A képjel és a csúszka statikus rajz: a bináris és a
+                    // mérés a működését, értékét és interakcióját nem adja meg.
+                    Item {
+                        objectName: "slideshowImageSliderIcon"
+                        x: 2
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 20
+                        height: 18
+
+                        Rectangle {
+                            anchors.fill: parent
+                            color: "transparent"
+                            border.color: Theme.mediaOverlayText
+                            border.width: 1
+                            radius: 1
+                        }
+                        Rectangle {
+                            x: 4
+                            y: 4
+                            width: 3
+                            height: 3
+                            radius: 1.5
+                            color: Theme.mediaOverlayText
+                        }
+                        Rectangle {
+                            x: 4
+                            y: 12
+                            width: 8
+                            height: 1
+                            rotation: -45
+                            color: Theme.mediaOverlayText
+                        }
+                        Rectangle {
+                            x: 9
+                            y: 12
+                            width: 7
+                            height: 1
+                            rotation: 38
+                            color: Theme.mediaOverlayText
+                        }
+                    }
+                    Item {
+                        objectName: "slideshowImageSliderTrack"
+                        x: 30
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 120
+                        height: 14
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width
+                            height: 2
+                            radius: 1
+                            color: Theme.sliderGrooveBorder
+                        }
+                        Rectangle {
+                            x: (parent.width - width) / 2
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 8
+                            height: 8
+                            radius: 4
+                            color: Theme.sliderHandleGrooveLight
+                            border.color: Theme.sliderHandleBorder
+                            border.width: 1
+                        }
+                    }
+                }
+            }
+            PicasaButton {
+                objectName: "slideshowRotateLeftButton"
+                text: "↺"; width: 34
+                height: controlsRow.buttonHeight
+                onClicked: slideshow.rotateCurrent(-1)
+            }
+            PicasaButton {
+                objectName: "slideshowRotateRightButton"
+                text: "↻"; width: 34
+                height: controlsRow.buttonHeight
+                onClicked: slideshow.rotateCurrent(1)
+            }
             //: #5541: az eredetiben a `oneup.tre` 75-81. sorában a ◀ és a ▶▶ gombon
             //: `mousedown` van; a kezelőjük a `0x008032e0`. Ezért LENYOMÁSRA léptet,
             //: nyomva tartva nem ismétel.
@@ -206,16 +303,25 @@ Item {
                 onClicked: slideshow.manualAdvance()
             }
             PicasaButton {
-                objectName: "slideshowRotateLeftButton"
-                text: "↺"; width: 34
+                objectName: "slideshowStarButton"
+                width: 34
                 height: controlsRow.buttonHeight
-                onClicked: slideshow.rotateCurrent(-1)
-            }
-            PicasaButton {
-                objectName: "slideshowRotateRightButton"
-                text: "↻"; width: 34
-                height: controlsRow.buttonHeight
-                onClicked: slideshow.rotateCurrent(1)
+                onClicked: slideshow.starCurrent()
+                contentItem: Text {
+                    text: "★"
+                    font.pixelSize: 15
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    color: slideshow.photosModel
+                           && (slideshow.photosModel.revision,
+                               slideshow.photosModel.starAt(slideshow.currentIndex))
+                           //: #3070: a diavetítés a hatókörön KÍVÜL van
+                           //: (11.7/3., NY-4), ezért a NYERS tokent olvassa —
+                           //: a megjelenítési mód a csillagot sem színezheti át
+                           ? Theme.nyers.starYellow : "#ffffff"
+                    style: Text.Outline
+                    styleColor: "#9a9a9a"
+                }
             }
             //: #433: az ÁTMENET-választó a vezérlősávban — az eredetiben is
             //: ott ül (`slideshowctrls/transtype`, a lebegő sáv alján).
@@ -250,28 +356,6 @@ Item {
                         slideshow.feliratModok[(i + 1) % slideshow.feliratModok.length])
                 }
             }
-            PicasaButton {
-                objectName: "slideshowStarButton"
-                width: 34
-                height: controlsRow.buttonHeight
-                onClicked: slideshow.starCurrent()
-                contentItem: Text {
-                    text: "★"
-                    font.pixelSize: 15
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    color: slideshow.photosModel
-                           && (slideshow.photosModel.revision,
-                               slideshow.photosModel.starAt(slideshow.currentIndex))
-                           //: #3070: a diavetítés a hatókörön KÍVÜL van
-                           //: (11.7/3., NY-4), ezért a NYERS tokent olvassa —
-                           //: a megjelenítési mód a csillagot sem színezheti át
-                           ? Theme.nyers.starYellow : "#ffffff"
-                    style: Text.Outline
-                    styleColor: "#9a9a9a"
-                }
-            }
-
             //: #2992: a DIAIDŐ-blokk — az eredeti sávján `tpslabel`
             //: („Display Time"), `minusone`, `tps` (a szám) és `plusone`.
             //: A tulajdonos jelezte, hogy nálunk nem volt állítható.
