@@ -885,6 +885,12 @@ class TestFolderSwitchNoReload:
     def test_switch_only_scrolls(self, qt_app, tmp_path, monkeypatch):
         ctl, root = self._controller(qt_app, tmp_path)
         ctl.selectFolder(str(root / "nyaralas"))
+        assert _wait_until(qt_app, lambda: not ctl.backgroundWorkersRunning())
+        # Az első megnyitás háttérben törölheti az olvasatlan jelölőt, ami
+        # jogosan módosítja az index-pecsétet. A háttérmunka befejezése után
+        # egy normál mappaválasztás rögzíti a lezárt index nyugalmi pecsétjét.
+        ctl.selectFolder(str(root / "nyaralas"))
+        assert ctl._feed_stamp == ctl._index_stamp()
         calls: list = []
         self._count_reads(monkeypatch, calls)
         activated: list = []
@@ -1093,7 +1099,7 @@ class TestWatchedFolderManagement:
         loop.exec()
         assert str(other) in controller.watchedFolders
         assert str(other) in read_watched_folders(controller._watched_file)
-        assert controller.folders.folderCount >= 2
+        assert _wait_until(qt_app, lambda: controller.folders.folderCount >= 2)
 
     def test_add_folder_with_accents_and_spaces(self, controller, tmp_path):
         # #58: klasszikus Windows-mappa (ékezet + szóköz) becsatolása a
@@ -1137,7 +1143,7 @@ class TestScanFolderOnce:
         controller.scanFolderOnce(str(other))
         loop.exec()
 
-        assert controller.folders.rowOfPath(str(other)) >= 0
+        assert _wait_until(qt_app, lambda: controller.folders.rowOfPath(str(other)) >= 0)
         assert str(other) not in controller.watchedFolders
 
     def test_ignores_missing_directory(self, controller, tmp_path):
@@ -1174,7 +1180,7 @@ class TestRemoveFolder:
         loop = _quit_on(controller.syncFinished)
         controller.scanFolderOnce(str(other))
         loop.exec()
-        assert controller.folders.rowOfPath(str(other)) >= 0
+        assert _wait_until(qt_app, lambda: controller.folders.rowOfPath(str(other)) >= 0)
 
         controller.removeFolder(str(other))
         assert controller.folders.rowOfPath(str(other)) == -1
@@ -1244,8 +1250,7 @@ class TestLiveWatch:
         loop = hangos_hurok(controller.syncFinished)
         controller._on_folders_dirty([str(library / "nyaralas")])
         loop.exec()
-        qt_app.processEvents()
-        assert controller.photos.rowCount() == 3
+        assert _wait_until(qt_app, lambda: controller.photos.rowCount() == 3)
 
     def test_shutdown_without_start_is_safe(self, controller):
         controller.shutdown()  # watcher nélkül sem dobhat
