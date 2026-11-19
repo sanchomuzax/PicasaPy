@@ -8,8 +8,13 @@ saját nézetének képeivel metsszük. A film gomb a meglévő `video_photos`
 indexlekérdezésre épül (#7264).
 
 A csillag-, arc- és geocímke-gomb eddigi állapota változatlan; a filmgomb
-szintén a keresőszöveggel közös állapotot használ (#7264). Az online,
-másodpéldány gomb és a kor-csúszka nem tartozik ehhez a gépezethez.
+szintén a keresőszöveggel közös állapotot használ (#7264). Az online és a
+másodpéldány gomb nem tartozik ehhez a gépezethez.
+
+A kor-csúszka (#7255) ugyanígy a keresés állapotának része: a találat a
+szöveg ÉS a `kor <= N nap` metszete (`intersect_with_age`), mérve az eredeti
+Picasán (`picasa-colab-jobs` #748). Szöveg nélkül a csúszka önmagában
+dátumszűrő a teljes könyvtáron (`photos_up_to_age`).
 """
 
 from __future__ import annotations
@@ -18,6 +23,7 @@ from collections.abc import Callable
 
 from picasapy.index import (
     geotagged_photos,
+    photos_up_to_age,
     photos_with_faces,
     starred_photos,
     video_photos,
@@ -32,6 +38,10 @@ BUTTON_FILTERS = (STAR, FACES, GEO, VIDEOS)
 
 #: a keresés nézetmódjai (szöveges keresés, mappára szűkítve is)
 SEARCH_MODES = ("search", "search-folder")
+
+#: azok a nézetmódok, amelyekben a kor-csúszka állása érvényes marad (#7255):
+#: a saját `age` nézet és a keresés; bármely más nézet betöltése törli
+AGE_KEEPING_MODES = ("age", *SEARCH_MODES)
 
 _BUTTON_QUERIES: dict[str, Callable] = {
     STAR: starred_photos,
@@ -54,4 +64,14 @@ def intersect_with_button(conn, records, button: str) -> tuple:
     if not button:
         return tuple(records)
     members = {record.id for record in button_records(conn, button)}
+    return tuple(record for record in records if record.id in members)
+
+
+def intersect_with_age(conn, records, cutoff: str) -> tuple:
+    """A keresés találatai a `cutoff` (ISO időpont) UTÁN készült képekkel metszve.
+
+    A tagságot ugyanaz a lekérdezés adja, mint a szöveg nélküli kor-nézetet
+    (`photos_up_to_age`), így a két út nem térhet el. A dátum NÉLKÜLI kép
+    kimarad (kora nincs). A metszet a találatok sorrendjét őrzi."""
+    members = {record.id for record in photos_up_to_age(conn, cutoff)}
     return tuple(record for record in records if record.id in members)

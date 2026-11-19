@@ -433,9 +433,13 @@ import QtQuick.Window
                 }
                 Connections {
                     target: typeof controller !== "undefined" ? controller : null
+                    // #7255: a csúszka pontosan akkor áll vissza 0-ra, amikor a
+                    // vezérlőben már nincs kor-szűrő. A keresésre váltás és a
+                    // szöveg módosítása/törlése a szűrőt megtartja, tehát a
+                    // csúszka is marad; a nézetváltás (szűrőgomb, mappa) törli.
                     function onStatusChanged() {
                         if (typeof controller !== "undefined" && controller
-                            && controller.viewModeName !== "age")
+                            && !controller.ageFilterText)
                             ageFilterSlider.value = 0.0
                     }
                 }

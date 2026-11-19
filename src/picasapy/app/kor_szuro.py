@@ -94,4 +94,24 @@ def felirat(nap: float, tr: Callable[[str], str]) -> str:
     return tr("Pictures up to %d years old.") % evek
 
 
-__all__ = ["ALAP", "ELTOLAS", "KITEVO_SZORZO", "felirat", "napok", "vagopont"]
+def sav_felirat(nap: float, tr: Callable[[str], str]) -> str:
+    """A zöld sáv jobb szélén álló felirat: `Date Range:  Pictures up to ...` (#7255).
+
+    Az előtag a szövegtár `il_SetSearchStatus::1` erőforrása (`Date Range: `,
+    hu: `Dátumtartomány: `). Az eredeti az erőforrásszöveg után MINDIG egy
+    szóközt tesz, mielőtt a szöveget hozzáfűzi (`0x00985c00`), ezért mérve két
+    szóköz áll a kettőspont után. A `tr` ugyanaz a befecskendezett fordító,
+    mint a `felirat`-nál."""
+    #: `il_SetSearchStatus::1`
+    return tr("Date Range: ") + " " + felirat(nap, tr)
+
+
+__all__ = [
+    "ALAP",
+    "ELTOLAS",
+    "KITEVO_SZORZO",
+    "felirat",
+    "napok",
+    "sav_felirat",
+    "vagopont",
+]

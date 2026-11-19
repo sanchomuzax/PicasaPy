@@ -24,6 +24,7 @@ Rectangle {
 
         // zöld eredménysáv aktív szűrőnél (Picasa-minta)
         Rectangle {
+            objectName: "filterResultsBar"
             Layout.fillWidth: true
             Layout.preferredHeight: 26
             // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
@@ -75,17 +76,13 @@ Rectangle {
                 }
                 Text {
                     // #305: null-őr
-                    //: #1830: a kor-szűrő mondata a találati sáv
-                    //: szövege UTÁN jön („Legfeljebb N napos
-                    //: képek."), ahogy az eredeti a találati
-                    //: fejlécben írja ki. Szűrés nélkül üres, tehát
-                    //: a sáv változatlan.
-                    text: hostController
-                          ? (hostController.ageFilterText
-                             ? hostController.filterStatusText + " "
-                               + hostController.ageFilterText
-                             : hostController.filterStatusText)
-                          : ""
+                    //: #7255: a kor-szűrő mondata már NEM a találati
+                    //: szöveg után folyik: az eredetiben a sáv jobb
+                    //: szélén áll `Date Range:  ...` előtaggal (lásd
+                    //: lent, `ageFilterBarLabel`). Ez a szöveg csak a
+                    //: találatot mutatja.
+                    objectName: "filterStatusLabel"
+                    text: hostController ? hostController.filterStatusText : ""
                     color: Theme.infoBarText
                     font.pixelSize: Theme.fontSize
                     font.bold: true
@@ -146,6 +143,21 @@ Rectangle {
                     font.pixelSize: Theme.fontSize
                 }
                 Item { Layout.fillWidth: true }
+                Text {
+                    // #7255: a kor-szűrő felirata a zöld sáv JOBB szélén
+                    // (mérve: `picasa-colab-jobs` #744, #748), két szóközzel
+                    // a kettőspont után; a bal szélső (0) állásban nincs.
+                    // A szöveg a vezérlőből jön (fordítható, `.ts`-ben).
+                    objectName: "ageFilterBarLabel"
+                    Layout.rightMargin: 8
+                    visible: text !== ""
+                    text: (hostController
+                           && hostController.ageFilterBarText !== undefined)
+                          ? hostController.ageFilterBarText : ""
+                    color: Theme.infoBarText
+                    font.pixelSize: Theme.fontSize
+                    font.bold: true
+                }
             }
         }
 

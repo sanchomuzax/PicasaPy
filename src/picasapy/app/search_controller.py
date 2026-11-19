@@ -17,6 +17,7 @@ from picasapy.index.queries import _normalize_search_query
 from .search_button_filter import (
     BUTTON_FILTERS,
     SEARCH_MODES,
+    intersect_with_age,
     intersect_with_button,
 )
 from .search_results import group_by_folder
@@ -43,7 +44,10 @@ class SearchMixin:
         #7191/#7264: a csillag-, arc-, geocímke- és filmgomb a szöveggel KÖZÖS
         állapot (a film mérése a két találati halmaz metszetét mutatja). A
         bekapcsolt gomb a keresés közben is él, és a szöveg törlése (üres
-        `text`) a gombot megtartja: a gomb nézetére lépünk."""
+        `text`) a gombot megtartja: a gomb nézetére lépünk.
+        #7255: a kor-csúszka is közös állapot: a szöveg módosításakor a
+        csúszka marad, a találat a szöveg és a kor metszete; a szöveg törlése
+        után a csúszka önmagában szűr a teljes könyvtáron."""
         self._search_selected_album_token = ""
         query = text.strip()
         matching = _normalize_search_query(query)
@@ -51,6 +55,12 @@ class SearchMixin:
         if not query and button:
             self._restore_full_folder_pane()
             self._show_button_view(button)
+            return
+        if not query and self._age_filter_days is not None:
+            # #7255: a szöveg törlése után a csúszka marad, és önmagában
+            # dátumszűrő a teljes könyvtáron (mérve: `picasa-colab-jobs` #748)
+            self._restore_full_folder_pane()
+            self._show_age_view()
             return
         self._filter_active = False
         self._filter_status = ""
@@ -115,12 +125,17 @@ class SearchMixin:
         return mode if mode in BUTTON_FILTERS else ""
 
     def _search_matches(self, conn, query: str):
-        """A keresés találatai a bekapcsolt gombbal metszve (#7191).
+        """A keresés találatai a bekapcsolt gombbal és a kor-csúszkával metszve.
 
-        A bal hasáb, a darabszám és a rács ugyanebből a halmazból épül."""
-        return intersect_with_button(
+        A bal hasáb, a darabszám és a rács ugyanebből a halmazból épül (#7191,
+        #7255)."""
+        records = intersect_with_button(
             conn, search_photos(conn, query), self._search_button
         )
+        cutoff = self._age_cutoff()
+        if cutoff is None:
+            return records
+        return intersect_with_age(conn, records, cutoff)
 
     def _show_search_pane(self, records) -> None:
         """A bal hasáb keresésre szűkítése (#49): csak a találatos mappák,
