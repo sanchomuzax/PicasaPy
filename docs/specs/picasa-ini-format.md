@@ -4077,7 +4077,7 @@ A 0x009bd640 sorosító a kulcsszöveget kis- és nagybetűtől függetlenül ke
 
 ### Pontosítás: a típus-1 rekord +0x4 mezője (#515 folytatás, 2026-11-19)
 
-A +0x4 mező nem a dokumentumobjektum: a 0x009bf000 típus-1 ágában a rekord +0x4 sztringobjektuma a 0x009bd640 második paramétereként kerül a sorosítóhoz. Ez a szekció kiválasztó szöveg. A sorosító/dokumentum az első argumentumként külön érkezik; a +0x8 és +0x10 körüli rekordmezők a kulcs- és értékadatsorhoz tartoznak.
+A +0x4 mező nem a dokumentumobjektum: a 0x009bf000 típus-1 ágában a rekord +0x4 szövegobjektuma a 0x009bd640 második paramétereként kerül a sorosítóhoz. Ez a szekció kiválasztó szöveg. A sorosító/dokumentum az első argumentumként külön érkezik; a +0x8 és +0x10 körüli rekordmezők a kulcs- és értékadatsorhoz tartoznak.
 
 **Bizonyítottság: feltételes.** Az argumentumút és a szekciókeresés közvetlenül látható, de a típus-1 parancsrekordot létrehozó forrás még nincs azonosítva. Következő cím: 0x0099b710.
 
