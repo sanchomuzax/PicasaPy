@@ -3181,6 +3181,12 @@ picasapy-origin-key: stringres:CThumUI::searchpicsyearsold</extracomment>
             <translation>Фотографии не старше %d лет.</translation>
         </message>
         <message>
+            <source>Date Range: </source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_SetSearchStatus::1</extracomment>
+            <translation>Интервал дат:</translation>
+        </message>
+        <message>
             <location filename="../formatting.py" />
             <source>Yes</source>
             <extracomment>picasapy-origin: picasa

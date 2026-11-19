@@ -102,7 +102,8 @@ def _make_skip(conn: sqlite3.Connection, filetype_signature: str | None = None):
         for row in conn.execute(
             "SELECT DISTINCT f.path FROM photos p"
             " JOIN folders f ON f.id = p.folder_id"
-            " WHERE p.kind = 'video' AND p.movie_format IS NULL"
+            " WHERE (p.kind = 'video' AND p.movie_format IS NULL)"
+            " OR (p.kind = 'photo' AND p.exif_words_pending = 1)"
         )
     } | {
         row["path"]

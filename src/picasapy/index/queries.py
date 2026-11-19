@@ -755,7 +755,7 @@ def search_suggestions(
     *,
     include_albums: bool = False,
 ) -> tuple[SearchSuggestion, ...]:
-    """Mappa-, album- és kulcsszó-javaslatok az indexelt adatokból.
+    """Mappa-, album- és keresőszó-javaslatok az indexelt adatokból.
 
     A részszó-egyezés kisbetűfüggetlen. Ha az album-ág engedélyezett,
     albumok jönnek előbb, majd a mappák és a kulcsszavak. A mappa- és
@@ -803,19 +803,23 @@ def search_suggestions(
         )
     word_counts: dict[str, int] = {}
     for row in conn.execute(
-        "SELECT COALESCE(p.keywords_file, p.keywords_ini) AS keywords "
+        "SELECT COALESCE(p.keywords_file, p.keywords_ini) AS keywords, "
+        "p.artist_file, p.copyright_file "
         "FROM photos p JOIN folders f ON f.id = p.folder_id "
         f"WHERE {visible_folder_sql(conn)}"
     ):
         raw_keywords = row["keywords"]
-        if not raw_keywords:
-            continue
-        photo_words = {
-            piece.casefold()
-            for chunk in raw_keywords.split(",")
-            for piece in chunk.split()
-            if piece
-        }
+        photo_words = set()
+        if raw_keywords:
+            photo_words.update(
+                piece.casefold()
+                for chunk in raw_keywords.split(",")
+                for piece in chunk.split()
+                if piece
+            )
+        for field in (row["artist_file"], row["copyright_file"]):
+            if field:
+                photo_words.update(word.casefold() for word in field.split())
         for word in photo_words:
             if query in word:
                 word_counts[word] = word_counts.get(word, 0) + 1

@@ -11,6 +11,7 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
+        # v29: EXIF Artist/Copyright keresőszavai az FTS-indexben (#7254)
         # v28: rögzített Időrend-albumdátum (#6914)
         # v27: a tag nélküli albumok tartós profil-indexe (#6278)
         # v26: Picasa-hasonlósági jellemzők cache-e (#5744)
@@ -25,7 +26,7 @@ class TestSchema:
         # v17: a befagyasztott, első látáskori fájlidő, #2486 —
         # `photos.first_seen_mtime_ns`; v16: a Picasa-gyorskulcs oszlopa,
         # #1494 — `photo_hashes.originfast`, a `dhash` NOT NULL feloldásával)
-        assert SCHEMA_VERSION == 28
+        assert SCHEMA_VERSION == 29
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
@@ -40,6 +41,9 @@ class TestSchema:
     def test_v5_database_migrates_and_gains_the_table(self, tmp_path):
         db = tmp_path / "index.db"
         with open_index(db) as conn:
+            from support.index_migration import downgrade_search_schema_to_v28
+
+            downgrade_search_schema_to_v28(conn)
             conn.execute("PRAGMA user_version = 5")
             conn.execute("DROP TABLE photo_hashes")
             # #30: az 5-ös séma még nem ismerte a geo-oszlopokat sem

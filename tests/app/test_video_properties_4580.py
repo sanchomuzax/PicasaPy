@@ -7,6 +7,7 @@ from PySide6.QtCore import QLocale
 
 from picasapy.app.formatting import properties_entries
 from picasapy.index import open_index, photos_in_folder, sync_tree
+from support.index_migration import downgrade_search_schema_to_v28
 from support.video_factory import make_mp4
 
 
@@ -43,6 +44,8 @@ def test_a_v20_as_index_videofelvetele_incrementalis_szinkronnal_frissul(
 
     with open_index(database) as conn:
         sync_tree(conn, library)
+        # A v20-as séma még a v28-as Artist/Copyright mezőket sem tartalmazza.
+        downgrade_search_schema_to_v28(conn)
         # Az elavult indexet utánozzuk: a v21-es videóoszlopok hiányoznak,
         # miközben a változatlan mappa inkrementális kihagyási pecsétje él.
         conn.execute("DROP INDEX idx_photos_video_metadata_missing")

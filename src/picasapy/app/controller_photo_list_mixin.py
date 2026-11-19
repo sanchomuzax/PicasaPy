@@ -8,6 +8,7 @@ from PySide6.QtCore import QLocale, QObject, Qt, Signal, Slot
 from picasapy.index import albums_in_index, count_recently_updated_photos, open_index
 from . import formatting
 from .models import folder_order
+from .search_button_filter import AGE_KEEPING_MODES
 from .small_picture_filter import is_big_picture
 from .search_results import group_by_folder
 
@@ -110,9 +111,13 @@ class AppControllerPhotoListMixin:
 
     def _show(self, records) -> None:
         # #4526: a kor-szűrő felirata és csúszkája csak a kor-nézethez
-        # tartozik. Bármely más nézet betöltése törölje, így a szűrőgombok,
-        # keresések és mappaváltások után sem maradhat régi kor-felirat.
-        if self._view_mode[0] != "age" and self._age_filter_days is not None:
+        # tartozik. Bármely más nézet betöltése törölje, így a szűrőgombok és
+        # mappaváltások után sem maradhat régi kor-felirat. #7255: a keresés
+        # a kor-csúszkával közös állapot, ott a csúszka marad.
+        if (
+            self._view_mode[0] not in AGE_KEEPING_MODES
+            and self._age_filter_days is not None
+        ):
             self._age_filter_days = None
         # #17: a rejtett képek alapból sehol nem látszanak (rács, keresés,
         # csillag-szűrő) — a Nézet → Rejtett képek kapcsolóval igen

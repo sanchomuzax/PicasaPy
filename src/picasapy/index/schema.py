@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 28
+SCHEMA_VERSION = 29
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -118,7 +118,7 @@ INSERT INTO photo_hashes(path, mtime_ns, size, dhash)
 DROP TABLE photo_hashes_v15;
 """
 
-_FTS_DDL = """
+_FTS_V1_DDL = """
 CREATE VIRTUAL TABLE IF NOT EXISTS photos_fts USING fts5(
     name, caption_ini, keywords_ini, caption_file, keywords_file,
     content='photos', content_rowid='id'
@@ -147,6 +147,47 @@ CREATE TRIGGER IF NOT EXISTS photos_fts_update AFTER UPDATE ON photos BEGIN
         (rowid, name, caption_ini, keywords_ini, caption_file, keywords_file)
     VALUES (new.id, new.name, new.caption_ini, new.keywords_ini,
             new.caption_file, new.keywords_file);
+END;
+"""
+
+_FTS_DDL = """
+CREATE VIRTUAL TABLE IF NOT EXISTS photos_fts USING fts5(
+    name, caption_ini, keywords_ini, caption_file, keywords_file,
+    artist_file, copyright_file,
+    content='photos', content_rowid='id'
+);
+
+CREATE TRIGGER IF NOT EXISTS photos_fts_insert AFTER INSERT ON photos BEGIN
+    INSERT INTO photos_fts
+        (rowid, name, caption_ini, keywords_ini, caption_file, keywords_file,
+         artist_file, copyright_file)
+    VALUES (new.id, new.name, new.caption_ini, new.keywords_ini,
+            new.caption_file, new.keywords_file, new.artist_file,
+            new.copyright_file);
+END;
+
+CREATE TRIGGER IF NOT EXISTS photos_fts_delete AFTER DELETE ON photos BEGIN
+    INSERT INTO photos_fts(photos_fts, rowid, name, caption_ini, keywords_ini,
+                           caption_file, keywords_file, artist_file,
+                           copyright_file)
+    VALUES ('delete', old.id, old.name, old.caption_ini, old.keywords_ini,
+            old.caption_file, old.keywords_file, old.artist_file,
+            old.copyright_file);
+END;
+
+CREATE TRIGGER IF NOT EXISTS photos_fts_update AFTER UPDATE ON photos BEGIN
+    INSERT INTO photos_fts(photos_fts, rowid, name, caption_ini, keywords_ini,
+                           caption_file, keywords_file, artist_file,
+                           copyright_file)
+    VALUES ('delete', old.id, old.name, old.caption_ini, old.keywords_ini,
+            old.caption_file, old.keywords_file, old.artist_file,
+            old.copyright_file);
+    INSERT INTO photos_fts
+        (rowid, name, caption_ini, keywords_ini, caption_file, keywords_file,
+         artist_file, copyright_file)
+    VALUES (new.id, new.name, new.caption_ini, new.keywords_ini,
+            new.caption_file, new.keywords_file, new.artist_file,
+            new.copyright_file);
 END;
 """
 
@@ -507,6 +548,9 @@ CREATE TABLE IF NOT EXISTS photos (
     height INTEGER,
     caption_file TEXT,
     keywords_file TEXT,
+    artist_file TEXT,
+    copyright_file TEXT,
+    exif_words_pending INTEGER NOT NULL DEFAULT 0,
     geotag_ini TEXT,
     exif_lat REAL,
     exif_lon REAL,
@@ -564,7 +608,7 @@ ALTER TABLE photos ADD COLUMN height INTEGER;
 ALTER TABLE photos ADD COLUMN caption_file TEXT;
 ALTER TABLE photos ADD COLUMN keywords_file TEXT;
 
-{_FTS_DDL}
+{_FTS_V1_DDL}
 
 INSERT INTO photos_fts(photos_fts) VALUES ('rebuild');
 """,
@@ -724,4 +768,22 @@ DELETE FROM folder_scan_state WHERE path IN (
     # már taggal rendelkező albumok pillanatnyi dátumát egyszer rögzítjük;
     # a dátum a további tagságváltozásoktól független marad.
     27: _ALBUM_TIMELINE_DATES_MIGRATION,
+    # #7254: Artist és Copyright EXIF-szavak kerülnek az FTS-szótárba. A
+    # migráció csak a sémát állítja át; a régi képsorok pending jelölője
+    # arra kéri a háttérszinkront, hogy változatlan fájlból is töltse fel őket.
+    28: f"""
+ALTER TABLE photos ADD COLUMN artist_file TEXT;
+ALTER TABLE photos ADD COLUMN copyright_file TEXT;
+ALTER TABLE photos ADD COLUMN exif_words_pending INTEGER NOT NULL DEFAULT 0;
+UPDATE photos SET exif_words_pending = 1 WHERE kind = 'photo';
+
+DROP TRIGGER IF EXISTS photos_fts_insert;
+DROP TRIGGER IF EXISTS photos_fts_delete;
+DROP TRIGGER IF EXISTS photos_fts_update;
+DROP TABLE photos_fts;
+
+{_FTS_DDL}
+
+INSERT INTO photos_fts(photos_fts) VALUES ('rebuild');
+""",
 }
