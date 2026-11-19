@@ -2,6 +2,7 @@
 
 from picasapy.index import albums_in_index, open_index, sync_tree
 from support.jpeg_factory import make_jpeg
+from support.index_migration import downgrade_search_schema_to_v28
 
 _TOKEN = "69146914691469146914691469146914"
 
@@ -74,6 +75,7 @@ def test_schema_migration_backfills_current_nonempty_album_date(tmp_path):
     with open_index(database) as conn:
         sync_tree(conn, library, incremental=False)
         conn.execute("DROP TABLE album_timeline_dates")
+        downgrade_search_schema_to_v28(conn)
         conn.execute("PRAGMA user_version = 27")
         conn.commit()
 
