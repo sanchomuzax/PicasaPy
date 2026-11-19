@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.158] - 2026-11-19
+
 ## [1.0.157] - 2026-11-19
 
 - A kereső a felvétel dátumára is talál: a teljes dátumra (például 2019:03:08), a hónapra (2019:03) és az évre. (#7241).
