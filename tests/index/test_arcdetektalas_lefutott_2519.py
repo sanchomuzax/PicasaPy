@@ -37,6 +37,7 @@ from picasapy.index.faces_detected import (
     mark_folder_excluded,
 )
 from picasapy.index.schema import DDL
+from support.index_migration import downgrade_search_schema_to_v28
 
 MTIME = 1_699_984_155_000_000_000
 MERET = 1234
@@ -77,6 +78,7 @@ class TestSema:
         path = tmp_path / "regi.db"
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
+        downgrade_search_schema_to_v28(raw)
         raw.executescript("DROP TABLE face_scan;\n"
             # #5180: a friss séma arcforrás-oszlopa csak a v25-ben érkezik
             "DROP INDEX idx_face_source_photo;\n"

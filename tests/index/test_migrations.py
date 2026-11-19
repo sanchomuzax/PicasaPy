@@ -6,6 +6,7 @@ import pytest
 
 from picasapy.index import SCHEMA_VERSION, open_index, photos_in_folder, search_photos
 from picasapy.index.schema import DDL
+from support.index_migration import downgrade_search_schema_to_v28
 
 # A v1 séma befagyasztott másolata (2026-07-17 előtti állapot) — a migrációs
 # tesztnek történeti sémára van szüksége, nem az aktuálisra.
@@ -48,7 +49,6 @@ CREATE TRIGGER photos_fts_update AFTER UPDATE ON photos BEGIN
 END;
 PRAGMA user_version = 1;
 """
-
 
 def _make_v1_db(path):
     conn = sqlite3.connect(path)
@@ -113,6 +113,7 @@ class TestMigrationV20TakenAtOverride:
         db = tmp_path / "index.db"
         _make_v1_db(db)
         with open_index(db) as conn:
+            downgrade_search_schema_to_v28(conn)
             conn.execute(
                 "UPDATE photos SET taken_at = ? WHERE name = ?",
                 ("2021-04-05T06:07:08", "a.jpg"),
@@ -201,6 +202,7 @@ class TestAlbumsMigration:
         path = tmp_path / "regi.db"
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
+        downgrade_search_schema_to_v28(raw)
         # A v7 database predates the #4536 table as well.
         raw.execute("DROP TABLE person_thumbnails")
         raw.executescript(
@@ -271,6 +273,7 @@ class TestFaceMigration:
         path = tmp_path / "regi.db"
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
+        downgrade_search_schema_to_v28(raw)
         raw.executescript(
             "DROP TABLE IF EXISTS face;\n"
             # #459/5: az offline oszlop a v11-ben érkezik
@@ -332,6 +335,7 @@ class TestFaceEmbeddingMigration:
         path = tmp_path / "regi.db"
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
+        downgrade_search_schema_to_v28(raw)
         raw.executescript(
             "DROP TABLE IF EXISTS face_group;\n"
             "DROP INDEX IF EXISTS idx_face_group;\n"
@@ -422,6 +426,7 @@ class TestAlbumPlaceMigration:
         path = tmp_path / f"regi-v{version}.db"
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
+        downgrade_search_schema_to_v28(raw)
         raw.execute("DROP TABLE person_thumbnails")
         raw.executescript(
             "ALTER TABLE photo_albums DROP COLUMN place;"
@@ -537,6 +542,7 @@ class TestAlbumPlaceMigration:
         # visszalépés v22-re: az album-migráció előtti oszlop nincs meg,
         # a scan-állapot viszont igen
         raw = sqlite3.connect(db)
+        downgrade_search_schema_to_v28(raw)
         raw.executescript(
             "DROP INDEX idx_face_source_photo;\n"
             "ALTER TABLE face DROP COLUMN source;\n"

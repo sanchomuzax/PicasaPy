@@ -12,6 +12,7 @@ from picasapy.index import (
 )
 from picasapy.index.queries import photos_in_folder
 from tests.support.jpeg_factory import make_jpeg
+from support.index_migration import downgrade_search_schema_to_v28
 
 _PERSON_ID = "aaaaaaaaaaaaaaaa"
 _RECT = "1e00280045006e00"
@@ -97,6 +98,7 @@ def test_v23_index_migrates_the_thumbnail_table(tmp_path):
 
     with open_index(db) as conn:
         sync_tree(conn, library)
+        downgrade_search_schema_to_v28(conn)
         conn.execute("DROP TABLE person_thumbnails")
         # #5180: a v23-as séma még nem tartalmazza az arcforrás-jelölőt
         conn.execute("DROP INDEX idx_face_source_photo")
@@ -105,8 +107,8 @@ def test_v23_index_migrates_the_thumbnail_table(tmp_path):
         conn.commit()
 
     with open_index(db) as conn:
-        # #6914: a rögzített Időrend-albumdátum az új v28-as indexmező.
-        assert SCHEMA_VERSION == 28
+        # #7254: a keresési FTS kiegészült EXIF Artist/Copyright szavakkal.
+        assert SCHEMA_VERSION == 29
         assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
         columns = {
             row["name"]

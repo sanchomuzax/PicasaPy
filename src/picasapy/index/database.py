@@ -11,6 +11,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from .schema import DDL, MIGRATIONS, SCHEMA_VERSION
+from .search_words import exif_search_words
 
 # ON CONFLICT ... RETURNING miatt (a bookworm 3.40-e és a CPython 3.12+
 # beépített SQLite-ja is bőven újabb).
@@ -412,13 +413,14 @@ def _migrate(conn: sqlite3.Connection, version: int) -> None:
                 f"Nincs migrációs útvonal a(z) {from_version}. sémaverzióról — "
                 "az index törölhető, a következő szinkron újraépíti."
             )
-        script = (
-            f"BEGIN;\n{MIGRATIONS[from_version]}\n"
-            f"PRAGMA user_version={from_version + 1};\nCOMMIT;"
-        )
+        script = f"BEGIN;\n{MIGRATIONS[from_version]}"
         try:
             conn.executescript(script)
-        except sqlite3.OperationalError as error:
+            if from_version == 28:
+                _backfill_exif_search_fields(conn)
+            conn.execute(f"PRAGMA user_version={from_version + 1}")
+            conn.commit()
+        except Exception as error:
             if conn.in_transaction:
                 conn.rollback()
             raise RuntimeError(
@@ -427,3 +429,25 @@ def _migrate(conn: sqlite3.Connection, version: int) -> None:
                 "gyorsítótár: törölhető, a következő szinkron újraépíti. "
                 "Részletek: " + str(error)
             ) from error
+
+
+def _backfill_exif_search_fields(conn: sqlite3.Connection) -> None:
+    """A v28-as index képeinek Artist/Copyright mezőit egyszer beolvassa."""
+    from picasapy.metadata import read_file_metadata
+
+    rows = conn.execute(
+        "SELECT p.id, f.path AS folder_path, p.name FROM photos p "
+        "JOIN folders f ON f.id = p.folder_id WHERE p.kind = 'photo'"
+    ).fetchall()
+    updates = []
+    for row in rows:
+        metadata = read_file_metadata(Path(row["folder_path"]) / row["name"])
+        artist = exif_search_words(metadata.artist)
+        copyright = exif_search_words(metadata.copyright)
+        if artist is not None or copyright is not None:
+            updates.append((artist, copyright, row["id"]))
+    if updates:
+        conn.executemany(
+            "UPDATE photos SET artist_file = ?, copyright_file = ? WHERE id = ?",
+            updates,
+        )

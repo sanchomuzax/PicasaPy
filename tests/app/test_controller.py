@@ -79,6 +79,24 @@ def _dispose_controller(controller) -> None:
     )
 
 
+def _add_artist_and_copyright(path, artist, copyright):
+    import piexif
+
+    piexif.insert(
+        piexif.dump(
+            {
+                "0th": {
+                    piexif.ImageIFD.Artist: artist.encode("utf-8"),
+                    piexif.ImageIFD.Copyright: copyright.encode("utf-8"),
+                },
+                "Exif": {},
+                "GPS": {},
+            }
+        ),
+        str(path),
+    )
+
+
 @pytest.fixture
 def controller(qt_app, tmp_path, library):
     from picasapy.app.controller import AppController
@@ -2201,3 +2219,46 @@ class TestBackgroundThreadTeardown:
 
         assert controller.waitForBackgroundWorkers(30.0)
         assert not controller.backgroundWorkersRunning()
+
+
+def test_exif_artist_and_copyright_search_through_controller(
+    controller, library, tmp_path
+):
+    from picasapy.app.models import FolderListModel
+    from picasapy.index import open_index, sync_tree
+
+    photo = make_jpeg(library / "nyaralas" / "exif.jpg")
+    _add_artist_and_copyright(photo, "Diego Delso", "CC-BY-SA 4.0")
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, library)
+    controller._reload()
+
+    controller.search("diego delso")
+
+    assert controller.searchResultCount == 1
+    assert controller.photos.rowCount() == 1
+    assert controller.photos.photos[0].name == "exif.jpg"
+    folder_rows = [
+        (
+            controller.folders.data(
+                controller.folders.index(index, 0), FolderListModel.NameRole
+            ),
+            controller.folders.data(
+                controller.folders.index(index, 0), FolderListModel.CountRole
+            ),
+        )
+        for index in range(controller.folders.rowCount())
+        if controller.folders.data(
+            controller.folders.index(index, 0), FolderListModel.KindRole
+        ) == "folder"
+    ]
+    assert folder_rows == [("nyaralas", 1)]
+
+    controller.search("cc sa")
+    assert controller.searchResultCount == 1
+    assert controller.photos.photos[0].name == "exif.jpg"
+    suggestions = controller.searchSuggestions("del")
+    assert any(
+        row["kind"] == "word" and row["name"] == "delso" and row["count"] == 1
+        for row in suggestions
+    )
