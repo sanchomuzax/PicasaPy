@@ -66,12 +66,19 @@ class EditControllerSessionMixin:
         if self._photo_id and self._photo_id != photo_id:
             self._provider.kepet_elenged(self._kulcs)
         path = Path(image_path)
+        network_path = fajlrendszer_gyoker(path) is not None
+        previous_tool_values = (
+            self._tool_property_values() if network_path else None
+        )
+        previous_camera_summary = self._camera_summary
+        previous_crop_suggestions = tuple(
+            getattr(self, "_network_crop_suggestions", ())
+        )
         # #3014: minden sima nyitás ÍRÓ munkamenet — a memóriás mód csak a
         # `beginEditInMemory`-vel jár, és nem ragadhat át a következő fotóra
         self._memory_only = False
         self._photo_id = photo_id
         self._image_path = path
-        network_path = fajlrendszer_gyoker(path) is not None
         self._network_edit_generation = getattr(
             self, "_network_edit_generation", 0
         ) + 1
@@ -136,11 +143,21 @@ class EditControllerSessionMixin:
         self._restore_text_overlay_state(read_ini=not network_path)
         self._register_preview()
         self._bump_revision()
-        self.toolsChanged.emit()
         if network_path:
+            self._emit_changed_tool_properties(previous_tool_values)
+            if self._camera_summary != previous_camera_summary:
+                self.cameraSummaryChanged.emit()
+            if previous_crop_suggestions:
+                self.cropSuggestionsChanged.emit()
+            # A panel saját, szerkesztés közbeni állapotai (például a
+            # csúszkák) új képnél egyszer szinkronizálódnak, de a hálózati
+            # nyitás nem ébreszti fel a toolsChanged teljes kötésgyűjtőjét.
+            self.editSessionStarted.emit()
             self._start_network_edit_state_load(
                 generation, path, self._ini_path, self._section_name
             )
+        else:
+            self.toolsChanged.emit()
 
 
     def _start_network_edit_state_load(
@@ -216,6 +233,14 @@ class EditControllerSessionMixin:
             or str(self._image_path) != image_path
         ):
             return
+        tool_values_before = self._tool_property_values()
+        camera_summary_before = self._camera_summary
+        preview_values_before = (
+            self._session.to_value(),
+            self._current_text_spec(),
+            self._paint_strokes(),
+            self._crop_value_for_session(self._session),
+        )
         self._network_edit_load_pending = False
         self._network_edit_load_failed = error is not None
         self._network_edit_load_error = error or ""
@@ -241,9 +266,19 @@ class EditControllerSessionMixin:
         text_dirty = self._network_edit_text_dirty_pending
         self._network_edit_filters_dirty_pending = False
         self._network_edit_text_dirty_pending = False
-        self._bump_revision()
-        self._register_preview()
-        self.toolsChanged.emit()
+        preview_values_after = (
+            self._session.to_value(),
+            self._current_text_spec(),
+            self._paint_strokes(),
+            self._crop_value_for_session(self._session),
+        )
+        preview_changed = preview_values_before != preview_values_after
+        if preview_changed:
+            self._register_preview()
+        self._bump_revision(preview_changed=preview_changed)
+        if self._camera_summary != camera_summary_before:
+            self.cameraSummaryChanged.emit()
+        self._emit_changed_tool_properties(tool_values_before)
         if error:
             self.editSaveFailed.emit(error)
             return
@@ -340,7 +375,7 @@ class EditControllerSessionMixin:
         self._aa_partner = partner
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.chainValueChanged)
     def chainValue(self) -> str:
         """#3014: a munkamenet jelenlegi `filters=` értéke (üres = nincs lánc).
 

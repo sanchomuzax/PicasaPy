@@ -25,7 +25,10 @@ Rectangle {
     property var targetRows:
         panel.appWindow ? panel.appWindow.selectedIndexes : []
 
-    readonly property var markers: controller ? controller.geoMarkers : []
+    // A rejtett könyvtári panel ne járja végig a teljes feedet minden
+    // geoChanged jelzésnél; a jelölőket csak megnyitáskor kérjük le.
+    readonly property var markers:
+        panel.visible && controller ? controller.geoMarkers : []
     // Az eredeti címkereső online geokódolását helyi szűrés váltja ki:
     // képfájlnév, felirat, kulcsszavak és mappanév alapján keresünk a már
     // indexelt GPS-es képek között; a mező nem küld hálózati kérést.

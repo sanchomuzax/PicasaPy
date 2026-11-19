@@ -99,16 +99,16 @@ class EditControllerEffectsStateMixin:
         return self._session.to_value()
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.enhanceEnabledChanged)
     def enhanceEnabled(self) -> bool:
         return not self._session.last_is("enhance")
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.autolightEnabledChanged)
     def autolightEnabled(self) -> bool:
         return not self._session.last_is("autolight")
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.autocolorEnabledChanged)
     def autocolorEnabled(self) -> bool:
         return not self._session.last_is("autocolor")

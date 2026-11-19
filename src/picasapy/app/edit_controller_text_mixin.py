@@ -53,7 +53,7 @@ class EditControllerTextMixin:
     def _text_family(self, value: str | None) -> None:
         self._text_family_value = value
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.textDraftChanged)
     def textDraft(self) -> str:
         """A szöveg-eszköz megnyitásakor a mezőbe töltendő piszkozat — a
         mentett tartalommal indul (ha van), a szerkesztés alatt a
@@ -67,13 +67,13 @@ class EditControllerTextMixin:
         return self._text_pending_pos is not None or self._text_selected_index is not None
 
 
-    @Property(int, notify=_Signals.toolsChanged)
+    @Property(int, notify=_Signals.textSelectedIndexChanged)
     def textSelectedIndex(self) -> int:
         """A kiválasztott mentett doboz sorszáma, vagy -1, ha nincs."""
         return self._text_selected_index if self._text_selected_index is not None else -1
 
 
-    @Property("QVariantList", notify=_Signals.toolsChanged)
+    @Property("QVariantList", notify=_Signals.textOverlayItemsChanged)
     def textOverlayItems(self) -> list[dict]:
         """A QML kattintásos kijelölőinek képre normalizált adatai."""
         if not self._text_overlay_visible or not self._text_active or not self._text_overlay:
@@ -114,7 +114,7 @@ class EditControllerTextMixin:
         return items
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.hasTextOverlayChanged)
     def hasTextOverlay(self) -> bool:
         """Van-e MENTETT, aktív szöveg-overlay — a „Visszavonás: Szöveg"
         felirathoz és a UI állapot-jelzéséhez."""
@@ -125,38 +125,38 @@ class EditControllerTextMixin:
         )
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.textOverlayVisibleChanged)
     def textOverlayVisible(self) -> bool:
         """A mentett szöveg látszik-e az előnézeten ebben a munkamenetben."""
         return self._text_overlay_visible
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.textFillColorChanged)
     def textFillColor(self) -> str:
         """A kitöltés-szín `#rrggbb` alakban."""
         return _rgb_to_hex(self._text_fill_color)
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.textOutlineColorChanged)
     def textOutlineColor(self) -> str:
         """A körvonal-szín `#rrggbb` alakban (a fill-től KÜLÖN választható)."""
         return _rgb_to_hex(self._text_outline_color)
 
 
-    @Property(float, notify=_Signals.toolsChanged)
+    @Property(float, notify=_Signals.textOutlineThicknessChanged)
     def textOutlineThickness(self) -> float:
         """A körvonal vastagsága `[0, 1]` — `0` esetén nincs körvonal."""
         return self._text_outline_thickness
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.textFillEnabledChanged)
     def textFillEnabled(self) -> bool:
         """Kitöltve jelenjen-e meg a szöveg — `False` a „Don't show the
         solid fill color (show outline only)" kapcsolónak felel meg."""
         return self._text_fill_enabled
 
 
-    @Property(float, notify=_Signals.toolsChanged)
+    @Property(float, notify=_Signals.textOpacityChanged)
     def textOpacity(self) -> float:
         """A szöveg-réteg átlátszósága [0..1] — `1.0` (alapérték) a
         teljesen fedő, korábbi viselkedés."""
@@ -231,12 +231,12 @@ class EditControllerTextMixin:
         self.textFontCatalogueChanged.emit()
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.textFontFamilyChanged)
     def textFontFamily(self) -> str:
         return self._text_family
 
 
-    @Property(int, notify=_Signals.toolsChanged)
+    @Property(int, notify=_Signals.textFontSizeChanged)
     def textFontSize(self) -> int:
         """A választott betűméret (a `BETUMERETEK` egyike)."""
         return self._text_size_pt
@@ -248,22 +248,22 @@ class EditControllerTextMixin:
         return list(BETUMERETEK)
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.textBoldChanged)
     def textBold(self) -> bool:
         return self._text_bold
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.textItalicChanged)
     def textItalic(self) -> bool:
         return self._text_italic
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.textUnderlineChanged)
     def textUnderline(self) -> bool:
         return self._text_underline
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.textAlignChanged)
     def textAlign(self) -> str:
         """`left` · `center` · `right` — a Picasa három igazítás-gombja."""
         return self._text_align

@@ -105,7 +105,10 @@ ListView {
 
 
     clip: true
-    model: grid.ctl ? grid.ctl.feedGroups : []
+    // A néző nyitva van a könyvtár fölött; ilyenkor a rejtett feedmodell
+    // delegátumai ne épüljenek és ne számolják újra a cellák kötéseit.
+    model: grid.ctl && !grid.appWindow.viewerOpen
+        ? grid.ctl.feedGroups : []
 
     LightboxFeedEmptyState { feed: grid }
 
@@ -569,6 +572,8 @@ ListView {
             })
         }
         function onFeedChanged() {
+            if (grid.appWindow.viewerOpen)
+                return
             if (grid.personAlbumMode) {
                 Qt.callLater(function() { grid.alignPersonAlbumHeader() })
                 return
@@ -591,6 +596,25 @@ ListView {
                 // nézőből visszatérve a megnyitás előtti nyers
                 // pozíciót állítjuk vissza, nem a szerkezeti
                 // horgonyt (#173)
+                if (grid.revealAfterViewer) {
+                    grid.applyRevealAfterViewer()
+                    return
+                }
+                grid.restoring = true
+                grid.restoreAnchor()
+                grid.restoring = false
+            })
+        }
+    }
+
+    Connections {
+        target: grid.appWindow
+        function onViewerOpenChanged() {
+            if (grid.appWindow.viewerOpen)
+                return
+            Qt.callLater(function() {
+                if (grid.appWindow.viewerOpen)
+                    return
                 if (grid.revealAfterViewer) {
                     grid.applyRevealAfterViewer()
                     return

@@ -17,7 +17,7 @@ from .edit_controller_signals import EditControllerSignalsMixin as _Signals
 class EditControllerEffectsFinetuneMixin:
     """A tilt- és finomhangolás-tulajdonságok, csúszkák és előnézetek (#6267)."""
 
-    @Property(float, notify=_Signals.toolsChanged)
+    @Property(float, notify=_Signals.tiltParamChanged)
     def tiltParam(self) -> float:
         """A mentett döntés-paraméter (-1..1 Picasa-egység), vagy 0.0, ha
         nincs tilt-szűrő a láncban. A döntés-csúszka ezzel áll be az eszköz
@@ -25,27 +25,27 @@ class EditControllerEffectsFinetuneMixin:
         return self._session.tilt_param() or 0.0
 
 
-    @Property(float, notify=_Signals.toolsChanged)
+    @Property(float, notify=_Signals.fillLightChanged)
     def fillLight(self) -> float:
         return self._finetune_field("fill")
 
 
-    @Property(float, notify=_Signals.toolsChanged)
+    @Property(float, notify=_Signals.highlightsChanged)
     def highlights(self) -> float:
         return self._finetune_field("highlights")
 
 
-    @Property(float, notify=_Signals.toolsChanged)
+    @Property(float, notify=_Signals.shadowsChanged)
     def shadows(self) -> float:
         return self._finetune_field("shadows")
 
 
-    @Property(float, notify=_Signals.toolsChanged)
+    @Property(float, notify=_Signals.colorTempChanged)
     def colorTemp(self) -> float:
         return self._finetune_field("temperature")
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.neutralColorChanged)
     def neutralColor(self) -> str:
         """A kijelölt semleges szín `#rrggbb` alakban, vagy üres string, ha
         nincs kijelölve (#464).
@@ -64,7 +64,7 @@ class EditControllerEffectsFinetuneMixin:
         return "#{:02x}{:02x}{:02x}".format(*neutral)
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.hasFinetuneChanged)
     def hasFinetune(self) -> bool:
         """Van-e finomhangolás a láncban — a „Visszavonás" felirathoz."""
         return self._session.has_finetune()

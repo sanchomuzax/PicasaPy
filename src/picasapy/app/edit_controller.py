@@ -197,6 +197,7 @@ class EditController(
         self._preview_worker_active = False
         self._preview_pending = None
         self._previewRendered.connect(self._on_preview_rendered)
+        self.toolsChanged.connect(self._emit_all_tool_property_changes)
         # #798: a Shift élő követése. Az eseményszűrő az ALKALMAZÁSRA megy,
         # mert a billentyű-esemény a fókuszált elemhez érkezik, nem a
         # vezérlőhöz — az effekt-rácsnak viszont fókusz nélkül is tudnia
@@ -225,6 +226,7 @@ class EditController(
         self._opening_crop_ops: tuple[FilterOp, ...] = ()
         self._session = EditSession()
         self._revision = 0
+        self._preview_revision = 0
         # GPU élő-előnézet (#22): önálló számláló, ld. gpuRevisionChanged
         self._gpu_revision = 0
         # undo/redo verem (#59): (filters-érték a művelet ELŐTT, művelet-kulcs)

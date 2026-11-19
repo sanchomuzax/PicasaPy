@@ -162,6 +162,8 @@ class AppControllerSyncMixin:
     @Slot()
     def _reload_after_sync_if_changed(self) -> None:
         """A syncFinished nézeteit csak tényleges index- vagy ini-változás frissíti."""
+        idle_ready = getattr(self, "_sync_reload_idle_ready", False)
+        self._sync_reload_idle_ready = False
         edit_controller = getattr(self, "_edit_controller_for_sync", None)
         if edit_controller is not None and getattr(edit_controller, "_photo_id", ""):
             # A néző az indexet is használja; a teljes feed újraépítése közben
@@ -191,8 +193,24 @@ class AppControllerSyncMixin:
             # mutatja. A záró teljes feed-újraépítés csak újra lefuttatná a
             # drága QML-csoportkötéseket, miközben semmi sem változott.
             return
+        if not idle_ready:
+            # A QML a mappa választása után néhány eseményből kezdi a kép
+            # szerkesztését. Engedjük megérkezni ezt a jelzést, mielőtt a
+            # feed teljes újraépítése a nézőnyitással versenyezne.
+            self._deferred_sync_reload = True
+            if not getattr(self, "_sync_reload_idle_pending", False):
+                self._sync_reload_idle_pending = True
+                QTimer.singleShot(100, self._finish_sync_reload_after_idle)
+            return
         self._deferred_sync_reload = False
         self._reload(preserve_scroll=True)
+
+    @Slot()
+    def _finish_sync_reload_after_idle(self) -> None:
+        """Egy eseményköri rés után újraellenőrzi, kell-e feedfrissítés."""
+        self._sync_reload_idle_pending = False
+        self._sync_reload_idle_ready = True
+        self._reload_after_sync_if_changed()
 
     @Slot()
     def _finish_sync_reload_grace(self) -> None:
@@ -204,8 +222,7 @@ class AppControllerSyncMixin:
         if edit_controller is not None and getattr(edit_controller, "_photo_id", ""):
             return
         if getattr(self, "_deferred_sync_reload", False):
-            self._deferred_sync_reload = False
-            self._reload(preserve_scroll=True)
+            self._reload_after_sync_if_changed()
 
     def _reload(
         self, preserve_scroll: bool = False, defer_collections: bool = False

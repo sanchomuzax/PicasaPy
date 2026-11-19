@@ -20,7 +20,7 @@ from .edit_controller_signals import EditControllerSignalsMixin as _Signals
 class EditControllerRedeyeMixin:
     """A vörösszem-automatikus és kézi régióinak kezelése."""
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.hasSavedRedeyeChanged)
     def hasSavedRedeye(self) -> bool:
         """Van-e a képen **MENTETT** vörösszem-javítás.
 

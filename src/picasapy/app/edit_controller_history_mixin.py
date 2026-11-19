@@ -16,29 +16,29 @@ from .edit_controller_signals import EditControllerSignalsMixin as _Signals
 class EditControllerHistoryMixin:
     """A szerkesztő globális Visszavonás/Újra verem és feliratai."""
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.canUndoChanged)
     def canUndo(self) -> bool:
         return bool(self._undo_stack)
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.canRedoChanged)
     def canRedo(self) -> bool:
         return bool(self._redo_stack)
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.undoActionChanged)
     def undoAction(self) -> str:
         """A visszavonható művelet kulcsa (crop/tilt/redeye/…) — a gomb
         feliratához (#59)."""
         return self._undo_stack[-1][1] if self._undo_stack else ""
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.redoActionChanged)
     def redoAction(self) -> str:
         return self._redo_stack[-1][1] if self._redo_stack else ""
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.undoLabelChanged)
     def undoLabel(self) -> str:
         """A Visszavonás gomb KÉSZ felirata (#465).
 
@@ -50,7 +50,7 @@ class EditControllerHistoryMixin:
         return undo_label(self.undoAction)
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.redoLabelChanged)
     def redoLabel(self) -> str:
         """Az Újra gomb kész felirata — az `undoLabel` párja (#465)."""
         return redo_label(self.redoAction)

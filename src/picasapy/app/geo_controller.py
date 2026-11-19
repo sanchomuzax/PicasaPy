@@ -58,6 +58,10 @@ class GeoMixin:
             return self._geo_marker_cache
         markers = []
         for row, photo in enumerate(photos):
+            if not photo.geotag and (
+                photo.exif_lat is None or photo.exif_lon is None
+            ):
+                continue
             point = photo.location
             if point is None:
                 continue
@@ -77,12 +81,32 @@ class GeoMixin:
             )
         self._geo_marker_source = photos
         self._geo_marker_cache = markers
+        self._geo_marker_count_source = photos
+        self._geo_marker_count_cache = len(markers)
         return markers
 
     @Property(int, notify=geoChanged)
     def geoMarkerCount(self):
-        """Hány látszó képnek van helye — a szűrő-ikon állapotához."""
-        return len(self.geoMarkers)
+        """Hány látszó képnek van helye — a szűrő-ikon állapotához.
+
+        A toolbar csak azt kérdezi, van-e egyáltalán geocímkézett kép; ne
+        építse fel emiatt a térkép teljes jelölőlistáját. A Photos rekord
+        már tartalmazza a geotag/EXIF mezőket, így a nem geocímkézett sorok
+        koordináta-parserét sem kell meghívni."""
+        photos = self._photos.photos
+        if getattr(self, "_geo_marker_source", None) is photos:
+            return len(self._geo_marker_cache)
+        if getattr(self, "_geo_marker_count_source", None) is photos:
+            return self._geo_marker_count_cache
+        count = sum(
+            1
+            for photo in photos
+            if (photo.geotag or (photo.exif_lat is not None and photo.exif_lon is not None))
+            and photo.location is not None
+        )
+        self._geo_marker_count_source = photos
+        self._geo_marker_count_cache = count
+        return count
 
     @Slot()
     def showGeotagged(self) -> None:
@@ -184,6 +208,7 @@ class GeoMixin:
             self.geoWriteFailed.emit(str(error))
             return
         self._geo_marker_source = None
+        self._geo_marker_count_source = None
         self.geoChanged.emit()
 
     # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a felület ugyanezt az adatot

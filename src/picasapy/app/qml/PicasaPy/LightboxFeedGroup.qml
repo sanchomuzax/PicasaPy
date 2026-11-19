@@ -224,6 +224,37 @@ Column {
         readonly property int windowCount: Math.max(0, Math.min(
             groupCol.modelData.count - windowStart,
             (lastRow - firstRow + 1) * feed.columns))
+        // A látható rács egyszerre akár több tucat QML-delegátumot is
+        // létrehozna. A rövid adagok között az eseményhurok kiszolgálja a
+        // görgetést és a menüket, miközben a cellák néhány képkocka alatt
+        // megjelennek.
+        property int materializedWindowCount: 0
+        Timer {
+            id: materializeWindowTimer
+            interval: 16
+            repeat: false
+            onTriggered: {
+                if (groupFlow.materializedWindowCount
+                        >= groupFlow.windowCount)
+                    return
+                groupFlow.materializedWindowCount = Math.min(
+                    groupFlow.windowCount,
+                    groupFlow.materializedWindowCount
+                        + 1)
+                if (groupFlow.materializedWindowCount
+                        < groupFlow.windowCount)
+                    restart()
+            }
+        }
+        onWindowCountChanged: {
+            if (materializedWindowCount < windowCount
+                    && !materializeWindowTimer.running)
+                materializeWindowTimer.start()
+        }
+        Component.onCompleted: {
+            if (materializedWindowCount < windowCount)
+                materializeWindowTimer.start()
+        }
         // #1148: lasszó a képfolyam ÜRES részéről is. Az eredetiben a
         // lasszó ÉPP az üres területre való lenyomásra indul
         // (`0x00719d4b`) — a kijelölt képről indított húzás ott is
@@ -298,7 +329,8 @@ Column {
             }
         }
         Repeater {
-            model: groupFlow.windowCount
+            model: Math.min(
+                groupFlow.windowCount, groupFlow.materializedWindowCount)
             delegate: Item {
                 id: slot
                 objectName: "feedCell"

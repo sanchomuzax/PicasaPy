@@ -78,7 +78,7 @@ TagsPanel {
     //: #2998: írásvédett elem a kijelölésben — a panel ELŐRE szól.
     //: A `photos.revision` a kötés kiváltója, ahogy a `tags`-nél is;
     //: a `!== undefined` a próbák stub-vezérlőjére véd (#1572).
-    readOnlySelection: (drawerRoot.hostController
+    readOnlySelection: (tagsPanelContent.visible && drawerRoot.hostController
                         && drawerRoot.hostController.selectionReadOnly !== undefined)
         ? (drawerRoot.hostController.photos.revision,
            drawerRoot.networkCacheRevision,
@@ -86,7 +86,7 @@ TagsPanel {
         : false
     // a photos.revision-nel együtt kötve: címke-írás után frissül
     // #305: null-őr
-    tags: drawerRoot.hostController
+    tags: tagsPanelContent.visible && drawerRoot.hostController
         ? (drawerRoot.hostController.photos.revision,
            drawerRoot.hostController.keywordsOfRows(drawerRoot.hostWindow.selectedRows()))
         : []
@@ -151,7 +151,8 @@ PropertiesPanel {
     focusRow: drawerRoot.hostWindow.selectedIndex
     // a photos.revision-nel együtt kötve: modell-frissüléskor újraolvas
     // #305: null-őr
-    entries: drawerRoot.hostController
+    entries: drawerRoot.hostWindow.propertiesPanelOpen
+        && drawerRoot.hostController
         ? (drawerRoot.hostController.photos.revision,
            drawerRoot.networkCacheRevision,
            drawerRoot.hostController.propertiesOf(drawerRoot.hostWindow.selectedIndex))
@@ -213,12 +214,13 @@ PeoplePanel {
     currentPerson: drawerRoot.hostController && !drawerRoot.hostWindow.unnamedFacesOpen
         ? drawerRoot.hostController.currentPersonName : ""
     // a photos.revision-nel együtt kötve: arc-írás után frissül
-    peopleHere: drawerRoot.hostController
+    peopleHere: peoplePanelItem.visible && drawerRoot.hostController
         ? (drawerRoot.hostWindow.peopleFaceRevision, drawerRoot.networkCacheRevision,
            drawerRoot.hostController.photos.revision,
            drawerRoot.hostController.peopleOfRows(drawerRoot.hostWindow.selectedRows()))
         : []
-    unnamedFacesHere: drawerRoot.hostController && !drawerRoot.hostWindow.unnamedFacesOpen
+    unnamedFacesHere: peoplePanelItem.visible && drawerRoot.hostController
+        && !drawerRoot.hostWindow.unnamedFacesOpen
         ? (drawerRoot.hostWindow.peopleFaceRevision, drawerRoot.hostWindow.unnamedFaceRevision,
            drawerRoot.networkCacheRevision,
            drawerRoot.hostController.photos.revision,

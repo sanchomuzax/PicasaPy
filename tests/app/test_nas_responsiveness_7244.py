@@ -42,8 +42,78 @@ def test_default_text_family_getter_does_not_load_font_catalogue():
     assert host.catalogue_loads == 0
 
 
+def test_tool_state_notifications_only_emit_changed_properties(qt_app):
+    from picasapy.app.edit_controller import EditController
+    from picasapy.app.edit_preview import EditPreviewProvider
+
+    controller = EditController(EditPreviewProvider())
+    emitted = []
+    controller.textOpacityChanged.connect(lambda: emitted.append("textOpacity"))
+    controller.textFontFamilyChanged.connect(
+        lambda: emitted.append("textFontFamily")
+    )
+    controller.toolStateChanges.connect(lambda names: emitted.append(tuple(names)))
+    controller.toolsChanged.connect(lambda: emitted.append("toolsChanged"))
+
+    before = controller._tool_property_values()
+    controller._text_opacity = 0.5
+
+    changed = controller._emit_changed_tool_properties(before)
+
+    assert changed == ["textOpacity"]
+    assert emitted == ["textOpacity", ("textOpacity",)]
+
+
+def test_network_begin_edit_emits_only_changed_tool_properties(
+    qt_app, tmp_path, monkeypatch
+):
+    from picasapy.app import edit_controller_session_mixin as session_mixin
+    from picasapy.app.edit_controller import EditController
+    from picasapy.app.edit_preview import EditPreviewProvider
+
+    controller = EditController(EditPreviewProvider())
+    monkeypatch.setattr(
+        session_mixin, "fajlrendszer_gyoker", lambda _path: str(tmp_path)
+    )
+    monkeypatch.setattr(controller, "_start_network_edit_state_load", lambda *_: None)
+    tools_changed = []
+    sessions_started = []
+    changed_properties = []
+    controller.toolsChanged.connect(lambda: tools_changed.append(True))
+    controller.editSessionStarted.connect(lambda: sessions_started.append(True))
+    controller.toolStateChanges.connect(
+        lambda names: changed_properties.extend(names)
+    )
+
+    controller.beginEdit("network-photo", str(tmp_path / "photo.jpg"))
+
+    assert not tools_changed
+    assert sessions_started == [True]
+    assert len(changed_properties) == len(set(changed_properties))
+
+
+def test_revision_without_preview_change_keeps_preview_url(qt_app, tmp_path):
+    from picasapy.app.edit_controller import EditController
+    from picasapy.app.edit_preview import EditPreviewProvider
+    from support.jpeg_factory import make_jpeg
+
+    photo = make_jpeg(tmp_path / "no-preview-change.jpg", size=(8, 6))
+    controller = EditController(EditPreviewProvider())
+    controller.beginEdit("1", str(photo))
+    before = controller.previewSource
+    before_revision = controller.revision
+    before_preview_revision = controller._preview_revision
+
+    controller._bump_revision(preview_changed=False)
+
+    assert controller.revision == before_revision
+    assert controller.previewSource == before
+    assert controller._preview_revision == before_preview_revision
+    assert controller.waitForBackgroundWorkers(10.0)
+
+
 def test_sync_finish_skips_feed_reload_when_progress_already_loaded_index():
-    class SyncHost:
+    class SyncHost(AppControllerSyncMixin):
         _last_sync_changed = True
         _view_mode = ("folder", "network-folder")
         _feed_stamp = ("db", 4, "wal", 8)
@@ -63,12 +133,48 @@ def test_sync_finish_skips_feed_reload_when_progress_already_loaded_index():
     assert host.reloads == 0
 
     host._index_stamp = lambda: ("db", 4, "wal", 9)
+    host._sync_reload_idle_ready = True
     AppControllerSyncMixin._reload_after_sync_if_changed(host)
     assert host.reloads == 1
 
 
+def test_sync_finish_yields_event_loop_before_feed_reload(monkeypatch):
+    queued = []
+
+    class SyncHost(AppControllerSyncMixin):
+        _last_sync_changed = True
+        _view_mode = ("folder", "network-folder")
+        _feed_stamp = None
+        backupFilterActive = False
+
+        def __init__(self):
+            self.reloads = 0
+
+        def _index_stamp(self):
+            return ("db", 1)
+
+        def _reload(self, **_kwargs):
+            self.reloads += 1
+
+    host = SyncHost()
+    monkeypatch.setattr(
+        QTimer,
+        "singleShot",
+        lambda delay, callback: queued.append((delay, callback)),
+    )
+
+    AppControllerSyncMixin._reload_after_sync_if_changed(host)
+
+    assert host.reloads == 0
+    assert len(queued) == 1
+    assert queued[0][0] == 100
+
+    AppControllerSyncMixin._finish_sync_reload_after_idle(host)
+    assert host.reloads == 1
+
+
 def test_sync_finish_defers_feed_reload_until_viewer_session_ends():
-    class SyncHost:
+    class SyncHost(AppControllerSyncMixin):
         _last_sync_changed = True
         _view_mode = ("folder", "network-folder")
         _feed_stamp = ("db", 4, "wal", 8)
@@ -91,6 +197,7 @@ def test_sync_finish_defers_feed_reload_until_viewer_session_ends():
 
     host._edit_controller_for_sync._photo_id = ""
     host._last_sync_changed = False
+    host._sync_reload_idle_ready = True
     AppControllerSyncMixin._reload_after_sync_if_changed(host)
     assert host.reloads == 1
     assert host._deferred_sync_reload is False
@@ -511,8 +618,9 @@ def test_geo_markers_are_materialized_once_for_large_feed(qt_app, tmp_path, monk
     second = host.geoMarkers
 
     assert first == second and len(first) == 1
-    assert len(reads) == len(photos), (
-        f"a {len(photos)} képes feed helyadatait {len(reads)} alkalommal olvasta"
+    assert len(reads) == 1, (
+        "csak az egyetlen helycímkézett képnél kell koordinátát feldolgozni; "
+        f"a {len(photos)} képes feed {len(reads)} helyolvasást végzett"
     )
 
 
@@ -548,6 +656,20 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
     window, controller, _library, _engine = qml_app
     edit_controller = _engine.rootContext().contextProperty("editController")
     controller._edit_controller_for_sync = edit_controller
+    window.setProperty("placesPanelOpen", False)
+    places_panel = window.findChild(QObject, "placesPanel")
+    assert places_panel is not None
+    assert places_panel.property("visible") is False
+    from picasapy.index.queries import PhotoRecord as IndexedPhoto
+
+    geo_location_reads = []
+    original_location = IndexedPhoto.location.fget
+
+    def counted_location(photo):
+        geo_location_reads.append(photo.id)
+        return original_location(photo)
+
+    monkeypatch.setattr(IndexedPhoto, "location", property(counted_location))
     reload_observations = []
     slow_callbacks = []
 
@@ -610,6 +732,9 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
         return wrapped
 
     for method_name in (
+        "_apply_network_edit_state",
+        "_tool_property_values",
+        "_emit_changed_tool_properties",
         "_bump_revision",
         "_register_preview",
         "_restore_text_overlay_state",
@@ -704,6 +829,16 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
     monkeypatch.setattr(builtins, "open", monitor("open", builtins.open))
     monkeypatch.setattr(io, "open", monitor("io.open", io.open))
 
+    # Az appablak már nyitva van, mielőtt a teljes útvonal mérését elkezdjük;
+    # a startup első kirajzolása nem része a beolvasás alatti használatnak.
+    window.show()
+    assert var_feltetelre(
+        qt_app,
+        lambda: window.findChild(QObject, "photoGrid") is not None
+        and window.findChild(QObject, "photoGrid").height() > 0,
+        5,
+    )
+
     loop = QEventLoop()
     state = {"done": False, "error": None, "stage": "add"}
     heartbeat = []
@@ -738,21 +873,31 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
     def poll():
         try:
             if state["stage"] == "add":
-                if str(slow_root) in controller._roots and any(
-                    photo.folder_path == str(slow_root)
-                    for photo in controller.photos.photos
-                ):
-                    state["stage"] = "select"
+                if str(slow_root) in controller._roots:
+                    # A NAS-on a felhasználó a hozzáadás után rögtön belép;
+                    # nem várja meg, míg az egész könyvtár felkerül a feedbe.
                     controller.selectFolder(str(slow_root))
-                    window.show()
                     window.setProperty("viewerOpen", True)
                     state["stage"] = "viewer"
             elif state["stage"] == "viewer":
                 viewer = window.findChild(QObject, "photoViewer")
-                if viewer is not None and viewer.isVisible():
-                    viewer.setProperty("currentIndex", 0)
+                slow_row = next(
+                    (
+                        row
+                        for row, photo in enumerate(controller.photos.photos)
+                        if photo.folder_path == str(slow_root)
+                    ),
+                    None,
+                )
+                if viewer is not None and viewer.isVisible() and slow_row is not None:
+                    viewer.setProperty("currentIndex", slow_row)
                     state["stage"] = "opening"
             elif state["stage"] == "opening":
+                photo_grid = window.findChild(QObject, "photoGrid")
+                assert photo_grid is not None
+                assert photo_grid.property("count") == 0, (
+                    "a néző mögötti könyvtárfeed modellje aktív maradt"
+                )
                 image = window.findChild(QObject, "viewerImage")
                 source = image.property("source") if image is not None else None
                 image_is_ready, image_ready_error = image_ready.evaluate()
@@ -763,13 +908,15 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
                     and image_is_ready
                     and not edit_controller._network_edit_load_pending
                 ):
+                    assert under_slow_root(edit_controller._image_path)
                     state["stage"] = "opened"
-                    beat_timer.stop()
             elif state["stage"] == "opened":
-                window.setProperty("viewerOpen", False)
-                state["stage"] = "return"
+                if not controller._sync_running and not controller._import_visible:
+                    window.setProperty("viewerOpen", False)
+                    state["stage"] = "return"
             elif state["stage"] == "return":
                 if not window.property("viewerOpen"):
+                    beat_timer.stop()
                     finish()
                     return
         except Exception as error:  # noqa: BLE001 — Qt timer callback jelentése
@@ -805,6 +952,11 @@ def test_teljes_nezo_utvonal_nem_olvas_lassu_gyokerbol_a_foszalon(
             f"a GUI-szál {len(violations)} lassú fájlműveletet végzett "
             f"({len(details)} egyedi út): " + "; ".join(details[:24])
         )
+    assert len(geo_location_reads) < 2 * len(controller.photos.photos), (
+        "a rejtett térképes kötés a látható cellák GPS-olvasásán felül a teljes "
+        f"feedet is bejárta ({len(geo_location_reads)} helyolvasás / "
+        f"{len(controller.photos.photos)} kép)"
+    )
     assert max_gap_ms < 200, (
         f"a mappa- és nézőút alatt {max_gap_ms:.0f} ms-re állt meg az eseményhurok; "
         f"főszál-minták: {long_stall_stacks}; "

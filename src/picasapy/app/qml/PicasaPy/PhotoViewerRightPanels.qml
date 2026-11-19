@@ -181,7 +181,8 @@ RowLayout {
             uncheckedCount: pendingCount()
             sortingPercent: faceScanController
                 ? faceScanController.sortingPercent : -1
-            peopleHere: (viewer.photosModel && viewer.controllerReady)
+            peopleHere: (viewer.peopleOpen && viewer.photosModel
+                         && viewer.controllerReady)
                 ? (viewer.appWindow
                    ? viewer.appWindow.peopleFaceRevision : 0,
                    viewerRightPanels.networkCacheRevision,
@@ -189,7 +190,8 @@ RowLayout {
                    controller.peopleOfRows(viewer.drawerRows))
                 : []
             unnamedFacesHere:
-                (viewer.photosModel && viewer.controllerReady)
+                (viewer.peopleOpen && viewer.photosModel
+                 && viewer.controllerReady)
                 ? (viewer.appWindow
                    ? viewer.appWindow.peopleFaceRevision : 0,
                    viewer.appWindow

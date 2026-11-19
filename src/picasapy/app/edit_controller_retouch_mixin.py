@@ -18,7 +18,7 @@ from .edit_controller_signals import EditControllerSignalsMixin as _Signals
 class EditControllerRetouchMixin:
     """A retusáló eszköz és a nem mentett javítófoltok kezelése."""
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.hasRetouchChanged)
     def hasRetouch(self) -> bool:
         """Van-e MENTETT retusálás — akár a jelenlegi (v2, folt-alapú, #445),
         akár egy korábbi PicasaPy-verzió (v1, téglalap-régiós, #148) által
@@ -54,13 +54,13 @@ class EditControllerRetouchMixin:
         return bool(self._retouch_patch_redo)
 
 
-    @Property(int, notify=_Signals.toolsChanged)
+    @Property(int, notify=_Signals.brushSizeChanged)
     def brushSize(self) -> int:
         """A retusálás-ecset mérete [1..100] egészben ("Brush Size", #445)."""
         return self._brush_size
 
 
-    @Property(float, notify=_Signals.toolsChanged)
+    @Property(float, notify=_Signals.retouchBrushRadiusRatioChanged)
     def retouchBrushRadiusRatio(self) -> float:  # noqa: N802 — QML-property
         """A retusáló ecset sugara a kép rövidebb oldalához mérve.
 
