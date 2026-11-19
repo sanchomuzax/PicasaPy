@@ -5,6 +5,7 @@ from picasapy.index.similarity_features import (
     load_similarity_features,
     save_similarity_features,
 )
+from support.index_migration import downgrade_search_schema_to_v28
 
 
 def test_hasonlosagi_cache_fajlazonossag_alapjan_ment_es_tolt(tmp_path):
@@ -28,6 +29,7 @@ def test_v25_migracio_megtartja_a_dhash_t_es_letrehozza_az_uj_tablat(tmp_path):
         save_dhashes(conn, [(*kulcs, 0xFEDCBA9876543210)])
         conn.commit()
         conn.execute("DROP TABLE photo_similarity")
+        downgrade_search_schema_to_v28(conn)
         conn.execute("PRAGMA user_version=25")
 
     with open_index(db) as conn:

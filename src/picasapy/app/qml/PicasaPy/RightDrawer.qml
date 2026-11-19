@@ -61,6 +61,10 @@ Rectangle {
     Rectangle {
         id: fejlec
         objectName: "rightDrawerHeader"
+        //: #7255: a csukott (0 széles) fiók fejléce nem látszik. Különben a
+        //: jobbra horgonyzott bezáró gombja a fiókon kívül, az ablak jobb
+        //: szélére, a találati sáv felirata fölé rajzolódna.
+        visible: fiok.width > 0
         anchors { left: parent.left; right: parent.right; top: parent.top }
         height: fiok.fejlecMagassag
         color: Theme.panelBg

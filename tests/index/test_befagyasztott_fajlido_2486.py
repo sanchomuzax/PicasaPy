@@ -45,6 +45,7 @@ from picasapy.index import SCHEMA_VERSION, open_index, photos_in_folder, sync_tr
 from picasapy.index.queries import PhotoRecord
 from picasapy.index.schema import DDL
 from picasapy.timeline import record_date
+from support.index_migration import downgrade_search_schema_to_v28
 from support.jpeg_factory import make_jpeg
 
 #: A három kép EREDETI fájlideje — külön napokon, tehát a dátum-rendezés
@@ -267,6 +268,7 @@ class TestMigracio:
         path = tmp_path / "regi.db"
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
+        downgrade_search_schema_to_v28(raw)
         # a v17 oszlopának eltávolítása = a v16-os alak visszaállítása
         raw.executescript(
             # #5180: a forrásjelölő csak a v25-ben érkezik

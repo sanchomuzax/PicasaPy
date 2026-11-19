@@ -27,6 +27,7 @@ from picasapy.index.hashes import (
     save_fast_keys,
 )
 from picasapy.index.schema import DDL
+from support.index_migration import downgrade_search_schema_to_v28
 
 
 def _oszlopok(conn: sqlite3.Connection) -> set[str]:
@@ -58,6 +59,7 @@ class TestMigracio:
         path = tmp_path / "regi.db"
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
+        downgrade_search_schema_to_v28(raw)
         raw.executescript(
             # #5180: a forrásjelölő csak a v25-ben érkezik
             "DROP INDEX idx_face_source_photo;\n"

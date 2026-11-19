@@ -3179,6 +3179,12 @@ picasapy-origin-key: stringres:CThumUI::searchpicsyearsold</extracomment>
             <translation>%d वर्षों तक के पुराने चित्र.</translation>
         </message>
         <message>
+            <source>Date Range: </source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_SetSearchStatus::1</extracomment>
+            <translation>तिथि श्रेणी:</translation>
+        </message>
+        <message>
             <location filename="../formatting.py" />
             <source>Yes</source>
             <extracomment>picasapy-origin: picasa

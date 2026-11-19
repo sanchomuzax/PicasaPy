@@ -46,6 +46,8 @@ _BOMB_EXCEPTIONS = (
 _ORIENTATION_TAG = 274
 _DATETIME_TAG = 306
 _EXIF_IFD = 0x8769
+_ARTIST_TAG = 315
+_COPYRIGHT_TAG = 33432
 _DATETIME_ORIGINAL_TAG = 36867
 _MAKE_TAG = 271
 _MODEL_TAG = 272
@@ -99,6 +101,8 @@ class FileMetadata:
     height: int | None = None
     caption: str | None = None
     keywords: tuple[str, ...] = ()
+    artist: str | None = None
+    copyright: str | None = None
     # #30: a fényképezőgép rögzítette hely (EXIF GPS-IFD), tizedes fokban;
     # None, ha a fájlban nincs (értelmes) GPS-adat
     latitude: float | None = None
@@ -129,6 +133,8 @@ def read_file_metadata(path: str | Path) -> FileMetadata:
                     height=height,
                     caption=_decode(iptc.get(_IPTC_CAPTION), utf8_marked),
                     keywords=_keywords(iptc.get(_IPTC_KEYWORDS), utf8_marked),
+                    artist=_exif_text(exif.get(_ARTIST_TAG)),
+                    copyright=_exif_text(exif.get(_COPYRIGHT_TAG)),
                     latitude=point.latitude if point else None,
                     longitude=point.longitude if point else None,
                 )
@@ -562,6 +568,18 @@ def _decode(raw: bytes | list[bytes] | None, utf8_marked: bool = False) -> str |
         return raw.decode("cp1250")
     except UnicodeDecodeError:
         return raw.decode("latin-1")
+
+
+def _exif_text(raw: str | bytes | None) -> str | None:
+    """A TIFF Artist/Copyright szöveges mezőjét adja vissza tisztán."""
+    if isinstance(raw, bytes):
+        value = _decode(raw)
+    elif isinstance(raw, str):
+        value = raw
+    else:
+        return None
+    value = value.strip("\x00 \t\r\n")
+    return value or None
 
 
 def _keywords(

@@ -13,6 +13,7 @@ import sqlite3
 import pytest
 
 from picasapy.index import SCHEMA_VERSION, open_index, sync_tree
+from support.index_migration import downgrade_search_schema_to_v28
 from support.jpeg_factory import make_jpeg
 
 
@@ -63,6 +64,7 @@ class TestMigrationV3:
         with open_index(db) as conn:
             sync_tree(conn, library)
         raw = sqlite3.connect(db)
+        downgrade_search_schema_to_v28(raw)
         raw.execute("ALTER TABLE folders DROP COLUMN date")
         # #459/5: az offline oszlop a v11-ben érkezik
         raw.execute("ALTER TABLE folders DROP COLUMN offline")

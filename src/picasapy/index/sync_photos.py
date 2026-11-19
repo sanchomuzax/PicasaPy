@@ -30,6 +30,7 @@ from picasapy.scanner import (
     MediaFile,
 )
 
+from .search_words import exif_search_words
 from .sync_compat import legacy
 
 logger = logging.getLogger("picasapy.index.sync")
@@ -40,9 +41,10 @@ _PHOTO_UPSERT_SQL = (
     "(folder_id, name, kind, size, mtime_ns, star, hidden, caption_ini,"
     " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
     " taken_at, orientation, width, height, caption_file, keywords_file,"
+    " artist_file, copyright_file,"
     " movie_format, frame_rate, duration_seconds,"
     " exif_lat, exif_lon, first_seen_mtime_ns)"
-    " VALUES (" + ", ".join("?" for _ in range(25)) + ") "
+    " VALUES (" + ", ".join("?" for _ in range(27)) + ") "
     "ON CONFLICT(folder_id, name) DO UPDATE SET "
     # #2486: az első látáskori mtime nem íródik felül az ütközési ágon.
     "first_seen_mtime_ns = COALESCE(photos.first_seen_mtime_ns,"
@@ -62,9 +64,12 @@ _PHOTO_UPSERT_SQL = (
     "width = excluded.width, height = excluded.height, "
     "caption_file = excluded.caption_file, "
     "keywords_file = excluded.keywords_file, "
+    "artist_file = excluded.artist_file, "
+    "copyright_file = excluded.copyright_file, "
     "movie_format = excluded.movie_format, "
     "frame_rate = excluded.frame_rate, "
     "duration_seconds = excluded.duration_seconds, "
+    "exif_words_pending = 0, "
     "exif_lat = excluded.exif_lat, exif_lon = excluded.exif_lon"
 )
 
@@ -108,11 +113,12 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResul
                 row["geotag_ini"],
             ),
             row["movie_format"],
+            row["exif_words_pending"],
         )
         for row in conn.execute(
             "SELECT name, mtime_ns, size, star, hidden, caption_ini,"
             " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
-            " movie_format"
+            " movie_format, exif_words_pending"
             " FROM photos WHERE folder_id = ?",
             (folder_id,),
         )
@@ -143,9 +149,11 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResul
             # fájl-metaadat oszlopok maradnak. UPDATE csak akkor fut, ha
             # az ini-mezők ténylegesen eltérnek (#139) — különben a sor
             # érintetlen, az FTS-trigger sem sül el.
-            if media.kind == "video" and current[2] is None:
-                # #4580: a v20-ról migrált sorokból a fájl újraolvasása tölti
-                # fel a videómezőket.
+            if (media.kind == "video" and current[2] is None) or (
+                media.kind == "photo" and current[3]
+            ):
+                # #4580: a v20-ról migrált sorok videómezőit, #7254: a régi
+                # index képeinek EXIF-szavait tölti fel újraolvasással.
                 upserts.append((media, ini_fields))
             elif current[1] != ini_fields:
                 conn.execute(
@@ -285,6 +293,8 @@ def _photo_upsert_values(
         meta.height,
         meta.caption,
         ",".join(meta.keywords) or None,
+        exif_search_words(meta.artist),
+        exif_search_words(meta.copyright),
         video_meta.movie_format,
         video_meta.frame_rate,
         video_meta.duration_seconds,

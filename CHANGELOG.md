@@ -7,13 +7,26 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.162] - 2026-11-19
+
+- A kereső megtalálja a képek EXIF szerző és szerzői jog mezőinek szavait. (#7254).
+- Az idő-csúszka a keresőszöveggel együtt szűr: a szöveg a mezőben marad, a csúszka a szöveg módosításakor és törlésekor is a helyén marad, a zöld sáv jobb szélén pedig a „Dátumtartomány:” felirattal látszik a beállított kor (#7255).
+
+## [1.0.161] - 2026-11-19
+
+- Kutatási kiadás: a program működése nem változott. Az eredeti Picasa visszafejtéséből további 13 kérdés válasza került a dokumentációba a dátumírásról, a nyomtatásról, a másolásról és a beviteli mezőkről; új eltérés a PicasaPy és az eredeti Picasa között nem derült ki (#7266).
+
 ## [1.0.160] - 2026-11-19
+
+- Kutatási kiadás: a program működése nem változott. Az eredeti Picasa visszafejtésének zárókörében további négy kérdés zárult le a diavetítésről, a keresés előzményéről és az albumtagság értesítéséről (#7266). A dátummódosításról kiderült, hogy a kép meglévő EXIF-dátummezője nem állítja le az írást. Új eltérés a PicasaPy és az eredeti Picasa között nem derült ki.
 
 ## [1.0.159] - 2026-11-19
 
 - A filmek gomb a keresőszöveggel együtt szűr, kikapcsolásakor megmarad a keresés, a szöveg törlésekor pedig visszatér a filmnézet. (#7264).
 
 ## [1.0.158] - 2026-11-19
+
+- Kutatási kiadás: a program működése nem változott. Az eredeti Picasa 2026-11-19-i visszafejtésének 22 kérdéséből az első válaszok kerültek a dokumentációba (#7266). Kiderült, hogy a diavetítés zenéje a lista végén elölről kezdődik, a képek ismétlésétől függetlenül, és a PicasaPy ugyanígy működik. A többi kérdésnél a dokumentáció a következő vizsgálandó helyet rögzíti.
 
 ## [1.0.157] - 2026-11-19
 
@@ -29,6 +42,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - A keresési javaslatok szósorára kattintva a mezőbe a szó és egy szóköz kerül, és a keresés lefut (#7253).
 
 ## [1.0.155] - 2026-11-19
+
+- Kutatási kiadás: a program működése nem változott. Az eredeti Picasa visszafejtéséből 19 kérdés válasza került a dokumentációba a szerkesztésről, a címkékről, az albumokról és a fájlműveletekről (#7235). Két eltérés derült ki, ezeket az 1.0.157 javította: az új album adatainak kulcssorrendje a `.picasa.ini`-ben (#7250) és a másolatok számozásának felső határa (#7251).
 
 ## [1.0.154] - 2026-11-18
 

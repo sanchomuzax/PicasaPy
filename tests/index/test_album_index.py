@@ -14,6 +14,7 @@ from __future__ import annotations
 import pytest
 
 from picasapy.index import SCHEMA_VERSION, open_index, sync_tree
+from support.index_migration import downgrade_search_schema_to_v28
 from picasapy.index.albums import album_photos, albums_in_index
 from support.jpeg_factory import make_jpeg
 
@@ -173,6 +174,7 @@ def test_v26_migration_creates_persistent_empty_album_store(tmp_path):
     db = tmp_path / "index.db"
     with open_index(db) as conn:
         conn.execute("DROP TABLE IF EXISTS local_empty_albums")
+        downgrade_search_schema_to_v28(conn)
         conn.execute("PRAGMA user_version=26")
         conn.commit()
 
