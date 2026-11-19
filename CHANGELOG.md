@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.157] - 2026-11-19
+
+- A kereső a felvétel dátumára is talál: a teljes dátumra (például 2019:03:08), a hónapra (2019:03) és az évre. (#7241).
+- A nyomtatás előtti felülvizsgálat Low, Good, Best minőség szerint csoportosítja a képeket, a csoportokon belül megőrizve a forrássorrendet. (#7249).
+- Az új album adatai az eredeti Picasa-kulcssorrendben kerülnek a `.picasa.ini`-fájlba (#7250).
+- A másolat mentésekor a névütközési számozás legfeljebb a -4095 sorszámig keres, mint az eredeti Picasa (#7251).
+- A kereső az album neve alapján megtalálja a képeket; a javaslatlistában csak nem üres albumok szerepelnek, az album kiválasztásakor pedig megmarad a keresés. (#7263).
+
 ## [1.0.156] - 2026-11-19
 
 - A telepítés utáni újraindításkor százalékos folyamatjelző mutatja az indulás előkészítésének előrehaladását (#7245).

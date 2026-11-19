@@ -1493,6 +1493,11 @@ képkockái nem voltak elérhetők a helyi mérőarchívumban.
 | **Starred Photos** | A különleges album tokenje `]star` (`0x004abe70`); a `thumbui/startoggle` diszpécserág a `0x005e81e0` kezelőhöz jut. A jegyben közölt job-256 mérés szerint a sor egy kijelölt, korábban nem csillagozott képnél `star=yes`-t ír a kép `.picasa.ini`-szakaszába, backuphash nélkül; a bal sávban megjelenik a `Starred Photos (1)`, a bélyegképen pedig a csillag. A már csillagozott kép viselkedését a mérés nem fedi le. A nyers job-adat itt nem volt elérhető. |
 | **New Album...** | A `0x005d9cc0` `thumbui/makealbum` ága a `0x00577c30` → `0x00577ea0` úton ugyanazt a `0x006dc030` Album Properties párbeszédet nyitja, mint az eszköztár `0x005eb810` útja. A job-257 mérés szerint OK után az `Untitled` album a kijelölt képpel együtt jön létre; az ini-ben az album szakasza `[.album:<token>]` (`name`/`token`/`date`), a képszakasz pedig `albums=<token>` mezőt kap. A nyers mérőképek nem voltak a helyi archívumban. A megvalósítás a #5846. |
 
+
+#### #7266-kiegészítés (#514, 2026-11-19): albumtagság-értesítő
+
+A `0x004a51f0` az albumtagsági token feldolgozása után csak akkor értesít, ha a `]album:` kulcs feloldható, az albumtag-lista megváltozott, és a képobjektum `+0x3f8` listener mezője nem nulla. Ekkor a listener vtable `+0x8` slotját hívja az albumazonosítóval és a tagság payloadjával. A callback célfüggvény és a PicasaPy oldali értesítési paritás ebből a törzsből nem állapítható meg.
+
 ### 24.3 Gombfeltétel és a PicasaPy-eltérés
 
 A job-255 jegyben közölt képkockáján egy kijelölt képpel és saját album

@@ -439,3 +439,15 @@ konfigurálása"**.
 
 *Bizonyítottsági fok: megerősített* (a négy erőforrásfájl teljes tartalma
 és a tizenkét `TagPanel::*` bejegyzés).
+
+## #7266-kiegészítés: szerkesztési és feliratbeviteli segédek (#508-513, 2026-11-19)
+
+A 0x00476ec0 a revertable token állapotát állítja; a dekompilációban látható minden visszatérési ága 0-val tér vissza. A 0x00477210 a 0x00462ba0 másolási eredményéből képez 0/1 értéket a tokenállapot-írónak, de a másolási kódok végső szemantikája a hívóargumentumok teljes lánca nélkül nem állapítható meg. A 0x004082f0 üres bemenetnél öt sztringmezőt üresre állít; Undo-Save hívóparamétereinek jelentése nyitott. Következő: 0x00462ba0 és mindkét hívó argumentumképzése.
+
+A 0x005ef3e0 látható Undo All útja 0x95/IDS_CONFIRMREVERT megerősítést kér, majd jóváhagyáskor 0x005f8d80-at és 0x005ef6b0-at hívja. Ez a kimenet nem igazolja a 0x119/IDS_CONFIRM_REDEYE_REVERT fogyasztóját vagy a hibajelzés helyét. Következő: 0x005ef520, 0x005ef6b0 és a 0x119 sztringhivatkozásának fogyasztója.
+
+A képaláírás módváltó 0x0067f580 wrapper a 0x0076b110-et hívja a panelalap, a harmadik argumentum és a [param_1+0x11] bájt átadásával. A négy wrapper felhasználói eseményekhez (kattintás, Enter, gépelés, kilépés) rendelése nincs meg; következő címek: 0x0067f5a0, 0x0076b0c0, 0x0076b0e0, majd a 0x0076b110 hívói.
+
+A 0x009869a0 UTF-8 bájtsorozatában ASCII whitespace-t vizsgál és a vezető whitespace bájthosszát adja át a 0x00986120 részsztring-segédnek. A segédnek átadott eltolás és a látható feldolgozási hívás alapján a pontos záróvágás nem dől el. Ebben a két rutinban nincs látható maximális hosszkonstans; a záró whitespace vizsgálata önmagában nem bizonyít záróvágást. Felsőbb hívóban vagy vezérlőkorlátban lévő hosszlimit nyitott.
+
+A 0x0067eca0 a Ctrl+V/C/X billentyűkódokhoz tartalmaz explicit ágat, más üzenetet a 0x0076ace0-hoz továbbít. A natív WM_UNDO kezelés nem látszik benne; a következő vizsgálat a 0x0076ace0 és a CNativeTextEditNode natív edit-control eljárása.
