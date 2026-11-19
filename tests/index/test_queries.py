@@ -96,6 +96,21 @@ class TestQueries:
         hits = [p.name for p in search_photos(conn, "a")]  # a mappa neve: "a"
         assert "alpha.jpg" in hits and "beta.jpg" in hits
 
+    def test_search_matches_album_name_prefix(self, conn, tmp_path):
+        # Az albumnév egyezése az album teljes tartalmát találattá teszi.
+        root = tmp_path / "kepek"
+        folder = root / "album-forras"
+        folder.mkdir()
+        (folder / "gray_ramp.jpg").write_bytes(b"album tag")
+        (folder / ".picasa.ini").write_text(
+            "[.album:zqalbum01]\nname=zqalbum\n"
+            "[gray_ramp.jpg]\nalbums=zqalbum01\n",
+            encoding="utf-8",
+        )
+        sync_tree(conn, root)
+
+        assert [p.name for p in search_photos(conn, "zqalb")] == ["gray_ramp.jpg"]
+
     def test_search_folder_name_case_insensitive(self, conn):
         assert len(search_photos(conn, "B")) >= 1  # "b" mappa
 
@@ -191,6 +206,10 @@ def suggest_conn(tmp_path):
         "[s0.jpg]\nalbums=aabb01,ccdd02\n",
         encoding="utf-8",
     )
+    (root / "ures album").mkdir()
+    (root / "ures album" / ".picasa.ini").write_text(
+        "[.album:eeff03]\nname=zqalbum\n", encoding="utf-8"
+    )
     with open_index(tmp_path / "index.db") as connection:
         sync_tree(connection, root)
         yield connection
@@ -212,6 +231,10 @@ class TestSearchSuggestions:
         result = search_suggestions(suggest_conn, "logo", include_albums=True)
         albums = [s for s in result if s.kind == "album"]
         assert [(s.name, s.count) for s in albums] == [("logo valogatas", 3)]
+
+    def test_empty_album_is_not_suggested(self, suggest_conn):
+        result = search_suggestions(suggest_conn, "zqalb", include_albums=True)
+        assert all(s.name != "zqalbum" for s in result)
 
     def test_default_no_albums_no_ini_read(self, suggest_conn, monkeypatch):
         # #138: alapértelmezésben (include_albums=False) az album-ág teljesen

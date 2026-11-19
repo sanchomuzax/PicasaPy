@@ -75,6 +75,29 @@ def _seed_album(controller, tmp_path) -> str:
     return "aabb01"
 
 
+def _seed_search_album(controller, tmp_path) -> str:
+    from picasapy.index import open_index, sync_tree
+
+    root = tmp_path / "kepek"
+    photo_folder = root / "photo source"
+    empty_folder = root / "empty source"
+    photo_folder.mkdir(parents=True)
+    empty_folder.mkdir()
+    make_jpeg(photo_folder / "gray_ramp.jpg", size=(64, 48))
+    (photo_folder / ".picasa.ini").write_text(
+        "[.album:zqalbum01]\nname=zqalbum\n"
+        "[gray_ramp.jpg]\nalbums=zqalbum01\n",
+        encoding="utf-8",
+    )
+    (empty_folder / ".picasa.ini").write_text(
+        "[.album:zqempty01]\nname=zqalbum empty\n", encoding="utf-8"
+    )
+    with open_index(controller._db_path) as conn:
+        sync_tree(conn, root)
+    controller._reload()
+    return "zqalbum01"
+
+
 def _render(window, name: str) -> Path:
     output = Path.cwd() / ".bt" / name
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -136,7 +159,7 @@ def test_real_typing_popup_geometry_keyboard_and_reference_renders(
 
 def test_clicking_album_suggestion_opens_that_album(qml_app, qt_app, tmp_path):
     window, controller, _engine = qml_app
-    token = _seed_album(controller, tmp_path)
+    token = _seed_search_album(controller, tmp_path)
     window.show()
     window.requestActivate()
     qt_app.processEvents()
@@ -146,7 +169,7 @@ def test_clicking_album_suggestion_opens_that_album(qml_app, qt_app, tmp_path):
 
     _click(window, field, qt_app)
     assert _wait(qt_app, lambda: field.property("activeFocus") is True)
-    _key_clicks(window, "recently")
+    _key_clicks(window, "zqalb")
 
     def _javaslatok():
         ertek = popup.property("suggestions")
@@ -167,12 +190,17 @@ def test_clicking_album_suggestion_opens_that_album(qml_app, qt_app, tmp_path):
             allapot["lista"], allapot["ota"] = most, time.monotonic()
         return (
             popup.property("visible") is True
-            and popup.property("query") == "recently"
-            and any(s["kind"] == "album" for s in most)
+            and popup.property("query") == "zqalb"
+            and any(s["kind"] == "album" and s["name"] == "zqalbum" for s in most)
             and time.monotonic() - allapot["ota"] >= 0.5
         )
 
     assert _wait(qt_app, _stabil_albumos_lista)
+    album_suggestions = [
+        (row["kind"], row["name"], row["count"])
+        for row in _javaslatok()
+        if row["kind"] == "album"
+    ]
     rows = [row for row in _walk(popup) if row.objectName() == "suggestionRow"]
     assert rows and rows[0].isVisible()
     suggestions = _javaslatok()
@@ -184,15 +212,26 @@ def test_clicking_album_suggestion_opens_that_album(qml_app, qt_app, tmp_path):
     album_row = next(row for row in rows if row.property("index") == album_index)
     _click(window, album_row, qt_app)
 
-    assert _wait(qt_app, lambda: controller.currentAlbumToken == token), (
-        "az album-javaslat kiválasztása nem nyitotta meg az albumot: "
-        f"currentAlbumToken={controller.currentAlbumToken!r}, várt={token!r}, "
+    assert field.property("text") == "zqalbum "
+    assert album_suggestions == [("album", "zqalbum", 1)]
+    assert _wait(qt_app, lambda: controller.searchSelectedAlbumToken == token), (
+        "az album-javaslat kiválasztása nem tartotta meg a keresést és az albumot: "
+        f"searchSelectedAlbumToken={controller.searchSelectedAlbumToken!r}, várt={token!r}, "
         f"lista látszik={popup.property('visible')!r}, mező={field.property('text')!r}, "
         f"mappa={controller.currentFolder!r}"
     )
-    # A képek betöltése háttérben megy; a CI-n lassabb lehet, mint a nyitás.
-    assert _wait(qt_app, lambda: controller.photos.rowCount() == 24, 20.0), (
-        f"az album megnyílt, de {controller.photos.rowCount()} képet mutat (várt: 24)"
+    assert _wait(qt_app, lambda: controller.photos.rowCount() == 1, 20.0), (
+        f"a keresés {controller.photos.rowCount()} képet mutat (várt: 1)"
     )
-    assert field.property("text") == ""
+    assert controller.searchActive is True
+    assert controller.searchQuery == "zqalbum"
+    assert controller.searchResultCount == 1
+    assert controller.filterActive is True
     assert popup.property("visible") is False
+    album_row = next(
+        item
+        for item in _walk(window.contentItem())
+        if item.objectName() == f"albumItem_{token}"
+    )
+    assert album_row.property("isSelectedAlbum") is True
+    assert "zqalbum (1)" in [item.property("text") for item in _walk(album_row)]

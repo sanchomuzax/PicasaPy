@@ -67,6 +67,13 @@ class AppControllerStateMixin:
             return RECENT_ALBUM_TOKEN
         return param if mode == "album" else ""
 
+    @Property(str, notify=_Signals.statusChanged)
+    def searchSelectedAlbumToken(self):
+        """A keresés mellett kijelölt album tokenje a bal hasábnak."""
+        if not self.searchActive:
+            return ""
+        return getattr(self, "_search_selected_album_token", "")
+
     @Property(int, notify=_Signals.albumsChanged)
     def recentlyUpdatedCount(self):
         """A Recently Updated album fotóinak száma (#6851)."""
