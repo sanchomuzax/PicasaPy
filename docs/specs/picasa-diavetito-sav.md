@@ -164,3 +164,41 @@ Minden javaslat három részből áll: **Eredeti**, **Nálunk**, **Teendő**.
 - **A `transtype` lista és választás útja.** A mai `SlideshowView.qml:1030` „22 soros” állítása nincs igazolva.
 
 A kódhoz nem nyúltam. A jegyjavaslatokat a hívó dönti el.
+
+## 5. #7284 — a vetítésben megjelenő zoomikon és csúszka
+
+A felvételen Exit után látható ikon és sín nem a `0x00802c60` által betöltött
+`oneup` sáv `plusone`/`minusone` párja: azok a vetítési időt léptetik
+(`oneup.tre:133-143`, `0x008032e0:0x008033e3-0x00803447`). A zoomvezérlő a
+normál `editoneup` vetítési út erőforrásaiból áll össze.
+
+| Elem vagy művelet | Azonosítás és bizonyíték |
+|---|---|
+| Nagyítónak látszó ikon | `editpanel/zoomup_icon`, `editpanel.tre:1288-1289`. |
+| Csúszkasín és fogantyú | `zoomslider/scaleslider` és `zoomslider/thumb`, `editpanel.tre:1291-1296`; a sín `Property slider 3` tulajdonságú. |
+| Vetítési sávhoz illesztő klip | `editoneup/sszoomsliderclip`, `editoneup.tre:68-69`. A `0x0075de50` belépési ága ezt a csomópontot és az `editpanel/zoomsliderrect`-et együtt adja át a `0x0075ddf0`-nek (`2026-11-19-koteg-496-517.txt:2464-2474`); kilépéskor az `editpanel/zoomsliderclip` párját kezeli (`:2733-2747`). |
+| Húzás eseményútja | A `0x005de8e0` az `0x08000000`/`0x08000001` eseményeknél a `zoomslider/scaleslider` nevet a `0x005d2020`-hoz irányítja (`2026-10-21-koteg-1021b.txt:3090-3190`). A `0x005d2020` a kapott lebegőpontos értéket a `0x005d1470`-nek adja (`0x005d2081-0x005d208d`). |
+| Mit állít | A `0x005d1470` a zoomvezérlő `+0xe50` értékébe ír (`0x005d14b8-0x005d14c3`), majd a `0x005d1520` képelem-frissítő utat hívja. A szerkesztő zoomláncban ez a normalizált érték a képelem `+0x3a0` skálájára jut; a leképezés a fenti **„A szerkesztő nagyítás-hármasa”** szakaszban szerepel. Tehát a húzás a fotó nagyítását változtatja, nem a vetítés időtartamát vagy képlépését. |
+
+**A `0x008032e0` nem kezeli a húzást.** A Ghidra-kimenet teljes név szerinti
+áglistájában nincs slider-ág; a `plusone` és `minusone` a `0x00802ff0`
+időállító függvényt hívja. Ezt az utasításszintű `annot_disasm.py
+0x008032e0 1274` olvasata is megerősíti. A csúszkát a külön `0x005de8e0` →
+`0x005d2020` út fogadja.
+
+**Láthatóság — nyitott.** A megvizsgált `0x0075de50` belépési ág a
+`editoneup` zoomcsomópontot a vetítés indításakor kapcsolja be; ebben az
+ágban lista-végi feltétel nem szerepel. A videó `t=10` képkockáján üres az
+Exit utáni hely, `t=98`, `100` és `116` másodpercnél pedig látszik az ikon és
+a csúszka (`video__08.mp4`). Ez a felvétel a láthatóságot nem köti kizárólag
+a lista végéhez: az eltérő képkockaállapotok önmagukban nem zárják ki, hogy
+a vezérlő köztes szünetben is megjelenjen. A `0x0075ddf0` segédfüggvény
+mezőszintű hatása és az összes dinamikus láthatósági feltétel `NINCS MEG`.
+Ezek eldöntéséhez a Colab-futásban azonos pause- és egérállapot mellett az
+első, középső és utolsó képen kell rögzíteni a sávot; a listavégi képen a
+csúszkát végállások között húzva fel kell jegyezni, változik-e a fotó mérete.
+
+> **Bizonyítottsági fok:** a csomópont eredete és zoomhatása **megerősített**
+> (erőforrás-fa + Ghidra-ág, valamint külön utasításszintű eseményút és
+> zoommező-lánc egyezik). Az a részállítás, hogy kizárólag a lista végén
+> látszik, **nyitott**; a mérés nem különíti el.
