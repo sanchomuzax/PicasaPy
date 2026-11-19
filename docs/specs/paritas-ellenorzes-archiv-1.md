@@ -1465,6 +1465,27 @@ A mérés célja annak rögzítése, hogy az Indexképek frissítése parancs mi
      - A Picasa profilkönyvtárában található `thumbs.db` fájl nem törlődik a lemezről (mérete a parancs futásakor nem esik nullára).
      - A könyvtárnézeti rácsban a bélyegképek a memóriából való ürülés után a háttérben egymás után újra elkészülnek és frissülnek.
 
+
+### #7235-kiegészítés (2026-11-18): a csonka névkezelési kérdések
+
+#### #494 - 0x0070b1e0
+
+A jegyben olvasható kérdés vége hiányzik: „a meglévő 2026-11-16-os kimenet a címet csak …”. A 2026-11-18-as köteg tartalmazza a 0x0070b1e0 dekompilációját és a 0x00994580 névképző hívását, de a kérdezett hiányzó cím/mező/ág nem állapítható meg a jegy megmaradt szövegéből. Ezért az eredeti kérdésre nincs igazolható válasz, és a PicasaPy-oldali összevetés sincs megadva. Következő lépés: a teljes kérdésmondat visszaszerzése; utána a már meglévő 0x0070b1e0 kimenetből csak a hiányzó ágat/mezőt célzottan összevetni.
+
+#### #495 - 0x00993650, 0x00994580
+
+A 0x00993650 dekompilációja (2026-11-18-koteg-466-495.txt:7099-7397) szerint a harmadik paraméter logikai kapcsoló: nulla esetén a bemeneti null-terminált név hosszát a 0x103 küszöbhöz, nem nulla esetén a 0xfe küszöbhöz hasonlítja. A küszöb alatti névnél a névütközési keresés a „%s-%03lu” alakú jelölteket próbálja. A 0x00994580 hívó disassemblyje (annot_disasm.py 0x00994580, 0x009945c8-0x009945cc) a harmadik argumentumnak 1-et ad át; a 0x00994620 wrapper is 1-et ad. A többi hívó nem egységesen 1-es, a függvénynek összesen 23 hívója van.
+
+PicasaPy oldalon a Save a Copy az src/picasapy/app/save_as_copy.py:61-73 útján az src/picasapy/edit/save_copy.py next_copy_path függvényét hívja, de a megadott eredeti wrapper és e forrásút azonossága nincs bizonyítva. Paritás: az általános -001 névminta hasonló, a harmadik paraméter hossz-küszöbhatásának mai forrásbeli megfelelője NINCS MEG. A jegyszöveg itt a harmadik argumentum után szintén csonka; a megmaradt részre adott válasz a kapcsoló pontos küszöbhatása, a hiányzó kért összevetést nem egészítem ki.
+
+**Eredeti / PicasaPy / teendő - a névütközési keresés felső határa.** Ez a #495 cím alatt bizonyítható, közvetlenül a névképzőhöz tartozó eltérés; nem pótolja a csonka kérdés végét.
+
+| Eredeti (bináris) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x00993650` a `"%s-%03lu"` névütközési jelölteket 1-től próbálja; a ciklus `0x00993b52-0x00993b63` utasításai növelnek, `0x1000`-hez hasonlítanak és csak kisebb értéknél ugranak vissza, tehát legfeljebb `-001`…`-4095`. A `0x00994580` a harmadik argumentumként 1-et ad át (Ghidra-köteg: 7099-7397; közvetlen hívóutasítás: `0x009945c8-0x009945cc`). | `next_copy_path` a `_MAX_COPY_NUMBER = 100_000` értékkel `-001`…`-100000` jelölteket próbálja (`src/picasapy/edit/save_copy.py:79-82,118-135`). | A Save a Copy névütközési keresése álljon meg `-4095` után; ha mind a 4095 jelölt foglalt, ne ajánljon `-4096` vagy későbbi nevet. A korábbi szabad jelölt kiválasztása és a `%s-%03lu` minta maradjon. |
+
+**Kész, ha:** ha `-001`…`-4094` foglalt és `-4095` szabad, a `-4095` nevet adja; ha `-001`…`-4095` mind foglalt, nincs célútvonal és `-4096` nem kerül felajánlásra; ha korábbi jelölt szabad, továbbra is a legkisebb szabad sorszámot választja. A hosszú név 0xfe/0x103 ágának részletes viselkedését ez a jegy nem módosítja.
+
 ## #6963: Delete from Disk teljes folyamata
 
 Az eredeti `ID_FILE_DELETEFROMDISK` azonosítója `0x9c9a`, de nem minden
@@ -2433,6 +2454,95 @@ Most nem javaslok külön kutatási jegyet: a nyitott tételek ennek a Print-fol
 - `NINCS MEG`: az eredeti 3.9.141 viselkedése írásvédett nyomtató/spool cél, hiányzó képfájl és megszakítás esetén. Megszerzés: Windowsos mérés külön üres profilban, külön PDF/printer célokkal; rögzítendő a hibaüzenet, létrejött fájl/spool, visszaálló UI és kijelölés.
 - `NINCS MEG`: eredeti Photo Tray tartalma és mappafa/rács állapota nyomtatás után. Megszerzés: Windowsos 3.9.141 mérés egy, majd több kijelölt képpel és eltérő Photo Tray tartalommal; előtte/utána képernyő és `.picasa.ini` és index fájlkivonatának összevetése.
 
+### #7234 nyomtatási zárókör (2026-11-18)
+
+**#466 - kevesebb mint két kijelölt kép.** A `0x00744ee0` ága a
+`0x004133e0`, `0x004b0190(param_2)`, majd `0x006cab20` útvonalat használja
+(`2026-11-15-6988-colab-decomp.txt:1059-1195`). A `0x004b0190` az aktív
+objektum több tárolójához iterátorokat köt (`2026-10-21-idorend-26.txt:62-114`);
+a `0x006cab20` indexenként bejárja a kapott vektort, az átengedett elemeket
+hozzáfűzi a kimenethez, és nem rendez át (`2026-11-18-koteg-466-495.txt:1-195`).
+Ez a menet a **bejárási sorrendet** megőrzi, de önmagában nem bizonyítja, hogy a
+forráslista a mappa/album minden képét tartalmazza. A `0x005cb180(0x10,1)`
+diszasszemblálva az `[ECX+0xeac]` objektum `+0x3c0` értékét adja vissza, vagy
+`-1`-et, ha az objektum hiányzik; a mező azonosítója/folder-album jelentése
+`NINCS MEG` (bináris `0x005cb180`).
+
+**#467 - felülvizsgálat és nyomtatás.** A `0x00743980` a
+`printpanel/reviewnowbutton` eseményre `0x007451a0`-t, a
+`printpanel/pnowbutton` eseményre `0x00745770`-et hívja; mindkettő után
+`0x004984d0`-val tér vissza. Az állapotfrissítés a `0x00745980`-ra jut
+(`2026-11-18-koteg-466-495.txt:196-1406`, különösen a `0x007444ae`,
+`0x007444cf`, `0x007446c7` ág). A `0x007434d0` printer-hiba esetén a
+`Picasa has encountered a problem with the printer '%s'. Please report this error.`
+szöveget a `0x00980700` modális útjára küldi (bináris `0x007434d0:0x007435a0-0x007435e6`).
+A felülvizsgálat üres útvonalmezőjű rekordot kihagy (`0x007451a0`), de sem a
+videót, sem a hiányzó/olvashatatlan képfájlt nem szűri: ebben a függvényben
+nincs képfájl-olvasás vagy videótípus-vizsgálat. A nyomtatási szál tényleges
+rajzoló-/dekódolóágát nem azonosítottam.
+
+**#468 - szál és megszakítás.** A `0x007433f0` konstruktor a négy objektum-
+vptr mezőbe `CPrintJobThread::vftable`-t ír; a `0x00743650` függvény ennek
+`+0x28` virtuális bejegyzése (vtable/RTTI `0x00cb0cf8`, `0x00cb0d20`). A
+`0x00743650` `printjobthread::cancelling` állapotot állít, a szál `+0x0c`
+metódusát (0,0)-val, majd a `+0x14` állapotmetódust hívja
+(`2026-11-15-6988-colab-decomp.txt:852-879,1235-1259`). A `0x00745770` a
+`0x00d67904+0x20` virtuális hívásával regisztrálja a `printjob:%x` objektumot,
+majd a thread `+0x0c` metódusát indítja; az utána hívott `0x0097b350(0,1)`
+diszasszemblált törzse mindkét ágban 0-val tér vissza, így a hívó
+`+0xec4` mezőjét törlő ága mindig lefut (bináris `0x0097b350`, valamint
+`0x00745770`, Ghidra: `...6988-colab-decomp.txt:760-849`). A manager `+0x20`
+metódus implementációja és a `0x00743650` virtuális hívói (Cancel, ablakbezárás,
+folyamatjelző) nyitottak; a statikus `xrefs`-lista hiánya nem cáfolat.
+
+**#469 - visszaállító.** A `0x005f8160` nullázza a `+0x337c` mezőt, majd a
+`0x0050ccd0` módérték alapján `0x005d7780`, `0x005d77d0` vagy `0x005d78d0`
+editorpanel-segédet hív; az utóbbi `editpanel/tabpanel%d`, `editcontrols`,
+`fxthumbs` csomópontokat használja. A vizsgált törzsben nincs közvetlen
+`thumbui/mainuipanel`/`printpanel` rendezés vagy rács-/tálcakijelölés-írás
+(`2026-11-18-koteg-466-495.txt:1409-1480`; helper diszasszemblálás
+`0x005d78d0`). A segédek közvetett hatása ettől még nincs kizárva.
+
+**#470 - Review-lista.** Az `0x0085c060` rekordazonosító + effektív DPI
+párokat ad. A `0x007451a0` a minőségi kód szerint három menetben fűz
+`Low → Good → Best` sorrendű csoportokat, csoporton belül az eredeti forrás
+sorrendjében (`2026-11-15-6988-colab-decomp.txt:440-729`, assembly
+`0x007451a0:0x00745210-0x0074567b`). A `0x0085c640` rekordfelvevő a 20 bájtos
+rekordot a vektor végére írja, nem rendezi (`2026-11-18-koteg-466-495.txt:1482-1601`).
+A `0x00776b00` az átadott rekordazonosítók egyezéseit kiveszi a nyomtatási
+listából, eltolással megőrzi a maradék sorrendjét (bináris `0x00776b00`).
+PicasaPy `print_controller_quality_mixin.py:75-103` ezzel szemben egzakt DPI
+szerint rendezi a sorokat; az eredeti csoporton belüli forrássorrendhez ez
+eltérhet. A részletes viselkedés a `picasa-nyomtatas.md` Review-sorrend
+alfejezetében szerepel.
+
+**Nyitott, célzott következő címek:**
+
+- Ghidra-kör kell: 0x005cb180 - a visszaadott `+0x3c0` mező azonosítója mely mappa/album és hogyan képződik [blokkoló]
+- Ghidra-kör kell: 0x004b0190 - a meglévő kimenet a paraméterezett iterátorokat rögzíti, de nem dönti el, hogy a `0x00744ee0` ágban kapott album/mappa iterátorai az összes képet adják-e, és milyen sorrendben [blokkoló; új kérdés a meglévő törzshöz]
+- Ghidra-kör kell: 0x00cb0d20 - oldja fel a `CPrintJobThread` vtable worker-slotját a pointerlistából, majd a workerben a videó-, hiányzó- és olvashatatlan-kép szűrését [blokkoló]
+- Ghidra-kör kell: 0x00745980 - a státuszfrissítés már disassemblyvel feltárt; a Cancel esemény szálhoz kötése és a `0x00743650` vtable-slot hívóhelye maradt nyitott [blokkoló]
+- Ghidra-kör kell: 0x00d67904 - a globális manager `+0x20` slotjának implementációja; a globális objektum vtable-jének futásidejű konstrukciója nincs feltárva [nem blokkoló]
+- Ghidra-kör kell: 0x005d78d0 - a `0x005f8160` által hívott editorpanel-segéd közvetett layout- vagy kijelölési hatása [nem blokkoló]
+
+**#467 státusz-kiegészítés.** A helyi, cím szerinti disassembly a `0x00745980`
+függvényben kiszámolja a legkisebb DPI-t és a küszöb alatti képek darabszámát
+(`0x00745cee-0x00745d15`), majd a `printpanel/statustext` mezőbe ír
+(`0x00745e01-0x00745e06`). Nulla kis kép esetén a `ThumbUIPrint::ReadyPrompt`
+„You are ready to print.”, ellenkező esetben a `ThumbUIPrint::ReviewPrompt`
+„Please review before printing.\n%d small %s found.” erőforrást választja
+(`0x00745da4`, `0x00745dd9`). A legkisebb DPI-sor az 1 000 000-es
+üres-listaértéknél kimarad (`0x00745d15`). Ez az állapotszöveg-feladatot
+megválaszolja, de a virtuális Cancel-hívókat nem azonosítja.
+
+**#466 lista-kiegészítés.** A már meglévő `0x007166c0` kimenet index szerint
+bejárja az aktuális nézet elemeit, és a `+0xb4` rekordazonosítót hozzáfűzi,
+ha a `+0x5d` jelző nem nulla és a `+0x5a` jelző nulla; így ennek a nézetlistának
+a sorrendje stabil (`2026-11-16-7022-7031-7033-colab-decomp.txt:2011-2208`).
+Ez a `0x00744ee0` előzetes nézet-/kijelölés-gyűjtője, nem a következő
+a `0x004b0190(param_2)` albumbejáró tartalmának bizonyítéka. A teljes
+mappa/album-készlet és a `0x005cb180` `+0x3c0` mező jelentése nyitott marad.
+
 
 
 ## #7000: A forgatás parancsainak teljes folyamata az eredeti Picasával összevetve
@@ -2808,6 +2918,25 @@ szürke; ahol az első szűrőláncos, élő; valódi menü-kattintásos teszt (
 - Ghidra-kör kell: 0x005ef6b0 - a tokenes (`redeye`, `retouch`, `picnik`) ág: hol jelenik meg a redeye-megerősítés (`IDS_CONFIRM_REDEYE_REVERT`, `0x119`), és a `0x005f3e10`/`0x00477210` láncon a fájlvisszaállítás hibája mit jelez a felhasználónak [nem blokkoló]
 - `NINCS MEG`: az Undo All Edits futásidejű végállapota (ini, fájl SHA-256, bélyegkép, rács, kijelölés, `-1` cache után a menü). Megszerzés: Colab-feladat `colab_felmero.py` szerint, Picasa 3.9: szerkesztett (filters, crop, flipped, text, elforgatott) képek, majd Kép menü, Undo All Edits, `Remove Edits`; előtte/utána az ini, a fájl kivonata és képernyőkép; külön futás csak elforgatott képpel (a tétel szürke-e) és vegyes kijelöléssel.
 - `NINCS MEG`: írásvédett `.picasa.ini` vagy lemezhiba alatti viselkedés. Megszerzés: ugyanez a Colab-futás mappaszinten írásvédett ini-vel; rögzítendő a megjelenő üzenet és az ini.
+
+
+### #7235-kiegészítés (2026-11-18): az eredeti fájlút és a tokenes ág
+
+#### #471 - 0x00462ba0, 0x0046d7d0, 0x00477210, 0x00462790
+
+A 0x00462ba0 Ghidra-kimenete (2026-11-18-koteg-466-495.txt:1604-1947) a képrekord +0xf8 mezőiből beolvasott típuskódot ellenőrzi. Elfogadott kódjai: 2, 3, 6-18, 21-24, 26, 27-29, 31 és 0x3e9; az ezen kívüliek a 0x00412790 ágra jutnak. Az eredeti mappája alatt előbb .picasaoriginals-t próbál, ha az nem létezik, Originals-t, és ha az sem létezik, visszaállítja a .picasaoriginals útvonalat. A sorszámozott jelöltek formátuma: 9-es típusnál %s.%d.mov; 8, 10, 11, 12, 0x17 és 0x1d kódnál %s.%d.wmv; a többi elfogadott kódnál %s.%d.jpg. A ciklus 0-tól 99-ig vizsgál jelöltet (0x00462ba0, local_a6c < 100). A 0. elem az alapfájlnév; a továbbiak a fenti sorszámozott mintát használják.
+
+A 0x0046d7d0 utasításszintű olvasása (annot_disasm.py 0x0046d7d0, 0x0046d8e8-0x0046d900) a 0x00462ba0 után EAX-et teszteli: nulla esetén a közvetlen .picasa.ini/moddate ág folytatódik; nem nulla esetén 0x00477210 fut. A hívott függvény gépi kódja nem egységes logikai igaz/hamis értéket ad: a sentinel param_3 == -1 ága 3-at, a nem támogatott típuskód ága 2-t, a normál ciklus vége 9-et állít EAX-be, a rekordolvasási hiba pedig az olvasó eredményét viszi tovább. Ezért a hívó nem nulla ága bizonyított, de a „nem nulla = a fájl visszamásolása sikerült” értelmezés nem következik belőle önmagában.
+
+A 0x00477210 tételenként hívja a 0x00462ba0-t, majd a 0x00476ec0-at (annot_disasm.py 0x00477210); az utóbbi utómunka pontos szerepe és a 0x004082f0 másolási segéd forrás-/célparamétere ebből a körből nem lett feloldva. A 0x00462790 nyers disassemblyje a 2-es típust külön ágra küldi, más kódnál 9-et ad, de a teljes rotate-predikátum nem azonosítható a mostani kimenetből. Nyitott következő címek: 0x00476ec0 (a 0x00477210 utólagos hívása); 0x004082f0 (az Undo-Save hívó paraméterei); 0x00462790 (rotate-feltétel). A meglévő 2026-11-18-as 0x00462ba0 kimenet csak a típusszűrést, útvonalakat és névmintákat mutatja, a tényleges másolási irányt nem.
+
+PicasaPy-oldal: src/picasapy/edit/save_operations.py:313-365 mindkét ismert eredetimappa-nevet keresi, majd a meglévő mentett képet állítja vissza. Az eredeti tokenes fájlágának pontos másolási iránya nélkül a paritás nem minősíthető.
+
+#### #472 - 0x005ef6b0, 0x005f3e10, 0x00477210
+
+A 0x005ef6b0 Ghidra-kimenete (2026-11-18-koteg-466-495.txt:1948-2072) a filters láncban a redeye, retouch és picnik neveket külön keresi. Találatnál meghívja a 0x005f3e10-et; a nem nulla eredmény azonnali visszatérés, a folytató ág a 0x00477210-et is meghívja. A korábbi Ghidra-kimenet (2026-11-15-7006-7008-7009-7012-colab-decomp.txt:7443-7481) szerint a 0x005f3e10 az 0x0046d7d0 eredményét adja tovább, és siker esetén frissít gyorsítótárat.
+
+A közvetlen út nem tölti be az IDS_CONFIRM_REDEYE_REVERT (0x119) erőforrást, és nem tartalmaz közvetlen felhasználói hibaüzenetet. A már meglévő 0x005ef520 kimenet az általános többes megerősítést (IDS_CONFIRMREVERT_MULTIPLE, 0xdc) írja le, nem a 0x119 ágat. A redeye-specifikus kérdés és a visszaállítási hiba felhasználói jelzése így nyitott; a 2026-11-15-ös kimenet meglevő általános kezelője nem válaszolja meg. Következő célzott vizsgálat: a 0x005ef3e0 megerősítési út új kérdése az 0x119 xref-fogyasztójáról, valamint a 0x005f3e10 hibavisszatérésének hívói. PicasaPy MainDialogs.qml:331-345 redeye-figyelmeztetése nem elég az eredetivel való paritás kimondásához.
 
 ## #7001: A csillagozás teljes folyamata az eredeti Picasával összevetve: belépési pontok és hatás
 
@@ -3354,4 +3483,27 @@ Nyitott kérdések: 7 nyílt · 25 lezárva · 0 blokkolt · 0 hatókörön kív
 ### 12. Módosított fájlok
 
 - `docs/specs/paritas-ellenorzes.md` - ez a #7024 alszakasz.
+
+
+### #7235-kiegészítés (2026-11-18): rekordtípus, módváltás és szövegfeldolgozás
+
+#### #473 - 0x004e3ab0, 0x004e40c0, 0x004e5070
+
+A 0x004e3ab0 kimenete (2026-11-18-koteg-466-495.txt:2073-2164) a +0x3f0 vektor rekordjának +0x18 mezőjében a 0x3e9 értéket hivatkozó rekordként kezeli, és a célindexre lép; ez nem azonosítja az 1, 2 és 5 kódhoz tartozó fájlformátumot. A 0x004e5070 korábbi kimenete (2026-10-21-idorend-34.txt:4507-4624) rekordot foglal és inicializál, a 0x004e40c0 annotált disassemblyje pedig a vektort olvassa és a +0x1e jelzőt vizsgálja, nem a +0x18 típuskódot írja. Nyitott következő cím: 0x00467ca0 és a +0x18 mezőt író hívói. A meglévő 0x00467ca0 dekompiláció (2026-10-21-idorend-34.txt) nem sorolja fel a tényleges formátumíró ágakat; az új kérdés kifejezetten az 1/2/5/0x3e9 kódok íróinak hozzárendelése.
+
+#### #474 - 0x0076b110 és közvetlen hívói
+
+A 0x0076b110 dekompiláció (2026-11-18-koteg-466-495.txt:2165-2318) a csomópont +0x2c5 állapotjelző bájtját állítja, majd a belső vezérlő +0x4c virtuális metódusával vált szerkeszthetőséget, a +0x80 callbackkel értesít és újrarajzol. Közvetlen hívói: 0x0067f580, 0x0067f5a0, 0x0076b0c0, 0x0076b0e0. A jelenlegi #7024 szakasz már bizonyítja a néző kattintás-, közvetlen gépelés-, Enter- és Esc-eseményeit; az új kimenet önmagában nem köti a négy setterhívót ezekhez az eseményekhez. Nyitott következő címek: a négy hívó és belépési eseménylánca. A PicasaPy mezője a PhotoViewerOverlayControls.qml:509-569 szerinti TextInput; ez önmagában nem azonosítja az eredeti módváltásokkal való teljes egyezést.
+
+#### #475 - 0x005f8520 és 0x0057bb50
+
+A 0x005f8520 dekompiláció (2026-11-18-koteg-466-495.txt:2319-2464) a puck-objektumot adja át a 0x0057bb50-nek; a puck +4 mezőjén a 4-es és 5-ös ág eltér, és az 5-ös a 0x00565f30-at hívja. A rainbow név is feltétel a 4-es ágon. A kimenet nem rendeli a konkrét eszközöket a 0x0057bb50 módparaméterének 4-es vagy 6-os értékéhez. Nyitott következő vizsgálat: a puck létrehozó/kitöltő hívói, amelyek a +4 kódot beállítják; a meglévő 0x005f8520 dekompiláció csak a már beolvasott kódágakat, nem az eszköz→mód leképezést adja.
+
+#### #476 - 0x00989f80, 0x009869a0
+
+A 0x00989f80 dekompiláció (2026-11-18-koteg-466-495.txt:2465-2592) a null-terminált UTF-8 bemenetet a `MultiByteToWideChar`(65001, ..., -1, ...) segítségével UTF-16-ra alakítja; előbb lekéri a szükséges méretet, majd annak megfelelő puffert foglal. Ebben a függvényben nem vágja le az elején és a végén a szóközt vagy a sortörést, és nincs külön hosszlimit. A 0x00437cf0 és a 0x0067f2a0 útja a 0x009869a0-t is meghívja, amely a jelenlegi kötegben nincs dekompilálva. Nyitott következő cím: 0x009869a0, a bemeneti trim és sorvég-átalakítás pontos sorrendjével. PicasaPy oldalon a Caption TextInput forrása PhotoViewerOverlayControls.qml:509-569; a végső karakter-/hosszkorlátra ebből az összevetésből nem következtetek.
+
+#### #477 - 0x0076ace0
+
+A 0x0076ace0 kimenet (2026-11-18-koteg-466-495.txt:2593-2723) koordináta-/eseményút-kezelő: az 1, 0x0d, 0x15 és 0x17 eseménykódokat kezeli; a törzsben nincs WM_UNDO (0x0304) ág. A kérdezett függvény tehát nem bizonyít Ctrl+Z-kezelést a Caption mezőben. Nyitott következő cím: 0x0067eca0 és a szerkesztőmező ablaküzenet-kezelőjének tényleges virtuális/natív célja, beleértve a WM_UNDO továbbítását. A meglévő 0x0076ace0 kimenet nem válaszolja meg a mező saját undo-veremét.
 
