@@ -57,6 +57,10 @@ Rectangle {
 
     color: Theme.panelBg
     border.color: Theme.chromeBorder
+    //: #7255: a csukott (0 széles) fiók fejlécének jobbra horgonyzott bezáró
+    //: gombja különben az ablak jobb szélére, a találati sáv felirata fölé
+    //: rajzolódna. A súgóbuborék és a menük Popupok, a vágás nem érinti őket.
+    clip: true
 
     Rectangle {
         id: fejlec

@@ -126,6 +126,13 @@ class ViewFilterMixin:
         csúszka bal széle nem „nagyon régi", hanem „nincs szűrés".
         """
         nap = kor_szuro.napok(max(0.0, min(1.0, float(ertek))))
+        if self._view_mode[0] in SEARCH_MODES:
+            # #7255: aktív keresésnél a csúszka a szöveggel KÖZÖS állapot: a
+            # keresés megmarad, a találat a szöveg és a kor metszete. A 0 állás
+            # csak a kor-szűrést kapcsolja ki, a szöveget nem.
+            self._age_filter_days = nap
+            self._refresh_view()
+            return
         if nap is None:
             self._age_filter_days = None
             self.clearFilter()
@@ -133,6 +140,17 @@ class ViewFilterMixin:
         self._age_filter_days = nap
         self._view_mode = ("age", nap)
         self._show_age_filtered(nap)
+
+    def _age_cutoff(self) -> str | None:
+        """A kor-szűrő vágópontja ISO-szövegként, vagy `None`, ha nincs szűrés.
+
+        A vágópont MINDIG a hívás pillanatához mérve számolódik (ugyanaz az
+        indoklás, mint a `_show_age_filtered`-nél): a napokat tároljuk, nem a
+        vágópontot."""
+        if self._age_filter_days is None:
+            return None
+        vagas = kor_szuro.vagopont(self._age_filter_days, datetime.now())
+        return vagas.isoformat(timespec="seconds")
 
     def _show_age_filtered(self, nap: float) -> None:
         """A kor-szűrt nézet — a vágópont MINDIG a hívás pillanatához mérve.
@@ -146,6 +164,15 @@ class ViewFilterMixin:
             records = photos_up_to_age(conn, vagas.isoformat(timespec="seconds"))
         self._show_filtered(records, time.perf_counter() - started)
 
+    def _show_age_view(self) -> None:
+        """A szöveg nélküli kor-nézet: a csúszka önmagában dátumszűrő (#7255).
+
+        A keresőszöveg törlése után hívjuk: a csúszka állása marad, és a
+        találat a teljes könyvtár kor szerinti szűkítése."""
+        nap = self._age_filter_days
+        self._view_mode = ("age", nap)
+        self._show_age_filtered(nap)
+
     @Property(str, notify=_Signals.statusChanged)
     def ageFilterText(self) -> str:
         """A kor-szűrő felirata a találati sávra, vagy üres, ha nincs szűrés.
@@ -155,6 +182,17 @@ class ViewFilterMixin:
         if self._age_filter_days is None:
             return ""
         return kor_szuro.felirat(self._age_filter_days, formatting.fordit)
+
+    @Property(str, notify=_Signals.statusChanged)
+    def ageFilterBarText(self) -> str:
+        """A zöld sáv jobb szélén álló felirat, vagy üres, ha nincs szűrés (#7255).
+
+        Alakja `Date Range:  Pictures up to N <egység> old.`. Az eredetiben a
+        `Date Range: ` előtag az `il_SetSearchStatus::1` erőforrás, utána két
+        szóközzel áll a mondat (`kor_szuro.sav_felirat`)."""
+        if self._age_filter_days is None:
+            return ""
+        return kor_szuro.sav_felirat(self._age_filter_days, formatting.fordit)
 
     # -- arc-szűrő (#1830) ---------------------------------------------------
 

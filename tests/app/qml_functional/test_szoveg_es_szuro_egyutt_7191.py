@@ -10,8 +10,8 @@ Minden próba VALÓDI felületi eseménnyel megy: a szűrőgombra valódi egérk
 a keresőmezőbe valódi billentyűleütés. A vezérlő függvényeit csak a
 visszaolvasáshoz (találatlista, darabszám, bal hasáb) hívjuk.
 
-Az online, a másodpéldány gomb és a kor-csúszka továbbra is külön nézet- vagy
-szűrőmód; a filmgomb a #7264 szerint a szöveggel közös állapotot használja.
+Az online és a másodpéldány gomb továbbra is külön nézet- vagy szűrőmód; a
+filmgomb (#7264) és a kor-csúszka (#7255) a szöveggel közös állapotot használja.
 """
 
 from __future__ import annotations
@@ -356,14 +356,16 @@ class TestAMaiViselkedesMarad:
             _kattint(window, qt_app, _elem(window, "searchClear"))
             assert _varj(qt_app, lambda: controller.viewModeName == "folder")
 
-    def test_a_kor_csuszka_ma_is_felulirja_a_keresest(self, app):
+    def test_a_kor_csuszka_a_keresessel_kozos_allapot(self, app):
+        """#7255: a csúszka a keresést nem váltja le, a szöveggel metsz."""
         window, controller, qt_app = app
         _gepel(window, controller, qt_app, KULCS)
 
         controller.setAgeFilter(0.9)
 
-        assert controller.viewModeName == "age"
-        assert controller.searchActive is False
+        assert controller.viewModeName == "search"
+        assert controller.searchActive is True
+        assert controller.searchQuery == KULCS
 
     def test_a_gomb_nelkuli_szuro_es_kereses_valtozatlan(self, app):
         window, controller, qt_app = app
