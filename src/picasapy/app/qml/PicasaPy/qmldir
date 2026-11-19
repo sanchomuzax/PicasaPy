@@ -118,6 +118,7 @@ QuickTagsConfigDialog 1.0 QuickTagsConfigDialog.qml
 PropertiesPanel 1.0 PropertiesPanel.qml
 PeoplePanel 1.0 PeoplePanel.qml
 PeoplePanelRow 1.0 PeoplePanelRow.qml
+internal LightboxFeedNetworkActivation LightboxFeedNetworkActivation.qml
 LightboxFeed 1.0 LightboxFeed.qml
 LightboxFeedSelection 1.0 LightboxFeedSelection.qml
 LightboxFeedGroup 1.0 LightboxFeedGroup.qml

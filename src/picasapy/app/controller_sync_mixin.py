@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from PySide6.QtCore import QLocale, QTimer, Slot
+from picasapy.halozati_ut import fajlrendszer_gyoker
 from picasapy.index import (
     album_photos,
     geotagged_photos,
@@ -162,6 +163,21 @@ class AppControllerSyncMixin:
     @Slot()
     def _reload_after_sync_if_changed(self) -> None:
         """A syncFinished nézeteit csak tényleges index- vagy ini-változás frissíti."""
+        current_folder = getattr(self, "_current_folder", "")
+        slow_network_folder = bool(
+            current_folder and fajlrendszer_gyoker(current_folder) is not None
+        )
+        if not slow_network_folder:
+            # Helyi lemezen maradjon a főág azonnali viselkedése. A QML
+            # modell késleltetése és a szinkron utáni eseményköri rés csak
+            # hálózati fájlrendszeren védi a megnyitott nézőt.
+            self._sync_reload_idle_ready = False
+            self._sync_reload_idle_pending = False
+            self._deferred_sync_reload = False
+            if getattr(self, "_last_sync_changed", True) is False:
+                return
+            self._reload(preserve_scroll=True)
+            return
         idle_ready = getattr(self, "_sync_reload_idle_ready", False)
         self._sync_reload_idle_ready = False
         edit_controller = getattr(self, "_edit_controller_for_sync", None)
@@ -209,12 +225,19 @@ class AppControllerSyncMixin:
     def _finish_sync_reload_after_idle(self) -> None:
         """Egy eseményköri rés után újraellenőrzi, kell-e feedfrissítés."""
         self._sync_reload_idle_pending = False
+        current_folder = getattr(self, "_current_folder", "")
+        if not current_folder or fajlrendszer_gyoker(current_folder) is None:
+            return
         self._sync_reload_idle_ready = True
         self._reload_after_sync_if_changed()
 
     @Slot()
     def _finish_sync_reload_grace(self) -> None:
         """A mappaváltást követő nézőnyitásnak ad egy eseménykört."""
+        current_folder = getattr(self, "_current_folder", "")
+        if not current_folder or fajlrendszer_gyoker(current_folder) is None:
+            self._sync_reload_grace_until = 0.0
+            return
         if getattr(self, "_sync_reload_grace_until", 0.0) > time.monotonic():
             return
         self._sync_reload_grace_until = 0.0

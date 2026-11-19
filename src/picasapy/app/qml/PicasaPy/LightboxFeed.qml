@@ -105,15 +105,14 @@ ListView {
 
 
     clip: true
-    // A néző nyitva van a könyvtár fölött; ilyenkor a rejtett feedmodell
-    // delegátumai ne épüljenek és ne számolják újra a cellák kötéseit.
-    // Bezáráskor a néző eltűnése és a feed nagyobb QML-modelljének
-    // felépítése külön eseményköri lépésben fusson. A várakozás alatt a
-    // néző visszajelzése és az ablak többi vezérlője már reagálhat.
+    // Hálózati gyökérnél a néző mögötti feed delegátumai ne épüljenek újra;
+    // helyi mappán a főági, azonnali modellkapcsolat marad érvényben.
+    readonly property bool slowNetworkFolder:
+        !!grid.ctl && grid.ctl.currentFolderOnNetwork
     property bool feedActivationReady: true
     property int feedCacheBuffer: 600
-    model: grid.ctl && !grid.appWindow.viewerOpen
-            && grid.feedActivationReady
+    model: grid.ctl && (!grid.slowNetworkFolder
+            || (!grid.appWindow.viewerOpen && grid.feedActivationReady))
         ? grid.ctl.feedGroups : []
 
     LightboxFeedEmptyState { feed: grid }
@@ -578,7 +577,7 @@ ListView {
             })
         }
         function onFeedChanged() {
-            if (grid.appWindow.viewerOpen)
+            if (grid.slowNetworkFolder && grid.appWindow.viewerOpen)
                 return
             if (grid.personAlbumMode) {
                 Qt.callLater(function() { grid.alignPersonAlbumHeader() })
@@ -613,69 +612,7 @@ ListView {
         }
     }
 
-    Connections {
-        target: grid.appWindow
-        function onViewerOpenChanged() {
-            if (grid.appWindow.viewerOpen) {
-                viewerFeedActivationTimer.stop()
-                viewerFeedCacheRamp.stop()
-                grid.feedCacheBuffer = 0
-                grid.feedActivationReady = false
-                return
-            }
-            viewerFeedActivationTimer.restart()
-        }
-    }
-
-    Timer {
-        id: viewerFeedActivationTimer
-        interval: 100
-        repeat: false
-        onTriggered: {
-            if (!grid.appWindow.viewerOpen) {
-                grid.feedCacheBuffer = 0
-                grid.feedActivationReady = true
-                viewerFeedCacheRamp.start()
-            }
-        }
-    }
-
-    Timer {
-        id: viewerFeedCacheRamp
-        interval: 16
-        repeat: true
-        onTriggered: {
-            if (grid.appWindow.viewerOpen) {
-                stop()
-                return
-            }
-            if (grid.feedCacheBuffer >= 600) {
-                stop()
-                return
-            }
-            grid.feedCacheBuffer = Math.min(
-                600, grid.feedCacheBuffer + 100)
-        }
-    }
-
-    Connections {
-        target: grid.appWindow
-        function onViewerOpenChanged() {
-            if (grid.appWindow.viewerOpen)
-                return
-            Qt.callLater(function() {
-                if (grid.appWindow.viewerOpen)
-                    return
-                if (grid.revealAfterViewer) {
-                    grid.applyRevealAfterViewer()
-                    return
-                }
-                grid.restoring = true
-                grid.restoreAnchor()
-                grid.restoring = false
-            })
-        }
-    }
+    LightboxFeedNetworkActivation { feed: grid }
 
     // -- mentés-üzemmód: a görgetési helyzet megőrzése (#3751) ----
     // A mentés-szűrő modellcsere: az új szűrt tartalom (bekapcsolás, másik

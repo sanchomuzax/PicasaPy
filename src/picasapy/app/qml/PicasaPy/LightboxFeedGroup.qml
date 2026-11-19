@@ -224,14 +224,14 @@ Column {
         readonly property int windowCount: Math.max(0, Math.min(
             groupCol.modelData.count - windowStart,
             (lastRow - firstRow + 1) * feed.columns))
-        // A kezdő látható képernyő cellái egyszerre készülnek el, hogy a
-        // mappa megnyitása után rögtön kattintható legyen a teljes első
-        // sor. A képernyőn túli cellák külön eseményköri lépésekben jönnek
-        // létre; így a nagy feed mellett is reagál a görgetés és a menü.
+        // A látható képernyő és az aktív előrebetöltési puffer cellái
+        // egyszerre készülnek el, hogy görgetés vagy sorra ugrás után is
+        // rögtön kattinthatók legyenek. A távolabbi cellák külön eseményköri
+        // lépésekben jönnek létre, így a nagy feed mellett is reagál a menü.
         readonly property int initialMaterializedCount: Math.min(
             windowCount,
-            Math.ceil(feed.height / Math.max(1, feed.cellHeight))
-                * feed.columns)
+            (Math.ceil(feed.height / Math.max(1, feed.cellHeight))
+                + bufferRows * 2) * feed.columns)
         property int materializedWindowCount: initialMaterializedCount
         Timer {
             id: materializeWindowTimer

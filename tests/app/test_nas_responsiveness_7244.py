@@ -92,6 +92,24 @@ def test_network_begin_edit_emits_only_changed_tool_properties(
     assert len(changed_properties) == len(set(changed_properties))
 
 
+def test_local_edit_session_notifies_qml_properties(qt_app, tmp_path):
+    from picasapy.app.edit_controller import EditController
+    from picasapy.app.edit_preview import EditPreviewProvider
+    from support.jpeg_factory import make_jpeg
+
+    photo = make_jpeg(tmp_path / "local-edit.jpg", size=(32, 24))
+    controller = EditController(EditPreviewProvider())
+    notified = []
+    controller.chainValueChanged.connect(lambda: notified.append("chain"))
+    controller.cropSuggestionsChanged.connect(lambda: notified.append("crop"))
+
+    controller.beginEdit("local-photo", str(photo))
+
+    assert "chain" in notified
+    assert "crop" in notified
+    assert controller.waitForBackgroundWorkers(10.0)
+
+
 def test_revision_without_preview_change_keeps_preview_url(qt_app, tmp_path):
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
@@ -115,7 +133,8 @@ def test_revision_without_preview_change_keeps_preview_url(qt_app, tmp_path):
 def test_sync_finish_skips_feed_reload_when_progress_already_loaded_index():
     class SyncHost(AppControllerSyncMixin):
         _last_sync_changed = True
-        _view_mode = ("folder", "network-folder")
+        _view_mode = ("folder", r"\\server\share")
+        _current_folder = r"\\server\share"
         _feed_stamp = ("db", 4, "wal", 8)
         backupFilterActive = False
 
@@ -143,7 +162,8 @@ def test_sync_finish_yields_event_loop_before_feed_reload(monkeypatch):
 
     class SyncHost(AppControllerSyncMixin):
         _last_sync_changed = True
-        _view_mode = ("folder", "network-folder")
+        _view_mode = ("folder", r"\\server\share")
+        _current_folder = r"\\server\share"
         _feed_stamp = None
         backupFilterActive = False
 
@@ -173,10 +193,42 @@ def test_sync_finish_yields_event_loop_before_feed_reload(monkeypatch):
     assert host.reloads == 1
 
 
+def test_local_sync_finish_reloads_feed_without_delay(monkeypatch, tmp_path):
+    queued = []
+    reloads = []
+
+    class SyncHost(AppControllerSyncMixin):
+        _last_sync_changed = True
+        _feed_stamp = None
+        backupFilterActive = False
+
+        def __init__(self):
+            self._current_folder = str(tmp_path)
+            self._view_mode = ("folder", self._current_folder)
+
+        def _index_stamp(self):
+            return ("db", 1)
+
+        def _reload(self, **kwargs):
+            reloads.append(kwargs)
+
+    monkeypatch.setattr(
+        QTimer,
+        "singleShot",
+        lambda delay, callback: queued.append((delay, callback)),
+    )
+
+    AppControllerSyncMixin._reload_after_sync_if_changed(SyncHost())
+
+    assert reloads == [{"preserve_scroll": True}]
+    assert queued == []
+
+
 def test_sync_finish_defers_feed_reload_until_viewer_session_ends():
     class SyncHost(AppControllerSyncMixin):
         _last_sync_changed = True
-        _view_mode = ("folder", "network-folder")
+        _view_mode = ("folder", r"\\server\share")
+        _current_folder = r"\\server\share"
         _feed_stamp = ("db", 4, "wal", 8)
         backupFilterActive = False
         _edit_controller_for_sync = SimpleNamespace(_photo_id="network-photo")

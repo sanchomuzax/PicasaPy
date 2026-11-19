@@ -68,6 +68,24 @@ Item {
     property var _pendingSelectedIds: []
     property string _pendingAnchorId: ""
     property var _pendingRenameTargets: []
+    function captureSelectionBeforePhotoRowsChange() {
+        var ids = []
+        for (var k = 0; k < hostWindow.selectedIndexes.length; ++k) {
+            var id = hostController.photos.idAt(
+                Number(hostWindow.selectedIndexes[k]))
+            if (id.length > 0) ids.push(parseInt(id, 10))
+        }
+        _pendingSelectedIds = ids
+        _pendingAnchorId = hostWindow.selectedIndex >= 0
+            ? hostController.photos.idAt(hostWindow.selectedIndex) : ""
+    }
+    function restoreSelectionAfterPhotoRowsChange() {
+        hostWindow.selectedIndexes = Selection.remapByIds(
+            _pendingSelectedIds, hostController.photos.rowOfId)
+        hostWindow.selectedIndex = _pendingAnchorId.length > 0
+            ? hostController.photos.rowOfId(parseInt(_pendingAnchorId, 10))
+            : -1
+    }
     Connections {
         target: hostController
         function onRenameBatchTargets(targets) {
@@ -78,22 +96,17 @@ Item {
         // #305: engine-leépítéskor a `controller` context property null
         // lehet, miközben ez a kötés újra kiértékelődik — null-őr kell.
         target: hostController ? hostController.photos : null
+        function onRowsAboutToBeInserted(parent, first, last) {
+            commandSurface.captureSelectionBeforePhotoRowsChange()
+        }
+        function onRowsInserted(parent, first, last) {
+            commandSurface.restoreSelectionAfterPhotoRowsChange()
+        }
         function onModelAboutToBeReset() {
-            var ids = []
-            for (var k = 0; k < hostWindow.selectedIndexes.length; ++k) {
-                var id = hostController.photos.idAt(Number(hostWindow.selectedIndexes[k]))
-                if (id.length > 0) ids.push(parseInt(id, 10))
-            }
-            hostWindow._pendingSelectedIds = ids
-            hostWindow._pendingAnchorId = hostWindow.selectedIndex >= 0
-                ? hostController.photos.idAt(hostWindow.selectedIndex) : ""
+            commandSurface.captureSelectionBeforePhotoRowsChange()
         }
         function onModelReset() {
-            hostWindow.selectedIndexes = Selection.remapByIds(
-                hostWindow._pendingSelectedIds, hostController.photos.rowOfId)
-            hostWindow.selectedIndex = hostWindow._pendingAnchorId.length > 0
-                ? hostController.photos.rowOfId(parseInt(hostWindow._pendingAnchorId, 10))
-                : -1
+            commandSurface.restoreSelectionAfterPhotoRowsChange()
             // Az átnevezett fájl új útvonal miatt új adatbázis-id-t kaphat.
             // Csak akkor helyettesítjük a régi azonosítót, ha az már eltűnt
             // a modellből és az új útvonal megjelent; sikertelen átnevezésnél

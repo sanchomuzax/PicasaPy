@@ -71,9 +71,6 @@ class EditControllerSessionMixin:
             self._tool_property_values() if network_path else None
         )
         previous_camera_summary = self._camera_summary
-        previous_crop_suggestions = tuple(
-            getattr(self, "_network_crop_suggestions", ())
-        )
         # #3014: minden sima nyitás ÍRÓ munkamenet — a memóriás mód csak a
         # `beginEditInMemory`-vel jár, és nem ragadhat át a következő fotóra
         self._memory_only = False
@@ -145,10 +142,6 @@ class EditControllerSessionMixin:
         self._bump_revision()
         if network_path:
             self._emit_changed_tool_properties(previous_tool_values)
-            if self._camera_summary != previous_camera_summary:
-                self.cameraSummaryChanged.emit()
-            if previous_crop_suggestions:
-                self.cropSuggestionsChanged.emit()
             # A panel saját, szerkesztés közbeni állapotai (például a
             # csúszkák) új képnél egyszer szinkronizálódnak, de a hálózati
             # nyitás nem ébreszti fel a toolsChanged teljes kötésgyűjtőjét.
@@ -158,6 +151,12 @@ class EditControllerSessionMixin:
             )
         else:
             self.toolsChanged.emit()
+        if self._camera_summary != previous_camera_summary:
+            self.cameraSummaryChanged.emit()
+        # A tulajdonság külön notify-jelre váltott, ezért minden új képnél
+        # jelezni kell, hogy a helyi számítás és a hálózati várakozás is
+        # frissítse a vágás-panelt.
+        self.cropSuggestionsChanged.emit()
 
 
     def _start_network_edit_state_load(
