@@ -15,6 +15,7 @@ from picasapy.index import is_folder_hidden, open_index, sync_tree
 from picasapy.ini import load_document, read_folder_category
 from picasapy.ini.io import update_document
 from picasapy.ini import with_folder_category
+from support.index_migration import downgrade_search_schema_to_v28
 
 
 @pytest.fixture
@@ -39,6 +40,7 @@ def _regi_index(db, gyoker, rejtett):
     # ugyanígy a v25-ös arcforrás-jelölő (#5180)
     kapcsolat.execute("DROP INDEX idx_face_source_photo")
     kapcsolat.execute("ALTER TABLE face DROP COLUMN source")
+    downgrade_search_schema_to_v28(kapcsolat)
     kapcsolat.execute("PRAGMA user_version=21")
     kapcsolat.commit()
     kapcsolat.close()
