@@ -239,12 +239,12 @@ bizonyítja, hogy a helper a `zoomsliderrect` geometriai feldolgozását a
 `sszoomsliderclip` elemhez viszonyítva kéri, de nem mondja meg, mikor
 rajzolódik ki a csúszka.
 
-**Friss Colab-mérések.** A feladatban közölt eredmény szerint a job-775–778
+**Friss Colab-mérések.** A feladatban közölt eredmény szerint a job-775-778
 kézi szünetet mér az
 1., 11. és 22. dián, valamint a lista végén; a zoomsáv egyik képen sem
 látszik. A job-785/786 jobb kattintást mér szünet után; a sáv ott sem jelenik
 meg. **Cáfoló kísérlet:** az ellenőrizendő állítás az volt, hogy a kézi
-listavégi szünet önmagában elég a vezérlő előhozásához. A 775–778-as eredmény
+listavégi szünet önmagában elég a vezérlő előhozásához. A 775-778-as eredmény
 magában foglal listavégi kézi szünetet, de azon sem látszik a sáv; a 785/786
 jobb kattintása után sincs látható sáv. Ez a mért próbákban cáfolja e két
 esemény önálló elégségességét. **A cáfolat határa:** a megadott eredmények nem
@@ -281,7 +281,7 @@ ettől külön a `0x00802ff0` vetítési-idő útját használják.
 
 > **Bizonyítottsági fok:** a zoomvezérlő erőforrás-eredete és képskála-hatása
 > statikus bizonyítékkal alátámasztott; a láthatósági feltétel nyitott, ezért
-> a teljes #7284 kérdés **nyitott**. A 775–778 és 785/786 mérések negatívak a
+> a teljes #7284 kérdés **nyitott**. A 775-778 és 785/786 mérések negatívak a
 > megnevezett kézi eseményekre; a 789 eredményét nem sikerült ellenőrizni.
 
 **Következtetés.** A sávon látható nagyító nem a `oneup` saját időállító
