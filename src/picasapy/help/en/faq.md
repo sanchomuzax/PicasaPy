@@ -109,7 +109,7 @@ video format. On Linux, install `qml6-module-qtmultimedia` and
 The Qt module used to display maps is missing. You can still read and delete
 geotags, but the map will not appear.
 
-### “PicasaPy could not initialize Google Maps. Check your internet connection.”
+### “The map could not be loaded. Please make sure that you are connected to the Internet.”
 
 The map in the Places panel is downloaded from the internet, and the
 application could not reach it. Check your connection. Your geotags are
