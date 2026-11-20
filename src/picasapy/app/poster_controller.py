@@ -94,7 +94,21 @@ class PosterMixin(BackgroundWorkerMixin):
         if kind == "failed":
             self.posterFailed.emit(str(payload))
         else:
+            self._request_poster_pages_indexing(payload)
             self.posterFinished.emit(payload)
+
+    def _request_poster_pages_indexing(self, pages: list[str]) -> None:
+        """A kész lapok mappájának célzott újraolvasását kéri (#7316).
+
+        A felület az utolsó lapot a rácsmodell sorával nyitja meg
+        szerkesztésre (az eredeti is azt mutatja), ezért a lapoknak az
+        indexbe kell kerülniük. Minden lap a forrás mappájába íródik, így
+        egyetlen kérés elég, ahogy a kollázs, a film és a másolat
+        kimeneténél (#1539)."""
+        if not pages:
+            return
+        self._ensure_output_resync_wired()
+        self.noteOutputWritten(pages[-1])
 
     @Slot(result=list)
     def posterPaperSizes(self) -> list[str]:  # noqa: N802

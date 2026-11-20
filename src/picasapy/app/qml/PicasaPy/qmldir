@@ -151,6 +151,7 @@ InitialScanDialog 1.0 InitialScanDialog.qml
 ExportDialogs 1.0 ExportDialogs.qml
 CreateDialogs 1.0 CreateDialogs.qml
 PosterCreateDialog 1.0 PosterCreateDialog.qml
+PosterResultOpener 1.0 PosterResultOpener.qml
 CollageCreateDialog 1.0 CollageCreateDialog.qml
 MovieMakerDialog 1.0 MovieMakerDialog.qml
 MovieMakerActions 1.0 MovieMakerActions.qml

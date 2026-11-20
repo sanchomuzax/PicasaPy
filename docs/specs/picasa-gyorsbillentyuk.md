@@ -185,7 +185,7 @@ Jelölés a „3.9-ben él?" oszlopban:
 | 22 | Keywords | `Ctrl+K` | ⬜ | a 3.9 menüiben nincs `Ctrl+K`; a címkepanel a `Ctrl+T`-n van (12.) |
 | 23 | Slideshow | `Ctrl+4` | ✅ | Nézet ▸ Diavetítés (`cmd 0x9c9f`) **és** Mappa/Album ▸ Diavetítés megtekintése (`cmd 0x9c6d`) |
 | 24 | Timeline | `Ctrl+5` | ✅ | Nézet ▸ Időrend (`cmd 0x9ccc`) |
-| 25 | Print Contact Sheet | `Ctrl+Shift+P` | ✅ | Mappa/Album ▸ Indexképek nyomtatása… (`cmd 0x9c94`) |
+| 25 | Print Contact Sheet | `Ctrl+Shift+P` | ✅ | Mappa/Album ▸ Indexképek nyomtatása… (`cmd 0x9cd0`) |
 | 26 | Export as Web Page | `Ctrl+W` | ⬜ | a menütételen nincs kiírt billentyű — ld. 2.4 |
 | 27 | Rotate Clockwise | `Ctrl+R` | ✅ | Kép ▸ Forgatás jobbra (`cmd 0x9ca2`) |
 | 28 | Rotate Counterclockwise | `Ctrl+Shift+R` | ✅ | Kép ▸ Forgatás balra (`cmd 0x9ca3`) |
@@ -310,7 +310,7 @@ sorozatból.
 | `0xd6e07c` | Nézet | Diavetítés | `Ctrl+4` | `0x9c9f` |
 | `0xd6e090` | Nézet | Időrend | `Ctrl+5` | `0x9ccc` |
 | `0xd6e1d4` | Mappa/Album | Diavetítés megtekintése | `Ctrl+4` | `0x9c6d` |
-| `0xd6e274` | Mappa/Album | Indexképek nyomtatása… | `Ctrl+Shift+P` | `0x9c94` |
+| `0xd6e274` | Mappa/Album | Indexképek nyomtatása… | `Ctrl+Shift+P` | `0x9cd0` |
 | `0xd6e2b0` | Mappa/Album | Keresés a lemezen | `Ctrl+Enter` | `0x9cba` |
 | `0xd6e318` | Kép ▸ Csoportos szerkesztés | Átnevezés… | `F2` | `0x9d4f` |
 | `0xd6e340` | Kép | Forgatás jobbra | `Ctrl+R` | `0x9ca2` |

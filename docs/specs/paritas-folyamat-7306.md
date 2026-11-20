@@ -109,3 +109,68 @@ Nincs külön új jegyjavaslat. Az eredeti programfelvétel a #7306 nyitott „K
 - `docs/specs/paritas-folyamat-7306.md`: új, a #7306-ra szűkített folyamat-összevetés és nyitott bizonyítéklista.
 - `docs/specs/00-index.md`: új hivatkozás erre a lapra.
 - `.codex-jelentes.md`: hozzáférési és kutatási ellenőrzőpontok a folytathatósághoz.
+
+## Eredeti mérés (#794, #795, 2026-11-20)
+
+### Következtetés
+
+A Picasa 3.9 két külön futásban 200%-os, `4x6` papírméretű, átfedés nélküli poszterpárbeszédet mutatott. Egy 800×800 képpontos `color_patches.jpg` képből négy JPEG-lap keletkezett a forrásmappában; a Picasa ezután a `1-1-color_patches.jpg` lap szerkesztőnézetét nyitotta meg, a forráskép pedig a Selection tálcán maradt. A második megnyitáskor az egyszer bekapcsolt `Overlap tiles` ismét üres volt. A PicasaPy kód az alapértékekkel és a fájlnév/darabszám mintával egyezik; a befejezés utáni automatikus szerkesztőnézet helyett az eredmény-párbeszédet nyitja meg.
+
+**Bizonyítottsági fok: feltételes.** Az alapértékek és a kimeneti fájlok két külön Picasa-futásban ismétlődtek, és a képernyőképet a fájllista is alátámasztja. Az átfedés megőrzését és a befejezés utáni nézetet egy-egy futás mérte; a PicasaPy-oldal forráskódból, nem futtatott összehasonlításból ismert. A teljes #7306 issue-törzs nem része a kapott feladatleírásnak, ezért ez a lap csak a megadott mérési kérdésekről következtet.
+
+### Módszer és forrás
+
+- Eredeti program: Picasa 3.9 Colab-felvételek, a terv `m7305/terv.md` f05 és f06 lépéssorai szerint.
+- **#794 / f05:** egy kijelölt kép (`color_patches.jpg`), `kepernyo__09`-`15`, `kepmappa__lista.json`.
+- **#795 / f06:** egy kijelölt kép, `Overlap tiles` bejelölése, OK, majd a párbeszéd újranyitása; `kepernyo__11`-`21`, `allapot.json`, `kepmappa__lista.json`.
+- A bináris parancs, beállítások és kimeneti út korábbi elemzése: `picasa-create-features.md` 3.1; különösen `ID_POSTER` `0x9d30`, a kezelő `0x00530c10`, a párbeszéd `0x007387c0`, valamint a `%d-%d-%s` fájlnév-formátum.
+- A `kepmappa__lista.json` teljes mappalistája 91 meglévő bejegyzést és 4 új poszter-JPEG-et tartalmaz; a Picasa képernyőjén a képtár számlálója 28/28. E két számlálás eltérő nézetre vonatkozik, ezért nem helyettesítem egymással.
+
+### Eredeti / nálunk / teendő
+
+| Eredeti (bináris cím / mérés) | Nálunk (fájl:sor) | Teendő |
+|---|---|---|
+| `0x007387c0` párbeszédkonstruktor; #794 `kepernyo__11` és #795 `kepernyo__11`: Poster size `200%`, Paper size `4x6`, `Overlap tiles` üres. Mindkét felvétel azonos első megnyitási értéket mutatott. | `src/picasapy/app/qml/PicasaPy/PosterCreateDialog.qml:36-51`: minden nyitáskor 200%-ot választ, az átfedést kikapcsolja; a papírméretet a mentett értékből tölti be. Az amerikai méretkészlet és alapérték `src/picasapy/app/poster_controller.py:99-120`. | A mért amerikai beállításban egyezik; nincs igazolt fejlesztési eltérés. A más régióban látható papírméretet azonos lokalizációval kell összevetni. |
+| `0x005cc150` → `0x00530c10`; #794 `kepernyo__09`-`11`: egy kijelölt képnél a `Make a Poster...` menüpont aktív és megnyitja a Poster Settings ablakot. | `src/picasapy/app/qml/PicasaPy/PicasaCreateMenu.qml:23-27`; a kapu `MainMenuBar.qml:157-158`. | Az egyképes mérés egyezik. Az eredeti 0 kijelölt képes aktiválási állapotát az f05/f06 nem vizsgálta; arra ne terjesszük ki ezt a leletet. |
+| #794 `kepernyo__12`-`15` és `kepmappa__lista.json`: az `800×800`-as forrásból négy új fájl jött létre a `drive_c/PicasaTeszt` mappában: `0-0-color_patches.jpg`, `0-1-color_patches.jpg`, `1-0-color_patches.jpg`, `1-1-color_patches.jpg`. A Picasa által kijelzett utolsó lap `400×400` képpontos. | `src/picasapy/printing/poster.py:101-123`: a nagyítás százasa adja a rács méretét; a lapnév `<oszlop>-<sor>-<forrásnév>.jpg`, a forrás mappájába írva. A párbeszéd `PosterCreateDialog.qml:54-63` átadja a 200%-ot és a papírméretet. | A vizsgált 200%-os négyzetes esetben a kimeneti darabszám, nevek és célmappa egyeznek. A szimmetrikus 2×2 kimenet a névben szereplő sor/oszlop szemantikáját önmagában nem dönti el; az eltérő képarányú geometriát és az átfedés képpontjait ne tekintsük e méréssel igazoltnak. |
+| #794 `kepernyo__15`: a Picasa szerkesztőnézetre vált, a `PicasaTeszt > 1-1-color_patches.jpg` lapot mutatja, a képtárban `28 of 28` jelzéssel; a Selection tálcán az eredeti kép miniatűrje marad. | `src/picasapy/app/qml/PicasaPy/MainWindowDialogStack.qml:309` → `CreateDialogs.qml:187-192`: siker után a `Poster tiles saved.` eredmény-párbeszédet és a fájlutakat mutatja. A `poster_controller.py:122-208` a kimeneti fájlok listáját jelzi. | Eltérés: a Picasa automatikusan az utolsó poszterlap szerkesztőnézetét nyitja, a PicasaPy sikerútja pedig eredmény-párbeszédet nyit. Lásd D1. |
+| #795 `kepernyo__13`, `kepernyo__20`: az első panelen az átfedés bejelölve, a következő megnyitáskor üres. | `PosterCreateDialog.qml:50` minden megnyitáskor `false`-ra állítja a jelölőt. | A beállítás Cancel/újranyitás állapotában egyezik. Nincs fejlesztési eltérés erre a megfigyelt viselkedésre. |
+
+### Bizonyítottság és cáfoló kísérlet
+
+- **A, eredeti képernyők:** #794 és #795 képei megmutatják a beállításokat, az OK utáni szerkesztőnézetet, a kijelölést és az átfedés második megnyitáskori állapotát.
+- **B, fájlrendszer-lista és kódsorok:** #794/#795 `kepmappa__lista.json` listája a négy új nevet és méretet rögzíti; a PicasaPy `poster.py` fájlnév- és lapgeneráló kódja, illetve a `CreateDialogs.qml` sikerútja külön forrásból hasonlítható hozzá.
+- **Egyezés:** a panel 200% / 4x6 / átfedés ki alapértéke, a négy 200%-os fájl és az átfedés visszaállása egyezik a megvizsgált PicasaPy-kód viselkedésével.
+- **Cáfoló kísérlet:** a „bekapcsolt átfedés a következő megnyitásra is megmarad” állítást a #795-ben próbáltam cáfolni. A `kepernyo__13` képen bekapcsolt, a `kepernyo__20` képen kikapcsolt állapot látszik, miközben az `allapot.json` mindkét esetben `Poster Settings` ablakot jelez. A második kép a Cancel előtti párbeszédet mutatja, tehát nem a bezárás utáni képet néztem félre.
+
+### A megadott mérési kérdések állapota
+
+1. ✅ **Poszter alapértékei:** 200%, `4x6`, átfedés kikapcsolva; két külön futás képe egyezik (#794/#795 `kepernyo__11`).
+2. ✅ **Létrejött fájlok neve és darabszáma:** négy megnevezett JPEG az eredeti mappában (#794 `kepmappa__lista.json`).
+3. ✅ **Picasa végállapot:** szerkesztőnézet, utolsó lap `1-1-color_patches.jpg`, képtár `28 of 28`, Selection tálcán az eredeti kép (#794 `kepernyo__15`).
+4. ✅ **Átfedés újranyitáskor:** a bekapcsolt állapot a második megnyitásra kikapcsolt (#795 `kepernyo__13`, `kepernyo__20`).
+5. ⛔ **PicasaPy végállapot futtatott egyezése:** nem futtattam PicasaPy-t; a forrásban siker-párbeszéd van, az eredeti pedig szerkesztőnézetre vált. A runtime-paritás nincs igazolva.
+
+### Javasolt fejlesztői jegytörzs
+
+#### D1. A poszterlap elkészülte utáni nézet
+
+**Eredeti:** a Picasa-colab-jobs #794 `kepernyo__15` képe szerint az OK után az Editor nézet nyílik meg az utolsó lapon, `1-1-color_patches.jpg`-n, `28 of 28` számlálóval; a Selection tálcán az eredeti `color_patches.jpg` marad.
+
+**Nálunk:** `MainWindowDialogStack.qml:309` és `CreateDialogs.qml:187-192` siker-párbeszédet nyit a poszterlapok útvonalaival; nincs ebben a sikerútban explicit editor-navigáció.
+
+**Teendő:** a sikeresen elkészült lapok után frissítsük a könyvtárnézetet, nyissuk meg az utolsó generált lapot szerkesztőnézetben, és hagyjuk meg a forráskép kijelölését a Selection tálcán.
+
+**Kész, ha:** egy kijelölt forráskép 200%-os poszterének elkészülte után a szerkesztő az utolsó kimeneti JPEG-et mutatja; a lap a mappában látszik, a képtár számlálója a friss állapotot mutatja, a forráskép Selection tálcás kijelölése megmarad.
+
+### Nyitott
+
+- `NINCS MEG`: a Poszter menü aktiválási feltétele 0 kijelölt képnél; a megadott mérések csak egy kijelölt képet használtak.
+- `NINCS MEG`: a PicasaPy futásidejű rácsfrissítés, eredmény-párbeszéd és kijelölés utáni állapota; a fenti PicasaPy-összevetés kódszintű.
+- `NINCS MEG`: az átfedés pontos képpont-geometriája, a nem négyzetes/eltérő képarányú kép lapjai, a metaadatok és a papírméret vágásra gyakorolt hatása. A megadott `kepmappa` lista neveket és fájlméreteket tartalmaz, képadatot nem.
+- `NINCS MEG`: a papírméret megjegyzésének viselkedése megváltoztatott papírméret után; a f05/f06 nem választott másik méretet.
+- Ghidra-kör nem szükséges a fenti, szűk mérésekhez; az átfedés pontos képlete és az eltérő képarányú lapozás külön, célzott bináris/futtatott munka.
+
+### Módosított fájlok
+
+- `docs/specs/paritas-folyamat-7306.md`: a #794/#795 felvételek, a PicasaPy-kód és a mért eltérés összevetése.

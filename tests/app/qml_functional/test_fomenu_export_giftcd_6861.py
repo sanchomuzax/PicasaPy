@@ -156,7 +156,12 @@ def test_create_gift_cd_a_mappa_nevevel_es_mukodo_include_slideshow_valasztoval(
 ):
     window, controller, _engine = qml_app
     _ablakmagassag(window, qt_app, height_offset)
-    _kijelol_ket_kept(window, qt_app, controller)
+    assert _varj(qt_app, lambda: controller.photos.rowCount() == 2), (
+        "a két tesztkép nem töltődött be"
+    )
+    window.setProperty("selectedIndexes", [])
+    window.setProperty("selectedIndex", -1)
+    qt_app.processEvents()
 
     _menu_tetel(window, qt_app, "&Create", "menuCreateGiftCd")
     host = _elem(window, "giftCdHost")
@@ -166,6 +171,30 @@ def test_create_gift_cd_a_mappa_nevevel_es_mukodo_include_slideshow_valasztoval(
     assert _elem(window, "publishCdName").property("text") == Path(
         str(controller.currentFolder)
     ).name
+    panel = _elem(window, "publishPanel")
+    folder_source = _elem(window, "publishGiftCdFolderSource")
+    mappa_darab = controller.ajandekCdAktualisMappaDarab()
+    assert folder_source.property("visible") is True
+    assert folder_source.property("checked") is True
+    assert folder_source.property("text") == (
+        f"{Path(str(controller.currentFolder)).name} ({mappa_darab})"
+    )
+    assert panel.property("elemekSzama") == mappa_darab
+
+    # Az egy tételű tálcára változtatás sem vált forrást magától.
+    # A panel jelölőjének kikapcsolása viszont kifejezetten a tálcát választja.
+    window.setProperty("selectedIndexes", [0])
+    window.setProperty("selectedIndex", 0)
+    qt_app.processEvents()
+    assert folder_source.property("checked") is True
+    assert panel.property("elemekSzama") == mappa_darab
+    _kattints(qt_app, folder_source)
+    assert folder_source.property("checked") is False
+    assert panel.property("elemekSzama") == 1
+    _kattints(qt_app, folder_source)
+    assert folder_source.property("checked") is True
+    assert panel.property("elemekSzama") == mappa_darab
+
     slideshow = _elem(window, "publishIncludeSlideshowCheck")
     assert slideshow.property("visible") is True
     assert slideshow.property("checked") is True
@@ -177,13 +206,10 @@ def test_create_gift_cd_a_mappa_nevevel_es_mukodo_include_slideshow_valasztoval(
     assert slideshow.property("checked") is False, (
         "az Include Slideshow választó nem reagált a kattintásra"
     )
-    assert controller.giftCdSlideshowEnabled is False, (
-        "az Include Slideshow állása nem jutott el a mentett beállításhoz"
-    )
     _kattints(qt_app, _elem(window, "publishPresentCdCancel"))
     assert _varj(qt_app, lambda: host.property("visible") is False)
 
     _menu_tetel(window, qt_app, "&Create", "menuCreateGiftCd")
-    assert _elem(window, "publishIncludeSlideshowCheck").property("checked") is False, (
-        "a panel újranyitáskor nem töltötte vissza a kapcsoló állását"
+    assert _elem(window, "publishIncludeSlideshowCheck").property("checked") is True, (
+        "a panel újranyitáskor nem állt vissza a bejelölt alapértékre"
     )

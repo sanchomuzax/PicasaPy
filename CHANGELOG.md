@@ -7,11 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Kiderült, honnan indul és milyen fájlokat ír a poszterkészítés az eredeti Picasában, és miben tér el tőle a PicasaPy (#7306) (#7306).
+- Kiderült, honnan nyílik és mit csinál az Ajándék-CD az eredeti Picasában, és miben tér el tőle a PicasaPy (#7305) (#7305).
+- Kiderült, hogy az eredeti Picasa diavetítő sávján látható csúszka a kép nagyítását állítja; azt, hogy pontosan mikor jelenik meg, még vizsgáljuk (#7284).
+
 ## [1.0.164] - 2026-11-20
 
 - A diavetítés vezérlősávján a gombok az eredeti Picasa sorrendjében állnak: a forgatógombok az Előző előtt, a csillag a Következő után (#7281).
 - A diavetítés a mappában lévő videókat is lejátssza a mentett vágási pontok között, és utána lép tovább; korábban átugrotta őket (#7282).
-- Kiderült, hogy az eredeti Picasa diavetítő sávján látható csúszka a kép nagyítását állítja; azt, hogy pontosan mikor jelenik meg, még vizsgáljuk (#7284).
 - A diavetítés képére kattintva most szüneteltethető vagy folytatható a lejátszás (#7285).
 - Kiderült, honnan indítható a kollázs az eredeti Picasában, és hogy a mappafejlécből indítva más képkészletet visz a vászonra, mint a PicasaPy (#7287) (#7287).
 - Kiderült, honnan és hogyan indítható a filmkészítés az eredeti Picasában, és miben tér el tőle a PicasaPy (#7288) (#7288).
@@ -28,8 +32,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - A biztonsági mentés Új készlet űrlapja CD/DVD típussal nyílik, mint az eredetiben, így a név beírása után a Létrehozás azonnal engedett; a mappa csak lemez-lemez típusnál kell (#7302).
 - Kiderült, honnan érhető el és hogyan működik a Helyek panel az eredeti Picasában, és miben tér el tőle a PicasaPy (#7303) (#7303).
 - A Helyek panel térképhibája már nem Google Mapset említ, hanem azt írja, hogy a térkép nem tölthető be, és ellenőrizni kell az internetkapcsolatot (#7304).
-- Kiderült, honnan nyílik és mit csinál az Ajándék-CD az eredeti Picasában, és miben tér el tőle a PicasaPy (#7305) (#7305).
-- Kiderült, honnan indul és milyen fájlokat ír a poszterkészítés az eredeti Picasában, és miben tér el tőle a PicasaPy (#7306) (#7306).
 - Kiderült, hova menti és hogyan állítja be az asztali hátteret az eredeti Picasa, és miben tér el tőle a PicasaPy (#7307) (#7307).
 - Belső javítás: a keresési mappajavaslat egyik próbája nem bukik többé véletlenszerűen (#7317).
 
