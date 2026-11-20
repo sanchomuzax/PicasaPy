@@ -303,7 +303,7 @@ Ez a specifikáció a sanchomuzax/PicasaPy#7289 kutatási feladat alapján össz
 | `[Contacts2]` szakasz kontakt tárolás (`0x007d55f0`) | `src/picasapy/ini/faces.py:120` | Egyezik. Nincs teendő. |
 | Védett Unnamed album törölhetetlensége (`0x004ac650`) | `src/picasapy/app/people_album_controller.py:78` | Egyezik. Nincs teendő. |
 | Csak olvasható fájl hibajelzése (`0x004852e0` / `0x00485382`) | `src/picasapy/app/photo_ops_xmp_mixin.py` | Egyezik. Nincs teendő. |
-| Frexclude mappánkénti kizárás (`0x006e3990`) | `src/picasapy/scanner/` | Egyezik. Nincs teendő. |
+| `FRExclude` mappánkénti kizárás (`0x006e3990`) | `src/picasapy/scanner/` | Egyezik. Nincs teendő. |
 | Arckeresés manuális indítóablaka (`FaceScanDialog.qml:33`) | `src/picasapy/app/qml/PicasaPy/PicasaToolsMenu.qml:23` | Szándékos saját UX többlet (#1473). Nincs teendő. |
 
 ---
