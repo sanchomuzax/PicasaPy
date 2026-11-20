@@ -22,7 +22,7 @@ def _szam(ertek) -> int:
 
 
 def _egerterulet(show):
-    """A vetítőt fedő, lebegésre reagáló MouseArea."""
+    """A vetítőt fedő, mozgásra figyelő, kattintást nem fogadó MouseArea."""
     talalatok = []
     for elem in show.findChildren(QObject):
         meta = elem.metaObject()
@@ -34,7 +34,7 @@ def _egerterulet(show):
                 and _szam(accepted_buttons) == 0):
             talalatok.append(elem)
     assert len(talalatok) == 1, (
-        "a vetítőt fedő, gomb nélküli MouseArea nem egyértelmű: "
+        "a vetítőt fedő hover MouseArea nem egyértelmű: "
         f"{len(talalatok)} találat"
     )
     return talalatok[0]
@@ -71,6 +71,10 @@ def test_space_elrejti_es_megjeleniti_a_kurzort(
             and show.property("playing") is True,
         ), "a diavetítés nem indult el"
         egerterulet = _egerterulet(show)
+        kattinthato = _objektum(window, "slideshowPlaybackToggleArea")
+        assert _szam(kattinthato.property("acceptedButtons")) == (
+            Qt.MouseButton.LeftButton.value
+        )
         assert _szam(egerterulet.property("cursorShape")) == (
             Qt.CursorShape.BlankCursor.value
         ), (

@@ -1,4 +1,4 @@
-"""#5649: a vetítő tetején levő kattintósáv a lejátszás gombot követi."""
+"""#5649/#7285: a felső auto2-régió és a képfelület a lejátszás gombját követi."""
 
 # rontás-kontroll: SlideshowView.qml#slideshowAuto2Area = kihagyva → 3 failed
 
@@ -123,7 +123,6 @@ def test_felso_sav_es_lejatszas_azonos_allapotot_valt_es_a_tobbi_kattintas_marad
         10.0,
     ), "a Ctrl+4 nem indította el a vetítést"
     show = _gyerek(window, "slideshowView")
-    show.setProperty("playing", False)
     controls = _gyerek(window, "slideshowControls")
     controls.setProperty("shown", True)
     assert varj_feltetelre(
@@ -140,7 +139,7 @@ def test_felso_sav_es_lejatszas_azonos_allapotot_valt_es_a_tobbi_kattintas_marad
         "a kattintósáv nem a vetítő bal felső sarkából indul"
     )
 
-    # A képközép kattintása maradjon semleges.
+    # #7285: a képközép kattintása ugyanúgy szüneteltet, mint a Space.
     _kattints(window, qt_app, show)
     assert show.property("playing") is False, (
         "a sáv alatti képterület kattintása megváltoztatta a lejátszást"
@@ -151,7 +150,8 @@ def test_felso_sav_es_lejatszas_azonos_allapotot_valt_es_a_tobbi_kattintas_marad
     felso_sav_utan = show.property("playing")
     assert felso_sav_utan is True, "a felső sáv kattintása nem indította el a vetítést"
 
-    show.setProperty("playing", False)
+    _kattints(window, qt_app, show)
+    assert show.property("playing") is False, "a középkattintás nem szüneteltetett"
     lejatszas_gomb = _gyerek(window, "slideshowPlayButton")
     _kattints(window, qt_app, lejatszas_gomb)
     lejatszas_gomb_utan = show.property("playing")
