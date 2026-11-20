@@ -74,6 +74,9 @@ _EREDETI_FORRASHASH = {
     # megjegyzése (`LastBkSet`)
     "megnyitasiKeszlet": "e16ef97aa087cb51698e6cc37a86be9d38b38f307c2ba0c8926e91f694426593",
     "utolsoKeszletMegjegyzese": "96b6091c30dca214ce16c0b2357abb482d1b66e88b3be45b255886678ed46b69",
+    # #7299: új tag: az Új/Módosítás űrlap névellenőrzése (az eredeti
+    # `0x00679570` figyelője: ASCII A-Z kisbetűsítés, nincs levágás)
+    "keszletNevFoglalt": "eec9701b80bab34d1c6cf4002b4a2aa14e974c30f669f2afd1b66baa97f7eb4c",
     "_utolso_keszlet_neve": "dfc1ab6339ae6b3abdcbdfaaf03f17a67e15bcc64cd177d01e7fef1f35a28a5f",
     "_kovesd_az_atnevezest": "3b53120fa047d5fa482b1d68977eca7506c26d12f342a9a75478c08de73f26f2",
     "_get_settings": "394aedc75d0aac14b8e38f8892fd5539c2493fd30f965d196fbf0123ba0bf375",
@@ -116,6 +119,8 @@ _QT_TAGOK = {
         ("slot", "futtasdMost", 1),
         ("slot", "futtasdMost", 2),
         ("slot", "keszletek", 0),
+        # #7299: az űrlap névellenőrzése
+        ("slot", "keszletNevFoglalt", 2),
         ("slot", "lemezkepAlapHely", 0),
         ("slot", "mentesKulcs", 1),
         ("slot", "mentetlenMappakLekerese", 1),

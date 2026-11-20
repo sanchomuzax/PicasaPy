@@ -127,12 +127,20 @@ class TestACelhelyEsAzUtolsoFutas:
 
 class TestAzUrlapNemVesziElAzAdatot:
     def test_elutasitott_keszletnel_az_urlap_nyitva_marad(
-        self, gazda, qt_app
+        self, gazda, qt_app, tmp_path
     ):
         view, ablak, vezerlo = gazda
         _kattints(view, _elem(ablak, "publishNewBackupSet"), qt_app)
         _kattints(view, _elem(ablak, "backupTypeDisk"), qt_app)
-        # lemez-lemez típus, hely NÉLKÜL → a vezérlő elutasítja
+        # #7299: az űrlap maga már nem engedi el az üres vagy a foglalt nevet
+        # és a hely nélküli lemez-lemez készletet, ezért a vezérlő elutasítása
+        # már csak a végén szóközt viselő névvel érhető el: az űrlap nem vág
+        # le (mint az eredeti), a mentés viszont igen, és így a név az
+        # alapkészlettel ütközik
+        cel = str(tmp_path / "cel")
+        ablak.setProperty("urlapNev", "My Backup Set ")
+        ablak.setProperty("urlapCel", cel)
+        assert _elem(ablak, "backupFormSave").property("enabled") is True
         _kattints(view, _elem(ablak, "backupFormSave"), qt_app)
 
         # #7294: a megnyitás létrehozta az alapkészletet; az elutasított
@@ -142,10 +150,12 @@ class TestAzUrlapNemVesziElAzAdatot:
         urlap = ablak.findChild(QObject, "backupSetDialog")
         assert urlap.property("visible") is True, "az űrlap bezárult"
         assert _elem(ablak, "backupSetName").property("text") == (
-            "My Backup Set"), "a beírt név elveszett"
+            "My Backup Set "), "a beírt név elveszett"
+        assert ablak.property("urlapCel") == cel, "a beírt hely elveszett"
         hiba = _elem(ablak, "backupFormError")
         assert hiba.isVisible()
-        assert hiba.property("text") == "Choose where to save the backup."
+        assert hiba.property("text") == (
+            "A backup set with this name already exists.")
 
     def test_sikeres_mentes_utan_bezarul(self, gazda, qt_app, tmp_path):
         view, ablak, vezerlo = gazda

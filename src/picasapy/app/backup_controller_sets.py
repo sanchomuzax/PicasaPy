@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import string
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, Slot
@@ -26,6 +27,10 @@ _FAJLNEV_KORLAT = 20
 #: #7294: az utoljára használt készlet NEVE, az eredeti `Preferences\LastBkSet`
 #: (`0x00670cb3`) megfelelője; név szerint keresünk (`0x00670d63`).
 _UTOLSO_KESZLET_KULCS = "backup/lastSet"
+#: #7299: az eredeti névellenőrzés (`0x00679570`, `0x00679760..0x0067977c`)
+#: csak az ASCII `A`-`Z` betűket kisbetűsíti, bájtonként; a nem ASCII betűk
+#: (`Á`/`á`) kis/nagybetűs alakja KÜLÖN név, ezért nem `str.lower()`
+_ASCII_KISBETUSITES = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
 
 
 # `pyside6-lupdate` uses the enclosing class as the `self.tr` context.
@@ -92,6 +97,28 @@ class BackupController:
             return False
         self.keszletekValtoztak.emit()
         return True
+
+    @Slot(str, int, result=bool)
+    def keszletNevFoglalt(  # noqa: N802, QML-slot-stílus
+        self, nev: str, szerkesztett_id: int
+    ) -> bool:
+        """#7299: foglalt-e a név az Új/Módosítás űrlapon.
+
+        Az eredeti figyelője (`0x00679570`) az `ok` gombot tiltja, ha egy
+        MÁSIK készlet neve ASCII A-Z kisbetűsítve egyezik a mezőszöveggel:
+        a nem ASCII betűk kis/nagybetűs alakja külön név, és a szöveget
+        nem vágjuk le (a szóköz számít). `szerkesztett_id` a szerkesztett
+        készlet azonosítója (új készletnél `-1`): a saját rekord nem
+        ütközik. Tudatos eltérés az eredetitől: a saját név kis/nagybetűs
+        átírása is engedett (az eredeti ezt is tiltja, hibának tűnik)."""
+        kulcs = str(nev).translate(_ASCII_KISBETUSITES)
+        sajat = int(szerkesztett_id)
+        with open_index(self._db_path) as conn:
+            return any(
+                k.id != sajat
+                and k.nev.translate(_ASCII_KISBETUSITES) == kulcs
+                for k in keszletek(conn)
+            )
 
     @Slot(int, str, str, str, result=bool)
     @Slot(int, str, str, str, str, result=bool)

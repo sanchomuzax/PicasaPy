@@ -114,10 +114,16 @@ class TestAzUrlap:
             vezerlo.lemezkepAlapHely()
         )
 
+        # #7299: az űrlap üres névvel nyílik, és a gomb addig tiltott; a
+        # #7294 alapkészlete is CD/DVD típusú, ezért a névvel együtt a
+        # LÉTREJÖTT második készletet is számoljuk (különben az alapkészlet
+        # egyedül is zöldet adna)
+        ablak.setProperty("urlapNev", "Lemezre")
         _kattints(view, _elem(ablak, "backupFormSave"), qt_app)
 
         keszletek = vezerlo.keszletek()
-        assert [k["tipus"] for k in keszletek] == ["cddvd"], (
+        assert [(k["nev"], k["tipus"]) for k in keszletek] == [
+            ("Lemezre", "cddvd"), ("My Backup Set", "cddvd")], (
             ablak.property("uzenet"), ablak.property("urlapNev"),
             ablak.property("urlapTipus"), ablak.property("szerkesztes"))
 
