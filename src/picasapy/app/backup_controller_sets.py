@@ -3,19 +3,20 @@
 from __future__ import annotations
 
 import logging
+import string
 from pathlib import Path
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QSettings, Slot
 
-from picasapy.backup import mappankent
+from picasapy.backup import keszlet_modositasa, mappankent
 from picasapy.index import open_index
 from picasapy.index.backup_sets import (
+    SZURO_MINDEN,
     SZUROK,
     TIPUS_CD_DVD,
     TIPUS_LEMEZ,
     TIPUSOK,
     keszlet_letrehozasa,
-    keszlet_modositasa,
     keszlet_torlese,
     keszletek,
 )
@@ -23,6 +24,13 @@ from picasapy.paths import flat_key, normalize_path
 
 _log = logging.getLogger("picasapy.app.backup_controller")
 _FAJLNEV_KORLAT = 20
+#: #7294: az utoljára használt készlet NEVE, az eredeti `Preferences\LastBkSet`
+#: (`0x00670cb3`) megfelelője; név szerint keresünk (`0x00670d63`).
+_UTOLSO_KESZLET_KULCS = "backup/lastSet"
+#: #7299: az eredeti névellenőrzés (`0x00679570`, `0x00679760..0x0067977c`)
+#: csak az ASCII `A`-`Z` betűket kisbetűsíti, bájtonként; a nem ASCII betűk
+#: (`Á`/`á`) kis/nagybetűs alakja KÜLÖN név, ezért nem `str.lower()`
+_ASCII_KISBETUSITES = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
 
 
 # `pyside6-lupdate` uses the enclosing class as the `self.tr` context.
@@ -90,6 +98,28 @@ class BackupController:
         self.keszletekValtoztak.emit()
         return True
 
+    @Slot(str, int, result=bool)
+    def keszletNevFoglalt(  # noqa: N802, QML-slot-stílus
+        self, nev: str, szerkesztett_id: int
+    ) -> bool:
+        """#7299: foglalt-e a név az Új/Módosítás űrlapon.
+
+        Az eredeti figyelője (`0x00679570`) az `ok` gombot tiltja, ha egy
+        MÁSIK készlet neve ASCII A-Z kisbetűsítve egyezik a mezőszöveggel:
+        a nem ASCII betűk kis/nagybetűs alakja külön név, és a szöveget
+        nem vágjuk le (a szóköz számít). `szerkesztett_id` a szerkesztett
+        készlet azonosítója (új készletnél `-1`): a saját rekord nem
+        ütközik. Tudatos eltérés az eredetitől: a saját név kis/nagybetűs
+        átírása is engedett (az eredeti ezt is tiltja, hibának tűnik)."""
+        kulcs = str(nev).translate(_ASCII_KISBETUSITES)
+        sajat = int(szerkesztett_id)
+        with open_index(self._db_path) as conn:
+            return any(
+                k.id != sajat
+                and k.nev.translate(_ASCII_KISBETUSITES) == kulcs
+                for k in keszletek(conn)
+            )
+
     @Slot(int, str, str, str, result=bool)
     @Slot(int, str, str, str, str, result=bool)
     def modositsdAKeszletet(  # noqa: N802 — QML-slot-stílus
@@ -105,16 +135,19 @@ class BackupController:
             cel = self.lemezkepAlapHely()
         try:
             with open_index(self._db_path) as conn:
+                regi = self._keszlet(conn, keszlet_id)
                 keszlet_modositasa(
                     conn, int(keszlet_id), nev=nev or None,
                     cel=cel or None, szuro=szuro or None,
                     tipus=tipus or None,
                 )
                 conn.commit()
+                uj = self._keszlet(conn, keszlet_id)
         except Exception as hiba:  # noqa: BLE001
             _log.warning("a mentés-készlet módosítása elszállt: %s", hiba)
             self.hibatJelez.emit(self.tr("The backup set could not be changed."))
             return False
+        self._kovesd_az_atnevezest(regi, uj)
         self.keszletekValtoztak.emit()
         return True
 
@@ -128,6 +161,56 @@ class BackupController:
             keszlet_torlese(conn, int(keszlet_id))
             conn.commit()
         self.keszletekValtoztak.emit()
+
+    @Slot(str, result=int)
+    def megnyitasiKeszlet(self, alapnev: str) -> int:  # noqa: N802
+        """#7294: a mentés-panel megnyitásakor kiválasztandó készlet azonosítója.
+
+        Az eredeti (`0x006706d0`): üres készletlistánál a panel MAGA hoz létre
+        egy „My Backup Set" (`il_BurnPanel::bksetname`) nevű, CD/DVD típusú
+        készletet (`0x00670ae6-0x00670ca8`); van készlet: az utoljára
+        használtat választja név szerint (`LastBkSet`), és ha a név nincs a
+        listában, a 0. indexűt (`0x00670dd5`). A felület a lokalizált
+        `alapnev`-et adja át. `-1` = nincs készlet (a hibát jelezzük)."""
+        lista = self.keszletek()
+        if not lista:
+            if not self.ujKeszlet(alapnev, "", SZURO_MINDEN, TIPUS_CD_DVD):
+                return -1
+            lista = self.keszletek()
+            if not lista:
+                return -1
+        megjegyzett = self._utolso_keszlet_neve()
+        for keszlet in lista:
+            if keszlet["nev"] == megjegyzett:
+                return int(keszlet["id"])
+        return int(lista[0]["id"])
+
+    @Slot(int)
+    def utolsoKeszletMegjegyzese(self, keszlet_id: int) -> None:  # noqa: N802
+        """#7294: a kiválasztott készlet lesz a következő megnyitás választása.
+
+        Ismeretlen azonosítónál nem ír semmit: a megjegyzés csak létező
+        készletre mutathat."""
+        with open_index(self._db_path) as conn:
+            keszlet = self._keszlet(conn, keszlet_id)
+        if keszlet is not None:
+            self._get_settings().setValue(_UTOLSO_KESZLET_KULCS, keszlet.nev)
+
+    def _utolso_keszlet_neve(self) -> str:
+        return str(self._get_settings().value(_UTOLSO_KESZLET_KULCS, "") or "")
+
+    def _kovesd_az_atnevezest(self, regi, uj) -> None:
+        """Az „Edit Set" átnevezése után a megjegyzés az ÚJ nevet követi:
+        a felhasználó ugyanazt a készletet választotta."""
+        if regi is None or uj is None or regi.nev == uj.nev:
+            return
+        if self._utolso_keszlet_neve() == regi.nev:
+            self._get_settings().setValue(_UTOLSO_KESZLET_KULCS, uj.nev)
+
+    @staticmethod
+    def _get_settings() -> QSettings:
+        """A közös alkalmazás-beállítások (a példányok egy tárat látnak)."""
+        return QSettings("PicasaPy", "PicasaPy")
 
     def _keszlet(self, conn, keszlet_id: int):
         for keszlet in keszletek(conn):

@@ -42,6 +42,23 @@ Rectangle {
     //: az űrlap saját hibasora — ha a vezérlő elutasítja a készletet, az
     //: űrlap NYITVA marad, a beírt adat megmarad, és ez mondja meg, miért
     property string urlapHiba: ""
+    //: #7299: szerkesztéskor a típus-csoport tiltott (`0x0067921b`)
+    readonly property bool tipusModosithato: host.szerkesztettId < 0
+    //: #7299: a gomb engedélye (`0x00679570`, minden eseményre): a név nem
+    //: üres (levágás NINCS), nem foglalt (ASCII-kisbetűsítve egyezik egy
+    //: MÁSIK készlet nevével), lemez-lemez típusnál a mappa nem üres
+    readonly property bool urlapMentheto: {
+        void host.keszletek
+        if (host.urlapNev.length === 0)
+            return false
+        if (host.urlapTipus === "lemez" && host.urlapCel.trim() === "")
+            return false
+        if (typeof backupController !== "undefined" && backupController
+                && backupController.keszletNevFoglalt(host.urlapNev,
+                                                      host.szerkesztettId))
+            return false
+        return true
+    }
     //: #3009: fut-e éppen másolás, és a haladás-sáv számlálói
     property bool fut: false
     property int keszFajl: 0
@@ -141,11 +158,42 @@ Rectangle {
         controller.setBackupFilter(utak)
     }
 
+    //: #7294: megnyitáskor a vezérlő dönt, melyik készlet áll elő: üres
+    //: listánál létrehozza a „My Backup Set" nevű CD/DVD készletet (az
+    //: eredeti `il_BurnPanel::bksetname`, `0x00670ae6`), különben az
+    //: utoljára használtat adja (`LastBkSet`), eltűnt névnél az elsőt. A
+    //: döntés a lista frissítése ELŐTT születik, mert a frissítés a régi
+    //: választást is érintheti.
     function nyisd() {
         host.uzenet = ""
         host.szerkesztes = false
+        var megnyitasiId = -1
+        if (typeof backupController !== "undefined" && backupController)
+            megnyitasiId = backupController.megnyitasiKeszlet(
+                qsTr("My Backup Set"))
         host.frissitsd()
+        host.valaszdAKeszletet(megnyitasiId)
         host.nyitva = true
+    }
+
+    function valaszdAKeszletet(keszletId) {
+        for (var i = 0; i < host.keszletek.length; i++) {
+            if (host.keszletek[i].id === keszletId) {
+                if (host.kivalasztott !== i)
+                    host.kivalasztott = i
+                return
+            }
+        }
+    }
+
+    //: #7294: a kiválasztott készlet a következő megnyitás választása
+    function megjegyezdAKeszletet() {
+        if (typeof backupController === "undefined" || !backupController
+                || host.kivalasztott < 0
+                || host.kivalasztott >= host.keszletek.length)
+            return
+        backupController.utolsoKeszletMegjegyzese(
+            host.keszletek[host.kivalasztott].id)
     }
 
     //: másik készlet = más nyilvántartás, a régi pipák nem érvényesek;
@@ -155,6 +203,7 @@ Rectangle {
         host.pipaltMappak = []
         if (!host.fut)
             host.uzenet = ""
+        host.megjegyezdAKeszletet()
         host.frissitsdAMappakat()
     }
 
@@ -209,15 +258,25 @@ Rectangle {
             host.kivalasztott = host.keszletek.length - 1
         if (host.kivalasztott === elozo)
             host.frissitsdAMappakat()
+        //: a lista rendezett (név szerint), tehát egy új vagy átnevezett
+        //: készlet eltolhatja, melyik áll a megtartott indexen
+        host.megjegyezdAKeszletet()
     }
 
     function ujKeszletUrlap() {
         host.szerkesztettId = -1
-        //: #3189: az eredeti NEM üres mezővel indít (`il_BurnPanel::bksetname`)
-        host.urlapNev = qsTr("My Backup Set")
-        host.urlapCel = ""
+        //: #7299: az eredeti űrlap ÜRES névvel nyílik (`0x00678c09`): a
+        //: "My Backup Set" csak az első megnyitás alapkészletének neve
+        //: (#7294), az űrlap soha nem tölti elő
+        host.urlapNev = ""
+        //: #7302: az űrlap CD/DVD típussal nyílik (az eredeti felépítője a
+        //: `type` rádiót a cél üres voltából tölti: `0x00678ec6`, üres cél =
+        //: rádió 0); a CD/DVD típus célja nálunk a lemezkép alaphelye
+        host.urlapCel = (typeof backupController !== "undefined"
+                         && backupController)
+                        ? backupController.lemezkepAlapHely() : ""
         host.urlapSzuro = "minden"
-        host.urlapTipus = "lemez"
+        host.urlapTipus = "cddvd"
         host.urlapHiba = ""
         host.szerkesztes = true
     }
@@ -484,10 +543,11 @@ Rectangle {
         anchors.centerIn: parent
         modal: true
         visible: host.szerkesztes
-        //: `il_NewBkDialogTitle` / `il_NewBkDialog::EditTitle`
-        //: (`biztonsagi-mentes.md` 10.2)
+        //: #7299: új készletnél a `newbackupset.fen` címe ("New Backup
+        //: Set"), szerkesztéskor `il_NewBkDialog::EditTitle`; az
+        //: `il_NewBkDialogTitle` ("Backup Set") a törlés-megerősítés címe
         title: host.szerkesztettId >= 0
-            ? qsTr("Edit Backup Set") : qsTr("Backup Set")
+            ? qsTr("Edit Backup Set") : qsTr("New Backup Set")
         implicitWidth: 420 + leftPadding + rightPadding
         onClosed: host.szerkesztes = false
 
@@ -496,9 +556,11 @@ Rectangle {
             columnSpacing: 8
             rowSpacing: 8
 
-            //: #3189: a MÉRT felirat — `publish/label_backupname`
+            //: #7299: az űrlap saját felirata (`newbackupset/labelgroup2`);
+            //: a `publish/label_backupname` ("Backup Set") a panel eleme
             Text {
-                text: qsTr("Backup Set")
+                objectName: "backupSetNameLabel"
+                text: qsTr("Name:")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
@@ -515,6 +577,7 @@ Rectangle {
             //: rádió; a „Choose…" csak a lemez-lemez típusnál él
             Text {
                 Layout.alignment: Qt.AlignTop
+                opacity: host.tipusModosithato ? 1.0 : 0.4
                 text: qsTr("Backup type:")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
@@ -524,6 +587,8 @@ Rectangle {
                 spacing: 2
                 RadioButton {
                     objectName: "backupTypeCdDvd"
+                    enabled: host.tipusModosithato
+                    opacity: enabled ? 1.0 : 0.4
                     text: qsTr("CD or DVD backup")
                     font.pixelSize: Theme.fontSize
                     checked: host.urlapTipus === "cddvd"
@@ -531,6 +596,8 @@ Rectangle {
                 }
                 RadioButton {
                     objectName: "backupTypeDisk"
+                    enabled: host.tipusModosithato
+                    opacity: enabled ? 1.0 : 0.4
                     text: qsTr("Disk-to-disk backup (for external and network drives)")
                     font.pixelSize: Theme.fontSize
                     checked: host.urlapTipus === "lemez"
@@ -600,16 +667,19 @@ Rectangle {
             }
         }
         //: ⚠️ A mentés gombja NEM `AcceptRole`: az a párbeszédet a mentés
-        //: ELŐTT bezárná, és ha a vezérlő elutasítja a készletet (üres név,
-        //: hiányzó hely, foglalt név), a beírt adat elveszne. Az
+        //: ELŐTT bezárná, és ha a vezérlő elutasítja a készletet (levágás
+        //: után üres név, a levágott névvel ütköző név), a beírt adat
+        //: elveszne. Az
         //: `ActionRole` csak jelez; a párbeszédet a `mentsdAzUrlapot`
         //: zárja, és csak SIKERES mentés után — ahogy a régi ablak is.
         footer: DialogButtonBox {
             Button {
                 objectName: "backupFormSave"
-                //: #3189: SZERKESZTÉSKOR a mért felirat „Change"
-                //: (`il_NewBkDialog::EditOKButton`); ÚJ készletnél „OK"
-                text: host.szerkesztettId >= 0 ? qsTr("Change") : qsTr("OK")
+                //: #7299: SZERKESZTÉSKOR „Change"
+                //: (`il_NewBkDialog::EditOKButton`), ÚJ készletnél „Create"
+                //: (`newbackupset/ok.title`)
+                text: host.szerkesztettId >= 0 ? qsTr("Change") : qsTr("Create")
+                enabled: host.urlapMentheto
                 DialogButtonBox.buttonRole: DialogButtonBox.ActionRole
                 onClicked: host.mentsdAzUrlapot()
             }
