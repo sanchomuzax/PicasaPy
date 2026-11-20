@@ -936,7 +936,7 @@ A közös tároló mutatója a híváshelyen `[this+0x2bc]+0xf8`
 a hívó előbb a `0x004f5960`-at, majd a `0x004f5d90`-at hívja ugyanezen
 közös tárolóval (`0x005cfa53`-`0x005cfacf`). A sztring-xrefek ezeket rendre
 a `watchedfolders.txt` és a `frexcludefolders.txt` fájlhoz kötik. Ez az
-OK-út a közös tároló módosítását és ezt a két utóhívást igazolja; **nem**
+OK-út a közös tároló módosítását és az ezt követő két hívást igazolja; **nem**
 bizonyítja, hogy ezen az úton közvetlenül kiíródik a `scanlist.txt`. A
 célzottan diszasszemblált `0x005cf5b0` és `0x004f6a20` egyikében sincs
 közvetlen hívás a `scanlist.txt` kezelőjére, a `0x004f61c0`-ra. Ez a
