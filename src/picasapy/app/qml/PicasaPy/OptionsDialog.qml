@@ -110,8 +110,26 @@ Window {
     }
 
     function acceptOptions() {
+        var fileTypesChanged = false
+        var fileTypeGroups = [
+            "bmp", "gif", "png", "tga", "tiff", "webp", "psd",
+            "raw", "movies", "quicktime"
+        ]
+        if (typeof controller !== "undefined" && controller) {
+            for (var i = 0; i < fileTypeGroups.length; ++i) {
+                var group = fileTypeGroups[i]
+                var current = controller.fileTypeEnabled(group)
+                var accepted = optionsDraft.value("filetypes." + group, current)
+                if (accepted !== current) {
+                    fileTypesChanged = true
+                    break
+                }
+            }
+        }
         optionsDraft.commit()
         saveAcceptedOptionSettings()
+        if (fileTypesChanged && typeof controller.rescan === "function")
+            controller.rescan()
         optionsWindow.visible = false
     }
 
