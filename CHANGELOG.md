@@ -7,10 +7,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.165] - 2026-11-20
+
 ### Javítva
 - Kiderült, honnan indul és milyen fájlokat ír a poszterkészítés az eredeti Picasában, és miben tér el tőle a PicasaPy (#7306) (#7306).
 - Kiderült, honnan nyílik és mit csinál az Ajándék-CD az eredeti Picasában, és miben tér el tőle a PicasaPy (#7305) (#7305).
 - Kiderült, hogy az eredeti Picasa diavetítő sávján látható csúszka a kép nagyítását állítja; azt, hogy pontosan mikor jelenik meg, még vizsgáljuk (#7284).
+- Kutatás: kiderült, mit állít az eredeti diavetítő sávjának képikonja és csúszkája, és mikor látszik (#7284).
+- A kollázs a kijelölt képeket teszi a vászonra, a mappa többi képét a kliplistára; kijelölés nélkül a teljes mappát veszi, és a mappafejléc gombja egyetlen kijelölt képnél is a teljes mappából indul, mint az eredetiben (#7293).
+- Kutatás: az Ajándék-CD folyamata az eredeti Picasán mérve, kijelölés nélküli indítással és a Mégse utáni újranyitással (#7305).
+- Kutatás: a poszter elkészülte utáni nézet az eredeti Picasán mérve (#7306).
+- Windowson az asztali háttér beállítása ugyanabban a sorrendben fut, mint az eredeti Picasában (#7312).
+- Kiderült, honnan indul és mit ír a HTML-oldal exportálása az eredeti Picasában, és miben tér el tőle a PicasaPy (#7313).
+- 800 px-es ablakban is elérhetővé váltak a diavetítő vezérlősávjának gombjai (#7314).
+- Az Ajándék-CD kijelölés nélkül az aktuális mappából indul, a diavetítő kapcsoló pedig Mégse után visszaáll (#7315).
+- A poszter elkészülte után az utolsó lap megnyílik szerkesztésre, mint az eredeti Picasában, és a forráskép kijelölve marad (#7316).
+- Belső javítás: két Windows-on ingadozó próba (a háttérszinkron türelmi ideje és a keresésből kilépés gombja) nem bukik többé véletlenszerűen (#7319).
+- Belső javítás: a diavetítő sávja nagyobb rendszerbetűvel is elfér 800 px-en, és négy próba nem bukik többé Windowson és Linuxon (#7334).
 
 ## [1.0.164] - 2026-11-20
 
