@@ -429,10 +429,13 @@ A lánc mérve:
 be a program fájltípus-táblájába — induláskor, nem csak az importáló
 párbeszédben.**
 
-⚠️ **A lánc utolsó szeme NINCS mérve:** hogy a **figyelt mappák
-pásztázása** ebből a táblából dolgozik-e. A folytatás konkrét: a
-`+0x3dc`-es tömb **olvasóit** kell megkeresni (nem a `Support*`
-sztringeket), és megnézni, a pásztázó ág köztük van-e.
+✅ **A lánc utolsó szeme lezárva (#7329):** a figyelt mappák feldolgozója
+olvassa ezt a táblát. A `0x004e2cc0` a fájl kiterjesztését a `+0x3dc`
+(tömb) / `+0x3e0` (elemszám) listával hasonlítja össze; a
+`0x004fb9c0` ezt az eredményt használja az éppen támogatott kiterjesztésen
+kívüli nyilvántartott rekordok kezelésére. Az eredmény csak az eredeti
+folyamat memóriabeli rekordkezelését bizonyítja; a lemezen lévő fájl vagy az
+SQLite-katalógus törlését nem.
 
 *(Ez nem cáfolja a #2344 következtetését: a mi feltétel nélküli szűrőnk
 továbbra is helyes választás, mert a tulajdonos katalógusa szerint az
@@ -441,6 +444,59 @@ eredeti a PNG-t és a BMP-t az alapérték ellenére is indexeli.)*
 > ⚠️ **A PNG és a GIF alapból KI van kapcsolva.** Ez ellentmond a
 > megérzésnek, de a kód egyértelmű: `0x006e0e83 push 0` → `SupportPNG`,
 > `0x006e0e76 push 0` → `SupportGIF`.
+
+#### A fájltípus-kapcsolók OK utáni hatása (#7329, 2026-11-20)
+
+Az Opciók kezelője (`0x005cf5b0`) a módosított kapcsoló értékével
+frissíti a fájltípus-táblát a `0x004fadb0` útján, majd az OK eseményben
+feltételesen meghívja a két rekordkezelő út egyikét. A kezelőben hamisnak
+vizsgált értéknél a `0x005cfd67`-nél hívott `0x004fb9c0` fut; igaznak
+vizsgált értéknél a `0x005cfd7e`-nél hívott `0x004efb40`. A
+`0x005cfd8f`-nél mindkét ágat követően meghívott `0x004ebe40` zárja a
+szakaszt. E címeket a dekompilált hívó és az utasításszintű hívási sorrend
+is megerősíti.
+
+- **Kikapcsolás:** a `0x004fb9c0` a nyilvántartott rekordokat vizsgálja;
+  a `0x004e2cc0` a rekord kiterjesztését a frissített `+0x3dc` / `+0x3e0`
+  listával hasonlítja össze, és nem találatkor igaz eredményt ad. Az ilyen
+  rekord útja a `0x004f9450` állapotkezelő (itt nulla argumentumokkal), a
+  `0x0040fae0` belső rekordművelet és a nyilvántartott darabszám
+  csökkentése; a rutin ezután figyelőjelzést küld. Ez **memóriabeli
+  rekordkezelés**, nem a fényképfájl törlése. A vizsgált út az SQLite-sor
+  törlését sem bizonyítja.
+- **Bekapcsolás:** a `0x004efb40` beállítja az érintett rekordok
+  állapotjelzőit, majd az objektum `+0x33c` / `+0x340` útvonal-/kéréslistájának
+  elemeire `0x004e31a0`-t hív. A `0x004e31a0` az útvonalat callback-adatba
+  csomagolja és a feldolgozó objektum virtuális metódusát hívja. Tehát az OK-kezelő
+  **azonnal beadja a feldolgozási kérést**; a tényleges háttérmunka
+  befejezési ideje és az index tartós módosításának szabálya a statikus
+  forrásból **NINCS MEG**.
+- **Bizonyíték és korlát:** a közvetlen út a `2026-11-20-koteg-574-579.txt`
+  Ghidra-kimenetben, a `0x004e2cc0` 112 bájtos helyi diszasszemblálása pedig
+  az eredeti binárisban olvasható. Ettől függetlenül a fenti indulási lánc
+  megmutatja a `+0x3dc` / `+0x3e0` tábla írását (`0x004fa590`), a helyi
+  diszasszemblálás pedig ennek a táblának az olvasását; a két adatút
+  egyezik. A cáfoló ellenőrzés a kikapcsoló ág fájl- vagy adatbázis-törlésként
+  való olvasatát próbálta igazolni, de a teljes vizsgált hívási út csak
+  memóriabeli állapotot, darabszámot és figyelőjelzést mutatott.
+
+**PicasaPy-összevetés, fejlesztési eltérés:** az `OptionsDialog.qml`
+piszkozat-írói az OK alatti `optionsDraft.commit()` során hívják a
+`setFileTypeEnabled`-et. A `library_controller_folders.py` QSettings-be
+menti az új értéket, és frissíti a következő scan szűrőpillanatképét;
+a `controller.py` `saveOptionSettings` hívása csak a teljes elfogadott
+beállításképet menti. Ezen az elfogadási útvonalon nincs `_start_rescan`;
+a teljes újraolvasás külön `rescan()` belépési ponttal indul
+(`library_controller_sync_rescan.py`). A PicasaPy ezért az elfogadott
+szűrőt a következő pásztázásra készíti elő, de OK után nem kezdi el a már
+ismert könyvtár azonnali egyeztetését. A következő teljes újraolvasás a
+szűrőaláírás változása miatt a mappákat újraellenőrzi; a `sync_folder`
+csak az engedélyezett médiákat veszi fel, a `_prune_photos` pedig törli az
+indexből az olyan fotósorokat, amelyek nem szerepelnek az új szkennelési
+eredményben. Ha nem marad engedélyezett média és `.picasa.ini` sincs,
+az üres mappasor is kikerül. Ezek indexbeli műveletek, a fotófájlokat nem
+törlik. Az eredeti Picasa azonnali útjának tartós SQLite-szemantikája ettől
+függetlenül **NINCS MEG**.
 
 ### Számértékek
 
