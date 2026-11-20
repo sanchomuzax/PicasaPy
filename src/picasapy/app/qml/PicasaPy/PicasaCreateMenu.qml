@@ -42,12 +42,11 @@ PicasaMenu {
         enabled: bar.libraryPhotoActionsEnabled
         onTriggered: bar.addToScreensaverRequested()
     }
-    //: #3503: a kiadás-panelt Ajándék-CD üzemmódban nyitja; a tálcáról
-    //: dolgozik, ezért ugyanaz a kapu, mint a kollázsé és a filmé
+    //: #7315: a panel mappaforrása kijelölés és képtálca nélkül is elérhető
     MenuItem {
         objectName: "menuCreateGiftCd"
         text: qsTr("Create a &Gift CD...")
-        enabled: bar.createActionsEnabled
+        enabled: bar.giftCdActionsEnabled
         onTriggered: bar.giftCdRequested()
     }
     // Az általános filmkészítő belépő mellé a #4331 visszahozza az

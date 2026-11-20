@@ -47,6 +47,13 @@ Rectangle {
 
     function nyisd() {
         panel.cdName = host.aktualisMappaNeve()
+        panel.mappaForrasUtvonal = host.appController
+                ? String(host.appController.currentFolder || "") : ""
+        panel.mappaForrasFelirat = host.aktualisMappaNeve()
+        panel.mappaForrasDarab = host.appController
+                && typeof host.appController.ajandekCdAktualisMappaDarab === "function"
+                ? host.appController.ajandekCdAktualisMappaDarab() : 0
+        panel.mappaForrasKivalasztva = panel.mappaForrasDarab > 0
         host.nyitva = true
     }
 
@@ -54,27 +61,33 @@ Rectangle {
         if (!host.appController)
             return
         host.dolgozik = true
-        host.appController.ajandekCdIrasa(host._meretIndex, host._cdNev, cel)
+        host.appController.ajandekCdIrasaForrassal(
+            host._meretIndex, host._cdNev, cel,
+            panel.mappaForrasUtvonal,
+            panel.mappaForrasKivalasztva,
+            panel.slideshowIncluded)
     }
 
     PublishPanel {
         id: panel
         uzemmod: "cd"
-        slideshowIncluded: host.appController
-            ? host.appController.giftCdSlideshowEnabled : true
-        elemekSzama: host.appController && host.appController.heldCount !== undefined
-                     ? host.appController.heldCount : 0
+        elemekSzama: panel.mappaForrasKivalasztva
+            ? panel.mappaForrasDarab
+            : (host.appController && host.appController.heldCount !== undefined
+                ? host.appController.heldCount : 0)
         dolgozik: host.dolgozik
         onLemezreIrasKert: function (meretIndex, cdNev) {
             host._meretIndex = meretIndex
             host._cdNev = cdNev
             celValaszto.open()
         }
-        onMegseKert: host.nyitva = false
+        onMegseKert: {
+            panel.slideshowIncluded = true
+            host.nyitva = false
+        }
         onTovabbiakKert: host.nyitva = false
         onSlideshowIncludedRequested: function (enabled) {
-            if (host.appController)
-                host.appController.setGiftCdSlideshowEnabled(enabled)
+            panel.slideshowIncluded = enabled
         }
     }
 

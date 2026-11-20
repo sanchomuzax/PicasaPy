@@ -1,10 +1,10 @@
-"""#3503 — „Létrehozás ▸ Ajándék CD készítése…": a menüponttól a kész
+"""#3503/#7315: „Létrehozás ▸ Ajándék CD készítése…": a menüponttól a kész
 lemezképig, a teljes ablakban.
 
 A menüpont a #324-es audit óta halott helyfoglaló volt. Most a
 kiadás-panelt nyitja Ajándék-CD üzemmódban a könyvtár ALJÁN (ahol az
-eredetiben is ül), a „Lemezre írás" a képtálca elemeiből lemezképet ír, és
-a végén a mért „CD kész" párbeszéd jön „CD megjelenítése" gombbal.
+eredetiben is ül), a mappa a kijelöléstől függetlenül választható, és a
+„Lemezre írás" a panelen kijelölt forrásból készít lemezképet.
 
 ⚠️ A cél-fájl választó a rendszer natív párbeszéde — offscreen nem
 kattintható, ezért a folyamatot a választó `onAccepted` ágának belépőjén
@@ -109,11 +109,11 @@ def _nyisd_meg(window, qt_app):
 
 
 class TestAMenupont:
-    def test_ures_talcanal_szurke(self, qml_app, qt_app):
+    def test_ures_talcanal_aktiv(self, qml_app, qt_app):
         window, controller, _ = qml_app
         _talcara(window, qt_app, [])
 
-        assert _elem(window, "menuCreateGiftCd").property("enabled") is False
+        assert _elem(window, "menuCreateGiftCd").property("enabled") is True
 
     def test_a_talcaval_el_es_nem_helyfoglalo(self, qml_app, qt_app):
         window, controller, _ = qml_app

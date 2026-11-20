@@ -89,7 +89,7 @@ def test_a_talca_elemei_kerulnek_a_lemezkepre(controller, qt_app, library):
     assert cel.stat().st_size > 0
 
 
-def test_a_diavetito_beallitasa_alapbol_igaz_es_qsettingsbe_mentodik(
+def test_a_diavetito_beallitasa_alapbol_igaz_es_nem_marad_meg_ujrainditasnal(
     controller, library
 ):
     from picasapy.app.controller import AppController
@@ -110,7 +110,60 @@ def test_a_diavetito_beallitasa_alapbol_igaz_es_qsettingsbe_mentodik(
             str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
         ),
     )
-    assert masik.giftCdSlideshowEnabled is False
+    assert masik.giftCdSlideshowEnabled is True
+
+
+def test_a_mappaforras_megmarad_harom_talcaelem_mellett(tmp_path, qt_app, monkeypatch):
+    """A jelenlegi 24 képes mappa legyen az alapforrás, ne a háromelemű tálca."""
+    from picasapy.app.controller import AppController
+    from picasapy.app.thumbnail_provider import ThumbnailProvider
+    from picasapy.burn.ajandek_cd import AjandekCdEredmeny
+
+    import picasapy.app.ajandek_cd_controller as modul
+
+    mappa = tmp_path / "PicasaTeszt"
+    mappa.mkdir()
+    for index in range(24):
+        make_jpeg(mappa / f"{index:02}.jpg", size=(32, 24))
+    db = tmp_path / "index.db"
+    with open_index(db) as conn:
+        sync_tree(conn, mappa)
+    controller = AppController(
+        db, (str(mappa),),
+        ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32)),
+        settings=QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat),
+    )
+    controller.selectFolder(str(mappa))
+    controller.holdRows([0, 1, 2])
+    assert controller.heldCount == 3
+
+    kapott = {}
+
+    def lemezkep(tetelek, cel, **kwargs):
+        kapott["forrasok"] = tuple(elem.source for elem in tetelek)
+        kapott["convert_non_jpeg"] = kwargs["convert_non_jpeg"]
+        return AjandekCdEredmeny(cel, len(tetelek))
+
+    monkeypatch.setattr(modul, "ajandek_cd_lemezkep", lemezkep)
+    monkeypatch.setattr(
+        controller, "_start_background",
+        lambda target, *, args, name: target(*args),
+    )
+
+    assert controller.ajandekCdAktualisMappaDarab() == 24
+    controller.ajandekCdIrasaForrassal(
+        0, "PicasaTeszt", str(tmp_path / "ajandek.iso"), str(mappa), True, False
+    )
+
+    assert len(kapott["forrasok"]) == 24
+    assert {path.parent for path in kapott["forrasok"]} == {mappa}
+    assert kapott["convert_non_jpeg"] is False
+
+    controller.ajandekCdIrasaForrassal(
+        0, "PicasaTeszt", str(tmp_path / "talcara.iso"), str(mappa), False, True
+    )
+    assert len(kapott["forrasok"]) == 3
+    assert kapott["convert_non_jpeg"] is True
 
 
 def test_a_diavetito_allapota_kapcsolja_a_nem_jpeg_atalakitasat(
