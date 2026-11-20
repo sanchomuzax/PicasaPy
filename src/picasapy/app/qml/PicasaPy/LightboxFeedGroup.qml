@@ -77,9 +77,9 @@ Column {
             if (feed.appWindow && feed.appWindow.selectStarred)
                 feed.appWindow.selectStarred()
         }
-        //: #1006: ha a csoportban van kijelölt kép, a fejléc kollázsa
-        //: azokat adja át; csoporton belüli kijelölés nélkül a teljes
-        //: csoportot használja. A másik mappa kijelölése nem szivárog át.
+        //: #7293: legalább két csoporton belüli kijelölés kerül a vászonra;
+        //: nulla vagy egy kijelölésnél a teljes csoportot adja át. A másik
+        //: mappa kijelölése nem szivárog át.
         onCollageRequested: {
             if (!feed.appWindow || !feed.appWindow.openCollageFromRows)
                 return
@@ -92,7 +92,8 @@ Column {
                 if (kijeloltSor >= kezdet && kijeloltSor < veg)
                     sorok.push(kijeloltSor)
             }
-            if (sorok.length === 0) {
+            if (sorok.length < 2) {
+                sorok = []
                 for (var csoportSor = kezdet; csoportSor < veg; ++csoportSor)
                     sorok.push(csoportSor)
             }
