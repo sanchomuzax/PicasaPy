@@ -549,7 +549,7 @@ nincs jelen; a már mentett felhasználói értéket ne írja felül. A
 `SupportQuicktime` második írásútja nyitott, ezért ezt nem számoltam a fenti 15
 megerősített QSettings-hiány közé. A `disposepreviews` kiváltó eseménye a #7325
 óta ismert (az Opciók OK-ja, egyszeri ürítés, a jelölő visszaáll nullára);
-ugyanez a lelet válaszolja meg a táblában `NINCS MEG` írási útú Opciók-kulcsokat
+ugyanez a lelet válaszolja meg a táblában azokat az Opciók-kulcsokat, amelyeknek az írója `NINCS MEG` volt
 (`UITransitions`, `ShowTooltips`, `SingleClickExit`, `autoexclude`,
 `LoopSlideshow`, `PlayMP3Tracks`, `SupportRAW`, `SupportTGA`): ezeket az Opciók
 OK-ja írja az általános mentéssel (`0x006e39af` -> `0x009a5b30`), lásd
