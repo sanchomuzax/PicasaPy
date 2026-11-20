@@ -11828,16 +11828,17 @@ picasapy-origin-key: stringres:eMenuCreateMovie::ID_FACESRANDOM</extracomment>
             <translation>จากอัลบั้มบุคคล...</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaCreateMenu.qml" line="63" />
+            <source>From Selection...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreateMovie::MOVIE</extracomment>
+            <translation>จากรายการที่เลือก...</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="255" />
             <source>Make a &amp;Poster...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>สร้าง&amp;โปสเตอร์...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="434" />
-            <source>New Movie...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ภาพยนตร์ใหม่...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="440" />
