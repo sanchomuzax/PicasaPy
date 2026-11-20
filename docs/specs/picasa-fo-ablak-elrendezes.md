@@ -480,7 +480,7 @@ Az `0x004183c0` migrációban a hiányzó `dbVersion` olvasási alapértéke `0`
 | `UITransitions` | bool, `1` (`0x006e0cd8`) | íróút/időzítés: **NINCS MEG** | `view/uiTransitions`; alapértéket olvas, mentés csak explicit setterrel |
 | `ShowTooltips` | bool, `1` (`0x006e0ce5`) | íróút/időzítés: **NINCS MEG** | `view/showTooltips`; alapértéket olvas, mentés csak explicit setterrel |
 | `SingleClickExit` | bool, `0` (`0x006e0cf2`) | íróút/időzítés: **NINCS MEG** | `view/singleClickExit`; alapértéket olvas, mentés csak explicit setterrel |
-| `disposepreviews` | bool, `0` (`0x006e0cff`) | `0x005cf5b0` csak akkor ír `0`-t, ha az olvasott érték nem nulla; az ezt kiváltó pontos esemény **NINCS MEG** | `view/disposePreviewsOnExit`; mentés explicit setterrel; életciklus-párhuzam nyitott |
+| `disposepreviews` | bool, `0` (`0x006e0cff`) | **HELYESBÍTVE (#7325):** a kapcsoló értékét az Opciók OK-ja írja (általános mentés: `0x006e39af` -> `0x009a5b30`), a `0x005cf5b0` az OK után, ha az érték nem nulla, a két memóriabeli bélyegképtárat azonnal újrainicializálja (`0x005cfdeb`-`0x005cfe48`) és `0`-t ír vissza; kilépéskor a kulcsot semmi nem olvassa (a sztring a teljes `.text`-ben csak három helyen áll). Lásd [paritas-folyamat-7325.md](paritas-folyamat-7325.md) 1.4 f sor. | `view/disposePreviewsOnExit`; tartós jelölő, kilépéskor ürít; **ELTÉR** (#7325) |
 | `DoNotConfirmDeleteFromDisk` | bool, `0` (`0x006e0d0c`) | `0x005fd670`: a törlési megerősítő párbeszéd döntési/„ne kérdezze újra” útján | `confirm/delete/remember`; a párbeszéd döntésekor `true`-t és `false`-t is ment |
 | `DoNotConfirmRemoveFromAlbum` | bool, `0` (`0x006e0d19`) | `0x005fd670`: az albumeltávolítás megerősítő párbeszédének döntési útján | `confirm/removeFromAlbum/remember`; a párbeszéd döntésekor `true`-t és `false`-t is ment |
 | `autoexclude` | bool, `1` (`0x006e0d29`) | `0x0051f600`: az importálási művelet a panelen látott értéket kiírja | `import/autoexclude`; alapértéket olvas, mentés csak explicit setterrel |
@@ -546,9 +546,14 @@ javasolja az eredeti nyers értékek bemásolását. A fejlesztési feladat
 konkrét megőrzési szabálya: az adott érték QSettings-feloldása után csak
 akkor írja el az **effektív, a felületen használt értéket**, ha a kulcs még
 nincs jelen; a már mentett felhasználói értéket ne írja felül. A
-`SupportQuicktime` második írásútja és a `disposepreviews` pontos kiváltó
-eseménye nyitott, ezért ezeket nem számoltam a fenti 15 megerősített
-QSettings-hiány közé.
+`SupportQuicktime` második írásútja nyitott, ezért ezt nem számoltam a fenti 15
+megerősített QSettings-hiány közé. A `disposepreviews` kiváltó eseménye a #7325
+óta ismert (az Opciók OK-ja, egyszeri ürítés, a jelölő visszaáll nullára);
+ugyanez a lelet válaszolja meg a táblában `NINCS MEG` íróútú Opciók-kulcsokat
+(`UITransitions`, `ShowTooltips`, `SingleClickExit`, `autoexclude`,
+`LoopSlideshow`, `PlayMP3Tracks`, `SupportRAW`, `SupportTGA`): ezeket az Opciók
+OK-ja írja az általános mentéssel (`0x006e39af` -> `0x009a5b30`), lásd
+[paritas-folyamat-7325.md](paritas-folyamat-7325.md) 1.3.
 
 *Bizonyítottság: feltételes az írási életciklus teljességére.* A teljes
 utasításszintű pásztázás a kulcsnevekre megtalálta a 39/39 regisztrált kulcsot;
@@ -909,7 +914,7 @@ A jegy `0x007fad0a`-ra tett „író ág” megnevezése pontatlan: az a
 | `Show tooltips` | `ShowTooltips` (`0x00ca9a08`) | 1 (`0x006e0ced`) | `optionsShowTooltipsCheck` | `view/showTooltips` | igaz | EGYEZIK |
 | `Single-click to exit Edit View` | `SingleClickExit` (`0x00c8e614`) | 0 (`0x006e0cfa`) | `optionsSingleClickExitCheck` | `view/singleClickExit` | hamis | ELTÉR (felirat: `Single click to exit the editing view`) |
 | `Detect duplicates while importing` | `autoexclude` (`0x00c8875c`) | 1 (`0x006e0d31`) | `optionsAutoExcludeCheck` | `import/autoexclude` | hamis | ELTÉR (alapérték; felirat: `Detect duplicates on import`) |
-| `Clear cache files` | `disposepreviews` (`0x00c95630`) | 0 (`0x006e0d07`) | `optionsClearCacheFilesCheck` | `view/disposePreviewsOnExit` | hamis | EGYEZIK (felirat, kapcsoló, alapérték; az eredeti ürítés pontos időpontja nincs igazolva, PicasaPy kilépéskor ürít #5897) |
+| `Clear cache files` | `disposepreviews` (`0x00c95630`) | 0 (`0x006e0d07`) | `optionsClearCacheFilesCheck` | `view/disposePreviewsOnExit` | hamis | ELTÉR (felirat, kapcsoló, alapérték egyezik; **az időzítés és a jelleg eltér:** az eredetiben OK-ra szóló egyszeri ürítés, a jelölő visszaáll nullára, kilépéskor nem ürít; a PicasaPy tartós jelölője kilépéskor ürít #5897; részletek: [paritas-folyamat-7325.md](paritas-folyamat-7325.md) 2. szakasz 8. sor) |
 | `Delete from disk without confirmation` | `DoNotConfirmDeleteFromDisk` (`0x00c98f48`) | 0 (`0x006e0d14`) | `optionsSkipDeleteConfirmCheck` | megerősítési döntés: `delete` | hamis | EGYEZIK |
 | `Remove from album without confirmation` | `DoNotConfirmRemoveFromAlbum` (`0x00c98f64`) | 0 (`0x006e0d24`) | `optionsSkipRemoveConfirmCheck` | megerősítési döntés: `removeFromAlbum` | hamis | EGYEZIK |
 | `Send anonymous usage stats to Google` | `ReportStats` (`0x00c80118`), nincs a regisztrálóban | `-1` hiányzó értéknél (`0x006e1327`); a jelölőnégyzet hamis/üres (`0x006e1340-0x006e13dc`), az „nincs tárolva” jelző külön megmarad (`0x006e1354`) | `optionsUsageStatsCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; felirat: `Send anonymous usage statistics`) |
