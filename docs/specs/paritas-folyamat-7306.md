@@ -147,9 +147,9 @@ A Picasa 3.9 két külön futásban 200%-os, `4x6` papírméretű, átfedés né
 
 1. ✅ **Poszter alapértékei:** 200%, `4x6`, átfedés kikapcsolva; két külön futás képe egyezik (#794/#795 `kepernyo__11`).
 2. ✅ **Létrejött fájlok neve és darabszáma:** négy megnevezett JPEG az eredeti mappában (#794 `kepmappa__lista.json`).
-3. ✅ **Picasa utóállapot:** szerkesztőnézet, utolsó lap `1-1-color_patches.jpg`, képtár `28 of 28`, Selection tálcán az eredeti kép (#794 `kepernyo__15`).
+3. ✅ **Picasa végállapot:** szerkesztőnézet, utolsó lap `1-1-color_patches.jpg`, képtár `28 of 28`, Selection tálcán az eredeti kép (#794 `kepernyo__15`).
 4. ✅ **Átfedés újranyitáskor:** a bekapcsolt állapot a második megnyitásra kikapcsolt (#795 `kepernyo__13`, `kepernyo__20`).
-5. ⛔ **PicasaPy utóállapot futtatott egyezése:** nem futtattam PicasaPy-t; a forrásban siker-párbeszéd van, az eredeti pedig szerkesztőnézetre vált. A runtime-paritás nincs igazolva.
+5. ⛔ **PicasaPy végállapot futtatott egyezése:** nem futtattam PicasaPy-t; a forrásban siker-párbeszéd van, az eredeti pedig szerkesztőnézetre vált. A runtime-paritás nincs igazolva.
 
 ### Javasolt fejlesztői jegytörzs
 
