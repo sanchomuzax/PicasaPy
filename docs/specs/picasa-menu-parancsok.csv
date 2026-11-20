@@ -73,8 +73,8 @@ eMenuLabelFolder,ID_ALBUM_DELETE,&Delete...,&Törlés...,0x9d44
 eMenuLabelFolder,ID_ALBUM_EDITCAPTIONS,&Edit Description...,&Leírás szerkesztése...,0x9c69
 eMenuLabelFolder,ID_ALBUM_SLIDESHOW,&View Slideshow,&Diavetítés megtekintése,0x9c6d
 eMenuLabelFolder,ID_DATESORT,&Date,&Dátum,0x9cd4
-eMenuLabelFolder,ID_FILE_EXPORTASWEBPAGE,E&xport as HTML Page...,E&xportálás HTML-oldalként...,0x9c95
-eMenuLabelFolder,ID_FILE_PRINTCONTACTSHEET,&Print Contact Sheet...,&Indexképek nyomtatása...,0x9c94
+eMenuLabelFolder,ID_FILE_EXPORTASWEBPAGE,E&xport as HTML Page...,E&xportálás HTML-oldalként...,0x9c94
+eMenuLabelFolder,ID_FILE_PRINTCONTACTSHEET,&Print Contact Sheet...,&Indexképek nyomtatása...,0x9cd0
 eMenuLabelFolder,ID_MANAGE_ALBUM,&Remove from Picasa...,&Eltávolítás a Picasából...,0x9cce
 eMenuLabelFolder,ID_MOVEFOLDER,&Move...,Át&helyezés...,0x9df4
 eMenuLabelFolder,ID_NAMESORT,&Name,&Név,0x9cd3
