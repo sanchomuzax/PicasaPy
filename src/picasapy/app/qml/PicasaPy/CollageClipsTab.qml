@@ -74,19 +74,62 @@ Item {
     //: A lista alsó behúzása (spec 4.3: „alul −10").
     readonly property int listBottomGap: 10
 
-    //: #1276: a tálca FEL NEM HASZNÁLT elemei — ez a lap bemenete.
-    //: A `!== undefined` őr a #1572 szabálya: a próbák stub-vezérlőjén a
-    //: tulajdonság nincs rajta, és a `filter` `undefined`-on eldobna.
+    //: #7293: a forrásmappa vászonra nem került képei: ez a lap bemenete.
+    //: Régebbi panel-próba vezérlőjén nincs kollázs-/fotómodell; ott a
+    //: korábbi tálca-lista marad kompatibilis tartaléknak.
     readonly property var unusedClips: {
+        if (tab.controller
+                && tab.controller.photos !== undefined
+                && tab.controller.collageNodes !== undefined) {
+            var photos = tab.controller.photos
+            var nodes = tab.controller.collageNodes
+            // A jelzések újraértékeltetik a listát fotófrissítésnél és minden
+            // vászoncsomópont-változásnál (azonos elemszám esetén is).
+            var photoRevision = photos.revision
+            var selectionRevision = tab.controller.collageSelection
+            var canvasCount = tab.controller.collageClipCount
+            var sourceRows = ({})
+            var canvasRows = ({})
+            for (var nodeRow = 0; nodeRow < nodes.rowCount(); ++nodeRow) {
+                // A CollageNodeModel útvonal-szerepe Qt.UserRole + 1.
+                var nodePath = nodes.data(nodes.index(nodeRow, 0), Qt.UserRole + 1)
+                var photoRow = Number(photos.rowOfPath(String(nodePath)))
+                if (photoRow < 0)
+                    continue
+                canvasRows[photoRow] = true
+                var folderRange = photos.folderRowRange(photoRow)
+                var folderStart = Number(folderRange[0])
+                var folderCount = Number(folderRange[1])
+                for (var folderRow = folderStart;
+                        folderRow < folderStart + folderCount; ++folderRow)
+                    sourceRows[folderRow] = true
+            }
+            var remaining = []
+            for (var row = 0; row < photos.rowCount(); ++row) {
+                if (!sourceRows[row] || canvasRows[row])
+                    continue
+                var photo = photos.itemAt(row)
+                remaining.push({
+                    photoId: Number(photos.idAt(row)),
+                    path: photos.filePathAt(row),
+                    thumbUrl: photos.thumbUrlAt(row),
+                    name: photo.name,
+                    used: false,
+                    held: false
+                })
+            }
+            return remaining
+        }
+
         if (!tab.controller || tab.controller.trayItems === undefined)
             return []
-        var ki = []
         var elemek = tab.controller.trayItems
+        var valaszthatok = []
         for (var i = 0; i < elemek.length; ++i) {
             if (!elemek[i].used)
-                ki.push(elemek[i])
+                valaszthatok.push(elemek[i])
         }
-        return ki
+        return valaszthatok
     }
 
     // --- A három gomb ------------------------------------------------------

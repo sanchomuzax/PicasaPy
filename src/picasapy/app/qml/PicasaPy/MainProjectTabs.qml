@@ -101,7 +101,12 @@ QtObject {
             if (row >= 0) rows.push(row)
         }
         if (rows.length > 0) return rows
-        return hostWindow.selectedRows()
+        var kijeloltSorok = hostWindow.selectedRows()
+        if (kijeloltSorok.length > 0 || held.length > 0)
+            return kijeloltSorok
+        // #7293: kijelölés és tálcán tartott kép nélkül a menü a jelenlegi
+        // mappacsoport teljes tartalmát teszi a vászonra.
+        return hostWindow._groupRows()
     }
 
     /** A Kollázs LAP megnyitása — a Létrehozás menü és a tálca gombja is ide

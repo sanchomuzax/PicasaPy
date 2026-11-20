@@ -89,15 +89,22 @@ class TestMenuJelzesVegigmegy:
         assert dialog is not None, "a menü nem építette fel a film-párbeszédet"
         assert dialog.property("visible") is True
 
-    def test_kijeloles_NELKUL_is_megnyilik_a_lap(self, qml_app, qt_app):
-        """#922 + #936 + #985: a menüből, forrás nélkül is történik valami.
-
-        Spec 3.2 utolsó bekezdése: forrás nélkül a lap **akkor is megnyílik**,
-        üres vászonnal — a felhasználó ne egy néma menüpontot kapjon."""
+    def test_kijeloles_NELKUL_a_teljes_mappat_teszi_a_vaszonra(
+        self, qml_app, qt_app
+    ):
+        """#7293: kijelölés nélkül a Létrehozás menü teljes aktuális
+        mappája kerül a vászonra."""
         window, controller, lib, engine = qml_app
         window.setProperty("selectedIndexes", [])
         window.setProperty("selectedIndex", -1)
+        aktualis_mappa = controller.currentFolder
+        csoport = next(
+            group
+            for group in controller.feedGroups
+            if group["path"] == aktualis_mappa
+        )
+        vart_db = int(csoport["count"])
         _menusor(window).metaObject().invokeMethod(_menusor(window), "collageRequested")
         _settle(qt_app, 3)
         assert controller.property("collageOpen") is True
-        assert controller.property("collageClipCount") == 0
+        assert controller.collageNodes.rowCount() == vart_db

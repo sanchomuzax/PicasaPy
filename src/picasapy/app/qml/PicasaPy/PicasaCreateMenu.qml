@@ -31,7 +31,8 @@ PicasaMenu {
     MenuItem {
         objectName: "menuCreateCollage"
         text: qsTr("&Picture Collage...")
-        enabled: bar.createActionsEnabled
+        // #7293: kijelölés nélkül is a teljes aktuális mappából nyit kollázst.
+        enabled: !bar.editorActive
         onTriggered: bar.collageRequested()
     }
     // hiányzott (#324 audit): OS-integrációs funkciók

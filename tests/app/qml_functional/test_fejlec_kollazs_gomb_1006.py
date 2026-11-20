@@ -112,17 +112,20 @@ class TestABekotes:
             "a fejléc kollázs-jelzését senki nem fogja el — néma gomb"
         )
 
-    def test_a_CSOPORT_kepeit_adja_at_nem_a_kijelolest(self):
-        """A fejléc a csoport kijelölését szűri; üres eredménynél a teljes
-        csoportot adja át.
+    def test_ket_kijeloles_alatt_a_teljes_csoportot_adja_at(self):
+        """A fejléc két kijelölés alatt a teljes csoportot adja át.
         """
         blokk = blokk_horgony_utan(_FEED, "onCollageRequested")
         assert "modelData.start" in blokk and "modelData.count" in blokk, (
             "a gomb nem a csoport sorait adja át"
         )
-        assert "selectedIndexes" in blokk and "sorok.length === 0" in blokk, (
-            "a kijelölést a csoport tartományára kell szűrni, majd üres "
-            "kijelölésnél a teljes csoportot kell használni"
+        assert "selectedIndexes" in blokk and "sorok.length < 2" in blokk, (
+            "a kijelölést a csoport tartományára kell szűrni, majd nulla vagy "
+            "egy kijelölésnél a teljes csoportot kell használni"
+        )
+        assert "sorok = []" in blokk, (
+            "a küszöb alatti kijelölést ki kell üríteni, mielőtt a teljes "
+            "csoport sorai hozzáadódnak"
         )
 
     def test_kattintasra_megnyilik_a_kollazs_lap(self, qml_app, qt_app):
