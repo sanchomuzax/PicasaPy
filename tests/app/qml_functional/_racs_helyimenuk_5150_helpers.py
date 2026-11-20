@@ -102,6 +102,15 @@ def kattints(window, qt_app, elem, gomb=Qt.MouseButton.LeftButton) -> None:
     ⚠️ Az ablakot a hívó adja át, nem az `elem.window()`-ból veszi: a
     Python-wrapper GC után megsemmisítené az ablakot (ld. a
     `qml-teszt-python-wrapper-torles` tanulságot)."""
+    # Az újonnan létrejött delegált (pl. a címkesor szövege) azonnal
+    # látszhat, de a méretét csak a következő elrendezési kör adja meg
+    # (#7334, a CI-n 0×0-s elem). A kattintás előtt ezt megvárjuk.
+    var_feltetelre(
+        qt_app,
+        hibaturo_feltetel(
+            lambda: elem.isVisible() and elem.width() > 0 and elem.height() > 0
+        ),
+    )
     assert elem.isVisible() and elem.width() > 0 and elem.height() > 0, (
         f"{elem.objectName()}: nem látszik / nulla méretű, nem kattintható"
     )
