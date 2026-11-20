@@ -15117,6 +15117,16 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
         </message>
     </context>
     <context>
+        <name>MainTimeline</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainTimeline.qml" line="122" />
+            <source>You must have images in the Picture Tray to do this.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MUST_SELECT</extracomment>
+            <translation>Des photos doivent être présentes dans la Sélection temporaire pour que vous puissiez effectuer cette opération.</translation>
+        </message>
+    </context>
+    <context>
         <name>TimelineController</name>
         <message>
             <location filename="../timeline_controller.py" line="96" />
