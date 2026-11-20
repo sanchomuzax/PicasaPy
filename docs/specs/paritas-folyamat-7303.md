@@ -20,7 +20,7 @@ Az eredeti Places nézet egy Google Maps v3 térképet tartalmazó helyi HTML-ol
 
 Az eredeti Picasa a `Preferences\maptype` kulcsból visszaolvassa a típust, és picasa.setMapType(%d) hívást ad a v3 oldalnak. A v3 függvény üres, ezért a mentett típus visszaállítása ebben a változatban nem történik meg (picasa-helyek-panel.md:5.4). Az active_metadata_tab kulcsot a panelvezérlő olvassa, de a vizsgált indexben nem találtunk író útvonalat (picasa-menu-parancsok-viselkedes.md:2354-2365). A két beállításból nem következik, hogy a panelkamera vagy a kiválasztott lap teljes állapota megmarad.
 
-PicasaPy-ban a Places panel a képek helyeit térképen mutatja, egy helyi szövegszűrővel. A kereső a már látható jelölők fájlnevét, feliratát, kulcsszavait és mappanevét vizsgálja; nem indít címkeresést (PlacesPanel.qml:28-42,215-247,312-314). A térkép QtLocation osm plugint használ, üres jelölőlista esetén Budapestre, 47.4979,19.0402 középpontra és 4 nagyításra áll (PlacesMap.qml:78-90). Jelölők érkezésekor a középpont a jelölők koordinátáinak átlaga lesz (PlacesMap.qml:62-70,173-174). A térkép és a kereső állapota a panel példányának helyi QML-állapota; újraindítások közötti megőrzést a vizsgált út nem mutat.
+PicasaPy-ban a Places panel a képek helyeit térképen mutatja, egy helyi szövegszűrővel. A kereső a már látható jelölők fájlnevét, feliratát, kulcsszavait és mappanevét vizsgálja; nem indít címkeresést (PlacesPanel.qml:28-42,215-247,312-314). A térkép QtLocation `osm` plugint használ, üres jelölőlista esetén Budapestre, 47.4979,19.0402 középpontra és 4 nagyításra áll (PlacesMap.qml:78-90). Jelölők érkezésekor a középpont a jelölők koordinátáinak átlaga lesz (PlacesMap.qml:62-70,173-174). A térkép és a kereső állapota a panel példányának helyi QML-állapota; újraindítások közötti megőrzést a vizsgált út nem mutat.
 
 ## 3. Kérdések és megszakítás
 
@@ -47,7 +47,7 @@ PicasaPy-ban a Places panel a képek helyeit térképen mutatja, egy helyi szöv
 - A közös _apply_batch fotókat mappa szerint csoportosít, update_document(..., backup=True) hívást végez, mappánként szinkronizálja az indexet, majd frissíti a nézetet (photo_ops_write_text_mixin.py:110-131). Az ini-író mentés előtt .picasa.ini.bak másolatot készít a létező célról és atomikus mentési útvonalat használ (ini/io.py:212-270,292-360). Ez mentési másolat, nem felhasználói Visszavonás.
 - Az indexelő a geotag= értéket geotag_ini mezőbe szinkronizálja; a Places-lista .picasa.ini vagy EXIF GPS alapján épül (index/sync_photos.py:141-164, index/queries.py:498-513). Így az ini-kulcs törlése után egy EXIF-hely továbbra is megjelenhet a listában.
 - Sikeres írás után geoChanged frissíti a jelölőket; írási hiba esetén a geoWriteFailed üzenet a hibasávba kerül, és nem bocsátódik ki geoChanged (geo_controller.py:174-181, MainErrorBanner.qml:93-96). A mappánként soros írás miatt későbbi mappa hibája előtt korábbi mappák már elmentődhettek. Ez a kódsorrendből következik, futtatott hibapróba nincs.
-- Hálózati térképhibánál az offline állapotot a Places panel külön felirattal jelzi; hiányzó QtLocation modulnál külön tartaléküzenet van, és a helylista/törlőgomb térkép nélkül is elérhető (PlacesMap.qml:38-45,78-90, PlacesPanel.qml:133-188,251-295). A mai offline felirat még Google Maps-et nevez meg, miközben a térkép QtLocation osm plugint használ. Ez a szöveg pontatlan.
+- Hálózati térképhibánál az offline állapotot a Places panel külön felirattal jelzi; hiányzó QtLocation modulnál külön tartaléküzenet van, és a helylista/törlőgomb térkép nélkül is elérhető (PlacesMap.qml:38-45,78-90, PlacesPanel.qml:133-188,251-295). A mai offline felirat még Google Maps-et nevez meg, miközben a térkép QtLocation `osm` plugint használ. Ez a szöveg pontatlan.
 - A vizsgált Places írási útban nincs undo-hívás. Ebből nem következik, hogy az app más globális felületén nincs ilyen lehetőség; a geocímke felhasználói undo-viselkedése mindkét programban NINCS MEG.
 
 ## 5. Eredeti / nálunk / teendő összefoglaló
@@ -66,7 +66,7 @@ PicasaPy-ban a Places panel a képek helyeit térképen mutatja, egy helyi szöv
 
 **Eredeti:** 0x00650ba0 a runtime/geotag/geopanelscript_v3.html oldalt tölti be; az eredeti oldal Google Maps API v3-at használ, és a hibaüzenet Google Maps inicializálási hibát nevez meg.
 
-**Nálunk:** PlacesMap.qml:78-89 QtLocation osm plugint használ, de PlacesPanel.qml:178-188 offline üzenete Google Maps-et említ.
+**Nálunk:** PlacesMap.qml:78-89 QtLocation `osm` plugint használ, de PlacesPanel.qml:178-188 offline üzenete Google Maps-et említ.
 
 **Teendő:** írjuk át az offline térképüzenetet szolgáltatófüggetlen hálózati/térképcsempe hibára. Ne vezessünk be új térképszolgáltatást.
 
@@ -123,7 +123,7 @@ PicasaPy-ban a Places panel a képek helyeit térképen mutatja, egy helyi szöv
 
 ## 8. Vizsgálatkor átnézett korábbi anyagok
 
-- rg -rn "job-[0-9]" docs/specs/ és a Places/geotag kulcsszavas ellenőrzés: a job-225 az Eszközök menüben a Geotag almenüt mutatja, a kb-2 a Ctrl+Shift+G Warning ablakát; egyik sem rögzíti a teljes Places adatírást.
+- `rg -rn "job-[0-9]" docs/specs/` és a Places/geotag kulcsszavas ellenőrzés: a job-225 az Eszközök menüben a Geotag almenüt mutatja, a kb-2 a Ctrl+Shift+G Warning ablakát; egyik sem rögzíti a teljes Places adatírást.
 - A meroadat.tar 944 bejegyzéses archívumának olvasási listája: tíz fő címke, `geo/gps/place/geotag/7303` nevű tag nélkül. Nem bontottam ki adatot.
 - ls docs/specs | grep -i 'backup\|mentes': biztonsagi-mentes.md. Ez a Picasa Back Up Pictures termékfunkcióról szól, nem a geotag ini-írásáról.
 - Geotag tárgyú lapok: picasa-helyek-panel.md, továbbá a menü- és gyorsbillentyű-specifikáció. Az összefoglalók helyett a hivatkozott részek és források kerültek ellenőrzésre.
