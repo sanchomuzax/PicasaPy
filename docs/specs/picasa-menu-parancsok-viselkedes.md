@@ -7511,8 +7511,8 @@ FileVersion 3.9.141.259 (mérés: PE FileVersion).
 |---|---|---|
 | Képméret | EGYEZIK: 0 = eredeti, 1024, 800, 640, 320; alapérték Preferences\WebExportSize = 3, vagyis 640 px (0x007f5310). | EGYEZIK: ugyanezek a választások és 640 px alapérték; QSettings-kulcs: webexport/size (WebExportController, sizes.py). |
 | Mozgókép mód | EGYEZIK: Első képkocka / Teljes mozgófilm; alapérték Preferences\WebExportMovie = 0, vagyis Első képkocka (0x007f5355). | EGYEZIK: ugyanezek a módok és alapérték; QSettings-kulcs: webexport/movieFull. |
-| Célmappa | A 0x007f52b0 a Preferences\WebExportPath értéket olvassa és a 0x007f5e80 menti. Hiányzó értéknél a 0x00996230 által feloldott Personal mappához a bináris 0x00cbc7f8 `Picasa HTML Exports` nevet fűzi a 0x007f53a7 útvonalon. | A célmappát `webexport/targetDir` QSettings-kulcsba menti és visszatölti. Első érték Windows alatt `DocumentsLocation/Picasa HTML Exports/<mappanév>`, más platformon `Pictures/Picasa HTML exportok/<mappanév>` (`webexport_controller.py:256–286,432–440`). A mappanévvel képzett almappa eltér az eredeti alapútvonaltól. |
-| Sablon | A Preferences\WebExportTemplate kulcsot a 0x007f52b0 olvassa és a 0x007f5e80 menti; üres tárolt értéknél a párbeszéd alapindexe 0. | A sablonazonosítót `webexport/templateId` QSettings-kulcsba menti és visszatölti (`webexport_controller.py:66,432–440`; `WebExportDialog.qml:193–226`). Mentett érték nélkül az első sablon (`szurke`) az alap. |
+| Célmappa | A 0x007f52b0 a Preferences\WebExportPath értéket olvassa és a 0x007f5e80 menti. Hiányzó értéknél a 0x00996230 által feloldott Personal mappához a bináris 0x00cbc7f8 `Picasa HTML Exports` nevet fűzi a 0x007f53a7 útvonalon. | A célmappát `webexport/targetDir` QSettings-kulcsba menti és visszatölti. Első érték Windows alatt `DocumentsLocation/Picasa HTML Exports/<mappanév>`, más platformon `Pictures/Picasa HTML exportok/<mappanév>` (`webexport_controller.py:256-286,432-440`). A mappanévvel képzett almappa eltér az eredeti alapútvonaltól. |
+| Sablon | A Preferences\WebExportTemplate kulcsot a 0x007f52b0 olvassa és a 0x007f5e80 menti; üres tárolt értéknél a párbeszéd alapindexe 0. | A sablonazonosítót `webexport/templateId` QSettings-kulcsba menti és visszatölti (`webexport_controller.py:66,432-440`; `WebExportDialog.qml:193-226`). Mentett érték nélkül az első sablon (`szurke`) az alap. |
 | Sablon-előnézet | A webexport.fen sablonlistát, leírást és élő előnézetet ír le (a helyi telepítés erőforrása, 1-16. sor). | Sablononkénti leírás és a sablon saját `preview.svg` képe látszik; az előnézet sematikus, élő sablonból renderelt változat nincs (#5909, WebExportDialog.qml). |
 | FTP-fiókok | AccountMGR alatt a kulcsok: ftpUser (0x00cb9ecc), ftpPass (0x00cb9ed4), ftpDomain (0x00cb9edc), ftpRoot (0x00cb9ee8), webUrl (0x00cb9ef0), secure (0x00cb9ef8). A hiányzó szövegértékek alapja az üres 0x00c7f979; a secure mező alapértéke 0 (0x007e8340). | NINCS MEG: nincs FTP-fiók- vagy beállítási réteg a src/picasapy alatt. |
 | Fióktárolás | A kulcsok olvasása/írása a HKCU beállítási rétegen át történik, AccountMGR névtérrel (0x007e8340, 0x007e89e0, 0x007e8f80; olvasó segéd: 0x00407630). A teljes fizikai registry-útvonal NINCS MEG; megszerzés: a 0x00407630/0x00407ea0 registry-kulcs-összeállításának célzott követése. | NINCS MEG: nincs megfelelő fióktároló. |
@@ -7529,7 +7529,7 @@ FileVersion 3.9.141.259 (mérés: PE FileVersion).
 |---|---|---|
 | **Menüpont és parancs.** 0x00559150 / 0x0055c295; szöveg 0x00c8df1c; parancs 0x9d54; diszpécser 0x005cb990. | PicasaPy-ban nincs FTP-menüelem; a QML-ben csak a kihagyást jelző megjegyzés található. | A termékjegy döntse el és valósítsa meg az FTP-módú menüpont bekötését a meglévő HTML-export párbeszédbe. |
 | **Méret és film mód.** Alap: 640 px és Első képkocka; mindkettő megmarad a következő indításra (0x007f5310, 0x007f5355, 0x007f5e80). | EGYEZIK: alapérték és felhasználói választás megőrzése megvan. | Nincs teendő. |
-| **Célmappa és sablon megőrzése.** Preferences\WebExportPath és Preferences\WebExportTemplate (0x007f52b0, 0x007f5e80); alapút `Personal/Picasa HTML Exports`. | A célmappát és sablont a `webexport/targetDir` és `webexport/templateId` QSettings-kulcsban megőrzi (`webexport_controller.py:432–440`). Első Windows-alapérték: `DocumentsLocation/Picasa HTML Exports/<mappanév>`; más platformon Képek/Picasa HTML exportok/<mappanév> (`webexport_controller.py:256–286`). | A jelenlegi megőrzés egyezik; Windows-alapérték paritásához a mappanévvel képzett almappa eltérését kell rendezni. |
+| **Célmappa és sablon megőrzése.** Preferences\WebExportPath és Preferences\WebExportTemplate (0x007f52b0, 0x007f5e80); alapút `Personal/Picasa HTML Exports`. | A célmappát és sablont a `webexport/targetDir` és `webexport/templateId` QSettings-kulcsban megőrzi (`webexport_controller.py:432-440`). Első Windows-alapérték: `DocumentsLocation/Picasa HTML Exports/<mappanév>`; más platformon Képek/Picasa HTML exportok/<mappanév> (`webexport_controller.py:256-286`). | A jelenlegi megőrzés egyezik; Windows-alapérték paritásához a mappanévvel képzett almappa eltérését kell rendezni. |
 | **FTP-fiók és feltöltés.** AccountMGR 0x00cb9ec0, fiókválasztó 0x005e7370, fiókkezelő 0x005cfff0, CFtpSync 0x00957630; távoli gyökérrel és az InternetConnectA 0x00967c35 címen átadott 21-es porttal. | Nincs fiókkezelő vagy FTP-feltöltés. | Valósítsa meg a fiókválasztás/kezelés és a webexport-fájlok FTP-szinkronizálásának útját. A mezőcímkéket, a secure működését és a webUrl használatát ne következtesse ki a mezőnevekből; előbb zárja le a nyitott bizonyítást. |
 | **Élő sablon-előnézet.** A párbeszéd építője 0x007f4be0; mérés: a szállított runtime/webexport.fen 1-16. sora. | #5909 óta sablononként a saját `preview.svg` látszik; ez sematikus, nem a sablonból renderelt élő előnézet. | Ha a teljes élő előnézet is cél, a sablont renderelve kell megjeleníteni. |
 
@@ -7622,17 +7622,17 @@ hívja. **Megerősített:** a menüépítő és a diszpécser egymástól függe
   `0x005e7490(0)` ágat hívja; felhasználói felületi belépési pontja ebből a
   bináris útból nem állapítható meg.
 
-PicasaPy-ban a `PicasaFolderMenu.qml:176–180` a Mappa-menüt, a
-`FolderPaneMenus.qml:50–89,91–118,394–396` az Album-, Frissített album- és
+PicasaPy-ban a `PicasaFolderMenu.qml:176-180` a Mappa-menüt, a
+`FolderPaneMenus.qml:50-89,91-118,394-396` az Album-, Frissített album- és
 Mappa-helyi menüt köti ugyanahhoz a `openWebExport()` útvonalhoz. A QML-ben
 ezeken kívül nem találtam eszköztári HTML-export-kötést vagy erre a műveletre
 mutató `Shortcut` elemet. A párbeszéd megnyitásakor a jelenlegi mappa neve
-kerül a címmezőbe (`WebExportDialog.qml:172–182`); a generálás képlista nélkül
-nem indul el (`webexport_controller.py:329–336`).
+kerül a címmezőbe (`WebExportDialog.qml:172-182`); a generálás képlista nélkül
+nem indul el (`webexport_controller.py:329-336`).
 
 ### Párbeszéd, alapérték és megjegyzett állapot
 
-Az eredeti `runtime/webexport.fen:1–43` mezői: öt képméret; két mozgókép-mód;
+Az eredeti `runtime/webexport.fen:1-43` mezői: öt képméret; két mozgókép-mód;
 „Web page title” szerkeszthető mező; célmappa és Browse; sablonlista,
 sablonleírás és előnézet; Export és Cancel. A méret alapértéke 640 px, a
 mozgóképé az első képkocka (`0x007f5310`, `0x007f5355`). A
@@ -7641,55 +7641,55 @@ mozgóképé az első képkocka (`0x007f5310`, `0x007f5355`). A
 Az alap cél a `Personal/Picasa HTML Exports`; a címmező kezdeti értéke
 **NINCS MEG**.
 
-PicasaPy ugyanezeket a fő vezérlőket mutatja (`WebExportDialog.qml:344–410,
-451–513,528–549`), és a méretet, film-módot, célmappát és sablont
-`QSettings`-be menti, majd visszatölti (`webexport_controller.py:62–68,
-432–440`; `WebExportDialog.qml:193–229`). Mentett sablon hiányában mindkét
+PicasaPy ugyanezeket a fő vezérlőket mutatja (`WebExportDialog.qml:344-410,
+451-513,528-549`), és a méretet, film-módot, célmappát és sablont
+`QSettings`-be menti, majd visszatölti (`webexport_controller.py:62-68,
+432-440`; `WebExportDialog.qml:193-229`). Mentett sablon hiányában mindkét
 oldalon az első sablon a szürke háttér. A PicasaPy Windows alatt a `DocumentsLocation/Picasa HTML
 Exports/<mappa neve>`, más platformon a Képek mappában a `Picasa HTML
-exportok/<mappa neve>` célból indul (`webexport_controller.py:256–286`);
+exportok/<mappa neve>` célból indul (`webexport_controller.py:256-286`);
 az eredeti bináris alapútja a `Personal/Picasa HTML Exports`. A címmező
 PicasaPy-ban a jelenlegi mappanévvel indul, az eredeti induló cím továbbra is
 nyitott. Az eredeti FEN `printpreview` vezérlőt ír le; a PicasaPy sablononként
 statikus, sematikus `preview.svg` képet jelenít meg, nem renderelt előnézetet
-(`WebExportDialog.qml:53–59`, #5909).
+(`WebExportDialog.qml:53-59`, #5909).
 
 ### Kimenet és futásidejű hatás
 
 Az eredeti sablonrendszer leírása a kiválasztott képek bélyegképeit a
 cél `thumbnail/`, nagy képeit az `image/` almappájába teszi, majd a sablon
-`index.tpl` fájlját dolgozza fel (`web/documentation/index.html:11–18`). A
+`index.tpl` fájlját dolgozza fel (`web/documentation/index.html:11-18`). A
 szállított sablonkönyvtárak hat HTML-sablont és az `xml` sablont tartalmazzák.
 Ez a dokumentált formátum, nem minden fájlnévre és félbeszakított írásra
 kiterjedő runtime-mérés.
 
 PicasaPy ugyanilyen `thumbnail/` és `image/` alkönyvtárat használ
-(`webexport/images.py:39–77`), majd a célkönyvtárba írja a sablon fájljait
-(`webexport/engine.py:49–84,194–234`). A teljes export háttérszálon fut;
+(`webexport/images.py:39-77`), majd a célkönyvtárba írja a sablon fájljait
+(`webexport/engine.py:49-84,194-234`). A teljes export háttérszálon fut;
 képszám-alapú haladást, hibát és eredményüzenetet mutat
-(`webexport_controller.py:288–362,442–466`; `WebExportStatusPane.qml:18–76`).
+(`webexport_controller.py:288-362,442-466`; `WebExportStatusPane.qml:18-76`).
 Az alkalmazás alsó busy-sávját a `BackgroundWorkerMixin` kezeli
-(`worker_thread.py:25–31`).
+(`worker_thread.py:25-31`).
 
 Az eredeti `0x005e7490` háttérmunkát indító útja a `0x00631cb0`-ba fut. A
 bináris RTTI `CWebExportNotify::vftable` táblájában (`0x00cbcd28`) szerepel a
 `0x00631d40` megszakítási metódus. Az utóbbi „Want to Cancel?” kérdést,
 „Don't Cancel” és „Cancel Operation” gombot állít elő; igen válasznál a
-megszakítási jelzőt beállítja (`0x00631d40–0x00631e3e`). Az eredeti
+megszakítási jelzőt beállítja (`0x00631d40-0x00631e3e`). Az eredeti
 `0x0086b980` út sztringjei között szerepel az `Export Cancelled`. A pontos
 félkimenet-takarítás **NINCS MEG**.
 
 PicasaPy export közben letiltja a Bezárás gombot, és a webexport-vezérlőnek
-nincs külön megszakító művelete (`WebExportDialog.qml:544–549`,
-`webexport_controller.py:288–362,442–466`). Az alkalmazásból kilépéskor külön
+nincs külön megszakító művelete (`WebExportDialog.qml:544-549`,
+`webexport_controller.py:288-362,442-466`). Az alkalmazásból kilépéskor külön
 megerősítést ad, és jelzi, hogy az export megáll, majd nem folytatódik
-(`MainWindowCommands.qml:236–258`). A webexport útvonal kimenetei a kiválasztott
+(`MainWindowCommands.qml:236-258`). A webexport útvonal kimenetei a kiválasztott
 célban jönnek létre; nincs közvetlen `.picasa.ini`-írás vagy export utáni
-index-újraolvasás a PicasaPy útvonalán (`webexport_controller.py:288–362,
-442–466`; `engine.py:211–234`).
+index-újraolvasás a PicasaPy útvonalán (`webexport_controller.py:288-362,
+442-466`; `engine.py:211-234`).
 
 Az eredeti helyi export értesítő útján a `0x007f6d50` az `open` műveletet és
-a célútvonalat adja át egy közvetett hívásnak (`0x007f6e6e–0x007f6e79`), ami
+a célútvonalat adja át egy közvetett hívásnak (`0x007f6e6e-0x007f6e79`), ami
 az alapértelmezett böngésző megnyitására utal; a hívás célja fel nem oldott,
 így ezt **feltételes következtetésként**, nem megerősített viselkedésként kell
 kezelni. A PicasaPy siker után a célútvonalat és a fájlszámot mutatja, de nem
@@ -7710,13 +7710,13 @@ nem állítható, hogy az export semmilyen katalógus-hatással nem jár.
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| Főmenü HTML-parancs: `0x9c94` (`0x00559150:0x0055b060–0x0055b086`; diszpécser `0x005cb990`). Helyi menük: `0xa0cb` (`0x007319f0`, `0x00732160`). | Főmenü és három helyi menü ugyanazt a QML-párbeszédet nyitja (`PicasaFolderMenu.qml:176–180`; `FolderPaneMenus.qml:50–89,91–118,394–396`). | A CSV-ben felcserélt HTML- és nyomtatási azonosító javítva. A HTML-hez külön billentyű nincs. Az eredeti eszköztár és az aktív állapotok futtatott mérése nyitott. |
-| A párbeszéd csak kiválasztott mappa/album mellett nyílik; különben figyelmeztet (`0x005e7490`, `IDS_NEED_ALBUM_TO_EXPORT`). | Nincs kép esetén a generálás hibával áll le (`webexport_controller.py:329–336`); a QML Export gomb csak célmappa+sablon alapján engedélyeződik (`WebExportDialog.qml:536–542`). | A pontos „nincs mappa/album” felületi feltételhez és üzenethez futtatott paritásmérés kell. |
-| Öt képméret, két film-mód, cím, célmappa, sablonlista/leírás, előnézet, Export/Cancel (`webexport.fen:1–43`). | Ugyanezek a mezők; az előnézet statikus SVG, a title aktuális mappanév (`WebExportDialog.qml:53–59,172–229,344–410,451–513`). | A sematikus előnézet eltérése már a #5909-ben szerepel. Az eredeti cím induló értékét meg kell mérni, mielőtt eltérésre fejlesztési jegy nyílik. |
-| Méret/film/sablon/cél megőrzése; alapcél `Personal/Picasa HTML Exports` (`0x007f52b0`, `0x007f5e80`, `0x00996230`). | Mind a négy érték megőrzött; első Windows-célhoz még a mappanév almappa kerül (`webexport_controller.py:256–286,432–440`). | Ha a pontos Windows-paritás a cél, az alapértékből ki kell venni a jelenlegi mappanévvel képzett almappát. |
-| `thumbnail/`, `image/`, majd `index.tpl`-ből létrehozott oldalak (eredeti webexport-dokumentáció 11–18.). | Ugyanezek az alkönyvtárak és sablonmotor (`images.py:39–77`; `engine.py:49–84,211–234`). | A fő fájlszerkezet egyezik; pontos fájlnév-/felülírási viselkedés mérésre vár. |
-| Háttérmunka és megerősíthető megszakítási kérdés: „Want to Cancel?” (`0x00631cb0`, `0x00631d40`, CWebExportNotify RTTI `0x00cbcd28`). | Háttérmunka és haladásjelzés van, megszakító gomb nincs; futás közben a Bezárás letiltott (`WebExportDialog.qml:544–549`). | Készítsen külön megszakítási útvonalat megerősítéssel. A részleges kimenet törlésének szabályát csak az eredeti megszakítás utáni mérés után rögzítse. |
-| Helyi siker után a callback `open` műveletet kér a célútvonalra (`0x007f6d50`, `0x007f6e6e–0x007f6e79`); alapértelmezett böngésző nyitása feltételes következtetés. | Sikerüzenet mutatja az útvonalat/fájlszámot (`WebExportStatusPane.qml:63–76`); automatikus böngészőnyitás nincs a talált kódláncban. | Az eredeti futtatott megfigyelése után dönthető el, kell-e automatikus megnyitás. |
+| Főmenü HTML-parancs: `0x9c94` (`0x00559150:0x0055b060-0x0055b086`; diszpécser `0x005cb990`). Helyi menük: `0xa0cb` (`0x007319f0`, `0x00732160`). | Főmenü és három helyi menü ugyanazt a QML-párbeszédet nyitja (`PicasaFolderMenu.qml:176-180`; `FolderPaneMenus.qml:50-89,91-118,394-396`). | A CSV-ben felcserélt HTML- és nyomtatási azonosító javítva. A HTML-hez külön billentyű nincs. Az eredeti eszköztár és az aktív állapotok futtatott mérése nyitott. |
+| A párbeszéd csak kiválasztott mappa/album mellett nyílik; különben figyelmeztet (`0x005e7490`, `IDS_NEED_ALBUM_TO_EXPORT`). | Nincs kép esetén a generálás hibával áll le (`webexport_controller.py:329-336`); a QML Export gomb csak célmappa+sablon alapján engedélyeződik (`WebExportDialog.qml:536-542`). | A pontos „nincs mappa/album” felületi feltételhez és üzenethez futtatott paritásmérés kell. |
+| Öt képméret, két film-mód, cím, célmappa, sablonlista/leírás, előnézet, Export/Cancel (`webexport.fen:1-43`). | Ugyanezek a mezők; az előnézet statikus SVG, a title aktuális mappanév (`WebExportDialog.qml:53-59,172-229,344-410,451-513`). | A sematikus előnézet eltérése már a #5909-ben szerepel. Az eredeti cím induló értékét meg kell mérni, mielőtt eltérésre fejlesztési jegy nyílik. |
+| Méret/film/sablon/cél megőrzése; alapcél `Personal/Picasa HTML Exports` (`0x007f52b0`, `0x007f5e80`, `0x00996230`). | Mind a négy érték megőrzött; első Windows-célhoz még a mappanév almappa kerül (`webexport_controller.py:256-286,432-440`). | Ha a pontos Windows-paritás a cél, az alapértékből ki kell venni a jelenlegi mappanévvel képzett almappát. |
+| `thumbnail/`, `image/`, majd `index.tpl`-ből létrehozott oldalak (eredeti webexport-dokumentáció 11-18.). | Ugyanezek az alkönyvtárak és sablonmotor (`images.py:39-77`; `engine.py:49-84,211-234`). | A fő fájlszerkezet egyezik; pontos fájlnév-/felülírási viselkedés mérésre vár. |
+| Háttérmunka és megerősíthető megszakítási kérdés: „Want to Cancel?” (`0x00631cb0`, `0x00631d40`, CWebExportNotify RTTI `0x00cbcd28`). | Háttérmunka és haladásjelzés van, megszakító gomb nincs; futás közben a Bezárás letiltott (`WebExportDialog.qml:544-549`). | Készítsen külön megszakítási útvonalat megerősítéssel. A részleges kimenet törlésének szabályát csak az eredeti megszakítás utáni mérés után rögzítse. |
+| Helyi siker után a callback `open` műveletet kér a célútvonalra (`0x007f6d50`, `0x007f6e6e-0x007f6e79`); alapértelmezett böngésző nyitása feltételes következtetés. | Sikerüzenet mutatja az útvonalat/fájlszámot (`WebExportStatusPane.qml:63-76`); automatikus böngészőnyitás nincs a talált kódláncban. | Az eredeti futtatott megfigyelése után dönthető el, kell-e automatikus megnyitás. |
 | `.picasa.ini`, index, bal hasáb, rács, kijelölés, állapotsor, írásvédett/hálózati cél, hiba utáni részleges fájlok és Visszavonás: **NINCS MEG**. | A webexport-vezérlő csak kimeneti fájlokat készít és a képlistát olvassa; nincs közvetlen index-újraolvasás vagy `.picasa.ini`-írás. A hibát a státuszpanelen jelzi. | Előtte/utána futtatott leltár szükséges a felsorolt eredeti és PicasaPy állapotok összevetéséhez. |
 
 ### Cáfoló kör
@@ -7728,7 +7728,7 @@ nem állítható, hogy az export semmilyen katalógus-hatással nem jár.
 2. **Feltevés:** a PicasaPy nem őrzi meg a célmappát és a sablont. **Cáfolat:**
    a `webExportPrefs()` beolvassa, a `_remember_choice()` pedig elmenti a
    `webexport/targetDir` és `webexport/templateId` értékeket. A kód két külön
-   útja egyezik; a régi §7514–7515 és §7532 táblázatszöveg javítva.
+   útja egyezik; a régi §7514-7515 és §7532 táblázatszöveg javítva.
 3. **Feltevés:** az eredeti exporthoz semmilyen katalógus-hatás nem társul.
    **Cáfoló eredmény:** a `0x0086f840` rutin a `Exported Pictures` sztringet
    használja. Ez nem bizonyít indexírást, ezért az eredeti katalógus-hatás
@@ -7736,11 +7736,11 @@ nem állítható, hogy az export semmilyen katalógus-hatással nem jár.
 
 ### A két független út
 
-- **A — eredeti bináris:** menüépítő `0x00559150` → parancsazonosító `0x9c94`
+- **A - eredeti bináris:** menüépítő `0x00559150` → parancsazonosító `0x9c94`
   → diszpécser `0x005cb990` → párbeszédnyitó `0x005e7490` → háttérmunka
   `0x00631cb0`; RTTI és `0x00631d40` igazolja a webexport-notifier
   megszakítási kérdését.
-- **B — deklaratív erőforrás + PicasaPy-kód:** eredeti `webexport.fen` és
+- **B - deklaratív erőforrás + PicasaPy-kód:** eredeti `webexport.fen` és
   `web/documentation/index.html` rögzíti a mezőket/kimenetstruktúrát; a
   PicasaPy QML → `WebExportController` → `images.py` → `engine.py` út ugyanezt
   az alapfájlszerkezetet állítja elő, de eltérő előnézettel és megszakítási
