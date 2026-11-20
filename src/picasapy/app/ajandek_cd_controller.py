@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import Property, QStandardPaths, QUrl, Signal, Slot
+from PySide6.QtCore import QStandardPaths, QUrl, Signal, Slot
 
 from picasapy.burn.ajandek_cd import ajandek_cd_lemezkep
 from picasapy.paths import path_key
@@ -24,48 +24,14 @@ from .formatting import to_file_url, to_local_path
 from .worker_thread import BackgroundWorkerMixin
 
 _log = logging.getLogger(__name__)
-GIFT_CD_SLIDESHOW_KEY = "Preferences/CDSlideshow"
-
-
-def _diavetito_engedelyezve(ertek) -> bool:
-    """A mentett Picasa-kapcsoló bool/string alakjának értelmezése."""
-    if isinstance(ertek, bool):
-        return ertek
-    if isinstance(ertek, int) and ertek in (0, 1):
-        return bool(ertek)
-    if isinstance(ertek, str):
-        normalizalt = ertek.strip().lower()
-        if normalizalt in ("true", "1"):
-            return True
-        if normalizalt in ("false", "0"):
-            return False
-    return True
 
 
 class AjandekCdMixin(BackgroundWorkerMixin):
     """„Létrehozás ▸ Ajándék CD készítése…" — a lemezkép háttérszála."""
 
-    giftCdSlideshowEnabledChanged = Signal()
-
     #: (a kész lemezkép útja — üres, ha nem készült; rákerült elemek;
     #: sikertelen elemek)
     ajandekCdKesz = Signal(str, int, int)
-
-    @Property(bool, notify=giftCdSlideshowEnabledChanged)
-    def giftCdSlideshowEnabled(self) -> bool:  # noqa: N802 - QML-property
-        """Az aktuális munkamenet értéke; QSettings-be nem kerül (#7315)."""
-        return _diavetito_engedelyezve(
-            getattr(self, "_gift_cd_slideshow_enabled", True)
-        )
-
-    @Slot(bool)
-    def setGiftCdSlideshowEnabled(self, enabled: bool) -> None:  # noqa: N802
-        """A diavetítő jelölő állását csak memóriában tartja (#7315)."""
-        enabled = bool(enabled)
-        if enabled == self.giftCdSlideshowEnabled:
-            return
-        self._gift_cd_slideshow_enabled = enabled
-        self.giftCdSlideshowEnabledChanged.emit()
 
     def _ajandek_cd_mappa_rekordok(self, mappa: str) -> tuple:
         """A megadott mappa képei a már betöltött könyvtárfeedből."""
@@ -94,20 +60,6 @@ class AjandekCdMixin(BackgroundWorkerMixin):
             QStandardPaths.writableLocation(
                 QStandardPaths.StandardLocation.PicturesLocation
             )
-        )
-
-    @Slot(int, str, str)
-    def ajandekCdIrasa(  # noqa: N802 — QML-slot-stílus
-        self, meret_index: int, cd_nev: str, cel: str
-    ) -> None:
-        """A tálca elemeiből lemezkép a `cel` útra (URL vagy helyi út).
-
-        A tálca rekordjait a FŐSZÁLON olvassuk ki (a modell nem szálbiztos),
-        a lemezkép a háttérszálon készül."""
-        felold = getattr(self, "_tray_records", None)
-        tetelek = tuple(_export_item(r) for r in felold()) if felold else ()
-        self._ajandek_cd_indit(
-            tetelek, meret_index, cd_nev, cel, self.giftCdSlideshowEnabled
         )
 
     @Slot(int, str, str, str, bool, bool)

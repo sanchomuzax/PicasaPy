@@ -82,35 +82,12 @@ def test_a_talca_elemei_kerulnek_a_lemezkepre(controller, qt_app, library):
 
     eredmeny = _varj(
         controller, qt_app,
-        lambda: controller.ajandekCdIrasa(0, "Család", str(cel)),
+        lambda: controller.ajandekCdIrasaForrassal(0, "Család", str(cel), "", False, True),
     )
 
     assert eredmeny == {"ut": str(cel), "darab": 2, "hibas": 0}
     assert cel.stat().st_size > 0
 
-
-def test_a_diavetito_beallitasa_alapbol_igaz_es_nem_marad_meg_ujrainditasnal(
-    controller, library
-):
-    from picasapy.app.controller import AppController
-    from picasapy.app.thumbnail_provider import ThumbnailProvider
-
-    from PySide6.QtCore import QSettings
-
-    tmp_path, first, second, db = library
-    assert controller.giftCdSlideshowEnabled is True
-
-    controller.setGiftCdSlideshowEnabled(False)
-    assert controller.giftCdSlideshowEnabled is False
-
-    masik = AppController(
-        db, (str(first), str(second)),
-        ThumbnailProvider(ThumbnailCache(tmp_path / "masik-thumbs", size=32)),
-        settings=QSettings(
-            str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
-        ),
-    )
-    assert masik.giftCdSlideshowEnabled is True
 
 
 def test_a_mappaforras_megmarad_harom_talcaelem_mellett(tmp_path, qt_app, monkeypatch):
@@ -179,13 +156,14 @@ def test_a_diavetito_allapota_kapcsolja_a_nem_jpeg_atalakitasat(
         return AjandekCdEredmeny(None, 0)
 
     monkeypatch.setattr(modul, "ajandek_cd_lemezkep", lemezkep)
-    controller.setGiftCdSlideshowEnabled(False)
 
     monkeypatch.setattr(
         controller, "_start_background",
         lambda target, **kwargs: target(*kwargs["args"]),
     )
-    controller.ajandekCdIrasa(0, "X", str(tmp_path / "ajandek.iso"))
+    controller.ajandekCdIrasaForrassal(
+        0, "X", str(tmp_path / "ajandek.iso"), "", False, False
+    )
 
     assert kapott["convert_non_jpeg"] is False
 
@@ -196,7 +174,7 @@ def test_iso_kiterjesztes_nelkul_is_iso_lesz(controller, qt_app, library):
 
     eredmeny = _varj(
         controller, qt_app,
-        lambda: controller.ajandekCdIrasa(1, "X", str(tmp_path / "lemez")),
+        lambda: controller.ajandekCdIrasaForrassal(1, "X", str(tmp_path / "lemez"), "", False, True),
     )
 
     assert eredmeny["ut"] == str(tmp_path / "lemez.iso")
@@ -207,7 +185,7 @@ def test_ures_talcanal_nincs_lemezkep(controller, qt_app, library):
     cel = tmp_path / "ures.iso"
 
     eredmeny = _varj(
-        controller, qt_app, lambda: controller.ajandekCdIrasa(0, "X", str(cel))
+        controller, qt_app, lambda: controller.ajandekCdIrasaForrassal(0, "X", str(cel), "", False, True)
     )
 
     assert eredmeny == {"ut": "", "darab": 0, "hibas": 0}
@@ -232,7 +210,7 @@ def test_a_mappanev_honositott(controller, qt_app, library):
     try:
         _tartsd_mindkettot(controller, qt_app, first, second)
         cel = tmp_path / "hu.iso"
-        _varj(controller, qt_app, lambda: controller.ajandekCdIrasa(0, "X", str(cel)))
+        _varj(controller, qt_app, lambda: controller.ajandekCdIrasaForrassal(0, "X", str(cel), "", False, True))
     finally:
         QCoreApplication.removeTranslator(forditas)
 
@@ -264,7 +242,7 @@ def test_varatlan_hibanal_is_jelez(controller, qt_app, library, monkeypatch):
 
     eredmeny = _varj(
         controller, qt_app,
-        lambda: controller.ajandekCdIrasa(0, "X", str(tmp_path / "x.iso")),
+        lambda: controller.ajandekCdIrasaForrassal(0, "X", str(tmp_path / "x.iso"), "", False, True),
     )
 
     assert eredmeny == {"ut": "", "darab": 0, "hibas": 2}
