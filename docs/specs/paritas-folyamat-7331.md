@@ -30,8 +30,8 @@ A `0x00487590` egy, a `0x00449a90`-től kapott lista alapján albumcímke-tagsá
 
 ## Két bizonyítéki út
 
-- **A út: utasításszintű binárisolvasás:** a `0x0048aab0` összehasonlításai és visszatérési ágai, majd a `0x005cf5b0` feltételes hívása megadják a sentinel kaput és a hívási sorrendet. A `0x00487590` célzott diszasszembly-je közvetlenül mutatja a `0x00449a90`, `0x0045ecf0` és `0x004d9aa0` hívásokat.
-- **B út: Ghidra-függvénytörzs és külön helper-azonosítás:** a meglévő Ghidra-kimenet a `0x00487590` listakezelő ciklusát és albumonkénti helperhívásait külön C-nézetben mutatja. A másik két helper szerepét a korábbi, más hívási környezetből származó spec-elemzések rögzítik.
+- **A út: a bináris utasításszintű olvasása:** a `0x0048aab0` összehasonlításai és visszatérési ágai, majd a `0x005cf5b0` feltételes hívása megadják a sentinel kaput és a hívási sorrendet. A `0x00487590` célzott diszasszembly-je közvetlenül mutatja a `0x00449a90`, `0x0045ecf0` és `0x004d9aa0` hívásokat.
+- **B út: Ghidra-függvénytörzs és a segédfüggvények külön azonosítása:** a meglévő Ghidra-kimenet a `0x00487590` listakezelő ciklusát és albumonkénti segédfüggvény-hívásait külön C-nézetben mutatja. A másik két helper szerepét a korábbi, más hívási környezetből származó spec-elemzések rögzítik.
 
 A két út egyezik a kapuról és az albumcímke-tagság módosításáról. Mivel ugyanazon bináris függvények elemzésére támaszkodnak, és nincs független futásmérés a People panelről, a teljes felhasználói következmény bizonyítottsága **feltételes**, nem megerősített.
 
