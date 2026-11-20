@@ -303,7 +303,7 @@ sora "megerősített" fokra állítva.
 | a "My Backup Set" egyetlen hivatkozása a `0x006706d0` (az űrlap soha nem tölti elő) | **megerősített** (4 bájtos pásztázás az egész fájlon, 1-1 találat, és az index egyezik) |
 | az űrlap név mezője üresen nyílik | **megerősített** (a konstruktor nullázza, a felépítő abból tölt, a `.fen`-ben nincs alapérték, a kezelő új módban nem tölt) |
 | a Létrehozás gomb tiltott üres vagy foglalt névnél | **megerősített** (az utasítások olvasva, az `ok` vezérlő és az engedélyező slot azonosítva) |
-| a kisbetűsítés csak ASCII A-Z, nincs levágás | **megerősített** (a bájtciklus olvasva) |
+| a kisbetűsítés csak ASCII A-Z, nincs levágás | **megerősített** (a bájtonkénti ciklus olvasva) |
 | a figyelő minden vezérlő-eseményre lefut | **erős** (regisztráció üres kulccsal és a kiváltó ciklus olvasva; a kiváltó összes hívóját nem térképeztem fel) |
 | az **induló** kiértékelés (azonnal tiltott gomb) | **erős következtetés, nincs követve** (J2) |
 | nincs számozás, felülírás, hibaszöveg | **megerősített** az űrlap útjára: a hat függvény (`0x00679ca0` új/szerkeszt ága, `0x00678be0`, `0x00678e80`, `0x00679310`, `0x00679570`, `0x0067d800`) olvasva; a `0x006759c0` (`backups.xml` író) és a `0x006769f0` (`LastBkSet` író) nincs újraolvasva, a `biztonsagi-mentes.md` 1-2. és 9.1 szakasza rögzíti őket |
