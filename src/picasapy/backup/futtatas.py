@@ -25,7 +25,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+import logging
+import os
 import shutil
+import stat
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -40,6 +43,8 @@ from picasapy.ini import ini_source_path
 from picasapy.ini.names import INI_NAME
 
 from .szuro import szurd_meg
+
+_log = logging.getLogger(__name__)
 
 #: Az eredeti a lemez gyökerére `files.txt`-et írt a másolt fájlokról.
 MANIFESZT_NEVE = "files.txt"
@@ -159,6 +164,25 @@ def mappankent(terv: Terv) -> dict[Path, tuple[TervezettFajl, ...]]:
     }
 
 
+def _masold_at(forras: Path, celfajl: Path) -> None:
+    """A fájl tartalmát és idejét másolja, a módbiteket NEM (#7291).
+
+    Az eredeti `Picasa3.exe` ezt teszi: a meglévő írásvédett célt előbb
+    írhatóvá teszi (`GetFileAttributes` -> `SetFileAttributes`, `0x0067834e`
+    -> `0x00678362`), aztán `CreateFile(OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL)`
+    nyitja (`0x0067839a`), tehát az új cél sosem örökli a forrás
+    attribútumait. A `shutil.copy2` a módbiteket is viszi: az írásvédett
+    forrásból írásvédett másolat lett, amit a következő futás már nem tudott
+    felülírni."""
+    if celfajl.is_file():
+        mod = celfajl.stat().st_mode
+        if not mod & stat.S_IWUSR:
+            celfajl.chmod(mod | stat.S_IWUSR)
+    shutil.copyfile(forras, celfajl)
+    allapot = forras.stat()
+    os.utime(celfajl, ns=(allapot.st_atime_ns, allapot.st_mtime_ns))
+
+
 def _ird_ki_a_manifesztet(cel: Path, tetelek) -> Path:
     manifeszt = cel / MANIFESZT_NEVE
     sorok = [
@@ -213,10 +237,15 @@ def futtasd(
         celfajl = cel / tetel.relativ
         celfajl.parent.mkdir(parents=True, exist_ok=True)
         try:
-            shutil.copy2(tetel.forras, celfajl)
-        except OSError:
+            _masold_at(tetel.forras, celfajl)
+        except OSError as hiba:
             # a bukott fájl kimarad a nyilvántartásból, tehát a következő
-            # futás újra megpróbálja
+            # futás újra megpróbálja; az eredeti is naplósort ír, és megy
+            # a következő fájlra (`0x006783b8`-`0x006783d9`, #7291)
+            _log.warning(
+                "A fájl mentése sikertelen: %s -> %s (%s)",
+                tetel.forras, celfajl, hiba,
+            )
             continue
         masoltak.append(celfajl)
         feljegyzendo.append((str(tetel.forras), tetel.meret, tetel.mtime_ns))
@@ -231,8 +260,11 @@ def futtasd(
         celmappa = (cel / _ini_relativ(mappa, terv, ini.name)).parent
         celmappa.mkdir(parents=True, exist_ok=True)
         try:
-            shutil.copy2(ini, celmappa / ini.name)
-        except OSError:
+            _masold_at(ini, celmappa / ini.name)
+        except OSError as hiba:
+            _log.warning(
+                "A %s mentése sikertelen: %s (%s)", INI_NAME, ini, hiba
+            )
             continue
 
     _ird_ki_a_manifesztet(cel, [
