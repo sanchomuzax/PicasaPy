@@ -269,9 +269,14 @@ Rectangle {
         //: "My Backup Set" csak az első megnyitás alapkészletének neve
         //: (#7294), az űrlap soha nem tölti elő
         host.urlapNev = ""
-        host.urlapCel = ""
+        //: #7302: az űrlap CD/DVD típussal nyílik (az eredeti felépítője a
+        //: `type` rádiót a cél üres voltából tölti: `0x00678ec6`, üres cél =
+        //: rádió 0); a CD/DVD típus célja nálunk a lemezkép alaphelye
+        host.urlapCel = (typeof backupController !== "undefined"
+                         && backupController)
+                        ? backupController.lemezkepAlapHely() : ""
         host.urlapSzuro = "minden"
-        host.urlapTipus = "lemez"
+        host.urlapTipus = "cddvd"
         host.urlapHiba = ""
         host.szerkesztes = true
     }

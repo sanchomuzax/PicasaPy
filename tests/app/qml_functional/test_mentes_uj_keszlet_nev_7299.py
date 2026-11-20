@@ -144,6 +144,81 @@ class TestAzUrlapUresenIndul:
         assert not _gomb_engedett(ablak)
 
 
+class TestAzUrlapCdDvdTipussalIndul:
+    """#7302: az Új készlet űrlap a CD/DVD rádióval nyílik.
+
+    Az eredeti felépítője (`0x00678e80`) a `type` rádiót a `[dlg+0xd0]` (a
+    cél) üres voltából tölti: `0x00678ec0` betölti, `0x00678ec6` nullához
+    hasonlítja, és üresnél az `0x00678ef1`-es ágra ugrik (`push "type"`,
+    rádió 0 = CD/DVD); csak nem üres célnál megy a másik ágra. Új módban a
+    konstruktor a célt nullázza (`0x00678c09`..`0x00678c3e`), tehát az űrlap
+    CD/DVD-vel indul. Nálunk a CD/DVD típus célja a `lemezkepAlapHely()`.
+    A típust SOHA nem kattintjuk be: az induló állapotot mérjük."""
+
+    def test_a_cd_dvd_radio_van_kivalasztva_es_a_hely_nem_valaszthato(
+        self, ures_lista, qt_app
+    ):
+        view, ablak, vezerlo = ures_lista
+
+        _uj_urlap(view, ablak, qt_app)
+
+        assert keres(ablak, "backupTypeCdDvd").property("checked") is True
+        assert keres(ablak, "backupTypeDisk").property("checked") is False
+        assert ablak.property("urlapTipus") == "cddvd"
+        assert ablak.property("urlapCel") == vezerlo.lemezkepAlapHely()
+        assert keres(ablak, "backupChooseTarget").property("enabled") is False
+        assert keres(ablak, "backupSetTarget").property("enabled") is False
+        assert keres(ablak, "backupSetTarget").property("text") == (
+            vezerlo.lemezkepAlapHely())
+
+    def test_a_nev_beirasa_utan_a_letrehozas_azonnal_engedett(
+        self, ures_lista, qt_app
+    ):
+        view, ablak, vezerlo = ures_lista
+        _uj_urlap(view, ablak, qt_app)
+        assert not _gomb_engedett(ablak), "név nélkül tiltott"
+
+        _gepel(view, qt_app, "Nyaralas")
+
+        # sem rádió-, sem mappa-kattintás: a név egymaga elég
+        assert _gomb_engedett(ablak)
+        kattint(view, qt_app, "backupFormSave")
+        uj = [k for k in vezerlo.keszletek() if k["nev"] == "Nyaralas"]
+        assert len(uj) == 1
+        assert uj[0]["tipus"] == "cddvd"
+        assert uj[0]["cel"] == vezerlo.lemezkepAlapHely()
+        assert ablak.property("szerkesztes") is False
+
+    def test_a_masodik_megnyitas_is_cd_dvd_vel_indul_lemez_valasztas_utan(
+        self, ures_lista, qt_app
+    ):
+        view, ablak, vezerlo = ures_lista
+        _uj_urlap(view, ablak, qt_app)
+        kattint(view, qt_app, "backupTypeDisk")
+        assert keres(ablak, "backupTypeDisk").property("checked") is True
+        kattint(view, qt_app, "backupFormCancel")
+        assert varj(qt_app, lambda: ablak.property("szerkesztes") is False)
+
+        _uj_urlap(view, ablak, qt_app)
+
+        assert keres(ablak, "backupTypeCdDvd").property("checked") is True
+        assert keres(ablak, "backupTypeDisk").property("checked") is False
+        assert ablak.property("urlapCel") == vezerlo.lemezkepAlapHely()
+
+    def test_a_lemez_lemez_valasztas_kiuriti_az_alaphelyet(
+        self, ures_lista, qt_app
+    ):
+        view, ablak, _ = ures_lista
+        _uj_urlap(view, ablak, qt_app)
+
+        kattint(view, qt_app, "backupTypeDisk")
+
+        # a lemezkép-alaphely nem lehet a mappába mentés célja
+        assert ablak.property("urlapCel") == ""
+        assert keres(ablak, "backupSetTarget").property("text") == ""
+        assert keres(ablak, "backupChooseTarget").property("enabled") is True
+
+
 class TestAFoglaltNev:
     def test_a_baitra_azonos_meglevo_nev_tiltott(self, ures_lista, qt_app):
         view, ablak, vezerlo = ures_lista
@@ -378,6 +453,24 @@ class TestASzerkesztes:
         _mezo_torles(view, qt_app)
 
         assert not _gomb_engedett(ablak)
+
+    def test_a_szerkeszto_a_keszlet_sajat_tipusat_es_helyet_mutatja(
+        self, ketto, qt_app, tmp_path
+    ):
+        """#7302: az új űrlap CD/DVD-s alapja a szerkesztést nem érinti: a
+        lemez-lemez készlet a saját rádióját és mappáját kapja."""
+        _, ablak, _ = ketto
+
+        self._szerkeszt(ketto, qt_app)
+
+        assert ablak.property("urlapTipus") == "lemez"
+        assert keres(ablak, "backupTypeDisk").property("checked") is True
+        assert keres(ablak, "backupTypeCdDvd").property("checked") is False
+        # Path-összevetés: Windowson a nyers `str(Path)` visszaperjeles (#5155)
+        assert Path(ablak.property("urlapCel")) == tmp_path / "kulso"
+        assert Path(
+            keres(ablak, "backupSetTarget").property("text")
+        ) == tmp_path / "kulso"
 
     def test_a_tipus_csoport_szerkeszteskor_tiltott(self, ketto, qt_app):
         _, ablak, _ = ketto

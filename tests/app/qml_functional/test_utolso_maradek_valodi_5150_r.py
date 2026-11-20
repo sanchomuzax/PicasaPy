@@ -253,6 +253,11 @@ def test_a_keszlet_neve_valodi_billentyuzetrol_mentodik(mentes_host, qt_app):
 def test_a_cel_mappa_mezo_szerkesztheto_es_a_hostba_irodik(mentes_host, qt_app):
     view, host = mentes_host
     _ujkeszlet_urlap(view, host, qt_app)
+    # #7302: az űrlap CD/DVD típussal nyílik, ott a cél mező tiltott (az
+    # eredetiben is csak a lemez-lemez típusnál él), ezért a mappa
+    # beírásához előbb a lemez-lemez rádiót választjuk, valódi kattintással
+    assert keres(view, "backupSetTarget").property("enabled") is False
+    kattint(view, qt_app, "backupTypeDisk")
     assert keres(view, "backupSetTarget").property("enabled") is True
     kattint(view, qt_app, "backupSetTarget")
     kijelol_mindent(view, qt_app)
