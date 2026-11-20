@@ -341,13 +341,14 @@ class TimelineController(QObject):
         # A qshow a rendezett kártyadátumokat hónap első napjára kerekíti,
         # majd a napi különbségek logaritmusát halmozza (38.2.210 §6).
         cumulative_by_collection: dict[str, float] = {}
-        previous_month: date | datetime | None = None
+        previous_month: date | None = None
         cumulative = 0.0
         for collection in prepared:
             card_date = collection["date"]
             if card_date is None:
                 continue
-            month_start = card_date.replace(day=1)
+            day = card_date.date() if isinstance(card_date, datetime) else card_date
+            month_start = day.replace(day=1)
             if previous_month is not None:
                 cumulative += log1p((month_start - previous_month).days)
             cumulative_by_collection[collection["collectionId"]] = cumulative
