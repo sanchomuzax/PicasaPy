@@ -20,7 +20,7 @@ egész binárisban **egyetlen** helyen szerepel, a `0x006706d0` panel-feltöltő
 és ott is csak akkor kerül használatra, ha a készletlista **üres**: ez az
 automatikus alapkészlet (a #7294), nem az űrlap alapértéke.
 
-1. **Milyen alapnevet ad foglalt "My Backup Set" mellett?** Semmilyet: üres
+1. **Milyen alapnevet ad foglalt "My Backup Set" mellett?** Egyet sem: üres
    mezőt. A felhasználónak kell nevet írnia.
 2. **Mit csinál foglalt névnél?** Nem hibát, nem felülírást, nem
    átnevezést: a **Létrehozás gomb (`ok`) tiltott**, amíg a név üres, vagy
