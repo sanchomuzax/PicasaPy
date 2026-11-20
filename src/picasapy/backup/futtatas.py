@@ -50,6 +50,16 @@ _log = logging.getLogger(__name__)
 #: Az eredeti a lemez gyökerére `files.txt`-et írt a másolt fájlokról.
 MANIFESZT_NEVE = "files.txt"
 
+#: A `shutil.disk_usage` MODULSZINTŰ fogantyúja (#7295): a teszt EZT
+#: cserélje, valódi lemezt a teszt ne töltsön.
+_disk_usage = shutil.disk_usage
+disk_usage = _disk_usage
+
+
+class NincsElegendoHelyError(OSError):
+    """Kevés a szabad lemezhely a mentéshez (#7295)."""
+
+
 @dataclass(frozen=True)
 class TervezettFajl:
     """Egy mentendő fájl: honnan, hová, és miért került a tervbe."""
@@ -256,6 +266,8 @@ def futtasd(
     """
     cel = Path(keszlet.cel)
     cel.mkdir(parents=True, exist_ok=True)
+    if _disk_usage(cel).free < terv.osszes_bajt:
+        raise NincsElegendoHelyError("Not Enough Disk Space to Backup Files")
     masoltak: list[Path] = []
     feljegyzendo: list[tuple[str, int, int]] = []
     ini_mappak: set[Path] = set()

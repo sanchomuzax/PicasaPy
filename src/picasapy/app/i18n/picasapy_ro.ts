@@ -19858,6 +19858,12 @@ picasapy-origin-key: stringres:il_BurnPanel::ISOFolder</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Copia de rezervă nu a putut fi restaurată: %1</translation>
         </message>
+        <message>
+            <source>Not Enough Disk Space to Backup Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_BurnPanel::BackgroundProc::4</extracomment>
+            <translation>Nu există spaţiu suficient pe disc pentru fişierele de rezervă</translation>
+        </message>
     </context>
     <context>
         <name>BackupHost</name>

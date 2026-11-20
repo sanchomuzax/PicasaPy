@@ -45,6 +45,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QStandardPaths, Signal, Slot
 
 from picasapy.backup import (
+    NincsElegendoHelyError as _NincsElegendoHelyError,
     belyegezd,
     futtasd,
     keszlet_modositasa,
@@ -234,6 +235,11 @@ class BackupController(
                     datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 )
                 conn.commit()
+        except _NincsElegendoHelyError:
+            self.hibatJelez.emit(
+                self.tr("Not Enough Disk Space to Backup Files")
+            )
+            return
         except OSError as hiba:
             _log.warning("a lemezkép-írás elszállt: %s", hiba)
             self.hibatJelez.emit(
@@ -267,6 +273,11 @@ class BackupController(
                     megszakitva=self._megszakitas.is_set,
                 )
                 conn.commit()
+        except _NincsElegendoHelyError:
+            self.hibatJelez.emit(
+                self.tr("Not Enough Disk Space to Backup Files")
+            )
+            return
         except OSError as hiba:
             _log.warning("a mentés elszállt: %s", hiba)
             self.hibatJelez.emit(

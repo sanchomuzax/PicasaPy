@@ -11,6 +11,7 @@ futtatás itt.
 from .belyeg import belyegezd, keszlet_kulcs, nevezd_at_a_belyegeket
 from .futtatas import (
     MANIFESZT_NEVE,
+    NincsElegendoHelyError,
     Terv,
     TervezettFajl,
     futtasd,
@@ -23,6 +24,7 @@ from .visszaallitas import VisszaallitasiEredmeny, visszaallit
 
 __all__ = [
     "MANIFESZT_NEVE",
+    "NincsElegendoHelyError",
     "Terv",
     "TervezettFajl",
     "VisszaallitasiEredmeny",

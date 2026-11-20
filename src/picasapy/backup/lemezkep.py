@@ -35,13 +35,19 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+import shutil
 
 from picasapy.burn import hasznalhato_kapacitas, lemezekre_oszt
 from picasapy.burn.iso import iso_kiirasa
 from picasapy.ini import ini_source_path
 from picasapy.ini.names import INI_NAME
 
-from .futtatas import MANIFESZT_NEVE
+from .futtatas import MANIFESZT_NEVE, NincsElegendoHelyError
+
+#: A `shutil.disk_usage` MODULSZINTŰ fogantyúja (#7295): a teszt EZT
+#: cserélje, valódi lemezt a teszt ne töltsön.
+_disk_usage = shutil.disk_usage
+disk_usage = _disk_usage
 
 #: A lemezképek nevének alapja és a kötetnév előtagja.
 ALAPNEV = "picasapy-mentes"
@@ -107,6 +113,9 @@ def lemezkepekbe(
     tetelek = list(tetelek)
     cel_mappa = Path(cel_mappa)
     cel_mappa.mkdir(parents=True, exist_ok=True)
+    osszes_bajt = sum(tetel.meret for tetel in tetelek)
+    if _disk_usage(cel_mappa).free < osszes_bajt:
+        raise NincsElegendoHelyError("Not Enough Disk Space to Backup Files")
     kapacitas = hasznalhato_kapacitas(media, szektorszam=szektorszam)
 
     csoportok = lemezekre_oszt(
