@@ -25,7 +25,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+import logging
+import os
 import shutil
+import stat
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,10 +42,22 @@ from picasapy.paths import normalize_path
 from picasapy.ini import ini_source_path
 from picasapy.ini.names import INI_NAME
 
+from .belyeg import SOHA_NEM_MENTETT, BelyegOlvaso, belyegezd, mentendo
 from .szuro import szurd_meg
+
+_log = logging.getLogger(__name__)
 
 #: Az eredeti a lemez gyökerére `files.txt`-et írt a másolt fájlokról.
 MANIFESZT_NEVE = "files.txt"
+
+#: A `shutil.disk_usage` MODULSZINTŰ fogantyúja (#7295): a teszt EZT
+#: cserélje, valódi lemezt a teszt ne töltsön.
+_disk_usage = shutil.disk_usage
+disk_usage = _disk_usage
+
+
+class NincsElegendoHelyError(OSError):
+    """Kevés a szabad lemezhely a mentéshez (#7295)."""
 
 
 @dataclass(frozen=True)
@@ -93,6 +108,12 @@ def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=(), mappak=None) -> Terv:
     szűrője itt fut le rajtuk. A már elmentett, változatlan fájl kimarad —
     ez a készlet lényege.
 
+    #7292: a döntést a kép `.picasa.ini`-szakaszának két kulcsa hozza (a sima
+    `backuphash` és a `BKTag <készlet>-backuphash`, ld. `belyeg.py`), így egy
+    metaadat-szerkesztés (felirat, csillag ...) újra mentendővé teszi a képet.
+    A (méret, mtime) a nyilvántartásból kiegészítésként marad: a kívülről
+    módosított képfájlt az eredeti nem venné észre, mi igen.
+
     #3594: a `mappak` a felületen bepipált mappák (`backuptext3`: „Jelölje
     ki azokat a mappákat, amelyekről biztonsági másolatot szeretne
     készíteni"). `None` = minden mappa; üres lista = semmi. A szűkítés a
@@ -103,6 +124,9 @@ def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=(), mappak=None) -> Terv:
         pipaltak = {Path(mappa) for mappa in mappak}
         fajlok = [f for f in fajlok if Path(f).parent in pipaltak]
     nyilvantartas = elmentett_allapot(conn, keszlet.id)
+    #: #7292: a döntést a kép `.picasa.ini`-szakaszának két kulcsa is hozza
+    #: (az eredeti `0x0065d010`-e); a (méret, mtime) kiegészítésként marad.
+    belyegek = BelyegOlvaso(keszlet.nev)
     #: #3776 [KÖZEPES javítás]: a `fajlok` a #3776 óta FELOLDOTT
     #: (symlink/8.3-rövidnév/betűzés szerint kanonikus) útvonalon
     #: érkeznek, de a nyilvántartás régebbi sorai — a javítás előtti
@@ -129,7 +153,16 @@ def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=(), mappak=None) -> Terv:
                 }
             korabbi = nyilvantartas_feloldva.get(str(fajl))
         mostani = (allapot.st_size, allapot.st_mtime_ns)
-        if korabbi == mostani:
+        belyeg = belyegek.belyeg(fajl)
+        dontes = mentendo(
+            belyeg,
+            nyilvantartva=korabbi is not None,
+            nyilvantartva_valtozatlanul=korabbi == mostani,
+        )
+        if dontes is None:
+            # nincs ini, amiből dönteni lehetne: a nyilvántartás dönt
+            dontes = korabbi != mostani
+        if not dontes:
             kihagyott += 1
             continue
         tervezett.append(
@@ -138,7 +171,12 @@ def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=(), mappak=None) -> Terv:
                 relativ=_relativ_ut(fajl, gyokerek),
                 meret=allapot.st_size,
                 mtime_ns=allapot.st_mtime_ns,
-                ok="valtozott" if korabbi is not None else "uj",
+                ok=(
+                    "valtozott"
+                    if korabbi is not None
+                    or (belyeg is not None and belyeg.keszlet != SOHA_NEM_MENTETT)
+                    else "uj"
+                ),
             )
         )
     return Terv(tuple(tervezett), kihagyott)
@@ -157,6 +195,31 @@ def mappankent(terv: Terv) -> dict[Path, tuple[TervezettFajl, ...]]:
         mappa: tuple(sorted(csoportok[mappa], key=lambda t: t.forras.name))
         for mappa in sorted(csoportok)
     }
+
+
+def _masold_at(forras: Path, celfajl: Path) -> None:
+    """A fájl tartalmát és idejét másolja, a módbiteket NEM (#7291).
+
+    Az eredeti `Picasa3.exe` ezt teszi: a meglévő írásvédett célt előbb
+    írhatóvá teszi (`GetFileAttributes` -> `SetFileAttributes`, `0x0067834e`
+    -> `0x00678362`), aztán `CreateFile(OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL)`
+    nyitja (`0x0067839a`), tehát az új cél sosem örökli a forrás
+    attribútumait. A `shutil.copy2` a módbiteket is viszi: az írásvédett
+    forrásból írásvédett másolat lett, amit a következő futás már nem tudott
+    felülírni."""
+    if celfajl.is_file():
+        mod = celfajl.stat().st_mode
+        if not mod & stat.S_IWUSR:
+            celfajl.chmod(mod | stat.S_IWUSR)
+    shutil.copyfile(forras, celfajl)
+    allapot = forras.stat()
+    os.utime(celfajl, ns=(allapot.st_atime_ns, allapot.st_mtime_ns))
+
+
+#: A fájlmásolás modulszintű fogantyúja: a teszt ezt cseréli, nem a globális
+#: `shutil`-t (`tests/test_platform_seam_1217.py`, #7292). A másolás maga a
+#: `_masold_at` (#7291).
+_masol = _masold_at
 
 
 def _ird_ki_a_manifesztet(cel: Path, tetelek) -> Path:
@@ -203,6 +266,8 @@ def futtasd(
     """
     cel = Path(keszlet.cel)
     cel.mkdir(parents=True, exist_ok=True)
+    if _disk_usage(cel).free < terv.osszes_bajt:
+        raise NincsElegendoHelyError("Not Enough Disk Space to Backup Files")
     masoltak: list[Path] = []
     feljegyzendo: list[tuple[str, int, int]] = []
     ini_mappak: set[Path] = set()
@@ -213,16 +278,25 @@ def futtasd(
         celfajl = cel / tetel.relativ
         celfajl.parent.mkdir(parents=True, exist_ok=True)
         try:
-            shutil.copy2(tetel.forras, celfajl)
-        except OSError:
+            _masol(tetel.forras, celfajl)
+        except OSError as hiba:
             # a bukott fájl kimarad a nyilvántartásból, tehát a következő
-            # futás újra megpróbálja
+            # futás újra megpróbálja; az eredeti is naplósort ír, és megy
+            # a következő fájlra (`0x006783b8`-`0x006783d9`, #7291)
+            _log.warning(
+                "A fájl mentése sikertelen: %s -> %s (%s)",
+                tetel.forras, celfajl, hiba,
+            )
             continue
         masoltak.append(celfajl)
         feljegyzendo.append((str(tetel.forras), tetel.meret, tetel.mtime_ns))
         ini_mappak.add(tetel.forras.parent)
         if haladas is not None:
             haladas((index, osszes))
+
+    # #7292: a bélyeg a forrás ini-jébe CSAK a sikeresen másolt fájlokra
+    # kerül, és az archívumba másolt ini már a bélyeges állapot
+    belyegezd(keszlet.nev, [Path(forras) for forras, _meret, _mtime in feljegyzendo])
 
     for mappa in sorted(ini_mappak):
         ini = ini_source_path(mappa / INI_NAME)
@@ -231,8 +305,11 @@ def futtasd(
         celmappa = (cel / _ini_relativ(mappa, terv, ini.name)).parent
         celmappa.mkdir(parents=True, exist_ok=True)
         try:
-            shutil.copy2(ini, celmappa / ini.name)
-        except OSError:
+            _masol(ini, celmappa / ini.name)
+        except OSError as hiba:
+            _log.warning(
+                "A %s mentése sikertelen: %s (%s)", INI_NAME, ini, hiba
+            )
             continue
 
     _ird_ki_a_manifesztet(cel, [

@@ -13,6 +13,13 @@
 Ezek eddig **saját fogalmazású** szövegek voltak nálunk („Name:",
 üres névmező, „OK", „Backup complete: %1 file(s).").
 
+## #7299
+
+Az Új készlet űrlap a `newbackupset.fen` SAJÁT feliratait kapta („New Backup
+Set", „Name:", „Create"), és az eredeti módján ÜRES névvel nyílik (a „My
+Backup Set" csak az első megnyitás alapkészletének neve, #7294). A
+`publish/label_backupname` („Backup Set") a PANEL eleme, az űrlapé nem.
+
 ## ⚠️ Amit SZÁNDÉKOSAN nem veszünk át
 
 Az eredeti magyar `BackupCopy::1` sora **megcseréli a két argumentumot**
@@ -62,26 +69,33 @@ def _kontextus_blokk(szoveg: str, nev: str) -> str:
 
 
 class TestAMertFeliratok:
-    def test_a_nev_mezo_felirata_a_MERT(self):
-        """`publish/label_backupname` — nem a saját „Name:"."""
+    def test_a_panel_nev_felirata_a_MERT(self):
+        """`publish/label_backupname`: a PANEL eleme, nem az űrlapé."""
         panel = _forras(_PANEL)
-        gazda = _forras(_GAZDA)
         assert 'qsTr("Backup Set")' in panel
-        assert 'qsTr("Backup Set")' in gazda
         assert 'qsTr("Name:")' not in panel
-        assert 'qsTr("Name:")' not in gazda, (
-            "a sajat fogalmazasu Name: felirat meg bent van"
-        )
 
-    def test_az_uj_keszlet_ALAPNEVET_kap(self):
-        """Az eredeti nem üres mezővel indít (`il_BurnPanel::bksetname`)."""
-        assert 'host.urlapNev = qsTr("My Backup Set")' in _forras(_GAZDA)
+    def test_az_urlap_nev_felirata_a_newbackupset_sajatja(self):
+        """#7299: `newbackupset/labelgroup2.title` („Név:"), nem a panel
+        „Backup Set" felirata."""
+        gazda = _forras(_GAZDA)
+        assert 'qsTr("Name:")' in gazda
+        assert 'qsTr("Backup Set")' not in gazda
+
+    def test_az_uj_keszlet_urlapja_ures_nevvel_indul(self):
+        """#7299: az eredeti űrlap ÜRES névvel nyílik (`0x00678c09`); a
+        `My Backup Set` csak az első megnyitás alapkészletének neve."""
+        gazda = _forras(_GAZDA)
+        kezd = gazda.index("function ujKeszletUrlap()")
+        torzs = gazda[kezd:gazda.index("function szerkesztoUrlap()")]
+        assert 'host.urlapNev = ""' in torzs
+        assert 'qsTr("My Backup Set")' not in torzs
 
     def test_a_szerkesztes_gombja_MODOSITAS(self):
         """`il_NewBkDialog::EditOKButton` — csak SZERKESZTÉSKOR."""
         forras = _forras(_GAZDA)
-        assert 'qsTr("Change") : qsTr("OK")' in forras, (
-            "a Change/OK kettosseg hianyzik - szerkeszteskor Modositas kell"
+        assert 'qsTr("Change") : qsTr("Create")' in forras, (
+            "a Change/Create kettosseg hianyzik - szerkeszteskor Modositas kell"
         )
 
     def test_a_zaro_uzenet_a_MERT(self):
@@ -91,13 +105,16 @@ class TestAMertFeliratok:
 
 
 class TestAMagyarForditasok:
-    def test_mind_a_negy_uj_szoveg_le_van_forditva(self):
+    def test_mind_az_uj_szoveg_le_van_forditva(self):
         blokk = _kontextus_blokk(_ts(), "BackupHost")
         vart = {
-            "Backup Set": "Mentési készlet",
             "My Backup Set": "Saját mentési készlet",
             "Change": "Módosítás",
             "Backup Complete": "A mentés elkészült",
+            # #7299: a `newbackupset.xml` hivatalos magyar sorai
+            "New Backup Set": "Új mentési készlet",
+            "Name:": "Név:",
+            "Create": "Létrehozás",
         }
         for forras, magyar in vart.items():
             assert f"<source>{forras}</source>" in blokk, (
@@ -158,23 +175,23 @@ def gazda(qt_app, tmp_path):
 class TestAMukodesben:
     """A forrás-őr nem elég: a ténylegesen MEGJELENŐ szöveget mérjük."""
 
-    def test_az_UJ_keszlet_urlapja_alapnevvel_nyilik(self, gazda, qt_app):
+    def test_az_UJ_keszlet_urlapja_ures_nevvel_nyilik(self, gazda, qt_app):
         ablak, _ = gazda
         ablak.metaObject().invokeMethod(ablak, "ujKeszletUrlap")
         qt_app.processEvents()
 
         mezo = _nevvel(ablak, "backupSetName")
         assert mezo is not None
-        assert mezo.property("text") == "My Backup Set", (
-            f"az új készlet neve nem az alapnév: {mezo.property('text')!r}"
+        assert mezo.property("text") == "", (
+            f"az új készlet neve nem üres: {mezo.property('text')!r}"
         )
 
-    def test_a_MENTES_gomb_uj_keszletnel_OK(self, gazda, qt_app):
+    def test_a_MENTES_gomb_uj_keszletnel_Create(self, gazda, qt_app):
         ablak, _ = gazda
         ablak.metaObject().invokeMethod(ablak, "ujKeszletUrlap")
         qt_app.processEvents()
 
-        assert _nevvel(ablak, "backupFormSave").property("text") == "OK"
+        assert _nevvel(ablak, "backupFormSave").property("text") == "Create"
 
     def test_a_MENTES_gomb_szerkeszteskor_Change(self, gazda, qt_app, tmp_path):
         ablak, vezerlo = gazda

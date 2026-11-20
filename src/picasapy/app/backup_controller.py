@@ -44,7 +44,15 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QStandardPaths, Signal, Slot
 
-from picasapy.backup import futtasd, mappankent, tervezd_meg, visszaallit
+from picasapy.backup import (
+    NincsElegendoHelyError as _NincsElegendoHelyError,
+    belyegezd,
+    futtasd,
+    keszlet_modositasa,
+    mappankent,
+    tervezd_meg,
+    visszaallit,
+)
 from picasapy.backup.lemezkep import LemezkepTetel, lemezkepekbe
 from picasapy.burn import CD, DVD, hasznalhato_kapacitas, lemezek_szama
 from picasapy.index import open_index
@@ -58,7 +66,6 @@ from picasapy.index.backup_sets import (
     jegyezd_fel_a_futast,
     jegyezd_fel_az_elmentettet,
     keszlet_letrehozasa,
-    keszlet_modositasa,
     keszlet_torlese,
     keszletek,
 )
@@ -219,12 +226,20 @@ class BackupController(
                         for tetel in terv.fajlok
                     ],
                 )
+                # #7292: a készlet-bélyeg a forrás ini-jébe, a nyilvántartással
+                # együtt: enélkül a szerkesztett kép örökre újra mentendő lenne
+                belyegezd(keszlet.nev, [tetel.forras for tetel in terv.fajlok])
                 jegyezd_fel_a_futast(
                     conn,
                     keszlet.id,
                     datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 )
                 conn.commit()
+        except _NincsElegendoHelyError:
+            self.hibatJelez.emit(
+                self.tr("Not Enough Disk Space to Backup Files")
+            )
+            return
         except OSError as hiba:
             _log.warning("a lemezkép-írás elszállt: %s", hiba)
             self.hibatJelez.emit(
@@ -258,6 +273,11 @@ class BackupController(
                     megszakitva=self._megszakitas.is_set,
                 )
                 conn.commit()
+        except _NincsElegendoHelyError:
+            self.hibatJelez.emit(
+                self.tr("Not Enough Disk Space to Backup Files")
+            )
+            return
         except OSError as hiba:
             _log.warning("a mentés elszállt: %s", hiba)
             self.hibatJelez.emit(

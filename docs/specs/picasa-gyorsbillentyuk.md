@@ -2912,3 +2912,28 @@ Mind a 17 „eltér” sorhoz rögzítettem a PicasaPy-oldali jelenlegi kódutat
 **Következtetés.** A §12.14 0 px-es „eltér” sorait a fókusz hiánya okozta: kattintással fókuszált rácsban az eredeti Picasa mind a tíz billentyűre ugyanazt a műveletet végzi, mint a PicasaPy. A `Ctrl+0` §12.15-ös „b” besorolása, és vele a `Ctrl+8` „az F4 kezeli” megjegyzése is helyesbítve: mindkettő egyezik. A `Ctrl+Left` a #6776 próbája szerint szintén egyezik.
 
 **A #6531 „Kész, ha” mérlege.** A tábla minden sorához van eredeti és PicasaPy-próba. A videónéző `/`, `,`, `.` billentyűjének aktív lejátszás közbeni eredeti próbája Wine alatt nem futtatható (a DirectShow-lejátszó nem indul, §12.14), ám a binárisban nincs olyan út, amely ezeknek parancsot adna (§12.10). Eltérés így csak három rejtett funkciónál maradt: `Ctrl+Shift+L` (helyi webszerver), `Ctrl+Alt+Shift+G` (óriás kontaktkép külső nézőben) és `Ctrl+Shift+Y` (rejtett „egg” réteg). Ezekről a §12.11 hatókördöntése szól: nem cél. Más javítandó eltérés nincs.
+
+### 12.17 Diavetítés: kattintás a képen szüneteltet vagy folytat (#7285, 2026-11-20)
+
+**Eredeti, statikus bizonyíték; futásmérés nélkül.** Normál lejátszáskor a
+QDrawable bal egérgomb-kezelője (`0x007fde80`, `0x201` ág) a vetítő bármely
+pontjáról a Space-szel közös `0x00801130` szünetkapcsolóhoz jut; koordináta-
+vagy találatvizsgálat nincs. Szünetben a OneUpUI aktív gyereke fogadja a
+kattintást: az `oneup/auto2` téglalap teljes szélességű, y=0-tól H-97-ig tart
+(`oneup.tre:20-23`), és a felengedési út a `0x00803110` folytató híváshoz
+vezet. A korábbi Colab-próba (#770, `f05d`) nem döntött, mert az eredeti
+Picasa a kattintás után nem reagált.
+
+**PicasaPy.** A `SlideshowControls.qml` teljes vetítőt figyelő
+egérmozgás-kezelője változatlanul teljes méretű marad. A külön kattintási
+MouseArea normál lejátszáskor teljes méretű, szünetben H-97-nél ér véget, és
+bal kattintáskor a `SlideshowView.togglePause()`-t hívja. A felső 14 px-es
+`slideshowAuto2Area` ugyanezen a ponton egyetlen kattintást fogad, a vezérlősáv
+gyerekei pedig megtartják saját eseményeiket. A jobb gomb, a dupla kattintás,
+az Időrend vetítés és a képernyővédő mód kezelése változatlan.
+
+**Helyi próba.** A #7285 QML-teszt valódi egér press+release eseményt küldött,
+és -5/0/+5 px ablakmagasságon is ellenőrizte a középkattintást, a felső
+14 px-es átfedés egyszeres folytatását, a H-97-es alsó határt és a sáv
+kizárását. Ez a PicasaPy kódútját igazolja; az eredeti program mérési státusza
+továbbra is „statikus, mérés nélkül”.

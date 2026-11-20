@@ -74,7 +74,12 @@ PicasaMenu {
     MenuItem {
         objectName: "menuToolsBackup"
         text: qsTr("&Back Up Pictures...")
+        // #7300: a két panel gazdája a főablak építése közben még lehet
+        // `undefined` (a menüsor hamarabb készül), ezért a kötés null-biztos.
         enabled: !bar.editorActive
+            && !(bar.hostBackupHost
+                 && (bar.hostBackupHost.nyitva || bar.hostBackupHost.fut))
+            && !(bar.hostGiftCdHost && bar.hostGiftCdHost.nyitva)
         onTriggered: bar.backupRequested()
     }
     PicasaMenuItem { text: qsTr("Batch Upload..."); placeholder: false; retired: true }  // #638

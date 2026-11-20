@@ -37,8 +37,9 @@ the destination or **Cancel** to leave them unchanged.
 Map tiles are downloaded from the internet. While the map loads, the
 panel displays a loading message and the original Picasa progress
 image. If there is no connection and the map cannot load, the panel
-reports that Google Maps could not be initialized and asks you to check
-your connection. This message uses the original Picasa wording.
+reports that the map could not be loaded and asks you to check your
+connection. The search field and the control for clearing geotags stay
+available without the map.
 
 The panel has a control for clearing locations from selected photos;
 it shows how many photos are affected. The same action is available

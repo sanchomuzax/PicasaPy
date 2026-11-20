@@ -36,6 +36,8 @@ _REGI_NYILVANOS_NEVEK = {
     "TIPUS_CD_DVD",
     "TIPUS_LEMEZ",
     "annotations",
+    # #7292: a lemezkép-írás bélyegzi a forrás ini-jét
+    "belyegezd",
     "datetime",
     "flat_key",
     "futtasd",
@@ -65,7 +67,19 @@ _EREDETI_FORRASHASH = {
     "keszletek": "065294d4dde0ee719d2491d09cafefc2a84d52c5fe23cf7e66339b04aca71d26",
     "lemezkepAlapHely": "e5b4df54f19573aed5b79ac4c5f9cea23e64a773842719f644ba4b1452e347fa",
     "ujKeszlet": "9bcfbcca521af65a82724d137b7009a7f42bd30db33722e4a01e3781ef12af97",
-    "modositsdAKeszletet": "236f7579444857b458092555be736645b6a43927e218bfc6faf15d12a1606ded",
+    # #7294: szándékos változás: az „Edit Set" átnevezése az utoljára
+    # használt készlet megjegyzett nevét is átviszi
+    "modositsdAKeszletet": "456b88db30a9f5fadbf071f20e83df2e85470ba98501b42569b2206f095ada04",
+    # #7294: új tagok: a megnyitáskori készletválasztás és az utolsó készlet
+    # megjegyzése (`LastBkSet`)
+    "megnyitasiKeszlet": "e16ef97aa087cb51698e6cc37a86be9d38b38f307c2ba0c8926e91f694426593",
+    "utolsoKeszletMegjegyzese": "96b6091c30dca214ce16c0b2357abb482d1b66e88b3be45b255886678ed46b69",
+    # #7299: új tag: az Új/Módosítás űrlap névellenőrzése (az eredeti
+    # `0x00679570` figyelője: ASCII A-Z kisbetűsítés, nincs levágás)
+    "keszletNevFoglalt": "eec9701b80bab34d1c6cf4002b4a2aa14e974c30f669f2afd1b66baa97f7eb4c",
+    "_utolso_keszlet_neve": "dfc1ab6339ae6b3abdcbdfaaf03f17a67e15bcc64cd177d01e7fef1f35a28a5f",
+    "_kovesd_az_atnevezest": "3b53120fa047d5fa482b1d68977eca7506c26d12f342a9a75478c08de73f26f2",
+    "_get_settings": "394aedc75d0aac14b8e38f8892fd5539c2493fd30f965d196fbf0123ba0bf375",
     "torisdAKeszletet": "c8e83f686a4407a1ed1e50a57488ace099b5547fa61a8c7cebbd8c77f3368f55",
     "_keszlet": "a84fef74a7a35088b6bdb2508ff8be1c2be485b3bd5b75c64a89fd100cf49f89",
     "_tervezd": "87b3f700fbb623748bef778bbe96df1d523bc46bad6042c09386d918c9601a29",
@@ -80,9 +94,12 @@ _EREDETI_FORRASHASH = {
     "_mappalista": "653058451bd640b3c8fbdfca55d4e773074e16cd4136cbb32e2238ddbc91bdab",
     "futtasdMost": "5c9f89f48fdf8165d56004b321b6c50946416f93fececab5f75cadbba148ce6a",
     "futtasdLemezkepbe": "76a34add4f5791dd94b180bca92165202d2c1c6f0a2149371881aa9e0995663f",
-    "_lemezkepek_hattereben": "3a0bc34e3282a689b00277af7db630b52f58c9cbc52afc13c86189ee7d6ee192",
+    # #7292: szándékos változás: a lemezkép-írás a nyilvántartás mellé a
+    # készlet-bélyeget is a forrás ini-jébe írja (`belyegezd` hívás);
+    # #7295: a kevés szabad hely külön hibaként jut a felületre
+    "_lemezkepek_hattereben": "b861f2ce06f5527aaa1fa1c2a1c84f4f2b47078ad2f50babdc9dc01a765cca0c",
     "szakitsdMeg": "3684222bed10b1674165a1a80c8d368439f8d5ae88263e49e2dbf622bd42d60d",
-    "_futtatas_hattereben": "8dbbb1ec7b73bc7a0bcea38c39c4d2de97b28803b56233442485ddf29d4a5e41",
+    "_futtatas_hattereben": "0dcfe96025262c7cef3ac717d5361c0d42d1307706ab1d06eba5c069d3cae68d",
     "visszaallitastFuttat": "c2ad46cd3d17292969b4fdddda6de01c3eecdef55c3e8dac300246f767abe33f",
     "_visszaallitas_hattereben": "266b37a081443ee8807c19049363e21fc3d8d8525a14e6ad95bca970fceeba10",
 }
@@ -103,9 +120,14 @@ _QT_TAGOK = {
         ("slot", "futtasdMost", 1),
         ("slot", "futtasdMost", 2),
         ("slot", "keszletek", 0),
+        # #7299: az űrlap névellenőrzése
+        ("slot", "keszletNevFoglalt", 2),
         ("slot", "lemezkepAlapHely", 0),
         ("slot", "mentesKulcs", 1),
         ("slot", "mentetlenMappakLekerese", 1),
+        # #7294: a megnyitáskori készletválasztás és az utolsó készlet megjegyzése
+        ("slot", "megnyitasiKeszlet", 1),
+        ("slot", "utolsoKeszletMegjegyzese", 1),
         ("slot", "modositsdAKeszletet", 4),
         ("slot", "modositsdAKeszletet", 5),
         ("slot", "szakitsdMeg", 0),

@@ -63,7 +63,15 @@ def main(work_dir: Path) -> None:
     from picasapy.index import open_index, sync_tree
     from picasapy.thumbs import ThumbnailCache
     from picasapy.version import version_string
-    from PySide6.QtCore import QEvent, QObject, QPointF, QSettings, Qt
+    from PySide6.QtCore import (
+        Q_ARG,
+        QEvent,
+        QMetaObject,
+        QObject,
+        QPointF,
+        QSettings,
+        Qt,
+    )
     from PySide6.QtGui import QGuiApplication
     from PySide6.QtQml import QQmlApplicationEngine
     from PySide6.QtTest import QTest
@@ -131,6 +139,16 @@ def main(work_dir: Path) -> None:
         obj = window.findChild(QObject, name)
         assert obj is not None, f"{name} nem található"
         return obj
+
+    def invoke(obj, name, *args):
+        ok = QMetaObject.invokeMethod(
+            obj,
+            name,
+            Qt.ConnectionType.DirectConnection,
+            *[Q_ARG("QVariant", value) for value in args],
+        )
+        assert ok, f"a(z) {name} QML-művelet nem hívható"
+        app.processEvents()
 
     assert controller.photos.isVideoAt(1) is True, "a b.mp4 nem videó-sor"
     assert controller.photos.isVideoAt(0) is False
@@ -539,6 +557,72 @@ def main(work_dir: Path) -> None:
     app.processEvents()
     assert rotate_left.property("enabled") is True
     assert rotate_right.property("enabled") is True
+
+    # 7) diavetítés-videó: a vágáspont a modellből kerül a meglévő lejátszóba,
+    # a beállított diaidő nem állítja le a futó videót, a lejátszás vége léptet.
+    controller.setMovieTrim(1, 200, 1600)
+    trim = controller.photos.movieTrimAt(1)
+    assert trim == {"start": 200, "end": 1600}, trim
+    controller.setSlideshowSeconds(30)
+    controller.setSlideshowLoop(True)
+    print("PROBE-SLIDESHOW START video", flush=True)
+    invoke(window, "startSlideshow", 1, False)
+    slideshow = child("slideshowView")
+    slideshow_video_loader = child("slideshowVideoLoader")
+    assert varj(
+        lambda: slideshow.property("visible") is True
+        and slideshow.property("currentIndex") == 1
+        and slideshow_video_loader.property("item") is not None,
+        3.0,
+    ), "a vetítés videóról nem indult el"
+    slideshow_video = slideshow_video_loader.property("item")
+    assert slideshow_video.property("forceAutoPlay") is True
+    assert slideshow_video.property("controlsVisible") is False
+    assert slideshow_video.property("trimStartMs") == 200
+    assert slideshow_video.property("trimEndMs") == 1600
+    slideshow_media = slideshow_video.findChild(QObject, "viewerMediaPlayer")
+    assert slideshow_media is not None
+    source = slideshow_video.property("source")
+    source = source.toString() if hasattr(source, "toString") else str(source)
+    assert source.endswith("b.mp4"), source
+
+    # A MediaPlayer EndOfMedia/trim-vége ugyanazt a lejátszás-vége jelet adja.
+    invoke(slideshow_video, "playbackFinished")
+    assert varj(lambda: slideshow.property("currentIndex") == 0, 3.0), (
+        "a videó lejátszásának vége után nem lépett a következő elemre"
+    )
+    print("PROBE-SLIDESHOW END playback-finished", flush=True)
+    invoke(slideshow, "stop")
+
+    # 8) fotóról a diaidő után videóra lép, a hibajelzés látható marad, és a
+    # diaidő lejártakor a lejátszhatatlan videó után is továbblép.
+    controller.setSlideshowSeconds(1)
+    print("PROBE-SLIDESHOW START photo-to-video", flush=True)
+    invoke(window, "startSlideshow", 0, False)
+    assert varj(
+        lambda: slideshow.property("visible") is True
+        and slideshow.property("currentIndex") == 0,
+        3.0,
+    ), "a vetítés nem a fotóról indult"
+    assert varj(
+        lambda: slideshow.property("currentIndex") == 1,
+        3.0,
+    ), "a diaidő után nem lépett a videóra"
+    assert varj(
+        lambda: slideshow_video_loader.property("item") is not None,
+        3.0,
+    ), "a videólejátszó nem töltődött be a diavetítésben"
+    slideshow_video = slideshow_video_loader.property("item")
+    slideshow_error = slideshow_video.findChild(QObject, "videoErrorText")
+    assert slideshow_error is not None
+    assert varj(lambda: slideshow_error.isVisible(), 3.0), (
+        "a lejátszhatatlan videó hibája nem látható"
+    )
+    assert varj(lambda: slideshow.property("currentIndex") == 0, 3.0), (
+        "a lejátszhatatlan videó diaideje után nem lépett tovább"
+    )
+    print("PROBE-SLIDESHOW END photo-to-video-fallback", flush=True)
+    invoke(slideshow, "stop")
 
     print("OK", flush=True)  # os._exit nem üríti a puffert — flush kell!
     # Szándékosan NEM futtatunk rendes Qt-leállítást: a MediaPlayer/ffmpeg

@@ -141,11 +141,16 @@ def test_mozgofilm_almenu_es_a_mukodo_muvelet_megmaradt():
     assert 'title: qsTr("Movie")' in src
     # a korábban is működő normál film tétel az almenü gyermekeként él tovább
     assert 'objectName: "menuCreateMovie"' in src
+    assert 'text: qsTr("From Selection...")' in src
     assert "bar.movieRequested()" in src
     # #4331: az eredeti ID_FACES a kijelölésből nyitja meg az arc-film módot
     assert 'objectName: "menuCreateMovieFromFaces"' in src
     assert 'qsTr("From Faces in Selection...")' in src
     assert "bar.faceMovieRequested()" in src
+    # #4633: az Emberek-albumok külön, kijelölés nélküli parancs marad
+    assert 'objectName: "menuCreateMovieFromPeopleAlbums"' in src
+    assert 'qsTr("From People Albums...")' in src
+    assert "bar.peopleAlbumsMovieRequested()" in src
 
 
 # -- 3. réteg: élő QML-fa — a meglévő, MŰKÖDŐ tételek nem romlottak el ----

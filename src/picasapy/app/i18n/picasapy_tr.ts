@@ -11828,16 +11828,17 @@ picasapy-origin-key: stringres:eMenuCreateMovie::ID_FACESRANDOM</extracomment>
             <translation>Kişi Albümlerinden...</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaCreateMenu.qml" line="63" />
+            <source>From Selection...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreateMovie::MOVIE</extracomment>
+            <translation>Seçimden...</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="255" />
             <source>Make a &amp;Poster...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>&amp;Poster Yap…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="434" />
-            <source>New Movie...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Yeni Film...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="440" />
@@ -13138,10 +13139,9 @@ picasapy-origin-key: geopaneltext:Text(geopanel/loading_title)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="150" />
-            <source>PicasaPy failed to initialize Google Maps.  Please make sure that you are connected to the Internet.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:geo::init_err</extracomment>
-            <translation>PicasaPy, Google Haritalar uygulamasını başlatamadı. İnternet'e bağlı olduğunuzdan emin olun.</translation>
+            <source>The map could not be loaded. Please make sure that you are connected to the Internet.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Harita yüklenemedi. İnternet'e bağlı olduğunuzdan emin olun.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="96" />
@@ -19827,6 +19827,12 @@ picasapy-origin-key: stringres:il_BurnPanel::ISOFolder</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Yedekleme geri yüklenemedi: %1</translation>
         </message>
+        <message>
+            <source>Not Enough Disk Space to Backup Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_BurnPanel::BackgroundProc::4</extracomment>
+            <translation>Dosyaları Yedeklemek için Yeterli Disk Alanı Yok</translation>
+        </message>
     </context>
     <context>
         <name>BackupHost</name>
@@ -19911,10 +19917,10 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>Yedekleme konumunu seçin</translation>
         </message>
         <message>
-            <source>OK</source>
+            <source>Create</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>Tamam</translation>
+picasapy-origin-key: newbackupset:newbackupset/ok.title</extracomment>
+            <translation>Oluştur</translation>
         </message>
         <message>
             <source>Cancel</source>
@@ -19928,10 +19934,16 @@ picasapy-origin-key: tooltips:Label(publish/deletebackupset)</extracomment>
             <translation>Kümeyi Sil</translation>
         </message>
         <message>
-            <source>Backup Set</source>
+            <source>New Backup Set</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_NewBkDialogTitle;tooltips:Text(publish/label_backupname)</extracomment>
-            <translation>Yedekleme Kümesi</translation>
+picasapy-origin-key: newbackupset:newbackupset/window1.title</extracomment>
+            <translation>Yeni Yedekleme Kümesi</translation>
+        </message>
+        <message>
+            <source>Name:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: newbackupset:newbackupset/labelgroup2.title</extracomment>
+            <translation>Adı:</translation>
         </message>
         <message>
             <source>Edit Backup Set</source>

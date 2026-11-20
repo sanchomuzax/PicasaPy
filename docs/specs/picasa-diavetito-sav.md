@@ -30,8 +30,10 @@ A `stripback` (`oneup.tre:164-166`) a sáv tartója. A `centergroup`
 (`oneup.tre:156-158`) ennek középre igazított gyermeke.
 
 A `.tre` nem ad x-koordinátát a vezérlőknek. Ezért a sorrend a csoporton belül
-`NINCS MEG`. A `.tre` deklarációs sorrendje (`oneup.tre:40-143`) nem vizuális
-sorrend, ezt bizonyítékként nem használom.
+magából az erőforrásból `NINCS MEG`. A `.tre` deklarációs sorrendje
+(`oneup.tre:40-143`) nem vizuális sorrend, ezt bizonyítékként nem használom.
+Az alábbi „Mai hely” oszlop a #7281 előtti kódot rögzíti; az új, képernyőn
+mért sorrendet a következő táblázat adja.
 
 | Vezérlő | Szülő és horgony (oneup.tre) | Csoport (a .tre szerint) | Mai hely (controlsRow, 1-től) | Eredmény |
 |---|---|---|---|---|
@@ -53,6 +55,21 @@ jobb (`rotateleft`, `rotateright`, `star`, `captionbutton`). A mai sor egyetlen
 lista (`SlideshowView.qml:981`). A kijelzési idő blokk a jobb szélen áll, a
 forgatás a sor közepén. Az `exit` az egyetlen tétel, amelynek a csoportja és a
 helye egyezik.
+
+### Képernyőn mért sorrend (#7281, #7197)
+
+A `picasa-colab-jobs` #762 `video__08.mp4` felvételének 12. és 100. másodperce
+alapján, szünetben balról jobbra: Kilépés, képikon és csúszka, forgatás balra,
+forgatás jobbra, Előző, Lejátszás, Következő, csillag, átmenet-választó,
+feliratmód, Display Time. A lista végén álló szünetben a képikon és csúszka
+látszik; az első képen álló szünetben ugyanez a hely üres. A #7197 mérési jegy
+rögzíti, hogy a két felvételi pont sorrendje egyezik.
+
+A `oneup.tre` (a 40-143. sorok vezérlőelemei) nem tartalmaz csúszka- vagy
+képikon-elemet, és működésükre sincs adat. A `sszoomsliderclip` név csak a
+külön szerkesztői `editoneup.tre`-ben szerepel, ezért nem bizonyíték a normál
+diavetítő csúszkájának funkciójára. A PicasaPy a mért helyet üresen tartja fenn; a csúszka funkciója, értéke és
+kezelése **nincs megállapítva** (#7284), ezért működés nélküli vezérlőt nem rajzol.
 
 ## 2. Tételek elemenként
 
@@ -156,7 +173,7 @@ Minden javaslat három részből áll: **Eredeti**, **Nálunk**, **Teendő**.
 
 ## 4. Nyitott pontok
 
-- **A csoporton belüli sorrend.** A `0x00802c60` konstruktor beállítja a vtáblákat, és a `0x009c68a0` hívással tölti be az erőforrást. A gyermekek elhelyezése nincs végigkövetve. Ehhez a betöltő (`0x009c68a0`) és az elrendezés követése kell, vagy mért képernyőkép.
+- **A csoporton belüli sorrend.** A `.tre` és a `0x00802c60` konstruktor továbbra sem adja meg a sorrendet; a képernyőn mért eredményt a fenti #7197 felvétel rögzíti.
 - **Az `exit` cél.** A `0x00803527` ág vtábla `+0x24` objektuma és a vtábla `+0x14` metódusa nincs azonosítva. A `show.stop()` egyezése ezért nincs igazolva.
 - **Az `auto2` kattintási cél.** A `.tre` nem ad találat-jelzőt. Hogy az eredetiben a kép kattintása is léptet-e, nincs igazolva.
 - **Az esemény útja a gombtól a diszpécserig.** A parancs-kibocsátó `0x00a64a10` a gomb vtábla `+0x70` elemét hívja (`0x00ce48e4`), ennek célja `0x009e3b00`. A `0x009e3b00` végig nincs követve. A `0x8000004` típus közvetlen tárolása a `.text`-ben egyetlen helyen van: `0x00a64b02`. Regiszteren át történő írást nem zártam ki.
@@ -164,3 +181,85 @@ Minden javaslat három részből áll: **Eredeti**, **Nálunk**, **Teendő**.
 - **A `transtype` lista és választás útja.** A mai `SlideshowView.qml:1030` „22 soros” állítása nincs igazolva.
 
 A kódhoz nem nyúltam. A jegyjavaslatokat a hívó dönti el.
+
+## 5. #7284: a vetítésben megjelenő zoomikon és csúszka
+
+Az Exit után látható képikon és csúszka a normál `editoneup` vetítési út
+`editpanel` zoomvezérlője. Nem a `0x00802c60` által betöltött `oneup` sáv
+`plusone`/`minusone` párja: azok a vetítési időt léptetik
+(`oneup.tre:133-143`, `0x008032e0:0x008033e3-0x00803447`).
+
+| Elem vagy művelet | Azonosítás és bizonyíték |
+|---|---|
+| Nagyítónak látszó ikon | `editpanel/zoomup_icon`, `editpanel.tre:1288-1289`. |
+| Csúszkasín és fogantyú | `zoomslider/scaleslider` és `zoomslider/thumb`, `editpanel.tre:1291-1296`; a sín `Property slider 3` tulajdonságú. |
+| Vetítési sávhoz illesztő klip | `editoneup/sszoomsliderclip`, `editoneup.tre:68-69`. A `0x0075de50` vetítési belépési ágában ezt és az `editpanel/zoomsliderrect` csomópontot adja át a `0x0075ddf0`-nek (`2026-11-19-koteg-496-517.txt:2464-2474`). A másik állapotág az `editpanel/zoomsliderclip` és `editpanel/zoomsliderrect` csomópontot adja át (`:2733-2747`). |
+| Húzás eseményútja | A `0x005de8e0` a `zoomslider/scaleslider` eseményt a `0x005d2020`-hoz irányítja (`2026-10-21-koteg-1021b.txt:3090-3190`). Ez a kapott lebegőpontos értéket a `0x005d1470`-nek adja (`0x005d2081-0x005d208d`), amely a zoomvezérlő `+0xe50` mezőjét írja (`0x005d14b8-0x005d14c3`). |
+| Mit állít | A `0x005d1470` ezután a `0x005d1520` képelem-frissítő útját hívja. A lánc a két képelem `+0x3a0` skáláját frissítő `0x005c5ed0`-hez jut. A húzás a fotó nagyítását állítja, nem a vetítési időt vagy a képlépést. A szerkesztői zoomlánc további leírását lásd a **„A szerkesztő nagyítás-hármasa”** szakaszban. |
+| A `0x0075ddf0` helper | A 93 bájtos függvény feloldja a kapott két csomópontnevet; ha mindkét csomópont létezik, a `0x009df550`-et hívja a két csomóponttal és `1` paraméterrel. Ebben a függvénytörzsben nincs közvetlen `m_hidden` írás vagy név szerinti show/hide hívás. |
+
+**A `0x008032e0` nem kezeli a húzást.** A teljes név szerinti áglistában nincs
+slider-ág; a `plusone` és `minusone` a `0x00802ff0` időállító függvényt hívja.
+Ezt a Ghidra-kimenet és a teljes 1274 bájtos helyi diszasszemblálás is
+alátámasztja. A csúszka külön `0x005de8e0` → `0x005d2020` eseményúton működik.
+
+**Láthatóság: nyitott.** A `0x0075de50` a `[+0x332f]` állapotbájt két
+ágában frissíti a zoomklip párját. A vetítési belépési ágban
+`editoneup/sszoomsliderclip`, a másik ágban `editpanel/zoomsliderclip`
+csomópontot ad a helpernek. A vizsgált hívások előtt nincs lista-végi,
+szünet-ok-, képméret- vagy zoomérték-feltétel. Ez önmagában nem bizonyítja,
+hogy a vezérlő mindig látszik, mert a helper a `0x009df550`-en át más
+függvényeket és virtuális metódusokat is hív. A `0x009df550` közvetlenül
+olvassa a `[+0x213]` bájtot és a `[+0x244]` mezőt, virtuális `+4` és `+8`
+metódust, valamint további segédfüggvényeket hív; a láthatóságra gyakorolt
+közvetett hatásuk `NINCS MEG`. A teljes program láthatósági feltételét a
+diszasszemblálás nem dönti el.
+
+A szünet és a listahatár megvizsgált útjai sem döntik el a láthatóságot. A
+`0x008032e0` `auto`/`auto2` ágai a `0x00803110`-hez mennek; az utóbbi a
+vetítési állapotot állítja, de nem olvassa a listaindexet és nem hívja a
+`0x0075de50`-et. A `next` ág `0x008029f0`-hez megy; az a végindexnél nem
+kér le következő diát, de ott sincs hívás a `0x00803110`-re vagy a
+`0x0075de50`-re. Ez a követési határ nem bizonyítja, mi történik a külön
+automatikus listavégi leállási úton.
+
+A korábbi képkockaolvasat szerint az Exit utáni hely `video__08.mp4`-ben
+`t=10` másodpercnél üres, `t=98`, `100` és `116` másodpercnél látható. Ezek a
+képkockák nem azonos egérpozíciójú és azonos szüneteltetési okú, párosított
+próbák, így nem döntik el, hogy a lista vége, a szünet oka, a képméret vagy a
+nagyítási állapot váltja-e ki a megjelenést. A jelenlegi mérőadat-tárban a
+`video__08.mp4` tag nem található; az új méréshez szükséges Colab-felvételt
+onnan kell rögzíteni, nem ebből a tárból.
+
+**Colab-mérési terv.** Egyetlen futásban, azonos ablakméret, egérpozíció és
+várakozási idő mellett, kézzel szüneteltesd az első, egy középső és az utolsó
+diát. Külön rögzítsd az utolsó diánál az automatikus listavégi megállást is.
+Minden próbánál jegyezd fel a diaindexet, a szünet okát, a kép pontos
+pixelméretét, az ablak méretét, a kurzor helyét és a csúszka láthatóságát.
+Az utolsó képen húzd a csúszkát egyik végállásból a másikba, és videón
+rögzítsd a kép skáláját és a diaindexet előtte és utána. Ha a láthatóság
+képméretfüggőnek látszik, ismételd meg az első, középső és utolsó próbát
+azonos forrásképpel, majd különböző pontos pixelméretű képekkel. A rögzített
+mérési értékeken kívül küszöböt vagy méretet ne következtess.
+
+> **Bizonyítottsági fok:** a csomópont eredete és zoomhatása **megerősített**
+> (erőforrás-fa és a vetítési kódút, továbbá külön zoom eseményút és
+> képskála-frissítés egyezik). A teljes feladat bizonyítottsági foka
+> **feltételes**, mert a láthatósági szabály és a segédfüggvény közvetett
+> láthatósági hatása nyitott. A „csak a lista végén látszik” állítást a
+> rendelkezésre álló képkockák nem igazolják.
+
+**Következtetés.** Az ikon és a sín a Picasa szerkesztő zoomvezérlőjének
+vetítésben használt elemei. Húzásuk a megjelenített fotó skáláját állítja;
+az viszont statikusan és a meglévő képkockákból sem dönthető el, hogy pontosan
+mely szünetállapotban jelennek meg. A feladat lezárásához a fenti, párosított
+Colab-mérés szükséges.
+
+### PicasaPy fejlesztői következmény
+
+| | |
+|---|---|
+| **Eredeti** | `editpanel/zoomup_icon` (`editpanel.tre:1288-1289`), `zoomslider/scaleslider` és `zoomslider/thumb` (`editpanel.tre:1291-1296`); a vetítési út az `editoneup/sszoomsliderclip`-et használja (`editoneup.tre:68-69`, a `0x0075de50` vetítési belépési ágában). Húzásra a kép skálája változik. |
+| **Nálunk** | A jelenlegi `src/picasapy/app/qml/PicasaPy/SlideshowControls.qml` lejátszósávjában nincs képnagyító-vezérlő. A `src` alatt a briefben említett `slideshowImageSliderContent` név nem található. |
+| **Teendő** | A #7281-ben illeszd be az eredeti zoomikont és csúszkát a vetítővezérlők közé, és kösd az aktuális kép zoomállapotához. A láthatósági feltételt a fenti Colab-mérés után rögzítsd. |
+| **Kész, ha** | A csúszka húzása az aktuális kép skáláját változtatja, a diaindexet nem; a láthatóság megfelel azonos szünet-, dia-, egér- és képméretfeltételek mellett rögzített eredeti viselkedésnek. |

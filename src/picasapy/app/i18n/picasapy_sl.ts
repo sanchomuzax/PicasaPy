@@ -11873,16 +11873,17 @@ picasapy-origin-key: stringres:eMenuCreateMovie::ID_FACESRANDOM</extracomment>
             <translation>Iz albumov z osebami ...</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaCreateMenu.qml" line="63" />
+            <source>From Selection...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreateMovie::MOVIE</extracomment>
+            <translation>Iz izbora ...</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="255" />
             <source>Make a &amp;Poster...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ustvari &amp;plakat ...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="434" />
-            <source>New Movie...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nov film ...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="440" />
@@ -13183,10 +13184,9 @@ picasapy-origin-key: geopaneltext:Text(geopanel/loading_title)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="150" />
-            <source>PicasaPy failed to initialize Google Maps.  Please make sure that you are connected to the Internet.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:geo::init_err</extracomment>
-            <translation>PicasaPy ni mogla zagnati Google Zemljevidov. Preverite, ali imate vzpostavljeno povezavo z internetom.</translation>
+            <source>The map could not be loaded. Please make sure that you are connected to the Internet.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zemljevida ni bilo mogoče naložiti. Preverite, ali imate vzpostavljeno povezavo z internetom.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="96" />
@@ -19874,6 +19874,12 @@ picasapy-origin-key: stringres:il_BurnPanel::ISOFolder</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Varnostne kopije ni bilo mogoče obnoviti: %1</translation>
         </message>
+        <message>
+            <source>Not Enough Disk Space to Backup Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_BurnPanel::BackgroundProc::4</extracomment>
+            <translation>Za izvedbo varnostnega kopiranja datotek na disku ni dovolj prostora</translation>
+        </message>
     </context>
     <context>
         <name>BackupHost</name>
@@ -19958,10 +19964,10 @@ picasapy-origin-key: options:options/labelgroup10.title</extracomment>
             <translation>Izberite mesto za varnostno kopijo</translation>
         </message>
         <message>
-            <source>OK</source>
+            <source>Create</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>V redu</translation>
+picasapy-origin-key: newbackupset:newbackupset/ok.title</extracomment>
+            <translation>Ustvari</translation>
         </message>
         <message>
             <source>Cancel</source>
@@ -19975,10 +19981,16 @@ picasapy-origin-key: tooltips:Label(publish/deletebackupset)</extracomment>
             <translation>Izbriši paket</translation>
         </message>
         <message>
-            <source>Backup Set</source>
+            <source>New Backup Set</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_NewBkDialogTitle;tooltips:Text(publish/label_backupname)</extracomment>
-            <translation>Paket za varnostno kopiranje</translation>
+picasapy-origin-key: newbackupset:newbackupset/window1.title</extracomment>
+            <translation>Nov paket za varnostno kopiranje</translation>
+        </message>
+        <message>
+            <source>Name:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: newbackupset:newbackupset/labelgroup2.title</extracomment>
+            <translation>Ime:</translation>
         </message>
         <message>
             <source>Edit Backup Set</source>
