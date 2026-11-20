@@ -155,3 +155,27 @@ def test_futo_masolas_kozben_a_mentes_panel_nem_nyithato_ujra(
     )
     host.setProperty("fut", False)
     qt_app.processEvents()
+
+
+@pytest.mark.parametrize("magassag_eltolas", _ABLAKMAGASSAG_ELTOLASOK)
+def test_a_mentes_menupont_nem_dob_hibat_ha_a_gazdak_meg_hianyoznak(
+    qml_app, qt_app, magassag_eltolas
+):
+    """A főablak építésekor a menüsor hamarabb létezik, mint a két panel gazdája:
+    a kötés `undefined` gazdánál sem szólhat QML-hibát (a `qml_warnings` őr
+    a teszt végén jelzi), és gazda nélkül a panel nincs nyitva, a pont aktív."""
+    window, _controller, _engine = qml_app
+    window.show()
+    window.requestActivate()
+    _allitsd_be_az_ablakmagassagot(window, qt_app, magassag_eltolas)
+    menu_bar = window.property("menuBar")
+    backup_item = _elem(window, "menuToolsBackup")
+
+    for nev in ("hostBackupHost", "hostGiftCdHost"):
+        assert menu_bar.setProperty(nev, None), f"{nev} nem állítható"
+        qt_app.processEvents()
+        assert menu_bar.property(nev) is None, f"{nev} nem lett üres"
+
+    assert backup_item.property("enabled") is True, (
+        "gazdák nélkül a mentés menüpont nem lehet szürke: a panel nincs nyitva"
+    )

@@ -259,7 +259,7 @@ Colab-mérés szükséges.
 
 | | |
 |---|---|
-| **Eredeti** | `editpanel/zoomup_icon`, `zoomslider/scaleslider`, `zoomslider/thumb`; a vetítési út az `editoneup/sszoomsliderclip`-et használja. Húzásra a kép skálája változik. |
+| **Eredeti** | `editpanel/zoomup_icon` (`editpanel.tre:1288-1289`), `zoomslider/scaleslider` és `zoomslider/thumb` (`editpanel.tre:1291-1296`); a vetítési út az `editoneup/sszoomsliderclip`-et használja (`editoneup.tre:68-69`, a `0x0075de50` vetítési belépési ágában). Húzásra a kép skálája változik. |
 | **Nálunk** | A jelenlegi `src/picasapy/app/qml/PicasaPy/SlideshowControls.qml` lejátszósávjában nincs képnagyító-vezérlő. A `src` alatt a briefben említett `slideshowImageSliderContent` név nem található. |
 | **Teendő** | A #7281-ben illeszd be az eredeti zoomikont és csúszkát a vetítővezérlők közé, és kösd az aktuális kép zoomállapotához. A láthatósági feltételt a fenti Colab-mérés után rögzítsd. |
 | **Kész, ha** | A csúszka húzása az aktuális kép skáláját változtatja, a diaindexet nem; a láthatóság megfelel azonos szünet-, dia-, egér- és képméretfeltételek mellett rögzített eredeti viselkedésnek. |

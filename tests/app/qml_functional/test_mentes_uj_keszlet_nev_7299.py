@@ -503,19 +503,32 @@ class TestASzerkesztes:
         assert ablak.property("szerkesztes") is False
 
 
-def _felirat_fenyesseg(view, qt_app, elem) -> int:
-    """A rádió FELIRATÁNAK legfényesebb képpontja a kirajzolt képen (a
-    jelölő kör nélkül): a sötét párbeszédben a halványabb szöveg kisebb."""
+def _felirat_kontraszt(view, qt_app, elem) -> int:
+    """A rádió FELIRATÁNAK kontrasztja a háttérhez képest a kirajzolt képen (a
+    jelölő kör nélkül): a háttértől legtávolabbi képpont csatornánkénti
+    távolsága. A paletta platformfüggő (a CI-n világos, a sötét témájú gépen
+    sötét), ezért nem a legfényesebb képpontot mérjük: az világos háttéren
+    maga a háttér. A halványabb felirat a háttér felé közelít, kontrasztja
+    kisebb."""
     qt_app.processEvents()
     bal_felso = elem.mapToScene(QPointF(0, 0))
     kep = view.grabWindow()
     kezd_x = round(bal_felso.x()) + 30
     veg_x = round(bal_felso.x() + elem.width())
-    legfenyesebb = 0
-    for y in range(round(bal_felso.y()), round(bal_felso.y() + elem.height())):
+    teteje = round(bal_felso.y())
+    # a vezérlő legfelső sora a felirat fölötti háttér
+    hatter = kep.pixelColor(kezd_x, teteje)
+    legnagyobb = 0
+    for y in range(teteje, round(bal_felso.y() + elem.height())):
         for x in range(kezd_x, veg_x):
-            legfenyesebb = max(legfenyesebb, kep.pixelColor(x, y).red())
-    return legfenyesebb
+            szin = kep.pixelColor(x, y)
+            legnagyobb = max(
+                legnagyobb,
+                abs(szin.red() - hatter.red()),
+                abs(szin.green() - hatter.green()),
+                abs(szin.blue() - hatter.blue()),
+            )
+    return legnagyobb
 
 
 class TestATiltottTipusCsoportLatszik:
@@ -535,18 +548,18 @@ class TestATiltottTipusCsoportLatszik:
         _uj_urlap(view, ablak, qt_app)
         cd_dvd = keres(ablak, "backupTypeCdDvd")
         assert varj(qt_app, lambda: cd_dvd.property("opacity") == 1.0)
-        engedett = _felirat_fenyesseg(view, qt_app, cd_dvd)
+        engedett = _felirat_kontraszt(view, qt_app, cd_dvd)
         kattint(view, qt_app, "backupFormCancel")
         assert varj(qt_app, lambda: ablak.property("szerkesztes") is False)
 
         kattint(view, qt_app, "publishEditBackupSet")
         assert varj(qt_app, lambda: ablak.property("szerkesztes") is True)
         assert varj(qt_app, lambda: cd_dvd.property("opacity") < 1.0)
-        tiltott = _felirat_fenyesseg(view, qt_app, cd_dvd)
+        tiltott = _felirat_kontraszt(view, qt_app, cd_dvd)
 
-        assert engedett > 150, "a mérés nem a feliratot találta el"
+        assert engedett > 100, "a mérés nem a feliratot találta el"
         assert tiltott < engedett - 30, (
-            f"a tiltott rádió nem halványabb: {tiltott} vs {engedett}")
+            f"a tiltott rádió felirata nem halványabb: kontraszt {tiltott} vs {engedett}")
 
 
 class TestAFeliratok:

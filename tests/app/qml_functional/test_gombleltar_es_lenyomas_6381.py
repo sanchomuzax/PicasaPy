@@ -175,6 +175,13 @@ _NEM_GOMB_KEZELOK = {
         "elengedi a képaláírás-mező fókuszát, nincs felülete és nem vesz el "
         "kattintást"
     ),
+    ("PicasaPy/SlideshowControls.qml", "slideshowPlaybackToggleArea"): (
+        "#7285: az eredeti `oneup/auto2` ikon nélküli, láthatatlan kattintási "
+        "régió (`oneup.tre:20-23`), a vetítés képfelülete; nincs rajzolt "
+        "felülete, és a vezérlősáv gombjai fölötte állnak, tehát nem veszi el "
+        "a kattintásukat. Lenyomott kép a teljes vetítőt elsötétítené, ami "
+        "nincs az eredetiben"
+    ),
 }
 
 
@@ -269,8 +276,8 @@ def test_a_nem_gomb_kivetelek_letezo_tetelekre_mutatnak():
     leltar = {(str(elem["file"]), _nev(elem)): elem for elem in _qml_gombleltar()}
     for kulcs in _NEM_GOMB_KEZELOK:
         assert kulcs in leltar, f"a kivétel már nem létező elemre mutat: {kulcs}"
-        assert leltar[kulcs]["type"] == "TapHandler", (
-            f"a kivétel nem TapHandler-re mutat: {kulcs}"
+        assert leltar[kulcs]["type"] in {"TapHandler", "MouseArea"}, (
+            f"a kivétel nem TapHandler-re vagy MouseArea-ra mutat: {kulcs}"
         )
         assert "PressFeedback" not in str(leltar[kulcs]["body"]), (
             f"a kivételes elemnek van lenyomott képe, a kivétel felesleges: {kulcs}"

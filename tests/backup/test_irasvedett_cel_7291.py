@@ -37,6 +37,14 @@ from picasapy.backup import futtasd, tervezd_meg
 from picasapy.index import open_index
 from picasapy.index.backup_sets import keszlet_letrehozasa
 
+# #1864: a `chmod` Windowson a POSIX-biteket nem érvényesíti, ezért a fájl
+# minden próbája (az írásvédett forrás/cél a fixture-ben áll elő) csak
+# POSIX-on fut. Rendszergazdán is fut: az írhatóságot a módbitből mérjük.
+pytestmark = pytest.mark.skipif(
+    os.name != "posix",
+    reason="#1864: a chmod Windowson a POSIX-biteket nem érvényesíti",
+)
+
 _IRAS_BITEK = stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
 
 

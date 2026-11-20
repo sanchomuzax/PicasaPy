@@ -239,6 +239,16 @@ def _diavetites_indul(window, qt_app):
         "a Diavetítés menüpont nem indította a vetítést"
     )
     show.setProperty("playing", False)
+    # A vetítés teljes képernyőre vált, az offscreen képernyő viszont csak
+    # 800 px széles, a vezérlősáv a #7281 óta 865 px. Valódi használatban a
+    # képernyő szélesebb a sávnál; a próbában ablakos módban 1280 px-es ablak
+    # adja ugyanezt, különben a jobb szélső gombok (pl. diaidő "+") az
+    # ablakon kívülre esnek, és a valódi egérkattintás nem érné el őket.
+    window.setVisibility(QWindow.Visibility.Windowed)
+    window.resize(1280, window.height())
+    assert varj(qt_app, lambda: show.width() >= 1280), (
+        f"a vetítő nem vette fel a próbaszélességet: {show.width()}"
+    )
     sav = gyerek(window, "slideshowControls")
     sav.setProperty("shown", True)
     assert varj(qt_app, lambda: sav.property("opacity") > 0.99), (

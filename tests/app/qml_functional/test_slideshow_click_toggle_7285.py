@@ -82,7 +82,15 @@ def test_kepkattintas_szunet_es_folytat_es_a_savon_nem_valt(
     assert show.property("playing") is False, "a második képkattintás nem szüneteltetett"
 
     sav = _objektum(window, "slideshowControls")
-    sav_pont = QPointF(show.width() / 2, show.height() - 50)
+    # A próbapont a sáv gombmentes helyére esik (az eredeti képikon/csúszka
+    # helye, #7281): a sáv közepe az átrendezés óta a ▶▶ gombra esne, ami
+    # szándékosan lép, és a sávon belüli kattintás hatását elfedné.
+    ures_hely = _objektum(window, "slideshowImageSliderSlot")
+    sav_pont = show.mapFromScene(
+        ures_hely.mapToScene(
+            QPointF(ures_hely.width() / 2, ures_hely.height() / 2)
+        )
+    )
     assert sav.contains(sav.mapFromScene(show.mapToScene(sav_pont))), (
         "a próbapont nem esik a tényleges vezérlősávba"
     )
