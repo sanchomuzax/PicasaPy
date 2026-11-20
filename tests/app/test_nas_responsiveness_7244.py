@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer, Signal
 
+from picasapy.app import library_controller_activity as activity_module
 from picasapy.app.controller_content_info_mixin import ContentInfoMixin
 from picasapy.app.folder_date_controller import FolderDateMixin
 from picasapy.app.geo_controller import GeoMixin
@@ -514,6 +515,14 @@ def test_sync_progress_keeps_selected_folder_open_grace_alive(monkeypatch):
         "singleShot",
         lambda delay, callback: queued.append((delay, callback)),
     )
+    # #7319: a valódi óra Windowson durva (~15,6 ms-os lépcső), így a teszt
+    # eleji és a hívás közbeni `time.monotonic()` UGYANAZT az értéket adhatja,
+    # és az időkülönbségre épülő éles egyenlőtlenség a határon elbukik. A
+    # modul óráját a teszt vezérli: az idő nem telik, a szerződés pontos.
+    now = 1000.0
+    monkeypatch.setattr(
+        activity_module, "time", SimpleNamespace(monotonic=lambda: now)
+    )
 
     class SignalRecorder:
         def emit(self):
@@ -523,7 +532,7 @@ def test_sync_progress_keeps_selected_folder_open_grace_alive(monkeypatch):
     host = SimpleNamespace(
         _root_for_folder=lambda path: folder if path.startswith(folder) else None,
         _current_folder=folder,
-        _sync_reload_grace_until=time.monotonic() + 1,
+        _sync_reload_grace_until=now + 1,
         _deferred_sync_reload=True,
         _import_visible=True,
         _import_forced=False,
@@ -532,7 +541,7 @@ def test_sync_progress_keeps_selected_folder_open_grace_alive(monkeypatch):
         _import_total=0,
         _import_new=0,
         _import_new_at_reload=0,
-        _import_last_reload=time.monotonic(),
+        _import_last_reload=now,
         _finish_sync_reload_grace=lambda: None,
         importChanged=SignalRecorder(),
     )
@@ -540,7 +549,10 @@ def test_sync_progress_keeps_selected_folder_open_grace_alive(monkeypatch):
 
     _LibraryActivityMixin._on_sync_progress(host, folder + "/album", 1, 2, 0)
 
-    assert host._sync_reload_grace_until > previous_grace + 2
+    # A progressz a türelmi időt a mostani időtől számított TELJES 3 s-ra
+    # újítja, nem hagyja meg a megmaradt 1 s-ot.
+    assert host._sync_reload_grace_until == now + 3.0
+    assert host._sync_reload_grace_until - previous_grace == 2.0
     assert queued and 2500 <= queued[0][0] <= 3000
 
 

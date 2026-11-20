@@ -47,8 +47,24 @@ def _activate(window, qt_app):
     qt_app.processEvents()
 
 
+def _wait_for_layout(item, timeout_s=3.0):
+    """Megvárja, hogy az elem elrendezése lefusson (mérete ne legyen 0).
+
+    A rétegben újonnan láthatóvá váló elem (pl. a zöld sáv gombja) `isVisible()`
+    értéke azonnal igaz, de a mérete és helye csak a következő polish-körben
+    áll be. A kattintás pontja addig a 0 x 0-s elem sarkába esne (#7319)."""
+    deadline = time.monotonic() + timeout_s
+    while (item.width() <= 0 or item.height() <= 0) and time.monotonic() < deadline:
+        QTest.qWait(10)
+    assert item.width() > 0 and item.height() > 0, (
+        f"Az elem elrendezése {timeout_s} s alatt sem futott le "
+        f"({item.width()} x {item.height()})"
+    )
+
+
 def _click(window, item, qt_app):
     assert item is not None and item.isVisible()
+    _wait_for_layout(item)
     point = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
     QTest.mouseClick(
         window,
@@ -250,6 +266,25 @@ def test_back_to_view_all_restores_search_origin_selection(
     _wait_for_visible_row(
         window.findChild(QObject, "photoGrid"), restored_row, qt_app
     )
+
+
+def test_back_to_view_all_click_waits_for_the_layout_7319(qml_app_7215, qt_app):
+    """#7319: a zöld sáv gombja a keresés után LÁTSZIK, de az elrendezés csak
+    a következő polish-körben méretezi: addig 0 x 0. Windowson (szálas
+    render-hurok) a keresést követő egyetlen `processEvents` nem biztos, hogy
+    lefuttatja a polish-t, ezért a gombra kattintás a semmibe ment, és a
+    keresés élve maradt. Itt az eseményhurok SZÁNDÉKOSAN nem fut a keresés
+    és a kattintás között: a segéd a kattintás előtt megvárja az elrendezést."""
+    window, controller, _engine = qml_app_7215
+    _activate(window, qt_app)
+    controller.search("needle")
+    back = window.findChild(QObject, "searchBackToViewAll")
+    assert controller.searchActive
+    assert back.isVisible() and back.width() == 0 and back.height() == 0
+
+    _click(window, back, qt_app)
+
+    assert controller.searchActive is False
 
 
 def test_search_only_shows_matching_album_and_people_categories(
