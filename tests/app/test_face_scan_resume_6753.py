@@ -62,6 +62,17 @@ def test_qt_exit_signal_is_connected_to_face_scan_cancellation():
     assert "app.aboutToQuit.connect(face_scan_controller.cancelScan)" in source
 
 
+def test_effect_slice_mtime_az_indexrekordbol_jon_stat_nelkul():
+    """A gyorsítótárkulcs mtime-ja a betöltött rekordból származik."""
+    from picasapy.app.application_startup_qml import _photo_record_mtime
+
+    photo_path = Path("/slow-network-root/album/photo.jpg")
+    record = SimpleNamespace(
+        folder_path=str(photo_path.parent), name=photo_path.name, mtime_ns=123456789
+    )
+    assert _photo_record_mtime((record,), str(photo_path)) == 123456789
+
+
 def test_application_shutdown_stops_face_scan_worker_within_timeout(
     qt_app, tmp_path, monkeypatch
 ):
