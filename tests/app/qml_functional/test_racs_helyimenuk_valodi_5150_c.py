@@ -351,14 +351,38 @@ class TestCimkeMenu:
 
     def _cimke_menu(self, window, qt_app):
         """Valódi jobbklikk a `kirandulas` címkesor szövegén; a menü megnyílását is megvárjuk."""
-        sor = keres_vizualis(window, "tagRemove-kirandulas")
-        while sor is not None and sor.property("modelData") != "kirandulas":
-            sor = sor.parentItem()
-        assert sor is not None, "a kirandulas címkesor nem található"
-        assert varj(qt_app, lambda: _sor_a_nezetben(window, sor)), (
-            "a kirandulas címkesor nem került a főablak látható részére"
+        # #7334: a címkepanel listája megnyitás után újraépülhet, ezért a
+        # sort és a feliratot minden mintavételnél újra keressük, és csak
+        # akkor kattintunk, ha a helye öt mintavételen át nem mozdul. A régi
+        # (közben törölt vagy még 0×0-s) delegáltra kattintás a CI-n bukott.
+        allapot = {"hely": None, "db": 0}
+
+        def _felirat():
+            sor = keres_vizualis(window, "tagRemove-kirandulas")
+            while sor is not None and sor.property("modelData") != "kirandulas":
+                sor = sor.parentItem()
+            if sor is None or not _sor_a_nezetben(window, sor):
+                return None
+            try:
+                return _cimke_szovege(sor, "kirandulas")
+            except AssertionError:
+                return None
+
+        def _nyugodt() -> bool:
+            elem = _felirat()
+            if elem is None or not elem.isVisible() or elem.width() <= 0:
+                allapot.update(hely=None, db=0)
+                return False
+            p = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2))
+            hely = (p.x(), p.y(), elem.width(), elem.height())
+            allapot["db"] = allapot["db"] + 1 if hely == allapot["hely"] else 0
+            allapot["hely"] = hely
+            return allapot["db"] >= 5
+
+        assert varj(qt_app, _nyugodt), (
+            "a kirandulas címkesor nem került nyugalmi helyzetbe a főablak látható részén"
         )
-        kattints(window, qt_app, _cimke_szovege(sor, "kirandulas"), Qt.MouseButton.RightButton)
+        kattints(window, qt_app, _felirat(), Qt.MouseButton.RightButton)
         menu = gyerek(window, "tagContextMenu")
         assert varj(qt_app, lambda: menu.property("visible") is True), (
             "a címkesor jobbklikkje nem nyitotta meg a címke-menüt"
