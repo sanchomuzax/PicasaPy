@@ -30,8 +30,10 @@ A `stripback` (`oneup.tre:164-166`) a sáv tartója. A `centergroup`
 (`oneup.tre:156-158`) ennek középre igazított gyermeke.
 
 A `.tre` nem ad x-koordinátát a vezérlőknek. Ezért a sorrend a csoporton belül
-`NINCS MEG`. A `.tre` deklarációs sorrendje (`oneup.tre:40-143`) nem vizuális
-sorrend, ezt bizonyítékként nem használom.
+magából az erőforrásból `NINCS MEG`. A `.tre` deklarációs sorrendje
+(`oneup.tre:40-143`) nem vizuális sorrend, ezt bizonyítékként nem használom.
+Az alábbi „Mai hely” oszlop a #7281 előtti kódot rögzíti; az új, képernyőn
+mért sorrendet a következő táblázat adja.
 
 | Vezérlő | Szülő és horgony (oneup.tre) | Csoport (a .tre szerint) | Mai hely (controlsRow, 1-től) | Eredmény |
 |---|---|---|---|---|
@@ -53,6 +55,21 @@ jobb (`rotateleft`, `rotateright`, `star`, `captionbutton`). A mai sor egyetlen
 lista (`SlideshowView.qml:981`). A kijelzési idő blokk a jobb szélen áll, a
 forgatás a sor közepén. Az `exit` az egyetlen tétel, amelynek a csoportja és a
 helye egyezik.
+
+### Képernyőn mért sorrend (#7281, #7197)
+
+A `picasa-colab-jobs` #762 `video__08.mp4` felvételének 12. és 100. másodperce
+alapján, szünetben balról jobbra: Kilépés, képikon és csúszka, forgatás balra,
+forgatás jobbra, Előző, Lejátszás, Következő, csillag, átmenet-választó,
+feliratmód, Display Time. A lista végén álló szünetben a képikon és csúszka
+látszik; az első képen álló szünetben ugyanez a hely üres. A #7197 mérési jegy
+rögzíti, hogy a két felvételi pont sorrendje egyezik.
+
+A `oneup.tre` (a 40-143. sorok vezérlőelemei) nem tartalmaz csúszka- vagy
+képikon-elemet, és működésükre sincs adat. A `sszoomsliderclip` név csak a
+külön szerkesztői `editoneup.tre`-ben szerepel, ezért nem bizonyíték a normál
+diavetítő csúszkájának funkciójára. A PicasaPy a mért helyet üresen tartja fenn; a csúszka funkciója, értéke és
+kezelése **nincs megállapítva** (#7284), ezért működés nélküli vezérlőt nem rajzol.
 
 ## 2. Tételek elemenként
 
@@ -156,7 +173,7 @@ Minden javaslat három részből áll: **Eredeti**, **Nálunk**, **Teendő**.
 
 ## 4. Nyitott pontok
 
-- **A csoporton belüli sorrend.** A `0x00802c60` konstruktor beállítja a vtáblákat, és a `0x009c68a0` hívással tölti be az erőforrást. A gyermekek elhelyezése nincs végigkövetve. Ehhez a betöltő (`0x009c68a0`) és az elrendezés követése kell, vagy mért képernyőkép.
+- **A csoporton belüli sorrend.** A `.tre` és a `0x00802c60` konstruktor továbbra sem adja meg a sorrendet; a képernyőn mért eredményt a fenti #7197 felvétel rögzíti.
 - **Az `exit` cél.** A `0x00803527` ág vtábla `+0x24` objektuma és a vtábla `+0x14` metódusa nincs azonosítva. A `show.stop()` egyezése ezért nincs igazolva.
 - **Az `auto2` kattintási cél.** A `.tre` nem ad találat-jelzőt. Hogy az eredetiben a kép kattintása is léptet-e, nincs igazolva.
 - **Az esemény útja a gombtól a diszpécserig.** A parancs-kibocsátó `0x00a64a10` a gomb vtábla `+0x70` elemét hívja (`0x00ce48e4`), ennek célja `0x009e3b00`. A `0x009e3b00` végig nincs követve. A `0x8000004` típus közvetlen tárolása a `.text`-ben egyetlen helyen van: `0x00a64b02`. Regiszteren át történő írást nem zártam ki.
