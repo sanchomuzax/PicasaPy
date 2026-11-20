@@ -135,7 +135,9 @@ class TestAzUrlapNemVesziElAzAdatot:
         # lemez-lemez típus, hely NÉLKÜL → a vezérlő elutasítja
         _kattints(view, _elem(ablak, "backupFormSave"), qt_app)
 
-        assert vezerlo.keszletek() == []
+        # #7294: a megnyitás létrehozta az alapkészletet; az elutasított
+        # űrlap nem vett fel másodikat
+        assert [k["nev"] for k in vezerlo.keszletek()] == ["My Backup Set"]
         assert ablak.property("szerkesztes") is True
         urlap = ablak.findChild(QObject, "backupSetDialog")
         assert urlap.property("visible") is True, "az űrlap bezárult"
@@ -149,10 +151,14 @@ class TestAzUrlapNemVesziElAzAdatot:
         view, ablak, vezerlo = gazda
         _kattints(view, _elem(ablak, "publishNewBackupSet"), qt_app)
         _kattints(view, _elem(ablak, "backupTypeDisk"), qt_app)
+        # #7294: az alapnév már foglalt (a megnyitás létrehozta az
+        # alapkészletet), ezért az űrlapon másik nevet adunk
+        ablak.setProperty("urlapNev", "Külső")
         ablak.setProperty("urlapCel", str(tmp_path / "cel"))
         _kattints(view, _elem(ablak, "backupFormSave"), qt_app)
 
-        assert [k["nev"] for k in vezerlo.keszletek()] == ["My Backup Set"]
+        assert sorted(k["nev"] for k in vezerlo.keszletek()) == [
+            "Külső", "My Backup Set"]
         assert ablak.property("szerkesztes") is False
         assert ablak.property("urlapHiba") == ""
 
@@ -162,9 +168,9 @@ class TestAzEgyetlenKeszlet:
         self, gazda, qt_app, tmp_path
     ):
         _, ablak, vezerlo = gazda
-        vezerlo.ujKeszlet("Egy", str(tmp_path / "c1"), "minden", "lemez")
-        ablak.setProperty("kivalasztott", 0)
-        qt_app.processEvents()
+        # #7294: az egyetlen készlet az első megnyitás alapkészlete
+        assert len(vezerlo.keszletek()) == 1
+        assert ablak.property("kivalasztott") == 0
         assert not _elem(ablak, "publishDeleteBackupSet").isVisible()
 
         vezerlo.ujKeszlet("Kettő", str(tmp_path / "c2"), "minden", "lemez")

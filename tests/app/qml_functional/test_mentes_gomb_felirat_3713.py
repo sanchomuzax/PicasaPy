@@ -114,6 +114,10 @@ class TestAGombFelirata:
         view, ablak, vezerlo = gazda
         vezerlo.ujKeszlet("Külső", str(tmp_path / "cel"), "minden")
         QMetaObject.invokeMethod(ablak, "frissitsd")
+        # #7294: a megnyitás már kiválaszt egy készletet (az alapkészletet);
+        # a „nincs kiválasztott" állapot a választás elvesztése (pl. törlés
+        # után `kivalasztott = -1`)
+        ablak.setProperty("kivalasztott", -1)
         qt_app.processEvents()
 
         assert ablak.property("kivalasztott") == -1
@@ -141,6 +145,9 @@ class TestAGombFelirata:
         vezerlo.ujKeszlet("Külső", str(tmp_path / "cel"), "minden")
         vezerlo.ujKeszlet("Második", str(tmp_path / "cel2"), "minden")
         QMetaObject.invokeMethod(ablak, "frissitsd")
+        # #7294: a megnyitás már kiválasztott egy készletet - a váltás
+        # tesztje a „nincs kiválasztott" állapotból indul
+        ablak.setProperty("kivalasztott", -1)
         qt_app.processEvents()
         gomb = _elem(ablak, "publishBackupGo")
         kombo = _elem(ablak, "publishBackupSetMenu")

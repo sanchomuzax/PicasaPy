@@ -141,11 +141,42 @@ Rectangle {
         controller.setBackupFilter(utak)
     }
 
+    //: #7294: megnyitáskor a vezérlő dönt, melyik készlet áll elő: üres
+    //: listánál létrehozza a „My Backup Set" nevű CD/DVD készletet (az
+    //: eredeti `il_BurnPanel::bksetname`, `0x00670ae6`), különben az
+    //: utoljára használtat adja (`LastBkSet`), eltűnt névnél az elsőt. A
+    //: döntés a lista frissítése ELŐTT születik, mert a frissítés a régi
+    //: választást is érintheti.
     function nyisd() {
         host.uzenet = ""
         host.szerkesztes = false
+        var megnyitasiId = -1
+        if (typeof backupController !== "undefined" && backupController)
+            megnyitasiId = backupController.megnyitasiKeszlet(
+                qsTr("My Backup Set"))
         host.frissitsd()
+        host.valaszdAKeszletet(megnyitasiId)
         host.nyitva = true
+    }
+
+    function valaszdAKeszletet(keszletId) {
+        for (var i = 0; i < host.keszletek.length; i++) {
+            if (host.keszletek[i].id === keszletId) {
+                if (host.kivalasztott !== i)
+                    host.kivalasztott = i
+                return
+            }
+        }
+    }
+
+    //: #7294: a kiválasztott készlet a következő megnyitás választása
+    function megjegyezdAKeszletet() {
+        if (typeof backupController === "undefined" || !backupController
+                || host.kivalasztott < 0
+                || host.kivalasztott >= host.keszletek.length)
+            return
+        backupController.utolsoKeszletMegjegyzese(
+            host.keszletek[host.kivalasztott].id)
     }
 
     //: másik készlet = más nyilvántartás, a régi pipák nem érvényesek;
@@ -155,6 +186,7 @@ Rectangle {
         host.pipaltMappak = []
         if (!host.fut)
             host.uzenet = ""
+        host.megjegyezdAKeszletet()
         host.frissitsdAMappakat()
     }
 
@@ -209,6 +241,9 @@ Rectangle {
             host.kivalasztott = host.keszletek.length - 1
         if (host.kivalasztott === elozo)
             host.frissitsdAMappakat()
+        //: a lista rendezett (név szerint), tehát egy új vagy átnevezett
+        //: készlet eltolhatja, melyik áll a megtartott indexen
+        host.megjegyezdAKeszletet()
     }
 
     function ujKeszletUrlap() {
