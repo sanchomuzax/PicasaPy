@@ -75,6 +75,9 @@ PicasaMenu {
         objectName: "menuToolsBackup"
         text: qsTr("&Back Up Pictures...")
         enabled: !bar.editorActive
+            && !bar.hostBackupHost.nyitva
+            && !bar.hostGiftCdHost.nyitva
+            && !bar.hostBackupHost.fut
         onTriggered: bar.backupRequested()
     }
     PicasaMenuItem { text: qsTr("Batch Upload..."); placeholder: false; retired: true }  // #638
