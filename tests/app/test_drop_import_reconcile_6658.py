@@ -19,6 +19,16 @@ def _wait(qt_app, predicate, timeout: float = 20.0) -> bool:
     return bool(predicate())
 
 
+def _folder_count(model, folder: Path) -> int | None:
+    from picasapy.app.folder_list_model import FolderListModel
+
+    for row in range(model.rowCount()):
+        index = model.index(row, 0)
+        if Path(model.data(index, FolderListModel.PathRole)) == folder:
+            return model.data(index, FolderListModel.CountRole)
+    return None
+
+
 @pytest.fixture
 def stale_library(qt_app, tmp_path):
     from picasapy.app.controller import AppController
@@ -82,7 +92,6 @@ def stale_library(qt_app, tmp_path):
 
 def test_dropping_a_photo_in_a_known_folder_repairs_stale_index(stale_library, qt_app):
     from picasapy.app.drop_import_controller import DropImportController
-    from picasapy.app.folder_list_model import FolderListModel
     from picasapy.index import open_index, photos_in_folder
 
     controller, library, source, destination, image = stale_library
@@ -95,12 +104,14 @@ def test_dropping_a_photo_in_a_known_folder_repairs_stale_index(stale_library, q
 
     assert _wait(
         qt_app,
-        lambda: any(
-            Path(record.folder_path) == source for record in controller.photos.photos
+        lambda: (
+            any(
+                Path(record.folder_path) == source
+                for record in controller.photos.photos
+            )
+            and _folder_count(controller.folders, source) == 1
         ),
-    ), (
-        "az ismert forrásmappa behúzása nem olvasta újra a lemezt"
-    )
+    ), "az ismert forrásmappa újraszinkronizálása nem frissítette a teljes nézetet"
     source_photos = [
         record
         for record in controller.photos.photos
@@ -109,11 +120,7 @@ def test_dropping_a_photo_in_a_known_folder_repairs_stale_index(stale_library, q
     assert len(source_photos) == 1
 
     index = controller.folders
-    source_count = next(
-        index.data(index.index(row, 0), FolderListModel.CountRole)
-        for row in range(index.rowCount())
-        if Path(index.data(index.index(row, 0), FolderListModel.PathRole)) == source
-    )
+    source_count = _folder_count(index, source)
     assert source_count == len(source_photos) == 1
     with open_index(controller._db_path) as conn:
         assert len(photos_in_folder(conn, source)) == 1
