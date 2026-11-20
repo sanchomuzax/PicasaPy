@@ -60,6 +60,41 @@ def poster_app(
             amerikai.undo()
 
 
+def _qml_lista(ertek) -> list:
+    """Egy QML `var` lista Pythonban: az érték `list` vagy `QJSValue` is lehet."""
+    if hasattr(ertek, "toVariant"):
+        ertek = ertek.toVariant()
+    return list(ertek or [])
+
+
+@pytest.fixture(autouse=True)
+def _nezo_bezarasa_utana(request, qt_app):
+    """#7316: a kész poszter szerkesztésre nyitja az utolsó lapot.
+
+    A modulszintű alkalmazásban a megnyitott néző letiltaná a Poszter
+    menüpontot a következő próbában, ezért minden próba könyvtárnézetben
+    indul. A megnyitás a rácsmodell frissülése után történik, ezért előbb a
+    függő megnyitást kell bevárni, különben a következő próbában nyílna meg."""
+    yield
+    if "poster_app" not in request.fixturenames:
+        return
+    window, _controller, _engine = request.getfixturevalue("poster_app")
+    opener = window.findChild(QObject, "posterResultOpener")
+    if opener is not None:
+        var_feltetelre(
+            qt_app,
+            lambda: not _qml_lista(opener.property("pendingPaths")),
+            20.0,
+        )
+    window.setProperty("viewerOpen", False)
+
+
+def _forras_utvonala(controller) -> str:
+    """A forráskép útvonala. A kész lapok bekerülnek a rácsba, ezért a 0. sor
+    a második futástól már nem feltétlenül a forrás (#7316)."""
+    return str(Path(controller.currentFolder) / "color_patches.jpg")
+
+
 def _var(qt_app, condition, message: str, seconds: float = 10.0):
     if not var_feltetelre(qt_app, condition, seconds):
         raise AssertionError(message)
@@ -112,8 +147,10 @@ def _ellenorizd_dialog_szuloterulethez_igazitas(dialog, window):
 
 
 def _nyisd_meg_valodi_menu_kattintassal(window, controller, qt_app):
-    window.setProperty("selectedIndexes", [0])
-    window.setProperty("selectedIndex", 0)
+    forras_sor = controller.photos.rowOfPath(_forras_utvonala(controller))
+    assert forras_sor >= 0, "a forráskép nincs a rácsban"
+    window.setProperty("selectedIndexes", [forras_sor])
+    window.setProperty("selectedIndex", forras_sor)
     qt_app.processEvents()
 
     create_menu = _elem(window, "menuCreateRoot")
@@ -174,7 +211,7 @@ def _inditsd_a_kimenetet(
         "a Poszter párbeszéd elfogadása nem zárta be a párbeszédet",
     )
 
-    source = controller.photos.filePathAt(0)
+    source = _forras_utvonala(controller)
     source_folder = source.rsplit("/", 1)[0]
     names = [
         f"{column}-{row}-color_patches.jpg"

@@ -261,6 +261,17 @@ Item {
         }
     }
 
+    // #7316: a kész poszter utolsó lapját szerkesztésre nyitja. Ha a lap a
+    // várakozási időn belül nem kerül a rácsba, az eredmény-párbeszéd jelez.
+    PosterResultOpener {
+        id: posterResultOpener
+        hostWindow: dialogStack.hostWindow
+        hostController: typeof controller !== "undefined" ? controller : null
+        onNotOpened: function (paths) {
+            createDialogs.ensure().jelezdAPoszterSikert(paths)
+        }
+    }
+
     // #2096: a Létrehozás-párbeszédek vezérlő-hallgatói. Azért ITT állnak és
     // nem a komponensben, mert az halasztott: amíg a felhasználó meg nem
     // nyitotta, egy belső `Connections` nem létezne, és a kollázs/film
@@ -306,7 +317,9 @@ Item {
             createDialogs.ensure().jelezdAFilmHibajat(message)
         }
         function onPosterFinished(paths) {
-            createDialogs.ensure().jelezdAPoszterSikert(paths)
+            // #7316: az eredeti az utolsó lapot mutatja szerkesztésre; a
+            // sikert ez jelzi, eredmény-párbeszéd csak tartalékként nyílik.
+            posterResultOpener.open(paths)
         }
         function onPosterFailed(message) {
             createDialogs.ensure().jelezdAPoszterHibajat(message)
