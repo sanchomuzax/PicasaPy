@@ -101,6 +101,19 @@ Item {
     map_item.setProperty("mapLoading", False)
     map_item.setProperty("offline", True)
     assert _var(qt_app, lambda: overlay.isVisible() and not loading.isVisible())
-    assert "Internet" in message.property("text")
-    assert "Google Maps" in message.property("text")
+    # #7304: a térkép QtLocation/OSM, ezért az üzenet szolgáltatónevet nem
+    # nevezhet meg; a hibát és a teendőt mondja ki.
+    text = message.property("text")
+    assert text == (
+        "The map could not be loaded. "
+        "Please make sure that you are connected to the Internet."
+    )
+    assert "Google" not in text
+    # A térkép nélkül is elérhető a helykeresés és a geocímke törlése: az
+    # átfedés csak a térkép területét fedi.
+    overlay_bottom = overlay.mapToScene(overlay.boundingRect().bottomLeft()).y()
+    for name in ("placesSearchInput", "placesClearButton"):
+        control = _item(window, name)
+        assert control.isVisible(), name
+        assert control.mapToScene(control.boundingRect().topLeft()).y() >= overlay_bottom
     window.resize(original_width, original_height)

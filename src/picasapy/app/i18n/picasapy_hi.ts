@@ -13139,10 +13139,9 @@ picasapy-origin-key: geopaneltext:Text(geopanel/loading_title)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="150" />
-            <source>PicasaPy failed to initialize Google Maps.  Please make sure that you are connected to the Internet.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:geo::init_err</extracomment>
-            <translation>PicasaPy, Google मानचित्र आरंभ करने में विफल हुआ.  कृपया सुनिश्चित करें कि आप इंटरनेट से कनेक्ट हैं.</translation>
+            <source>The map could not be loaded. Please make sure that you are connected to the Internet.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>मानचित्र लोड नहीं हो सका. कृपया सुनिश्चित करें कि आप इंटरनेट से कनेक्ट हैं.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PlacesPanel.qml" line="96" />
