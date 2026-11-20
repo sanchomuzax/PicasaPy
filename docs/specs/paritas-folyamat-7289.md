@@ -84,7 +84,7 @@ Ez a specifikáció a #7289 kutatási feladat alapján összegzi a személyek (a
      - `create_face_movie`: Mozgófilm készítése arcokból (`0x00603660`).
      - `addname` (`0x00602970`) és `ignore` (`0x005c9b00`).
    - Nálunk: `src/picasapy/app/qml/PicasaPy/LightboxHeader.qml:66-100`, `src/picasapy/app/qml/PicasaPy/LightboxHeaderButtons.qml`, `src/picasapy/app/qml/PicasaPy/LightboxHeaderSuggestionRow.qml`.
-   - Eltérés: Az `addname` és `ignore` vezérlők a `faceheaderpanel` fejléc-változatából nincsenek bekötve a `LightboxHeader.qml`-be (fejlesztési jegy javasolt: #2187 bővítése).
+   - Helyesbítés (#7296): a `faceheaderpanel` geometriájában (`picasa-arcfelismeres.md` 15.5) nincs `addname` és `ignore` elem; a `0x005e0f70` elosztó a három fejlécpanel közös kezelője, ezért a két parancs ismerete nem jelent gombot a személyalbum fejlécén. Nincs eltérés.
 
 3. **"Név nélküliek" album fejlécsávja (`unknownfaceheaderpanel`, `0x0074ad40`):**
    - Eredeti:
@@ -288,7 +288,7 @@ Ez a specifikáció a #7289 kutatási feladat alapján összegzi a személyek (a
 | Személy-album fejléc: removesel (`0x005c9b00`) | `src/picasapy/app/qml/PicasaPy/LightboxHeader.qml:93` | Egyezik. Nincs teendő. |
 | Személy-album fejléc: moresug (`0x00602890`, küszöb -0.1) | `src/picasapy/app/qml/PicasaPy/LightboxHeader.qml:95` | Egyezik. Nincs teendő. |
 | Személy-album fejléc: face_zoom 35x21 px (`0x005e5290`) | `src/picasapy/app/qml/PicasaPy/LightboxHeaderButtons.qml` | Egyezik. Nincs teendő. |
-| Személy-album fejléc: addname (`0x00602970`) és ignore (`0x005c9b00`) | `src/picasapy/app/qml/PicasaPy/LightboxHeader.qml:88` | **ELTÉRÉS**: A `LightboxHeader.qml` személy-album módjából hiányoznak az `addname` és `ignore` gombok. Fejlesztési jegy szükséges. |
+| Személy-album fejléc: addname (`0x00602970`) és ignore (`0x005c9b00`) | `src/picasapy/app/qml/PicasaPy/LightboxHeader.qml` | Egyezik: a `faceheaderpanel` geometriájában (15.5) nincs ilyen gomb; a két parancs a közös `0x005e0f70` elosztóé (#7296). Nincs teendő. |
 | Név nélküliek fejléc: clustering / viewtype (`0x0074ad40`) | `src/picasapy/app/qml/PicasaPy/UnnamedFacesView.qml:20` | Egyezik. Nincs teendő. |
 | Név nélküliek: addname és ignore csempén (`0x00602970`, `0x005c9b00`) | `src/picasapy/app/qml/PicasaPy/UnnamedFacesViewGrid.qml` | Egyezik. Nincs teendő. |
 | Kézi arc-hozzáadás a szerkesztőben (`editpanel/addfaceselection`) | `src/picasapy/app/qml/PicasaPy/FacesOverlay.qml` | Egyezik. Nincs teendő. |
@@ -308,32 +308,11 @@ Ez a specifikáció a #7289 kutatási feladat alapján összegzi a személyek (a
 
 ---
 
-## 6. Javasolt fejlesztői jegytörzs az eltérésre
+## 6. Helyesbítés: nincs igazolt eltérés
 
-### Jegy: A személy-album fejlécsávjából hiányzó `addname` és `ignore` vezérlők pótlása
+A kör első változata a személyalbum fejlécéből hiányzó `addname` és `ignore` gombra fejlesztői jegyet javasolt (#7296). Ez téves volt: a `docs/specs/picasa-arcfelismeres.md` 15.5 szakasza a `faceheaderpanel` teljes, `respack.yt`-ből mért geometriáját sorolja, és abban ez a két elem nem szerepel. A `0x005e0f70` elosztó a `headerpanel`, a `faceheaderpanel` és az `unknownfaceheaderpanel` közös kezelője, a parancsnevek ismerete tehát nem panelhez kötött. A #7296 ezért nem tervezett jeggyel zárult.
 
-```markdown
-# Személy-album fejléc: az `addname` és `ignore` gombok pótlása a LightboxHeader-ben
-
-## Kiindulás
-A `docs/specs/paritas-folyamat-7289.md` paritás-auditja kimutatta, hogy az eredeti Picasa 3.9 személy-album fejlécsávja (`faceheaderpanel`, `0x0074ad40`) az összes jóváhagyása (`confirmsug`), jóváhagyás (`confirmsel`), elvetés (`removesel`) és további javaslatok (`moresug`) mellett tartalmazza a Név hozzáadása (`addname`, `0x00602970`) és a Mellőzés (`ignore`, `0x005c9b00`) vezérlőket is.
-
-Eredeti: `faceheaderpanel.tre:185`, `0x00602970` (`addname`), `0x005c9b00` (`ignore`), elosztó: `0x005e0f70`.
-
-## Hiba / Hiány
-A PicasaPy-ban a `src/picasapy/app/qml/PicasaPy/LightboxHeader.qml:66-100` személy-album módjában (`personAlbumHeaderMode`) a jóváhagyási gombok megvannak, de az `addname` és `ignore` gombok nem jelennek meg a fejlécben (a Név nélküliek nézetben külön léteznek, de a személyalbum fejlécében hiányoznak).
-
-## Teendő
-1. A `LightboxHeader.qml` és `LightboxHeaderButtons.qml` személy-album fejlécére helyezd el az `addname` és `ignore` gombokat az eredeti `faceheaderpanel.tre` geometriája alapján.
-2. Az `addname` gomb nyissa meg a jobb oldali Emberek panelt a `header_addname` tokennel (`0x00602970`).
-3. Az `ignore` gomb hívja meg a kijelölt/jelenlegi arc mellőzési útját (`0x005c9b00`).
-
-## Kész, ha
-- A személy-album megnyitásakor a fejlécen megjelenik a Név hozzáadása és Mellőzés gomb.
-- A gombok funkciója megegyezik az eredeti kezelőkkel (`0x00602970`, `0x005c9b00`).
-```
-
----
+**Következtetés:** a személyek kezelésének folyamata a vizsgált belépési pontokon, ablakokban és hatásokban egyezik az eredetivel; fejlesztői teendő ebből a körből nem következik.
 
 ## 7. Bizonyítottsági fok és lezárás
 
