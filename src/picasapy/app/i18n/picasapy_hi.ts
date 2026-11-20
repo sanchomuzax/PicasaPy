@@ -19827,6 +19827,12 @@ picasapy-origin-key: stringres:il_BurnPanel::ISOFolder</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>बैकअप पुनर्स्थापित नहीं किया जा सका: %1</translation>
         </message>
+        <message>
+            <source>Not Enough Disk Space to Backup Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_BurnPanel::BackgroundProc::4</extracomment>
+            <translation>फ़ाइलें बैकअप करने के लिए पर्याप्त डिस्क रिक्ति नहीं</translation>
+        </message>
     </context>
     <context>
         <name>BackupHost</name>

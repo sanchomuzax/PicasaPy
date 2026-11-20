@@ -19858,6 +19858,12 @@ picasapy-origin-key: stringres:il_BurnPanel::ISOFolder</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Zálohu se nepodařilo obnovit: %1</translation>
         </message>
+        <message>
+            <source>Not Enough Disk Space to Backup Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_BurnPanel::BackgroundProc::4</extracomment>
+            <translation>Není dost místa na disku pro zálohování souborů</translation>
+        </message>
     </context>
     <context>
         <name>BackupHost</name>

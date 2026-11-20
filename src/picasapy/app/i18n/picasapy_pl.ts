@@ -19858,6 +19858,12 @@ picasapy-origin-key: stringres:il_BurnPanel::ISOFolder</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nie udało się odtworzyć kopii zapasowej: %1</translation>
         </message>
+        <message>
+            <source>Not Enough Disk Space to Backup Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_BurnPanel::BackgroundProc::4</extracomment>
+            <translation>Za mało miejsca na dysku, aby utworzyć kopię zapasową plików</translation>
+        </message>
     </context>
     <context>
         <name>BackupHost</name>

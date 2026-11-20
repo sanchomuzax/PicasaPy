@@ -80,9 +80,9 @@ _EREDETI_FORRASHASH = {
     "_mappalista": "653058451bd640b3c8fbdfca55d4e773074e16cd4136cbb32e2238ddbc91bdab",
     "futtasdMost": "5c9f89f48fdf8165d56004b321b6c50946416f93fececab5f75cadbba148ce6a",
     "futtasdLemezkepbe": "76a34add4f5791dd94b180bca92165202d2c1c6f0a2149371881aa9e0995663f",
-    "_lemezkepek_hattereben": "3a0bc34e3282a689b00277af7db630b52f58c9cbc52afc13c86189ee7d6ee192",
+    "_lemezkepek_hattereben": "6fe0aadba47a20aae2c4096151577a574a5a78136ac5e843f291ca23638cf37d",
     "szakitsdMeg": "3684222bed10b1674165a1a80c8d368439f8d5ae88263e49e2dbf622bd42d60d",
-    "_futtatas_hattereben": "8dbbb1ec7b73bc7a0bcea38c39c4d2de97b28803b56233442485ddf29d4a5e41",
+    "_futtatas_hattereben": "0dcfe96025262c7cef3ac717d5361c0d42d1307706ab1d06eba5c069d3cae68d",
     "visszaallitastFuttat": "c2ad46cd3d17292969b4fdddda6de01c3eecdef55c3e8dac300246f767abe33f",
     "_visszaallitas_hattereben": "266b37a081443ee8807c19049363e21fc3d8d8525a14e6ad95bca970fceeba10",
 }

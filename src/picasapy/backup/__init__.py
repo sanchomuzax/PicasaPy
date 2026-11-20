@@ -10,6 +10,7 @@ futtatás itt.
 
 from .futtatas import (
     MANIFESZT_NEVE,
+    NincsElegendoHelyError,
     Terv,
     TervezettFajl,
     futtasd,
@@ -21,6 +22,7 @@ from .visszaallitas import VisszaallitasiEredmeny, visszaallit
 
 __all__ = [
     "MANIFESZT_NEVE",
+    "NincsElegendoHelyError",
     "Terv",
     "TervezettFajl",
     "VisszaallitasiEredmeny",
