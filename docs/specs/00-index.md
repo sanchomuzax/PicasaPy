@@ -1785,6 +1785,7 @@ minden további lapja.
 
 | lap | miről szól |
 |---|---|
+| [paritas-folyamat-7303.md](paritas-folyamat-7303.md) | #7303: az eredeti Picasa Helyek/geocímkézés belépési pontjai, kérdések, térkép, helyi adattárolási hatás és a PicasaPy-összevetés; a két Clear út közös helperje igazolt, a régi EXIF/INI íróhatás és a hibautak nyitva maradtak. |
 | [picasa-ini-format.md](picasa-ini-format.md) | A `.picasa.ini` — az igazságforrás, round-trip szabályokkal · ⭐ **2026-09-04: a `[Picasa] date=` OLVASÓJA `atof` (#2304)** — `0x00441ed0`: alapérték **`949998.0`** (`0x00c7ccf8`), majd `0x0044248d` → `0x00c080d7` (`atof`) ⇒ az **ISO-alak némán 1905-öt ad**; az író (`0x00710080`) `%f`-fel ír és a **0.0-t kihagyja**; a közös beállító `0x004460a0` egy hívásból tölti a DB-t ÉS az ini-t. ⚠️ NYITVA: melyik hívó süti el először új mappára (vtábla-mutató a `0x00c81fb0`-on) |
 | [picasa-inditoikon-meres.md](picasa-inditoikon-meres.md) | A Picasa3.exe és a PicasaPy indítóikonjainak erőforrás-mérete, alakja, kör-befoglaló mérete és Windows-méretválasztása (#6509) |
 | [picasa-beepitett-webszerver.md](picasa-beepitett-webszerver.md) | **A Picasa 3 beépített HTTP/WebDAV-kiszolgálója** - a Picasa Sharing natív PE-párbeszéde (`RT_DIALOG #300`), kulcsai és alapértékei; az `AllowRemoteWeb` automatikus/egyedi portútja; a `LANShareAlbums` módjai; a 14 végpont teljes listája, a kép- és bélyegkép-URL-ek, a WebDAV-válaszok, a LAN-hirdetés mezői, a `text/plain` metaadat-alak és a `picasa://` URL-séma. Nyitott: az egyedi albumengedély belső feltétele. Döntés: **nem építjük meg** (#2023) |
