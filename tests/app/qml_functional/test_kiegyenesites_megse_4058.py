@@ -6,6 +6,7 @@ from math import sqrt
 from pathlib import Path
 from statistics import median
 
+import pytest
 from PySide6.QtCore import QObject, QPointF, QRect, Qt
 from PySide6.QtGui import QColor, QImage, QPainter
 from PySide6.QtTest import QSignalSpy, QTest
@@ -555,13 +556,14 @@ def test_kiegyenesites_nyitva_a_referencia_szerint_szurkit_es_elrejti_a_visszavo
     )
 
 
+@pytest.mark.parametrize("height_delta", [-5, 0, 5])
 def test_kiegyenesites_aa_fokuszcsere_visszarajzolja_a_mentett_fokepet(
-    qml_app_negyzet_kepek, qt_app, tmp_path
+    qml_app_negyzet_kepek, qt_app, tmp_path, height_delta
 ):
     """#4058: azonos láncú A/B-cserénél is frissüljön a főfél képe."""
     window, controller, _ = qml_app_negyzet_kepek
     _forrasok(controller, negyedes=True)
-    _beallit_ablak(window, qt_app)
+    _beallit_ablak(window, qt_app, (ABLAK[0], ABLAK[1] + height_delta))
     viewer = _nezobe_lep(window, qt_app)
     photos = viewer.property("photosModel")
     edit_controller = viewer.property("editCtl")
@@ -626,11 +628,23 @@ def test_kiegyenesites_aa_fokuszcsere_visszarajzolja_a_mentett_fokepet(
     assert bal_huzas_diff > 0, "az aa-fél képe nem változott a valódi húzásra"
     grid.setProperty("visible", True)
 
-    # rontás-kontroll: javítás nélkül ezen az úton 16 082 képpont tért el;
-    # az azonos mentett láncok miatt a swapAaFocus korai no-opja nem rajzolt.
+    # CI-rontás-kontroll: a korábbi felvétel 14 390 képponttal tért el,
+    # mert a fókuszcsere új előnézete még nem készült el a mintavételkor.
+    jobb_render = QSignalSpy(edit_controller._previewRendered)
+    jobb_render_elotte = jobb_render.count()
+    jobb_forras_elotte = image_jobb.property("source").toString()
     _kattint(window, _item(window, "viewerSwapFocus"), qt_app)
     assert panel.property("tiltActive") is False
     assert viewer.property("aktivOldal") == "jobb"
+    _uj_elonezetre_var(
+        edit_controller,
+        image_jobb,
+        qt_app,
+        jobb_render,
+        jobb_render_elotte,
+        jobb_forras_elotte,
+        "az aa-fókusz visszaállítása",
+    )
     fokusz_utan = _felvetel_kirajzolas_utan(
         window, qt_app, tmp_path / "aa-fokuszcsere-utan.png"
     )
