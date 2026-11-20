@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.163] - 2026-11-20
+
+- Hálózati mappában (például NAS-on) a mappába lépés és a kép megnyitása a beolvasás közben sem fagyasztja le a programot (#7244).
+
 ## [1.0.162] - 2026-11-19
 
 - A kereső megtalálja a képek EXIF szerző és szerzői jog mezőinek szavait. (#7254).
