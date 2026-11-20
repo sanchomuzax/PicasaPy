@@ -193,11 +193,16 @@ ApplicationWindow {
 
     property string pendingPeopleManagerPersonName: ""
     property string pendingPeopleManagerPersonId: ""
-    property int thumbSize: 144
+    property int thumbSize: (controller && controller.thumbScale !== undefined)
+                            ? controller.thumbScale : 144
     //: #598: a cellaméret átadása a bélyegkép-tárnak — a SZINTET (72 · 144 ·
     //: a maximum) a tár választja ki belőle. A csúszka húzása nem kér újra
     //: mindent: egy szint több fokozatot fed le.
     onThumbSizeChanged: if (controller) controller.setThumbCellSize(thumbSize)
+    onPersonAlbumNameChanged: {
+        if (controller)
+            window.thumbSize = controller.thumbScale
+    }
     property int selectedIndex: -1        // horgony (utoljára kattintott)
     property var selectedIndexes: []      // a teljes kijelölés
     // #5396: átnevezéskor a fájl útvonal alapján új fotóazonosítót kaphat
