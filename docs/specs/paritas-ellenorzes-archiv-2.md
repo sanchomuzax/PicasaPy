@@ -1,4 +1,4 @@
-# PicasaPy paritás-ellenőrzés — archívum 2 (#7244 folytatás)
+# PicasaPy paritás-ellenőrzés - archívum 2 (#7244 folytatás)
 
 A lezárt folyamatszintű összevetések változatlanul átemelt szakaszai. A nyitott vizsgálatok a fő lapon maradnak.
 
