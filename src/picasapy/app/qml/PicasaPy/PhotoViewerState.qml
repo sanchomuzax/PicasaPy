@@ -24,6 +24,14 @@ QtObject {
             ? viewerState.photosModel.filePathAt(viewerState.currentIndex) : ""
     readonly property bool controllerReady:
         viewerState.hostController ? true : false
+    property int networkCacheRevision: 0
+    property Connections networkPropertiesConnection: Connections {
+        target: viewerState.hostController
+        ignoreUnknownSignals: true
+        function onNetworkPropertiesChanged() {
+            viewerState.networkCacheRevision += 1
+        }
+    }
     readonly property bool singleClickExitEnabled:
         viewerState.controllerReady
             && viewerState.hostController.singleClickExitEnabled !== undefined
@@ -33,24 +41,30 @@ QtObject {
                 || viewerState.currentFilePath.length === 0)
             return false
         return viewerState.hostController.collageSavedPath !== undefined
-               && viewerState.hostController.isCollageDraft(
-                   viewerState.currentFilePath) === true
+               && (viewerState.photosModel.revision,
+                   viewerState.networkCacheRevision,
+                   viewerState.hostController.isCollageDraft(
+                       viewerState.currentFilePath)) === true
     }
     readonly property bool currentIsSavedCollage: {
         if (!viewerState.controllerReady
                 || viewerState.currentFilePath.length === 0)
             return false
         return viewerState.hostController.collageSavedPath !== undefined
-               && viewerState.hostController.hasCollageProject(
-                   viewerState.currentFilePath) === true
+               && (viewerState.photosModel.revision,
+                   viewerState.networkCacheRevision,
+                   viewerState.hostController.hasCollageProject(
+                       viewerState.currentFilePath)) === true
     }
     readonly property bool currentIsSavedMovie: {
         if (!viewerState.controllerReady
                 || viewerState.currentFilePath.length === 0)
             return false
         return viewerState.hostController.hasMovieProject !== undefined
-               && viewerState.hostController.hasMovieProject(
-                   viewerState.currentFilePath) === true
+               && (viewerState.photosModel.revision,
+                   viewerState.networkCacheRevision,
+                   viewerState.hostController.hasMovieProject(
+                       viewerState.currentFilePath)) === true
     }
 
     readonly property real panelPreferredHeight:
@@ -198,6 +212,13 @@ QtObject {
             ? viewerState.appWindow._faceScanController : null
         function onUnnamedCountChanged() {
             viewerState.facesEditRevision += 1
+        }
+    }
+    property Connections faceCacheConnections: Connections {
+        target: viewerState.hostFacesHelper
+        function onNetworkFolderCacheChanged(imagePath) {
+            if (imagePath === viewerState.currentFilePath)
+                viewerState.facesEditRevision += 1
         }
     }
     readonly property var currentFaces:

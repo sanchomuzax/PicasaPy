@@ -7,6 +7,8 @@ eldobná).
 """
 
 from pathlib import Path
+import threading
+import time
 from threading import Event
 
 import cv2
@@ -303,6 +305,66 @@ class TestRevertAndUndoSave:
         self._save_once(controller, qt_app, library)
 
         assert controller.hasSavedBackup([0]) is True
+
+    def test_linuxos_cifs_mentes_elotti_mappat_hatterszalon_ellenoriz(
+        self, controller, qt_app, library, monkeypatch
+    ):
+        """A POSIX CIFS-mount nem UNC-út: a lassú mappaellenőrzés háttérben fusson."""
+        _tmp, folder, _db = library
+        main_thread = threading.main_thread()
+        directory_reads = []
+        original_is_dir = save_controller_module._is_dir
+
+        def slow_is_dir(path):
+            if path.parent == folder and path.name in {".picasaoriginals", "Originals"}:
+                directory_reads.append(threading.current_thread())
+                time.sleep(0.25)
+            return original_is_dir(path)
+
+        def mount_root(path):
+            try:
+                return str(folder) if Path(path).is_relative_to(folder) else None
+            except (TypeError, ValueError):
+                return None
+
+        # A POSIX CIFS-mountot a teljes fájlrendszer-gyökér detektálja;
+        # az UNC-detektor helyesen nem ismeri fel ezt az útalakot.
+        monkeypatch.setattr(
+            save_controller_module,
+            "halozati_gyoker",
+            lambda _path: None,
+            raising=False,
+        )
+        monkeypatch.setattr(
+            save_controller_module, "fajlrendszer_gyoker", mount_root, raising=False
+        )
+        monkeypatch.setattr(save_controller_module, "_is_dir", slow_is_dir)
+
+        heartbeat = [time.monotonic()]
+        beat_timer = QTimer()
+        beat_timer.setInterval(10)
+        beat_timer.timeout.connect(lambda: heartbeat.append(time.monotonic()))
+        beat_timer.start()
+        revision = controller.savedBackupRevision
+
+        assert controller.hasSavedBackup([0]) is False
+        heartbeat.append(time.monotonic())
+        max_gap_ms = max(
+            ((right - left) * 1000 for left, right in zip(heartbeat, heartbeat[1:], strict=False)),
+            default=0,
+        )
+        assert directory_reads, "a próba nem érte el a mentés-előtti mappákat"
+        assert all(thread is not main_thread for thread in directory_reads), (
+            "a mentés-előtti mappát a GUI-szál vizsgálta"
+        )
+        assert max_gap_ms < 200, (
+            f"a mentés-előtti mappák ellenőrzése {max_gap_ms:.0f} ms-re állította "
+            "meg az eseményhurkot"
+        )
+        assert var_feltetelre(
+            qt_app, lambda: controller.savedBackupRevision > revision, 3.0
+        ), "a háttér-cache befejezése nem értesítette a QML-kötést"
+        beat_timer.stop()
 
     def test_a_befejezett_mentes_es_visszaallitas_leptet_a_mentettseg_szamlalot(
         self, controller, qt_app, library

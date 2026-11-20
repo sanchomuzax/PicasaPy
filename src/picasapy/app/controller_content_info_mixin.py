@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import threading
 
-from PySide6.QtCore import QLocale, QMetaObject, Qt, Slot
+from PySide6.QtCore import QLocale, QMetaObject, Qt, Signal, Slot
 from pathlib import Path
 from picasapy.halozati_ut import fajlrendszer_gyoker, halozati_gyoker
 from picasapy.ini import load_or_empty
@@ -34,6 +34,8 @@ def _halozati_utvonal(path: str) -> bool:
 
 class ContentInfoMixin:
     """Mappaleírások és a kijelölt képek QML-információi."""
+
+    networkPropertiesChanged = Signal()
 
     @staticmethod
     def _read_folder_description(folder_path: str) -> str:
@@ -101,7 +103,9 @@ class ContentInfoMixin:
         current = getattr(self, "_current_folder", "")
         if current in results:
             self._folder_description = results[current]
-            self.statusChanged.emit()
+            # A látható mappaleírás a feed modelljén át frissül. A globális
+            # statusChanged több tucat, a nézőben is használt kötést
+            # újraértékeltetne egy háttérből érkező szövegérték miatt.
         if results:
             self.feedChanged.emit()
 
@@ -155,14 +159,17 @@ class ContentInfoMixin:
             return []
         photo = photos[row]
         contacts = central_contacts_path(self._db_path)
-        if halozati_gyoker(photo.folder_path) is not None and photo.kind == "photo":
+        if _halozati_utvonal(photo.folder_path) and photo.kind == "photo":
             path = Path(photo.folder_path) / photo.name
             details = _cached_exif_details(path)
             if details is None:
                 self._queue_network_exif_read(path)
                 details = EMPTY_EXIF_DETAILS
+            from .network_ini_document_cache import network_ini_document
+
+            _network, ini_document = network_ini_document(self, photo.folder_path)
             entries = formatting_properties._properties_entries_with_details(
-                photo, QLocale(), formatting.fordit, contacts, details
+                photo, QLocale(), formatting.fordit, contacts, details, ini_document
             )
         else:
             entries = formatting.properties_entries(
@@ -199,10 +206,18 @@ class ContentInfoMixin:
 
     @Slot()
     def _emit_network_properties_changed(self) -> None:
-        """Az EXIF-cache változása újraértékelteti a panel meglévő kötését."""
-        model = getattr(self, "_photos", None)
-        if model is not None:
-            model.revisionChanged.emit()
+        """A hálózati olvasó-cache-ek frissítése után újraértékeli a kötéseket."""
+        from .network_folder_file_cache import apply_network_folder_file_cache
+        from .network_ini_document_cache import apply_network_ini_document_results
+        from .network_text_layer_cache import apply_network_text_layer_results
+
+        apply_network_folder_file_cache(self)
+        apply_network_ini_document_results(self)
+        apply_network_text_layer_results(self)
+        apply_writability = getattr(self, "_apply_network_irhatosag", None)
+        if apply_writability is not None:
+            apply_writability()
+        self.networkPropertiesChanged.emit()
 
     @Slot(int, result=str)
     def viewerInfo(self, row: int) -> str:

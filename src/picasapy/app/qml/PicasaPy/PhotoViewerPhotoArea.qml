@@ -145,9 +145,20 @@ Item {
         panel: photoArea.hostEditorPanel
     }
 
-    PhotoViewerStraightenGrid {
-        photoArea: photoArea
-        editorToolBar: editorToolBar
+    Loader {
+        id: straightenGridLoader
+        property var hostPhotoArea: photoArea
+        property var hostEditorToolBar: editorToolBar
+        active: photoArea.hostViewer.visible
+                && photoArea.hostEditorPanel.tiltActive
+                && photoArea.hostEditorPanel.activeTab === 0
+                && !photoArea.hostViewer.isCurrentVideo
+        sourceComponent: Component {
+            PhotoViewerStraightenGrid {
+                photoArea: straightenGridLoader.hostPhotoArea
+                editorToolBar: straightenGridLoader.hostEditorToolBar
+            }
+        }
     }
 
     // GPU élő-előnézet (#22): a `fokuszKep` FÖLÖTT (#3755:
@@ -183,6 +194,7 @@ Item {
         cache: false
         source: photoArea.hostViewer.gpuFinetuneEligible
                 ? photoArea.hostEditCtl.gpuLutSource : ""
+        asynchronous: Qt.platform.pluginName !== "offscreen"
     }
     PhotoViewerGpuFinetune {
         id: gpuFinetuneVago

@@ -11,6 +11,7 @@ import numpy as np
 from PySide6.QtCore import QObject, QPointF
 from PySide6.QtGui import QImage
 import pytest
+from tests.support.varakozas import var_feltetelre
 
 from picasapy.ini.rect64 import Rect64, encode_rect64
 
@@ -25,7 +26,8 @@ def _rgb_tomb(image: QImage) -> np.ndarray:
     ).copy()
 
 
-def test_viewer_renders_only_named_face(qml_app, qt_app, tmp_path):
+@pytest.mark.parametrize("height_delta", [-5, 0, 5])
+def test_viewer_renders_only_named_face(qml_app, qt_app, tmp_path, height_delta):
     named = encode_rect64(Rect64(0.08, 0.12, 0.28, 0.40))
     ignored = encode_rect64(Rect64(0.38, 0.12, 0.58, 0.40))
     zero_contact = encode_rect64(Rect64(0.68, 0.12, 0.88, 0.40))
@@ -40,6 +42,13 @@ def test_viewer_renders_only_named_face(qml_app, qt_app, tmp_path):
         encoding="utf-8",
     )
     window, _controller, _engine = qml_app
+    vart_magassag = int(window.property("height")) + height_delta
+    window.setProperty("height", vart_magassag)
+    assert var_feltetelre(
+        qt_app,
+        lambda: int(window.property("height")) == vart_magassag,
+        3.0,
+    ), "a nézőablak magassága nem állt be"
     window.setProperty("viewerOpen", True)
     viewer = window.findChild(QObject, "photoViewer")
     viewer.setProperty("currentIndex", 0)
@@ -62,9 +71,9 @@ def test_viewer_renders_only_named_face(qml_app, qt_app, tmp_path):
     # A #4572 referenciájának keretszíne #d0d1d0. A fénykép tesztképe piros,
     # így a halványszürke tartomány csak a megjelenített kerethez tartozik.
     pale_gray = (
-        (np.abs(layer[:, :, 0].astype(np.int16) - 208) <= 24)
-        & (np.abs(layer[:, :, 1].astype(np.int16) - 209) <= 24)
-        & (np.abs(layer[:, :, 2].astype(np.int16) - 208) <= 24)
+        (np.abs(layer[:, :, 0].astype(np.int16) - 208) <= 8)
+        & (np.abs(layer[:, :, 1].astype(np.int16) - 209) <= 8)
+        & (np.abs(layer[:, :, 2].astype(np.int16) - 208) <= 8)
     ).astype(np.uint8)
     _component_count, _labels, stats, _centers = cv2.connectedComponentsWithStats(
         pale_gray, connectivity=8

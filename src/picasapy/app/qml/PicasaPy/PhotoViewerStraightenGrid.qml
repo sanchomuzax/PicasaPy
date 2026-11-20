@@ -90,6 +90,8 @@ Item {
     }
 
     function frissitGeometria() {
+        if (!parent || !photoArea || !photoArea.fokuszKep)
+            return
         var kep = photoArea.fokuszKep
         if (kep.paintedWidth <= 0 || kep.paintedHeight <= 0)
             return
@@ -159,7 +161,7 @@ Item {
             verticalAlignment: Image.AlignTop
             smooth: false
             cache: false
-            asynchronous: false
+            asynchronous: Qt.platform.pluginName !== "offscreen"
         }
     }
     // A gombok bal oldalán megmarad a háló, a résen nem.
@@ -184,7 +186,7 @@ Item {
             verticalAlignment: Image.AlignTop
             smooth: false
             cache: false
-            asynchronous: false
+            asynchronous: Qt.platform.pluginName !== "offscreen"
         }
     }
     // A gombok jobb oldalán megmarad a háló.
@@ -210,7 +212,7 @@ Item {
             verticalAlignment: Image.AlignTop
             smooth: false
             cache: false
-            asynchronous: false
+            asynchronous: Qt.platform.pluginName !== "offscreen"
         }
     }
     // Alsó sáv: a gombpár alatti teljes képterület.
@@ -237,7 +239,7 @@ Item {
             verticalAlignment: Image.AlignTop
             smooth: false
             cache: false
-            asynchronous: false
+            asynchronous: Qt.platform.pluginName !== "offscreen"
         }
     }
     Connections {

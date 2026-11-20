@@ -6,9 +6,10 @@ from math import sqrt
 from pathlib import Path
 from statistics import median
 
+import pytest
 from PySide6.QtCore import QObject, QPointF, QRect, Qt
 from PySide6.QtGui import QColor, QImage, QPainter
-from PySide6.QtTest import QTest
+from PySide6.QtTest import QSignalSpy, QTest
 from tests.support.varakozas import var_feltetelre
 from tests.app.qml_functional._kiegyenesites_helpers_4058 import (
     _felvetel,
@@ -16,6 +17,7 @@ from tests.app.qml_functional._kiegyenesites_helpers_4058 import (
     _kep_betoltve,
     _pont,
     _tilt_huzasa_egerrel,
+    _uj_elonezetre_var,
 )
 
 
@@ -241,7 +243,13 @@ def test_kiegyenesites_megse_visszaallitja_a_megnyitaskori_munkamenetet(
     kep_nyitaskor = _felvetel(window, tmp_path / "tilt-nyitva.png")
     racs.setProperty("visible", True)
 
-    _tilt_huzasa_egerrel(window, qt_app, slider)
+    _tilt_huzasa_egerrel(
+        window,
+        qt_app,
+        slider,
+        preview_image=image,
+        preview_controller=edit_controller,
+    )
 
     racs.setProperty("visible", False)
     for _ in range(5):
@@ -249,7 +257,19 @@ def test_kiegyenesites_megse_visszaallitja_a_megnyitaskori_munkamenetet(
     kep_huzas_utan = _felvetel(window, tmp_path / "tilt-huzas-utan.png")
     racs.setProperty("visible", True)
 
+    megse_render = QSignalSpy(edit_controller._previewRendered)
+    megse_render_elotte = megse_render.count()
+    forras_elotte = str(edit_controller.property("previewSource"))
     _kattint(window, _item(window, "tiltCancelButton"), qt_app)
+    _uj_elonezetre_var(
+        edit_controller,
+        image,
+        qt_app,
+        megse_render,
+        megse_render_elotte,
+        forras_elotte,
+        "a tilt-előnézet elvetése",
+    )
     for _ in range(8):
         qt_app.processEvents()
     kep_megse_utan = _felvetel(window, tmp_path / "tilt-megse-utan.png")
@@ -536,13 +556,14 @@ def test_kiegyenesites_nyitva_a_referencia_szerint_szurkit_es_elrejti_a_visszavo
     )
 
 
+@pytest.mark.parametrize("height_delta", [-5, 0, 5])
 def test_kiegyenesites_aa_fokuszcsere_visszarajzolja_a_mentett_fokepet(
-    qml_app_negyzet_kepek, qt_app, tmp_path
+    qml_app_negyzet_kepek, qt_app, tmp_path, height_delta
 ):
     """#4058: azonos láncú A/B-cserénél is frissüljön a főfél képe."""
     window, controller, _ = qml_app_negyzet_kepek
     _forrasok(controller, negyedes=True)
-    _beallit_ablak(window, qt_app)
+    _beallit_ablak(window, qt_app, (ABLAK[0], ABLAK[1] + height_delta))
     viewer = _nezobe_lep(window, qt_app)
     photos = viewer.property("photosModel")
     edit_controller = viewer.property("editCtl")
@@ -607,11 +628,23 @@ def test_kiegyenesites_aa_fokuszcsere_visszarajzolja_a_mentett_fokepet(
     assert bal_huzas_diff > 0, "az aa-fél képe nem változott a valódi húzásra"
     grid.setProperty("visible", True)
 
-    # rontás-kontroll: javítás nélkül ezen az úton 16 082 képpont tért el;
-    # az azonos mentett láncok miatt a swapAaFocus korai no-opja nem rajzolt.
+    # CI-rontás-kontroll: a korábbi felvétel 14 390 képponttal tért el,
+    # mert a fókuszcsere új előnézete még nem készült el a mintavételkor.
+    jobb_render = QSignalSpy(edit_controller._previewRendered)
+    jobb_render_elotte = jobb_render.count()
+    jobb_forras_elotte = image_jobb.property("source").toString()
     _kattint(window, _item(window, "viewerSwapFocus"), qt_app)
     assert panel.property("tiltActive") is False
     assert viewer.property("aktivOldal") == "jobb"
+    _uj_elonezetre_var(
+        edit_controller,
+        image_jobb,
+        qt_app,
+        jobb_render,
+        jobb_render_elotte,
+        jobb_forras_elotte,
+        "az aa-fókusz visszaállítása",
+    )
     fokusz_utan = _felvetel_kirajzolas_utan(
         window, qt_app, tmp_path / "aa-fokuszcsere-utan.png"
     )
@@ -684,7 +717,13 @@ def test_kiegyenesites_elonezet_elveszik_lapozaskor_es_bezaraskor(
     megnyitaskori = _felvetel(window, tmp_path / "tilt-nezo-bezaras-elott.png")
     grid.setProperty("visible", True)
 
-    _tilt_huzasa_egerrel(window, qt_app, _item(window, "tiltSlider"))
+    _tilt_huzasa_egerrel(
+        window,
+        qt_app,
+        _item(window, "tiltSlider"),
+        preview_image=image,
+        preview_controller=edit_controller,
+    )
     grid.setProperty("visible", False)
     for _ in range(5):
         qt_app.processEvents()
@@ -695,7 +734,20 @@ def test_kiegyenesites_elonezet_elveszik_lapozaskor_es_bezaraskor(
     assert edit_controller.property("redoAction") == ""
     assert not ini_path.exists()
 
+    elonezetek = QSignalSpy(edit_controller._previewRendered)
+    elonezetek_szama = elonezetek.count()
+    forras_elotte = str(edit_controller.property("previewSource"))
     viewer.setProperty("currentIndex", 1)
+    image = _item(window, "viewerImage")
+    _uj_elonezetre_var(
+        edit_controller,
+        image,
+        qt_app,
+        elonezetek,
+        elonezetek_szama,
+        forras_elotte,
+        "lapozás az első képről",
+    )
     for _ in range(8):
         qt_app.processEvents()
     assert viewer.property("currentIndex") == 1
@@ -704,12 +756,36 @@ def test_kiegyenesites_elonezet_elveszik_lapozaskor_es_bezaraskor(
     assert edit_controller.property("undoAction") == ""
     assert not ini_path.exists()
 
+    elonezetek_szama = elonezetek.count()
+    forras_elotte = str(edit_controller.property("previewSource"))
     viewer.setProperty("currentIndex", 0)
+    image = _item(window, "viewerImage")
+    _uj_elonezetre_var(
+        edit_controller,
+        image,
+        qt_app,
+        elonezetek,
+        elonezetek_szama,
+        forras_elotte,
+        "visszalapozás az első képre",
+    )
     for _ in range(8):
         qt_app.processEvents()
     assert viewer.property("currentIndex") == 0
     _kattint(window, _item(window, "editToolTilt"), qt_app)
-    grid.setProperty("visible", False)
+    image = _item(window, "viewerImage")
+    grid = _item(window, "straightenGridOverlay")
+    # A Loader új QML-rácsot hozott létre lapozás után; a `visible` kötést
+    # C++-oldali setProperty nem oldja fel, ezért a pixeltartomány méréséhez
+    # a rács átlátszatlanságát kapcsoljuk ki.
+    aktiv_racsok = [
+        elem
+        for elem in window.findChildren(QObject, "straightenGridOverlay")
+        if elem.property("visible") is True
+    ]
+    assert aktiv_racsok, "a kiegyenesítés aktív rácsa nem található"
+    grid = aktiv_racsok[-1]
+    grid.setProperty("opacity", 0.0)
     for _ in range(5):
         qt_app.processEvents()
     lapozas_utan = _felvetel(window, tmp_path / "tilt-lapozas-vissza-utan.png")
@@ -722,9 +798,15 @@ def test_kiegyenesites_elonezet_elveszik_lapozaskor_es_bezaraskor(
     assert edit_controller.property("redoAction") == ""
     assert not ini_path.exists()
 
-    grid.setProperty("visible", True)
-    _tilt_huzasa_egerrel(window, qt_app, _item(window, "tiltSlider"))
-    grid.setProperty("visible", False)
+    grid.setProperty("opacity", 1.0)
+    _tilt_huzasa_egerrel(
+        window,
+        qt_app,
+        _item(window, "tiltSlider"),
+        preview_image=image,
+        preview_controller=edit_controller,
+    )
+    grid.setProperty("opacity", 0.0)
     for _ in range(5):
         qt_app.processEvents()
     masodik_huzas = _felvetel(window, tmp_path / "tilt-bezaras-masodik-huzas.png")
@@ -738,7 +820,6 @@ def test_kiegyenesites_elonezet_elveszik_lapozaskor_es_bezaraskor(
 
     _nezobe_lep(window, qt_app)
     assert _item(window, "viewerEditorPanel").property("tiltActive") is False
-    grid.setProperty("visible", False)
     for _ in range(5):
         qt_app.processEvents()
     bezaras_utan = _felvetel(window, tmp_path / "tilt-nezo-bezaras-ujranyitas-utan.png")

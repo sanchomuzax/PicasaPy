@@ -19,7 +19,6 @@ from .edit_controller_shared import (
     _MOD_NINCS_KITOLTES,
     _argb_to_rgb,
     alignment_name,
-    default_family,
     _log,
     encode_rect64,
     is_folder_writable,
@@ -82,7 +81,7 @@ class EditControllerSaveMixin:
         )
         self._text_opacity = _DEFAULT_TEXT_OPACITY
         self._text_family = (
-            loaded.font if loaded is not None and loaded.font else default_family()
+            loaded.font if loaded is not None and loaded.font else None
         )
         self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
         self._text_size_edited = False

@@ -107,6 +107,14 @@ function _betolt(kep, par) {
     kep.source = par.url
 }
 
+function _hasVisiblePreview(editController) {
+    if (!editController || editController.previewSource === "")
+        return false
+    var networkFolder = typeof controller !== "undefined"
+            && controller && controller.currentFolderOnNetwork === true
+    return !networkFolder || editController.previewReady
+}
+
 //: #3877: a (forrás, méret) pár EGY kiértékelésben, ugyanabból a sorból
 //: - a kötött `abMasikSor`/`isCurrentVideo` helyett a friss függvényt
 //: és a modellt kérdezzük (#218), különben a pár egyik fele a régi, a
@@ -129,10 +137,9 @@ function _videoE() {
 function _photoPar(sor) {
     var url = viewer._videoE() ? ""
         : (viewer.layoutMode === "1up" || viewer.aktivOldal === "jobb"
-           ? (viewer.editCtl && viewer.editCtl.previewSource !== ""
+           ? (_hasVisiblePreview(viewer.editCtl)
               ? viewer.editCtl.previewSource : viewer.urlAt(sor))
-           : (viewer.masodikEditCtl
-              && viewer.masodikEditCtl.previewSource !== ""
+           : (_hasVisiblePreview(viewer.masodikEditCtl)
               ? viewer.masodikEditCtl.previewSource : viewer.urlAt(sor)))
     return viewer._par(sor, url)
 }

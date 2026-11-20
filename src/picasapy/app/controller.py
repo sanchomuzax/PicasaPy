@@ -296,8 +296,25 @@ class AppController(
         ÉS az index azóta nem változott (fájl-pecsét, 1-2 stat() hívás),
         a mappaváltás CSAK görgetés — a feed tartalma nem változik, ezért
         nem olvassuk újra a teljes indexet (50k fotónál több száz ms)."""
+        sync_target_active = (
+            (
+                getattr(self, "_sync_running", False)
+                or getattr(self, "_import_visible", False)
+                or getattr(self, "_import_forced", False)
+            )
+            and self._view_mode[0] == "folder"
+            and self._root_for_folder(folder_path) is not None
+        )
+        if sync_target_active:
+            # A QML-néző beginEdit-je a láthatóságváltás után érkezik; a sync
+            # befejezése néhány eseményen belül megelőzheti ezt a jelzést.
+            # Akkor is kihagyjuk a feed újraolvasását, ha a most figyelt
+            # mappából még egyetlen sor sem jutott az indexbe: a következő
+            # progressz- vagy záró frissítés hozza be az új képeket.
+            self._sync_reload_grace_until = time.monotonic() + 3.0
         already_in_feed = (
-            self._view_mode[0] == "folder"
+            not sync_target_active
+            and self._view_mode[0] == "folder"
             and bool(self._view_mode[1])
             and not self._filter_active
             and self._feed_stamp is not None
@@ -325,8 +342,10 @@ class AppController(
         if getattr(self, "_defer_initial_feed", False):
             self._deferred_folder_activation = folder_path
             return
-        if already_in_feed:
-            # currentFolder/folderDescription frissült — jelzés a QML-nek
+        if already_in_feed or sync_target_active:
+            # currentFolder/folderDescription frissült — jelzés a QML-nek.
+            # Aktív szinkron alatt a teljes feed-frissítés a következő
+            # progressz- vagy syncFinished-jel dolga.
             self.statusChanged.emit()
             self.folderActivated.emit(folder_path)
             return

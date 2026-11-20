@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QTimer, Slot
 from picasapy.index import open_index
 from picasapy.index.dedup_folders import merge_duplicate_folders
 from picasapy.paths import normalize_path, path_key
@@ -77,10 +77,11 @@ class _LibraryActivityMixin:
         A panel automatikusan akkor jelenik meg, ha a szkennelés érdemi:
         új gyökér importja (forced), vagy új fotók kerültek elő — a csendes,
         mindent-kihagyó 5 perces rescan nem villogtatja. A rács fokozatos
-        frissítése ritkított (max ~1,5 mp-enként), és a meglévő
-        megőrzött-görgetésű újratöltési úton fut, nem kötegenkénti
-        modell-resettel."""
-        if self._root_for_folder(folder) is None:
+            frissítése ritkított (max ~1,5 mp-enként), és csak a feedet
+            frissíti. A mappafa és az oldalsáv a sync végén töltődik újra,
+            így egy progress-jelzés nem indít teljes oldalsáv-bejárást."""
+        root = self._root_for_folder(folder)
+        if root is None:
             return  # #216: eltávolított gyökér késői jelzése — ignorálva
         self._import_folder = folder
         self._import_done = done
@@ -90,14 +91,49 @@ class _LibraryActivityMixin:
             self._import_visible = True
         self.importChanged.emit()
         now = time.monotonic()
+        current_root = self._root_for_folder(
+            getattr(self, "_current_folder", "")
+        )
         if (
-            new_photos > self._import_new_at_reload
+            getattr(self, "_sync_reload_grace_until", 0.0) > 0
+            and current_root == root
+        ):
+            # A mappába belépés után a teljes szkennelés percekig tarthat;
+            # a záró feed-újraépítés ne versenyezzen a felhasználóval, aki az
+            # első megjelent képet nyitja meg. A progressz újraindítja a
+            # 3 másodperces türelmi időt, így a tényleges befejezés után is
+            # megmarad egy eseményköri rés a néző megnyitására.
+            self._sync_reload_grace_until = now + 3.0
+            if getattr(self, "_deferred_sync_reload", False):
+                QTimer.singleShot(3000, self._finish_sync_reload_grace)
+        if (
+            done != total
+            and new_photos > self._import_new_at_reload
             and now - self._import_last_reload >= _legacy()._PROGRESS_RELOAD_MIN_S
         ):
             self._import_last_reload = now
             self._import_new_at_reload = new_photos
-            # a már feldolgozott (commitolt) mappák fotói jelenjenek meg
-            self._reload(preserve_scroll=True)
+            edit_controller = getattr(self, "_edit_controller_for_sync", None)
+            editing_photo = getattr(edit_controller, "_image_path", None)
+            editing_current_root = (
+                current_root == root
+                and edit_controller is not None
+                and bool(getattr(edit_controller, "_photo_id", ""))
+                and editing_photo is not None
+                and self._root_for_folder(str(editing_photo)) == root
+            )
+            if editing_current_root:
+                # A megnyitott képet fedő könyvtár-feed rejtett; minden
+                # progressz-jelre történő újraépítése csak a néző mellett
+                # futó GUI-munkát növelné. A végső sync-frissítés vagy a
+                # nézőből visszatérés behozza az elmaradt változást.
+                self._deferred_sync_reload = True
+            else:
+                # A már feldolgozott (commitolt) mappák fotói jelenjenek meg.
+                # A teljes _reload az oldalsáv ini-alapú tartalmát is újra
+                # bejárná minden 1,5 mp-es progresszjelre; a mappafa és az
+                # oldalsáv frissítését a sync végi útvonal végzi.
+                self._refresh_view()
 
     @Slot()
     def _on_import_finished(self) -> None:

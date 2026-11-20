@@ -40,6 +40,7 @@ import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtTest import QTest
+from support.varakozas import var_feltetelre
 
 #: A menütételek `objectName`-jei (a #1575 névsorából).
 TETEL_SZEPIA = "menuViewDisplayModeSepia"
@@ -162,6 +163,9 @@ def savos(qml_app, qt_app, tmp_path):
 
     edit_controller.beginEdit("sav", str(path))
     qt_app.processEvents()
+    assert var_feltetelre(
+        qt_app, lambda: edit_controller.previewReady, HATARIDO
+    ), "a nagy néző szűretlen előnézete nem készült el"
 
     def keres() -> set[tuple[int, int, int]]:
         return _szinek(_tombbe(provider.requestImage("sav", None, None)))

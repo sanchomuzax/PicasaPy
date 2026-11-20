@@ -21,6 +21,33 @@ Item {
     readonly property var drawerShortcutSequence:
         toggleEditorDrawerShortcut.sequence
 
+    Connections {
+        target: editWorkflow.hostEditController
+        function onTextFontCatalogueChanged() {
+            editWorkflow.syncTextFontCatalogue()
+        }
+    }
+
+    Connections {
+        target: editWorkflow.editorPanel
+        function onTextActiveChanged() {
+            if (editWorkflow.editorPanel.textActive)
+                editWorkflow.syncTextFontCatalogue()
+        }
+    }
+
+    function syncTextFontCatalogue() {
+        if (!hostEditController || !editorPanel || !editorPanel.textActive)
+            return
+        if (editorPanel.fontFamilyCatalogue.length === 0) {
+            var families = hostEditController.textFontFamilies
+            if (families.length === 0)
+                return
+            editorPanel.fontFamilyCatalogue = families.slice()
+        }
+        editorPanel.textFontFamily = hostEditController.textFontFamily
+    }
+
     function toggleEditorDrawer() {
         if (typeof controller !== "undefined" && controller
                 && controller.setEditorControlsVisible !== undefined) {
@@ -554,8 +581,13 @@ function syncTiltSlider() {
     // tiltParam a mentett döntés-paraméter, 0.0 = nincs aktív tilt
     editorPanel.straightenActive = hostEditController.tiltParam !== 0
 }
-function syncPanelFromController() {
+function syncPanelFromController(changedProperties) {
     if (!hostEditController) return
+    function changed(name) {
+        return changedProperties === undefined
+            || changedProperties === null
+            || changedProperties.indexOf(name) !== -1
+    }
     // #445: a panel `redeyeActive`-ja a Vágás/Retusálás mintájára
     // ESZKÖZ-nyitást jelent (nem a `redeye` réteg meglétét) - ezért NEM
     // a vezérlő `hasSavedRedeye`-jének tükre; azt onnan felülírni
@@ -564,43 +596,71 @@ function syncPanelFromController() {
     // névazonosság félrevitte a #1485-öt, ezért kapott beszédes nevet.
     // #448: a tilt-szűrő a láncban változhatott (pl. a felhasználó
     // épp most alkalmazta a Kiegyenesítést) - a figyelmeztetés kövesse
-    editorPanel.straightenActive = hostEditController.tiltParam !== 0
+    if (changed("tiltParam"))
+        editorPanel.straightenActive = hostEditController.tiltParam !== 0
     // egygombos javítások (#116): "nyomható-e" tükrözése - a gomb
     // tiltott, amíg ugyanez a szűrő a lánc utolsó eleme
-    editorPanel.enhanceEnabled = hostEditController.enhanceEnabled
-    editorPanel.autolightEnabled = hostEditController.autolightEnabled
-    editorPanel.autocolorEnabled = hostEditController.autocolorEnabled
-    // Finomhangolás-csúszkák (#20): a panel binding már frissítette a
-    // fillLight/highlights/shadows/colorTemp értékeket a kontrollerből -
-    // ez a hívás azokat suppress mellett a csúszkákba is beírja
-    editorPanel.syncFinetuneSliders()
+    if (changed("enhanceEnabled"))
+        editorPanel.enhanceEnabled = hostEditController.enhanceEnabled
+    if (changed("autolightEnabled"))
+        editorPanel.autolightEnabled = hostEditController.autolightEnabled
+    if (changed("autocolorEnabled"))
+        editorPanel.autocolorEnabled = hostEditController.autocolorEnabled
+    // A toolsChanged gyűjtőjel a rejtett panelek kötéseit is újraértékeltetné.
+    // A Finomhangolás csúszkáit csak a saját fülükön kell szinkronizálni.
+    if (editorPanel.activeTab === 1
+            && (changed("fillLight") || changed("highlights")
+                || changed("shadows") || changed("colorTemp")
+                || changed("neutralColor")))
+        editorPanel.syncFinetuneSliders()
     // #450: "Remove all existing text" gomb tiltási állapota
-    editorPanel.hasTextOverlay = hostEditController.hasTextOverlay
-    editorPanel.textOverlayVisible = hostEditController.textOverlayVisible
-    if (editorPanel.textActive)
-        editorPanel.textDraftContent = hostEditController.textDraft
-    // #450: szöveg-stílus - kitöltés+körvonal szín, körvonal-vastagság,
-    // kitöltés ki/be, átlátszóság
+    if (changed("hasTextOverlay"))
+        editorPanel.hasTextOverlay = hostEditController.hasTextOverlay
+    if (changed("textOverlayVisible"))
+        editorPanel.textOverlayVisible = hostEditController.textOverlayVisible
+    if (editorPanel.textActive) {
+        if (changed("textDraft"))
+            editorPanel.textDraftContent = hostEditController.textDraft
+        // #450: szöveg-stílus - kitöltés+körvonal szín, körvonal-vastagság,
+        // kitöltés ki/be, átlátszóság
+        if (changed("textFillColor"))
+            editorPanel.textFillColor = hostEditController.textFillColor
+        if (changed("textOutlineColor"))
+            editorPanel.textOutlineColor = hostEditController.textOutlineColor
+        if (changed("textOutlineThickness"))
+            editorPanel.textOutlineThickness = hostEditController.textOutlineThickness
+        if (changed("textFillEnabled"))
+            editorPanel.textFillEnabled = hostEditController.textFillEnabled
+        if (changed("textOpacity"))
+            editorPanel.textOpacity = hostEditController.textOpacity
+    }
     // #464: a Finomhangolás fül pipettája melletti színminta
-    editorPanel.neutralColor = hostEditController.neutralColor
-    editorPanel.textFillColor = hostEditController.textFillColor
-    editorPanel.textOutlineColor = hostEditController.textOutlineColor
-    editorPanel.textOutlineThickness = hostEditController.textOutlineThickness
-    editorPanel.textFillEnabled = hostEditController.textFillEnabled
-    editorPanel.textOpacity = hostEditController.textOpacity
+    if (changed("neutralColor")
+            && (editorPanel.activeTab === 1 || editorPanel.neutralPickerActive))
+        editorPanel.neutralColor = hostEditController.neutralColor
     // #450 (2. lépcső): tipográfia - betűcsalád, méret, B/I/U, igazítás
-    // #4966: a katalógus állandó, ezért egyszer kapja meg. A másolat
-    // JS-tömböt ad: a nyers hozzárendelés Python-hoz kötött QVariant-ot
-    // tárolna, és minden későbbi olvasás újrahívná a getter-t.
-    if (editorPanel.fontFamilyCatalogue.length === 0)
-        editorPanel.fontFamilyCatalogue = hostEditController.textFontFamilies.slice()
-    editorPanel.textFontFamily = hostEditController.textFontFamily
-    editorPanel.textFontSize = hostEditController.textFontSize
-    editorPanel.fontSizeChoices = hostEditController.fontSizeChoices
-    editorPanel.textBold = hostEditController.textBold
-    editorPanel.textItalic = hostEditController.textItalic
-    editorPanel.textUnderline = hostEditController.textUnderline
-    editorPanel.textAlign = hostEditController.textAlign
+    // A betűcsalád-katalógus csak a szöveg-eszköz megnyitásakor töltődik be;
+    // a képnéző megnyitása ne építsen QML-listát az összes rendszerbetűből.
+    if (editorPanel.textActive
+            && (changed("textFontFamily") || changed("textFontSize")
+                || changed("textBold") || changed("textItalic")
+                || changed("textUnderline") || changed("textAlign")))
+        syncTextFontCatalogue()
+    if (editorPanel.textActive) {
+        if (changed("textFontFamily"))
+            editorPanel.textFontFamily = hostEditController.textFontFamily
+        if (changed("textFontSize"))
+            editorPanel.textFontSize = hostEditController.textFontSize
+        editorPanel.fontSizeChoices = hostEditController.fontSizeChoices
+        if (changed("textBold"))
+            editorPanel.textBold = hostEditController.textBold
+        if (changed("textItalic"))
+            editorPanel.textItalic = hostEditController.textItalic
+        if (changed("textUnderline"))
+            editorPanel.textUnderline = hostEditController.textUnderline
+        if (changed("textAlign"))
+            editorPanel.textAlign = hostEditController.textAlign
+    }
 }
 onVisibleChanged: {
     if (visible) {
@@ -673,6 +733,10 @@ onCurrentIndexChanged: {
 Connections {
     target: hostEditController
     function onToolsChanged() { viewer.syncPanelFromController() }
+    function onEditSessionStarted() { viewer.syncPanelFromController() }
+    function onToolStateChanges(changedProperties) {
+        viewer.syncPanelFromController(changedProperties)
+    }
 }
 // Vágás eszköz nyitása/zárása (#71): nyitáskor a lánc crop64 nélküli
 // (teljes, vágatlan) előnézete + a meglévő kijelölés betöltése; záráskor

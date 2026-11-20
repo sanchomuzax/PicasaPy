@@ -24,6 +24,7 @@ from picasapy.collage.themes import BORDER_THEMES, COLLAGE_THEMES
 from picasapy.collage.win_paths import decode_cxf_path
 
 from .collage_model import CollageNode
+from .network_folder_file_cache import network_folder_file_names
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,9 @@ class CollageSaveOpenMixin:
         kollázsnál jön elő). A tulajdonos szava: *„Ez a gomb mindig
         megjelenik, ha megnyitom a kollázst."* - tehát nem a létrehozás
         emléke kapcsolja be, hanem a fájl mellett álló projektfájl."""
+        cached = self._network_project_file_exists(image_path, ".cxf")
+        if cached is not None:
+            return cached
         return self._collage_project_path(image_path) is not None
 
     @Slot(str, result=bool)
@@ -53,7 +57,31 @@ class CollageSaveOpenMixin:
         Erre kötődik a felület három következménye: a „Létrehozás" gomb
         megjelenése, a „Kollázs szerkesztése" gomb piszkozaton is, és a
         megosztás/nyomtatás tilalma."""
+        network, names = network_folder_file_names(self, image_path)
+        if network:
+            if names is None:
+                return False
+            image = Path(image_path)
+            return (
+                image.name.casefold() in names
+                and image.with_suffix(".cxf").name.casefold() not in names
+                and "autosave.cxf" in names
+            )
         return is_draft_image(image_path)
+
+    def _network_project_file_exists(
+        self, image_path: str, suffix: str
+    ) -> bool | None:
+        network, names = network_folder_file_names(self, image_path)
+        if not network:
+            return None
+        if names is None:
+            return False
+        image = Path(image_path)
+        return (
+            image.name.casefold() in names
+            and image.with_suffix(suffix).name.casefold() in names
+        )
 
     @Slot(str)
     def openCollageProject(self, image_path: str) -> None:  # noqa: N802

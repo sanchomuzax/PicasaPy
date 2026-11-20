@@ -111,7 +111,9 @@ _EREDETI_FORRAS_SHA256 = {
     "_film_beallitas": "88dd3128f0e2859ed944a579470970f2ccb5cd423e2cfbbececcdc220f2da064",
     "_film_projekt": "d7e5ec63fc03b569e4a61f770969c14a9faa319c44ba1668244c7e2e657f4c59",
     "_film_projekt_utja": "08b6fb4629cb37d23a807533cb3b25b1ceac2ee278d9dd3d8b825fa52f55196f",
-    "hasMovieProject": "e2e8da06e32800d9865c8a59aaf215f2ae1ee5f2ea6e856efa237ca2978f5976",
+    # #7244: hálózati mappán a projektfájlokat a háttérben készülő névcache-ből
+    # kérdezi le, nem végez GUI-szálas fájlrendszer-olvasást.
+    "hasMovieProject": "4e54cdfbb32f6a33687c34a510ce8824037e758fe60b48068a1ba0f3ba8f0b3e",
     "movieProject": "62282d481f1f58fca75c97cc704f55dceda2ec9685c3185f9d75f5e7078574e5",
     "exportMovie": "a8cdef85d6af3d23ed720f5948ce0d74b2230c84d8c6b25cc02a0d8e32dd622d",
 }

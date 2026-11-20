@@ -377,6 +377,13 @@ def _build_qml_app(qt_app, tmp_path):
     startup_status = StartupStatus()
     startup_status.finish()
     engine.rootContext().setContextProperty("startupStatus", startup_status)
+    # #7244: az éles alkalmazás első képkocka után, a mappabeolvasás előtt
+    # előtölti a render-csomagot. A teszt saját QQmlApplicationEngine-t épít,
+    # ezért ezt az előfeltételt a QML-betöltés előtt állítsuk be; a preview
+    # worker ne importáljon szinkronon egy Qt/QML eseménykezelő útvonaláról.
+    from picasapy.lazy_import import render_elore_betolt
+
+    render_elore_betolt()
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"
     window = engine.rootObjects()[0]

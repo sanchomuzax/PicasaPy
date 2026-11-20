@@ -118,6 +118,7 @@ QuickTagsConfigDialog 1.0 QuickTagsConfigDialog.qml
 PropertiesPanel 1.0 PropertiesPanel.qml
 PeoplePanel 1.0 PeoplePanel.qml
 PeoplePanelRow 1.0 PeoplePanelRow.qml
+internal LightboxFeedNetworkActivation LightboxFeedNetworkActivation.qml
 LightboxFeed 1.0 LightboxFeed.qml
 LightboxFeedSelection 1.0 LightboxFeedSelection.qml
 LightboxFeedGroup 1.0 LightboxFeedGroup.qml
@@ -325,6 +326,7 @@ PhotoViewerCaptionFocusRelease 1.0 PhotoViewerCaptionFocusRelease.qml
 MainWindowDialogStack 1.0 MainWindowDialogStack.qml
 
 MainWindowCommands 1.0 MainWindowCommands.qml
+MainWindowPhotoSelection 1.0 MainWindowPhotoSelection.qml
 MainWindowWorkspace 1.0 MainWindowWorkspace.qml
 internal MainWindowImportActions MainWindowImportActions.qml
 MainWindowPeripheralLayers 1.0 MainWindowPeripheralLayers.qml

@@ -6,6 +6,14 @@ RowLayout {
     id: viewerRightPanels
     property var hostViewer: null
     readonly property var viewer: hostViewer
+    property int networkCacheRevision: 0
+    Connections {
+        target: typeof controller !== "undefined" ? controller : null
+        ignoreUnknownSignals: true
+        function onNetworkPropertiesChanged() {
+            viewerRightPanels.networkCacheRevision += 1
+        }
+    }
     spacing: 0
     visible: viewer.propertiesOpen || viewer.tagsOpen
              || viewer.placesOpen || viewer.peopleOpen
@@ -14,36 +22,42 @@ RowLayout {
     // #192: Tulajdonságok-panel jobb oldalt - ugyanaz a buta
     // komponens, mint a könyvtár-nézetben (Main.qml), a nézett
     // kép adataival; a bezárás a közös kapcsolót állítja le
-    PropertiesPanel {
-        objectName: "viewerPropertiesPanel"
+    Loader {
+        objectName: "viewerPropertiesPanelLoader"
+        active: viewer.propertiesOpen && viewer.visible
         visible: viewer.propertiesOpen
         Layout.preferredWidth: 210
         Layout.minimumWidth: 160
         Layout.fillHeight: true
-        hasSelection: viewer.currentIndex >= 0
-        appController: (typeof controller !== "undefined")
-                       ? controller : null
-        selectedRows: viewer.currentIndex >= 0
-                      ? [viewer.currentIndex] : []
-        focusRow: viewer.currentIndex
-        // a photos.revision-nel együtt kötve: modell-frissüléskor
-        // (pl. forgatás, felirat-mentés) újraolvas; a controller
-        // önálló példányosításnál (tesztek) hiányozhat
-        entries: (viewer.propertiesOpen && viewer.photosModel
-                  && typeof controller !== "undefined" && controller)
-            ? (viewer.photosModel.revision,
-               controller.propertiesOf(viewer.currentIndex))
-            : []
-        onCloseRequested: viewer.zarjaAFiokot()
-        onEditTagsRequested: {
-            if (viewer.appWindow
-                    && viewer.appWindow.valtsFiokLapot !== undefined)
-                viewer.appWindow.valtsFiokLapot("tags")
-        }
-        onAdjustTimestampRequested: {
-            var row = focusRow >= 0 ? focusRow : viewer.currentIndex
-            if (row >= 0 && viewer.appWindow && viewer.appWindow.createDialogs)
-                viewer.appWindow.createDialogs.ensure().openTimestamp([row])
+        sourceComponent: PropertiesPanel {
+            objectName: "viewerPropertiesPanel"
+            visible: viewer.propertiesOpen
+            hasSelection: viewer.currentIndex >= 0
+            appController: (typeof controller !== "undefined")
+                           ? controller : null
+            selectedRows: viewer.currentIndex >= 0
+                          ? [viewer.currentIndex] : []
+            focusRow: viewer.currentIndex
+            // a photos.revision-nel együtt kötve: modellfrissüléskor
+            // (pl. forgatás, felirat-mentés) újraolvas; a controller
+            // önálló példányosításnál (tesztek) hiányozhat
+            entries: (viewer.propertiesOpen && viewer.photosModel
+                      && typeof controller !== "undefined" && controller)
+                ? (viewer.photosModel.revision,
+                   viewerRightPanels.networkCacheRevision,
+                   controller.propertiesOf(viewer.currentIndex))
+                : []
+            onCloseRequested: viewer.zarjaAFiokot()
+            onEditTagsRequested: {
+                if (viewer.appWindow
+                        && viewer.appWindow.valtsFiokLapot !== undefined)
+                    viewer.appWindow.valtsFiokLapot("tags")
+            }
+            onAdjustTimestampRequested: {
+                var row = focusRow >= 0 ? focusRow : viewer.currentIndex
+                if (row >= 0 && viewer.appWindow && viewer.appWindow.createDialogs)
+                    viewer.appWindow.createDialogs.ensure().openTimestamp([row])
+            }
         }
     }
 
@@ -172,14 +186,17 @@ RowLayout {
             uncheckedCount: pendingCount()
             sortingPercent: faceScanController
                 ? faceScanController.sortingPercent : -1
-            peopleHere: (viewer.photosModel && viewer.controllerReady)
+            peopleHere: (viewer.peopleOpen && viewer.photosModel
+                         && viewer.controllerReady)
                 ? (viewer.appWindow
                    ? viewer.appWindow.peopleFaceRevision : 0,
+                   viewerRightPanels.networkCacheRevision,
                    viewer.photosModel.revision,
                    controller.peopleOfRows(viewer.drawerRows))
                 : []
             unnamedFacesHere:
-                (viewer.photosModel && viewer.controllerReady)
+                (viewer.peopleOpen && viewer.photosModel
+                 && viewer.controllerReady)
                 ? (viewer.appWindow
                    ? viewer.appWindow.peopleFaceRevision : 0,
                    viewer.appWindow

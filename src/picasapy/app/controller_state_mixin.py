@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Property, QLocale, Slot
+from picasapy.halozati_ut import fajlrendszer_gyoker
 from picasapy.ini import RECENT_ALBUM_TOKEN, STAR_ALBUM_TOKEN
 from . import formatting
 from .search_results import groups_to_qml
@@ -86,6 +87,12 @@ class AppControllerStateMixin:
     @Property(str, notify=_Signals.statusChanged)
     def currentFolder(self):
         return self._current_folder
+
+    @Property(bool, notify=_Signals.statusChanged)
+    def currentFolderOnNetwork(self):
+        """A jelenlegi mappa hálózati fájlrendszeren van-e (#7244)."""
+        folder = self._current_folder
+        return bool(folder and fajlrendszer_gyoker(folder) is not None)
 
     @Property(str, notify=_Signals.statusChanged)
     def folderDateText(self):

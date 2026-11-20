@@ -52,6 +52,48 @@ def test_ugyanannal_az_effektnel_a_kezi_nezetvaltas_megmarad(qt_app, tmp_path):
     assert controller.selectedViewType == kezi
 
 
+def test_a_kulcs_a_betoltott_foto_mtimejat_hasznalja_stat_nelkul(
+    qt_app, tmp_path, monkeypatch
+):
+    """#7244: a szelet-kérés ne statolja a NAS-on lévő forrásképet a GUI-szálon."""
+    from pathlib import Path
+
+    from picasapy.app import effect_slice as effect_slice_module
+
+    controller = _controller(tmp_path)
+    controller._edit._photo_id = "42"
+    photo_path = Path("/slow-network-root/photo.jpg")
+    controller._photo_mtime_lookup = (
+        lambda path: 123456789 if path == str(photo_path) else None
+    )
+
+    def forbidden_mtime(path):
+        raise AssertionError(f"a GUI-szál a lassú forrásképet statolta: {path}")
+
+    monkeypatch.setattr(effect_slice_module, "_file_mtime", forbidden_mtime)
+    try:
+        controller.request("", [], 0, "", str(photo_path), "glow=1,0.5,0.5")
+
+        assert controller._pending["cacheKey"][1] == 123456789
+    finally:
+        controller.shutdown()
+
+
+def test_azonos_fuggoben_levo_kerelem_nem_ervenyteleniti_a_munkat(qt_app, tmp_path):
+    """A revíziójelzés ismétlése ne indítsa újra ugyanazt a mintaképet."""
+    controller = _controller(tmp_path)
+    try:
+        controller.request("", [], 0, "", "", "glow=1,0.5,0.5")
+        job = controller._job
+
+        controller.request("", [], 0, "", "", "glow=1,0.5,0.5")
+
+        assert controller._job == job
+        assert controller._pending["cacheKey"]
+    finally:
+        controller.shutdown()
+
+
 def test_a_foton_mert_tonusfelulet_atviteli_gorbe_nem_oszlopatlag():
     """#6536: a fotós mérés a bemenő szintenkénti kimenő átlag, nem a kép oszlopátlaga."""
     import numpy as np

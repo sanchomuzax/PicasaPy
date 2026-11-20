@@ -46,6 +46,7 @@ _EREDETI_NYILVANOS_NEVEK = {
 # `_felirat_iras` a hivatalos írási szabályokat kapta (változatlan szövegnél
 # nincs írás, írásvédett fájlnál az ini a tartalék), a `_fuggo_feliratok` új;
 # ezek lenyomata a #7027 szerinti. A többié a bontás előtti.
+# #7244: a kijelölés szövegréteg-jelzője hálózati mappán cache-ből válaszol.
 _EREDETI_FORRAS_SHA256 = {
     "hoverPreviewFileUrlAt": "d7c0de8636133f4907cea69506cfdf3ebe872ab72eefaf579b7254fdeef64522",
     "_ensure_broken_photo_wired": "09144552bde330597f10079da85ba2da1bd3fbab91261a38d8f11ca2babe34d3",
@@ -63,7 +64,7 @@ _EREDETI_FORRAS_SHA256 = {
     "toggleStar": "4b3e698bf19d889dff8da1f79f833d9b3398aeb5a1e48cc82b11cf09c42c4ebe",
     "_ensure_text_layer_clipboard": "6919ff5b531eaf9a7364df911c9080f87c4266e9eafb797f37d4718e10c197da",
     "_text_layer_value": "0abc20b5221931b3a192da9f95cd857356fda6d8bb57baee93ade5c645d6b779",
-    "hasTextLayerInSelection": "8f98039c96fdbe2955d9fe1fff7793ddfa3fa882763e8502bd0fba6523eaad56",
+    "hasTextLayerInSelection": "574369c1789ea0962a5690b8a4af97987bea5c41464a7ade2c4f27ffd9297d46",
     "hasTextLayerClipboard": "6e5ebd70ccacfba6d240550e091f4a2e8cff51f45645a75ef453cf111f1bf7b4",
     "copyTextLayer": "2bef7ea47fcd15e5f74d0169b566c242c8e1a687a9c04d188362bd5a6a817320",
     "pasteTextLayer": "a4db5b62d4af83939deaaccc3ee456e59f3f068484c13f34fd0fb49cd564a6a9",

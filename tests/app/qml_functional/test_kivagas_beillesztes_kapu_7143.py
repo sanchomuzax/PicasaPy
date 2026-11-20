@@ -290,11 +290,17 @@ class TestAzonosMappa:
         h["vezerlo"].copyFilesToClipboard([str(h["kepek"] / "a.jpg")])
         assert not _engedelyezve(h["window"], "menuEditPaste")
 
-        h["controller"].selectFolder(str(h["masik"]))
+        target = str(h["masik"])
+        # A bal oldali mappasor ugyanígy törli a régi rácskijelölést,
+        # mielőtt a vezérlő mappát vált. Enélkül a régi fókuszsor
+        # visszaállíthatja a tesztben közvetlenül beállított mappát.
+        h["window"].clearSelection()
+        h["controller"].selectFolder(target)
         assert var_feltetelre(
             h["qt_app"], lambda: _engedelyezve(h["window"], "menuEditPaste")
         ), "másik mappába lépve a Beillesztés nem éledt fel"
 
+        h["window"].clearSelection()
         h["controller"].selectFolder(str(h["kepek"]))
         assert var_feltetelre(
             h["qt_app"], lambda: not _engedelyezve(h["window"], "menuEditPaste")

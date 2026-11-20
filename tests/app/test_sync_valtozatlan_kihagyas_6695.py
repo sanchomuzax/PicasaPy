@@ -131,6 +131,34 @@ class TestValtozatlanSzinkron:
         assert racs_frissitesek == []
         assert timeline_frissitesek == []
 
+    def test_manualis_rescan_eszleli_a_fajlmodositast_azonos_mappamtimenal(
+        self, qt_app, library_setup
+    ):
+        """A kézi teljes rescan a fájl-mtime-ot is ellenőrzi a scan-ablakban."""
+        controller, _timeline, _root, folder_a, *_ = library_setup
+        fajl = folder_a / "a1.jpg"
+        sor = next(
+            index
+            for index, photo in enumerate(controller.photos.photos)
+            if photo.name == fajl.name
+        )
+        url_elotte = controller.photos.thumbUrlAt(sor)
+        mappa_stat = folder_a.stat()
+
+        make_jpeg(fajl, size=(48, 48))
+        os.utime(
+            folder_a,
+            ns=(mappa_stat.st_atime_ns, mappa_stat.st_mtime_ns),
+        )
+        assert fajl.stat().st_mtime_ns != controller.photos.photos[sor].mtime_ns
+
+        kesz = []
+        controller.syncFinished.connect(lambda: kesz.append(True))
+        controller.rescan()
+        _wait(qt_app, lambda: bool(kesz))
+
+        assert controller.photos.thumbUrlAt(sor) != url_elotte
+
     def test_valtozatlan_celzott_szinkron_utan_sem_tolt_ujra_a_racs(
         self, qt_app, library_setup, monkeypatch
     ):

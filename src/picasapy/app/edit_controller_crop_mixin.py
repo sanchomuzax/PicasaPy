@@ -6,7 +6,7 @@ import logging
 import threading
 
 from PySide6.QtCore import QMetaObject, Qt
-from picasapy.halozati_ut import halozati_gyoker
+from picasapy.halozati_ut import fajlrendszer_gyoker
 
 from .edit_controller_shared import (
     EditSession,
@@ -32,7 +32,7 @@ _log = logging.getLogger(__name__)
 class EditControllerCropMixin:
     """A vágóeszköz tulajdonságai, javaslatai és parancsai."""
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.hasCropChanged)
     def hasCrop(self) -> bool:
         """Van-e alkalmazott vágás — a „Visszavonás: Vágás" gombhoz (#51)."""
         return self.crop() is not None
@@ -73,7 +73,7 @@ class EditControllerCropMixin:
         return EditSession(ops=ops).crop()
 
 
-    @Property("QVariant", notify=_Signals.toolsChanged)
+    @Property("QVariant", notify=_Signals.cropSelectionChanged)
     def cropSelection(self):
         """A jelenlegi crop64 relatív [0..1] téglalapja (#71), vagy None ha
         nincs vágás — a Vágás eszköz ezzel tölti elő a meglévő kijelölést."""
@@ -137,7 +137,7 @@ class EditControllerCropMixin:
         self.toolsChanged.emit()
 
 
-    @Property("QVariant", notify=_Signals.revisionChanged)
+    @Property("QVariant", notify=_Signals.cropSuggestionsChanged)
     def cropSuggestions(self):
         """A vágás-panel HÁROM automatikus javaslata (#448).
 
@@ -151,7 +151,7 @@ class EditControllerCropMixin:
         """
         if not self._photo_id or self._image_path is None:
             return []
-        if halozati_gyoker(self._image_path) is not None:
+        if fajlrendszer_gyoker(self._image_path) is not None:
             if getattr(self, "_network_edit_load_pending", False):
                 return []
             if getattr(self, "_network_edit_load_failed", False):
@@ -240,7 +240,7 @@ class EditControllerCropMixin:
             if key == (generation, path, aspect):
                 self._network_crop_suggestions_key = key
                 self._network_crop_suggestions = suggestions
-                self._bump_revision()
+                self.cropSuggestionsChanged.emit()
 
 
     @Slot(float)

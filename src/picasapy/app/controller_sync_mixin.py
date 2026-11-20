@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import time
-from PySide6.QtCore import QLocale, Slot
+from PySide6.QtCore import QLocale, QTimer, Slot
+from picasapy.halozati_ut import fajlrendszer_gyoker
 from picasapy.index import (
     album_photos,
     geotagged_photos,
@@ -162,12 +163,113 @@ class AppControllerSyncMixin:
     @Slot()
     def _reload_after_sync_if_changed(self) -> None:
         """A syncFinished nézeteit csak tényleges index- vagy ini-változás frissíti."""
-        if getattr(self, "_last_sync_changed", True) is False:
+        current_folder = getattr(self, "_current_folder", "")
+        slow_network_folder = bool(
+            current_folder and fajlrendszer_gyoker(current_folder) is not None
+        )
+        if not slow_network_folder:
+            # Helyi lemezen maradjon a főág azonnali viselkedése. A QML
+            # modell késleltetése és a szinkron utáni eseményköri rés csak
+            # hálózati fájlrendszeren védi a megnyitott nézőt.
+            self._sync_reload_idle_ready = False
+            self._sync_reload_idle_pending = False
+            self._deferred_sync_reload = False
+            if getattr(self, "_last_sync_changed", True) is False:
+                return
+            self._reload(preserve_scroll=True)
             return
-        self._reload(preserve_scroll=True)
+        idle_ready = getattr(self, "_sync_reload_idle_ready", False)
+        self._sync_reload_idle_ready = False
+        edit_controller = getattr(self, "_edit_controller_for_sync", None)
+        if edit_controller is not None and getattr(edit_controller, "_photo_id", ""):
+            # A néző az indexet is használja; a teljes feed újraépítése közben
+            # a főszál a néző QML-kötéseit blokkolná. A néző lezárásakor kért
+            # mappa-resync syncFinished-je majd érvényesíti az elmaradt frissítést.
+            self._deferred_sync_reload = True
+            return
+        deferred = getattr(self, "_deferred_sync_reload", False)
+        grace_until = getattr(self, "_sync_reload_grace_until", 0.0)
+        if grace_until > time.monotonic():
+            self._deferred_sync_reload = True
+            QTimer.singleShot(
+                max(1, int((grace_until - time.monotonic()) * 1000)),
+                self._finish_sync_reload_grace,
+            )
+            return
+        if getattr(self, "_last_sync_changed", True) is False and not deferred:
+            return
+        if (
+            not deferred
+            and self._view_mode[0] == "folder"
+            and not self.backupFilterActive
+            and self._feed_stamp is not None
+            and self._feed_stamp == self._index_stamp()
+        ):
+            # A ritkított progressz-frissítés már ezt az indexállapotot
+            # mutatja. A záró teljes feed-újraépítés csak újra lefuttatná a
+            # drága QML-csoportkötéseket, miközben semmi sem változott.
+            return
+        if not idle_ready:
+            # A QML a mappa választása után néhány eseményből kezdi a kép
+            # szerkesztését. Engedjük megérkezni ezt a jelzést, mielőtt a
+            # feed teljes újraépítése a nézőnyitással versenyezne.
+            self._deferred_sync_reload = True
+            if not getattr(self, "_sync_reload_idle_pending", False):
+                self._sync_reload_idle_pending = True
+                QTimer.singleShot(100, self._finish_sync_reload_after_idle)
+            return
+        self._deferred_sync_reload = False
+        self._reload(preserve_scroll=True, defer_feed_refresh=True)
+
+    @Slot()
+    def _finish_sync_reload_after_idle(self) -> None:
+        """Egy eseményköri rés után újraellenőrzi, kell-e feedfrissítés."""
+        self._sync_reload_idle_pending = False
+        current_folder = getattr(self, "_current_folder", "")
+        if not current_folder or fajlrendszer_gyoker(current_folder) is None:
+            return
+        self._sync_reload_idle_ready = True
+        self._reload_after_sync_if_changed()
+
+    @Slot()
+    def _finish_sync_reload_grace(self) -> None:
+        """A mappaváltást követő nézőnyitásnak ad egy eseménykört."""
+        current_folder = getattr(self, "_current_folder", "")
+        if not current_folder or fajlrendszer_gyoker(current_folder) is None:
+            self._sync_reload_grace_until = 0.0
+            return
+        if getattr(self, "_sync_reload_grace_until", 0.0) > time.monotonic():
+            return
+        self._sync_reload_grace_until = 0.0
+        edit_controller = getattr(self, "_edit_controller_for_sync", None)
+        if edit_controller is not None and getattr(edit_controller, "_photo_id", ""):
+            return
+        if getattr(self, "_deferred_sync_reload", False):
+            self._reload_after_sync_if_changed()
+
+    def _schedule_sync_feed_refresh(self) -> None:
+        """A sync utáni feedfrissítés külön eseményköri lépésben fusson.
+
+        A néző bezárásakor a feed modelljének visszakapcsolása már önmagában
+        QML-munkát végez. Ha ugyanebben az eseményben olvassuk újra az indexet
+        és cseréljük le a feedet, a két költség összeadódik és megakaszthatja
+        a felületet. Az előkészítő `_reload` ezért csak egy késleltetett
+        frissítést ütemez.
+        """
+        if getattr(self, "_sync_feed_refresh_pending", False):
+            return
+        self._sync_feed_refresh_pending = True
+        QTimer.singleShot(100, self._finish_sync_feed_refresh)
+
+    def _finish_sync_feed_refresh(self) -> None:
+        self._sync_feed_refresh_pending = False
+        self._refresh_view()
 
     def _reload(
-        self, preserve_scroll: bool = False, defer_collections: bool = False
+        self,
+        preserve_scroll: bool = False,
+        defer_collections: bool = False,
+        defer_feed_refresh: bool = False,
     ) -> None:
         """#1601: `defer_collections=True` esetén a hasáb két ini-alapú
         gyűjteménye (Emberek, Projektek) NEM töltődik be itt — az indulás
@@ -195,14 +297,20 @@ class AppControllerSyncMixin:
         if mode != "folder":
             # #38: aktív keresés/szűrő a háttér-sync után is megmarad —
             # a selectFolder eldobná, ezért csak a nézetet frissítjük.
-            self._refresh_view()
+            if defer_feed_refresh:
+                self._schedule_sync_feed_refresh()
+            else:
+                self._refresh_view()
         elif self._current_folder:
             # #173: háttér-sync után csak a feedet frissítjük (folderActivated
             # nélkül) — a scroll-to-top csak explicit mappa-választásé. Induláskor
             # (preserve_scroll=False) viszont a selectFolder a visszaállított
             # mappához görget, ahogy eddig.
             if preserve_scroll:
-                self._refresh_view()
+                if defer_feed_refresh:
+                    self._schedule_sync_feed_refresh()
+                else:
+                    self._refresh_view()
             else:
                 self.selectFolder(self._current_folder)
         else:

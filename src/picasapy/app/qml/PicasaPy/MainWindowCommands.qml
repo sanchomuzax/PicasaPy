@@ -3,7 +3,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls
 import PicasaPy
-import "../selection.js" as Selection
 
 // A főablak gyorsműveletei, súgója és billentyűparancsai.
 Item {
@@ -46,6 +45,16 @@ Item {
     property alias exportSearchSuggestionsBox: searchSuggestionsBox
     property alias exportSuggestionsTimer: suggestionsTimer
 
+    // A főablak régi belső property-nevei változatlanul a kijelölésőrt érik el.
+    property alias _pendingSelectedIds: photoSelectionState.pendingSelectedIds
+    property alias _pendingAnchorId: photoSelectionState.pendingAnchorId
+
+    MainWindowPhotoSelection {
+        id: photoSelectionState
+        hostWindow: commandSurface.hostWindow
+        hostController: commandSurface.hostController
+    }
+
     // A helyi gombsor-menü az ApplicationWindow része, nem a PicasaMenuBaré:
     // így a főmenü szerkezete és bejárási útvonalai változatlanok maradnak.
     Menu {
@@ -58,88 +67,6 @@ Item {
         }
     }
 
-    // #135: a háttér-frissítés (5 perces rescan, watcher-jelzés) a
-    // rács-modellt teljesen resetelheti — beszúrt/eltűnt fájloknál a
-    // sor-indexek elcsúsznának, és a csillag/forgatás/elrejtés/export a
-    // FELHASZNÁLÓ által kijelölttől eltérő képre hatna. A resetet
-    // megelőzően elmentjük a kijelölt sorok fotó-id-it (a sor-index
-    // ekkor még a RÉGI adatot tükrözi), majd a reset után az id-k
-    // alapján képezzük újra a kijelölést — az eltűnt fotók kiesnek.
-    property var _pendingSelectedIds: []
-    property string _pendingAnchorId: ""
-    property var _pendingRenameTargets: []
-    Connections {
-        target: hostController
-        function onRenameBatchTargets(targets) {
-            commandSurface._pendingRenameTargets = targets || []
-        }
-    }
-    Connections {
-        // #305: engine-leépítéskor a `controller` context property null
-        // lehet, miközben ez a kötés újra kiértékelődik — null-őr kell.
-        target: hostController ? hostController.photos : null
-        function onModelAboutToBeReset() {
-            var ids = []
-            for (var k = 0; k < hostWindow.selectedIndexes.length; ++k) {
-                var id = hostController.photos.idAt(Number(hostWindow.selectedIndexes[k]))
-                if (id.length > 0) ids.push(parseInt(id, 10))
-            }
-            hostWindow._pendingSelectedIds = ids
-            hostWindow._pendingAnchorId = hostWindow.selectedIndex >= 0
-                ? hostController.photos.idAt(hostWindow.selectedIndex) : ""
-        }
-        function onModelReset() {
-            hostWindow.selectedIndexes = Selection.remapByIds(
-                hostWindow._pendingSelectedIds, hostController.photos.rowOfId)
-            hostWindow.selectedIndex = hostWindow._pendingAnchorId.length > 0
-                ? hostController.photos.rowOfId(parseInt(hostWindow._pendingAnchorId, 10))
-                : -1
-            // Az átnevezett fájl új útvonal miatt új adatbázis-id-t kaphat.
-            // Csak akkor helyettesítjük a régi azonosítót, ha az már eltűnt
-            // a modellből és az új útvonal megjelent; sikertelen átnevezésnél
-            // a régi ID-alapú állapot marad érvényben.
-            if (hostWindow._pendingRenamePhotoId.length > 0
-                    && hostWindow._pendingRenameTargetPath.length > 0) {
-                var ujSor = hostController.photos.rowOfPath(
-                    hostWindow._pendingRenameTargetPath)
-                var regiId = parseInt(hostWindow._pendingRenamePhotoId, 10)
-                if (ujSor >= 0
-                        && hostController.photos.rowOfId(regiId) < 0
-                        && hostWindow._pendingSelectedIds.indexOf(regiId) >= 0) {
-                    var ujKijeloles = hostWindow.selectedIndexes.slice()
-                    if (ujKijeloles.indexOf(ujSor) < 0)
-                        ujKijeloles.push(ujSor)
-                    ujKijeloles.sort(function (a, b) { return a - b })
-                    hostWindow.selectedIndexes = ujKijeloles
-                    if (hostWindow._pendingAnchorId === hostWindow._pendingRenamePhotoId)
-                        hostWindow.selectedIndex = ujSor
-                }
-                hostWindow._pendingRenamePhotoId = ""
-                hostWindow._pendingRenameTargetPath = ""
-            }
-            var renameTargets = commandSurface._pendingRenameTargets || []
-            if (renameTargets.length > 0) {
-                var kijelolt = hostWindow.selectedIndexes.slice()
-                var horgony = hostWindow.selectedIndex
-                for (var t = 0; t < renameTargets.length; ++t) {
-                    var entry = renameTargets[t]
-                    var regiId = Number(entry.photoId)
-                    if (hostController.photos.rowOfId(regiId) >= 0
-                            || hostWindow._pendingSelectedIds.indexOf(regiId) < 0)
-                        continue
-                    var ujSor = hostController.photos.rowOfPath(entry.targetPath)
-                    if (ujSor < 0) continue
-                    if (kijelolt.indexOf(ujSor) < 0) kijelolt.push(ujSor)
-                    if (hostWindow._pendingAnchorId === String(regiId))
-                        horgony = ujSor
-                }
-                kijelolt.sort(function (a, b) { return a - b })
-                hostWindow.selectedIndexes = kijelolt
-                hostWindow.selectedIndex = horgony
-                commandSurface._pendingRenameTargets = []
-            }
-        }
-    }
     // A főablak gyorsbillentyűi önálló komponensben (#6136).
     MainKeyboardShortcuts {
         id: mainKeyboardShortcuts

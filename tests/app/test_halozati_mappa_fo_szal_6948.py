@@ -38,9 +38,8 @@ def test_begin_edit_halozaton_a_lemezmuveleteket_hatterszalra_tereli(
 
     monkeypatch.setattr(
         session_module,
-        "halozati_gyoker",
+        "fajlrendszer_gyoker",
         lambda _path: r"\\teszt-nas\kepek",
-        raising=False,
     )
     monkeypatch.setattr(
         preview_module.EditControllerPreviewMixin,
@@ -92,9 +91,8 @@ def test_crop_suggestions_halozati_kepet_hatterszalon_dekodol(
     controller = EditController(EditPreviewProvider())
     monkeypatch.setattr(
         session_module,
-        "halozati_gyoker",
+        "fajlrendszer_gyoker",
         lambda _path: r"\\teszt-nas\kepek",
-        raising=False,
     )
     controller.beginEdit("2", str(photo))
     assert controller.waitForBackgroundWorkers(5.0)
@@ -118,9 +116,8 @@ def test_crop_suggestions_halozati_kepet_hatterszalon_dekodol(
     )
     monkeypatch.setattr(
         crop_module,
-        "halozati_gyoker",
+        "fajlrendszer_gyoker",
         lambda _path: r"\\teszt-nas\kepek",
-        raising=False,
     )
 
     started = time.perf_counter()
@@ -249,9 +246,8 @@ def test_mentett_eredeti_ellenorzese_halozaton_hatterszalra_kerul(
     hivasok = []
     monkeypatch.setattr(
         save_module,
-        "halozati_gyoker",
-        lambda _path: r"\\teszt-nas\kepek",
-        raising=False,
+        "fajlrendszer_gyoker",
+        lambda _path: str(tmp_path),
     )
     monkeypatch.setattr(
         save_module,
@@ -281,12 +277,6 @@ def test_eltunt_gyoker_ellenorzese_nem_fogja_a_foszalat(qt_app, tmp_path, monkey
         "watched_root_missing",
         _lassu(lambda _root: False, hivasok, delay=1.2),
     )
-    monkeypatch.setattr(
-        root_module,
-        "halozati_gyoker",
-        lambda _root: r"\\teszt-nas\kepek",
-    )
-
     started = time.perf_counter()
     controller._eltunt_gyokerek_rendezese()
     elapsed = time.perf_counter() - started
@@ -315,9 +305,8 @@ def test_betoltes_alatti_szerkesztes_a_betoltes_utan_lemezre_kerul(
     )
     monkeypatch.setattr(
         session_module,
-        "halozati_gyoker",
+        "fajlrendszer_gyoker",
         lambda _path: r"\\teszt-nas\kepek",
-        raising=False,
     )
     monkeypatch.setattr(
         preview_module.EditControllerPreviewMixin,

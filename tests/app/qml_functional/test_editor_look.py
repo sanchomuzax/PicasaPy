@@ -210,6 +210,21 @@ class TestEffectThumbSourceWiring:
             "image://effectthumb/42/sepia?filters="
         )
 
+    def test_effect_thumbnail_sources_remain_stable_when_switching_tabs(
+        self, qml_engine, qt_app
+    ):
+        fake = _FakeEditController(preview_source="image://editpreview/42?rev=7")
+        panel = _make_panel(qml_engine, fake_controller=fake, active_tab=0)
+        qt_app.processEvents()
+        button = panel.findChild(QObject, "effectSepia")
+
+        expected_source = "image://effectthumb/42/sepia?filters="
+        assert button.property("thumbSource") == expected_source
+
+        panel.setProperty("activeTab", 2)
+        qt_app.processEvents()
+        assert button.property("thumbSource") == expected_source
+
     def test_thumb_source_ignores_revision_bumps(self, qml_engine, qt_app):
         """Az előnézeti `rev` nem változtat az URL-en, ha a lánc azonos.
 

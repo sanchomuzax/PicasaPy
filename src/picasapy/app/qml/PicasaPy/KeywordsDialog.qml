@@ -21,6 +21,14 @@ Dialog {
     property var photoInfo: ({})
     property var tags: []
     property string dateValue: ""
+    property int networkCacheRevision: 0
+    Connections {
+        target: Qt.isQtObject(root.controller) ? root.controller : null
+        ignoreUnknownSignals: true
+        function onNetworkPropertiesChanged() {
+            root.networkCacheRevision += 1
+        }
+    }
     readonly property bool thumbnailReady:
         photoThumbnail.status === Image.Ready
     readonly property string photoName: String(root.photoInfo.name || "")
@@ -29,6 +37,7 @@ Dialog {
     readonly property bool readOnlySelection:
         root.controller && root.rowIndexes.length > 0
         ? (root.controller.photos.revision,
+           root.networkCacheRevision,
            root.controller.selectionReadOnly(root.rowIndexes))
         : false
 

@@ -21,6 +21,8 @@ forgatás irányát méri — a képlet egyiket sem tudja önmagával igazolni.
 
 from __future__ import annotations
 
+import os
+
 import cv2
 import numpy as np
 import pytest
@@ -48,6 +50,26 @@ ALAP_A = (200, 120, 60)
 ALAP_B = (60, 200, 230)
 SAROK = (0, 255, 0)
 KOZEP = (0, 0, 255)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def qml_cache_isolated(tmp_path_factory):
+    """A forrás-QML fordítása ne egy korábbi, azonos appverziós cache-ből jöjjön.
+
+    A fejlesztői ágakon a verzió nem változik, a régi `.qmlc` mégis érvényesnek
+    látszik a verzióbélyegnek. A pixelmérés ezért a modul saját, friss cache-ét
+    használja; a Qt lemezcache bekapcsolva marad.
+    """
+    cache_path = tmp_path_factory.mktemp("qmlcache-3760")
+    previous = os.environ.get("QML_DISK_CACHE_PATH")
+    os.environ["QML_DISK_CACHE_PATH"] = str(cache_path)
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop("QML_DISK_CACHE_PATH", None)
+        else:
+            os.environ["QML_DISK_CACHE_PATH"] = previous
 
 
 def _probakep(alap) -> np.ndarray:

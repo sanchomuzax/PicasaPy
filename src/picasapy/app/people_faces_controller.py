@@ -53,10 +53,16 @@ class PeopleFacesMixin:
             folder = Path(photo.folder_path)
             kulcs = str(folder)
             if kulcs not in dokumentumok:
-                try:
-                    dokumentumok[kulcs] = _load_ini(folder / PICASA_INI_NAME)
-                except OSError:
-                    dokumentumok[kulcs] = None
+                from .network_ini_document_cache import network_ini_document
+
+                network, document = network_ini_document(self, folder)
+                if network:
+                    dokumentumok[kulcs] = document
+                else:
+                    try:
+                        dokumentumok[kulcs] = _load_ini(folder / PICASA_INI_NAME)
+                    except OSError:
+                        dokumentumok[kulcs] = None
             document = dokumentumok[kulcs]
             if document is None:
                 continue

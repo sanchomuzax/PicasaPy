@@ -7,7 +7,7 @@ import threading
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QMetaObject
-from picasapy.halozati_ut import halozati_gyoker
+from picasapy.halozati_ut import fajlrendszer_gyoker
 from picasapy.ini import parse_document
 from picasapy.metadata.reader import _cache_exif_details, _cached_exif_details
 
@@ -66,12 +66,16 @@ class EditControllerSessionMixin:
         if self._photo_id and self._photo_id != photo_id:
             self._provider.kepet_elenged(self._kulcs)
         path = Path(image_path)
+        network_path = fajlrendszer_gyoker(path) is not None
+        previous_tool_values = (
+            self._tool_property_values() if network_path else None
+        )
+        previous_camera_summary = self._camera_summary
         # #3014: minden sima nyitás ÍRÓ munkamenet — a memóriás mód csak a
         # `beginEditInMemory`-vel jár, és nem ragadhat át a következő fotóra
         self._memory_only = False
         self._photo_id = photo_id
         self._image_path = path
-        network_path = halozati_gyoker(path) is not None
         self._network_edit_generation = getattr(
             self, "_network_edit_generation", 0
         ) + 1
@@ -136,11 +140,23 @@ class EditControllerSessionMixin:
         self._restore_text_overlay_state(read_ini=not network_path)
         self._register_preview()
         self._bump_revision()
-        self.toolsChanged.emit()
         if network_path:
+            self._emit_changed_tool_properties(previous_tool_values)
+            # A panel saját, szerkesztés közbeni állapotai (például a
+            # csúszkák) új képnél egyszer szinkronizálódnak, de a hálózati
+            # nyitás nem ébreszti fel a toolsChanged teljes kötésgyűjtőjét.
+            self.editSessionStarted.emit()
             self._start_network_edit_state_load(
                 generation, path, self._ini_path, self._section_name
             )
+        else:
+            self.toolsChanged.emit()
+        if self._camera_summary != previous_camera_summary:
+            self.cameraSummaryChanged.emit()
+        # A tulajdonság külön notify-jelre váltott, ezért minden új képnél
+        # jelezni kell, hogy a helyi számítás és a hálózati várakozás is
+        # frissítse a vágás-panelt.
+        self.cropSuggestionsChanged.emit()
 
 
     def _start_network_edit_state_load(
@@ -148,33 +164,40 @@ class EditControllerSessionMixin:
     ) -> None:
         """A hálózati kép méretét, ini-állapotát és EXIF-jét egy worker olvassa."""
         def worker() -> None:
-            error = None
-            try:
-                document = self._load_ini_document_from_disk(ini_path)
-                section = document.section(section_name)
-                crop = section.get("crop") if section is not None else None
-                crop_readable = True
-            except OSError as exc:
-                document = parse_document("")
-                crop = None
-                crop_readable = False
-                error = str(exc)
-                _log.warning("A hálózati .picasa.ini nem olvasható: %s", ini_path)
-            size = self._read_image_size(image_path)
-            details = _cached_exif_details(image_path)
-            if details is None:
-                details = read_exif_details(image_path)
-                _cache_exif_details(image_path, details)
-            result = (
-                generation,
-                str(image_path),
-                document,
-                crop,
-                crop_readable,
-                size,
-                details,
-                error,
-            )
+            # A képellenőrzés, az INI dekódolása és az EXIF feldolgozása
+            # Python-kódot is futtat. A preview-worker meglévő fairness
+            # mintája megakadályozza, hogy ezek a háttérmunkák a QML-jelzés
+            # idején hosszú időre kiszorítsák a GUI-szálat a GIL-ből.
+            from .edit_controller_preview_mixin import _preview_gil_fairness
+
+            with _preview_gil_fairness():
+                error = None
+                try:
+                    document = self._load_ini_document_from_disk(ini_path)
+                    section = document.section(section_name)
+                    crop = section.get("crop") if section is not None else None
+                    crop_readable = True
+                except OSError as exc:
+                    document = parse_document("")
+                    crop = None
+                    crop_readable = False
+                    error = str(exc)
+                    _log.warning("A hálózati .picasa.ini nem olvasható: %s", ini_path)
+                size = self._read_image_size(image_path)
+                details = _cached_exif_details(image_path)
+                if details is None:
+                    details = read_exif_details(image_path)
+                    _cache_exif_details(image_path, details)
+                result = (
+                    generation,
+                    str(image_path),
+                    document,
+                    crop,
+                    crop_readable,
+                    size,
+                    details,
+                    error,
+                )
             with _NETWORK_EDIT_STATE_LOCK:
                 self._network_edit_state_result = result
             QMetaObject.invokeMethod(
@@ -209,6 +232,14 @@ class EditControllerSessionMixin:
             or str(self._image_path) != image_path
         ):
             return
+        tool_values_before = self._tool_property_values()
+        camera_summary_before = self._camera_summary
+        preview_values_before = (
+            self._session.to_value(),
+            self._current_text_spec(),
+            self._paint_strokes(),
+            self._crop_value_for_session(self._session),
+        )
         self._network_edit_load_pending = False
         self._network_edit_load_failed = error is not None
         self._network_edit_load_error = error or ""
@@ -234,9 +265,19 @@ class EditControllerSessionMixin:
         text_dirty = self._network_edit_text_dirty_pending
         self._network_edit_filters_dirty_pending = False
         self._network_edit_text_dirty_pending = False
-        self._bump_revision()
-        self._register_preview()
-        self.toolsChanged.emit()
+        preview_values_after = (
+            self._session.to_value(),
+            self._current_text_spec(),
+            self._paint_strokes(),
+            self._crop_value_for_session(self._session),
+        )
+        preview_changed = preview_values_before != preview_values_after
+        if preview_changed:
+            self._register_preview()
+        self._bump_revision(preview_changed=preview_changed)
+        if self._camera_summary != camera_summary_before:
+            self.cameraSummaryChanged.emit()
+        self._emit_changed_tool_properties(tool_values_before)
         if error:
             self.editSaveFailed.emit(error)
             return
@@ -333,7 +374,7 @@ class EditControllerSessionMixin:
         self._aa_partner = partner
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.chainValueChanged)
     def chainValue(self) -> str:
         """#3014: a munkamenet jelenlegi `filters=` értéke (üres = nincs lánc).
 

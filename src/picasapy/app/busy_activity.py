@@ -90,6 +90,18 @@ MUNKANEVEK: dict[str, str] = {
     "picasapy-edit-file-read": QT_TRANSLATE_NOOP(KONTEXTUS, "Rendering edit preview"),
     "picasapy-watched-root-check": QT_TRANSLATE_NOOP(KONTEXTUS, "Checking folders for changes"),
     "picasapy-backup-check": QT_TRANSLATE_NOOP(KONTEXTUS, "Checking folders for changes"),
+    # #7244: a hálózati fájlrendszer-hozzáféréseket és az egyszeri
+    # inicializálásokat háttérmunka jelzi az állapotsávban.
+    "picasapy-clear-unread": QT_TRANSLATE_NOOP(KONTEXTUS, "Loading folders"),
+    "picasapy-font-family-list": QT_TRANSLATE_NOOP(KONTEXTUS, "Working in the background"),
+    "picasapy-network-face-query": QT_TRANSLATE_NOOP(KONTEXTUS, "Scanning faces"),
+    "picasapy-network-face-ini": QT_TRANSLATE_NOOP(KONTEXTUS, "Scanning faces"),
+    "picasapy-folder-music-read": QT_TRANSLATE_NOOP(KONTEXTUS, "Loading folders"),
+    "picasapy-folder-music-file": QT_TRANSLATE_NOOP(KONTEXTUS, "Loading folders"),
+    "picasapy-folder-hierarchy": QT_TRANSLATE_NOOP(KONTEXTUS, "Loading subfolders"),
+    "picasapy-network-folder-writability": QT_TRANSLATE_NOOP(KONTEXTUS, "Checking folders for changes"),
+    "picasapy-network-folder-files": QT_TRANSLATE_NOOP(KONTEXTUS, "Scanning folders"),
+    "picasapy-network-text-layer": QT_TRANSLATE_NOOP(KONTEXTUS, "Loading folders"),
 }
 
 

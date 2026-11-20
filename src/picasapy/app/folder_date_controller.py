@@ -13,10 +13,13 @@ hasáb év-szakaszolása (`models._with_year_separators`) azonnal a friss
 
 from __future__ import annotations
 
+import threading
+import logging
 from pathlib import Path
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QMetaObject, Qt, Slot
 
+from picasapy.halozati_ut import fajlrendszer_gyoker
 from picasapy.ini import (
     is_valid_folder_date,
     load_or_empty,
@@ -31,6 +34,9 @@ from picasapy.scanner import PICASA_INI_NAME
 
 from .photo_ops_controller import _WRITE_ERRORS
 from . import formatting
+
+_FOLDER_MUSIC_LOCK = threading.Lock()
+_log = logging.getLogger(__name__)
 
 
 class FolderDateMixin:
@@ -49,6 +55,9 @@ class FolderDateMixin:
     def folderMusicEnabled(self, folder_path: str) -> bool:  # noqa: N802
         if not folder_path:
             return False
+        if fajlrendszer_gyoker(folder_path) is not None:
+            state = self._network_folder_music_state(folder_path)
+            return bool(state and state[0])
         return read_folder_music(
             load_or_empty(Path(folder_path) / PICASA_INI_NAME)
         )[0]
@@ -57,6 +66,9 @@ class FolderDateMixin:
     def folderMusicFile(self, folder_path: str) -> str:  # noqa: N802
         if not folder_path:
             return ""
+        if fajlrendszer_gyoker(folder_path) is not None:
+            state = self._network_folder_music_state(folder_path)
+            return state[1] if state else ""
         return read_folder_music(
             load_or_empty(Path(folder_path) / PICASA_INI_NAME)
         )[1]
@@ -75,12 +87,32 @@ class FolderDateMixin:
             lambda document: with_folder_music(document, use_music, local_file),
         ):
             return
+        if fajlrendszer_gyoker(folder_path) is not None:
+            cache = getattr(self, "_folder_music_cache", None)
+            if cache is None:
+                cache = self._folder_music_cache = {}
+            cache[folder_path] = (bool(use_music), local_file)
+            urls = getattr(self, "_folder_music_urls_cache", None)
+            if urls is None:
+                urls = self._folder_music_urls_cache = {}
+            urls.pop(folder_path, None)
+            if use_music and local_file:
+                self._queue_network_folder_music_urls(folder_path, local_file)
         changed = getattr(self, "statusChanged", None)
         if changed is not None:
             changed.emit()
 
     def folderMusicTrackUrls(self, folder_path: str) -> list:  # noqa: N802
         """A bekapcsolt mappazene URL-je a diavetítőnek."""
+        if folder_path and fajlrendszer_gyoker(folder_path) is not None:
+            state = self._network_folder_music_state(folder_path)
+            if not state or not state[0] or not state[1]:
+                return []
+            urls = getattr(self, "_folder_music_urls_cache", {}).get(folder_path)
+            if urls is None:
+                self._queue_network_folder_music_urls(folder_path, state[1])
+                return []
+            return list(urls)
         enabled, music_file = read_folder_music(
             load_or_empty(Path(folder_path) / PICASA_INI_NAME)
         ) if folder_path else (False, "")
@@ -93,6 +125,111 @@ class FolderDateMixin:
             return [formatting.to_file_url(str(path.resolve()))]
         except OSError:
             return []
+
+    def _network_folder_music_state(self, folder_path: str):
+        """A hálózati mappazene állapota; cache-missnél worker olvassa az ini-t."""
+        cache = getattr(self, "_folder_music_cache", None)
+        if cache is None:
+            cache = self._folder_music_cache = {}
+        state = cache.get(folder_path)
+        if state is not None:
+            return state
+        self._queue_network_folder_music_read(folder_path)
+        return None
+
+    def _queue_network_folder_music_read(self, folder_path: str) -> None:
+        pending = getattr(self, "_folder_music_pending", None)
+        if pending is None:
+            pending = self._folder_music_pending = set()
+            self._folder_music_read_results = {}
+        with _FOLDER_MUSIC_LOCK:
+            if folder_path in pending:
+                return
+            pending.add(folder_path)
+
+        def worker() -> None:
+            try:
+                state = read_folder_music(
+                    load_or_empty(Path(folder_path) / PICASA_INI_NAME)
+                )
+            except OSError as error:
+                _log.warning(
+                    "A hálózati mappazene ini nem olvasható (%s): %s",
+                    folder_path,
+                    error,
+                )
+                state = (False, "")
+            with _FOLDER_MUSIC_LOCK:
+                self._folder_music_read_results[folder_path] = state
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_network_folder_music_reads",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        self._start_background(worker, name="picasapy-folder-music-read", busy=False)
+
+    @Slot()
+    def _apply_network_folder_music_reads(self) -> None:
+        """A hálózati ini eredményét a GUI-szálas gyorsítótárba emeli."""
+        with _FOLDER_MUSIC_LOCK:
+            results = dict(self._folder_music_read_results)
+            self._folder_music_read_results.clear()
+            self._folder_music_pending.difference_update(results)
+        cache = getattr(self, "_folder_music_cache", None)
+        if cache is None:
+            cache = self._folder_music_cache = {}
+        cache.update(results)
+        changed = getattr(self, "folderMusicChanged", None)
+        if results and changed is not None:
+            changed.emit()
+
+    def _queue_network_folder_music_urls(
+        self, folder_path: str, music_file: str
+    ) -> None:
+        pending = getattr(self, "_folder_music_urls_pending", None)
+        if pending is None:
+            pending = self._folder_music_urls_pending = set()
+            self._folder_music_url_results = {}
+        with _FOLDER_MUSIC_LOCK:
+            if folder_path in pending:
+                return
+            pending.add(folder_path)
+
+        def worker() -> None:
+            path = Path(music_file).expanduser()
+            try:
+                urls = (
+                    (formatting.to_file_url(str(path.resolve())),)
+                    if path.is_file()
+                    else ()
+                )
+            except OSError:
+                urls = ()
+            with _FOLDER_MUSIC_LOCK:
+                self._folder_music_url_results[folder_path] = urls
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_network_folder_music_urls",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        self._start_background(worker, name="picasapy-folder-music-file", busy=False)
+
+    @Slot()
+    def _apply_network_folder_music_urls(self) -> None:
+        """A zenefájl-ellenőrzés eredményét a slideshow QML-kötéséhez jelzi."""
+        with _FOLDER_MUSIC_LOCK:
+            results = dict(self._folder_music_url_results)
+            self._folder_music_url_results.clear()
+            self._folder_music_urls_pending.difference_update(results)
+        cache = getattr(self, "_folder_music_urls_cache", None)
+        if cache is None:
+            cache = self._folder_music_urls_cache = {}
+        cache.update(results)
+        changed = getattr(self, "folderMusicChanged", None)
+        if results and changed is not None:
+            changed.emit()
 
     @Slot(str, result=str)
     def localPathFromFileUrl(self, file_url: str) -> str:  # noqa: N802

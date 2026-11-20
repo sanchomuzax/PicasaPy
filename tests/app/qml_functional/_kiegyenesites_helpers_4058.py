@@ -59,9 +59,38 @@ def _forrasra_var(
     )
 
 
+def _uj_elonezetre_var(
+    preview_controller,
+    preview_image,
+    qt_app,
+    rendered_spy,
+    rendered_before: int,
+    source_before: str,
+    leiras: str,
+) -> None:
+    """A sessionváltás háttér-renderje után várja meg az új képkockát."""
+    assert var_feltetelre(
+        qt_app,
+        lambda: rendered_spy.count() > rendered_before,
+        10.0,
+    ), f"{leiras}: a szerkesztő előnézete nem készült el"
+    _forrasra_var(
+        preview_image,
+        qt_app,
+        source_before,
+        str(preview_controller.property("previewSource")),
+        leiras,
+    )
+
+
 def _tilt_huzasa_egerrel(
     window, qt_app, slider, *, preview_image=None, preview_controller=None
 ) -> None:
+    preview_rendered = None
+    preview_render_count = 0
+    if preview_controller is not None:
+        preview_rendered = QSignalSpy(preview_controller._previewRendered)
+        preview_render_count = preview_rendered.count()
     kezdo = _pont(slider, slider.width() / 2, slider.height() / 2)
     veg = _pont(slider, slider.width() * 0.78, slider.height() / 2)
     QTest.mouseRelease(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, kezdo)
@@ -103,6 +132,12 @@ def _tilt_huzasa_egerrel(
         assert var_feltetelre(
             qt_app, lambda: slider.property("pressed") is False, 3.0
         ), "a csúszka nem engedte el az egeret"
+    if preview_rendered is not None:
+        assert var_feltetelre(
+            qt_app,
+            lambda: preview_rendered.count() > preview_render_count,
+            10.0,
+        ), "a kiegyenesítés háttér-előnézete nem készült el"
     if preview_image is not None:
         _forrasra_var(
             preview_image,

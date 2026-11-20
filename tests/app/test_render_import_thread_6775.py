@@ -4,6 +4,7 @@ az indulási háttérmunka előtt történik."""
 from __future__ import annotations
 
 import ast
+import json
 import os
 import subprocess
 import sys
@@ -61,3 +62,74 @@ def test_az_elso_kepkocka_utani_callback_az_elotoltesen_at_indit():
         and [a.id for a in cb.body.args if isinstance(a, ast.Name)] == ["_start_and_finish"]
         for cb in utemezett
     ), "az első képkocka utáni indítás a render-előtöltésen át fusson"
+
+
+def test_az_elonezet_elso_render_importja_a_munkaszal_inditasa_elott_tortenik():
+    program = r'''
+import contextvars
+import json
+import sys
+import threading
+
+from picasapy import lazy_import
+
+lazy_import.render_elore_betolt()
+main_thread = threading.get_ident()
+preload_calls = []
+worker_observations = []
+
+def forbidden_worker_preload():
+    preload_calls.append(threading.get_ident())
+    raise RuntimeError("a render-előtöltés ne a preview indításakor történjen")
+
+lazy_import.render_elore_betolt = forbidden_worker_preload
+from picasapy.app.edit_controller_preview_mixin import EditControllerPreviewMixin
+
+class Signal:
+    def emit(self, *_args):
+        pass
+
+class Provider:
+    def register(self, **_kwargs):
+        worker_observations.append({
+            "thread": threading.get_ident(),
+            "render_loaded": "picasapy.render" in sys.modules,
+        })
+
+class Host:
+    _preview_job = 0
+    _provider = Provider()
+    _previewRendered = Signal()
+    editSaveFailed = Signal()
+
+    def _start_background(self, worker, name):
+        self.thread = threading.Thread(target=worker, name=name)
+        self.thread.start()
+        self.thread.join(timeout=60)
+        assert not self.thread.is_alive(), "az előnézeti worker nem állt le"
+
+    def _finish_preview_worker(self):
+        pass
+
+host = Host()
+EditControllerPreviewMixin._start_preview_worker(
+    host, (0, {}, contextvars.copy_context())
+)
+print(json.dumps({
+    "main": main_thread,
+    "preload_calls": preload_calls,
+    "worker_observations": worker_observations,
+}))
+'''
+    env = {**os.environ, "PYTHONPATH": str(REPO / "src"), "PYTHONUTF8": "1"}
+    ki = subprocess.run(
+        [sys.executable, "-c", program], env=env, capture_output=True,
+        text=True, encoding="utf-8", errors="replace", timeout=120,
+    )
+    assert ki.returncode == 0, ki.stderr or ki.stdout
+    eredmeny = json.loads(ki.stdout)
+    assert eredmeny["preload_calls"] == []
+    assert len(eredmeny["worker_observations"]) == 1
+    observation = eredmeny["worker_observations"][0]
+    assert observation["thread"] != eredmeny["main"]
+    assert observation["render_loaded"] is True

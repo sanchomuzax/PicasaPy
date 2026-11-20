@@ -138,7 +138,8 @@ def test_mappa_felosztasa_a_kattintott_keptol_mozgat_es_kijeloli_az_uj_mappat(
             assert varj(qt_app, lambda: Path(controller.currentFolder) == cel)
             assert varj(qt_app, lambda: _mappaszam(controller, cel) == 20)
             assert varj(qt_app, lambda: _mappaszam(controller, source) == 4)
-            assert controller.photos.rowCount() == 24
+            # A két mappa resyncje háttérszálon frissíti a teljes feedet.
+            assert varj(qt_app, lambda: controller.photos.rowCount() == 24)
         if menu.property("visible"):
             zar(qt_app, menu)
 

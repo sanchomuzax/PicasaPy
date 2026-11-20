@@ -22,7 +22,14 @@ class _LibrarySyncRescanMixin:
     @Slot()
     def rescan(self) -> None:
         """Teljes újrapásztázás — a „Frissítés" menü kézi művelete."""
-        self._start_rescan(self._sync_worker)
+        self._start_rescan(self._manual_rescan_worker)
+
+    def _manual_rescan_worker(self) -> None:
+        """A kézi Frissítés minden fájl mtime-ját ellenőrzi a háttérben."""
+        from picasapy.index.sync import _manual_rescan_file_check
+
+        with _manual_rescan_file_check():
+            self._sync_worker()
 
     def _rescan_network_roots(self) -> None:
         """Az időzített teljes újraolvasás csak UNC-gyökereket pásztáz (#6696)."""

@@ -10,8 +10,26 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QPoint, QPointF, QRect, QSize, Qt
-from PySide6.QtGui import QColor, QGuiApplication, QImage, QKeyEvent, QPainter
+from PySide6.QtCore import (
+    QCoreApplication,
+    QEvent,
+    QEventLoop,
+    QObject,
+    QPoint,
+    QPointF,
+    QRect,
+    QSize,
+    QTimer,
+    Qt,
+)
+from PySide6.QtGui import (
+    QColor,
+    QGuiApplication,
+    QImage,
+    QKeyEvent,
+    QMouseEvent,
+    QPainter,
+)
 from PySide6.QtTest import QTest
 import pytest
 
@@ -107,14 +125,74 @@ def _pont(item, x: float, y: float) -> QPoint:
 
 def _kattint(window, elem, qt_app) -> None:
     assert elem.width() > 0 and elem.height() > 0, "a vezérlő nem látható"
-    QTest.mouseClick(
+    pont = _pont(elem, elem.width() / 2, elem.height() / 2)
+    if not str(elem.objectName()).startswith("editTab"):
+        QTest.mouseClick(
+            window,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            pont,
+        )
+        for _ in range(5):
+            qt_app.processEvents()
+        return
+
+    globalis = QPointF(window.mapToGlobal(pont))
+    esemeny_hurok = QEventLoop()
+
+    class _KattintasFigyelo(QObject):
+        def __init__(self):
+            super().__init__()
+            self.db = 0
+
+        def eventFilter(self, watched, event):  # noqa: N802 — Qt API
+            if watched is window and event.type() in (
+                QEvent.Type.MouseButtonPress,
+                QEvent.Type.MouseButtonRelease,
+            ):
+                self.db += 1
+                if self.db == 2:
+                    esemeny_hurok.quit()
+            return False
+
+    figyelo = _KattintasFigyelo()
+    window.installEventFilter(figyelo)
+    QCoreApplication.postEvent(
         window,
-        Qt.MouseButton.LeftButton,
-        Qt.KeyboardModifier.NoModifier,
-        _pont(elem, elem.width() / 2, elem.height() / 2),
+        QMouseEvent(
+            QEvent.Type.MouseButtonPress,
+            QPointF(pont),
+            QPointF(pont),
+            globalis,
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        ),
     )
-    for _ in range(5):
-        qt_app.processEvents()
+    QCoreApplication.postEvent(
+        window,
+        QMouseEvent(
+            QEvent.Type.MouseButtonRelease,
+            QPointF(pont),
+            QPointF(pont),
+            globalis,
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        ),
+    )
+    # A sorba állított egéresemény a Qt hurkában fut. Az exec() átengedi a
+    # GIL-t a Pythonos, aszinkron effekt-bélyegkép szolgáltatójának, így a
+    # QML Image.source váltás nem akad meg az image-reader szálon. A
+    # határidő kizárja, hogy a teszt elveszett eseményre korlátlanul várjon.
+    hatarido = QTimer()
+    hatarido.setSingleShot(True)
+    hatarido.timeout.connect(esemeny_hurok.quit)
+    hatarido.start(3000)
+    esemeny_hurok.exec()
+    hatarido.stop()
+    window.removeEventFilter(figyelo)
+    assert figyelo.db == 2, "a Qt nem kézbesítette a kattintás mindkét eseményét"
 
 
 def _kuldd_shift(tipus) -> None:
@@ -402,6 +480,12 @@ def test_forcefit_szuro_nyitasa_illesztesre_valt(
     assert viewer.property("zoomFactor") > 1.01, "a próbaképnek nagyítva kell lennie"
 
     _kattint(window, _item(window, tab_name), qt_app)
+    vart_ful = {
+        "editTabFixes": 0,
+        "editTabEffects": 2,
+        "editTabEffects4": 5,
+    }[tab_name]
+    assert panel.property("activeTab") == vart_ful, "a fülre kattintás nem váltott fület"
     if tab_name == "editTabEffects4" and button_name.startswith("legacyEffect_"):
         assert panel.property("activeTab") == 5
         legacy_column = _item(window, "legacyEffectsColumn")

@@ -8,6 +8,7 @@ class AppControllerSignalsMixin:
 
     statusChanged = Signal()
     feedChanged = Signal()
+    folderMusicChanged = Signal()
     folderActivated = Signal(str)
     albumsChanged = Signal()
     folderUnavailable = Signal(str)

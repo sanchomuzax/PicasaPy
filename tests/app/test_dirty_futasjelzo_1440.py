@@ -189,18 +189,20 @@ class TestAtfedoIrok:
 
 class TestZarutkozes:
     def test_zarhiba_utan_nem_indul_azonnali_ujraprobalkozasi_ciklus(
-        self, controller, library, monkeypatch
+        self, controller, library, qt_app, monkeypatch
     ):
         import sqlite3
 
         import picasapy.app.library_controller as lc
 
         probalkozasok = 0
+        probalkozott_mappak = []
         sync_folder_eredeti = lc.sync_folder
 
         def zarba_utkozik_egyszer(conn, root, folder, **kwargs):
             nonlocal probalkozasok
             probalkozasok += 1
+            probalkozott_mappak.append(str(folder))
             if probalkozasok == 1:
                 raise sqlite3.OperationalError("database is locked")
             return sync_folder_eredeti(conn, root, folder, **kwargs)
@@ -212,10 +214,29 @@ class TestZarutkozes:
             "_start_background",
             lambda worker, **_kwargs: inditott_munkak.append(worker),
         )
+        # Ez a próba csak a zárütközés retry-jelét vizsgálja; az ettől
+        # független, minden syncFinished-re feliratkozó eltűntgyökér-őr
+        # saját háttérmunkája nem része az indításszámlálásnak.
+        controller.syncFinished.disconnect(controller._eltunt_gyokerek_rendezese)
 
         controller._on_folders_dirty([str(library / "nyaralas")])
         assert len(inditott_munkak) == 1
-        inditott_munkak[0]()
+
+        def valodi_hattermunkaszal(worker):
+            # A worker syncFinished jelzése a vezérlő GUI-szálára queued;
+            # közvetlenül itt futtatva tévesen szinkronban végrehajtanánk a
+            # külön gyökér-ellenőrző slotot, és az összekeveredne a dirty
+            # retry-számlálóval.
+            szal = threading.Thread(target=worker)
+            szal.start()
+            szal.join(10.0)
+            assert not szal.is_alive(), "a dirty worker nem állt le"
+
+        valodi_hattermunkaszal(inditott_munkak[0])
+        # A valódi workerből a syncFinished queued módon érkezik. A retry
+        # slotot közvetlenül hívjuk, így a fájl más tesztből hátramaradt
+        # queued eseményei nem torzíthatják ezt a mappánkénti számlálót.
+        controller._flush_pending_dirty()
 
         assert len(inditott_munkak) == 1, "a syncFinished nem indíthat azonnali új kört"
         assert controller._pending_dirty == {str(library / "nyaralas")}
@@ -224,9 +245,11 @@ class TestZarutkozes:
 
         controller._retry_locked_dirty_folders()
         assert len(inditott_munkak) == 2
-        inditott_munkak[1]()
+        valodi_hattermunkaszal(inditott_munkak[1])
+        monkeypatch.setattr(lc, "sync_folder", sync_folder_eredeti)
+        qt_app.processEvents()
 
-        assert probalkozasok == 2
+        assert probalkozasok == 2, probalkozott_mappak
         assert controller._pending_dirty == set()
 
     def test_tobb_zarhiba_egy_jelzest_ad_es_a_mappakat_ujrasorolja(

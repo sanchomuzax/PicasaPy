@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtQml import QQmlApplicationEngine
 
@@ -19,6 +21,23 @@ from .timeline_background import TimelineBackgroundProvider
 
 _IMAGE_PROVIDER_REFS = "_picasapy_image_provider_refs"
 _QML_SHUTDOWN_KEEPALIVE = []
+
+
+def _photo_record_mtime(photos, path: str) -> int | None:
+    """Az indexben már betöltött fotó mtime-ja, fájlrendszer-érintés nélkül."""
+    try:
+        target = os.path.normcase(os.path.normpath(os.fsdecode(os.fspath(path))))
+    except (TypeError, ValueError):
+        return None
+    if not target:
+        return None
+    for photo in photos:
+        record_path = os.path.normcase(
+            os.path.normpath(os.path.join(photo.folder_path, photo.name))
+        )
+        if record_path == target:
+            return photo.mtime_ns
+    return None
 
 
 def _register_image_provider(engine, name: str, provider) -> None:
@@ -193,6 +212,12 @@ def _startup_step_register_qml_context(state):
     effect_slice_controller = EffectSliceController(
         edit_controller, settings=QSettings("PicasaPy", "PicasaPy"), parent=app
     )
+
+    # A szelet-kontroller ugyanazt az adatot kapja, amelyet a néző már a
+    # háttérben betöltött indexrekordból használ. Ez belső híd, nem QML-API.
+    effect_slice_controller._photo_mtime_lookup = lambda path: _photo_record_mtime(
+        controller.photos.photos, path
+    )
     app.aboutToQuit.connect(effect_slice_controller.shutdown)
     _register_image_provider(
         engine, "effectslice", EffectSliceImageProvider(effect_slice_controller)
@@ -205,6 +230,9 @@ def _startup_step_register_qml_context(state):
     app.aboutToQuit.connect(screen_capture_controller.shutdown)
     # #6475: a mentett képernyőkép mappája a Projektek alatt is megjelenjen
     screen_capture_controller.screenCaptureSaved.connect(controller.indexScreenCapture)
+    # A syncFinished teljes feed-frissítését elhalasztjuk, amíg a néző
+    # szerkesztési munkamenete aktív; a két QObject-közti belső híd nem QML-API.
+    controller._edit_controller_for_sync = edit_controller
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty(
         "notifierScreenGeometry", notifier_screen_geometry

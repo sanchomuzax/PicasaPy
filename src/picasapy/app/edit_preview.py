@@ -536,6 +536,12 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
             return None
         return image.copy()
 
+    def has_rendered_image(self, photo_id: str) -> bool:
+        """Van-e már tényleges előnézet a kulcshoz, másolat készítése nélkül."""
+        with self._lock:
+            image = self._images.get(str(photo_id))
+            return image is not None and not image.isNull()
+
     def histogram_for(self, photo_id: str) -> dict:
         """Az utoljára renderelt előnézet RGB-hisztogramja (#25), vagy üres
         hisztogram, ha a fotó nincs (már) regisztrálva."""

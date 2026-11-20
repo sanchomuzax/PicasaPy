@@ -23,9 +23,11 @@ import os
 
 from PySide6.QtCore import (
     Property,
+    QMetaObject,
     QObject,
     QSettings,
     QStandardPaths,
+    Qt,
     Signal,
     Slot,
 )
@@ -36,6 +38,7 @@ from .folder_hierarchy import (
     flatten,
     szurt_sorok,
 )
+from .worker_thread import BackgroundWorkerMixin
 
 
 def _platform() -> str:
@@ -128,7 +131,7 @@ def _is_ancestor(candidate: str, target: str) -> bool:
     return jelolt.endswith("/") or cel[len(jelolt)] == "/"
 
 
-class FolderHierarchyController(QObject):
+class FolderHierarchyController(BackgroundWorkerMixin, QObject):
     """A `FolderHierarchyView.qml` adatforrása."""
 
     rowsChanged = Signal()
@@ -186,6 +189,8 @@ class FolderHierarchyController(QObject):
         if self._rendszer_gyoker:
             self._tree_view = True
         self._rows: tuple[dict, ...] = ()
+        self._folder_rebuild_generation = 0
+        self._folder_rebuild_result = None
         self._rebuild()
 
     # -- tartós beállítások (#2154) --------------------------------------
@@ -236,7 +241,10 @@ class FolderHierarchyController(QObject):
         egyszerűen hatástalanok maradnak a halmazban).
         """
         self._folders = tuple(dict(folder) for folder in folders or ())
-        self._rebuild()
+        if len(self._folders) < 100:
+            self._rebuild()
+        else:
+            self._queue_folder_rebuild()
 
     #: ⚠️ SZÁNDÉKOSAN nem `@Slot`: a figyelt mappák listája a PROGRAMTÓL
     #: jön (`application.py`), nem a felületről. Slotként a #1476 őre
@@ -525,6 +533,46 @@ class FolderHierarchyController(QObject):
 
     def _rebuild(self) -> None:
         rows = flatten(self._tree(), self._expanded)
+        if rows == self._rows:
+            return
+        self._rows = rows
+        self.rowsChanged.emit()
+
+    def _queue_folder_rebuild(self) -> None:
+        """Az indexből érkező lapos mappalistából a fát háttérben építi."""
+        self._folder_rebuild_generation += 1
+        generation = self._folder_rebuild_generation
+        folders = self._folders
+        expanded = self._expanded
+        simplified = self._simplified
+        watched_roots = self._watched_roots
+
+        def worker() -> None:
+            tree = build_hierarchy(
+                folders,
+                simplified=simplified,
+                watched_roots=watched_roots,
+            )
+            rows = flatten(tree, expanded)
+            self._folder_rebuild_result = (generation, rows)
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_folder_rebuild",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        self._start_background(worker, name="picasapy-folder-hierarchy", busy=False)
+
+    @Slot()
+    def _apply_folder_rebuild(self) -> None:
+        result = self._folder_rebuild_result
+        self._folder_rebuild_result = None
+        if result is None:
+            return
+        generation, rows = result
+        if generation != self._folder_rebuild_generation:
+            self._queue_folder_rebuild()
+            return
         if rows == self._rows:
             return
         self._rows = rows

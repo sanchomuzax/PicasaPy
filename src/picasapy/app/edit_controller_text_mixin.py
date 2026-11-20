@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+import threading
+
+from PySide6.QtCore import QMetaObject, Qt
+from picasapy.ini.text_overlay import DEFAULT_FAMILY
+
 from .edit_controller_shared import (
     BETUMERETEK,
     Property,
@@ -20,7 +26,6 @@ from .edit_controller_shared import (
     _rgb_to_hex,
     alignment_code,
     alignment_name,
-    default_family,
     fill_mode_from,
     meret_taroltbol,
     replace,
@@ -30,24 +35,25 @@ from .edit_controller_shared import (
 
 from .edit_controller_signals import EditControllerSignalsMixin as _Signals
 
+_FONT_FAMILIES_LOCK = threading.Lock()
+_log = logging.getLogger(__name__)
+
+
 class EditControllerTextMixin:
     """A szöveg-overlay tulajdonságai, elhelyezése és stílusa."""
 
     @property
     def _text_family(self) -> str:
-        """A szöveg-eszköz betűcsaládja; az alapértelmezés az ELSŐ olvasáskor
-        számolódik (#6688). A `default_family()` a `picasapy.render` csomagot
-        és a Qt betűcsalád-adatbázist tölti, ami a vezérlő létrehozásakor, az
-        első ablakkép előtt nem fér bele."""
+        """A szöveg-eszköz betűcsaládja; katalógust csak használatkor kér."""
         if self._text_family_value is None:
-            self._text_family_value = default_family()
+            return DEFAULT_FAMILY
         return self._text_family_value
 
     @_text_family.setter
-    def _text_family(self, value: str) -> None:
+    def _text_family(self, value: str | None) -> None:
         self._text_family_value = value
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.textDraftChanged)
     def textDraft(self) -> str:
         """A szöveg-eszköz megnyitásakor a mezőbe töltendő piszkozat — a
         mentett tartalommal indul (ha van), a szerkesztés alatt a
@@ -61,13 +67,13 @@ class EditControllerTextMixin:
         return self._text_pending_pos is not None or self._text_selected_index is not None
 
 
-    @Property(int, notify=_Signals.toolsChanged)
+    @Property(int, notify=_Signals.textSelectedIndexChanged)
     def textSelectedIndex(self) -> int:
         """A kiválasztott mentett doboz sorszáma, vagy -1, ha nincs."""
         return self._text_selected_index if self._text_selected_index is not None else -1
 
 
-    @Property("QVariantList", notify=_Signals.toolsChanged)
+    @Property("QVariantList", notify=_Signals.textOverlayItemsChanged)
     def textOverlayItems(self) -> list[dict]:
         """A QML kattintásos kijelölőinek képre normalizált adatai."""
         if not self._text_overlay_visible or not self._text_active or not self._text_overlay:
@@ -108,7 +114,7 @@ class EditControllerTextMixin:
         return items
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.hasTextOverlayChanged)
     def hasTextOverlay(self) -> bool:
         """Van-e MENTETT, aktív szöveg-overlay — a „Visszavonás: Szöveg"
         felirathoz és a UI állapot-jelzéséhez."""
@@ -119,59 +125,118 @@ class EditControllerTextMixin:
         )
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.textOverlayVisibleChanged)
     def textOverlayVisible(self) -> bool:
         """A mentett szöveg látszik-e az előnézeten ebben a munkamenetben."""
         return self._text_overlay_visible
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.textFillColorChanged)
     def textFillColor(self) -> str:
         """A kitöltés-szín `#rrggbb` alakban."""
         return _rgb_to_hex(self._text_fill_color)
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.textOutlineColorChanged)
     def textOutlineColor(self) -> str:
         """A körvonal-szín `#rrggbb` alakban (a fill-től KÜLÖN választható)."""
         return _rgb_to_hex(self._text_outline_color)
 
 
-    @Property(float, notify=_Signals.toolsChanged)
+    @Property(float, notify=_Signals.textOutlineThicknessChanged)
     def textOutlineThickness(self) -> float:
         """A körvonal vastagsága `[0, 1]` — `0` esetén nincs körvonal."""
         return self._text_outline_thickness
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.textFillEnabledChanged)
     def textFillEnabled(self) -> bool:
         """Kitöltve jelenjen-e meg a szöveg — `False` a „Don't show the
         solid fill color (show outline only)" kapcsolónak felel meg."""
         return self._text_fill_enabled
 
 
-    @Property(float, notify=_Signals.toolsChanged)
+    @Property(float, notify=_Signals.textOpacityChanged)
     def textOpacity(self) -> float:
         """A szöveg-réteg átlátszósága [0..1] — `1.0` (alapérték) a
         teljesen fedő, korábbi viselkedés."""
         return self._text_opacity
 
 
-    @Property("QVariant", constant=True)
+    @Property("QVariant", notify=_Signals.textFontCatalogueChanged)
     def textFontFamilies(self):
         """A betűtípus-lenyíló adata: `key` + megjelenő `label`.
 
         A katalógust a Qt rendszer-betűtípus-adatbázisa adja, nem kézzel a
         QML-be írt rögzített lista."""
-        return _controller_family_labels()
+        families = getattr(self, "_text_font_families", None)
+        if families is None:
+            self._queue_text_font_families()
+            return []
+        return [dict(family) for family in families]
+
+    @staticmethod
+    def _preferred_text_family(families) -> str:
+        available = {item["key"].casefold(): item["key"] for item in families}
+        for preferred in ("Arial", "Liberation Sans", "DejaVu Sans"):
+            if preferred.casefold() in available:
+                return available[preferred.casefold()]
+        return families[0]["key"] if families else DEFAULT_FAMILY
+
+    def _default_text_family(self) -> str:
+        families = getattr(self, "_text_font_families", None)
+        if families is None:
+            self._queue_text_font_families()
+            return DEFAULT_FAMILY
+        return self._preferred_text_family(families)
+
+    def _queue_text_font_families(self) -> None:
+        """A rendszercsaládokat egyszer, háttérben kéri le."""
+        if getattr(self, "_text_font_families", None) is not None:
+            return
+        if getattr(self, "_text_font_families_pending", False):
+            return
+        self._text_font_families_pending = True
+
+        def worker() -> None:
+            try:
+                families = tuple(dict(item) for item in _controller_family_labels())
+            except Exception:
+                _log.exception("A rendszer betűcsalád-listája nem kérdezhető le")
+                families = ()
+            with _FONT_FAMILIES_LOCK:
+                self._text_font_families_result = families
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_text_font_families",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        self._start_background(
+            worker, name="picasapy-font-family-list", busy=False
+        )
+
+    @Slot()
+    def _apply_text_font_families(self) -> None:
+        """A worker eredményét a GUI-szálon gyorsítótárazza."""
+        with _FONT_FAMILIES_LOCK:
+            families = getattr(self, "_text_font_families_result", None)
+            self._text_font_families_result = None
+        if families is None:
+            return
+        self._text_font_families = families
+        self._text_font_families_pending = False
+        if self._text_family_value is None:
+            self._text_family_value = self._preferred_text_family(families)
+        self.textFontCatalogueChanged.emit()
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.textFontFamilyChanged)
     def textFontFamily(self) -> str:
         return self._text_family
 
 
-    @Property(int, notify=_Signals.toolsChanged)
+    @Property(int, notify=_Signals.textFontSizeChanged)
     def textFontSize(self) -> int:
         """A választott betűméret (a `BETUMERETEK` egyike)."""
         return self._text_size_pt
@@ -183,22 +248,22 @@ class EditControllerTextMixin:
         return list(BETUMERETEK)
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.textBoldChanged)
     def textBold(self) -> bool:
         return self._text_bold
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.textItalicChanged)
     def textItalic(self) -> bool:
         return self._text_italic
 
 
-    @Property(bool, notify=_Signals.toolsChanged)
+    @Property(bool, notify=_Signals.textUnderlineChanged)
     def textUnderline(self) -> bool:
         return self._text_underline
 
 
-    @Property(str, notify=_Signals.toolsChanged)
+    @Property(str, notify=_Signals.textAlignChanged)
     def textAlign(self) -> str:
         """`left` · `center` · `right` — a Picasa három igazítás-gombja."""
         return self._text_align
@@ -208,7 +273,7 @@ class EditControllerTextMixin:
     def setTextFontFamily(self, value: str) -> None:
         """A teljes rendszer-betűcsaládnév beállítása; élő előnézettel."""
         self._require_active()
-        self._text_family = value.strip() or default_family()
+        self._text_family = value.strip() or None
         self._refresh_text_preview()
 
 
@@ -408,7 +473,7 @@ class EditControllerTextMixin:
         self._text_outline_color = _argb_to_rgb(style.outline_argb)
         self._text_outline_thickness = float(style.unknown_a)
         self._text_fill_enabled = style.fill_mode != _MOD_NINCS_KITOLTES
-        self._text_family = block.font or default_family()
+        self._text_family = block.font or None
         self._text_size_pt = meret_taroltbol(block.geometry.size)
         self._text_size_edited = False
         self._text_bold = style.weight >= 700
@@ -599,8 +664,7 @@ class EditControllerTextMixin:
         }
 
 
-    @staticmethod
-    def _text_style_kwargs_for_block(block: TextBlock) -> dict:
+    def _text_style_kwargs_for_block(self, block: TextBlock) -> dict:
         """A mentett blokk saját ismert stílusa a többblokkos előnézethez."""
         style = block.style
         return {
@@ -609,7 +673,7 @@ class EditControllerTextMixin:
             "outline_thickness": style.unknown_a,
             "fill_enabled": style.fill_mode != _MOD_NINCS_KITOLTES,
             "opacity": _DEFAULT_TEXT_OPACITY,
-            "font_family": block.font or default_family(),
+            "font_family": block.font or self._default_text_family(),
             "font_size_pt": block.geometry.size * 360.0,
             "bold": style.weight >= 700,
             "italic": style.italic,

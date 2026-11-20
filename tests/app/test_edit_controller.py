@@ -9,6 +9,7 @@ import pytest
 from picasapy.ini.rect64 import encode_rect64
 from picasapy.app.histogram_helper import EMPTY_HISTOGRAM
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import varj_feltetelre
 
 # rontás-kontroll: picasapy.ini.backuphash.backuphash_for_local_datetime = 65536 → 1 failed
 
@@ -45,6 +46,32 @@ def _wait_preview(controller, qt_app=None):
 
 
 class TestBeginEdit:
+    def test_preview_ready_tracks_async_render_availability(
+        self, controller, provider, photo, monkeypatch
+    ):
+        """A néző a nyers fájlt használja, amíg az új editpreview elkészül."""
+        from threading import Event
+
+        started = Event()
+        release = Event()
+        register = provider.register
+
+        def delayed_register(**kwargs):
+            started.set()
+            assert release.wait(5), "a teszt nem oldotta fel az előnézeti workert"
+            return register(**kwargs)
+
+        monkeypatch.setattr(provider, "register", delayed_register)
+        controller.beginEdit("1", str(photo))
+
+        try:
+            assert started.wait(5), "az előnézeti worker nem indult el"
+            assert controller.previewReady is False
+        finally:
+            release.set()
+        _wait_preview(controller)
+        assert controller.previewReady is True
+
     def test_empty_ini_gives_empty_session(self, controller, photo):
         controller.beginEdit("1", str(photo))
         assert controller.hasSavedRedeye is False  # #2393: átnevezve
@@ -879,6 +906,28 @@ class TestGpuFinetunePreview:
     def test_no_active_edit_gives_empty_sources(self, controller):
         assert controller.gpuPrefixSource == ""
         assert controller.gpuLutSource == ""
+
+    def test_neutral_gpu_lut_does_not_load_render_pipeline(
+        self, controller, monkeypatch
+    ):
+        """Üres láncnál az azonosság-LUT ne importálja a renderláncot."""
+        import numpy as np
+
+        from picasapy.app import edit_controller_effects_finetune_mixin
+
+        def unexpected_render_import(**_kwargs):
+            pytest.fail("az üres lánc semleges LUT-ja a renderláncot hívta")
+
+        monkeypatch.setattr(
+            edit_controller_effects_finetune_mixin,
+            "build_finetune2_lut",
+            unexpected_render_import,
+        )
+        expected = np.repeat(
+            np.arange(256, dtype=np.uint8)[:, None], 3, axis=1
+        )
+
+        assert np.array_equal(controller._gpu_lut_for(controller._session), expected)
 
     def test_begin_edit_on_empty_chain_is_gpu_eligible(self, controller, photo):
         """Üres lánc: a `set_finetune` a végére fűzné → GPU-alkalmas."""
@@ -2481,9 +2530,14 @@ class TestASzovegStilusaAFAJLBA_KERUL:
         assert _text_ertek(photo) != felkover
 
     def test_a_valasztott_BETUTIPUS_kerul_a_blokkba(
-        self, legalabb_ket_betucsalad, controller, photo
+        self, legalabb_ket_betucsalad, controller, photo, qt_app
     ):
         # a lista `{key, label}` szótárakból áll (a lenyíló adata)
+        assert varj_feltetelre(
+            qt_app,
+            lambda: len(controller.textFontFamilies) >= 2,
+            5.0,
+        ), "a háttérben töltött betűcsalád-lista nem készült el"
         kulcsok = [cs["key"] for cs in controller.textFontFamilies]
         mas = next((cs for cs in kulcsok if cs != "Arial"), None)
         assert mas is not None, "a panel csak egy betűtípust kínál — a próba tárgytalan"

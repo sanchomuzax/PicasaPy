@@ -143,8 +143,13 @@ def test_search_word_suggestion_click_sets_field_with_space_and_runs_search(
     )
     _click(window, zqkase_row, qt_app)
 
-    # Kattintás után: lista bezárul, mező "zqkase ", keresés lefut (1 találat)
-    assert _wait(qt_app, lambda: controller.searchActive is True)
+    # A `searchActive` az első keresés óta igaz; a mező és a lekérdezés
+    # új értéke jelzi, hogy a második kattintás feldolgozása is befejeződött.
+    assert _wait(
+        qt_app,
+        lambda: field.property("text") == "zqkase "
+        and controller.searchQuery == "zqkase",
+    )
     assert field.property("text") == "zqkase "
     assert controller.searchQuery == "zqkase"
     assert controller.searchResultCount == 1
@@ -162,8 +167,13 @@ def test_search_word_suggestion_click_sets_field_with_space_and_runs_search(
     )
     _click(window, zqai_row, qt_app)
 
-    # Kattintás után: lista bezárul, mező "zqai ", keresés lefut
-    assert _wait(qt_app, lambda: controller.searchActive is True)
+    # A korábbi searchActive állapot nem elég: az új mező- és lekérdezésértéket
+    # várjuk meg, mielőtt a találatokat ellenőrizzük.
+    assert _wait(
+        qt_app,
+        lambda: field.property("text") == "zqai "
+        and controller.searchQuery == "zqai",
+    )
     assert field.property("text") == "zqai "
     assert controller.searchQuery == "zqai"
     assert not popup.property("visible") or len(_value(popup, "suggestions") or []) == 0

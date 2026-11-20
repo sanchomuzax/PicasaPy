@@ -80,14 +80,20 @@ class EditControllerPreviewMixin:
         return self._revision
 
 
-    @Property(str, notify=_Signals.revisionChanged)
+    @Property(str, notify=_Signals.previewRevisionChanged)
     def previewSource(self) -> str:
         """`image://editpreview/<id>?rev=<n>` vagy üres, ha nincs aktív
-        szerkesztés. A QML-frissítés triggere a revision — a previewSource
-        értéke (a ?rev= rész) attól függ, hogy a kép-URL biztosan változzon."""
+        szerkesztés. Csak a képi tartalom változásakor lép a saját revíziója,
+        ezért a vezérlők metaadatának frissítése nem kéri le újra az előnézetet."""
         if not self._photo_id:
             return ""
-        return f"image://editpreview/{self._kulcs}?rev={self._revision}"
+        return f"image://editpreview/{self._kulcs}?rev={self._preview_revision}"
+
+
+    @Property(bool, notify=_Signals.previewRevisionChanged)
+    def previewReady(self) -> bool:
+        """Van-e már ténylegesen kirajzolható előnézet az aktív fotóhoz."""
+        return bool(self._photo_id) and self._provider.has_rendered_image(self._kulcs)
 
 
     @Property(str, notify=_Signals.gpuRevisionChanged)
@@ -159,7 +165,7 @@ class EditControllerPreviewMixin:
         }
 
 
-    @Property(str, notify=_Signals.revisionChanged)
+    @Property(str, notify=_Signals.cameraSummaryChanged)
     def cameraSummary(self) -> str:
         """Picasa-stílusú, egysoros gép-összefoglaló (#25) a hisztogram
         alatt — a forrásfájl EXIF-jéből, beginEdit-kor gyorsítótárazva."""
@@ -342,9 +348,14 @@ class EditControllerPreviewMixin:
         self._bump_revision()
 
 
-    def _bump_revision(self) -> None:
+    def _bump_revision(self, *, preview_changed: bool = True) -> None:
+        """A vezérlőállapotot jelzi; képi változás nélkül nem bustolja az URL-t."""
+        if not preview_changed:
+            return
         self._revision = next(_REVIZIO)
         self.revisionChanged.emit()
+        self._preview_revision = self._revision
+        self.previewRevisionChanged.emit()
         # A QML-ecset láthatósága is a filters-láncból számolódik. A közös
         # revíziós pont lefedi az alkalmazást, a Visszavonást, az Újrát és
         # az ugyanarra a fotóra újraolvasott ini-t; csak bool-váltás jelez.

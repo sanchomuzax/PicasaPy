@@ -12,6 +12,32 @@ from .model_helpers import _thumb_url
 from .photo_sort import DEFAULT_SORT_MODE, sort_folder_blocks
 
 
+def _inserted_ranges(existing, updated) -> tuple[tuple[int, int], ...] | None:
+    """A csak hozzáfűzött index-sorok folytonos tartományait adja vissza.
+
+    A háttérszinkron gyakran csak új képeket talál. Ha a korábbi rekordok
+    sorrendben, változatlanul benne maradtak az új feedben, a modell-reset
+    helyett célzott sors beszúrások őrzik meg a látható cellákat.
+    """
+    if not existing or len(updated) <= len(existing):
+        return None
+    ranges = []
+    old_index = 0
+    range_start = None
+    for new_index, record in enumerate(updated):
+        if old_index < len(existing) and record == existing[old_index]:
+            if range_start is not None:
+                ranges.append((range_start, new_index - 1))
+                range_start = None
+            old_index += 1
+            continue
+        if range_start is None:
+            range_start = new_index
+    if range_start is not None:
+        ranges.append((range_start, len(updated) - 1))
+    return tuple(ranges) if old_index == len(existing) else None
+
+
 class PhotoGridState:
     def initialize(self) -> None:
         self._photos: tuple[PhotoRecord, ...] = ()
@@ -202,6 +228,26 @@ class PhotoGridState:
         #: vágás nélkül pedig no-op, tehát a #142 nyeresége megmarad.
         if photos == self._photos:
             self.set_face_zoom(None)
+            return
+        old_photos = self._photos
+        inserted = _inserted_ranges(old_photos, photos)
+        if inserted is not None:
+            current = list(old_photos)
+            face_zoom_cleared = self._arc_teglalapok is not None
+            self._arc_teglalapok = None
+            for first, last in reversed(inserted):
+                self.beginInsertRows(QModelIndex(), first, last)
+                current[first:first] = photos[first : last + 1]
+                self._photos = tuple(current)
+                self.endInsertRows()
+            if face_zoom_cleared and old_photos:
+                self.dataChanged.emit(
+                    self.index(0, 0),
+                    self.index(len(self._photos) - 1, 0),
+                    [self.ThumbUrlRole],
+                )
+            self._revision += 1
+            self.revisionChanged.emit()
             return
         self._arc_teglalapok = None
         self.beginResetModel()

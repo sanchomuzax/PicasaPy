@@ -60,6 +60,14 @@ def test_a_legordulobol_kattintott_rendszerbetu_elonezetre_es_inibe_kerul(
     system_families = sorted(
         set(QFontDatabase.families()), key=lambda family: (family.casefold(), family)
     )
+    panel = window.findChild(QObject, "viewerEditorPanel")
+    assert panel is not None
+    panel.setProperty("textActive", True)
+    assert _varj(
+        qt_app,
+        lambda: bool(system_families)
+        and len(edit.textFontFamilies) == len(system_families),
+    ), "a rendszer betűcsalád-listája nem töltődött be"
     offered = [entry["key"] for entry in edit.textFontFamilies]
     assert offered == system_families, (
         "a betűtípus-legördülő nem a telepített rendszerbetűket kínálja"
@@ -82,9 +90,6 @@ def test_a_legordulobol_kattintott_rendszerbetu_elonezetre_es_inibe_kerul(
 
     monkeypatch.setattr(preview_module, "apply_text_overlay", track_render)
 
-    panel = window.findChild(QObject, "viewerEditorPanel")
-    panel.setProperty("textActive", True)
-    qt_app.processEvents()
     field = window.findChild(QObject, "textContentField")
     field.setProperty("text", "System font")
     edit.previewTextPlacement(0.3, 0.6)

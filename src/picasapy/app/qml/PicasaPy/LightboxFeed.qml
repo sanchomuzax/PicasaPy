@@ -105,12 +105,21 @@ ListView {
 
 
     clip: true
-    model: grid.ctl ? grid.ctl.feedGroups : []
+    // Hálózati gyökérnél a néző mögötti feed delegátumai ne épüljenek újra;
+    // helyi mappán a főági, azonnali modellkapcsolat marad érvényben.
+    readonly property bool slowNetworkFolder:
+        (grid.ctl && grid.ctl.currentFolderOnNetwork !== undefined)
+            ? grid.ctl.currentFolderOnNetwork === true : false
+    property bool feedActivationReady: true
+    property int feedCacheBuffer: 600
+    model: grid.ctl && (!grid.slowNetworkFolder
+            || (!grid.appWindow.viewerOpen && grid.feedActivationReady))
+        ? grid.ctl.feedGroups : []
 
     LightboxFeedEmptyState { feed: grid }
 
     spacing: 14
-    cacheBuffer: 600
+    cacheBuffer: grid.feedCacheBuffer
     // #85: kiegyenlített sor-elrendezés — az oszlopszám a
     // névleges (thumbSize alapú) cellaméretből adódik, de a
     // ténylegesen kiosztott cellaszélesség (cellWidth) a
@@ -569,6 +578,8 @@ ListView {
             })
         }
         function onFeedChanged() {
+            if (grid.slowNetworkFolder && grid.appWindow.viewerOpen)
+                return
             if (grid.personAlbumMode) {
                 Qt.callLater(function() { grid.alignPersonAlbumHeader() })
                 return
@@ -601,6 +612,8 @@ ListView {
             })
         }
     }
+
+    LightboxFeedNetworkActivation { feed: grid }
 
     // -- mentés-üzemmód: a görgetési helyzet megőrzése (#3751) ----
     // A mentés-szűrő modellcsere: az új szűrt tartalom (bekapcsolás, másik

@@ -132,7 +132,7 @@ def test_quick_view_elrejti_a_konyvtari_feluletet_es_launch_picasa_visszater(
         "viewerLeftDrawer",
         "viewerEditorPanel",
         "viewerHistogramBox",
-        "viewerPropertiesPanel",
+        "viewerPropertiesPanelLoader",
         "viewerTagsPanelLoader",
         "viewerPlacesPanelLoader",
         "viewerPeoplePanelLoader",

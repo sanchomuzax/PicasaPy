@@ -186,12 +186,16 @@ class EffectSliceController(QObject):
         self._active_values: list = []
         self._depth_index = 0
         self._photo_path = ""
+        # Az effekt-szelet gyorsítótárához a már betöltött indexrekordból
+        # kérjük az mtime-ot. A fájl statolása ezen a GUI-szálas úton tilos.
+        self._photo_mtime_lookup = None
         self._chain_value = ""
         self._chain_length = 0
         self._slider_label = ""
         self._slider_current = 0.0
         self._pending = None
         self._job = 0
+        self._rendering_job = None
         self._last_cache_key = None
         self._last_target = None
         self._cache: OrderedDict[tuple, dict] = OrderedDict()
@@ -265,6 +269,7 @@ class EffectSliceController(QObject):
         self._timer.stop()
         self._job += 1
         self._pending = None
+        self._rendering_job = None
         self._pool.clear()
         self._pool.waitForDone(1000)
 
@@ -284,8 +289,25 @@ class EffectSliceController(QObject):
         self._depth_index = max(0, int(depth_index))
         self._photo_path = str(photo_path or "")
         self._chain_value = str(chain_value or "")
-        self._job += 1
         request = self._build_request(str(preferred_view or ""))
+        if not request.get("cached"):
+            cache_key = request["cacheKey"]
+            if self._pending is not None and self._pending.get("cacheKey") == cache_key:
+                # Az azonos, még időzítőre váró kérés csak a legfrissebb
+                # csúszka-jelölőt cseréli; a mintaképet nem kell újraindítani.
+                self._pending = request
+                return
+            if (
+                self._pending is None
+                and self._rendering_job == self._job
+                and self._last_cache_key == cache_key
+            ):
+                # A preview revíziója gyakran úgy változik, hogy a lánc és a
+                # forráskép nem. A futó render eredményét tartsuk meg, csak a
+                # jelölő célértékét frissítsük.
+                self._last_target = request["target"]
+                return
+        self._job += 1
         self._pending = request
         self._timer.start()
 
@@ -363,8 +385,16 @@ class EffectSliceController(QObject):
             params = list(item.params)
             params[target["parameterIndex"]] = "__slice_axis__"
             key_ops[target["operationIndex"]] = FilterOp(item.name, tuple(params))
+        source_mtime_ns = None
+        if path is not None and self._photo_mtime_lookup is not None:
+            try:
+                source_mtime_ns = self._photo_mtime_lookup(str(path))
+                if source_mtime_ns is not None:
+                    source_mtime_ns = int(source_mtime_ns)
+            except (AttributeError, RuntimeError, TypeError, ValueError):
+                source_mtime_ns = None
         cache_key = (
-            str(path or ""), _file_mtime(path), selected, probe_kind,
+            str(path or ""), source_mtime_ns, selected, probe_kind,
             tuple((item.name, item.params) for item in key_ops),
             target["operationIndex"] if target else None,
             target["parameterIndex"] if target else None,
@@ -506,6 +536,7 @@ class EffectSliceController(QObject):
             return
         self._last_cache_key = request["cacheKey"]
         self._last_target = request["target"]
+        self._rendering_job = self._job
         render_signals = RenderSignals()
         render_signals.finished.connect(
             self._on_render_finished, Qt.ConnectionType.QueuedConnection
@@ -514,6 +545,8 @@ class EffectSliceController(QObject):
 
     @Slot(int, object)
     def _on_render_finished(self, job: int, data: dict) -> None:
+        if self._rendering_job == job:
+            self._rendering_job = None
         if job != self._job:
             return
         request = self._pending
