@@ -1,6 +1,6 @@
 # A személyek (arcok) kezelésének teljes folyamata az eredeti Picasával összevetve: belépési pontok, ablak, hatás
 
-Ez a specifikáció a sanchomuzax/PicasaPy#7289 kutatási feladat alapján összegzi a személyek (arcok) kezelésének teljes futásidejű folyamatát az eredeti Picasa 3.9 (Picasa3.exe 3.9.141.259) bináris vizsgálata, élő futásidejű mérések (job-61, job-64, job-66, job-68, job-113, job-180, job-325) és a PicasaPy megvalósítása alapján.
+Ez a specifikáció a #7289 kutatási feladat alapján összegzi a személyek (arcok) kezelésének teljes futásidejű folyamatát az eredeti Picasa 3.9 (Picasa3.exe 3.9.141.259) bináris vizsgálata, élő futásidejű mérések (job-61, job-64, job-66, job-68, job-113, job-180, job-325) és a PicasaPy megvalósítása alapján.
 
 ## 1. Belépési pontok és feltételeik
 
@@ -118,7 +118,7 @@ Ez a specifikáció a sanchomuzax/PicasaPy#7289 kutatási feladat alapján össz
     - Bélyegkép + fotók száma (`%d photos`).
   - Megerősítések és kérdések:
     - Személy törlésekor: megerősítő kérdés a személyalbum törléséről (az arcok visszakerülnek a Név nélküliek közé).
-    - Név módosításakor: ha a megadott új név megegyezik egy létező személy nevével, felugrik az egyesítési megerősítés (Merge People: "Szeretné egyesíteni ezt a két személyt?").
+    - Név módosításakor: ha a megadott új név megegyezik egy létező személy nevével, felugrik az egyesítési megerősítés (`Merge People`: "Szeretné egyesíteni ezt a két személyt?").
 - Nálunk: `src/picasapy/app/qml/PicasaPy/PeopleManagerDialog.qml:8-17` (szélesség 632, magasság 372, `selectedKey`, `contactList`, `nameField`, `emailField`, egyesítési logika). Egyezik.
 
 ### 2.2 Új személy / Név hozzáadása (New Person)
@@ -274,7 +274,7 @@ Ez a specifikáció a sanchomuzax/PicasaPy#7289 kutatási feladat alapján össz
 | Options > Name Tags beállítások (`0x006e3990`, `0x006e0ead`) | `src/picasapy/app/qml/PicasaPy/OptionsTabNameTags.qml:41` | Egyezik. Nincs teendő. |
 | Write faces to XMP... (`0x9e2a`, `0xd6e838`, `0x004852e0`) | `src/picasapy/app/qml/PicasaPy/PicasaToolsMenu.qml:308`, `photo_ops_xmp_mixin.py:50` | Egyezik. Nincs teendő. |
 | People Manager ablak (`0x9e0e`, `0x006443e0`, 632x372 px) | `src/picasapy/app/qml/PicasaPy/PeopleManagerDialog.qml:7` | Egyezik. Nincs teendő. |
-| Reset Faces háromfelé ágazó logika (`0x9e11`, `0x005cc83c`) | `src/picasapy/app/face_scan_controller_reset_mixin.py:93`, `PicasaMenuBar.qml:67` | Egyezik (Ctrl/Shift módális megerősítés). Nincs teendő. |
+| Reset Faces háromfelé ágazó logika (`0x9e11`, `0x005cc83c`) | `src/picasapy/app/face_scan_controller_reset_mixin.py:93`, `PicasaMenuBar.qml:67` | Egyezik (Ctrl/Shift esetén modális megerősítés). Nincs teendő. |
 | From Faces in Selection... / People Albums (`0x9d59`, `0x9d5a`) | `src/picasapy/app/qml/PicasaPy/PicasaCreateMenu.qml:150` | Egyezik. Nincs teendő. |
 | Fotó helyi menü Reset Faces (`0x9e11`) | `src/picasapy/app/qml/PicasaPy/PhotoContextMenu.qml:541` | Egyezik. Nincs teendő. |
 | Mappa/Album helyi menü Add name tags (`0x9e1c`, `0x007319f0`) | `src/picasapy/app/qml/PicasaPy/FolderContextMenu.qml:369`, `AlbumContextMenu.qml:68` | Egyezik. Nincs teendő. |
