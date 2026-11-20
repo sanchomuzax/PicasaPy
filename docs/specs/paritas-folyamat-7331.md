@@ -1,4 +1,4 @@
-# #7331 — Beállítások OK-ja: arcküszöb-frissítés és a `0x00487590` szerepe
+# #7331: Beállítások OK-ja: arcküszöb-frissítés és a `0x00487590` szerepe
 
 **Állapot: feltételes.** A statikus bináris út megmutatja, mikor hívódik a `0x00487590`, és hogy az albumcímke-tagságot módosító segédeket használja. A kapott lista pontos jelentése és a Személyek panel azonnali, látható változása nincs igazolva.
 
@@ -18,11 +18,11 @@ A `0x00487590` egy, a `0x00449a90`-től kapott lista alapján albumcímke-tagsá
 
 | Érték vagy állítás | Forrás |
 |---|---|
-| A `0x005cf5b0` a `0x0048aab0(0)` eredményét `0xf4240`-hez hasonlítja; eltéréskor kihagyja a `0x00487590`-et. | bináris (`0x005cfe6d`–`0x005cfe79`) |
-| A `0x0048aab0` az `arg=0` útban beolvassa a `FRSuggestionThreshold`, `FRSuggestionSingleThreshold`, `FRSortThreshold` és `FRRecommendIncludeLimit` kulcsokat. | bináris (`0x0048aab0`–`0x0048ad98`) |
-| A visszatérési feltétel csak a korábbi és új `FRSuggestionThreshold`, valamint `FRSuggestionSingleThreshold` értéket hasonlítja össze; egyezéskor `0`, eltéréskor `0xf4240` a visszatérés. | bináris (`0x0048ad9e`–`0x0048adcc`, `0x0048ae7e`–`0x0048ae87`) |
-| A felületi `facethresh1` kulcsa `FRSortThreshold`; a `0x0048aab0` ezt újratölti, de nem hasonlítja össze a sentinel kiválasztásakor. | bináris (`0x006e0ee8`, `0x0048ab56`–`0x0048ab9b`, `0x0048ad9e`–`0x0048adc2`); korábbi megfeleltetés: [picasa-arcfelismeres.md §1.1](picasa-arcfelismeres.md) |
-| Sentinel esetén a hívó meghívja a `0x00487590`-et, majd feltételesen a `0x0047baf0`-t, és beállítja a panelobjektum `+0x166` bájtját. | bináris (`0x005cfe7b`–`0x005cfed6`) |
+| A `0x005cf5b0` a `0x0048aab0(0)` eredményét `0xf4240`-hez hasonlítja; eltéréskor kihagyja a `0x00487590`-et. | bináris (`0x005cfe6d`-`0x005cfe79`) |
+| A `0x0048aab0` az `arg=0` útban beolvassa a `FRSuggestionThreshold`, `FRSuggestionSingleThreshold`, `FRSortThreshold` és `FRRecommendIncludeLimit` kulcsokat. | bináris (`0x0048aab0`-`0x0048ad98`) |
+| A visszatérési feltétel csak a korábbi és új `FRSuggestionThreshold`, valamint `FRSuggestionSingleThreshold` értéket hasonlítja össze; egyezéskor `0`, eltéréskor `0xf4240` a visszatérés. | bináris (`0x0048ad9e`-`0x0048adcc`, `0x0048ae7e`-`0x0048ae87`) |
+| A felületi `facethresh1` kulcsa `FRSortThreshold`; a `0x0048aab0` ezt újratölti, de nem hasonlítja össze a sentinel kiválasztásakor. | bináris (`0x006e0ee8`, `0x0048ab56`-`0x0048ab9b`, `0x0048ad9e`-`0x0048adc2`); korábbi megfeleltetés: [picasa-arcfelismeres.md §1.1](picasa-arcfelismeres.md) |
+| Sentinel esetén a hívó meghívja a `0x00487590`-et, majd feltételesen a `0x0047baf0`-t, és beállítja a panelobjektum `+0x166` bájtját. | bináris (`0x005cfe7b`-`0x005cfed6`) |
 | A `0x00487590` a `0x00449a90`-től kér listát, majd albumonként a `0x0045ecf0` és `0x004d9aa0` címkemódosítókat hívja; a végén nullával tér vissza. | bináris (`0x00487590`; Ghidra: `2026-11-20-koteg-574-579.txt`, a függvény C-törzse) |
 | A `0x0045ecf0` címketagságot távolít el; a `0x004d9aa0` címketagságot ad hozzá. | bináris (`0x0045ecf0`, `0x004d9aa0`); korábbi helper-azonosítások: [ui-audit-context-menus.md §D.8.3](ui-audit-context-menus.md), [picasa-arcfelismeres-kutatasi-naplo.md](picasa-arcfelismeres-kutatasi-naplo.md) |
 | A `0x00449a90` kimeneti listájának pontos elem- és albumjelentése. | NINCS MEG |
@@ -30,8 +30,8 @@ A `0x00487590` egy, a `0x00449a90`-től kapott lista alapján albumcímke-tagsá
 
 ## Két bizonyítéki út
 
-- **A út — utasításszintű binárisolvasás:** a `0x0048aab0` összehasonlításai és visszatérési ágai, majd a `0x005cf5b0` feltételes hívása megadják a sentinel kaput és a hívási sorrendet. A `0x00487590` célzott diszasszembly-je közvetlenül mutatja a `0x00449a90`, `0x0045ecf0` és `0x004d9aa0` hívásokat.
-- **B út — Ghidra-függvénytörzs és külön helper-azonosítás:** a meglévő Ghidra-kimenet a `0x00487590` listakezelő ciklusát és albumonkénti helperhívásait külön C-nézetben mutatja. A másik két helper szerepét a korábbi, más hívási környezetből származó spec-elemzések rögzítik.
+- **A út: utasításszintű binárisolvasás:** a `0x0048aab0` összehasonlításai és visszatérési ágai, majd a `0x005cf5b0` feltételes hívása megadják a sentinel kaput és a hívási sorrendet. A `0x00487590` célzott diszasszembly-je közvetlenül mutatja a `0x00449a90`, `0x0045ecf0` és `0x004d9aa0` hívásokat.
+- **B út: Ghidra-függvénytörzs és külön helper-azonosítás:** a meglévő Ghidra-kimenet a `0x00487590` listakezelő ciklusát és albumonkénti helperhívásait külön C-nézetben mutatja. A másik két helper szerepét a korábbi, más hívási környezetből származó spec-elemzések rögzítik.
 
 A két út egyezik a kapuról és az albumcímke-tagság módosításáról. Mivel ugyanazon bináris függvények elemzésére támaszkodnak, és nincs független futásmérés a People panelről, a teljes felhasználói következmény bizonyítottsága **feltételes**, nem megerősített.
 
@@ -47,7 +47,7 @@ A két út egyezik a kapuról és az albumcímke-tagság módosításáról. Miv
 
 ## Nyitott
 
-- `Ghidra-kör kell: 0x00449a90 — pontosan milyen személy-, arc- vagy albumbejegyzéseket ad vissza a 0x00487590 által feldolgozott listában, és hogyan kapcsolódik ez a küszöbértékekhez? [blokkoló]` A címet a meglévő `referencia/ghidra/*.txt` fájlokban kerestem; hivatkozások vannak, önálló `0x00449a90` dekompiláció nincs.
+- `Ghidra-kör kell: 0x00449a90: pontosan milyen személy-, arc- vagy albumbejegyzéseket ad vissza a 0x00487590 által feldolgozott listában, és hogyan kapcsolódik ez a küszöbértékekhez? [blokkoló]` A címet a meglévő `referencia/ghidra/*.txt` fájlokban kerestem; hivatkozások vannak, önálló `0x00449a90` dekompiláció nincs.
 - **Colab-mérés szükséges:** az arcos mintakészleten a Névcímkék küszöbcsúszkáját módosítani, OK-t választani, majd azonnal összevetni a Személyek panel javaslatait; rögzíteni kell a mozdított vezérlőt és a javaslatlistát OK előtt és után. A helyi `meroadat.tar` ehhez nem tartalmaz adatot.
 - **A közvetett frissítőút nyitott:** a `0x00487590` feloldatlan indirekt hívásai és a `0x0047baf0` látható felületi hatása nincsenek azonosítva.
 - **Forráslap hiányzik:** a hivatkozott `docs/specs/paritas-folyamat-7325.md` nem érhető el ebben a munkafában; a #7331-et ettől független új lapon dokumentáltam.
