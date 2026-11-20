@@ -60,7 +60,7 @@ PicasaMenu {
         enabled: bar.createActionsEnabled || bar.hasPeopleAlbumMovieSources
         MenuItem {
             objectName: "menuCreateMovie"
-            text: qsTr("New Movie...")
+            text: qsTr("From Selection...")
             enabled: bar.createActionsEnabled
             onTriggered: bar.movieRequested()
         }

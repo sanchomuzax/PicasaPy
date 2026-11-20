@@ -96,6 +96,8 @@ HIVATALOS = {
         "Kijelöltek mellőzése", "unknownfaceheaderpanel/ignore"),
     "From Faces in Selection...": (
         "A kijelölésben lévő arcokból…", "eMenuCreateMovie::ID_FACES"),
+    "From Selection...": (
+        "Kijelölésből...", "eMenuCreateMovie::MOVIE"),
     "Display Time": ("Megjelenítési idő", "oneup/tpslabel"),
     "seconds": ("másodperc", "OneUpUI::seconds"),
     "Start Point": ("Kezdőpont", "filter_moviestart_label0"),
@@ -204,7 +206,8 @@ ELOFORDULASOK = {
         "Loading faces for file...", "Looking for other people...",
         "Sorting face data, %1%", "Loading faces for %1 files...",
         ", %1 files unchecked."],
-    "PicasaPy/PicasaCreateMenu.qml": ["From Faces in Selection..."],
+    "PicasaPy/PicasaCreateMenu.qml": [
+        "From Selection...", "From Faces in Selection..."],
     "PicasaPy/SlideshowControls.qml": ["Display Time", "seconds"],
     "PicasaPy/VideoTrimSlider.qml": ["Start Point", "End Point"],
     # #3575
