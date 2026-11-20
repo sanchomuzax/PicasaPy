@@ -295,6 +295,7 @@ def update_document(
     *,
     backup: bool = True,
     max_retries: int = 3,
+    touch: bool = True,
 ) -> IniDocument:
     """Best-effort konkurenciakezelésű betöltés → módosítás → mentés (#137).
 
@@ -316,6 +317,11 @@ def update_document(
     4. mentés ELŐTT újraolvassa a fájl aktuális ujjlenyomatát; eltéréskor
        frissen újratölt és a `mutate`-et újrajátssza,
     5. egyező ujjlenyomatnál atomikusan (backuppal) ment.
+
+    `touch=False` (#7292): a változott szakaszok képfájljának mtime-ját NEM
+    érinti meg. Tiszta könyvelő írásnál való (a mentés-készlet bélyege), ahol
+    a Picasa újraolvasása nem cél, a képfájl mtime-ja viszont az inkrementális
+    mentés döntésének része. Szerkesztésnél hagyd az alapértéken.
 
     A `mutate` KULCS-szintű, immutábilis módosítás legyen (`with_value` /
     `with_removed` / …) és mellékhatásmentes, mert újrajátszásra kerülhet. Az
@@ -352,7 +358,8 @@ def update_document(
                 # teszi elavulttá — a változott szakaszok képfájljának mtime-ját
                 # is meg kell érinteni. Sosem dob: az érintés kudarca (írásvédett
                 # kép, hálózati megosztás) nem boríthatja a kész mentést.
-                notify_picasa_after_ini_write(target, document, mutated)
+                if touch:
+                    notify_picasa_after_ini_write(target, document, mutated)
                 return mutated
             # Az ellenőrzésig észlelt változás: friss újratöltés + újrajátszás.
     raise IniConflictError(

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Slot
 
-from picasapy.backup import mappankent
+from picasapy.backup import keszlet_modositasa, mappankent
 from picasapy.index import open_index
 from picasapy.index.backup_sets import (
     SZUROK,
@@ -15,7 +15,6 @@ from picasapy.index.backup_sets import (
     TIPUS_LEMEZ,
     TIPUSOK,
     keszlet_letrehozasa,
-    keszlet_modositasa,
     keszlet_torlese,
     keszletek,
 )

@@ -36,6 +36,8 @@ _REGI_NYILVANOS_NEVEK = {
     "TIPUS_CD_DVD",
     "TIPUS_LEMEZ",
     "annotations",
+    # #7292: a lemezkép-írás bélyegzi a forrás ini-jét
+    "belyegezd",
     "datetime",
     "flat_key",
     "futtasd",
@@ -80,7 +82,9 @@ _EREDETI_FORRASHASH = {
     "_mappalista": "653058451bd640b3c8fbdfca55d4e773074e16cd4136cbb32e2238ddbc91bdab",
     "futtasdMost": "5c9f89f48fdf8165d56004b321b6c50946416f93fececab5f75cadbba148ce6a",
     "futtasdLemezkepbe": "76a34add4f5791dd94b180bca92165202d2c1c6f0a2149371881aa9e0995663f",
-    "_lemezkepek_hattereben": "3a0bc34e3282a689b00277af7db630b52f58c9cbc52afc13c86189ee7d6ee192",
+    # #7292: szándékos változás: a lemezkép-írás a nyilvántartás mellé a
+    # készlet-bélyeget is a forrás ini-jébe írja (`belyegezd` hívás)
+    "_lemezkepek_hattereben": "4e80fce96ed18115ff293f81cbd711b67f35349cf88f0ab4f0ce151ac5350191",
     "szakitsdMeg": "3684222bed10b1674165a1a80c8d368439f8d5ae88263e49e2dbf622bd42d60d",
     "_futtatas_hattereben": "8dbbb1ec7b73bc7a0bcea38c39c4d2de97b28803b56233442485ddf29d4a5e41",
     "visszaallitastFuttat": "c2ad46cd3d17292969b4fdddda6de01c3eecdef55c3e8dac300246f767abe33f",

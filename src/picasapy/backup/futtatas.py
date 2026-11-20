@@ -39,10 +39,15 @@ from picasapy.paths import normalize_path
 from picasapy.ini import ini_source_path
 from picasapy.ini.names import INI_NAME
 
+from .belyeg import SOHA_NEM_MENTETT, BelyegOlvaso, belyegezd, mentendo
 from .szuro import szurd_meg
 
 #: Az eredeti a lemez gyökerére `files.txt`-et írt a másolt fájlokról.
 MANIFESZT_NEVE = "files.txt"
+
+#: A fájlmásolás modulszintű fogantyúja: a teszt ezt cseréli, nem a globális
+#: `shutil.copy2`-t (`tests/test_platform_seam_1217.py`).
+_masol = shutil.copy2
 
 
 @dataclass(frozen=True)
@@ -93,6 +98,12 @@ def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=(), mappak=None) -> Terv:
     szűrője itt fut le rajtuk. A már elmentett, változatlan fájl kimarad —
     ez a készlet lényege.
 
+    #7292: a döntést a kép `.picasa.ini`-szakaszának két kulcsa hozza (a sima
+    `backuphash` és a `BKTag <készlet>-backuphash`, ld. `belyeg.py`), így egy
+    metaadat-szerkesztés (felirat, csillag ...) újra mentendővé teszi a képet.
+    A (méret, mtime) a nyilvántartásból kiegészítésként marad: a kívülről
+    módosított képfájlt az eredeti nem venné észre, mi igen.
+
     #3594: a `mappak` a felületen bepipált mappák (`backuptext3`: „Jelölje
     ki azokat a mappákat, amelyekről biztonsági másolatot szeretne
     készíteni"). `None` = minden mappa; üres lista = semmi. A szűkítés a
@@ -103,6 +114,9 @@ def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=(), mappak=None) -> Terv:
         pipaltak = {Path(mappa) for mappa in mappak}
         fajlok = [f for f in fajlok if Path(f).parent in pipaltak]
     nyilvantartas = elmentett_allapot(conn, keszlet.id)
+    #: #7292: a döntést a kép `.picasa.ini`-szakaszának két kulcsa is hozza
+    #: (az eredeti `0x0065d010`-e); a (méret, mtime) kiegészítésként marad.
+    belyegek = BelyegOlvaso(keszlet.nev)
     #: #3776 [KÖZEPES javítás]: a `fajlok` a #3776 óta FELOLDOTT
     #: (symlink/8.3-rövidnév/betűzés szerint kanonikus) útvonalon
     #: érkeznek, de a nyilvántartás régebbi sorai — a javítás előtti
@@ -129,7 +143,16 @@ def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=(), mappak=None) -> Terv:
                 }
             korabbi = nyilvantartas_feloldva.get(str(fajl))
         mostani = (allapot.st_size, allapot.st_mtime_ns)
-        if korabbi == mostani:
+        belyeg = belyegek.belyeg(fajl)
+        dontes = mentendo(
+            belyeg,
+            nyilvantartva=korabbi is not None,
+            nyilvantartva_valtozatlanul=korabbi == mostani,
+        )
+        if dontes is None:
+            # nincs ini, amiből dönteni lehetne: a nyilvántartás dönt
+            dontes = korabbi != mostani
+        if not dontes:
             kihagyott += 1
             continue
         tervezett.append(
@@ -138,7 +161,12 @@ def tervezd_meg(conn, keszlet, fajlok, *, gyokerek=(), mappak=None) -> Terv:
                 relativ=_relativ_ut(fajl, gyokerek),
                 meret=allapot.st_size,
                 mtime_ns=allapot.st_mtime_ns,
-                ok="valtozott" if korabbi is not None else "uj",
+                ok=(
+                    "valtozott"
+                    if korabbi is not None
+                    or (belyeg is not None and belyeg.keszlet != SOHA_NEM_MENTETT)
+                    else "uj"
+                ),
             )
         )
     return Terv(tuple(tervezett), kihagyott)
@@ -213,7 +241,7 @@ def futtasd(
         celfajl = cel / tetel.relativ
         celfajl.parent.mkdir(parents=True, exist_ok=True)
         try:
-            shutil.copy2(tetel.forras, celfajl)
+            _masol(tetel.forras, celfajl)
         except OSError:
             # a bukott fájl kimarad a nyilvántartásból, tehát a következő
             # futás újra megpróbálja
@@ -224,6 +252,10 @@ def futtasd(
         if haladas is not None:
             haladas((index, osszes))
 
+    # #7292: a bélyeg a forrás ini-jébe CSAK a sikeresen másolt fájlokra
+    # kerül, és az archívumba másolt ini már a bélyeges állapot
+    belyegezd(keszlet.nev, [Path(forras) for forras, _meret, _mtime in feljegyzendo])
+
     for mappa in sorted(ini_mappak):
         ini = ini_source_path(mappa / INI_NAME)
         if ini is None:
@@ -231,7 +263,7 @@ def futtasd(
         celmappa = (cel / _ini_relativ(mappa, terv, ini.name)).parent
         celmappa.mkdir(parents=True, exist_ok=True)
         try:
-            shutil.copy2(ini, celmappa / ini.name)
+            _masol(ini, celmappa / ini.name)
         except OSError:
             continue
 

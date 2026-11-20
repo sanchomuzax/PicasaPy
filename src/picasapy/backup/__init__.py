@@ -8,6 +8,7 @@ A készlet tárolása az indexben él (`picasapy.index.backup_sets`), a
 futtatás itt.
 """
 
+from .belyeg import belyegezd, keszlet_kulcs, nevezd_at_a_belyegeket
 from .futtatas import (
     MANIFESZT_NEVE,
     Terv,
@@ -16,6 +17,7 @@ from .futtatas import (
     mappankent,
     tervezd_meg,
 )
+from .keszlet import keszlet_modositasa
 from .szuro import szurd_meg
 from .visszaallitas import VisszaallitasiEredmeny, visszaallit
 
@@ -24,8 +26,12 @@ __all__ = [
     "Terv",
     "TervezettFajl",
     "VisszaallitasiEredmeny",
+    "belyegezd",
     "futtasd",
+    "keszlet_kulcs",
+    "keszlet_modositasa",
     "mappankent",
+    "nevezd_at_a_belyegeket",
     "szurd_meg",
     "tervezd_meg",
     "visszaallit",
