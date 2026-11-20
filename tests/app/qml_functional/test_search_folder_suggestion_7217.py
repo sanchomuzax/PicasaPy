@@ -172,18 +172,21 @@ def test_search_suggestion_rows_and_folder_click_keep_search(qml_app, qt_app, tm
         )
 
     assert _wait(qt_app, _folder_ready)
-    suggestions = _value(popup, "suggestions")
-    folder_index = next(
-        index
-        for index, row in enumerate(suggestions)
-        if row["kind"] == "folder" and row["param"] == target
-    )
-    folder_row = next(
-        row for row in _walk(popup)
-        if row.objectName() == "suggestionRow"
-        and row.property("index") == folder_index
-    )
-    _click(window, folder_row, qt_app)
+
+    # #7317: a sort a TARTALMA alapján keressük, nem a lista egy korábbi
+    # pillanatképéből vett sorszámmal: a javaslatlista frissülhet a kettő
+    # között, és akkor a sorszám alatt már egy szójavaslat (pl. „ai8”) áll.
+    def _folder_row():
+        for row in _walk(popup):
+            if row.objectName() != "suggestionRow" or not row.isVisible():
+                continue
+            data = _value(row, "modelData") or {}
+            if data.get("kind") == "folder" and data.get("param") == target:
+                return row
+        return None
+
+    assert _wait(qt_app, lambda: _folder_row() is not None)
+    _click(window, _folder_row(), qt_app)
 
     assert _wait(qt_app, lambda: controller.searchActive is True)
     assert field.property("text") == "ai-folder "
