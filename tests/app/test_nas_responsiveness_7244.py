@@ -895,12 +895,14 @@ def test_final_sync_progress_does_not_repeat_the_final_feed_reload(qt_app):
     assert host.reloads == 0, "a végső progressz egy második teljes feed-újratöltést kért"
 
 
-def test_nezo_kepolvasasa_aszinkron_es_a_rejtett_fak_lustak(qml_app, qt_app):
+def test_nezo_kepolvasasa_aszinkron_es_a_rejtett_fak_lustak(qt_app):
     """A hálózati kép forrása nem fogja meg az eseményhurkot; rejtett fák nem épülnek fel."""
+    import json
+
     from PySide6.QtCore import QUrl
     from PySide6.QtGui import QColor, QImage
-    from PySide6.QtQuick import QQuickImageProvider
-    from PySide6.QtQml import QQmlExpression, qmlContext
+    from PySide6.QtQml import QQmlComponent, QQmlEngine, QQmlExpression, qmlContext
+    from PySide6.QtQuick import QQuickImageProvider, QQuickWindow
     from tests.support.varakozas import var_feltetelre
 
     qml_dir = Path(__file__).parents[2] / "src/picasapy/app/qml/PicasaPy"
@@ -927,7 +929,6 @@ def test_nezo_kepolvasasa_aszinkron_es_a_rejtett_fak_lustak(qml_app, qt_app):
     assert "active: viewer.propertiesOpen && viewer.visible" in right_panels_qml
     assert "sourceComponent: PropertiesPanel {" in right_panels_qml
 
-    window, _controller, _library, engine = qml_app
     provider_threads = []
 
     class SlowImageProvider(QQuickImageProvider):
@@ -944,24 +945,54 @@ def test_nezo_kepolvasasa_aszinkron_es_a_rejtett_fak_lustak(qml_app, qt_app):
             return image
 
     provider = SlowImageProvider()
+    engine = QQmlEngine()
     engine.addImageProvider("slowNas", provider)
-    window.setProperty("viewerOpen", True)
-    viewer = window.findChild(QObject, "photoViewer")
-    assert viewer is not None
-    viewer.setProperty("currentIndex", 0)
-    image = window.findChild(QObject, "viewerImage")
+    component = QQmlComponent(engine)
+    component.setData(
+        b"import QtQuick\n"
+        b'Item { width: 32; height: 24; Image { objectName: "viewerImage"; '
+        b"anchors.fill: parent; asynchronous: true } }",
+        QUrl(),
+    )
+    assert var_feltetelre(
+        qt_app,
+        lambda: component.status() != QQmlComponent.Status.Loading,
+        5.0,
+    ), "a minimális Image-komponens nem készült el"
+    root = component.create()
+    assert root is not None, "\n".join(error.toString() for error in component.errors())
+    window = QQuickWindow()
+    window.setWidth(32)
+    window.setHeight(24)
+    root.setParentItem(window.contentItem())
+    window.show()
+    image = root.findChild(QObject, "viewerImage")
     assert image is not None
     image_ready = QQmlExpression(qmlContext(image), image, "status === Image.Ready")
     image_ready.setSourceLocation(str(qml_dir / "PhotoViewerFotoImage.qml"), 1, 1)
     previous_source = image.property("source")
-    image.setProperty("asynchronous", True)
+    queued_source_expressions = []
+
+    def queue_source_change(source: str) -> None:
+        # A Qt képbetöltő a Python szolgáltatót munkaszálon hívja. A forrás
+        # Pythonból állítása közben a GIL-t tartó tesztszál és a képbetöltő
+        # egymásra várhat, ezért maga az értékadás QML-oldalon, a következő
+        # eseménykörben történjen.
+        expression = QQmlExpression(
+            qmlContext(image),
+            image,
+            "Qt.callLater(function() { source = "
+            f"{json.dumps(source)}; }})",
+        )
+        expression.evaluate()
+        queued_source_expressions.append(expression)
 
     heartbeat = [time.monotonic()]
     beat_timer = QTimer()
     beat_timer.setInterval(10)
     beat_timer.timeout.connect(lambda: heartbeat.append(time.monotonic()))
     beat_timer.start()
-    image.setProperty("source", QUrl("image://slowNas/large-network-image"))
+    queue_source_change("image://slowNas/large-network-image")
     assert var_feltetelre(
         qt_app,
         lambda: bool(image_ready.evaluate()[0]) and bool(provider_threads),
@@ -969,7 +1000,22 @@ def test_nezo_kepolvasasa_aszinkron_es_a_rejtett_fak_lustak(qml_app, qt_app):
     ), "a lassú Image-forrás nem készült el"
     heartbeat.append(time.monotonic())
     beat_timer.stop()
-    image.setProperty("source", previous_source)
+    previous_source_text = (
+        previous_source.toString()
+        if hasattr(previous_source, "toString")
+        else str(previous_source or "")
+    )
+    queue_source_change(previous_source_text)
+
+    def current_source_text() -> str:
+        source = image.property("source")
+        return source.toString() if hasattr(source, "toString") else str(source or "")
+
+    assert var_feltetelre(
+        qt_app,
+        lambda: current_source_text() == previous_source_text,
+        5.0,
+    ), "a QML-oldali forrás-visszaállítás nem fejeződött be"
 
     max_gap_ms = max(
         ((right - left) * 1000 for left, right in zip(heartbeat, heartbeat[1:], strict=False)),

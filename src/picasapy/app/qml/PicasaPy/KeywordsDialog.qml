@@ -23,7 +23,7 @@ Dialog {
     property string dateValue: ""
     property int networkCacheRevision: 0
     Connections {
-        target: root.controller
+        target: Qt.isQtObject(root.controller) ? root.controller : null
         ignoreUnknownSignals: true
         function onNetworkPropertiesChanged() {
             root.networkCacheRevision += 1
