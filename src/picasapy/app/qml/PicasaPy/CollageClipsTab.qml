@@ -74,7 +74,7 @@ Item {
     //: A lista alsó behúzása (spec 4.3: „alul −10").
     readonly property int listBottomGap: 10
 
-    //: #7293: a forrásmappa vászonra nem került képei — ez a lap bemenete.
+    //: #7293: a forrásmappa vászonra nem került képei: ez a lap bemenete.
     //: Régebbi panel-próba vezérlőjén nincs kollázs-/fotómodell; ott a
     //: korábbi tálca-lista marad kompatibilis tartaléknak.
     readonly property var unusedClips: {

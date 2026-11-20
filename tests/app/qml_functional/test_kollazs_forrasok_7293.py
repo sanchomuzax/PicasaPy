@@ -96,7 +96,7 @@ def _futtasd_negy_kijelolest(window, controller, qt_app, belepo: str) -> None:
             _kattints(window, gomb, qt_app)
         else:
             menu_bar = window.property("menuBar")
-            menu = _megnyit(menu_bar, qt_app, "&Create")
+            _megnyit(menu_bar, qt_app, "&Create")
             # A Picture Collage sor a negyedik tényleges menüelem.
             parancs = _elero_menu(menu_bar, qt_app, "&Create", (3,))
             assert parancs.objectName() == "menuCreateCollage"

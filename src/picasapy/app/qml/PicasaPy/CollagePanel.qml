@@ -91,7 +91,7 @@ Item {
             ? panel.controller.collagePageRatio : 0.75
 
     //: #7293: a „Klipek (N)" a vászonra nem került forrásmappabeli képeket
-    //: számolja — ugyanazt a listát, amely a lapon megjelenik.
+    //: számolja, ugyanazt a listát, amely a lapon megjelenik.
     readonly property int clipCount:
         (clipsTab && panel.controller
             && panel.controller.photos !== undefined
