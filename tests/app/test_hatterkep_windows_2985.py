@@ -20,7 +20,6 @@ asztalt semmi nem állítja át (a jegy külön kéri).
 from __future__ import annotations
 
 
-import ctypes
 from types import SimpleNamespace
 
 import pytest
@@ -73,7 +72,9 @@ class TestAWindowsAg:
                 hivasok.append(argumentumok)
                 return 1
 
-        monkeypatch.setattr(ctypes, "windll", SimpleNamespace(user32=User32()), raising=False)
+        monkeypatch.setattr(
+            wallpaper, "ctypes", SimpleNamespace(windll=SimpleNamespace(user32=User32()))
+        )
         ut = str(tmp_path / "picasabackground.bmp")
 
         assert wallpaper._windows_api(ut)

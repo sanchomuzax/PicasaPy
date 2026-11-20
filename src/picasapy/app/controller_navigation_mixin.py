@@ -129,6 +129,12 @@ class FolderNavigationMixin:
         for path in (self._db_path, Path(f"{self._db_path}-wal")):
             try:
                 stat = path.stat()
+                if path.name.endswith("-wal") and stat.st_size == 0:
+                    # Az üres WAL nem hordoz adatot: egy olvasó kapcsolat
+                    # megnyitása is létrehozhatja, és ettől a feed nem avul
+                    # el (#7334, a CI-n ingadozó gyorsút-pecsét).
+                    stamp.append(None)
+                    continue
                 stamp.append((stat.st_mtime_ns, stat.st_size))
             except OSError:
                 stamp.append(None)
