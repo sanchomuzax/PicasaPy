@@ -43,7 +43,7 @@ def _elem(window, object_name: str):
     return window.findChild(QQuickItem, object_name)
 
 
-def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
 

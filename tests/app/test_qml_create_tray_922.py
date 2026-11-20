@@ -70,7 +70,9 @@ class TestMenuKovetiATalcat:
         window, controller, lib, engine = qml_app
         window.setProperty("selectedIndexes", [])
         _settle(qt_app, 2)
-        for name in ("menuCreateCollage", "menuCreateMovie"):
+        # #7293: a Kollázs kijelölés nélkül a teljes mappából nyit (job-779...788),
+        # ezért itt csak a Film szürke.
+        for name in ("menuCreateMovie",):
             assert window.findChild(QObject, name).property("enabled") is False
 
     def test_kijelolessel_talca_nelkul_is_el(self, qml_app, qt_app):

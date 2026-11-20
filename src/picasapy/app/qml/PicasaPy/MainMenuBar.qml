@@ -45,7 +45,7 @@ PicasaMenuBar {
     required property var hostXmpFacesWriteDialog
     // #7315: az Ajándék-CD módhoz nem kell kijelölt kép vagy tálcaelem;
     // a panel az aktuális mappát választja ki alapértelmezésként.
-    property bool giftCdActionsEnabled: !hostWindow.viewerOpen
+    giftCdActionsEnabled: !hostWindow.viewerOpen
     property int networkCacheRevision: 0
 
     Connections {

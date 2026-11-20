@@ -35,7 +35,9 @@ def _felepitett_parbeszedek(qml_app):
 class TestCreateMenu:
     def test_items_disabled_without_selection(self, qml_app):
         window, controller, lib, engine = qml_app
-        for name in ("menuCreateCollage", "menuCreateMovie"):
+        # #7293: a Kollázs kijelölés nélkül a teljes mappából nyit (job-779...788),
+        # ezért itt csak a Film szürke.
+        for name in ("menuCreateMovie",):
             item = window.findChild(QObject, name)
             assert item is not None, name
             assert item.property("enabled") is False

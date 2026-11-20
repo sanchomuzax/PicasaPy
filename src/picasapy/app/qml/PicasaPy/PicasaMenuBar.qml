@@ -243,6 +243,9 @@ MenuBar {
     // NEM a `photoActionsEnabled`-ből élnek — az a rácsbeli kijelöléshez
     // kötött 27 fotó-műveletet vezérli, és azoknak tényleg kijelölés kell.
     property bool createActionsEnabled: false
+    //: #7315: az Ajándék-CD mappaforrással kijelölés és tálca nélkül is nyitható;
+    //: a főablak a nézőben tiltja (MainMenuBar)
+    property bool giftCdActionsEnabled: true
     // #4633: az Emberek-album filmhez nem kell kijelölt kép; a People-modell
     // csak olyan személyalbumokat tartalmaz, amelyeknek van alsó képlistája.
     readonly property bool hasPeopleAlbumMovieSources: {
