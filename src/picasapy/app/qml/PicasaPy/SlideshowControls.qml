@@ -53,6 +53,19 @@ Item {
             }
         }
     }
+    // #7285: a teljes felület egérmozgás-figyelője fölött külön kattintási
+    // terület kapcsolja a normál vetítést. Lejátszáskor teljes magasságú,
+    // szünetben a `oneup.tre:20-23` szerinti H-97-nél ér véget. A `.tre`
+    // statikus bizonyíték, Picasa-futásmérés nélkül. A hover-kezelőt külön
+    // hagyjuk teljes méretűnek, hogy a sáv egérmozgásra szünetben is előjöjjön.
+    MouseArea {
+        objectName: "slideshowPlaybackToggleArea"
+        anchors.fill: parent
+        anchors.bottomMargin: slideshow.playing ? 0 : 97
+        enabled: !slideshow.screensaverMode && !slideshow.timelineSlideshow
+        acceptedButtons: Qt.LeftButton
+        onClicked: slideshow.togglePause()
+    }
     // #5649: az eredeti `oneup/auto2` teljes szélességű, 14 px magas
     // kattintósávja a vetítő tetején. Ugyanazt a műveletet hívja, mint a
     // lejátszás gomb; a `MouseArea` átlátszó, a képet nem takarja el.

@@ -60,18 +60,19 @@ Minden állítás mellett cím vagy `fájl:sor` áll. Ami nem igazolható, az
 
 | elem | eredeti forrás | mai kód | eredmény |
 |---|---|---|---|
-| hely a `.tre`-ben | `oneup.tre:20-23`: `oneup/auto2: root`, `m_scaleX`, `YConstraint 0, 0, 0`, `YConstraint 1, 1, -97`. A gyökér gyermeke, nem a `stripback`-é. Nincs ikon és nincs rejtő-jelzés. | nincs `auto2` elem | ELTÉR (hiányzik) |
-| geometria (meglévő lap) | `picasa-create-features.md:7373-7376`: `vbutton: auto2`, pozíció (0, 0), méret 800 × 14, „a teljes szélességű felső kattintósáv”. Ez a meglévő lap állítása a `respack.yt`-ből. A `respack.yt` nincs a munkafában, ezt ebben a körben nem olvastuk újra (N3). | nincs | ELTÉR (hiányzik) |
-| kattintás: ág | `0x00803491`-`0x008034bd`: név-összehasonlítás `oneup/auto2`-vel (`0xcbd51c`, 12 bájt). A találat ága: `0x008034c1`-`0x008034c5`, `call 0x00803110`, az `eax` a `this`. | nincs. A vetítő `MouseArea`-ja (`SlideshowView.qml:898-912`) vetítésen kívül `Qt.NoButton`, és nincs kattintás-művelete. | ELTÉR (az eredetiben kattintás van, nálunk nincs) |
-| `auto` ugyanaz a hívás | `0x00803452`-`0x00803480` (`oneup/auto`, `0xcbd510`, 11 bájt). `0x00803486`: `call 0x00803110`, ugyanazzal a `this` argumentummal. | `SlideshowView.qml:1000-1004` (`slideshowPlayButton`, `show.togglePause()`) | az `auto` és az `auto2` ugyanazt a függvényt hívja |
-| mikor látszik az `auto` helyett | Név szerinti láthatóság-váltás nincs a `0x008037e0`-ban: az csak `oneup/timeline` (`0xcbd528`) és `oneup/transtype` (`0xcbd54c`) nevet használ. A két név konstans címe (`0xcbd510`, `0xcbd51c`) a sztring-index szerint közvetlen címként csak a `0x008032e0`-ban szerepel. A `.tre`-ben sem az `auto`, sem az `auto2` nem kap rejtő-jelzést. | nincs megfelelő | NINCS MEG (lásd N2) |
+| hely a `.tre`-ben | `oneup.tre:20-23`: `oneup/auto2: root`, `m_scaleX`, `YConstraint 0, 0, 0`, `YConstraint 1, 1, -97`. A gyökér gyermeke, nem a `stripback`-é. Nincs ikon és nincs rejtő-jelzés. | `SlideshowControls.qml`: a teljes szélességű kattintási felület magában foglalja a felső 14 px-es sávot is. | az elem helye és a felső régió megfelel |
+| geometria | A `.tre` korlátai szerint a téglalap teljes szélességű, felső éle `0`, alsó éle `H-97`; ez statikus adat, Picasa-futásmérés nélkül. A korábbi 800 × 14 állítás csak a felső sáv magasságát írta le, nem a teljes kattintási területet. | `slideshowPlaybackToggleArea`: lejátszáskor teljes magasság, normál szünetben `bottomMargin: 97`; a külön `slideshowAuto2Area` továbbra is 14 px magas. | szünetben a `.tre` geometriájával egyezik |
+| kattintás: lejátszás | `0x007fde80` `0x201` ága (normál vetítés, `[this+0x3b8]==0`) a vetítő bármely pontján a `0x00801130` szünet-kapcsolót hívja; koordináta- és találatvizsgálat nincs. A kattintást nem fogyasztja el (`0xf4241`). | A külön kattintási MouseArea bal kattintáskor `slideshow.togglePause()`-t hívja; a teljes méretű egérmozgás-figyelő megmarad. | a kért bal kattintás működik |
+| kattintás: szünet | Szünetben a OneUpUI aktív gyerek; az `auto2` teljes szélességű, `0…H-97` régiójának felengedése (`0x8000004`) a `0x008032e0`-n át `0x00803110`-et hívja. Ez ugyanaz a hívás, mint a lejátszásgombé. | A külön kattintási MouseArea H-97-ig ér; az első 14 px-en a fölötte levő `slideshowAuto2Area` egyetlen kattintást kap. A teljes méretű hover-figyelő megmarad, a vezérlősáv gyerekei pedig saját egér-eseményt kapnak. | az eredeti út statikusan igazolt; PicasaPy-egérpróbával fedett |
+| `auto` ugyanaz a hívás | `0x00803452`-`0x00803480` (`oneup/auto`, `0xcbd510`, 11 bájt). `0x00803486`: `call 0x00803110`, ugyanazzal a `this` argumentummal. | `SlideshowControls.qml` (`slideshowAuto2Area`) és `slideshowPlayButton` egyaránt a `SlideshowView.qml` `togglePause()`-ját használja. | ugyanaz a play/pause művelet |
+| mikor látszik az `auto` helyett | A `.tre`-ben egyik elemhez sincs rejtő-jelzés. A `0x008037e0` név szerinti láthatóságot nem vált; a vizsgált sztringek a `0x008032e0`-ban szerepelnek. A OneUpUI szünetbeli aktív gyerek-útja ismert, de az `auto` és `auto2` külön látható állapotának szabálya továbbra sem. | A PicasaPy felső 14 px-es eleme a normál vetítésben megmarad; a teljes kattintási régió a lejátszás állapotához igazodik. | a külön vizuális láthatósági szabály NINCS MEG (N2) |
 
-**A `0x00803110` törzséhez:** a függvény nem olvassa a lejátszás állapotát.
-A `[esi+0x518] = 1` beállítás feltétel nélkül történik (`0x00803131`). Csak a
-`0x00801cf0` hívás függ a `[esi+0x3be]` mezőtől (`0x0080311d`-`0x00803127`).
-A QML `togglePause()` (`SlideshowView.qml:479`) viszont invertál. Az `auto` és
-a `togglePause` egyezését ez a kör nem igazolta (N2). A szóköz-ágat a meglévő
-lap írja le: `picasa-menu-parancsok-viselkedes.md:3674` és `:3823`.
+**Bizonyítottság.** Az eredeti viselkedés statikus: dekompiláció és
+disassembly, eredeti futásmérés nélkül. A Colab #770 (`f05d`) nem döntötte el
+a kérdést, mert kattintás után az eredeti nem reagált. A helyi QML-próba a
+PicasaPy valódi press+release útját ellenőrzi, nem az eredeti Picasát. A
+Space ugyanazt a PicasaPy `togglePause()`-t hívja
+(`SlideshowView.qml:689-693`).
 
 #### 1.3.3 `transtype` (átmenet-választó)
 
@@ -191,8 +192,8 @@ meglévő lap is nyitottnak írja (`picasa-create-features.md:6890`, N8). Nálun
 | 1 | `exit` felirat | `SlideshowView.qml:990` | EGYEZIK |
 | 2 | `exit` ikon | `SlideshowView.qml:990` (szöveges ✕) | ELTÉR (grafika NINCS MEG) |
 | 3 | `exit` művelet | `SlideshowView.qml:992` (`show.stop()`) | NINCS MEG (az `X` osztálya) |
-| 4 | `auto2` elem | nincs (`SlideshowView.qml:898-912`) | ELTÉR (hiányzik) |
-| 5 | `auto2` láthatósága | nincs | NINCS MEG |
+| 4 | `auto2` kattintási területe | `SlideshowControls.qml` (`slideshowPlaybackToggleArea`, `slideshowAuto2Area`) | EGYEZIK normál módban; az eredeti bizonyíték statikus |
+| 5 | `auto2` láthatósága az `auto`-hoz képest | nincs közvetlen láthatósági váltó | NINCS MEG |
 | 6 | `transtype` lista (7 elem) | `SlideshowView.qml:100-107` | EGYEZIK |
 | 7 | `transtype` megjegyzés („22 soros”) | `SlideshowView.qml:1030` | ELTÉR |
 | 8 | `transtype` tárolás | `controller.py:540-554` | ELTÉR (DWORD 0-6 és sztring-kulcs) |
@@ -207,10 +208,12 @@ meglévő lap is nyitottnak írja (`picasa-create-features.md:6890`, N8). Nálun
   szöveges ✕ jel (`SlideshowView.qml:990`). Teendő: a grafika azonosítása (N7).
   A `picasapy-research` skill 5. szakasza szerint a felület az eredetit
   követi, ezért ez nem UI-kérdés.
-- **`auto2`.** Eredeti: 800 × 14 képpontos felső kattintósáv, amely a
-  `0x00803110`-at hívja (geometria: meglévő lap, `picasa-create-features.md:7373-7376`).
-  Nálunk: nincs ilyen elem. Teendő: a láthatóság (N2) és a geometria (N3)
-  tisztázása, csak utána jegy.
+- **`auto2`.** Eredeti: lejátszáskor a bal kattintás a teljes vetítőben
+  szünetet kapcsol; szünetben az `auto2` teljes szélességű kattintási
+  téglalapja a felső széltől H-97-ig ér (`oneup.tre:20-23`). Nálunk a teljes
+  egérkezelő használja a `togglePause()`-t; szünetben ugyanezen a H-97-es
+  határon ér véget. Az eredeti bizonyíték statikus, mérés nélkül. Az `auto`
+  és `auto2` külön vizuális láthatósági szabálya (N2) nyitott.
 - **`transtype` megjegyzés.** Eredeti: 7 elemű felugró lista (`0x0075db71`).
   Nálunk: a „22 soros” megjegyzés (`SlideshowView.qml:1030`). Teendő: a
   megjegyzés javítása 7 elemre. Csak szöveg, nem viselkedés.
@@ -225,9 +228,9 @@ meglévő lap is nyitottnak írja (`picasa-create-features.md:6890`, N8). Nálun
 
 ### 1.5 Nyitott kérdések mérlege
 
-Nyitott kérdések: 8 nyílt · 8 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”.
+Nyitott kérdések: 7 nyílt · 9 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”.
 
-**Lezárva (8):**
+**Lezárva (9):**
 
 - L1: a 22 belső kulcs és sorrendjük (`0x00771a10`).
 - L2: a választó 7 eleme és a QML egyezése (`0xd342e8`, `SlideshowView.qml:101-107`).
@@ -237,8 +240,10 @@ Nyitott kérdések: 8 nyílt · 8 lezárva · 0 blokkolt · 0 hatókörön kív�
 - L6: az `exit` ága és első hívása (`0x00803527`, `0x00a6ccf0`).
 - L7: az `auto` és az `auto2` ugyanazt a függvényt hívja (`0x00803486`, `0x008034c5`).
 - L8: az `exit` felirat egyezik (`oneuptext.tre:7-8`).
+- L9: az `auto2` teljes területe, szünetbeli H-97-es alsó határa és a két
+  állapot statikus kattintási útja; PicasaPy-egérpróba: #7285.
 
-**Nyílt, mindegyiknek megvan az útja (8):**
+**Nyílt, mindegyiknek megvan az útja (7):**
 
 - N1: az `exit` `X` objektumának osztálya és a `vt+0x14` metódusa. Út: a
   `this+0x50` beállítójának (`0x00a6cd00`, `vt+0x28`) közvetett hívóhelyének
@@ -246,8 +251,6 @@ Nyitott kérdések: 8 nyílt · 8 lezárva · 0 blokkolt · 0 hatókörön kív�
 - N2: az `auto2` és az `auto` láthatósága egymás helyett. Út: a motor
   láthatósági szabálya, vagy az eredeti Picasa két állapotú felvétele a
   Colab-felmérővel (`picasa-colab-jobs`, `picasapy-research` 1/d). Örökölt.
-- N3: az `auto2` geometriája a `respack.yt`-ből. Út: a fájl beszerzése a
-  munkafába, majd `tools/picasa/respack.py list`. Új.
 - N4: a registry-előtag. Út: a `0x00407a20` `vt+4` metódusa az
   `[ebx+0x18]` objektumon. Új.
 - N5: az API-név a `0xd694f0`-n. Út: a PE import-tábla közvetlen olvasása
@@ -260,7 +263,7 @@ Nyitott kérdések: 8 nyílt · 8 lezárva · 0 blokkolt · 0 hatókörön kív�
   a `timeline` osztályának azonosítása. Örökölt
   (`picasa-create-features.md:6890`).
 
-**Megjegyzés a számláláshoz.** Az N3-N7 új részkérdések, a skill szerint
+**Megjegyzés a számláláshoz.** Az N4-N7 új részkérdések, a skill szerint
 gépi úton zárhatók volnának ebben a körben. Ezért a kör a skill szerinti
 lezárási feltételt nem teljesíti. A nyitott tételek a hívóhoz kerülnek, aki
 dönt, folytatódik-e a kör.
