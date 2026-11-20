@@ -156,6 +156,13 @@ def test_video_viewer_probe(tmp_path):
             r"event=press timestamp=\d+ monotonic=\d+\.\d+",
             result.stdout,
         ), f"{lepes}: nem került egéresemény-időbélyeg a próbanaplóba"
+    for lepes in (
+        "PROBE-SLIDESHOW START video",
+        "PROBE-SLIDESHOW END playback-finished",
+        "PROBE-SLIDESHOW START photo-to-video",
+        "PROBE-SLIDESHOW END photo-to-video-fallback",
+    ):
+        assert lepes in result.stdout, f"hiányzó diavetítési próbalépés: {lepes}"
     assert re.search(
         r"PROBE-DOUBLECLICK step=photo-double-click-exit-click "
         r"handler=(?:entered|not-entered) entries=\d+ "

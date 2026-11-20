@@ -26,6 +26,7 @@ SlideshowView {
             slideshow.folderMusicRevision += 1
         }
     }
+    property bool _viewerPlaybackSuspendedForSlideshow: false
 
     // A régi, írható QML-tulajdonságokat megtartjuk a főablaki állapot mellett.
     onVisibilityBeforeViewerFullscreenChanged: {
@@ -72,10 +73,11 @@ SlideshowView {
             index = hostWindow.viewerOpen && hostPhotoViewer
                 ? hostPhotoViewer.currentIndex
                                           : Math.max(0, hostWindow.selectedIndex)
+        _suspendViewerVideo()
         hostWindow.visibilityBeforeSlideshow = hostWindow.visibility
         hostWindow.visibility = Window.FullScreen
         slideshow.start(index, paused)
-        if (!slideshow.visible)   // nincs vetíthető fotó — állítsuk vissza
+        if (!slideshow.visible)   // nincs vetíthető elem — állítsuk vissza
             exitSlideshow()
     }
 
@@ -104,11 +106,14 @@ SlideshowView {
         hostWindow.visibility =
             hostWindow.visibilityBeforeSlideshow === Window.FullScreen
                 ? Window.Windowed : hostWindow.visibilityBeforeSlideshow
-        if (wasScreensaver)
+        if (wasScreensaver) {
+            _resumeViewerVideo()
             return
+        }
         if (wasTimelineSlideshow) {
             hostWindow.timelineSlideshowActive = false
             hostWindow.timelineSlideshowModel = null
+            _resumeViewerVideo()
             return
         }
         if (slideshow.currentIndex >= 0) {
@@ -119,6 +124,37 @@ SlideshowView {
                 hostWindow.selectedIndex = slideshow.currentIndex
                 hostWindow.selectedIndexes = [slideshow.currentIndex]
             }
+        }
+        _resumeViewerVideo()
+    }
+
+    // Nézőből indított videódia esetén a háttérben maradó nézőlejátszó ne
+    // szóljon együtt a vetítő saját lejátszójával. A lejátszó csak akkor
+    // folytatja a videót kilépéskor, ha a szüneteltetés előtt valóban ment.
+    function _suspendViewerVideo() {
+        var loader = hostPhotoViewer ? hostPhotoViewer.videoLoader : null
+        var player = loader ? loader.item : null
+        if (player && player.playbackEnabled !== undefined) {
+            player.playbackEnabled = false
+            _viewerPlaybackSuspendedForSlideshow = true
+        }
+    }
+
+    function _resumeViewerVideo() {
+        if (!_viewerPlaybackSuspendedForSlideshow) return
+        var loader = hostPhotoViewer ? hostPhotoViewer.videoLoader : null
+        var player = loader ? loader.item : null
+        if (player && player.playbackEnabled !== undefined)
+            player.playbackEnabled = true
+        _viewerPlaybackSuspendedForSlideshow = false
+    }
+
+    Connections {
+        target: slideshow.hostPhotoViewer
+                ? slideshow.hostPhotoViewer.videoLoader : null
+        ignoreUnknownSignals: true
+        function onLoaded() {
+            if (slideshow.visible) slideshow._suspendViewerVideo()
         }
     }
 

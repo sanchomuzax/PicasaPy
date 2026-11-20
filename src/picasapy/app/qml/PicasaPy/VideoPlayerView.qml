@@ -10,10 +10,23 @@ import QtMultimedia
 Item {
     id: player
     property url source: ""
+    // A diavetítés felülírhatja az AutoPlayMovies beállítást, mert ott a
+    // videó maga a dia. A néző alapértelmezett viselkedése változatlan.
+    property bool forceAutoPlay: false
+    // A vetítő a saját szünet/folytatás állapotát adja át; az eredeti videó
+    // nézetnél ez mindig igaz marad.
+    property bool playbackEnabled: true
+    property bool controlsVisible: true
     // 1:1 bekapcsolásakor a VideoViewport a dekóder által jelzett
     // képkockaméretet tartja meg; a nézőterületen túli részt levágja.
     property bool actualSizeEnabled: false
     signal exitRequested()
+    signal playbackStarted()
+    signal playbackFinished()
+    signal playbackFailed()
+    property bool _completionNotified: false
+    property bool _failureNotified: false
+    property bool _pausedByPlaybackGate: false
 
     //: #4570: az `AutoPlayMovies` beállítás — kikapcsolva a videó megnyitáskor
     //: áll, és a lejátszó gombjával indul. Kontroller nélkül (próbákban) a
@@ -34,6 +47,18 @@ Item {
     //: `.picasa.ini` `filters=` láncába mennek vissza.
     property int trimStartMs: -1
     property int trimEndMs: -1
+
+    onPlaybackEnabledChanged: {
+        if (!playbackEnabled) {
+            if (media.playbackState === MediaPlayer.PlayingState) {
+                _pausedByPlaybackGate = true
+                media.pause()
+            }
+        } else if (_pausedByPlaybackGate) {
+            _pausedByPlaybackGate = false
+            media.play()
+        }
+    }
 
     //: #1838: a vágás MENTÉSE. A komponens nem ír inifájlt — jelez, és a
     //: gazda (`PhotoViewer`) hívja a vezérlő `setMovieTrim`/`resetMovieTrim`
@@ -68,6 +93,12 @@ Item {
             media.position = Math.min(player.trimStartMs, media.duration)
     }
 
+    function _finishPlayback() {
+        if (_completionNotified) return
+        _completionNotified = true
+        player.playbackFinished()
+    }
+
     // Bezárásnál/navigálásnál a Loader elereszti a komponenst, a lejátszás
     // vele áll le — külön stop-kezelés nem kell.
     MediaPlayer {
@@ -86,15 +117,42 @@ Item {
         // a Picasa a megnyitáskor azonnal lejátszotta a videót. Nyíl-
         // függvény kell: a sourceChanged injektált jel-paramétere ("media")
         // különben árnyékolná a MediaPlayer id-ját.
-        onSourceChanged: () => player.startIfAutoPlay()
+        onSourceChanged: () => {
+            player._completionNotified = false
+            player._failureNotified = false
+            player.startIfAutoPlay()
+        }
         //: #1838: a hossz csak a betöltés után ismert — a kezdőpontra ekkor
         //: tudunk ugrani (előbb a `position` írása elveszik)
         onDurationChanged: () => player.seekToTrimStart()
         //: a kimeneti pont: ott megállunk, mintha a klip véget érne. A
         //: vágáson TÚLI szakaszt nem játsszuk le — az eredeti sem teszi.
         onPositionChanged: () => {
-            if (player.trimEndMs >= 0 && media.position > player.trimEndMs)
+            if (player.trimEndMs >= 0 && media.position > player.trimEndMs) {
                 media.pause()
+                player._finishPlayback()
+            }
+        }
+        onPlaybackStateChanged: () => {
+            if (media.playbackState === MediaPlayer.PlayingState) {
+                if (!player.playbackEnabled) {
+                    player._pausedByPlaybackGate = true
+                    media.pause()
+                } else {
+                    player.playbackStarted()
+                }
+            }
+        }
+        onMediaStatusChanged: () => {
+            if (media.mediaStatus === MediaPlayer.EndOfMedia)
+                player._finishPlayback()
+        }
+        onErrorChanged: () => {
+            if (media.error !== MediaPlayer.NoError
+                    && !player._failureNotified) {
+                player._failureNotified = true
+                player.playbackFailed()
+            }
         }
         Component.onCompleted: () => player.startIfAutoPlay()
     }
@@ -103,11 +161,13 @@ Item {
     //: Kikapcsolva a lejátszó áll marad, és a lejátszás gombra indul.
     function startIfAutoPlay() {
         if (String(media.source).length === 0) return
-        if (player.autoPlay) media.play()
+        if (!player.playbackEnabled) media.pause()
+        else if (player.forceAutoPlay || player.autoPlay) media.play()
         else media.stop()
     }
 
     function togglePlayback() {
+        if (!player.playbackEnabled) return
         if (media.playbackState === MediaPlayer.PlayingState) media.pause()
         else media.play()
     }
@@ -155,7 +215,8 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        height: 72
+        height: player.controlsVisible ? 72 : 0
+        visible: player.controlsVisible
         color: "#2b2b2b"
 
         ColumnLayout {

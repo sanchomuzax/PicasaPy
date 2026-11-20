@@ -95,6 +95,7 @@ VideoEditPanel 1.0 VideoEditPanel.qml
 internal SlideshowImageLayer SlideshowImageLayer.qml
 internal SlideshowControls SlideshowControls.qml
 internal SlideshowTiming SlideshowTiming.qml
+internal SlideshowVideo SlideshowVideo.qml
 internal SlideshowPreviousImage SlideshowPreviousImage.qml
 internal SlideshowCurrentImage SlideshowCurrentImage.qml
 internal SlideshowVeil SlideshowVeil.qml
