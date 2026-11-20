@@ -4,6 +4,7 @@ az indulási háttérmunka előtt történik."""
 from __future__ import annotations
 
 import ast
+import json
 import os
 import subprocess
 import sys
@@ -61,3 +62,67 @@ def test_az_elso_kepkocka_utani_callback_az_elotoltesen_at_indit():
         and [a.id for a in cb.body.args if isinstance(a, ast.Name)] == ["_start_and_finish"]
         for cb in utemezett
     ), "az első képkocka utáni indítás a render-előtöltésen át fusson"
+
+
+def test_az_elonezet_elso_render_importja_a_munkaszal_inditasa_elott_tortenik():
+    program = r'''
+import contextvars
+import json
+import sys
+import threading
+from importlib.abc import MetaPathFinder
+
+from picasapy import lazy_import
+from picasapy.app.edit_controller_preview_mixin import EditControllerPreviewMixin
+
+assert "picasapy.render" not in sys.modules
+main_thread = threading.get_ident()
+import_threads = []
+
+class RenderThreadGuard(MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == "picasapy.render":
+            import_threads.append(threading.get_ident())
+            if import_threads[-1] != main_thread:
+                raise RuntimeError("a render első importja munkaszálról indult")
+        return None
+
+sys.meta_path.insert(0, RenderThreadGuard())
+
+class Signal:
+    def emit(self, *_args):
+        pass
+
+class Provider:
+    def register(self, **_kwargs):
+        lazy_import.lazy_callable("picasapy.render", "apply_filters")()
+
+class Host:
+    _preview_job = 0
+    _provider = Provider()
+    _previewRendered = Signal()
+    editSaveFailed = Signal()
+
+    def _start_background(self, worker, name):
+        self.thread = threading.Thread(target=worker, name=name)
+        self.thread.start()
+        self.thread.join(timeout=60)
+        assert not self.thread.is_alive(), "az előnézeti worker nem állt le"
+
+    def _finish_preview_worker(self):
+        pass
+
+host = Host()
+EditControllerPreviewMixin._start_preview_worker(
+    host, (0, {}, contextvars.copy_context())
+)
+print(json.dumps({"main": main_thread, "imports": import_threads}))
+'''
+    env = {**os.environ, "PYTHONPATH": str(REPO / "src"), "PYTHONUTF8": "1"}
+    ki = subprocess.run(
+        [sys.executable, "-c", program], env=env, capture_output=True,
+        text=True, encoding="utf-8", errors="replace", timeout=120,
+    )
+    assert ki.returncode == 0, ki.stderr or ki.stdout
+    eredmeny = json.loads(ki.stdout)
+    assert eredmeny["imports"] == [eredmeny["main"]]
