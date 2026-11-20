@@ -212,7 +212,7 @@ def _inditsd_a_kimenetet(
     )
 
     source = _forras_utvonala(controller)
-    source_folder = source.rsplit("/", 1)[0]
+    source_folder = str(Path(source).parent)
     names = [
         f"{column}-{row}-color_patches.jpg"
         for row in range(2)

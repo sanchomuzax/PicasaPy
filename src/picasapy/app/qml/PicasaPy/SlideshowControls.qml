@@ -181,21 +181,25 @@ Item {
             anchors.centerIn: parent
             spacing: 6
             readonly property real preferredSliderSlotWidth: 157
+            readonly property real preferredTransitionWidth: 150
+            readonly property real minimumTransitionWidth: 90
             // #7314: keskeny ablakban először a funkció nélküli, üres
-            // csúszkahely húzódik össze. A sor többi eleme a mért méretét
-            // tartja; széles ablakban a 157 px-es hely változatlan.
-            readonly property real widthWithoutSlider: {
+            // csúszkahely húzódik össze, utána (nagyobb betűs rendszeren,
+            // pl. Windowson, #7334) az átmenetválasztó, legfeljebb 90 px-ig.
+            // A többi elem a mért méretét tartja; széles ablakban a 157 és
+            // 150 px változatlan.
+            readonly property real fixedWidth: {
                 var total = spacing * Math.max(0, children.length - 1)
                 for (var i = 0; i < children.length; ++i) {
-                    if (children[i] !== imageSliderSlot)
+                    if (children[i] !== imageSliderSlot
+                            && children[i] !== transitionBox)
                         total += children[i].width
                 }
                 return total
             }
-            width: Math.min(
-                widthWithoutSlider + preferredSliderSlotWidth,
-                Math.max(0, controlsLayer.width - 40)
-            )
+            readonly property real availableWidth: Math.max(
+                0, controlsLayer.width - 40 - fixedWidth)
+            width: fixedWidth + imageSliderSlot.width + transitionBox.width
             // egységes gombmagasság: a csillag nagyobb glifje (15px) ne
             // növessze meg a saját gombját a többihez képest
             readonly property int buttonHeight: 28
@@ -216,7 +220,7 @@ Item {
                     0,
                     Math.min(
                         controlsRow.preferredSliderSlotWidth,
-                        controlsRow.width - controlsRow.widthWithoutSlider
+                        controlsRow.availableWidth - transitionBox.width
                     )
                 )
                 implicitWidth: controlsRow.preferredSliderSlotWidth
@@ -363,9 +367,14 @@ Item {
             //: #433: az ÁTMENET-választó a vezérlősávban — az eredetiben is
             //: ott ül (`slideshowctrls/transtype`, a lebegő sáv alján).
             PicasaComboBox {
+                id: transitionBox
                 objectName: "slideshowTransitionBox"
                 height: controlsRow.buttonHeight
-                width: 150
+                width: Math.max(
+                    controlsRow.minimumTransitionWidth,
+                    Math.min(controlsRow.preferredTransitionWidth,
+                             controlsRow.availableWidth)
+                )
                 //: a lista a képernyő alján álló sáv fölé nyílik
                 popup.y: -popup.implicitHeight
                 model: slideshow.atmenetek.map(function (a) { return a.nev })

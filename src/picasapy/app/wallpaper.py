@@ -47,6 +47,7 @@ kimenet (#936).
 
 from __future__ import annotations
 
+import ctypes
 import logging
 import os
 import re
@@ -182,9 +183,10 @@ def _windows_registry_setter(kulcs: str, ertek: str) -> None:
 
 
 def _windows_api(ut: str) -> bool:
-    """`SystemParametersInfoW(SPI_SETDESKWALLPAPER, …, 0)` hívása."""
-    import ctypes
+    """`SystemParametersInfoW(SPI_SETDESKWALLPAPER, …, 0)` hívása.
 
+    A `ctypes` modulszintű fogantyú, hogy a teszt ezt cserélhesse a globális
+    `ctypes.windll` helyett (#1375, #7334)."""
     return bool(
         ctypes.windll.user32.SystemParametersInfoW(
             _SPI_SETDESKWALLPAPER,
