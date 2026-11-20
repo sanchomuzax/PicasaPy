@@ -90,13 +90,17 @@ Item {
         (panel.controller && panel.controller.collagePageRatio !== undefined)
             ? panel.controller.collagePageRatio : 0.75
 
-    //: #1276: a „Klipek (N)" fülfelirat száma a FEL NEM HASZNÁLT tálca-
-    //: elemeket számolja, nem a kollázsra már feltett képeket. A felirat
-    //: a lap TARTALMÁT nevezi meg — a tulajdonos képernyőképén „Klipek
-    //: (80)" állt egy néhány elemű kollázs mellett.
+    //: #7293: a „Klipek (N)" a vászonra nem került forrásmappabeli képeket
+    //: számolja, ugyanazt a listát, amely a lapon megjelenik.
     readonly property int clipCount:
-        (panel.controller && panel.controller.trayUnusedCount !== undefined)
-            ? panel.controller.trayUnusedCount : 0
+        (clipsTab && panel.controller
+            && panel.controller.photos !== undefined
+            && panel.controller.collageNodes !== undefined
+            && clipsTab.unusedClips !== undefined)
+            ? clipsTab.unusedClips.length
+            : ((panel.controller
+                && panel.controller.trayUnusedCount !== undefined)
+                ? panel.controller.trayUnusedCount : 0)
 
     // A lap téglalapja a VÁSZON koordinátarendszerében: a `previewinset`-be
     // arányosan illesztve, középen, egész képpontra kerekítve.

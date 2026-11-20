@@ -11,7 +11,8 @@ import QtQuick.Layouts
 //
 // Az **Ajándék-CD** üzemmód él (#3503): a „Létrehozás ▸ Ajándék CD
 // készítése…" nyitja, és a „Lemezre írás" a képtálca elemeiből lemezképet
-// készít. A panel csak JELEZ (`lemezreIrasKert`, `megseKert`,
+// készít; a #7315 óta az aktuális mappa az alapforrás, a forrást a panelen
+// lehet váltani a képtálcára. A panel csak JELEZ (`lemezreIrasKert`, `megseKert`,
 // `tovabbiakKert`); a munkát a gazda végzi. A biztonsági mentést a
 // `BackupHost` köti be (#3504). A feltöltési csoport 1/2/3 módválasztása
 // működik, maga az online művelet a megszűnt szolgáltatás miatt nincs bekötve.
@@ -51,11 +52,16 @@ Item {
     readonly property int cdNevHossz: 16
     //: a Gift CD gazdája a megnyitott mappa nevét tölti be
     property string cdName: ""
-    //: #6878: a diavetítő jelölőjének mentett állapota
+    //: #7315: a diavetítő jelölője csak a panel megnyitásáig él
     property bool slideshowIncluded: true
     signal slideshowIncludedRequested(bool enabled)
 
-    //: #3503: hány elem van a képtálcán — üres tálcával nincs mit írni
+    //: #7315: a panelen kiválasztott mappaforrás
+    property string mappaForrasUtvonal: ""
+    property string mappaForrasFelirat: ""
+    property int mappaForrasDarab: 0
+    property bool mappaForrasKivalasztva: false
+    //: #7315: a választott forrás elemszáma, ez engedélyezi az írást
     property int elemekSzama: 0
     //: #3503: amíg a lemezkép készül, a „Lemezre írás" nem nyomható újra
     property bool dolgozik: false
@@ -252,6 +258,14 @@ Item {
         MertFelirat {
             objectName: "publishOriginInfo"
             x: 307; y: 2; width: 197; height: 25
+        }
+        CheckBox {
+            objectName: "publishGiftCdFolderSource"
+            x: 307; y: 2; width: 197; height: 25
+            visible: panel.uzemmod === "cd" && panel.mappaForrasDarab > 0
+            text: panel.mappaForrasFelirat + " (" + panel.mappaForrasDarab + ")"
+            checked: panel.mappaForrasKivalasztva
+            onClicked: panel.mappaForrasKivalasztva = checked
         }
         //: #3503: `publish/presentcd_go` (664,37 – 762,65) — „Lemezre írás"
         PicasaButton {

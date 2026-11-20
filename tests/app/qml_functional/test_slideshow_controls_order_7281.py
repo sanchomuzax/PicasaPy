@@ -11,12 +11,15 @@ from PySide6.QtCore import (
     Q_ARG,
     QMetaObject,
     QObject,
+    QPoint,
+    QPointF,
     Qt,
     QUrl,
     Signal,
     Slot,
 )
 from PySide6.QtQuick import QQuickItem, QQuickView
+from PySide6.QtTest import QTest
 
 from support.qt_wait import varj_feltetelre
 
@@ -35,6 +38,18 @@ _SORREND = (
     "slideshowTransitionBox",
     "slideshowCaptionModeButton",
     "slideshowTimeBlock",
+)
+_KATTINTHATO_GOMBOK = (
+    "slideshowExitButton",
+    "slideshowRotateLeftButton",
+    "slideshowRotateRightButton",
+    "slideshowPrevButton",
+    "slideshowPlayButton",
+    "slideshowNextButton",
+    "slideshowStarButton",
+    "slideshowCaptionModeButton",
+    "slideshowTimeMinus",
+    "slideshowTimePlus",
 )
 
 
@@ -116,6 +131,17 @@ def _regio_megvaltozott(before, after, item: QQuickItem) -> bool:
     )
 
 
+def _valodi_kattintas(view: QQuickView, qt_app, item: QQuickItem) -> None:
+    pont = item.mapToScene(item.boundingRect().center())
+    QTest.mouseClick(
+        view,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        QPoint(round(pont.x()), round(pont.y())),
+    )
+    qt_app.processEvents()
+
+
 @pytest.mark.parametrize("height", (595, 600, 605))
 def test_a_vezerlosav_sorrendje_es_lista_vegi_tartoeleme_renderelt(
     qt_app, height
@@ -190,6 +216,127 @@ def test_a_vezerlosav_sorrendje_es_lista_vegi_tartoeleme_renderelt(
     assert elso_kep.size() == vegso_kep.size()
 
     QMetaObject.invokeMethod(root, "stop", Qt.ConnectionType.DirectConnection)
+    view.close()
+    view.deleteLater()
+    qt_app.processEvents()
+
+
+@pytest.mark.parametrize(
+    ("width", "height"),
+    (
+        (800, 595),
+        (800, 600),
+        (800, 605),
+        (1280, 600),
+    ),
+)
+def test_a_vezerlosav_gombjai_800_px_en_belul_es_kattinthatoak(
+    qt_app, width, height
+):
+    """A keskeny vetítőn minden gomb elfér és valódi kattintást kap (#7314)."""
+    view = QQuickView()
+    view.engine().addImportPath(str(_QML))
+    view.setResizeMode(QQuickView.ResizeMode.SizeRootObjectToView)
+    view.setSource(QUrl.fromLocalFile(str(_QML / "PicasaPy/SlideshowView.qml")))
+    assert view.status() == QQuickView.Status.Ready, [
+        error.toString() for error in view.errors()
+    ]
+    view.resize(width, height)
+    root = view.rootObject()
+    model = _PhotosModel()
+    root.setProperty("photosModel", model)
+    root.setProperty("captionMode", "none")
+    root.setProperty("transitionKind", "cut")
+    root.setProperty("loop", False)
+    view.show()
+    assert varj_feltetelre(
+        qt_app,
+        lambda: round(root.width()) == width and round(root.height()) == height,
+        masodperc=10.0,
+    ), "a vetítő nem vette fel a kért ablakméretet"
+    QMetaObject.invokeMethod(
+        root,
+        "start",
+        Qt.ConnectionType.DirectConnection,
+        Q_ARG("QVariant", 0),
+        Q_ARG("QVariant", True),
+    )
+    controls = _item(root, "slideshowControls")
+    QMetaObject.invokeMethod(
+        _object(root, "slideshowHideTimer"),
+        "stop",
+        Qt.ConnectionType.DirectConnection,
+    )
+    controls.setProperty("shown", True)
+    assert varj_feltetelre(
+        qt_app,
+        lambda: float(controls.property("opacity")) >= 0.999,
+        masodperc=10.0,
+    ), "a diavetítő vezérlősávja nem jelent meg"
+
+    ablakpont = controls.mapToItem(root, QPointF(0, 0))
+    assert ablakpont.x() >= 0 and ablakpont.x() + controls.width() <= root.width(), (
+        f"a sáv kilóg a {width} px-es nézőből: "
+        f"x={ablakpont.x():.1f}, szélesség={controls.width():.1f}"
+    )
+    gombok = {nev: _item(root, nev) for nev in _KATTINTHATO_GOMBOK}
+    for nev, gomb in gombok.items():
+        pont = gomb.mapToItem(root, QPointF(0, 0))
+        assert gomb.isVisible() and gomb.isEnabled(), f"{nev} nem használható"
+        assert gomb.width() > 0 and gomb.height() > 0, f"{nev} mérete nulla"
+        assert (
+            pont.x() >= 0
+            and pont.y() >= 0
+            and pont.x() + gomb.width() <= root.width()
+            and pont.y() + gomb.height() <= root.height()
+        ), f"{nev} kilóg a {width}×{height} px-es nézőből"
+
+    slot = _item(root, "slideshowImageSliderSlot")
+    if width == 1280:
+        assert slot.width() == pytest.approx(157), (
+            "a 1280 px-es elrendezésben megváltozott a mért csúszkahely"
+        )
+    else:
+        assert slot.width() < 157, "800 px-en az üres csúszkahely nem húzódott össze"
+
+    view.requestActivate()
+    assert QTest.qWaitForWindowActive(view, 5000), "a vetítőablak nem lett aktív"
+    kattintasok = {nev: 0 for nev in _KATTINTHATO_GOMBOK}
+    for nev, gomb in gombok.items():
+        gomb.clicked.connect(
+            lambda *_, gomb_nev=nev: kattintasok.__setitem__(
+                gomb_nev, kattintasok[gomb_nev] + 1
+            )
+        )
+    root.secondsChosen.connect(lambda value: root.setProperty("seconds", value))
+    root.captionModePicked.connect(
+        lambda value: root.setProperty("captionMode", value)
+    )
+
+    _valodi_kattintas(view, qt_app, gombok["slideshowRotateLeftButton"])
+    _valodi_kattintas(view, qt_app, gombok["slideshowRotateRightButton"])
+    _valodi_kattintas(view, qt_app, gombok["slideshowNextButton"])
+    assert root.property("currentIndex") == 1, "a Következő kattintása nem léptetett"
+    _valodi_kattintas(view, qt_app, gombok["slideshowPrevButton"])
+    assert root.property("currentIndex") == 0, "az Előző kattintása nem léptetett vissza"
+    _valodi_kattintas(view, qt_app, gombok["slideshowPlayButton"])
+    assert root.property("playing") is True, "a Lejátszás kattintása nem indított"
+    _valodi_kattintas(view, qt_app, gombok["slideshowPlayButton"])
+    assert root.property("playing") is False, "a Szünet kattintása nem állított meg"
+    _valodi_kattintas(view, qt_app, gombok["slideshowStarButton"])
+    _valodi_kattintas(view, qt_app, gombok["slideshowCaptionModeButton"])
+    assert root.property("captionMode") == "caption"
+    _valodi_kattintas(view, qt_app, gombok["slideshowTimeMinus"])
+    assert root.property("seconds") == 2, "a diaidő mínusz gombja nem kattintható"
+    _valodi_kattintas(view, qt_app, gombok["slideshowTimePlus"])
+    assert root.property("seconds") == 3, "a diaidő plusz gombja nem kattintható"
+    _valodi_kattintas(view, qt_app, gombok["slideshowExitButton"])
+    assert root.isVisible() is False, "a Kilépés gomb kattintása nem zárta be a vetítőt"
+    assert kattintasok == {
+        nev: (2 if nev == "slideshowPlayButton" else 1)
+        for nev in _KATTINTHATO_GOMBOK
+    }, f"nem minden gomb kapott valódi kattintást: {kattintasok}"
+
     view.close()
     view.deleteLater()
     qt_app.processEvents()

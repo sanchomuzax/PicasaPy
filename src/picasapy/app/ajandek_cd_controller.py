@@ -1,13 +1,12 @@
-"""Az Ajándék CD (#3503) — az AppController szelete.
+"""Az Ajándék CD (#3503, #7315): az AppController szelete.
 
-A kiadás-panel Ajándék-CD üzemmódja a **képtálca** elemeiből dolgozik
-(`publish/giftcdtext`: „A program a fent pipával kijelölt elemeket másolja
-az ajándék CD-re"), ugyanúgy, mint a tálca alatti többi kimenet (#455). A
-munka háttérszálon fut: nagy tálcánál az átméretezés és a lemezkép-írás
-percekig is eltarthat.
+A kiadás-panel alapforrása a jelenlegi mappa; a felhasználó a panelen
+választhatja helyette a képtálcát. A munka háttérszálon fut: a mappa összes
+fájljának átméretezése és a lemezkép-írás percekig is eltarthat.
 
 A lemezkép összeállítása a `picasapy.burn.ajandek_cd` magé; ez a modul csak
-a tálcát olvassa, a honosított mappanevet adja, és jelez a felületnek.
+a panel által választott mappát vagy tálcát olvassa, a honosított mappanevet
+adja, és jelez a felületnek.
 """
 
 from __future__ import annotations
@@ -15,57 +14,42 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import Property, QStandardPaths, QUrl, Signal, Slot
+from PySide6.QtCore import QStandardPaths, QUrl, Signal, Slot
 
 from picasapy.burn.ajandek_cd import ajandek_cd_lemezkep
+from picasapy.paths import path_key
 
 from .export_controller import _export_item
 from .formatting import to_file_url, to_local_path
 from .worker_thread import BackgroundWorkerMixin
 
 _log = logging.getLogger(__name__)
-GIFT_CD_SLIDESHOW_KEY = "Preferences/CDSlideshow"
-
-
-def _diavetito_engedelyezve(ertek) -> bool:
-    """A mentett Picasa-kapcsoló bool/string alakjának értelmezése."""
-    if isinstance(ertek, bool):
-        return ertek
-    if isinstance(ertek, int) and ertek in (0, 1):
-        return bool(ertek)
-    if isinstance(ertek, str):
-        normalizalt = ertek.strip().lower()
-        if normalizalt in ("true", "1"):
-            return True
-        if normalizalt in ("false", "0"):
-            return False
-    return True
 
 
 class AjandekCdMixin(BackgroundWorkerMixin):
     """„Létrehozás ▸ Ajándék CD készítése…" — a lemezkép háttérszála."""
 
-    giftCdSlideshowEnabledChanged = Signal()
-
     #: (a kész lemezkép útja — üres, ha nem készült; rákerült elemek;
     #: sikertelen elemek)
     ajandekCdKesz = Signal(str, int, int)
 
-    @Property(bool, notify=giftCdSlideshowEnabledChanged)
-    def giftCdSlideshowEnabled(self) -> bool:  # noqa: N802 - QML-property
-        """A `Preferences/CDSlideshow` jelölő, alapból bepipálva."""
-        return _diavetito_engedelyezve(
-            self._get_settings().value(GIFT_CD_SLIDESHOW_KEY, True)
+    def _ajandek_cd_mappa_rekordok(self, mappa: str) -> tuple:
+        """A megadott mappa képei a már betöltött könyvtárfeedből."""
+        if not mappa:
+            return ()
+        cel = path_key(mappa)
+        if not cel:
+            return ()
+        photos = getattr(getattr(self, "_photos", None), "photos", ())
+        return tuple(
+            rekord for rekord in photos
+            if path_key(rekord.folder_path) == cel
         )
 
-    @Slot(bool)
-    def setGiftCdSlideshowEnabled(self, enabled: bool) -> None:  # noqa: N802
-        """A diavetítő jelölő állását tartósan elmenti."""
-        enabled = bool(enabled)
-        if enabled == self.giftCdSlideshowEnabled:
-            return
-        self._get_settings().setValue(GIFT_CD_SLIDESHOW_KEY, enabled)
-        self.giftCdSlideshowEnabledChanged.emit()
+    @Slot(result=int)
+    def ajandekCdAktualisMappaDarab(self) -> int:  # noqa: N802
+        """A jelenlegi mappa lemezképre választható fájljainak száma."""
+        return len(self._ajandek_cd_mappa_rekordok(self.currentFolder))
 
     @Slot(result=QUrl)
     def ajandekCdAlapHely(self) -> QUrl:  # noqa: N802 — QML-slot-stílus
@@ -78,16 +62,32 @@ class AjandekCdMixin(BackgroundWorkerMixin):
             )
         )
 
-    @Slot(int, str, str)
-    def ajandekCdIrasa(  # noqa: N802 — QML-slot-stílus
-        self, meret_index: int, cd_nev: str, cel: str
+    @Slot(int, str, str, str, bool, bool)
+    def ajandekCdIrasaForrassal(  # noqa: N802 - QML-slot-stílus
+        self,
+        meret_index: int,
+        cd_nev: str,
+        cel: str,
+        mappa_ut: str,
+        mappa_kivalasztva: bool,
+        diavetito_engedelyezve: bool,
     ) -> None:
-        """A tálca elemeiből lemezkép a `cel` útra (URL vagy helyi út).
+        """A panelen kiválasztott mappából vagy képtálcából készít lemezképet."""
+        if mappa_kivalasztva:
+            rekordok = self._ajandek_cd_mappa_rekordok(mappa_ut)
+        else:
+            felold = getattr(self, "_tray_records", None)
+            rekordok = tuple(felold()) if felold else ()
+        tetelek = tuple(_export_item(r) for r in rekordok)
+        self._ajandek_cd_indit(
+            tetelek, meret_index, cd_nev, cel, bool(diavetito_engedelyezve)
+        )
 
-        A tálca rekordjait a FŐSZÁLON olvassuk ki (a modell nem szálbiztos),
-        a lemezkép a háttérszálon készül."""
-        felold = getattr(self, "_tray_records", None)
-        tetelek = tuple(_export_item(r) for r in felold()) if felold else ()
+    def _ajandek_cd_indit(
+        self, tetelek, meret_index: int, cd_nev: str, cel: str,
+        diavetito_engedelyezve: bool,
+    ) -> None:
+        """Közös háttérmunka-indítás a tálca és a mappaforrás számára."""
         cel_ut = Path(to_local_path(cel))
         if cel_ut.suffix.lower() != ".iso":
             cel_ut = cel_ut.with_name(cel_ut.name + ".iso")
@@ -97,7 +97,7 @@ class AjandekCdMixin(BackgroundWorkerMixin):
             self._ajandek_cd_hattereben,
             args=(
                 tetelek, cel_ut, int(meret_index), str(cd_nev), kepek_mappa,
-                self.giftCdSlideshowEnabled,
+                bool(diavetito_engedelyezve),
             ),
             name="ajandek-cd",
         )

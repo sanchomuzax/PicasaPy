@@ -2,26 +2,37 @@
 
 ## Következtetés
 
-Az eredeti Picasában a Létrehozás menü és a fő nézet `thumbui/cdmode` eleme nyitja meg a közös `publish` panel Ajándék-CD módját; a panel gombja fizikai lemezírást indít, és meghajtó hiányakor ISO-fájlt ajánl fel. A PicasaPy ugyanennek a panelnek a lemezkép-készítő útját valósítja meg, de mindig ISO-fájlt ment, és a fizikai író, lemeztörlés, írási folyamat és megszakítás kezelése nem része a vizsgált útvonalnak.
+Az eredeti Picasa 3.9 méréseiben a `Create a Gift CD...` menüpont 0 és 3 kijelölt képnél is aktív, és mindkét esetben a bejelölt `PicasaTeszt (24)` mappát teszi a CD tartalmává. A panel alapértékei mindkét felvételen `PicasaTeszt`, `Original Size` és bekapcsolt diavetítés; a név és a diavetítés módosítása a panel bezárása és újranyitása után visszaállt. Ez eltér a PicasaPy tálcaalapú bemenetétől és az azonnal tartósított diavetítés-beállítástól.
 
-A teljes futásidejű paritás nem zárható le: az elérhető mérőadat-archívumban nincs Ajándék-CD felvétel. A forrásfájlok és az utasításszintű bináris olvasás több lépést alátámaszt, de a `.picasa.ini`, az index, a könyvtárnézet és a kijelölés művelet utáni állapotáról, hálózati vagy írásvédett célról, valamint a félbeszakított írás maradványairól nem ad futásidejű bizonyítékot.
+A #792 mérés nem jutott el az író nélküli Burn Disc kérdésig vagy az ISO mentőablakig: a panel megnyitásakor az IMAPI2-hibaablak jelent meg, de a Burn Disc-kattintás utáni képeken csak a panel látszik. Ezért az eredeti kérdés és az ISO mentőablak futásidejű neve/mappája **NINCS MEG**. A belépési módok, művelet utáni fájl/indexállapot, hálózati vagy írásvédett cél és megszakítás további mérése is nyitott.
 
 ## Módszer és bizonyítottság
 
 - Vizsgált bináris: Picasa 3.9.141.259, SHA-256 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`. A fájlt nem futtattam és nem másoltam a munkafába.
-- A `grep -rn "job-[0-9]" docs/specs/` futtatott mérésekre mutató találatai között a kapcsolódó `ajandek-cd-kimenet.md` lapon nincs Ajándék-CD felvétel. A mérőadat-tár név szerinti szűrése sem talált `gift`, `ajand`, `burn`, `cd` vagy `job-<szám>` címkéjű tagot; ezért a `.bt/` alá nem bontottam ki fájlt.
+- A korábbi statikus kutatáshoz tartozó `ajandek-cd-kimenet.md` felvételeit külön kezeltem. E kiegészítő kör közvetlen mérőanyaga a megadott `m7305/terv.md` és a j790-j793 futások (#790-#793), a `kepernyo__NN.png`, `allapot.json` és `kepmappa__lista.json` állományokkal; ezekből csak a döntési szabály szerinti bizonyítékot használtam.
 - Az eredeti binárisból az indexben meghatározott méretű függvényeket az `annot_disasm.py` eszközzel olvastam. A teljes `.text` pásztázás kizárólag a `paszta.utasitasok()` útján futott, a `paszta.memoria_kapu()` első műveletként.
-- Összesített bizonyítottsági fok: **feltételes**. A függvények vezérlőágai és a statikus `.fen`/`.tre` felületleírók egyeznek, de nem helyettesítik az eredeti program futtatott mérését. A futásidejű állapotokat nem következtetem ki pusztán sztringből vagy indexhiányból.
+- Összesített bizonyítottsági fok: **feltételes**. A menü és panel alapállapotát két külön futás rögzíti; az újranyitás egy, a Burn Disc út egy sikertelen célállapotú futásból ismert. A teljes folyamat, a PicasaPy futásidejű viselkedése és a lemezművelet utóhatása nem igazolt.
+
+## Futtatott mérés: a panel és az újranyitás (#790-#793)
+
+| Mérés | Képernyőkép / adat | Megfigyelés |
+|---|---|---|
+| #790, 0 kijelölt kép | `kepernyo__07`, `kepernyo__12` | A `Create a Gift CD...` menütétel aktív. Megnyílik a panel; a bal oldali `Folders (1)` alatt a `PicasaTeszt (24)` mappa be van jelölve. A CD Name `PicasaTeszt`, a Photo Size `Original Size`, az Include Slideshow bejelölt, az Include Picasa szürke; a Burn Disc aktív. Az állapotsor `Calculating (24) 24 files 10.1 MB Est. 1 CD or 1 DVD` értéket mutatja. |
+| #791, 3 kijelölt kép | `kepernyo__13`, `kepernyo__18` | A menütétel aktív és ugyanaz a panel nyílik. A három mező értéke változatlan, a `PicasaTeszt (24)` mappa bejelölt, az állapotsor továbbra is 24 fájlt számlál. A három képes kijelölés nem változtatja meg az alapértelmezett tartalomkészletet ebben a próbában. |
+| #792, Burn Disc író nélkül | `kepernyo__14`, `kepernyo__19`-`25`, `allapot.json` | A panel megnyitásakor `Confirm` ablak jelenik meg: `Unable to connect to Windows IMAPI2 CD Engine. Click OK to open the troubleshooting webpage.`; gombjai `OK` és `No`. Az Escape után a panel visszatér. A Burn Disc-kattintás után nem jelenik meg új kérdés vagy mentőablak; a képek és az ablaklista a Picasa panelt mutatják. A tervezett íróhiányos kérdés/ISO állapot **nem valósult meg**, ezért erről a futásról nincs következtetés. |
+| #793, módosítás és újranyitás | `kepernyo__22`, `kepernyo__24`, `kepernyo__26`, `kepernyo__32` | A CD Name `ProbaCD`-re változik, az Include Slideshow kikapcsolható. A Cancel visszatér a könyvtárba, ahol a 3 képes kijelölés és a Selection tálca megmarad. A menüből újranyitott panelen a CD Name ismét `PicasaTeszt`, a diavetítés pedig bejelölt. A Photo Size megjegyzett állapotát ez a futás nem tesztelte. |
+
+Minden itt közölt szám és felirat képernyőképről vagy a futás állapot-JSON-jából származik. A `.picasa.ini` tartalmáról és a helyi indexről ezek a feladatok nem adnak mérést.
 
 ## Eredeti / nálunk / teendő
 
 | Eredeti (bináris cím) | Nálunk (fájl:sor) | Teendő |
 |---|---|---|
-| `eMenuCreate::ID_BURNCD`, `0x00559150`: a Létrehozás menü `Create a &Gift CD...` tétele. A `&` menün belüli billentyű-mnemonikát jelöl, nem igazolt globális gyorsbillentyűt. | `src/picasapy/app/qml/PicasaPy/PicasaCreateMenu.qml:46-50`; az engedélyezési feltétel `MainMenuBar.qml:148-158`; az esemény bekötése `MainMenuBar.qml:343`. A menü akkor él, ha nincs nyitva a fotónéző és van kijelölt kép vagy képtálcaelem. | A jelenlegi feltétel forrásból ismert. Az eredeti menü aktiválási feltétele és az eredeti globális gyorsbillentyű nem dőlt el. Lásd D1, ha a teljes belépési paritás cél. |
+| `eMenuCreate::ID_BURNCD`, `0x00559150`: a Létrehozás menü `Create a &Gift CD...` tétele. A `&` menün belüli billentyű-mnemonikát jelöl, nem igazolt globális gyorsbillentyűt. A #790/#791 felvételen 0 és 3 képkijelölés mellett is aktív. | `src/picasapy/app/qml/PicasaPy/PicasaCreateMenu.qml:46-50`; a kapu `MainMenuBar.qml:165-167`; az esemény bekötése `MainMenuBar.qml:343`. A PicasaPy a menüt kijelölt képpel vagy nem üres tálcával engedélyezi. | Mért eltérés: az eredeti 0 kijelöléssel, üres tálca mellett is megnyitja a panelt; a mostani PicasaPy-kapu ekkor tilt. A teljes tartalomkészlet is eltér: az eredeti a `PicasaTeszt (24)` mappát pipálja be és 24 fájlt számlál, a PicasaPy a képtálcát adja át. Lásd D1. |
 | Aktív főnézeti módgomb `thumbui/cdmode`; kezelőcímek `0x005cb990`, `0x005d9cc0`, `0x005e0f70`. A panel saját indítógombja `publish/presentcd_go`, melynek ágát a `0x00679ca0` kezeli. A `headerpanel/create_cd` és `faceheaderpanel/create_cd` a meglévő lapon hivatkozott `.tre`-fájlokban kommentelt, kikapcsolt elem. | A vizsgált PicasaPy útvonal a Létrehozás menüből indul (`PicasaCreateMenu.qml:46-50`, `MainMenuBar.qml:343`). A `publish/presentcd_go` megfelelője `PublishPanel.qml:256-263`. | A `thumbui/cdmode`-nak nincs azonosított PicasaPy-beli párja; a két kikapcsolt fejlécgomb nem eltérés. Helyi menü útvonalat nem igazoltam, ezért annak hiányát nem állítom. Lásd D1. |
 | Több író esetén meghajtóválasztó: `0x0066b6a0` vizsgálja a meghajtók számát; a `cdchoose` erőforrást a `0x0066b2d0` építi. A statikus `runtime/cdchoose.fen` szövege szerint egynél több meghajtónál `Drives:` listából lehet választani, OK/Cancel gombbal. A `Preferences\\lastcddriveused` értéket a `0x0066b430` és `0x0066b6a0` olvassa a korábbi választás előállításához. | `src/picasapy/app/qml/PicasaPy/GiftCdHost.qml:81-92`: fájlmentő párbeszéd ISO szűrővel, alapértelmezett Képek mappával. Meghajtólistát nem nyit. | Eltérő célválasztás. A binárisban a korábban használt meghajtó beolvasása bizonyított; annak írása új választás után nem bizonyított. D2 csak akkor, ha fizikai író támogatása cél. |
-| Ajándék-CD beállításai: `0x0066f470` méretértékei 0, 640, 800, 1600; `Preferences\\CDSlideshow` és `Preferences\\CDSlideshowInclSetup` alapértéke 1; `CDLimitSize` alapértéke 0 (`0x006706d0`, `0x0067112e-0x00671159`). A törlés jelölő `Preferences\\CDEraseFirst` kulcsát a `0x006706d0` 1-es alapértékkel olvassa, az írási ága pedig `0x00675710` alatt újra olvassa. A három közvetlen kulcshivatkozás a biztonságos teljes pásztázásban `0x006710ca`, `0x006757c3`, `0x0067b69e`. A `PicasaCDName` erőforrásban a `Picasa CD` tartalékérték szerepel (`0x0067c5e9-0x0067c5f3`); a paramétertől függő esetleges felülírás nincs teljesen tisztázva. | `PublishPanel.qml:179-197` ad diavetítő jelölőt és négy méretet. `GiftCdHost.qml:48-50` megnyitáskor az aktuális mappa nevét tölti a CD név mezőjébe (`PublishPanel.qml:209-224`). A `PublishPanel.qml:234-249` a `Include Picasa` és `Erase Media` feliratot elrejti; nincs hozzájuk működő jelölő. A diavetítő állapot QSettings-be mentése `ajandek_cd_controller.py:54-68`. A méretfokozat állapotának mentését ez a komponens nem mutatja. | Az Ajándék-CD kapcsolói nem teljesek, a név alapértéke eltérő forrásból ered, és a méret megjegyzett állapota PicasaPy-ben nem bizonyított. Az eredeti `CDEraseFirst` átállítás utáni mentése szintén nyitott. D3 csak a választott, támogatott opciók körére készüljön. |
-| A `publish` panel a képtálcán pipával kiválasztott tételekről szól (`publish/giftcdtext`, meglévő spec 13. szakasz). A `0x006740a0` kezdeti gyűjtése a szükséges lemezek számáról ad szöveget; a `0x00673de0` az írás előtti lemezellenőrzést végzi. Ha nincs elérhető író, igen/nem kérdéssel ISO-kimenetet ajánl; az ISO mentőablakot a `0x00674c00` építi `CD%d.iso`, `ISO Files` / `*.iso` szűrővel. | `GiftCdHost.qml:63-78` a tálca elemszámát és diavetítő állapotát adja át; `ajandek_cd_controller.py:81-103` főszálon pillanatképet vesz a tálcáról és háttérmunkát indít; `GiftCdHost.qml:81-92` mindig ISO fájl célját kéri. | Az eredeti fizikai lemezút és PicasaPy ISO út eltér. A jelenlegi útban nincs fizikai meghajtó- vagy lemeztörlési ág. Lásd D2 és D3. |
+| Ajándék-CD beállításai: `0x0066f470` méretértékei 0, 640, 800, 1600; a statikus olvasóban a diavetítés alapértéke 1. A #790/#791 felvételen a Photo Size `Original Size`, az Include Slideshow bejelölt. A #793 felvételen a kikapcsolt diavetítés a panel bezárása/újranyitása után ismét bejelölt. | `PublishPanel.qml:179-197` adja a diavetítés-jelölőt és a négy méretet. A CD név nyitáskori értéke `GiftCdHost.qml:48-50`; a diavetítés állapotát `ajandek_cd_controller.py:54-68` QSettings-be menti, `GiftCdHost.qml:63-77` pedig ezt tölti vissza. | Az alapértékek a mért esetben egyeznek, de a megjegyzési időzítés eltér: Picasa a Mégse és az újranyitás után visszaállítja, a PicasaPy kattintáskor azonnal tartósította (a #7315 javítja). A Photo Size módosítás utáni visszaállítása, a Picasa telepítő/törlés opciók futtatott viselkedése és a `CDEraseFirst` mentése nyitott. Lásd D3. |
+| A `publish` panel kimenetét a felületen bepipált mappa jelöli: #790/#791 alatt `PicasaTeszt (24)`, 24 fájl. A `0x00673de0` íróhiány esetén ISO ágat tartalmaz; a mentőablakot a `0x00674c00` építi `CD%d.iso`, `ISO Files` / `*.iso` szűrővel. A #792 nem jutott el ehhez az ághoz. | `GiftCdHost.qml:63-78` a tálca elemszámát adja át; `ajandek_cd_controller.py:89-103` a tálcarekordokból készít bemenetet; `GiftCdHost.qml:81-92` ISO célválasztót nyit. | A mérések a PicasaPy ISO-only és az eredeti fizikai író út különbségét nem zárják le. A #792-ben sem a hiányzó-író kérdés, sem a `CD%d.iso` mentőablak, sem annak mappája nem jelent meg; ezeket a futásidejű adatokat ne tekintsük mértnek. Lásd D2. |
 | Az eredeti Ajándék-CD ág által a lemezre másolt állományok és az `autorun.inf` forrásai, valamint a kimeneti opciók a kapcsolódó `ajandek-cd-kimenet.md` 1-5. és 12. szakaszában szerepelnek. Az ISO-út lehetséges; a teljes folyamat nem csak azt jelenti. | `src/picasapy/burn/ajandek_cd.py:81-125` ISO 9660/Joliet lemezképet épít a kimeneti út mellett ideiglenes könyvtárban, majd `os.replace`-szel helyezi végleges helyére. A kimeneti builder nem tesz `.picasa.ini`-t az ISO-ba. | A kimeneti formátum ismert. A forrásmappában lévő `.picasa.ini`, a helyi index, a bal hasáb, a rács és a kijelölés futás utáni állapotáról egyik útvonalhoz sincs megfelelő előtte/utána felvétel. Ezekre nincs igazolt javítási jegy. |
 | Írási folyamat és állapot: `0x00672f50` kezeli többek között a `Preparing to write`, `Writing...`, `Verifying...`, `Finishing Disc`, `Writing complete!` állapotokat; `0x00678630` tartalmazza a `CD in Progress`/`Disc Done` állapotot. `0x00672380` kezeli a `Not Enough Disk Space on Drive` esetet. | A PicasaPy munka háttérszálas (`ajandek_cd_controller.py:87-103`); a panel csak `dolgozik` állapotban tiltja az újraindítást (`PublishPanel.qml:58-64`, `256-263`). Az elkészült lemezkép vagy hiba a `GiftCdHost.qml:94-105` útján jelenik meg; százalékos haladási felületet ez az út nem tartalmaz. | A részletes folyamatjelzés és a fizikai lemezkapacitás állapotai eltérnek. D4 javasolt, ha a felhasználónak a háttérmunka alatt látható előrehaladás és megszakítható művelet kell. |
 | Nincs író: `0x00673de0` „Unable to find an available CD drive...” kérdése; lemezellenőrzési hiba: „Unable to check disc. Please try again”. Írási/engine hibaágak: `0x00671ef0`, `0x00672f50`; ISO felülírási hiba: `0x00674c00` (`Unable to overwrite file`). Újraírható, fájlokat tartalmazó lemeznél `0x006755f0` törlési jóváhagyást kér. | A worker általános kivételt naplóz, üres eredményt jelez, majd a QML hibaablakot nyit (`ajandek_cd_controller.py:105-127`, `GiftCdHost.qml:97-105`, `155-169`). A sikertelen egyedi exportokat a sikerablak darabszámmal közli (`GiftCdHost.qml:128-135`). | A konkrét hálózati vagy írásvédett cél, fizikai lemezhiba és törlési jóváhagyás eredménye nem mérhető a statikus ágakból. Ezeknél `NINCS MEG`; a tetszőleges kivétel kezelése nem bizonyítja a felhasználói kimenet megfelelőségét. |
@@ -45,20 +56,25 @@ A PicasaPy controller a képtálca pillanatképéből épít ISO-t háttérszál
 
 ## A két független út
 
-- **A, bináris vezérlés:** az `0x00679ca0` callbacket az Ajándék-CD `publish/presentcd_go` útjához követtem; ez a `0x00673de0` kapuhoz jut. A meghajtólistát, beállításokat, írási állapotokat és törlési/megszakítási ágakat a pontos méretű függvények utasításszintű olvasása adta.
-- **B, külön felület- és forrásút:** az eredeti `runtime/cdchoose.fen` dialógusleírása, a `publish`/`thumbui` elemeket felsoroló meglévő spec, valamint a PicasaPy QML és Python bekötése. A statikus meghajtóablak szövege egyezik az A út több meghajtós ágával; a PicasaPy kód külön ISO célválasztást mutat.
-- **Egyezés:** a dialógus célja, az ISO ág és a PicasaPy ISO-only út a két leírásban egyezik. **Nem igazolt:** tényleges menüengedélyezés az eredeti futásban, az ablakok futtatott állapota, a helyi index/könyvtár utóhatása, a hálózati és írásvédett hibák, valamint a megszakítás utáni állapot.
+- **A, statikus bináris és erőforrás:** az `0x00679ca0` callbacket az Ajándék-CD `publish/presentcd_go` útjához követtem; ez a `0x00673de0` kapuhoz jut. A függvények és a `runtime/cdchoose.fen` a meghajtó-, beállítás-, írás- és megszakítási ágakat írják le.
+- **B, eredeti futás:** a #790-#793 felvételek képei és állapot-JSON-jai. A #790 és #791 két külön futása ugyanazt az aktív menüt, panelt és alapértékeket mutatja; a #793 egy újranyitási próbát ad.
+- **PicasaPy-összevetés:** a QML/Python-forrás a saját belépési feltételt, tálcaalapú bemenetet és beállításmentést adja.
+- **Egyezés és határ:** A statikus út azonosítja a panel és írási ágak szerkezetét; B adja a futásidejű állapotokat. A két független futás megerősíti a 0/3 kijelölésnél mért panelalapértékeket. A #792 nem erősítette meg az íróhiányos kérdést; a hálózati/írásvédett hibák, művelet utáni helyi index és `.picasa.ini`, valamint a megszakítás maradványa nyitott.
 
 ## Cáfoló kísérlet
 
 Az első olvasat szerint a törlési jelölőhöz nem tartozik megjegyzett beállítás, mert a korábban vizsgált `0x0066f470` `option_*` olvasóban nincs ilyen kulcs. Ezt a következtetést cáfoltam a teljes, memóriakapus `.text` pásztázással: a `CDEraseFirst` kulcs címe három közvetlen kódbeli hivatkozásban szerepel. A `0x006706d0` beolvasáskor 1-es alapértéket ad, a `0x00675710` az írási ág előtt ismét beolvassa. A cáfoló a kulcs létezését és használatát megerősíti; az érték módosítás utáni mentését nem bizonyítja, ezért ezt nyitottként hagytam.
 
+A friss feltevést - „Ajándék-CD csak kijelölt képpel nyitható” - az ellenkező állapotban próbáltam cáfolni. A #790 `kepernyo__07` képen 0 kijelölt képnél is aktív a menüpont, és a `kepernyo__12` képen megnyílik a panel; a feltevés hamis. A #791 másik futása 3 kijelölésnél ugyanazt a `PicasaTeszt (24)` / 24 fájlos alapot mutatja.
+
+A #792 Burn Disc próbáját a saját mércével ellenőriztem: a #792 `allapot.json` szerint a Burn Disc-kattintás utáni lépésekben az ablaklista csak `Picasa 3`-at tartalmaz; a képernyőképek szintén a panelt mutatják. Ez nem cáfolja az eredeti bináris íróhiányos ágát, hanem azt mutatja, hogy ez a mérés nem váltotta ki a tervezett állapotot.
+
 ## A jegy „Kész, ha” pontjai
 
-1. ⛔ **Belépési pontok és feltétel:** a menü, a főnézeti `thumbui/cdmode`, a panel gombja és a két kikapcsolt fejléc-elem azonosítva. A helyi menü, globális gyorsbillentyű és az eredeti menü aktiválási feltétele nyitott.
-2. ⛔ **Ablak, mezők, alapértékek, megjegyzett állapot:** a panel statikus mezői, három opciója, méretfokozatai, a több meghajtós választó és a fontos alapértékek ismertek. Az eredeti futtatott megjelenés, a `CDEraseFirst` átállítás mentése és a névmező esetleges felülírása nyitott.
-3. ⛔ **Hatás:** a fizikai lemez és ISO kimeneti útja, a PicasaPy ISO builder, háttérszál és visszajelzés ismert. A `.picasa.ini`, index, bal hasáb, rács és kijelölés művelet utáni állapota nincs mérve.
-4. ⛔ **Hiba, megszakítás, hálózati vagy írásvédett hely, visszavonás:** néhány eredeti kérdés és hibaág statikusan olvasható. A hálózat, írásvédelem, félbeszakított írás maradványa és undo hatása nincs megmérve.
+1. ⛔ **Belépési pontok és feltétel:** a Létrehozás menü 0 és 3 kijelölésnél aktív; a panel megnyílik. A `thumbui/cdmode` és kikapcsolt fejlécelemek statikusan azonosítottak, de a helyi menü és globális gyorsbillentyű nincs futásban mérve.
+2. ⛔ **Ablak, mezők, alapértékek, megjegyzett állapot:** a két alapállapot-felvétel és a CD-név/diavetítés Cancel utáni újranyitása megvan. A Photo Size módosítás utáni állapota, újraindítás utáni viselkedés, `CDEraseFirst` mentése és a Burn Disc kérdése nyitott.
+3. ⛔ **Hatás:** a bal hasábban bejelölt `PicasaTeszt (24)`, a 24 fájlos állapotsor és a Cancel után megmaradó 3-as kijelölés megvan. Burn/ISO művelet nem történt; `.picasa.ini`, index, fájlrendszer, rács és kijelölés írás utáni állapotáról nincs mérés.
+4. ⛔ **Hiba, megszakítás, hálózati vagy írásvédett hely, visszavonás:** az IMAPI2-panelnyitási hiba mért. A tervezett íróhiányos kérdés, az ISO mentőablak és célmappája, hálózat, írásvédelem, félbeszakított írás maradványa és undo hatása nincs megmérve.
 
 ## Javasolt fejlesztői jegytörzsek
 
@@ -66,13 +82,13 @@ Az alábbiak javaslatok, nem megnyitott jegyek. A fizikai író támogatását k
 
 ### D1. Ajándék-CD belépési pontjainak paritása
 
-**Eredeti:** `0x00559150` (`eMenuCreate::ID_BURNCD`), `0x005cb990` / `0x005d9cc0` / `0x005e0f70` (`thumbui/cdmode`), `0x0066bf90` (`publish` panel).
+**Eredeti:** `0x00559150` (`eMenuCreate::ID_BURNCD`); a #790 `kepernyo__07` és #791 `kepernyo__13` szerint a menü 0 és 3 kijelölésnél is aktív. Mindkét panelen a `PicasaTeszt (24)` mappa van bejelölve, 24 fájlos számlálóval (#790 `kepernyo__12`, #791 `kepernyo__18`). A főnézeti `thumbui/cdmode` statikus címei `0x005cb990` / `0x005d9cc0` / `0x005e0f70`.
 
-**Nálunk:** `PicasaCreateMenu.qml:46-50` és `MainMenuBar.qml:343`.
+**Nálunk:** `PicasaCreateMenu.qml:46-50` és `MainMenuBar.qml:165-167`; a `GiftCdHost.qml:65-66` a tálcát számolja, az `ajandek_cd_controller.py:89-100` a tálcarekordokat adja át.
 
-**Teendő:** a Létrehozás menü mellett tegyük elérhetővé az Ajándék-CD panelt a főnézet megfelelő módgombjáról is, és ugyanarra a hostra irányítsuk mindkét utat. Az eredeti menü- és kijelölési feltételt futtatott méréssel kell felvenni, mielőtt a PicasaPy kapuját hozzáigazítjuk.
+**Teendő:** adjunk Gift-CD-specifikus kaput és forráskészletet: kijelölés és üres tálca mellett a menü nyíljon, az aktuális mappa legyen az alapértelmezett kijelölt forrás; 3 képkijelölés mellett se váltsa le automatikusan a 24 képes, kipipált mappát a képtálca három elemére. A PicasaPy főnézeti módgombja legyen elérhető, ha a `thumbui/cdmode` paritás része ennek a fejlesztésnek. Helyi menüt vagy globális gyorsbillentyűt ne vezessünk be bizonyíték nélkül.
 
-**Kész, ha:** mindkét igazolt belépés ugyanazt a panelt nyitja; a panelelem/menü engedélyezése a rögzített eredeti feltételt követi; helyi menüt vagy globális gyorsbillentyűt csak külön bizonyíték után adunk hozzá.
+**Kész, ha:** 0 kijelölt kép és üres tálca esetén a menü aktív és a kiválasztott mappa fájljait számlálja; 3 kijelölt kép esetén az alapértelmezett tartalom továbbra is a mappa, amíg a felhasználó a panelen át nem állítja; mindkét esetben a Burn Disc az eredetihez mért fájlszám szerint engedélyezett. A módgomb ugyanazt a panelt nyitja, ha megvalósítjuk.
 
 ### D2. Fizikai meghajtó és ISO célválasztás
 
@@ -80,7 +96,7 @@ Az alábbiak javaslatok, nem megnyitott jegyek. A fizikai író támogatását k
 
 **Nálunk:** `GiftCdHost.qml:81-92` mindig `.iso` mentőablakot nyit.
 
-**Teendő:** ha a termék támogat fizikai írást, adjunk célválasztót az elérhető meghajtóknak, több író esetén választóablakot, és meghajtó hiányakor maradjon választható az ISO-kimenet. A korábbi meghajtó előválasztását csak az írási irány bizonyítása után tegyük tartóssá.
+**Teendő:** ha a termék támogat fizikai írást, adjunk célválasztót az elérhető meghajtóknak, több író esetén választóablakot, és meghajtó hiányakor maradjon választható az ISO-kimenet. A #792 mérés nem igazolta a Burn Disc utáni kérdést vagy az ISO mentőablakot; a statikus `CD%d.iso` alapnév és `*.iso` szűrő ne legyen futásidejű paritásként idézve, a célmappát pedig ne állítsuk, amíg új mérés nem rögzíti.
 
 **Kész, ha:** fizikai író és ISO cél is választható; több írónál a kiválasztás egyértelmű; nulla írónál a felhasználó ISO-ra válthat vagy visszaléphet; hálózati és írásvédett ISO célra mért hibaüzenet jelenik meg.
 
@@ -90,9 +106,9 @@ Az alábbiak javaslatok, nem megnyitott jegyek. A fizikai író támogatását k
 
 **Nálunk:** `PublishPanel.qml:179-197`, `234-249`; tartós diavetítő-beállítás `ajandek_cd_controller.py:54-68`.
 
-**Teendő:** a fizikai lemezírás célba vétele esetén az eredetihez illő, platformon támogatott kapcsolókat kössük tényleges kimeneti viselkedéshez, és az állapotot nyissuk vissza ugyanazzal a beállítással. Az `Include Picasa` opció csak akkor kerüljön be, ha a hozzá tartozó telepítőcsomag szállítható.
+**Teendő:** az Include Slideshow állapotát a panelben ideiglenesen tartsuk; Cancel után az újranyitott panelen a #793 szerint vissza kell állnia a bejelölt alapértékre. Ne mentsük QSettings-be kattintáskor. A sikeres írás utáni mentési szabályt és az újraindítás utáni állapotot külön mérés döntse el. Az `Include Picasa` opció csak akkor kerüljön be, ha a hozzá tartozó telepítőcsomag szállítható.
 
-**Kész, ha:** a képméret, diavetítés, Picasa tartozékok és lemeztörlés látható állapota pontosan az implementált kimenetet kapcsolja; a megjegyzett érték újranyitás és újraindítás után a mért szerződés szerint áll vissza.
+**Kész, ha:** a #790/#791 alapértékek (`Original Size`, Include Slideshow be) megegyeznek; a #793 szerinti kikapcsolás és Cancel után a következő megnyitás visszatér a bejelölt alapra; sikeres Burn és alkalmazás-újraindítás utáni mentési szabályról csak külön mérés után állítunk.
 
 ### D4. Haladás és megszakítás
 
@@ -104,27 +120,30 @@ Az alábbiak javaslatok, nem megnyitott jegyek. A fizikai író támogatását k
 
 **Kész, ha:** munka közben látszik az állapot és nem indítható második művelet; a megszakítás megerősítés után leállítja az aktuális munkát; a felület nem jelez sikert részleges ISO után.
 
-### D5. A CD név mező alapértéke
+### D5. A CD név mező alapértéke - mért egyezés
 
 **Eredeti:** `0x0067c5e9-0x0067c5f3` a `PicasaCDName` erőforrás `Picasa CD` tartalékértékét tölti be, a konstruktor egyik módágában.
 
 **Nálunk:** `GiftCdHost.qml:48-50` megnyitáskor az aktuális mappa utolsó elemét állítja a névmezőbe.
 
-**Teendő:** a fenti eredeti ágat futtatott méréssel kell összevetni az aktuális mappa nevével és az esetleges korábbi névvel. Csak ezután igazítsuk a PicasaPy alapértékét.
+**Teendő:** nincs fejlesztési jegy a mért esetre. A #790/#791 felvételen az eredeti név `PicasaTeszt`; a #793 módosítás után, a panel újranyitásakor a mező visszatér `PicasaTeszt`-re. Ez egyezik a `GiftCdHost.qml:48-50` aktuális mappanév-alapú újrainicializálásával.
 
-**Kész, ha:** ugyanazon megnyitási helyzetben a CD név mező induló értéke és újranyitás utáni viselkedése megegyezik a mért szerződéssel.
+**Nyitva:** más megnyitási módban a statikus `Picasa CD` tartalékérték tényleges használata; alkalmazás-újraindítás utáni névállapot.
 
 ## Nyitott
 
-- `NINCS MEG`: az eredeti program futtatott állapotfelvétele a 7305 folyamatról. Konkrét beszerzési út: a Picasa 3.9 hashével egyező eredeti rendszeren mérni kell az aktív menü/módgomb megnyitását, panel állapotát, fizikai íróval és író nélkül futó műveletet, majd előtte/utána `.picasa.ini`, index, kijelölés, rács és bal hasáb állapotot.
+- `NINCS MEG`: a #792 tervezett Burn Disc íróhiányos kérdése, az igen ág ISO mentőablaka, annak futásidejű alapneve és mappája. Megszerzés: a Burn Disc gomb aktiválását és az Igen ágát tartalmazó eredeti Colab-felvétel, amelyben a képek ténylegesen mutatják a kérdést és mentőablakot.
+- `NINCS MEG`: fizikai íróval végzett futás és a fájl/index/`.picasa.ini` változásai. A Burn Disc nem váltott ki látható célműveletet a #792-ben; `.picasa.ini`, index, bal hasáb, rács és kijelölés írás utáni állapota ezért nincs megmérve.
+- `NINCS MEG`: az eredeti futásidejű módgomb, helyi menü, globális gyorsbillentyű és menüállapot más mappákkal/profilokkal; a #790/#791 csak a Létrehozás menüt mérte a PicasaTeszt mappán.
 - `NINCS MEG`: a `Preferences\\CDEraseFirst` módosítás utáni tényleges mentése; a teljes pásztázás megtalálta mindhárom közvetlen kódbeli hivatkozást, de a kulcs-író viselkedés nem igazolt.
 - `NINCS MEG`: a `Preferences\\lastcddriveused` új választás után frissül-e, vagy csak korábban rögzített értékből állítja vissza a listát.
-- `NINCS MEG`: a PicasaCDName `Picasa CD` tartalékértéke mellett pontosan mely megnyitási állapot ad felülírt nevet.
+- `NINCS MEG`: a `PicasaCDName` `Picasa CD` tartalékértékét mely megnyitási helyzet használja; a mért `PicasaTeszt` mappa esetén a név-egyezés és Cancel utáni visszaállás megerősített.
+- `NINCS MEG`: a Photo Size kiválasztásának mentése/újranyitása és az Include Slideshow állapota sikeres CD-készítés, illetve alkalmazás-újraindítás után. A #793 csak Cancel utáni újranyitást mérte.
 - `NINCS MEG`: helyi menü vagy globális billentyűparancs az eredeti Picasában.
 - `NINCS MEG`: hálózati/írásvédett cél, lemezhiba, megszakítás utáni részleges adat, valamint a művelet visszavonásának hatása.
 - Ghidra-kör nem szükséges a fenti, címzett kérdésekhez; a nyitottságot a hiányzó futtatott mérés és az állapotírás nem eldöntött útja okozza.
 
 ## Módosított fájlok
 
-- `docs/specs/paritas-folyamat-7305.md`: a #7305 teljes folyamatának statikus összevetése, bizonyítéki korlátokkal és nyitott mérési pontokkal.
-- `docs/specs/00-index.md`: új tartalomjegyzék-sor ehhez a laphoz.
+- `docs/specs/paritas-folyamat-7305.md`: a statikus összevetés kiegészült a #790-#793 futásidejű eredményekkel és az el nem ért Burn Disc ággal.
+- `docs/specs/00-index.md`: frissült a lap összefoglalója.

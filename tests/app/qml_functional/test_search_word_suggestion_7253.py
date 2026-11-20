@@ -8,6 +8,7 @@ from PySide6.QtTest import QTest
 from picasapy.index import open_index, sync_tree
 from tests.support.jpeg_factory import make_jpeg
 from tests.support.varakozas import var_feltetelre
+from tests.support.javaslatsor_kattintas import kattints_a_javaslatsorra
 
 
 def _wait(qt_app, predicate, timeout: float = 10.0) -> bool:
@@ -45,6 +46,15 @@ def _click(window, item, qt_app) -> None:
         QPoint(round(point.x()), round(point.y())),
     )
     qt_app.processEvents()
+
+
+def _javaslatsor(popup, nev):
+    for row in _walk(popup):
+        if row.objectName() != "suggestionRow" or not row.isVisible():
+            continue
+        if (_value(row, "modelData") or {}).get("name") == nev:
+            return row
+    return None
 
 
 def _seed_zqai_sample(controller, tmp_path) -> None:
@@ -136,12 +146,12 @@ def test_search_word_suggestion_click_sets_field_with_space_and_runs_search(
     assert suggestions_zqk[0]["count"] == 1
 
     # zqkase sorra kattintás
-    zqkase_row = next(
-        row for row in _walk(popup)
-        if row.objectName() == "suggestionRow"
-        and _value(row, "modelData")["name"] == "zqkase"
+    # #7324: a sort minden mintavételnél újra keressük, és csak akkor
+    # kattintunk, ha a helye már nem mozog (a lista újraépülhet).
+    kattints_a_javaslatsorra(
+        window, popup,
+        lambda: _javaslatsor(popup, "zqkase"), qt_app,
     )
-    _click(window, zqkase_row, qt_app)
 
     # A `searchActive` az első keresés óta igaz; a mező és a lekérdezés
     # új értéke jelzi, hogy a második kattintás feldolgozása is befejeződött.
@@ -160,12 +170,12 @@ def test_search_word_suggestion_click_sets_field_with_space_and_runs_search(
     _type_text(window, "zq")
     assert _wait(qt_app, _zq_rows_ready)
 
-    zqai_row = next(
-        row for row in _walk(popup)
-        if row.objectName() == "suggestionRow"
-        and _value(row, "modelData")["name"] == "zqai"
+    # #7324: a sort minden mintavételnél újra keressük, és csak akkor
+    # kattintunk, ha a helye már nem mozog (a lista újraépülhet).
+    kattints_a_javaslatsorra(
+        window, popup,
+        lambda: _javaslatsor(popup, "zqai"), qt_app,
     )
-    _click(window, zqai_row, qt_app)
 
     # A korábbi searchActive állapot nem elég: az új mező- és lekérdezésértéket
     # várjuk meg, mielőtt a találatokat ellenőrizzük.

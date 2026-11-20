@@ -171,7 +171,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 24
-        width: controlsRow.width + 24
+        width: Math.min(controlsRow.width + 24, controlsLayer.width - 16)
         height: 40
         radius: 6
         color: "#2b2b2bd9"
@@ -180,6 +180,22 @@ Item {
             id: controlsRow
             anchors.centerIn: parent
             spacing: 6
+            readonly property real preferredSliderSlotWidth: 157
+            // #7314: keskeny ablakban először a funkció nélküli, üres
+            // csúszkahely húzódik össze. A sor többi eleme a mért méretét
+            // tartja; széles ablakban a 157 px-es hely változatlan.
+            readonly property real widthWithoutSlider: {
+                var total = spacing * Math.max(0, children.length - 1)
+                for (var i = 0; i < children.length; ++i) {
+                    if (children[i] !== imageSliderSlot)
+                        total += children[i].width
+                }
+                return total
+            }
+            width: Math.min(
+                widthWithoutSlider + preferredSliderSlotWidth,
+                Math.max(0, controlsLayer.width - 40)
+            )
             // egységes gombmagasság: a csillag nagyobb glifje (15px) ne
             // növessze meg a saját gombját a többihez képest
             readonly property int buttonHeight: 28
@@ -194,8 +210,16 @@ Item {
             // után, a forgatópár előtt van. A oneup.tre nem ad meg slider-*
             // elemet vagy működést; ez a 157 px-es hely csak tartóelem.
             Item {
+                id: imageSliderSlot
                 objectName: "slideshowImageSliderSlot"
-                width: 157
+                width: Math.max(
+                    0,
+                    Math.min(
+                        controlsRow.preferredSliderSlotWidth,
+                        controlsRow.width - controlsRow.widthWithoutSlider
+                    )
+                )
+                implicitWidth: controlsRow.preferredSliderSlotWidth
                 height: controlsRow.buttonHeight
 
                 Item {
