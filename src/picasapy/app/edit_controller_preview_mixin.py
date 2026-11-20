@@ -7,8 +7,6 @@ from contextlib import contextmanager
 from contextvars import copy_context
 from threading import Lock
 
-from picasapy.lazy_import import render_elore_betolt
-
 from .edit_controller_shared import (
     EMPTY_HISTOGRAM,
     EditSession,
@@ -275,13 +273,6 @@ class EditControllerPreviewMixin:
 
     def _start_preview_worker(self, task) -> None:
         job, request, render_context = task
-
-        # A render-csomagot a GUI-szál töltse be az első előnézet előtt. A
-        # teljes alkalmazás induláskor már előtölti, az önálló szerkesztő- és
-        # tesztútvonalak viszont ezt kihagyhatják; nélkülük a lusta import
-        # először a workerből indulna, és a shiboken importhorgánál holtpontot
-        # okozhatna (#7244).
-        render_elore_betolt()
 
         def still_current() -> bool:
             return job == self._preview_job

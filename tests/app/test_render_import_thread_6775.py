@@ -70,24 +70,20 @@ import contextvars
 import json
 import sys
 import threading
-from importlib.abc import MetaPathFinder
 
 from picasapy import lazy_import
-from picasapy.app.edit_controller_preview_mixin import EditControllerPreviewMixin
 
-assert "picasapy.render" not in sys.modules
+lazy_import.render_elore_betolt()
 main_thread = threading.get_ident()
-import_threads = []
+preload_calls = []
+worker_observations = []
 
-class RenderThreadGuard(MetaPathFinder):
-    def find_spec(self, fullname, path=None, target=None):
-        if fullname == "picasapy.render":
-            import_threads.append(threading.get_ident())
-            if import_threads[-1] != main_thread:
-                raise RuntimeError("a render első importja munkaszálról indult")
-        return None
+def forbidden_worker_preload():
+    preload_calls.append(threading.get_ident())
+    raise RuntimeError("a render-előtöltés ne a preview indításakor történjen")
 
-sys.meta_path.insert(0, RenderThreadGuard())
+lazy_import.render_elore_betolt = forbidden_worker_preload
+from picasapy.app.edit_controller_preview_mixin import EditControllerPreviewMixin
 
 class Signal:
     def emit(self, *_args):
@@ -95,7 +91,10 @@ class Signal:
 
 class Provider:
     def register(self, **_kwargs):
-        lazy_import.lazy_callable("picasapy.render", "apply_filters")()
+        worker_observations.append({
+            "thread": threading.get_ident(),
+            "render_loaded": "picasapy.render" in sys.modules,
+        })
 
 class Host:
     _preview_job = 0
@@ -116,7 +115,11 @@ host = Host()
 EditControllerPreviewMixin._start_preview_worker(
     host, (0, {}, contextvars.copy_context())
 )
-print(json.dumps({"main": main_thread, "imports": import_threads}))
+print(json.dumps({
+    "main": main_thread,
+    "preload_calls": preload_calls,
+    "worker_observations": worker_observations,
+}))
 '''
     env = {**os.environ, "PYTHONPATH": str(REPO / "src"), "PYTHONUTF8": "1"}
     ki = subprocess.run(
@@ -125,4 +128,8 @@ print(json.dumps({"main": main_thread, "imports": import_threads}))
     )
     assert ki.returncode == 0, ki.stderr or ki.stdout
     eredmeny = json.loads(ki.stdout)
-    assert eredmeny["imports"] == [eredmeny["main"]]
+    assert eredmeny["preload_calls"] == []
+    assert len(eredmeny["worker_observations"]) == 1
+    observation = eredmeny["worker_observations"][0]
+    assert observation["thread"] != eredmeny["main"]
+    assert observation["render_loaded"] is True
