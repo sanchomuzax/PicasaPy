@@ -6,7 +6,7 @@ Ez a lap a #7306 kérdését dolgozza fel. A vizsgált eredeti `Picasa3.exe` SHA
 
 **Összesített bizonyítottság: feltételes.** A menüparancs, a párbeszéd definíciója, a fájlnév, a kimeneti formátum és a generáló függvény statikusan követhető. Az eredeti futtatott Picasa-folyamat felvétele nem található meg a helyi mérőadatban, ezért az alapértékek, a keletkező képek pontos határai, az index és a felület utóhatásai, valamint a hibák felhasználói kezelése nyitott.
 
-A korábbi futtatott felvételek keresése (`grep -rn "job-[0-9]" docs/specs/`) és a poszterlapok listázása (`ls docs/specs | grep -i 'poster\|poszter'`) megtörtént. Külön poszter-folyamatspec nem volt; a releváns statikus leírás a `picasa-create-features.md` 3.1. pontja, a menüleírás pedig a `picasa-menu-parancsok-viselkedes.md` 35.1-35.2. pontja. A tar 944 bejegyzéséből a poszterhez hasonló nevű `3084-poszterizalas` és `2770-poszterizalas` képminták kerültek elő, folyamatfelvétel nem. Mérőadatot nem bontottam ki.
+A korábbi futtatott felvételek keresése (`grep -rn "job-[0-9]" docs/specs/`) és a poszterlapok listázása (`ls docs/specs | grep -i 'poster\|poszter'`) megtörtént. Külön poszterfolyamat-specifikáció nem volt; a releváns statikus leírás a `picasa-create-features.md` 3.1. pontja, a menüleírás pedig a `picasa-menu-parancsok-viselkedes.md` 35.1-35.2. pontja. A tar 944 bejegyzéséből a poszterhez hasonló nevű `3084-poszterizalas` és `2770-poszterizalas` képminták kerültek elő, folyamatfelvétel nem. Mérőadatot nem bontottam ki.
 
 ## Eredeti menet
 
@@ -38,9 +38,9 @@ A `paper` választásnak a lapgeneráló ciklus pixelgeometriájára gyakorolt h
 
 A `0x00530c10` minden létrehozási ciklus után meghívja a `0x0053de70` függvényt az új útvonallal. A függvény `AddLocateFile` belépési pontot tartalmaz, és egyes ágai `locate`, `indexonly` vagy `indexonlyreadonly` műveletneveket vizsgálnak. A 7306-hoz elérhető diszasszemblálás nem dönti el, hogy a poszter hívási ág a fájlt hozzáadja-e az indexhez, megváltoztatja-e a bal hasábot, a rácsot vagy a kijelölést. A `.picasa.ini` változásáról nincs futtatott adat.
 
-A poszterkezelőn belül a modal párbeszéd után közvetlenül fut a két lapgeneráló ciklus; külön poszter-munkaszálat, százalékos előrehaladási hívást vagy Cancel-visszahívást nem találtam ebben a függvényben. A `0x009d6010` író kódjának látható hibaágai nem nulla visszatérési értéket adnak, a poszterkezelő ezt a visszatérési értéket nem vizsgálja, hanem utána meghívja a `0x0053de70` függvényt. Hogy írásvédett vagy hálózati cél esetén mi jelenik meg, illetve maradnak-e részleges lapok, futásidejű felvétel nélkül nyitott.
+A poszterkezelőn belül a modális párbeszéd után közvetlenül fut a két lapgeneráló ciklus; külön poszter-munkaszálat, százalékos előrehaladási hívást vagy Cancel-visszahívást nem találtam ebben a függvényben. A `0x009d6010` író kódjának látható hibaágai nem nulla visszatérési értéket adnak, a poszterkezelő ezt a visszatérési értéket nem vizsgálja, hanem utána meghívja a `0x0053de70` függvényt. Hogy írásvédett vagy hálózati cél esetén mi jelenik meg, illetve maradnak-e részleges lapok, futásidejű felvétel nélkül nyitott.
 
-Az eredeti megszakítás, progresszjelzés, állapotsor, bal hasáb, rács, kijelölés és visszavonás pontos viselkedéséről nincs mérés. A generáló függvényben külön visszavonási műveletet nem találtam, de ez önmagában nem bizonyítja az összes külső visszavonási út hiányát.
+Az eredeti megszakítás, haladásjelzés, állapotsor, bal hasáb, rács, kijelölés és visszavonás pontos viselkedéséről nincs mérés. A generáló függvényben külön visszavonási műveletet nem találtam, de ez önmagában nem bizonyítja az összes külső visszavonási út hiányát.
 
 ## Összevetés
 
@@ -55,12 +55,12 @@ Az eredeti megszakítás, progresszjelzés, állapotsor, bal hasáb, rács, kije
 | Lapírás után `0x0053de70` | `src/picasapy/printing/poster.py:121-123`; eredménykezelés: `CreateDialogs.qml:187-198` | Az eredeti index-, lista- és kijelöléshatás nyitott. Nálunk nincs közvetlen index- vagy kijelölésmódosítás a poszteríróban; a háttérben működő figyelők utóhatása nincs összevetve. |
 | A poszterkezelő közvetlen lapciklust futtat; az író visszatérési értékét nem kezeli | `src/picasapy/app/poster_controller.py:122-208`; állapotszöveg: `src/picasapy/app/busy_activity.py:77`; eredmény: `src/picasapy/app/qml/PicasaPy/CreateDialogs.qml:187-198` | Nálunk külön folyamat, 120 másodperces időkorlát, háttérállapot és siker/hiba ablak van. Az eredeti felhasználói hibaüzenet, hálózati vagy írásvédett cél viselkedése nincs megmérve. |
 | Cancel az eredeti párbeszédben; a lapgeneráló függvényben nincs külön progress vagy megszakítási ág | `src/picasapy/app/qml/PicasaPy/PosterCreateDialog.qml:119-132`; `src/picasapy/app/poster_controller.py:136-208` | A megnyitott ablak Cancel gombja elutasítja a műveletet, a már futó workerhez nincs poszter-megszakítási visszahívás. Az eredeti futás megszakítása és visszavonása nyitott. |
-| `.picasa.ini`, SQLite-index, bal hasáb, rács és kijelölés: `0x0053de70` utóhívás, teljes hatása NINCS MEG | `src/picasapy/printing/poster.py:51-70,121-123`; nincs poszter-specifikus indexhívás | Eredeti programfelvétel kell a fájlok, `.picasa.ini`, `index.db`, mappalista, rács és kijelölés előtte-utána állapotával. |
+| `.picasa.ini`, SQLite-index, bal hasáb, rács és kijelölés: `0x0053de70` utólagos hívás, teljes hatása NINCS MEG | `src/picasapy/printing/poster.py:51-70,121-123`; nincs poszter-specifikus indexhívás | Eredeti programfelvétel kell a fájlok, `.picasa.ini`, `index.db`, mappalista, rács és kijelölés előtte-utána állapotával. |
 
 ## A két független út
 
-- **A út:** a `0x00530c10` utasításszintű olvasása és meglévő Ghidra-kimenete a menü utáni párbeszédet, a két lapciklust, a névmintát, a JPEG-írást és az utóhívást követi végig. A `0x009d6010` külön diszasszemblálása megmutatja a `wb` fájlnyitást és a hibavisszatéréseket.
-- **B út:** az index `xrefs` és `string_xrefs` táblái, valamint a `paszta.py` memória-kapuval végzett teljes `.text` operandumkeresése egymástól függetlenül azonosítja a `0x9d30` menürekordot és a három közvetlen `0x00530c10` hívási helyet. A statikus PE-adatkiolvasás külön ellenőrzi az átfedési konstansok számait; a helyi `poster.py` pedig a jelenlegi név-, minőség- és kiterjesztési szabályt mutatja.
+- **A út:** a `0x00530c10` utasításszintű olvasása és meglévő Ghidra-kimenete a menü utáni párbeszédet, a két lapciklust, a névmintát, a JPEG-írást és az utólagos hívást követi végig. A `0x009d6010` külön diszasszemblálása megmutatja a `wb` fájlnyitást és a hibavisszatéréseket.
+- **B út:** az index `xrefs` és `string_xrefs` táblái, valamint a `paszta.py` memória-kapuval végzett teljes `.text` operandus-keresése egymástól függetlenül azonosítja a `0x9d30` menürekordot és a három közvetlen `0x00530c10` hívási helyet. A statikus PE-adatkiolvasás külön ellenőrzi az átfedési konstansok számait; a helyi `poster.py` pedig a jelenlegi név-, minőség- és kiterjesztési szabályt mutatja.
 - A két út egyezik a menü-hívásról, a három statikus akcióútról és a lapírás paramétereiről. Az eredeti futás utóhatásairól egyik út sem ad mérést, ezért a teljes folyamat bizonyítottsága feltételes marad.
 
 ## Cáfoló kísérlet
