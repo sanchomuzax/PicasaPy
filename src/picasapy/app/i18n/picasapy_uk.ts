@@ -2393,6 +2393,34 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
 picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
             <translation>публікування...</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="312" />
+            <source>Do you want to cancel this operation?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
+            <translation>Скасувати цю операцію?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="363" />
+            <source>Want to Cancel?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::canceltitle</extracomment>
+            <translation>Скасувати?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="366" />
+            <source>Cancel Operation</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::cancelyesbutton</extracomment>
+            <translation>Скасувати операцію</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="369" />
+            <source>Don't Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::cancelnobutton</extracomment>
+            <translation>Не скасовувати</translation>
+        </message>
     </context>
     <context>
         <name>WebExportTemplatePane</name>

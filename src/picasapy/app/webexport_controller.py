@@ -33,6 +33,7 @@ from __future__ import annotations
 import logging
 import sys
 import tempfile
+import threading
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -82,6 +83,8 @@ class WebExportController(BackgroundWorkerMixin, QObject):
     webExportProgress = Signal(int, int)
     # (célmappa, generált oldalak száma) — sikeres futás
     webExportFinished = Signal(str, int)
+    # A felhasználó megerősítette a megszakítást; nem siker és nem hiba.
+    webExportCancelled = Signal()
     # (fióknév, ténylegesen feltöltött helyi fájlok száma)
     ftpPublishFinished = Signal(str, int)
     webExportFailed = Signal(str)  # emberi nyelvű hibaüzenet
@@ -103,6 +106,7 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         self._settings = settings
         self._ftp_account_store = ftp_account_store
         self._ftp_publisher = ftp_publisher or FtpPublisher()
+        self._web_export_cancel_event: threading.Event | None = None
 
     def _get_settings(self):
         """Lusta alapértelmezés — a `controller.py` mintájára."""
@@ -230,6 +234,13 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         (teszt-fixture, alkalmazás-kilépés), ezt hívja."""
         return self.waitForBackgroundWorkers(timeout_s)
 
+    @Slot()
+    def cancelWebExport(self) -> None:  # noqa: N802
+        """Megszakítási kérést jelez a helyi HTML-export ciklusainak."""
+        cancel_event = self._web_export_cancel_event
+        if cancel_event is not None:
+            cancel_event.set()
+
     @Slot(result=list)
     def listWebExportTemplates(self) -> list[dict]:
         """A telepített sablonok a választó-lenyílóhoz: `[{"id","name",
@@ -353,12 +364,15 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         )
         self._remember_choice(size_index, movie_full, target, template.id)
         self.webExportStarted.emit()
+        cancel_event = threading.Event()
+        self._web_export_cancel_event = cancel_event
         # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         # — a busy-bejelentkezés is ITT, a mixinben történik automatikusan
         self._start_background(
             self._run_export,
-            args=(Path(target), template.path, photos, album_name, settings),
+            args=(Path(target), template.path, photos, album_name, settings, cancel_event),
             name="picasapy-webexport",
+            cancel=cancel_event.set,
         )
 
     @Slot(str, str, str, int, bool)
@@ -446,24 +460,49 @@ class WebExportController(BackgroundWorkerMixin, QObject):
         photos: tuple[PhotoRecord, ...],
         album_name: str,
         settings: WebExportSettings,
+        cancel_event: threading.Event,
     ) -> None:
         try:
-            image_report = prepare_photo_exports(photos, target_dir, settings)
-            self.webExportProgress.emit(len(image_report.photos), len(photos))
-            if not image_report.photos:
-                self.webExportFailed.emit(
-                    self.tr("None of the selected pictures could be exported.")
+            try:
+                image_report = prepare_photo_exports(
+                    photos,
+                    target_dir,
+                    settings,
+                    is_cancelled=cancel_event.is_set,
                 )
+                if cancel_event.is_set():
+                    self.webExportCancelled.emit()
+                    return
+                self.webExportProgress.emit(len(image_report.photos), len(photos))
+                if not image_report.photos:
+                    self.webExportFailed.emit(
+                        self.tr("None of the selected pictures could be exported.")
+                    )
+                    return
+                album = AlbumExportData(
+                    name=album_name or "", photos=image_report.photos
+                )
+                report = run_web_export(
+                    template_dir,
+                    target_dir,
+                    album,
+                    settings,
+                    is_cancelled=cancel_event.is_set,
+                )
+            except InterruptedError:
+                self.webExportCancelled.emit()
                 return
-            album = AlbumExportData(
-                name=album_name or "", photos=image_report.photos
-            )
-            report = run_web_export(template_dir, target_dir, album, settings)
-        except Exception as error:  # noqa: BLE001 — háttérszál, sose haljon el csendben
-            _log.warning("webexport sikertelen: %s", error)
-            self.webExportFailed.emit(str(error))
-            return
-        self.webExportFinished.emit(str(target_dir), len(report.output_files))
+            except Exception as error:  # noqa: BLE001 - háttérszál, sose haljon el csendben
+                _log.warning("webexport sikertelen: %s", error)
+                self.webExportFailed.emit(str(error))
+                return
+            if cancel_event.is_set():
+                self.webExportCancelled.emit()
+                return
+            self.webExportFinished.emit(str(target_dir), len(report.output_files))
+        finally:
+            if self._web_export_cancel_event is cancel_event:
+                self._web_export_cancel_event = None
 
     def _run_ftp_publish(
         self,

@@ -40,6 +40,29 @@ def _write(dir_path: Path, name: str, content: str) -> None:
 
 
 class TestDefineAndInclude:
+    def test_cancellation_during_template_leaves_no_successful_page(self, tmp_path):
+        template = tmp_path / "tpl"
+        template.mkdir()
+        _write(template, "index.tpl", "define exportFileName album.html\ninclude body.html\n")
+        _write(template, "body.html", "Album: <%albumName%>")
+        target = tmp_path / "out"
+        checks = 0
+
+        def cancel_before_second_command():
+            nonlocal checks
+            checks += 1
+            return checks >= 6
+
+        with pytest.raises(InterruptedError, match="web export cancelled"):
+            run_web_export(
+                template,
+                target,
+                _album("a.jpg"),
+                is_cancelled=cancel_before_second_command,
+            )
+
+        assert not (target / "album.html").exists()
+
     def test_define_sets_export_file_name(self, tmp_path):
         template = tmp_path / "tpl"
         template.mkdir()
