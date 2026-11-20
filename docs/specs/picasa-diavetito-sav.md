@@ -194,7 +194,7 @@ szünet-ok-, képméret- vagy zoomérték-feltétel. Ez önmagában nem bizonyí
 hogy a vezérlő mindig látszik, mert a helper a `0x009df550`-en át más
 függvényeket és virtuális metódusokat is hív. A `0x009df550` közvetlenül
 olvassa a `[+0x213]` bájtot és a `[+0x244]` mezőt, virtuális `+4` és `+8`
-metódust, valamint további helperfüggvényeket hív; a láthatóságra gyakorolt
+metódust, valamint további segédfüggvényeket hív; a láthatóságra gyakorolt
 közvetett hatásuk `NINCS MEG`. A teljes program láthatósági feltételét a
 diszasszemblálás nem dönti el.
 
@@ -228,7 +228,7 @@ mérési értékeken kívül küszöböt vagy méretet ne következtess.
 > **Bizonyítottsági fok:** a csomópont eredete és zoomhatása **megerősített**
 > (erőforrás-fa és a vetítési kódút, továbbá külön zoom eseményút és
 > képskála-frissítés egyezik). A teljes feladat bizonyítottsági foka
-> **feltételes**, mert a láthatósági szabály és a helper közvetett
+> **feltételes**, mert a láthatósági szabály és a segédfüggvény közvetett
 > láthatósági hatása nyitott. A „csak a lista végén látszik” állítást a
 > rendelkezésre álló képkockák nem igazolják.
 
