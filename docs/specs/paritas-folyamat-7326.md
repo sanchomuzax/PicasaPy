@@ -1,6 +1,6 @@
 # A nézet rendezésének és megjelenítésének teljes folyamata az eredeti Picasával összevetve (#7326, második kör)
 
-Issue: #7326. Eredeti: Picasa 3.9.141.259, SHA-256 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96` (a helyi `Picasa3.exe` bitre azonos az indexeltel). Kép-alap: az `0x00400000`. A bináris statikusan volt vizsgálva (capstone, a `pe_dis.py` és az index), a két tulajdonosi felvétel pedig a mérce (lásd 1. szakasz).
+Issue: #7326. Eredeti: Picasa 3.9.141.259, SHA-256 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96` (a helyi `Picasa3.exe` bitre azonos a bináris-indexben szereplővel). Kép-alap: az `0x00400000`. A bináris statikusan volt vizsgálva (capstone, a `pe_dis.py` és az index), a két tulajdonosi felvétel pedig a mérce (lásd 1. szakasz).
 
 A lap a Nézet és a Mappa menü rendezési és megjelenítési parancsait követi a belépési ponttól a hatásig: a bal hasáb ▾ ("View options") legördülőjét, a Nézet ▸ Mappanézet almenüt, a Mappa ▸ Rendezés almenüt, az Indexkép felirata almenüt és a hasáb jobbklikk-menüjét. A bélyegméret-csúszka (`Thumbscale`, `ThumbscalePeople`) tárgya a #7333, azt ez a kör szándékosan nem vizsgálja újra.
 
