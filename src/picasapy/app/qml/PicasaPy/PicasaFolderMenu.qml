@@ -37,20 +37,9 @@ PicasaMenu {
         text: qsTr("Refresh &Thumbnails")
         onTriggered: bar.rescanRequested()
     }
-    // #324 audit („eltérő"): eredetiben aktív almenü — nálunk is az.
-    // #1454: a mappák sorrendje EGYEDÜL itt (és az indexkép-helyi
-    // menüben) állítható; a Nézet ▸ Mappanézetből kikerült, mert ott az
-    // eredetiben szerkezeti tételek állnak, nem rendezés.
-    // #1468: a valódi kattintás előbb IMPERATÍVAN átbillenti a `checked`-et,
-    // és csak utána dördül el a `triggered`. Kizáró csoportban a MÁR AKTÍV
-    // tételre kattintva a vezérlő állapota nem változik, tehát a kötés magától
-    // soha nem értékelődik újra — a menü újranyitásakor egyik tételen sem
-    // állna pipa. Ezért a jelzés után azonnal VISSZAKÖTJÜK a `checked`-et
-    // (a #1464-ben bevezetett minta).
-    //
-    // A négy rendezési szempont kizáró csoport; a „Fordított sorrend"
-    // ÖNÁLLÓ kapcsoló (az állapota minden kattintásra változik, a kötés
-    // tehát magától helyreáll) — ott nem kell visszakötés.
+    // #7341: a négy eredeti tétel egyszeri, kijelölt mappára ható
+    // képrendezés. A mappasor helyi menüje ugyanezt a `sortFolderBy`
+    // műveletet használja; a rendezési mód nem marad beállításként.
     PicasaMenu {
         objectName: "menuFolderSortBy"
         // #1595: az eredetiben KÉT rendezés-készlet van, és mi a rosszat
@@ -63,38 +52,17 @@ PicasaMenu {
         MenuItem {
             objectName: "menuFolderSortByDate"
             text: qsTr("&Date")
-            checkable: true
-            checked: controllerRef && controllerRef.folderSort === "date"
-            onTriggered: {
-                controller.setFolderSort("date")
-                checked = Qt.binding(function () {
-                    return controllerRef && controllerRef.folderSort === "date"
-                })
-            }
+            onTriggered: controller.sortFolderBy(bar.currentFolder, "date")
         }
         MenuItem {
             objectName: "menuFolderSortByName"
             text: qsTr("&Name")
-            checkable: true
-            checked: controllerRef && controllerRef.folderSort === "name"
-            onTriggered: {
-                controller.setFolderSort("name")
-                checked = Qt.binding(function () {
-                    return controllerRef && controllerRef.folderSort === "name"
-                })
-            }
+            onTriggered: controller.sortFolderBy(bar.currentFolder, "name")
         }
         MenuItem {
             objectName: "menuFolderSortBySize"
             text: qsTr("&Size")
-            checkable: true
-            checked: controllerRef && controllerRef.folderSort === "size"
-            onTriggered: {
-                controller.setFolderSort("size")
-                checked = Qt.binding(function () {
-                    return controllerRef && controllerRef.folderSort === "size"
-                })
-            }
+            onTriggered: controller.sortFolderBy(bar.currentFolder, "size")
         }
         // SAJÁT FUNKCIÓ (#1595): a „legutóbbi változtatások" szerinti
         // rendezés — az eredeti négyes `ID_*SORT` készletben nincs ilyen
@@ -120,20 +88,7 @@ PicasaMenu {
         MenuItem {
             objectName: "menuFolderSortReverse"
             text: qsTr("&Reverse order")
-            checkable: true
-            checked: (controllerRef && controllerRef.folderSortReverse !== undefined)
-                ? controllerRef.folderSortReverse : false
-            onTriggered: {
-                controller.toggleFolderSortReverse()
-                // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
-                // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
-                // látszik, mert a művelet mindig átbillenti az állapotot —
-                // ez szerencse, nem szerkezet (ld. #1471).
-                checked = Qt.binding(function () {
-                    return (controllerRef && controllerRef.folderSortReverse !== undefined)
-                        ? controllerRef.folderSortReverse : false
-                })
-            }
+            onTriggered: controller.sortFolderBy(bar.currentFolder, "reverse")
         }
     }
     MenuSeparator {}

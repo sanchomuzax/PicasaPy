@@ -34,13 +34,12 @@ class FolderViewMixin:
 
     @Property(str, notify=_Signals.statusChanged)
     def paneSort(self):
-        """A BAL HASÁB rendezése (#461/3) — a rácsétól FÜGGETLEN beállítás.
+        """A BAL HASÁB és a rács mappa-blokkjainak rendezése (#7341).
 
         Az eredeti Picasában a bal panel saját jobbklikk-menüje
         (`AlbumList`, ld. `ui-audit-context-menus.md` A.2) tartalmazta a
-        „Rendezés dátum / név / méret / legutóbbi változtatás alapján"
-        tételeket — vagyis az a HASÁBOT rendezte. A Mappa ▸ Rendezés ettől
-        külön, a RÁCSOT állítja (#321). Két parancs, két cél."""
+        rendezési tételeket. A rács mappa-blokkjai ezt a sorrendet követik;
+        a védett „Recent &changes” tétel saját `folderSort` módban marad."""
         return self._get_settings().value("view/paneSort", "date")
 
     @Property(bool, notify=_Signals.statusChanged)
@@ -50,11 +49,12 @@ class FolderViewMixin:
 
     @Slot(str)
     def setPaneSort(self, mode: str) -> None:
-        """A bal hasáb rendezésének váltása (#461/3)."""
+        """A bal hasáb és a rács mappa-blokkjainak rendezése (#7341)."""
         if mode not in ("date", "changed", "size", "name"):
             return
         self._get_settings().setValue("view/paneSort", mode)
         self._reload_folders()
+        self._refresh_view()
 
     @Slot()
     def togglePaneSortReverse(self) -> None:
@@ -62,32 +62,27 @@ class FolderViewMixin:
             "view/paneSortReverse", not self.paneSortReverse
         )
         self._reload_folders()
+        self._refresh_view()
 
     @Slot(str)
     def setFolderSort(self, mode: str) -> None:
-        """A MAPPA-BLOKKOK sorrendje a rácson (Mappa ▸ Rendezés):
-        date / changed / size / name.
+        """A saját „Recent &changes” tétel mappablokk-rendezése.
 
-        ⚠️ #1759 — MÉRVE, mert a korábbi leírás félrevezetett. Ez a
-        beállítás azt dönti el, milyen sorrendben követik egymást a
-        MAPPÁK a rácson (`_feed_records` → `folder_order`). Nem rendezi
-        át a mappán BELÜLI képeket, és nem a bal hasáb sorrendje.
+        A Mappa menü négy eredeti tétele a `sortFolderBy` segítségével
+        egyszer rendezi át a kijelölt mappa képeit. A rács blokkjai egyébként
+        a `paneSort` beállítást követik; a `changed` érték kivételként
+        megőrzi a védett saját tétel működését. A régebbi `date`, `name` és
+        `size` értékeket elfogadjuk, de a rács rendezésére már nem használjuk.
 
         Három, egymástól FÜGGETLEN rendezés él a programban:
 
         | beállítás | mit rendez | honnan |
         |---|---|---|
-        | `folderSort` (ez) | a mappa-blokkokat a RÁCSON | Mappa ▸ Rendezés |
-        | kézi sorrend (#4890) | a mappa KÉPEIT, mappánként | mappa-jobbklikk |
-        | `paneSort` (#461/3) | a BAL HASÁB sorait | a hasáb helyi menüje |
+        | `folderSort == changed` | a mappa-blokkokat a rácson | saját Recent &changes tétel |
+        | kézi sorrend (#4890) | a mappa KÉPEIT, mappánként | Mappa menü / mappa-jobbklikk |
+        | `paneSort` | a BAL HASÁB sorait és a rács mappablokkjait | hasáb helyi menüje |
 
-        A #1595 kutatása épp azért vont le téves következtetést, mert a
-        korábbi docstring („a RÁCS rendezése") alapján úgy tűnt, hogy ez
-        és a kézi sorrend ugyanaz kétféle felirattal — az összevonás
-        egy működő szempontot („legutóbbi változtatások") vett volna el.
-
-        #1454: a Nézet ▸ Mappanézet almenü — ahonnan ez korábban szintén
-        hívható volt — nem rendez, hanem a bal hasáb szerkezetét állítja.
+        A Nézet ▸ Mappanézet almenü rendezése a `paneSort`-ot állítja.
         """
         if mode not in ("date", "changed", "size", "name"):
             return
@@ -172,10 +167,9 @@ class FolderViewMixin:
         # (load_matches), a teljes mappafa újratöltése ezt felülírná.
         if getattr(self, "_folders_filtered", False):
             return
-        # #321 + #461/3: a bal hasábnak SAJÁT rendezése van — a Mappa ▸
-        # Rendezés (folderSort) továbbra sem nyúl hozzá, azt csak a rács
-        # követi. A hasáb sorrendjét a saját jobbklikk-menüje állítja
-        # (`paneSort`), ahogy az eredeti Picasa `AlbumList` menüje tette.
+        # #7341: a bal hasáb és a rács mappa-blokkjai a `paneSort`-ot
+        # követik. A védett „Recent &changes” külön `folderSort == changed`
+        # módban marad a rácson.
         with open_index(self._db_path) as conn:
             self._folders.load(
                 conn,

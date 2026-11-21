@@ -25,16 +25,21 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from picasapy.ini import load_document
+from picasapy.ini.priority import olvasd_a_prioritasokat
+from picasapy.scanner import PICASA_INI_NAME
 
 from support.qt_wait import wait_for_photo_op
 from tests.app.qml_functional._felsomenupontok_helpers_4329 import _objektum
 from tests.app.qml_functional._mappa_kep_menu_5150_helpers import (
     KEPEK,
     MASIK,
+    MERET_SZERINT,
     app_epitese,
     elokeszit,
     gyerek,
     keszits_ket_mappat,
+    mappa_ut,
     nyitott,
     szures,
     tetel_kattintasa,
@@ -43,9 +48,6 @@ from tests.app.qml_functional._mappa_kep_menu_5150_helpers import (
 )
 
 _RENDEZESEK = (
-    ("menuFolderSortByDate", "date"),
-    ("menuFolderSortByName", "name"),
-    ("menuFolderSortBySize", "size"),
     ("menuFolderSortByChanged", "changed"),
 )
 
@@ -67,10 +69,12 @@ def _rendezes_elotti(ertek: str) -> str:
 
 class TestMappaRendezes:
     @pytest.mark.parametrize(("nev", "ertek"), _RENDEZESEK)
-    def test_a_rendezes_valodi_kattintassal_allitja_a_mappa_rendezeset(
-        self, mappa_kep_app, qt_app, nev, ertek
+    @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
+    def test_a_sajat_recent_changes_tetel_valodi_kattintassal_megmarad(
+        self, mappa_kep_app, qt_app, nev, ertek, magassag_elteres
     ):
         window, controller, _engine = mappa_kep_app
+        window.resize(window.width(), window.height() + magassag_elteres)
         elokeszit(window, qt_app, controller)
         elozo = _rendezes_elotti(ertek)
         controller.setFolderSort(elozo)
@@ -81,19 +85,27 @@ class TestMappaRendezes:
         )
 
         assert varj(qt_app, lambda: controller.folderSort == ertek), (
-            f"a {nev} kattintás nem állította a mappa rendezését: {ertek}"
+            f"a {nev} kattintás nem tartotta meg a saját rendezést: {ertek}"
         )
+        assert _objektum(window, nev).property("sajat") is True
 
-    def test_a_meret_szerinti_rendezes_valodi_kattintassal_atrendezi_a_mappablokkokat(
-        self, ket_mappas_app, qt_app
+    @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
+    def test_a_meret_szerinti_rendezes_valodi_kattintassal_atrendezi_a_kepeket(
+        self, ket_mappas_app, qt_app, magassag_elteres
     ):
-        """A Mappa ▸ Rendezés a MAPPÁK sorrendjét adja a rácson, nem a képekét
-        (ld. `controller.setFolderSort` dokumentációja), ezért a mappák
-        sorrendjét mérjük."""
+        """A Size a kijelölt mappa képeit rendezi; a blokkokat a paneSort adja."""
         window, controller, _engine = ket_mappas_app
         window.show()
+        window.resize(window.width(), window.height() + magassag_elteres)
         window.requestActivate()
         qt_app.processEvents()
+        mappa = mappa_ut(controller)
+        controller.selectFolder(str(mappa))
+        assert varj(
+            qt_app,
+            lambda: len(controller.photos.photos) == len(KEPEK) + 1,
+        ), "a kétmappás tesztkönyvtár nem töltődött be"
+        controller.setPaneSort("name")
         controller.setFolderSort("name")
 
         def mappak_sorrendje() -> list[str]:
@@ -107,31 +119,67 @@ class TestMappaRendezes:
         assert varj(qt_app, lambda: mappak_sorrendje() == ["fotok", MASIK]), (
             f"a név szerinti kiinduló sorrend nem áll be: {mappak_sorrendje()}"
         )
+        folder_sort = controller.folderSort
 
         tetel_kattintasa(
             window, qt_app, "F&older", "menuFolderSortBySize",
             almenu_utvonal=("menuFolderSortBy",),
         )
 
-        assert varj(qt_app, lambda: mappak_sorrendje() == [MASIK, "fotok"]), (
-            f"a Mappa ▸ Méret kattintás után a mappák sorrendje: {mappak_sorrendje()}"
+        assert varj(qt_app, lambda: mappak_sorrendje() == ["fotok", MASIK]), (
+            f"a Mappa ▸ Size elmozdította a mappablokkokat: {mappak_sorrendje()}"
         )
+        assert controller.folderSort == folder_sort
+        prioritasok = olvasd_a_prioritasokat(
+            load_document(mappa / PICASA_INI_NAME)
+        )
+        assert [
+            nev for nev, _hely in sorted(prioritasok.items(), key=lambda item: item[1])
+        ] == MERET_SZERINT
 
-    def test_a_forditott_sorrend_valodi_kattintassal_billenti_a_kapcsolot(
-        self, mappa_kep_app, qt_app
+    @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
+    def test_a_forditott_sorrend_valodi_kattintassal_a_kepeket_forditja(
+        self, mappa_kep_app, qt_app, magassag_elteres
     ):
         window, controller, _engine = mappa_kep_app
-        elokeszit(window, qt_app, controller)
-        elozo = controller.folderSortReverse
+        window.resize(window.width(), window.height() + magassag_elteres)
+        mappa = elokeszit(window, qt_app, controller)
+        controller.setFolderSort("name")
+        elotte = (controller.folderSort, controller.folderSortReverse)
+        meret_tetel = "menuFolderSortBySize"
+        tetel_kattintasa(
+            window,
+            qt_app,
+            "F&older",
+            meret_tetel,
+            almenu_utvonal=("menuFolderSortBy",),
+        )
+        meret_sorrend = [
+            nev for nev, _hely in sorted(
+                olvasd_a_prioritasokat(load_document(mappa / PICASA_INI_NAME)).items(),
+                key=lambda item: item[1],
+            )
+        ]
 
         tetel_kattintasa(
             window, qt_app, "F&older", "menuFolderSortReverse",
             almenu_utvonal=("menuFolderSortBy",),
         )
 
-        assert varj(qt_app, lambda: controller.folderSortReverse == (not elozo)), (
-            "a Fordított sorrend kattintás nem billentette a kapcsolót"
+        assert varj(
+            qt_app,
+            lambda: [
+                nev for nev, _hely in sorted(
+                    olvasd_a_prioritasokat(
+                        load_document(mappa / PICASA_INI_NAME)
+                    ).items(),
+                    key=lambda item: item[1],
+                )
+            ] == meret_sorrend[::-1],
+        ), (
+            "a Fordított sorrend kattintás nem fordította meg a képek sorrendjét"
         )
+        assert (controller.folderSort, controller.folderSortReverse) == elotte
 
 
 class TestMappaMuveletek:
