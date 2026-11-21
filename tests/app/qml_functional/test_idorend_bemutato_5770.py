@@ -117,6 +117,12 @@ def _nyit_időrendet(window, qt_app):
     timeline = _child(window, "timelineView")
     timeline.requestActivate()
     _vár(qt_app, timeline.isActive, "az Időrend nem kapott billentyűfókuszt")
+    fade_cover = _child(timeline, "timelineFadeCover")
+    _vár(
+        qt_app,
+        lambda: fade_cover.property("opacity") <= 0.001,
+        "az Időrend nyitó áttűnése nem fejeződött be",
+    )
     return timeline
 
 

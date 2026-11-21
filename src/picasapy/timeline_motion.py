@@ -390,7 +390,9 @@ def timeline_dot_positions(
     if not values:
         return []
     denominator = values[-1]
-    ratios = [value / denominator if denominator else 0.0 for value in values]
+    if denominator == 0:
+        return []
+    ratios = [value / denominator for value in values]
     output: list[dict[str, int | bool]] = []
     duplicate_run = 0
     previous_ratio: float | None = None
