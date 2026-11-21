@@ -218,11 +218,16 @@ Item {
             Item {
                 id: imageSliderSlot
                 objectName: "slideshowImageSliderSlot"
+                // #7322: a lista végén itt csúszka áll, tehát ilyenkor az
+                // átmenetválasztó húzódik össze előbb (legfeljebb 90 px-ig),
+                // és a hely csak a maradékból enged.
                 width: Math.max(
                     0,
                     Math.min(
                         controlsRow.preferredSliderSlotWidth,
-                        controlsRow.availableWidth - transitionBox.width
+                        controlsRow.availableWidth - (slideshow.listaVegen
+                            ? controlsRow.minimumTransitionWidth
+                            : transitionBox.width)
                     )
                 )
                 implicitWidth: controlsRow.preferredSliderSlotWidth
@@ -356,7 +361,8 @@ Item {
                 width: Math.max(
                     controlsRow.minimumTransitionWidth,
                     Math.min(controlsRow.preferredTransitionWidth,
-                             controlsRow.availableWidth)
+                             controlsRow.availableWidth - (slideshow.listaVegen
+                                 ? imageSliderSlot.width : 0))
                 )
                 //: a lista a képernyő alján álló sáv fölé nyílik
                 popup.y: -popup.implicitHeight
