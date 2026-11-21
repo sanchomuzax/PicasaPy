@@ -1,4 +1,4 @@
-"""#7341 — a három rendezés HÁROM külön dolog, és a leírásuk se mossa össze.
+"""#7341 - a három rendezés HÁROM külön dolog, és a leírásuk se mossa össze.
 
 ## Miért ér tesztet egy docstring
 
