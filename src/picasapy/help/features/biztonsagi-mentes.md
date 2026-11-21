@@ -12,6 +12,10 @@ dolgozik. A kettő **egyszerre nem lehet nyitva**: ha az egyiket
 megnyitod, a másik becsukódik. A panel nyitva tartása mellett a könyvtár
 használható marad.
 
+Amíg a mentés vagy az Ajándék CD panelje nyitva van, illetve amíg a
+másolás fut, az **Eszközök ▸ Képek biztonsági mentése…** menüpont
+szürke.
+
 ## Mit ment el
 
 A mentés a **figyelt mappáid** teljes tartalmát veszi alapul — ugyanazokat
@@ -25,7 +29,9 @@ lentebb.
 A mentés egy **készlethez** tartozik. A készlet megjegyzi, hova mentett és
 mit mentett már el, így a következő futás **csak az újat és a
 megváltozottat** másolja át. Egy nagy fotótár első mentése így hosszú, a
-másodiktól kezdve viszont gyors.
+másodiktól kezdve viszont gyors. Megváltozottnak számít az a kép is,
+amelynek a legutóbbi mentés óta a feliratát, a csillagát vagy más
+adatát szerkesztetted: ezt a következő mentés újra elviszi.
 
 Több készletet is létrehozhatsz — például egy teljeset a külső
 merevlemezre, és egy szűkebbet egy hálózati mappába.
@@ -34,6 +40,11 @@ A panel **két lépésre** oszlik. A bal oldali, **Készlet létrehozása vagy
 egy meglévő használata** keretben választod ki a készletet, a jobb
 oldali, **Mappák és albumok kijelölése biztonsági másolat készítéséhez**
 keretben pedig azt, mi menjen át.
+
+Amikor a mentést **először** nyitod meg, a program magától létrehoz egy
+**Saját mentési készlet** nevű, CD-re vagy DVD-re mentő készletet, és ki
+is választja. Később a panel mindig az utoljára használt készlettel
+nyílik meg.
 
 A készletet **legördülő listából** választod; alatta az **Új készlet…**,
 a **Készlet módosítása…** és a **Készlet törlése** gomb áll. A
@@ -49,31 +60,36 @@ futott" áll. Másolás közben ugyanitt jelenik meg a haladás.
 
 Az **Új készlet…** gombbal négy dolgot adsz meg:
 
-- **Mentési készlet** — a készlet neve, amit a listában látsz majd. A
-  mező nem üresen indul: az ajánlott név **Saját mentési készlet**.
-- **Mentés típusa** — ez dönti el, **milyen** a mentés kimenete:
-  - **Lemezről lemezre mentés (külső és hálózati meghajtókhoz)** — a
-    képek egy **mappába** másolódnak;
-  - **Mentés CD-re vagy DVD-re** — a képek **lemezkép-fájlba** kerülnek.
-- **Mentés ide** — a célmappa. A **Kiválasztás…** gombbal ki is válaszd.
-  Ez csak a lemezről lemezre mentésnél állítható: a CD/DVD-típusnál a
-  program adja a helyet, és mutatja is a mezőben (a Képek mappádon belül
-  a *Picasa biztonsági másolat ▸ ISO-k* mappa).
-- **Fájlok** — mi kerüljön át:
-  - **Minden fájltípus** — fotók, RAW-fájlok és videók;
+- **Név:** - a készlet neve, amit a listában látsz majd. A mező üresen
+  indul.
+- **Mentés típusa:** - ez dönti el, **milyen** a mentés kimenete:
+  - **Mentés CD-re vagy DVD-re** - a képek **lemezkép-fájlba** kerülnek.
+    Ez az alapértelmezés;
+  - **Lemezről lemezre mentés (külső és hálózati meghajtókhoz)** - a
+    képek egy **mappába** másolódnak.
+- **Mentés ide:** - a célmappa, amelyet a **Kiválasztás...** gombbal
+  választasz ki. Ez csak a lemezről lemezre mentésnél állítható: a
+  CD/DVD-típusnál a program adja a helyet, és mutatja is a mezőben (a
+  Képek mappádon belül a *Picasa biztonsági másolat ▸ ISO-k* mappa).
+- **Fájlok:** - mi kerüljön át:
+  - **Minden fájltípus** - fotók, RAW-fájlok és videók;
   - **Minden kép (videók nélkül)**;
-  - **Csak JPEG-ek fényképezőgép-adatokkal** — azok a JPEG-ek, amikben
+  - **Csak JPEG-ek fényképezőgép-adatokkal** - azok a JPEG-ek, amikben
     benne van a fényképezőgép neve. Ezzel a képernyőképek és a letöltött
     képek kimaradnak a mentésből.
 
-A készlet-űrlap **külön felugró ablakban** nyílik, **Mentési készlet**
-címmel; az **OK** gomb zárja le, a **Mégse** elveti. Ha a program nem
-fogadja el a készletet, az űrlap **nyitva marad**, a beírt adatok
-megmaradnak, és a hiba oka ott olvasható.
+A készlet-űrlap **külön felugró ablakban** nyílik, **Új mentési
+készlet** címmel; a **Létrehozás** gomb zárja le, a **Mégse** elveti. A
+**Létrehozás** gomb szürke, amíg a név üres, vagy ha már van ilyen nevű
+készlet. CD/DVD-típusnál tehát elég beírni a nevet; lemezről lemezre
+mentésnél a célmappát is meg kell adnod. Ha a program nem fogadja el a
+készletet, az űrlap **nyitva marad**, a beírt adatok megmaradnak, és a
+hiba oka ott olvasható.
 
 A **Készlet módosítása…** ugyanezeket a mezőket nyitja meg egy meglévő
-készleten — a típusát is átállíthatod. Ilyenkor az ablak címe **Mentési
-készlet szerkesztése**, a záró gomb pedig **Módosítás**.
+készleten. Ilyenkor az ablak címe **Mentési készlet szerkesztése**, a
+záró gomb pedig **Módosítás**. A mentés típusa szerkesztéskor nem
+változtatható, a gombjai szürkék.
 
 A **Készlet törlése** rákérdez, és a kérdésben **a készlet nevét is
 kiírja**; **a már elmentett fájlokat nem bántja**, csak a nyilvántartást
@@ -127,6 +143,8 @@ A gomb felirata **Biztonsági mentés**, ha van kiválasztott készlet;
 mappába mentésnél is ez indítja a másolást.
 
 A program először **megszámolja**, hány fájl menne át, és ezt kiírja.
+Másolás előtt azt is ellenőrzi, van-e elég szabad hely a célon. Ha nem
+fér el, bele sem kezd a másolásba, hanem szól.
 Mappába mentésnél azt is odaírja, **hány CD-re vagy DVD-re férne** ennyi
 adat; lemezkép-mentésnél a „*N* fájl írása lemezképbe…" üzenet jön.
 
@@ -135,6 +153,11 @@ Másolás közben a panelen **haladásjelző csík** fut, az üzenetben pedig a
 közben **használható marad**: a másolás a háttérben megy. A végén
 megmondja, hány fájl ment át. A záró üzenet mindig ugyanaz — **A mentés
 elkészült** —, akkor is, ha nem volt mit átmásolni.
+
+Ha egy fájl korábbi mentett példánya írásvédett, a program azt is
+felülírja a módosult képpel, ahogy az eredeti Picasa. Ha egy fájl
+mentése mégsem sikerül, az a naplóba kerül, és a mentés a többi fájllal
+folytatódik.
 
 ### Megszakítás
 

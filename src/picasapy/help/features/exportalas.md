@@ -85,6 +85,11 @@ megjegyzi a következő exportálásig.
 Az **Exportálás** gomb után a program megírja, hány fájlt írt és hova. A
 **Mégse** bezárja az ablakot.
 
+Az exportálás futás közben megszakítható: ha közben a **Mégse** gombra
+kattintasz, a program előbb rákérdez („Megszakítja ezt a műveletet?"),
+és csak jóváhagyás után áll le. A megszakított exportálás nem mutat
+eredményt.
+
 ### A hét sablon
 
 Az ablak középső részén, a „Kattintson a sablonok nevére a minta

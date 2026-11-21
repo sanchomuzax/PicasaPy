@@ -8,7 +8,13 @@ behozhatod a képeket.
 Indítás: az eszköztár **Importálás** gombja, vagy **Fájl ▸ Importálás
 forrása…** (Ctrl+M).
 
-A párbeszéd felül a **Forrást** kéri (a legutóbbi forrásokat is
+Az importálás nem külön ablakban, hanem a **főablak paneljén** nyílik
+meg, a teljes munkaterületen, nagy képelőnézettel. Ha bezárod, majd újra
+megnyitod, a forrás, a válogatás és az importálás állapota megmarad. Ha
+úgy zárod be, hogy a talált képeket még nem importáltad, a program
+felajánlja az importálásukat.
+
+A panel felül a **Forrást** kéri (a legutóbbi forrásokat is
 felkínálja), alatta megjelenik, mit talált: hány kép és videó van benne.
 
 A **Tallózás…** gomb egy kis menüt nyit:
@@ -33,6 +39,11 @@ meghajtó, a lista nem látszik.
 - Az indexképekre kattintva egyenként dönthetsz: **Bevonás** vagy
   **Kizárás**. Az **Összes bevonása** és **Összes kizárása** gomb mindet
   átállítja.
+- A bélyegképekre jobb gombbal kattintva helyi menü nyílik: **Fájllal
+  együtt** (bevonás), **Fájl kihagyása**, **Összes bevonása** és
+  **Összes kizárása**.
+- Több bélyegképet is kijelölhetsz (Ctrl+kattintással vagy
+  Shift+kattintással), és csak ezeket importálhatod, lásd lentebb.
 - A **Duplikátumok kizárása** azokat hagyja ki, amik már benne vannak a
   könyvtáradban.
 - **Fájltípusok** — képfájlok, filmek, kép- és filmfájlok, vagy minden
@@ -41,7 +52,7 @@ meghajtó, a lista nem látszik.
 ### Hova kerüljön
 
 A **Cél** mappát a **Tallózás…** gombbal választod, vagy a korábbi
-célmappák közül. Az ablak mindig az **alapértelmezett célmappával**
+célmappák közül. Az ablak az öt legutóbbi célmappát jegyzi meg. Az ablak mindig az **alapértelmezett célmappával**
 nyílik. Ez alapból a **Képek** mappád; átállítani az **Eszközök ▸
 Beállítások… ▸ Általános** fülön lehet, az **Importált képek mentési
 helye:** sor **Tallózás…** gombjával
@@ -71,8 +82,22 @@ A **Másolás után** beállítás dönti el, mi történjen a forrással:
 - **Csak a másolt fényképek törlése**,
 - **Minden törlése a kártyáról**.
 
-A két törlő választásra a program rákérdez, és a válasz **nem vonható
-vissza** — ami a kártyáról lemegy, az nem kerül a Lomtárba.
+A két törlő lehetőség csak akkor választható, ha a forrás egy csatolt
+kártya vagy meghajtó, amelyen van fényképezőgépes **DCIM** mappa.
+
+A két törlő választásra a program **egyetlen** kérdést tesz fel, az
+**Importált fájlok eltávolítása** (illetve **Az összes fájl
+eltávolítása**) és a **Mégse** gombbal. A kérdést nem lehet véglegesen
+elnyomni, minden alkalommal megjelenik. A válasz **nem vonható vissza**:
+ami a kártyáról lemegy, az nem kerül a Lomtárba.
+
+Ha importáláskor akár egy kép másolása sem sikerül, a program a
+forrásból **semmit nem töröl**. Ha maga a törlés ütközik hibába, az
+importálás ettől nem akad meg.
+
+Az ablak megjegyzi, melyik almappa-módot és melyik **Másolás után**
+lehetőséget választottad legutóbb; ezeket az importálás indításakor
+menti.
 
 A **Minden törlése a kártyáról** esetén a kérdés tételesen felsorolja,
 mibe mész bele:
@@ -86,6 +111,20 @@ mibe mész bele:
 Ha a forrást még nem pásztázta végig a program, a darabszámot nem
 találgatja: ezt írja ki, hogy „ismeretlen számú fájlt fog törölni".
 Ilyenkor érdemes megvárni a pásztázás végét, mielőtt igent mondasz.
+
+### Az importálás indítása
+
+Az ablak alján három gomb áll:
+
+- **Az összes importálása** - minden bevont képet behoz;
+- **Kijelöltek importálása** - csak a kijelölt bélyegképeket hozza be; a
+  gombon zárójelben a kijelöltek száma áll;
+- **Bezárás**.
+
+Az **Enter** és az **Esc** az eredeti Picasa szerint működik. Az ablak
+alján egy tippsor mutatja, mi a következő lépés, a választott
+almappa-módnak megfelelően. Az alsó gombsor kisebb ablakméretnél is
+teljesen látszik.
 
 ### Az importálás közben
 

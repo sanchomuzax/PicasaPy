@@ -1,7 +1,7 @@
 # Create a Gift CD...
 
 **Create** ▸ **Create a Gift CD...** is the original Picasa feature for making a
-gift disc. Collect photos in the Photo Tray, give the disc a name, choose an
+gift disc. Take the photos of a folder or of the Photo Tray, give the disc a name, choose an
 image size, and PicasaPy packages them into one file that you can burn to a
 disc.
 
@@ -10,16 +10,21 @@ can burn with any disc-writing application or mount and view directly. This
 is the only difference from the original: your system's disc-writing
 application handles the burning.
 
-## Photos come from the Photo Tray
+## Photos come from a folder or the Photo Tray
 
-Gift CD uses the items in the Photo Tray, not the selection in the grid,
-just like collage and movie creation. First collect the photos in the tray.
-You can add photos from several folders with **Hold selected items**; then
-open the Gift CD feature. The panel explains that checked items will be
-copied to the gift CD.
+The command is available even with nothing selected and an empty tray.
+By default, the panel uses the photos of the open folder: next to
+**Burn Disc**, a checkbox shows the folder name and its number of photos
+(for example `Holiday (42)`). It is checked when the panel opens if the
+folder contains photos.
 
-With an empty tray, **Burn Disc** is disabled because there is nothing to
-include.
+Clear the checkbox to use the items in the Photo Tray instead, just like
+collage and movie creation. First collect the photos in the tray; you
+can add photos from several folders with **Hold selected items**. The
+panel explains that checked items will be copied to the gift CD.
+
+When the folder checkbox is cleared and the tray is empty, **Burn Disc**
+is disabled because there is nothing to include.
 
 ## The panel
 
@@ -42,8 +47,8 @@ panel, but the Photo Tray contents are kept.
   The field prevents longer names. When the panel opens, it contains the
   open folder's name; you can change it. If you leave it empty, the file
   name is also used as the disc name.
-- **Include Slideshow** is selected by default, and the program
-  remembers its setting. When selected, non-JPEG pictures are also
+- **Include Slideshow** is selected by default. If you close the panel
+  with **Cancel**, it is selected again the next time. When selected, non-JPEG pictures are also
   written to the disc as JPEGs; when cleared, they keep their original
   format.
 

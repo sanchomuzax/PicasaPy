@@ -24,17 +24,24 @@ automatic corrections, effects, and finally red-eye correction.
 
 A progress bar appears while the operation runs, and you can cancel it.
 
+Selected videos are skipped: they get no effect and are not rotated. If
+the selection included a video, an information window points this out
+when the work is done. If nothing is selected, PicasaPy tells you the
+same way and does nothing.
+
 In the viewer, the menu applies to the open photo only. It does not
-affect the selection left in the grid.
+affect the selection left in the grid. If the photo is open in the
+editor, **Sepia**, **B&W**, **Warmify**, **Sharpen**, and **Film Grain**
+do not change the photo; they open the editor's Effects tab, where you
+can apply the effect yourself.
 
 ### Show or hide text
 
 The submenu has separate **Show Text** and **Hide Text** commands for
 the text overlay on selected photos. They hide or show the overlay
-without deleting it. Photos without text are left alone. The commands'
-enabled state is determined when the menu opens: **Show Text** is
-available only if the selection contains hidden text, and **Hide Text**
-only if it contains visible text. The editor has a **Show Text** checkbox
+without deleting it. Photos without text are left alone. With photos
+selected, both commands are always available, even if none of the
+photos has text on it. The editor has a **Show Text** checkbox
 for an individual photo; see [The editor](szerkeszto.md).
 
 To reverse a batch operation, use the batch undo command. It reverses
@@ -64,7 +71,8 @@ the file. You can rotate a photo in these ways:
 - Choose **Rotate Clockwise** or **Rotate Counterclockwise** from the
   photo's context menu.
 - Press `Ctrl+R` or `Ctrl+Shift+R`.
-- Use the same shortcuts during a slideshow.
+- During a slideshow, use the two rotate buttons on the control bar (the
+  shortcuts do not rotate during a slideshow).
 
 Videos cannot be rotated.
 

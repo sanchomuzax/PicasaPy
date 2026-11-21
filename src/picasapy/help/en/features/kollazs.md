@@ -4,11 +4,20 @@ A collage combines several photos into one new image.
 
 ## Start a collage
 
-Select photos, then use the collage command under **Create** or the
-**Collage** button in the photo tray. The collage button in the folder
-header in the grid opens a collage from the photos selected in that
-folder, or from all of its photos when nothing is selected. If nothing is selected, PicasaPy
-asks you to select photos in the library or add them to the tray.
+Use the collage command under **Create**, the **Collage** button in the
+photo tray, or the collage button in the folder header in the grid.
+
+What goes on the canvas:
+
+- If you selected photos (or hold photos in the tray), the selected
+  photos go on the canvas, and the folder's other photos go to the clips
+  tab, where you can drag them in later. The tab label shows how many
+  photos are not on the canvas.
+- With nothing selected, all photos of the open folder go on the canvas.
+- The folder header button uses the photos selected in its own folder
+  when at least two are selected; with none or one selected, it starts
+  from the whole folder. Photos selected in another folder are not
+  included.
 
 The collage opens on its own tab with the editor panel on the left.
 

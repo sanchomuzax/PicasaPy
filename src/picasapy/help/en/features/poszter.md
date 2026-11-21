@@ -38,7 +38,9 @@ Picasa. The source picture is not changed. The poster uses the edited
 picture, including its crop, rotation, and effects, and respects the
 orientation recorded by the camera.
 
-When the work is done, a dialog lists the saved poster sheets. If the
+When the work is done, a dialog lists the saved poster sheets. As in the original Picasa, PicasaPy then opens the last
+sheet in the editor, and the source picture stays selected in the
+library. If the
 picture could not be read or the folder could not be written, the dialog
 reports the failure. Large pictures can take a while to process, but
 PicasaPy remains usable and stops waiting after two minutes.

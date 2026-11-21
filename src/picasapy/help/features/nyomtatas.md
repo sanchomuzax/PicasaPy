@@ -102,8 +102,9 @@ előnézet is frissül.
 ### Minőségellenőrzés
 
 Ha van kis kép, mellette egy **Ellenőrzés** gomb jelenik meg. Rákattintva
-egy lista mutatja **minden** nyomtatandó képet, a legrosszabbal elöl,
-a felbontásával és minősítésével:
+egy lista mutatja **minden** nyomtatandó képet, a felbontásával és
+minősítésével. A képek minőség szerint csoportosítva állnak, a
+leggyengébbekkel elöl; egy csoporton belül a nyomtatás sorrendjében:
 
 - **Legjobb minőség** — legalább 150 képpont/hüvelyk,
 - **Jó minőség** — 100 és 149 között,

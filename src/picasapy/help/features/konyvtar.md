@@ -161,7 +161,10 @@ A mappa fejlécének jobb oldalán gombok állnak (hogy melyikek, azt az
 
 A mappa sorára jobbgombbal kattintva a **Mappaleírás szerkesztése…**
 tétel, vagy a megnyitott mappára a **Mappa ▸ Leírás szerkesztése…**
-megnyitja a **Mappa tulajdonságai** ablakot. A mezői:
+megnyitja a **Mappa tulajdonságai** ablakot. A mappalistában egy almappa
+nélküli mappa sorára **duplán kattintva** is ez az ablak nyílik meg (az
+almappás sor dupla kattintása továbbra is kinyitja vagy becsukja a
+sort). A mezői:
 
 - **Név:** — ide írva a mappát át is nevezheted. Az **OK** gomb átnevezi a
   mappát a lemezen, a benne lévő képek, almappák és a `.picasa.ini` vele
@@ -172,7 +175,11 @@ megnyitja a **Mappa tulajdonságai** ablakot. A mezői:
   jeleket (`< > : " / \ | ? *`) kihagyja, a tabulátort és a sortörést
   szóközre cseréli, a név elejéről és végéről levágja a szóközt és a
   pontot, a `con`, `prn`, `aux` és `nul` név végére pedig aláhúzást tesz.
-  A belső szóközöket nem vonja össze;
+  A belső szóközöket nem vonja össze. Az **OK** a mappa nevét a mappa
+  `.picasa.ini` fájljába is beírja. Windowson a mező a mappa nevét
+  mutatja, nem a teljes útvonalát; ha pedig az átnevezést egy másik
+  program épp akadályozza, a program fél másodpercenként újrapróbálja,
+  legfeljebb öt másodpercig, és csak utána jelez hibát;
 - **Dátum:** — a mappa dátuma, a nyelvi beállításod szerinti alakban
   (magyarul például `2026. 01. 01.`); a szabványos ÉÉÉÉ-HH-NN alakot is
   elfogadja. A mező jobb szélén lévő naptár-ikonra (**Dátum
@@ -286,27 +293,22 @@ ismételnek.
 Az album **nem mozgat fájlokat** — csak egy összeállítás. Ugyanaz a kép
 több albumban is szerepelhet.
 
-- Új albumot a **Fájl ▸ Új album…** (Ctrl+N) paranccsal vagy a képek
-  helyi menüjének **Új album…** tételével hozol létre a kijelölt
-  képekből. Megnyílik az **Album tulajdonságai** ablak (a név mezőben
-  **Névtelen** áll); itt megadod a nevet és a többi adatot, és az
-  **OK** után készül el az album a kijelölt képekkel. A **Mégse** után
-  nem készül album. Kijelölés nélkül nem történik semmi.
-- Az eszköztár **+** gombja másképp működik, ahogy az eredeti Picasában
-  is: megnyitja az **Album tulajdonságai** ablakot (a név mezőben
-  **Névtelen** áll), és az **OK** után egy **üres** albumot készít, a
-  kijelölt képek nélkül. Ezt utólag töltöd fel képekkel, például
-  ráhúzással. Amíg az album üres, a PicasaPy csak a saját
-  adatbázisában tartja nyilván, a képmappák `.picasa.ini` fájljához
-  **nem nyúl**. Az album egy képmappához tartozik: ha a bal hasábon egy
-  **mappa** van megnyitva, ahhoz; az **Időrend**, a keresési találatok
-  vagy egy album nézetében pedig a kijelölt (kijelölés nélkül a
-  kiemelt) kép mappájához. Ha ilyen mappa nincs, vagy a mappa nem része
-  a könyvtárnak, a program szól: „Albumot csak indexelt képmappába lehet
-  menteni.", és nem készül album. Amikor az első képet hozzáadod, az
-  album a nevével és adataival együtt a kép mappájának `.picasa.ini`
-  fájljába kerül, ahogy bármelyik más album. Az üres album is
-  átnevezhető, szerkeszthető és törölhető.
+- A **Fájl ▸ Új album…** (Ctrl+N) parancs és az eszköztár **+** gombja,
+  ahogy az eredeti Picasában, mindig **üres** albumot készít, a kijelölt
+  képektől függetlenül, és kijelölés nélkül is elérhető. Megnyílik az
+  **Album tulajdonságai** ablak: a név mezőben **Névtelen**, a dátum
+  mezőben a mai nap áll. Az **OK** után létrejön az üres album, és rögtön
+  meg is nyílik; a **Mégse** után nem készül album, és a nézet meg a
+  kijelölés változatlan marad. Az üres albumot utólag töltöd fel
+  képekkel, például ráhúzással. Amíg az album üres, a PicasaPy csak a
+  saját adatbázisában tartja nyilván, a képmappák `.picasa.ini` fájljához
+  **nem nyúl**. Amikor az első képet hozzáadod, az album a nevével és
+  adataival együtt a kép mappájának `.picasa.ini` fájljába kerül, ahogy
+  bármelyik más album. Az üres album is átnevezhető, szerkeszthető és
+  törölhető.
+- A kijelölt képekből a képek helyi menüjének **Új album…** tételével
+  készítesz albumot. Ilyenkor is az **Album tulajdonságai** ablak nyílik
+  meg, és az **OK** után az album a kijelölt képekkel készül el.
 - Meglévő albumhoz a kép helyi menüjének **Hozzáadás az albumhoz**
   almenüjén át adsz hozzá képet. Ugyanez elérhető a képtálca
   album-gombjával: ez egy fölfelé nyíló menüt nyit, akkor is, ha még
@@ -324,8 +326,14 @@ több albumban is szerepelhet.
   nélkül").
 - Képeket egy meglévő album sorára húzva azok **abba az albumba**
   kerülnek. Amíg egyetlen albumod sincs, az **Albumok** csoport alatt ott
-  áll a „Képeket idehúzva új albumot hozhat létre." sor — erre ejtve a
-  képeket **új album** készül belőlük. Húzás közben a célsor kék hátteret
+  áll a „Képeket idehúzva új albumot hozhat létre." sor. Erre ejtve a
+  képeket megnyílik az **Album tulajdonságai** ablak (a név és a mai
+  dátum kitöltve); az **OK** után létrejön és megnyílik az új album a
+  képekkel, a **Mégse** után nem változik semmi.
+- Albumnézetben a **Beillesztés** (menüből vagy Ctrl+V-vel) a vágólapon
+  lévő képeket az albumhoz adja: fájlt nem másol, és nem kérdez. A már
+  az albumban lévő kép nem kerül be kétszer, és a **Kivágás** ilyenkor
+  sem töröl semmit a forrásból. Húzás közben a célsor kék hátteret
   kap, hogy lásd, hova esnek majd a képek.
 
 A **Csillagozott képek** egy állandó album: minden csillaggal megjelölt
@@ -391,9 +399,15 @@ Mappanézetben ugyanezen a helyen a mappa leírását szerkeszted.
 
 Album vagy Emberek-album nézése közben a program a korábban nézett
 mappát megjegyzi, de a menü **Keresés a lemezen**, **Eltávolítás a
-Picasából…**, **Áthelyezés…** és **Törlés…** tétele ilyenkor **szürke** —
-így véletlenül sem a korábbi mappára hatnak. Ha ilyenkor mappát akarsz
+Picasából…** és **Áthelyezés…** tétele ilyenkor **szürke**, így
+véletlenül sem a korábbi mappára hat. Ha ilyenkor mappát akarsz
 kezelni, előbb kattints a mappára a bal hasábon.
+
+A **Törlés…** tétel albumnézetben a **megnyitott albumot** törli,
+legyen az saját album vagy Emberek-album; a képfájlok megmaradnak. A
+törlés után a könyvtár eleje látszik. Keresés közben a tétel szürke. Egy
+megnyitott **üres** albumot a **Delete** billentyű megerősítés nélkül
+töröl.
 
 ## Gyűjtemények
 
@@ -475,7 +489,9 @@ kikerülnek a listából.
   az áll pipával, amelyik az éppen látható nézetet adja: szerkesztési
   nézetben az utolsó, különben az aktuális indexképméret tétele. A
   csúszkával beállított köztes méretnél egyik indexkép-tételen sincs
-  pipa.
+  pipa. A beállított méret újraindítás után is megmarad. Az
+  Emberek-albumok külön méretet jegyeznek meg, így ott más méretet
+  használhatsz, mint a mappáidnál.
 - **Nézet ▸ Indexkép felirata** almenüben választhatod, mi legyen a kép
   alatt: **Egyik sem**, **Fájlnév**, **Képfelirat**, **Címkék** vagy
   **Felbontás**.
@@ -621,7 +637,8 @@ konfigurálása…** menüpont (lásd [Beállítások](beallitasok.md)).
 
 Ha egy képnek rossz a dátuma — például a gép órája rosszul volt beállítva
 —, javíthatod. Jelöld ki a képeket, majd **Eszközök ▸ Dátum és idő
-beállítása…**. A **Fotó dátumának módosítása - N elem.** ablakban
+beállítása…**. Ha a nézőben vagy, az ablak az éppen látott képre
+nyílik; mappanézetben kijelölés nélkül a mappa képeire. A **Fotó dátumának módosítása - N elem.** ablakban
 (egyetlen képnél csak **Fotó dátumának módosítása**) látod az első
 kép bélyegképét (több kijelölt képnél a rácsban elsőként álló képét, és
 a mezők is az ő dátumával nyílnak) és a **Jelenlegi fotódátum**át: a dátum és az idő két
@@ -639,7 +656,8 @@ időpontja**t. Két mód közül választasz:
 Az **OK** menti a változtatást. Amíg a képek dátuma íródik, egy kis
 **Fotók dátumának beállítása** ablak forgó jelzéssel mutatja, hogy a
 munka folyik; ha kész, magától eltűnik. Ahogy az eredeti Picasa is, az új
-felvételi dátumot **beleírja a képfájl EXIF-adataiba**. A fájl lemezen
+felvételi dátumot **beleírja a képfájl EXIF-adataiba**, és ha a fájlban
+XMP- vagy IPTC-dátum is van, azt is átírja. A fájl lemezen
 látható időbélyegeihez (például a módosítás idejéhez) **nem nyúl**: azok
 ugyanazok maradnak, mint előtte. A `.picasa.ini` fájlhoz sem nyúl. Ezután
 a program újraolvassa a mappát, így a rács, a dátum szerinti rendezés és
