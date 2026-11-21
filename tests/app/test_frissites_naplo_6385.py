@@ -16,7 +16,7 @@ def _elokeszit(monkeypatch, tmp_path):
     naplo = tmp_path / "frissites-naplo.txt"
     monkeypatch.setattr(helper, "_update_log_path", lambda: naplo)
     monkeypatch.setattr(helper, "wait_for_process", lambda _pid: None)
-    monkeypatch.setattr(helper, "extract_update_archive", lambda _zip, _stage: tmp_path)
+    monkeypatch.setattr(helper, "extract_update_archive", lambda _zip, _stage, **_: tmp_path)
     monkeypatch.setattr(helper, "inditsd_a_felhasznalonak", lambda _exe, **_k: None)
     monkeypatch.setattr(helper, "tarolo_tipusa", lambda _path: "helyi")
     # #6508: Windowson a segéd az új program ablakát várja; itt nincs új program.
@@ -114,7 +114,7 @@ def test_a_frisites_kivetelet_es_annak_szoveget_naplozza(monkeypatch, tmp_path):
     monkeypatch.setattr(
         helper,
         "extract_update_archive",
-        lambda *_args: (_ for _ in ()).throw(ValueError("hibás csomag")),
+        lambda *_args, **_: (_ for _ in ()).throw(ValueError("hibás csomag")),
     )
 
     with pytest.raises(ValueError, match="hibás csomag"):

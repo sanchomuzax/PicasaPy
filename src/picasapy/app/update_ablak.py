@@ -78,6 +78,66 @@ _SZOVEG_KULCSOK = (
 ABLAK_KAPCSOLO = "--frissitesi-ablak"
 _QML_HALADAS_STATUS_ENV = "PICASAPY_QML_HALADAS_STATUS"
 
+#: #7355: a teljes telepítés 0-100%-os sávja szakaszonként, a lépések
+#: sorrendjében. A két hosszú szakasz (kicsomagolás, indulás előkészítése) kapja
+#: a legnagyobb sávot; a rövid szakaszok a sávjuk végére ugranak, amikor véget érnek.
+SZAKASZ_SULYOK: dict[str, int] = {
+    "varakozas": 3,
+    "kicsomagolas": 30,
+    "maradek_folyamatok": 2,
+    "csere": 5,
+    "onellenorzes": 8,
+    "qml_cache": 40,
+    "qml_grafika": 7,
+    "inditas": 2,
+    "ablak_varakozas": 3,
+}
+#: szakaszonként a kész/összes darabszám kulcsai az állapotfájlban
+_SZAKASZ_SZAMLALOK = {
+    "kicsomagolas": ("extract_done", "extract_total"),
+    "qml_cache": ("qml_done", "qml_total"),
+}
+#: a kicsomagolás legfeljebb ennyi másodpercenként írja az állapotfájlt
+_KICSOMAGOLAS_IRASI_KOZ = 0.2
+
+
+def _egesz(ertek: object) -> int:
+    if isinstance(ertek, bool) or not isinstance(ertek, int):
+        return 0
+    return max(0, ertek)
+
+
+def _szakasz_szamlalo(allapot: Mapping[str, object]) -> tuple[int, int] | None:
+    kulcsok = _SZAKASZ_SZAMLALOK.get(str(allapot.get("stage", "")))
+    if kulcsok is None:
+        return None
+    return _egesz(allapot.get(kulcsok[0])), _egesz(allapot.get(kulcsok[1]))
+
+
+def teljes_szazalek(allapot: Mapping[str, object]) -> int:
+    """A teljes telepítés százaléka: a lezárt szakaszok sávja + a mostani része."""
+    if allapot.get("done"):
+        return 100
+    kulcsok = list(SZAKASZ_SULYOK)
+    stage = str(allapot.get("stage", ""))
+    if stage not in SZAKASZ_SULYOK:
+        return 0
+    kezdet = sum(SZAKASZ_SULYOK[k] for k in kulcsok[: kulcsok.index(stage)])
+    szamlalo = _szakasz_szamlalo(allapot)
+    resz = 0
+    if szamlalo is not None and szamlalo[1] > 0:
+        kesz, osszes = szamlalo
+        resz = SZAKASZ_SULYOK[stage] * min(kesz, osszes) // osszes
+    return min(100, kezdet + resz)
+
+
+def csik_felirat(allapot: Mapping[str, object], szazalek: int) -> str:
+    """A csík melletti szöveg: mindig a százalék, ahol van, a darabszám is."""
+    szamlalo = _szakasz_szamlalo(allapot)
+    if szamlalo is None or szamlalo[1] <= 0:
+        return f"{szazalek}%"
+    return f"{szazalek}% · {szamlalo[0]}/{szamlalo[1]}"
+
 
 def _platform() -> str:
     """Platformfogantyú (#1217): a teszt ezt írja át, nem a `sys.platform`-ot."""
@@ -208,6 +268,7 @@ class FrissitesiAblak:
         self._status_ut: Path | None = None
         self._feliratok = dict(feliratok or {})
         self._statusz: dict[str, object] = {"stage": "varakozas", "error": "", "done": False}
+        self._kicsomagolas_irva = 0.0
 
     @property
     def van_hibaja(self) -> bool:
@@ -237,12 +298,24 @@ class FrissitesiAblak:
 
     def lepes(self, kulcs: str) -> None:
         self._statusz.update(stage=kulcs, error="", done=False)
-        if kulcs == "qml_cache":
-            self._statusz.update(qml_done=0, qml_total=0)
-        else:
-            self._statusz.pop("qml_done", None)
-            self._statusz.pop("qml_total", None)
+        for szakasz, (kesz_kulcs, osszes_kulcs) in _SZAKASZ_SZAMLALOK.items():
+            if szakasz == kulcs:
+                self._statusz.update({kesz_kulcs: 0, osszes_kulcs: 0})
+            else:
+                self._statusz.pop(kesz_kulcs, None)
+                self._statusz.pop(osszes_kulcs, None)
+        self._kicsomagolas_irva = 0.0
         self._frissitsd_a_statuszt()
+
+    def kicsomagolas_halad(self, kesz: int, osszes: int, *, kenyszer: bool = False) -> None:
+        """#7355: a kicsomagolt fájlok aránya; legfeljebb 0,2 mp-enként ír."""
+        if self._statusz.get("stage") != "kicsomagolas":
+            return
+        self._statusz.update(extract_done=max(0, kesz), extract_total=max(0, osszes))
+        most = time.monotonic()
+        if kenyszer or kesz >= osszes or most - self._kicsomagolas_irva >= _KICSOMAGOLAS_IRASI_KOZ:
+            self._kicsomagolas_irva = most
+            self._frissitsd_a_statuszt()
 
     def uzenet(self, kulcs: str, **ertekek: object) -> str:
         return felirat(kulcs, self._kod, self._feliratok).format(**ertekek)
@@ -331,12 +404,18 @@ def _tkinter_ablak(kod: str, status_ut: Path) -> int:  # pragma: no cover - Wind
     )
     progress_row = ttk.Frame(frame, padding=(0, 8, 0, 0))
     progress_value = tk.DoubleVar(value=0)
-    progress_text = tk.StringVar(value="0% · 0/0")
+    progress_text = tk.StringVar(value="0%")
+    # #7355: a csík az első pillanattól látszik, és soha nem lép vissza
+    legtobb = [teljes_szazalek(kezdo)]
     progress_bar = ttk.Progressbar(
         progress_row, variable=progress_value, maximum=100, length=350, mode="determinate"
     )
     progress_bar.pack(side="left", fill="x", expand=True)
-    ttk.Label(progress_row, textvariable=progress_text, padding=(8, 0, 0, 0)).pack(side="right")
+    # a szöveg fix szélességű, hogy a változó darabszám ne méretezze át az ablakot
+    ttk.Label(
+        progress_row, textvariable=progress_text, padding=(8, 0, 0, 0), width=16
+    ).pack(side="right")
+    progress_row.pack(anchor="w", fill="x")
     elapsed_label = ttk.Label(frame, textvariable=elapsed, padding=(0, 10, 0, 0))
     elapsed_label.pack(anchor="w")
     error_label = ttk.Label(frame, textvariable=error, wraplength=430, foreground="#a32020")
@@ -357,22 +436,9 @@ def _tkinter_ablak(kod: str, status_ut: Path) -> int:  # pragma: no cover - Wind
         allapot = _status_olvasas(status_ut)
         stage_key = str(allapot.get("stage", "varakozas"))
         stage.set(felirat(stage_key, kod, feliratok))
-        if stage_key == "qml_cache":
-            percent = _qml_halas_szazalek(allapot)
-            done = allapot.get("qml_done", 0)
-            total = allapot.get("qml_total", 0)
-            if isinstance(done, bool) or not isinstance(done, int):
-                done = 0
-            if isinstance(total, bool) or not isinstance(total, int) or total < 0:
-                total = 0
-            percent = 0 if percent is None else percent
-            progress_bar.configure(maximum=max(1, total))
-            progress_value.set(min(done, max(1, total)))
-            progress_text.set(f"{percent}% · {done}/{total}")
-            if not progress_row.winfo_manager():
-                progress_row.pack(anchor="w", fill="x", before=elapsed_label)
-        else:
-            progress_row.pack_forget()
+        legtobb[0] = max(legtobb[0], teljes_szazalek(allapot))
+        progress_value.set(legtobb[0])
+        progress_text.set(csik_felirat(allapot, legtobb[0]))
         elapsed.set(
             felirat("elapsed", kod, feliratok).format(
                 seconds=int(max(0.0, time.monotonic() - indulasi_ido))

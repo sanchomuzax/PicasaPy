@@ -192,7 +192,7 @@ def test_a_seged_kudarcnal_okkodot_ir_a_jelzobe(tmp_path, monkeypatch):
     monkeypatch.setattr(update_swap_helper, "_log_update", lambda *a, **k: None)
     monkeypatch.setattr(update_swap_helper, "inditsd_a_felhasznalonak", lambda *a, **k: None)
     monkeypatch.setattr(update_folyamatok, "varj_vagy_allitsd_le", lambda *a, **k: 0)
-    monkeypatch.setattr(update_swap_helper, "extract_update_archive", lambda a, s: s)
+    monkeypatch.setattr(update_swap_helper, "extract_update_archive", lambda a, s, **_: s)
 
     def foglalt_csere(*_a, **_k):
         raise _foglalt()
@@ -352,7 +352,7 @@ def test_a_seged_lepesei_a_valos_sorrendben_jelennek_meg(tmp_path, monkeypatch):
     monkeypatch.setattr(update_swap_helper, "_mkdtemp", lambda **_kw: str(tmp_path / "stage"))
     (tmp_path / "stage").mkdir()
     monkeypatch.setattr(
-        update_swap_helper, "extract_update_archive", lambda _zip, stage: stage
+        update_swap_helper, "extract_update_archive", lambda _zip, stage, **_: stage
     )
     monkeypatch.setattr(update_folyamatok, "varj_vagy_allitsd_le", lambda *_a, **_k: 0)
     monkeypatch.setattr(
