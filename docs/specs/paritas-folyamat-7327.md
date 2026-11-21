@@ -60,7 +60,7 @@ A `Nálunk` oszlopban a QML-fájlok rövid útjának prefixe `src/picasapy/app/q
 ## A jegy „Kész, ha” pontjai
 
 - ⛔ A belépési pontok részben összevetve: `job-807` menüállapotokat rögzít nulla, egy és két kijelölt képnél; `job-808` helyi menüket a könyvtárban és szerkesztőben; `job-810` a szerkesztői `Ctrl+Shift+E`-t. A teljes toolbar-súgó és minden eszköz összes belépője `NINCS MEG`.
-- ⛔ Ablakok és mezők részben felmérve: `job-798` alapján csak a Crop panel és Escape utáni szerkesztőnézet látszik; a Straighten, Redeye, Retouch és Text képek nem váltottak panelt. `job-812` a gyorsjavító csempék, Undo/Redo és Derítőfény egyképes állapotát mutatja. A többi panel alapértékei, megjegyzett állapota és kérdése `NINCS MEG`.
+- ⛔ Ablakok és mezők részben felmérve: `job-798` alapján csak a Crop panel és Escape utáni szerkesztőnézet látszik; a Straighten, Redeye, Retouch és Text képek nem váltottak panelt. `job-812` a gyors javító csempék, Undo/Redo és Derítőfény egyképes állapotát mutatja. A többi panel alapértékei, megjegyzett állapota és kérdése `NINCS MEG`.
 - ⛔ A műveleti képek megvannak (`job-809`, `job-812`), de a fájl, `.picasa.ini`, index/DB, bal hasáb, háttérmunka és állapotsor teljes összevetése nincs igazolva a megtekintett képekből és `allapot.json`-okból. A `job-315` továbbra is részleges.
 - ⛔ A `job-812` Undo/Redo feliratot mutat; a Redeye Undo-kérdés, írási hiba, megszakítás, hálózati és írásvédett hely összevetése `NINCS MEG`.
 - ✅ Az Eredeti/Nálunk/Teendő táblázat, a mért eredmények és a nyitott kérdések dokumentáltak; a `Ctrl+Shift+E` editor-paritáshiányhoz kész fejlesztői javaslat szerepel.
@@ -157,5 +157,5 @@ A mért koordináták bekerültek a munkafa `.tmp/colab-kitoltott/7327-8a-vagas-
 - `job-798` újrafelvétele helyes Straighten, Redeye, Retouch és Text panelnyitással; minden panelről Apply, Cancel, Reset és csúszka koordináta, alapérték és megjegyzett állapot.
 - `job-809` batch útjának ini/DB/export/állapotsor mérése; a képernyőkép kijelölést mutat, de az írásokat nem.
 - `job-811` megismétlése a betöltött ini visszaolvasásával, hogy a `tilt=1,0.18` előkészítés ténylegesen jelen legyen a Redeye megnyitásakor.
-- A Crop, Straighten, Redeye Apply/Cancel/Undo/Save, Retouch ecset-Undo/Reset/Apply/Save és Text módosítás/új blokk/cancel/apply teljes ini- és fájlkimenete a koordinátakitöltött 8a/8b és a hiányos 9-12 feladatok folytatásával.
+- A Crop, Straighten, Redeye Apply/Cancel/Undo/Save, Retouch ecset-Undo/Reset/Apply/Save és Text módosítás/új blokk/cancel/apply teljes ini- és fájlkimenete a koordinátákkal kitöltött 8a/8b és a hiányos 9-12 feladatok folytatásával.
 - Írásvédett és hálózati mentés, teljes hibaszöveg, megszakítás, index, bal hasáb, rács, kijelölés, háttérmunka és állapotsor: `NINCS MEG`.
