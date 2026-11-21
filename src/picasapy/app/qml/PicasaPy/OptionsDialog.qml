@@ -39,6 +39,10 @@ Window {
                 ? values[key] : fallback
         }
 
+        function isStaged(key) {
+            return Object.prototype.hasOwnProperty.call(values, key)
+        }
+
         function stage(key, value, writer) {
             var nextValues = ({})
             var nextWriters = ({})
@@ -98,21 +102,79 @@ Window {
     minimumHeight: 360
     color: Theme.canvasBg
 
+    // #7328: az eredeti `Preferences\LastUsedOptionsPage` kulcsot a menü
+    // `-1`-gyel olvassa vissza (a legutóbbi fül), a többi belépés saját fület
+    // kér. A `COptionsDialog` destruktora MINDEN lezáráskor kiírja a fül
+    // indexét, az OK-n és a Mégse-n kívül az ablakbezárásnál is - ezért a
+    // mentés a láthatóság megszűnésére kötött, nem a két gombra.
     function open() {
+        openOnTab(restoredTab())
+    }
+
+    function openGooglePhotos() {
+        openOnTab(tabBar.count - 1)
+    }
+
+    function openOnTab(index) {
         optionsDraft.discard()
+        tabBar.currentIndex = index
         optionsWindow.visible = true
         Qt.callLater(function() { okButton.forceActiveFocus() })
     }
 
-    function openGooglePhotos() {
-        tabBar.currentIndex = tabBar.count - 1
-        open()
+    function hasLastTabStore() {
+        return typeof controller !== "undefined" && controller
+            && typeof controller.lastOptionsTab === "function"
+            && typeof controller.saveLastOptionsTab === "function"
     }
 
+    function restoredTab() {
+        return hasLastTabStore() ? controller.lastOptionsTab(tabBar.count) : 0
+    }
+
+    function saveLastTab() {
+        if (hasLastTabStore())
+            controller.saveLastOptionsTab(tabBar.currentIndex)
+    }
+
+    onVisibleChanged: if (!visible) saveLastTab()
+
     function acceptOptions() {
+        // #7338: fájltípus-változásnál az OK után azonnal szinkron indul.
+        var fileTypesChanged = false
+        var fileTypeGroups = [
+            "bmp", "gif", "png", "tga", "tiff", "webp", "psd",
+            "raw", "movies", "quicktime"
+        ]
+        if (typeof controller !== "undefined" && controller) {
+            for (var i = 0; i < fileTypeGroups.length; ++i) {
+                var group = fileTypeGroups[i]
+                var current = controller.fileTypeEnabled(group)
+                var accepted = optionsDraft.value("filetypes." + group, current)
+                if (accepted !== current) {
+                    fileTypesChanged = true
+                    break
+                }
+            }
+        }
+        // #7332: az eredeti OK utáni ág a kulcs AKTUÁLIS értékét nézi, tehát a
+        // jelölő érintetlen, régebben mentett bejelölését is lekezeli. A
+        // piszkozatba lépett jelölőt a General fül írója intézi a commitban.
+        var clearCacheTouched = optionsDraft.isStaged("general.disposePreviewsOnExit")
         optionsDraft.commit()
         saveAcceptedOptionSettings()
+        if (!clearCacheTouched)
+            applySavedClearCacheFiles()
+        if (fileTypesChanged && typeof controller.rescan === "function")
+            controller.rescan()
         optionsWindow.visible = false
+    }
+
+    function applySavedClearCacheFiles() {
+        if (typeof controller !== "undefined" && controller
+                && typeof controller.acceptClearCacheFiles === "function"
+                && controller.disposePreviewsOnExit === true)
+            controller.acceptClearCacheFiles(true)
     }
 
     function saveAcceptedOptionSettings() {

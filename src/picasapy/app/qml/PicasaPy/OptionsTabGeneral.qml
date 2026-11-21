@@ -19,8 +19,10 @@ import QtQuick.Layouts
 //     `import/autoexclude` kulcs, amit az importáló párbeszéd
 //     "Exclude Duplicates" jelölője is használ (importSourceController).
 //
-//   - "Clear cache files" - a `disposepreviews` beállítás megfelelője;
-//     bekapcsolva a bélyegkép-cache az alkalmazás kilépésekor ürül.
+//   - "Clear cache files" - a `disposepreviews` beállítás megfelelője (#7332);
+//     bekapcsolva az OK azonnal üríti a memóriabeli bélyegkép-tárat, és a
+//     jelölő kikapcsoltra áll vissza. A lemezes tárat az OK nem törli,
+//     kilépéskor semmi nem ürül.
 //
 //   - Felületi átmenetek és buboréksúgók — a #4449 óta QSettings-ben
 //     tárolt kapcsolók.
@@ -198,16 +200,16 @@ ColumnLayout {
             Layout.fillWidth: true
             enabled: typeof controller !== "undefined" && controller !== null
                      && controller.disposePreviewsOnExit !== undefined
-                     && controller.setDisposePreviewsOnExit !== undefined
+                     && controller.acceptClearCacheFiles !== undefined
             checked: typeof controller !== "undefined" && controller !== null
                      && controller.disposePreviewsOnExit !== undefined
                          ? root.setting("general.disposePreviewsOnExit",
                              controller.disposePreviewsOnExit) : false
             onToggled: {
                 if (typeof controller !== "undefined" && controller
-                    && controller.setDisposePreviewsOnExit !== undefined)
+                    && controller.acceptClearCacheFiles !== undefined)
                     root.stage("general.disposePreviewsOnExit", checked,
-                        function(value) { controller.setDisposePreviewsOnExit(value) })
+                        function(value) { controller.acceptClearCacheFiles(value) })
             }
         }
     }

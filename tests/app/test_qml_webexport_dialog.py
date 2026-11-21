@@ -23,12 +23,14 @@ class FakeWebExportController(QObject):
     webExportStarted = Signal()
     webExportProgress = Signal(int, int)
     webExportFinished = Signal(str, int)
+    webExportCancelled = Signal()
     ftpPublishFinished = Signal(str, int)
     webExportFailed = Signal(str)
 
     def __init__(self):
         super().__init__()
         self.generate_calls = []
+        self.cancel_calls = 0
         self._templates = [
             {
                 "id": "feher", "name": "Fehér",
@@ -53,6 +55,10 @@ class FakeWebExportController(QObject):
         self.generate_calls.append(
             (target_dir, template_id, album_name, size_index, movie_full)
         )
+
+    @Slot()
+    def cancelWebExport(self):
+        self.cancel_calls += 1
 
     #: #4610: a megőrzött választás (az eredeti `WebExportSize`/`WebExportMovie`)
     prefs = {
@@ -264,12 +270,41 @@ class TestStartExport:
         assert error_text.property("visible") is True
         assert "Nincs kijelölt kép" in str(error_text.property("text"))
 
-    def test_close_disabled_while_exporting(self, dialog, qt_app):
+    def test_cancel_confirmation_can_continue_or_cancel_export(self, dialog, qt_app):
         window, fake, _qt_app2 = dialog
         fake.webExportStarted.emit()
         qt_app.processEvents()
         close_button = _child(window, "webExportCloseButton")
-        assert close_button.property("enabled") is False
+        assert close_button.property("enabled") is True
+
+        _click(close_button)
+        confirm = _child(window, "webExportCancelDialog")
+        assert confirm.property("visible") is True
+        assert confirm.property("title") == "Want to Cancel?"
+        assert _child(window, "webExportCancelMessageLabel").property("text") == (
+            "Do you want to cancel this operation?"
+        )
+        assert _child(window, "webExportCancelYesButton").property("text") == (
+            "Cancel Operation"
+        )
+        assert _child(window, "webExportCancelNoButton").property("text") == (
+            "Don't Cancel"
+        )
+
+        _click(_child(window, "webExportCancelNoButton"))
+        assert confirm.property("visible") is False
+        assert window.property("exporting") is True
+        assert fake.cancel_calls == 0
+
+        _click(close_button)
+        assert confirm.property("visible") is True
+        _click(_child(window, "webExportCancelYesButton"))
+        assert fake.cancel_calls == 1
+
+        fake.webExportCancelled.emit()
+        qt_app.processEvents()
+        assert window.property("exporting") is False
+        assert _child(window, "webExportResultText").property("visible") is False
 
 
 class TestAzElorekitoltottCelmappa:

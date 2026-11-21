@@ -5,6 +5,10 @@ kézi előre lépéskor az utolsó képről az elsőre fordul, hátra pedig az e
 képen marad. A teszt a teljes alkalmazásban, valódi egérkattintással méri a
 két vezérlőgombot, ismétlés be- és kikapcsolt állapotában.
 
+#7322: ismétlés nélkül a lista végén a Következő gomb tiltott (az eredeti
+`kepernyo__32`-`37` felvételein szürke), ezért ott a körbefordulást a
+billentyűs Jobb adja; ismétléssel a gomb használható, és ő fordít.
+
 # rontás-kontroll: a régi hurokfüggő kézi ág → a javítás nélküli futás piros (FF)
 """
 
@@ -78,17 +82,29 @@ def test_kezzel_elore_az_utolso_keprol_korbe_hatra_az_elson_marad(
     assert show.property("loop") is loop_enabled
 
     try:
-        _kattint(window, qt_app, next_button)
-        assert clicked_buttons == ["next"], "az előre gomb nem kapott valódi kattintást"
+        if loop_enabled:
+            _kattint(window, qt_app, next_button)
+            assert clicked_buttons == ["next"], (
+                "az előre gomb nem kapott valódi kattintást"
+            )
+            elvart = ["next", "previous"]
+        else:
+            assert next_button.isEnabled() is False, (
+                "a lista végén a Következő gomb nem tiltott"
+            )
+            _kattint(window, qt_app, next_button)
+            assert clicked_buttons == [] and show.property("currentIndex") == 1, (
+                "a tiltott Következő gomb a lista végén lépést okozott"
+            )
+            QTest.keyClick(window, Qt.Key.Key_Right)
+            elvart = ["previous"]
         assert varj_feltetelre(
             qt_app, lambda: show.property("currentIndex") == 0, 3.0
         ), "kézi előrelépéskor az utolsó képről nem fordult az elsőre"
         assert show.property("visible") is True, "a kézi léptetés bezárta a vetítést"
 
         _kattint(window, qt_app, previous)
-        assert clicked_buttons == ["next", "previous"], (
-            "a hátra gomb nem kapott valódi kattintást"
-        )
+        assert clicked_buttons == elvart, "a hátra gomb nem kapott valódi kattintást"
         assert show.property("currentIndex") == 0, (
             "kézi hátralépéskor az első képről elmozdult, pedig ott kell maradnia"
         )

@@ -25,6 +25,32 @@ OPTION_SETTING_KEYS = (
 
 _FILETYPE_GROUPS = ("bmp", "psd", "tiff", "webp", "png", "gif", "movies")
 
+#: #7328: az eredeti `Preferences\LastUsedOptionsPage` megfelelője - a
+#: legutóbb használt fül indexe. Az OK és a Mégse is írja, ezért NEM tartozik
+#: az OK-ra mentett `OPTION_SETTING_KEYS` közé.
+LAST_OPTIONS_TAB_KEY = "options/lastUsedPage"
+
+
+def read_last_options_tab(settings, tab_count: int) -> int:
+    """A megjegyzett fül indexe; hiányzó, hibás vagy tartományon kívüli
+    értéknél az első fül (0), ahogy az eredeti 0-s alapértéke."""
+    raw = settings.value(LAST_OPTIONS_TAB_KEY)
+    if isinstance(raw, bool) or not isinstance(raw, (int, str)):
+        return 0
+    try:
+        index = int(raw)
+    except ValueError:
+        return 0
+    return index if 0 <= index < tab_count else 0
+
+
+def save_last_options_tab(settings, index: int) -> None:
+    """A fül indexének mentése; negatív indexet (nincs kiválasztott fül) nem ír."""
+    if index < 0:
+        return
+    settings.setValue(LAST_OPTIONS_TAB_KEY, int(index))
+    settings.sync()
+
 
 def current_option_settings(
     import_source_controller,
