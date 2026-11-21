@@ -16,6 +16,9 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import QObject, Qt
 
+from picasapy.ini import load_document
+from picasapy.ini.priority import olvasd_a_prioritasokat
+from picasapy.scanner import PICASA_INI_NAME
 from tests.app.qml_functional._menusor_maradek_5150_helpers import (
     billentyu,
     elokeszit,
@@ -330,19 +333,32 @@ class TestMappaRendezes:
             ("menuFolderSortByName", "name"),
         ],
     )
+    @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
     def test_a_mappa_rendezese_valodi_kattintassal_allitja_a_rendezest(
-        self, menu_app, qt_app, nev, ertek
+        self, menu_app, qt_app, nev, ertek, magassag_elteres
     ):
         window, controller, _engine = menu_app
+        window.resize(window.width(), window.height() + magassag_elteres)
         elokeszit(window, qt_app, controller)
         elozo = "name" if ertek != "name" else "date"
         controller.setFolderSort(elozo)
         assert varj(qt_app, lambda: controller.folderSort == elozo)
+        folder_sort_reverse = controller.folderSortReverse
+        mappa = Path(str(controller.photos.photos[0].folder_path))
+        kepek = {photo.name for photo in controller.photos.photos}
 
         tetel_kattintasa(
             window, qt_app, "F&older", nev, almenu_utvonal=("menuFolderSortBy",)
         )
 
-        assert varj(qt_app, lambda: controller.folderSort == ertek), (
-            f"a {nev} kattintás nem állította a mappa-rendezést: {ertek}"
+        prioritasok = olvasd_a_prioritasokat(
+            load_document(mappa / PICASA_INI_NAME)
         )
+        sorrend = [
+            nev for nev, _hely in sorted(prioritasok.items(), key=lambda item: item[1])
+        ]
+        assert set(sorrend) == kepek, f"a {nev} nem írta ki a képek sorrendjét"
+        assert controller.folderSort == elozo, "a menüpont tartós mappa-beállítást írt"
+        assert controller.folderSortReverse is folder_sort_reverse
+        if ertek == "name":
+            assert sorrend == sorted(kepek), "a Name menüpont nem név szerint rendezett"

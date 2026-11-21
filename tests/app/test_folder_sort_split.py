@@ -1,11 +1,12 @@
-"""#321: a `folderSort` rendezés a RÁCSRA hat, a bal hasábra nem.
+"""#7341: a rács mappa-blokkjai a `paneSort` szerinti sorrendet követik.
 
-(#1454: a beállítás menübeli helye a Mappa ▸ Rendezés almenü — korábban a
-Nézet ▸ Mappanézet is ugyanezt kínálta, tévesen.)
+Az eredeti négy Mappa-menütétel a mappa képeit rendezi egyszer.
+`folderSort == "changed"` kivételként megőrzi a védett „Recent &changes”
+saját tétel működését; a korábban eltárolt többi `folderSort` értéket a
+rács mappasorrendje nem használja.
 
-Az eredeti Picasában a mappafa sorrendje a saját (gyűjtemény/év) szabálya
-szerint áll, és a rendezés váltása nem mozdítja meg — csak a fő rács
-(feed) sorrendjét cseréli. Nálunk eddig mindkettő együtt mozgott (#64).
+Mappa-rendezés váltásakor a bal hasáb és a rács mappablokkjai együtt
+követik a `paneSort` értékét.
 """
 
 from __future__ import annotations
@@ -64,7 +65,7 @@ def _feed_folder_order(controller) -> tuple[str, ...]:
     return tuple(seen)
 
 
-class TestSortAffectsOnlyTheFeed:
+class TestFolderSortIsReservedForRecentChanges:
     def test_pane_order_is_stable_across_sort_changes(self, controller):
         before = controller.folders.folder_paths()
         controller.setFolderSort("name")
@@ -77,20 +78,27 @@ class TestSortAffectsOnlyTheFeed:
         controller.toggleFolderSortReverse()
         assert controller.folders.folder_paths() == before
 
-    def test_feed_order_follows_the_sort_setting(self, controller):
-        controller.setFolderSort("name")
+    def test_feed_order_follows_the_pane_sort_setting(self, controller):
+        controller.setPaneSort("name")
         by_name = [Path(p).name for p in _feed_folder_order(controller)]
         assert by_name == ["alma", "mokus", "zebra"]
 
-        controller.setFolderSort("date")
+        controller.setPaneSort("date")
         by_date = [Path(p).name for p in _feed_folder_order(controller)]
         assert by_date == ["mokus", "zebra", "alma"], "legújabb mappa elöl"
 
-    def test_reverse_flips_the_feed(self, controller):
-        controller.setFolderSort("name")
+    def test_pane_reverse_flips_the_feed(self, controller):
+        controller.setPaneSort("name")
         forward = _feed_folder_order(controller)
-        controller.toggleFolderSortReverse()
+        controller.togglePaneSortReverse()
         assert _feed_folder_order(controller) == tuple(reversed(forward))
+
+    def test_legacy_folder_sort_values_do_not_override_pane_sort(self, controller):
+        controller.setPaneSort("name")
+        controller.setFolderSort("size")
+        assert [Path(p).name for p in _feed_folder_order(controller)] == [
+            "alma", "mokus", "zebra"
+        ]
 
 
 class TestPaneHasItsOwnSort:
@@ -99,8 +107,8 @@ class TestPaneHasItsOwnSort:
     tartalmazta a „Rendezés dátum / név / méret / legutóbbi változtatás
     alapján" tételeket, vagyis az a HASÁBOT rendezte.
 
-    A #321 szerződése ettől érintetlen: a Mappa ▸ Rendezés
-    (`setFolderSort`) továbbra is CSAK a rácsot rendezi."""
+    A #7341 óta a rács mappa-blokkjai is ezt az értéket követik; az egyetlen
+    `folderSort`-kivétel a védett „Recent &changes” tétel."""
 
     def test_pane_sort_reorders_the_pane(self, controller):
         controller.setPaneSort("name")
@@ -117,20 +125,37 @@ class TestPaneHasItsOwnSort:
         controller.togglePaneSortReverse()
         assert controller.folders.folder_paths() == tuple(reversed(forward))
 
-    def test_pane_sort_does_not_touch_the_feed(self, controller):
-        """A két beállítás FÜGGETLEN: a hasáb átrendezése a rácsot nem
-        mozdítja meg."""
-        controller.setFolderSort("date")
-        before = _feed_folder_order(controller)
+    def test_pane_sort_reorders_both_pane_and_feed(self, controller):
         controller.setPaneSort("name")
-        assert _feed_folder_order(controller) == before
+        assert [Path(p).name for p in _feed_folder_order(controller)] == [
+            "alma", "mokus", "zebra"
+        ]
+        assert [Path(p).name for p in controller.folders.folder_paths()] == [
+            "alma", "mokus", "zebra"
+        ]
 
-    def test_feed_sort_does_not_touch_the_pane(self, controller):
-        """És fordítva — ez a #321 eredeti szerződése."""
+    def test_folder_sort_setting_does_not_touch_the_pane(self, controller):
+        """A `folderSort` csak a saját „Recent &changes” módot őrzi."""
         controller.setPaneSort("date")
         before = controller.folders.folder_paths()
         controller.setFolderSort("name")
         assert controller.folders.folder_paths() == before
+
+    def test_recent_changes_mode_remains_a_grid_override(
+        self, controller, monkeypatch
+    ):
+        from picasapy.app import controller_photo_list_mixin as feed_module
+
+        controller.setPaneSort("name")
+        seen: list[tuple[str, bool]] = []
+        monkeypatch.setattr(
+            feed_module,
+            "folder_order",
+            lambda _conn, mode, reverse: seen.append((mode, reverse))
+            or controller.folders.folder_paths(),
+        )
+        controller.setFolderSort("changed")
+        assert seen[-1] == ("changed", controller.folderSortReverse)
 
     def test_unknown_mode_is_ignored(self, controller):
         before = controller.folders.folder_paths()

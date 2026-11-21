@@ -1,25 +1,12 @@
-"""#1759 — a három rendezés HÁROM külön dolog, és a leírásuk se mossa össze.
+"""#7341 - a három rendezés HÁROM külön dolog, és a leírásuk se mossa össze.
 
 ## Miért ér tesztet egy docstring
 
-A #1595 kutatása **téves következtetést vont le** a `setFolderSort`
-docstringjéből („a RÁCS rendezése”): úgy tűnt, hogy a menüsáv és a mappa
-helyi menüje ugyanazt csinálja kétféle felirattal, és a jegy a menüsáv
-ötös készletének lecserélését javasolta a helyi menü négyesére. Az
-összevonás egy működő szempontot („legutóbbi változtatások”) vett volna
-el. A megvalósító kör csak azért nem hajtotta végre, mert a QML-komment
-ellentmondott a docstringnek.
-
-## ⚠️ A jegy állítása is pontatlan volt — MÉRVE
-
-A jegy szerint a `setFolderSort` „a **mappákat** rendezi **a bal
-hasábon**”. Ez sem igaz: a bal hasáb sorrendjét a `paneSort` adja
-(`_reload_folders`). A `folderSort` a **rácson** dönti el, milyen
-sorrendben követik egymást a mappa-blokkok (`_feed_records` →
-`folder_order`).
-
-Vagyis a régi leírás és a jegy javaslata **két különböző irányba**
-tévedett ugyanabból a pontból.
+Az eredeti Mappa-menü négy tétele a mappa képeit rendezi egyszer, ugyanazzal
+a `sortFolderBy` művelettel, amelyet a mappasor helyi menüje használ.
+`paneSort` rendezi a bal hasábot és a rács mappa-blokkjait. A korábbi
+`folderSort` értékek megmaradnak, a védett „Recent &changes” pedig továbbra
+is saját `changed` módban rendezi a rácsot.
 """
 
 from __future__ import annotations
@@ -34,11 +21,10 @@ def _doc(nev: str) -> str:
 
 
 class TestAHaromRendezesKulon:
-    def test_a_folderSort_a_RACS_mappa_blokkjait_rendezi(self):
+    def test_a_folderSort_a_sajat_recent_changes_modot_orzi(self):
         szoveg = _doc("setFolderSort")
-        assert "MAPPA-BLOKKOK" in szoveg, (
-            "a docstring nem mondja meg, MIT rendez ez a beállítás"
-        )
+        assert "Recent &changes" in szoveg
+        assert "changed" in szoveg
 
     def test_a_docstring_megnevezi_MINDHAROM_rendezest(self):
         """Az összemosás ellen: aki ezt olvassa, lássa a másik kettőt is."""
@@ -52,14 +38,10 @@ class TestAHaromRendezesKulon:
 
 
 class TestAMertUtvonal:
-    def test_a_folderSort_a_feed_mappa_sorrendjet_adja(self):
-        """A mérés, amire a docstring épül — ha a kód elmozdul, ez bukik,
-        és a leírás nem marad némán hamis."""
+    def test_a_feed_a_paneSortot_hasznalja_a_changed_kivetellel(self):
         forras = inspect.getsource(AppController._feed_records)
-        assert "folder_order(conn, self.folderSort" in forras, (
-            "a `folderSort` már nem a rács mappa-sorrendjét adja — a "
-            "docstringet újra kell mérni (#1759)"
-        )
+        assert 'folder_sort == "changed"' in forras
+        assert "(pane_sort, pane_sort_reverse)" in forras
 
     def test_a_bal_hasab_a_paneSort_ot_hasznalja(self):
         forras = inspect.getsource(AppController._reload_folders)
@@ -71,3 +53,7 @@ class TestAMertUtvonal:
             "a bal hasáb a `folderSort`-ot olvassa — akkor a jegy "
             "állítása lenne igaz, és a docstring rossz"
         )
+
+    def test_a_paneSort_valtozasa_a_racsot_is_frissiti(self):
+        forras = inspect.getsource(AppController.setPaneSort)
+        assert "self._refresh_view()" in forras
