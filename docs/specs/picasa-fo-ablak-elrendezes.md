@@ -512,7 +512,7 @@ kiolvasása az EXE-ből, és három teljes `.text` pásztázás a `paszta.py`-va
 közvetlen operandusai, valamint a `[reg+0x344]`, `[reg+0x358]`, `[reg+0x484]`
 hozzáférések. Az eredetit nem futtattam; a futtatott mérés (M4, Colab #799) a
 hívónál fut. A független újralevezetés (#140) **nem** futott le (itt nincs
-engedélyezett alügynök), ezért a fokok egyetlen, közvetlen diszasszemblátumon
+engedélyezett független ellenőrző ügynök), ezért a fokok egyetlen, közvetlen diszasszemblátumon
 alapuló olvasatra vonatkoznak.
 
 **Rövid válasz.**
@@ -540,7 +540,7 @@ veremargumentum (bájt, dword), `ret 0xc` (`0x004e325f`).
 | Lépés | Cím | Mit tesz |
 |---|---|---|
 | útvonal másolása | `0x004e31ce`-`0x004e31d3` | hossz kiszámítása, CString-másolat (`0x00985ff0`); a hivatkozásszámláló-műveletek (`0x004e31f8`: `KERNEL32!InterlockedIncrement`) csak a sztring-csomagoló dolgai, nem fájlrendszer-hívások |
-| rekord összeállítása | `0x004e3229`-`0x004e322d` | a bájtargumentum kétszer egy helyi rekordba (útvonal + két bájt) |
+| rekord összeállítása | `0x004e3229`-`0x004e322d` | a bájt típusú argumentum kétszer egy helyi rekordba (útvonal + két bájt) |
 | sorba állítás | `0x004e3232`-`0x004e3238` | `lea eax,[ebp+0x298]` + `call 0x006da030`: a rekord és a dword-argumentum a fogadó `+0x298` listájára; a `0x006da030` a lista zárolásával kezd (`GetCurrentThreadId`, `0x006da03d`-`0x006da077`) |
 | ébresztés | `0x004e323d`-`0x004e324c` | `mov eax,[ebp+0x344]` / `mov edx,[eax+0x10]` / `lea ecx,[ebp+0x344]` / `call edx` |
 
@@ -548,7 +548,7 @@ A `0x006da030` teljes teste nem olvasott; hogy hozzáfűzés, a hívási formáb
 a lista típusából következik (feltételes-erős). Hívói (11 függvény):
 `0x004e62d0`, `0x004e7d10`, `0x004e8bc0`, `0x004e9400`, `0x004ea360`,
 `0x004ebff0`, `0x004efb40`, `0x004efde0`, `0x004f1df0`, `0x004f6a20`,
-`0x004fdd10`. Tehát ez a szkenner **általános kérés-beadó primitívje**, nem az
+`0x004fdd10`. Tehát ez a szkenner **általános kérés-beadó alapművelete**, nem az
 OK-kezelő sajátja; az argumentumpárok a hívás címével: `(1,1)` (`0x004efc71`, `0x004ec516`,
 `0x004ec78d`, `0x004eb56d`), `(0,1)` (`0x004eb34b`, `0x004eb362`) és `(0,0)`
 (`0x004eb93f`).
