@@ -309,11 +309,27 @@ kilépéskor visszajön. Vezérlés közben:
 | billentyű | mit csinál |
 |---|---|
 | Szóköz | szünet / folytatás |
-| → vagy Enter | következő kép |
-| ← | előző kép |
-| Ctrl+R | forgatás jobbra |
-| Ctrl+Shift+R | forgatás balra |
+| → vagy ↓ | következő kép |
+| ← vagy ↑ | előző kép |
+| 1-9 | a megjelenítési idő ennyi másodperc (a 0 egy másodpercet ad) |
+| Pause | szünet lejátszás közben |
+| Play (médiabillentyű) | folytatás szünetben |
 | Esc | kilépés |
+
+Az **Enter**, a **Ctrl+R** és a **Ctrl+Shift+R** vetítés közben nem
+csinál semmit: nem léptet és nem forgat, ahogy az eredeti Picasában. A
+forgatáshoz használd a vezérlősáv gombjait.
+
+Kézi léptetésnél az utolsó képről előre lépve az elsőre jutsz, az első
+képről hátra lépve viszont nem történik semmi. Ez akkor is így van, ha
+az ismétlés ki van kapcsolva.
+
+Ha az ismétlés ki van kapcsolva, a vetítés a lista végén **nyitva
+marad** az utolsó képen. Ilyenkor az **Esc**-kel vagy a **Kilépés**
+gombbal zárod be, a **→** pedig az első képre lép.
+
+A mappában lévő **videókat** is lejátssza a vetítés: a videó a mentett
+vágási pontjai között fut le, és utána lép tovább a következő elemre.
 
 Kilépéskor a rács és a néző arra a képre ugrik, ahol a vetítés
 abbamaradt.
@@ -336,18 +352,18 @@ másodperc múlva lassan elhalványul. Amíg az egér **a sávon** áll, ott
 marad; amint elhagyod, újraindul a visszaszámlálás. A sávon:
 
 - **✕ Kilépés**;
+- egy üres hely, ahol a lista végén megállt vetítésnél egy **nagyító
+  ikon** és egy **csúszka** jelenik meg: ezzel az éppen látott kép
+  nagyítását állíthatod;
+- **↺** és **↻** forgatás, a vetítés közbeni forgatás megmarad;
 - **◀** előző, **▶** / **❚❚** lejátszás és szünet, **▶▶** következő;
   az előző és a következő gomb már a **lenyomás pillanatában** lép, és
-  nyomva tartva sem ismétel: egy lenyomás egy kép;
-- **↺** és **↻** forgatás — a vetítés közbeni forgatás megmarad;
-- **Időrend** gomb vagy **átmenet-választó** (lásd lentebb): a kettő
-  közül mindig csak az egyik látszik. Az eredeti Picasához hasonlóan
-  16 vagy 32 bites színmélységű képernyőn az **Időrend** gomb áll itt,
-  ami az Időrend bemutatót (lásd lentebb) nyitja meg; más képernyőn, és ha
-  a vetítést az Időrendből indítottad, az átmenet-választó;
+  nyomva tartva sem ismétel: egy lenyomás egy kép. A lista végén
+  megállt vetítésnél a következő gomb szürke;
+- **★** csillagozás, ez is megmarad;
+- az **átmenet-választó** (lásd lentebb), amely mindig látszik;
 - **feliratmód** gombja — körbejár a három állás közt: a felirat (**T**),
   a fájlnév (**F**), vagy semmi (**—**);
-- **★** csillagozás — ez is megmarad;
 - **Megjelenítési idő** — a **mínusz** és a **plusz** gombbal 1 és 20 másodperc
   közt állítható, hogy meddig álljon egy kép. A két gomb közt a kiírt
   érték látszik, például „5 másodperc" (vagy egynél „1 másodperc").
@@ -358,12 +374,16 @@ marad; amint elhagyod, újraindul a visszaszámlálás. A sávon:
 A választott átmenet, feliratmód és megjelenítési idő **megmarad** a következő
 vetítésre és a következő indításig is.
 
-A vetített kép **legfelső, keskeny sávjára** kattintva szünetel vagy
-folytatódik a vetítés, ugyanúgy, mint a lejátszás gombbal. A sáv nem
-látszik, és nem takarja a képet.
+A vetített **képre kattintva** szünetel vagy folytatódik a vetítés,
+ugyanúgy, mint a lejátszás gombbal. Szünetben a kép alsó, vezérlősáv
+körüli része nem kapcsol, hogy a sáv gombjait nyugodtan használhasd.
+
+A vezérlősáv kis, 800 képpont széles ablakban és nagyobb rendszerbetűvel
+is elfér: ilyenkor az átmenet-választó keskenyebb lesz, de minden gomb
+elérhető marad.
 
 **Szünet és folytatás.** Ha megállítod a vetítést (Szóközzel, a lejátszás
-gombbal vagy a felső sávra kattintva), a vezérlősáv **azonnal**, áttűnés
+gombbal vagy a képre kattintva), a vezérlősáv **azonnal**, áttűnés
 nélkül megjelenik, és a szünet végéig kint marad, akkor is, ha az egeret
 nem mozdítod. Folytatáskor a sáv rögtön eltűnik, és a vetítés **azonnal a
 következő képre lép**; onnan a beállított megjelenítési idő szerint megy
@@ -422,14 +442,20 @@ kártyát, és a rejtett képek sem jelennek meg. A **Legutóbb frissítve**
 album is kártyát kap, ha van benne látható kép; ennek a kártyának a
 dátuma mindig az Időrend megnyitásának hónapja.
 
-Az Időrend mindig az **első** kártyánál nyílik meg.
+Az Időrend mindig az **első** kártyánál nyílik meg, nagyjából egy
+másodperces, feketéből előtűnő áttűnéssel; bezáráskor ugyanígy
+elsötétül. Ha a könyvtárban nincs egyetlen kép sem, az Időrend nem
+nyílik meg, hanem üzenetet ad.
 
 - A **→** és **←** billentyűvel, vagy a sáv nyílgombjaival a következő,
   illetve az előző kártyára lépsz. A **↓** ugyanúgy előre, a **↑**
   ugyanúgy vissza léptet. Az egér görgőjével is lapozhatsz, és a
   kártyasort egérrel megfogva oldalra is húzhatod.
 - Az alsó **csúszkán** húzva nagyobbat ugorhatsz az időben; két oldalán
-  a könyvtár első és utolsó dátuma áll. Húzás közben a jobb felső
+  a könyvtár első és utolsó dátuma áll. A csúszka pontjai az eredeti
+  Picasához hasonlóan nem egyenletesen állnak: az egymáshoz közeli
+  hónapok kártyái közelebb kerülnek egymáshoz, a nagy időbeli hézagok
+  pedig összenyomva látszanak. Húzás közben a jobb felső
   felirat már azt a mappát vagy albumot mutatja, ahová érkezni fogsz;
   amikor elengeded, a kártyasor néhány másodperc alatt odaúszik.
 - A **Szóköz** vagy a lejátszás gomb az éppen látott mappa vagy album

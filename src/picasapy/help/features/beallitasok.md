@@ -16,6 +16,10 @@ Picasáé, a **Google Fotók** fül a PicasaPy saját kiegészítése.
 > A **Frissítések keresése automatikusan** kapcsoló működik; alapból be
 > van kapcsolva.
 
+Az ablak mindig azon a fülön nyílik meg, amelyet legutóbb használtál,
+akár **OK**-val, akár **Mégse**-vel zártad be. Ezt a program újraindítás
+után is megjegyzi.
+
 Az ablak alján két gomb áll, ahogy az eredeti Picasában:
 
 - **OK** (vagy az **Enter**) elmenti a füleken végzett változtatásokat,
@@ -179,14 +183,15 @@ látszik.
 ### Gyorsítótárban lévő fájlok törlése
 
 Az **Általános** fülön a **Gyorsítótárban lévő fájlok törlése** jelölő
-azt dönti el, hogy a program **kilépéskor** kitakarítsa-e a lemezen
-tartott bélyegképeket. Alapból ki van kapcsolva. A módosítás az Opciók
-ablakban piszkozat marad: az **OK** menti, a **Mégse** elveti. Azonnali
-ürítés nincs: a takarítás mindig a program bezárásakor történik.
+a program memóriájában tartott bélyegképeket üríti ki. Alapból ki van
+kapcsolva. A módosítás az Opciók ablakban piszkozat marad: a **Mégse**
+elveti. Ha bejelölve nyomod meg az **OK**-t, a program **azonnal**
+kiüríti a memóriában tartott bélyegképeket, a jelölő pedig újra
+kikapcsolt állapotra áll. A lemezen tárolt bélyegképekhez nem nyúl, és
+kilépéskor sem töröl semmit.
 
-Egyetlen kép sem vész el: a bélyegképek szükség szerint újra elkészülnek.
-A következő indítás után viszont a mappák lassabban nyílnak meg, amíg a
-bélyegképek újra fel nem épülnek.
+Egyetlen kép sem vész el: a bélyegképek szükség szerint újra betöltődnek.
+Közvetlenül utána a rács egy kicsit lassabban rajzolódhat ki.
 
 ### Fájltípusok fül
 
@@ -206,8 +211,10 @@ Alapból **minden formátum be van jelölve**, a **.GIF**, a **.PNG** és a
 **.TGA** is. (Az eredeti Picasában ez a három alapból ki volt kapcsolva;
 a PicasaPy szándékosan nem követi, hogy egy frissítés után ne tűnjenek el
 a meglévő képeid.) Ha korábban már átállítottál egy jelölőt, a program a
-te választásodat tartja meg. Amit kikapcsolsz, azt a program a mappák
-**következő beolvasásától** nem veszi fel; a fájlok a lemezen maradnak.
+te választásodat tartja meg. Ha az **OK**-val megváltoztatod a
+fájltípusokat, a program azonnal újraolvassa a könyvtárat: a frissen
+bekapcsolt formátumok megjelennek, a kikapcsoltak eltűnnek a nézetből. A
+fájlok a lemezen maradnak.
 
 ### Diavetítés fül
 

@@ -211,16 +211,23 @@ Item {
                 onClicked: slideshow.stop()
             }
             // #7281: a mért sorrendben a képikon/csúszka helye a Kilépés
-            // után, a forgatópár előtt van. A oneup.tre nem ad meg slider-*
-            // elemet vagy működést; ez a 157 px-es hely csak tartóelem.
+            // után, a forgatópár előtt van. A hely 157 px: a mért
+            // `zoomup_icon` (24) + rés (6) + `zoomslider_container` (127).
+            // #7322: a lista végén megállt vetítésnél (nincs következő kép)
+            // itt a képikon és a csúszka áll; máskor a hely üres marad.
             Item {
                 id: imageSliderSlot
                 objectName: "slideshowImageSliderSlot"
+                // #7322: a lista végén itt csúszka áll, tehát ilyenkor az
+                // átmenetválasztó húzódik össze előbb (legfeljebb 90 px-ig),
+                // és a hely csak a maradékból enged.
                 width: Math.max(
                     0,
                     Math.min(
                         controlsRow.preferredSliderSlotWidth,
-                        controlsRow.availableWidth - transitionBox.width
+                        controlsRow.availableWidth - (slideshow.listaVegen
+                            ? controlsRow.minimumTransitionWidth
+                            : transitionBox.width)
                     )
                 )
                 implicitWidth: controlsRow.preferredSliderSlotWidth
@@ -229,76 +236,53 @@ Item {
                 Item {
                     objectName: "slideshowImageSliderContent"
                     anchors.fill: parent
-                    // Az eredetiben a lista végi szünetben itt képikon és
-                    // csúszka látszik, de a működésük nem ismert (#7284):
-                    // amíg ki nem derül, a hely üres marad, működés nélküli
-                    // vezérlőt nem rajzolunk.
-                    visible: false
+                    visible: slideshow.listaVegen
 
-                    // A képjel és a csúszka statikus rajz: a bináris és a
-                    // mérés a működését, értékét és interakcióját nem adja meg.
-                    Item {
+                    //: #7322: a szerkesztő nagyítóikonja (`editpanel/zoomup_icon`,
+                    //: a nézőben is ez a `loupe.svg`, ld. `TrayTopRow`). Díszítő
+                    //: ikon, nem vezérlő; a mért szélessége 24. A `loupe.svg`
+                    //: sötét vonalú, a vetítősáv sötét: világos lap kell alá,
+                    //: különben az ikon nem látszik.
+                    Rectangle {
                         objectName: "slideshowImageSliderIcon"
-                        x: 2
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 20
+                        width: 24
                         height: 18
+                        radius: 3
+                        color: Theme.mediaOverlayText
+                        anchors.verticalCenter: parent.verticalCenter
 
-                        Rectangle {
-                            anchors.fill: parent
-                            color: "transparent"
-                            border.color: Theme.mediaOverlayText
-                            border.width: 1
-                            radius: 1
-                        }
-                        Rectangle {
-                            x: 4
-                            y: 4
-                            width: 3
-                            height: 3
-                            radius: 1.5
-                            color: Theme.mediaOverlayText
-                        }
-                        Rectangle {
-                            x: 4
-                            y: 12
-                            width: 8
-                            height: 1
-                            rotation: -45
-                            color: Theme.mediaOverlayText
-                        }
-                        Rectangle {
-                            x: 9
-                            y: 12
-                            width: 7
-                            height: 1
-                            rotation: 38
-                            color: Theme.mediaOverlayText
+                        Image {
+                            source: "icons/loupe.svg"
+                            width: 24
+                            height: 16
+                            sourceSize.width: 24
+                            sourceSize.height: 16
+                            fillMode: Image.PreserveAspectFit
+                            anchors.centerIn: parent
                         }
                     }
-                    Item {
-                        objectName: "slideshowImageSliderTrack"
+                    //: #7322: a szerkesztő nagyítócsúszkája (`zoomslider/scaleslider`)
+                    //: ugyanazzal a mért családdal, mint a néző alsó sávjában. Az
+                    //: érték [0, 1], a húzás a dia nagyítását állítja
+                    //: (`slideshow.imageZoomValue`), a diaindexet nem. Nem kap
+                    //: billentyűfókuszt: a nyilak és a szóköz a vetítőé maradnak.
+                    EditorSlider {
+                        id: imageSlider
+                        objectName: "slideshowImageSlider"
+                        csalad: "scaleslider"
                         x: 30
+                        width: Math.max(0, parent.width - x)
+                        height: 27
+                        grooveInset: 3
+                        focusPolicy: Qt.NoFocus
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 120
-                        height: 14
-
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: parent.width
-                            height: 2
-                            radius: 1
-                            color: Theme.sliderGrooveBorder
-                        }
-                        Rectangle {
-                            x: (parent.width - width) / 2
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 8
-                            height: 8
-                            radius: 4
-                            color: Theme.sliderHandleGrooveLight
-                            border.color: Theme.sliderHandleBorder
-                            border.width: 1
+                        from: 0
+                        to: 1
+                        onMoved: slideshow.imageZoomValue = value
+                        // húzás közben a kéz vezet; egyébként az állapot
+                        Binding on value {
+                            when: !imageSlider.pressed
+                            value: slideshow.imageZoomValue
                         }
                     }
                 }
@@ -336,10 +320,14 @@ Item {
                 onClicked: slideshow.togglePause()
             }
             //: #5541: ld. fent, a ◀ gombnál.
+            //: #7322: a lista végén megállt vetítésnél a nyíl szürke és tiltott
+            //: (`kepernyo__32`-`37`); a billentyűs Jobb (#7190) ettől még
+            //: visszafordít az első képre.
             PicasaButton {
                 objectName: "slideshowNextButton"
                 text: "▶▶"; width: 38
                 height: controlsRow.buttonHeight
+                enabled: !slideshow.listaVegen
                 lenyomasra: true
                 onClicked: slideshow.manualAdvance()
             }
@@ -373,7 +361,8 @@ Item {
                 width: Math.max(
                     controlsRow.minimumTransitionWidth,
                     Math.min(controlsRow.preferredTransitionWidth,
-                             controlsRow.availableWidth)
+                             controlsRow.availableWidth - (slideshow.listaVegen
+                                 ? imageSliderSlot.width : 0))
                 )
                 //: a lista a képernyő alján álló sáv fölé nyílik
                 popup.y: -popup.implicitHeight

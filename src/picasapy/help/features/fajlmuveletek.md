@@ -143,15 +143,32 @@ jelent meg, a fájl kerül a vágólapra.
 
 A **Szerkesztés ▸ Beillesztés** (Ctrl+V) a másik irány: a vágólapra tett
 fájlokat az **éppen kiválasztott mappába** másolja. Mindegy, honnan
-kerültek oda — a fájlkezelőből vagy a PicasaPy fenti két parancsából.
-Kivágás után áthelyezés lesz belőle, másolás után másolás.
+kerültek oda: a fájlkezelőből vagy a PicasaPy fenti két parancsából.
+Kivágás után áthelyezés lesz belőle, másolás után másolás. Albumnézetben
+a Beillesztés másképp működik: a képeket az albumhoz adja, lásd
+[A könyvtár](konyvtar.md).
 
-Ha a célmappában már van azonos nevű fájl, a beillesztett kép **új nevet
-kap**: semmi nem íródik felül.
+Másik mappába való beillesztés előtt a program megerősítést kér. Ha a
+célmappában már van azonos nevű fájl, választhatsz: átnevezi a
+beillesztett képet, kihagyja, vagy megszakítod a műveletet. Semmi nem
+íródik felül.
+
+Ha beillesztés közben egy fájl átvitele nem sikerül, a program ott
+**megáll**: a korábban már átvitt képek megmaradnak, a hibás kép utáni
+fájlokat nem kezdi el, és egyetlen összegzés nevezi meg a hibát. (A
+húzással és a menüből indított másolás és áthelyezés ezzel szemben a
+hiba után is folytatja a többi fájllal.)
+
+A **Kivágás** és a **Beillesztés** a nézőben szürke, és a Ctrl+X meg a
+Ctrl+V sem hat. Ugyanabba a mappába nem lehet beilleszteni, ahonnan a
+fájlok származnak: ilyenkor a Beillesztés szürke, és nem készül másolat.
+Sikeres beillesztés után a Beillesztés szürke lesz.
 
 Üres vágólapnál a menüpont szürke. Ha közben ürült ki a vágólap, a
 program megmondja, miért nem történt semmi („Nincs beilleszthető fájl a
-vágólapon.").
+vágólapon."). Ha a vágólapon van fájl, de nincs kijelölt mappa vagy
+album, egy ablak ezt írja: „Ennek a műveletnek az elvégzéséhez ki kell
+jelölnie egy mappát vagy egy albumot."
 
 Szövegmezőben — például átnevezés közben — a Ctrl+V a mezőé marad, tehát
 a szövegbe illeszt be, nem fájlt.
@@ -257,12 +274,16 @@ A helyi menüben ezen kívül:
 
 ## Mappák
 
-- **Mappa ▸ Áthelyezés…** - az egész mappa átköltöztetése. A célt az
-  ablakban választod ki, amelynek a címe „Mappa áthelyezése ide:”, utána a
-  mappa neve; ez a legutóbb választott célmappából indul (első alkalommal
-  a mappa jelenlegi szülőmappájából), a gombjai **OK** és **Mégse**. Ha az
-  áthelyezés menet
-  közben elakad (például egy olvashatatlan almappánál), a mappa a régi
+- **Mappa ▸ Áthelyezés…** - az egész mappa átköltöztetése. A célt a
+  **Mappa tallózása** ablakban választod ki, amelynek gombjai **OK** és
+  **Mégse**. Az ablak a legutóbb választott célmappából indul; ha ilyen
+  még nincs, a mozgatott mappától. A választott célt a program akkor is
+  megjegyzi, ha az áthelyezés végül nem sikerül. Rejtett mappába nem
+  lehet áthelyezni. A hét ismert felhasználói mappát (Képek, Asztal,
+  Zene, Videók, Dokumentumok, valamint a felhasználói és a közös
+  alkalmazásadatok mappája) nem lehet áthelyezni: rajtuk a menüpont
+  szürke, az alattuk lévő mappák viszont mozgathatók. Ha az
+  áthelyezés menet közben elakad (például egy olvashatatlan almappánál), a mappa a régi
   helyén marad, és a célban **nem marad félkész másolat**. Egyetlen olyan
   pillanat van, ami már nem fordítható vissza — ott a hibaüzenet megmondja,
   hol találod a tartalmat.

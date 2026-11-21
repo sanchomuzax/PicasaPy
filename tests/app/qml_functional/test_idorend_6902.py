@@ -81,13 +81,19 @@ def qml_app_6902(
 def _close_timeline_after_each_test(qml_app_6902, qt_app):
     yield
     window, _controller, _engine = qml_app_6902
-    if window.property("timelineOpen") is True:
-        timeline = _child(window, "timelineView")
+    timeline = window.findChild(QObject, "timelineView")
+    if timeline is not None and window.property("timelineOpen") is True:
         QTest.keyClick(timeline, Qt.Key.Key_Escape)
         _wait(
             qt_app,
             lambda: window.property("timelineOpen") is False,
             "az automatikus Escape nem zárta be az Időrendet",
+        )
+    if timeline is not None:
+        _wait(
+            qt_app,
+            lambda: timeline.isVisible() is False,
+            "az Időrend záró áttűnése nem fejeződött be",
         )
 
 
@@ -111,6 +117,12 @@ def _open_timeline(qml_app_6902, qt_app, height_delta: int = 0):
         qt_app,
         lambda: timeline.width() == 1280 and timeline.height() == expected_height,
         "az Időrend tesztablakának mérete nem állt be",
+    )
+    fade_cover = _child(timeline, "timelineFadeCover")
+    _wait(
+        qt_app,
+        lambda: fade_cover.property("opacity") <= 0.001,
+        "az Időrend nyitó áttűnése nem fejeződött be",
     )
     return window, controller, engine, timeline
 

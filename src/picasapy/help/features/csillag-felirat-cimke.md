@@ -86,7 +86,9 @@ panelt; kattints előbb a képekre, utána a Ctrl+T ismét nyitja és zárja.
   beírhatsz (például `nyár, tenger, család`); az üres részeket a program
   kihagyja. Ha valamelyik címkét nem sikerült felvenni, a többi akkor is
   felkerül, és a mező alatt ez a sor jelenik meg: „A beírt szöveg egy
-  része nem adható hozzá címkeként."
+  része nem adható hozzá címkeként." Ha a mező üres, vagy csak szóköz
+  van benne, az Enter nem ír címkét, hanem egy súgóablak jelzi, hogy
+  nincs beírt szöveg.
 - A panelen látszik, mely címkék vannak a kijelölésen. A lista fölötti
   fejléc megmondja, mire vonatkozik: egyetlen kijelölt képnél a kép
   nevét írja (*kép.jpg címkéi:*), több képnél *Címkék az aktuális
@@ -97,8 +99,8 @@ panelt; kattints előbb a képekre, utána a Ctrl+T ismét nyitja és zárja.
   gyakori címkék **fordított névsorban** követik egymást (Z-től A felé).
 - Egy címkére jobb gombbal kattintva három tételt kapsz, az eredeti
   Picasa sorrendjében: **A címke hozzáadása a teljes kijelölt részhez**,
-  **Az ilyen címkével ellátott elemek keresése** és **A címke
-  eltávolítása**.
+  **Az ilyen címkével ellátott elemek keresése** és, egy elválasztó
+  vonal után, **A címke eltávolítása**.
   A keresés a címkét beírja a felső keresőmezőbe, és rögtön a találatokat
   mutatja; a keresőmezőt törölve visszakapod a teljes nézetet.
 
@@ -111,7 +113,8 @@ címkét a kijelölés minden képére, a **Mégse** nem címkéz semmit. A kér
 a beíró mezőre, a gyorscímke-gombokra és a címke helyi menüjének
 **A címke hozzáadása a teljes kijelölt részhez** tételére egyaránt érvényes. A kijelölést a
 program a kérdés megjelenésekor rögzíti, tehát a döntésedig nem változhat
-a cél.
+a cél. Ha vesszővel egyszerre több címkét írtál be, a kérdés
+**címkénként** külön jelenik meg, így mindegyikről külön dönthetsz.
 
 ### Ha a kijelölésben írásvédett kép van
 
@@ -143,9 +146,9 @@ leggyakoribb címkéidnek. Egy gombra kattintva a címke azonnal felkerül a
 kijelölésre.
 
 A még üres gomb **?** jelet mutat. Ha rámutatsz, a buboréksúgója: „Ide
-kattintva konfigurálhatja a gyorscímkéket"; ha rákattintasz, egy
-tájékoztató ablak elmondja, hogyan kerül címke a gombra, és semmi nem
-íródik a képekre.
+kattintva konfigurálhatja a gyorscímkéket"; ha rákattintasz, megnyílik
+a **Gyorscímkék konfigurálása** párbeszéd, és semmi nem íródik a
+képekre.
 
 A gombok tartalmát a **Gyorscímkék konfigurálása** párbeszédben állítod
 be; ezt a felirat melletti fogaskerék-gomb nyitja meg (buboréksúgója is
@@ -155,7 +158,10 @@ első a másodikra csúszik, az addigi második pedig kiesik. Ha olyan
 címkét használsz, amely már a két gomb egyikén áll, a sorrend nem
 változik. Itt a kis- és nagybetű számít: a `Nyár` és a `nyár` két
 különböző címkének látszik. Egy gombbal fel is töltheted az üres
-mezőket a gyakran használt címkéiddel. Ha a legutóbbiak fenntartása ki
+mezőket: ez egyszeri művelet, amely a könyvtárad címkéiből tölti ki a
+még üres helyeket. Az eredeti Picasához hasonlóan a könyvtár első száz
+különböző címkéjéből merít, és kihagyja azt a kettőt, amelyet a legutóbb
+használtál. Ha a legutóbbiak fenntartása ki
 van kapcsolva, a program a gyorscímkézést nem is jegyzi fel a
 legutóbbiak közé: ha később bekapcsolod, a közben használt címkék nem
 jelennek meg ott.

@@ -11,6 +11,9 @@ slides up from the bottom of the library, in the same place as
 same time; opening one closes the other. You can continue using the library
 while the panel is open.
 
+While the backup or Gift CD panel is open, or while a copy is running,
+the **Back Up Pictures...** menu item is greyed out.
+
 ## What is included
 
 The backup starts with the full contents of your watched folders - the
@@ -23,7 +26,9 @@ and the folder checkboxes decide what is copied; see below.
 Each backup belongs to a set. The set remembers where it saved files and
 which files were already copied, so the next run copies only new or changed
 files. The first backup of a large library can take a while; later runs are
-faster.
+faster. A photo also counts as changed when you edited its caption,
+star, or other information since the last backup; the next backup copies
+it again.
 
 You can create several sets, for example, a full backup to an external hard
 drive and a smaller one to a network folder.
@@ -31,6 +36,10 @@ drive and a smaller one to a network folder.
 The panel has two steps. In **Create a Set or use an existing one** on the
 left, choose a set. In **Choose folders & albums to back up** on the right,
 choose what to include.
+
+The first time you open the backup, PicasaPy creates a CD or DVD set
+named **My Backup Set** and selects it. Later, the panel opens with the
+set you used last.
 
 Choose a set from the dropdown. Below it are **New Set...**, **Edit Set...**,
 and **Delete Set**. The dropdown is hidden until you have at least one set.
@@ -46,12 +55,11 @@ copied.
 
 Choose **New Set...** and enter four values:
 
-- **Backup Set** - the name shown in the list. The field is filled in with
-  the suggested name **My Backup Set**.
+- **Name:** the name shown in the list. The field starts empty.
 - **Backup type:** determines the output:
+  - **CD or DVD backup** creates disc-image files. This is the default.
   - **Disk-to-disk backup (for external and network drives)** copies the
     photos into a folder.
-  - **CD or DVD backup** creates disc-image files.
 - **Save to:** the destination folder. Use **Choose...** to select it.
   This field can be changed only for disk-to-disk backups. For CD or DVD
   backups, PicasaPy chooses the location and shows it in the field: the
@@ -62,13 +70,17 @@ Choose **New Set...** and enter four values:
   - **Only JPEGs with camera data** - JPEG files that contain the camera's
     name. Screenshots and downloaded pictures are left out.
 
-The set form opens in a separate window titled **Backup Set**. Choose
-**OK** to save it or **Cancel** to discard it. If PicasaPy cannot accept the
-set, the form stays open, keeps your entries, and displays the reason.
+The set form opens in a separate window titled **New Backup Set**.
+Choose **Create** to save it or **Cancel** to discard it. **Create** is
+disabled while the name is empty or when a set with that name already
+exists. For a CD or DVD set, entering a name is enough; for a
+disk-to-disk set, you also need a destination folder. If PicasaPy cannot
+accept the set, the form stays open, keeps your entries, and displays
+the reason.
 
-**Edit Set...** opens the same fields for an existing set; you can also
-change its type. The window is titled **Edit Backup Set**, and its closing
-button is **Change**.
+**Edit Set...** opens the same fields for an existing set. The window is
+titled **Edit Backup Set**, and its closing button is **Change**. The
+backup type cannot be changed while editing; its options are greyed out.
 
 **Delete Set** asks for confirmation and includes the set's name. It does
 not delete files already saved; it removes only the set's record.
@@ -121,6 +133,9 @@ The button says **Backup** when a set is selected. It starts the copy even
 for a folder-based backup.
 
 PicasaPy first counts how many files will be copied and displays the total.
+Before copying, it also checks that the destination has enough free
+space. If the files do not fit, it does not start copying and tells you
+instead.
 For folder backups, it also estimates how many CDs or DVDs the data would
 fill. For disc-image backups, it displays a message that files are being
 written to an image.
@@ -130,6 +145,11 @@ During the copy, a progress bar appears in the panel, and a counter such as
 the copy runs in the background. When it finishes, the application reports
 how many files were copied. The final message is **Backup Complete**, even
 if there was nothing to copy.
+
+If an earlier backed-up copy of a file is read-only, PicasaPy still
+replaces it with the changed photo, as the original Picasa does. If
+saving a file fails, the failure is written to the log and the backup
+continues with the other files.
 
 ### Stopping a backup
 

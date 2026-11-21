@@ -16,6 +16,7 @@ from __future__ import annotations
 from PySide6.QtCore import QEvent, QObject, Property, Qt, Signal, Slot
 
 from .folder_photo_sort_controller import FolderPhotoSortMixin
+from .option_settings import read_last_options_tab, save_last_options_tab
 
 # A QSettings-kulcs — a `view/` névtér a többi nézet-beállításé is
 # (folderSort, thumbCaption, showHidden).
@@ -266,13 +267,29 @@ class AppearanceMixin(FolderPhotoSortMixin):
         )
         self.singleClickExitEnabledChanged.emit()
 
+    @Slot(int, result=int)
+    def lastOptionsTab(self, tab_count: int) -> int:  # noqa: N802
+        """Az Opciók legutóbb használt füle (#7328); hiba esetén az első fül."""
+        return read_last_options_tab(self._get_settings(), tab_count)
+
+    @Slot(int)
+    def saveLastOptionsTab(self, index: int) -> None:  # noqa: N802
+        """Az Opciók lezárásakor (OK, Mégse, ablakbezárás) a fül mentése (#7328)."""
+        save_last_options_tab(self._get_settings(), index)
+
     @Property(bool, notify=disposePreviewsOnExitChanged)
     def disposePreviewsOnExit(self) -> bool:  # noqa: N802 - QML-property
-        """Az Opciók cache-kapcsolója: kilépéskor ürítse-e az előnézeteket."""
+        """A „Clear cache files" jelölő mentett állapota (#7332).
+
+        Az eredeti `disposepreviews` kulcs megfelelője: az Opciók OK-ja
+        visszaállítja kikapcsoltra, tehát csak az #5897-ben, kilépéskori
+        ürítéshez mentett régi `true` érték marad bejelölve addig, amíg az
+        első OK le nem nullázza. Kilépéskor már nem üríti a tárat."""
         return self._dispose_previews_on_exit
 
-    @Slot(bool)
     def setDisposePreviewsOnExit(self, enabled: bool) -> None:  # noqa: N802
+        """A mentett jelölő írása; QML-ből nem hívható (#7332): az Opciók az
+        `acceptClearCacheFiles`-on át, az OK-ra állítja."""
         enabled = bool(enabled)
         if enabled == self._dispose_previews_on_exit:
             return

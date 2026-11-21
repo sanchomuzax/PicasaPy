@@ -2391,6 +2391,34 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
 picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
             <translation>публикува се...</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="312" />
+            <source>Do you want to cancel this operation?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
+            <translation>Искате ли да анулирате тази операция?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="363" />
+            <source>Want to Cancel?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::canceltitle</extracomment>
+            <translation>Искате ли да анулирате?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="366" />
+            <source>Cancel Operation</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::cancelyesbutton</extracomment>
+            <translation>Анулиране на операцията</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="369" />
+            <source>Don't Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::cancelnobutton</extracomment>
+            <translation>Продължаване</translation>
+        </message>
     </context>
     <context>
         <name>WebExportTemplatePane</name>
@@ -15121,6 +15149,16 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <translation>Всички файлове</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainTimeline</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainTimeline.qml" line="122" />
+            <source>You must have images in the Picture Tray to do this.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MUST_SELECT</extracomment>
+            <translation>За да направите това, трябва да има снимки във фотоконтейнера.</translation>
         </message>
     </context>
     <context>

@@ -88,6 +88,12 @@ def test_rendered_background_tracks_the_selected_photo(
     timeline.resize(1280, 800)
     _wait(qt_app, lambda: timeline.width() == 1280, "az ablak szélessége nem állt be")
     _wait(qt_app, lambda: timeline.height() == 800, "az ablakmagasság nem állt be")
+    fade_cover = _child(timeline, "timelineFadeCover")
+    _wait(
+        qt_app,
+        lambda: fade_cover.property("opacity") <= 0.001,
+        "az Időrend nyitó áttűnése nem fejeződött be",
+    )
 
     timeline_controller = engine.rootContext().contextProperty("timelineController")
     collections = [dict(item) for item in timeline_controller.collections]

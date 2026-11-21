@@ -108,6 +108,28 @@ Image {
         to: 1.12
         duration: Math.max(slideshow.intervalMs, 1)
     }
+    //: #7322: a lista végi csúszka a dia nagyítását állítja (a diaindexet
+    //: nem). A [0, 1] érték leképezése a néző mért képlete (`skalaErtekbol`,
+    //: #2492): 0 = illesztés, 0,5 = valódi méret, 1 = 400 %. Az `r` a valódi
+    //: és az illesztett szélesség aránya; a valódi a nyers fájlszélesség, mert
+    //: a `sourceSize`-plafon az `implicitWidth`-et is torzítaná (#2492).
+    readonly property real zoomActualRatio: paintedWidth > 0
+        && forrasPixelSzelesseg > 0 ? forrasPixelSzelesseg / paintedWidth : 1
+    readonly property real zoomScale: {
+        var r = zoomActualRatio
+        var t = Math.max(0, Math.min(1, slideshow.imageZoomValue))
+        return t < 0.5 ? 1 + (Math.pow(2, 2 * t) - 1) * (r - 1)
+                       : r * Math.pow(2, 4 * (t - 0.5))
+    }
+    //: a `scale` tulajdonságtól különálló réteg: az átmenetek és a Pan and
+    //: Zoom a `scale`-t írják, a csúszka nagyítása ezektől független
+    transform: Scale {
+        origin.x: slide.width / 2
+        origin.y: slide.height / 2
+        xScale: slide.zoomScale
+        yScale: slide.zoomScale
+    }
+
     //: a nagyítás NEM ragadhat be: átmenet-váltáskor visszaáll
     onScaleChanged: if (slideshow.transitionKind !== "kenburns"
                         && slideshow.transitionKind !== "kenburnsaoi"

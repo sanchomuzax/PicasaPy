@@ -10,6 +10,7 @@ fájl között, ami a `PhotoRecord` → `PhotoExportData` leképezéshez kell (a
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from picasapy.cvimage import dekodolj_forrast
 from picasapy.export import ExportItem, ExportSettings, export_photos
 from picasapy.index import PhotoRecord
 
+from .cancellation import check_cancelled
 from .context import PhotoExportData
 
 logger = logging.getLogger(__name__)
@@ -40,6 +42,8 @@ def prepare_photo_exports(
     records: tuple[PhotoRecord, ...],
     target_dir: Path,
     settings,
+    *,
+    is_cancelled: Callable[[], bool] | None = None,
 ) -> ImagePreparationReport:
     """A megadott `PhotoRecord`-okból bélyegkép + nagyméretű másolat
     készítése a `target_dir/thumbnail/` és `target_dir/image/` alá, és a
@@ -69,7 +73,15 @@ def prepare_photo_exports(
     photos: list[PhotoExportData] = []
     skipped: list[str] = []
     for record in records:
-        result = _export_record(record, dirs, thumb_settings, image_settings)
+        check_cancelled(is_cancelled)
+        result = _export_record(
+            record,
+            dirs,
+            thumb_settings,
+            image_settings,
+            is_cancelled=is_cancelled,
+        )
+        check_cancelled(is_cancelled)
         if isinstance(result, str):
             skipped.append(f"{record.name}: {result}")
         else:
@@ -82,6 +94,8 @@ def _export_record(
     dirs: tuple[Path, Path],
     thumb_settings: ExportSettings,
     image_settings: ExportSettings,
+    *,
+    is_cancelled: Callable[[], bool] | None = None,
 ) -> PhotoExportData | str:
     """Egy tétel bélyegképe és nagy képe; hiba esetén az ok szövege."""
     thumb_dir, image_dir = dirs
@@ -93,8 +107,11 @@ def _export_record(
         filters=record.filters,
         taken_at_override=getattr(record, "taken_at_override", None),
     )
+    check_cancelled(is_cancelled)
     thumb_report = export_photos((item,), thumb_dir, thumb_settings)
+    check_cancelled(is_cancelled)
     image_report = export_photos((item,), image_dir, image_settings)
+    check_cancelled(is_cancelled)
     if not thumb_report.exported or not image_report.exported:
         return (thumb_report.reasons or image_report.reasons or ("ismeretlen hiba",))[0]
     thumb_path = thumb_report.exported[0]

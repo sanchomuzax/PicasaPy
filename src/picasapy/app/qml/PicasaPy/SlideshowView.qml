@@ -58,6 +58,12 @@ Rectangle {
     property bool playing: false
     // #4320: a beállításfül tartós ismétlés- és zenebeállításai.
     property bool loop: true
+    //: #7322: a lista végén (nincs következő kép) a sávban képikon és csúszka
+    //: áll, a Következő nyíl tiltott. A csúszka állása [0, 1] (0 = illesztés);
+    //: a lista végének elhagyása nullázza: a nagyítás az aktuális képé.
+    readonly property bool listaVegen: show.visible && count() > 0 && nextPhotoIndex(currentIndex, 1) < 0
+    property real imageZoomValue: 0
+    onListaVegenChanged: if (!listaVegen) imageZoomValue = 0
     property bool musicEnabled: false
     property var musicTrackUrls: []
     property int _musicTrackIndex: 0

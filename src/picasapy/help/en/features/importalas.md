@@ -5,8 +5,14 @@
 This is the main way to bring photos into the library, from a memory
 card, camera, or any folder.
 
-Start the import from the toolbar button or the File menu. Choose a
-source at the top of the dialog; recent sources are offered as well.
+Start the import from the toolbar button or the File menu. The import
+opens as a panel in the main window, filling the whole workspace with
+large previews, not in a separate window. If you close and reopen it,
+the source, your selection, and the import progress are kept. If you
+close it before importing the photos it found, PicasaPy offers to
+import them.
+
+Choose a source at the top of the panel; recent sources are offered as well.
 The dialog shows how many photos and videos it found.
 
 The **Browse...** button opens a small menu:
@@ -26,15 +32,19 @@ list is hidden when no removable drive is connected.
 
 ### Choose what to import
 
-- Click a thumbnail to include or exclude that item. The include-all
-  and exclude-all controls change every item at once.
+- Click a thumbnail to include or exclude that item. **Include All**
+  and **Exclude All** change every item at once.
+- Right-click a thumbnail for a menu with **Include File**, **Exclude
+  File**, **Include All**, and **Exclude All**.
+- You can select several thumbnails (with Ctrl+click or Shift+click)
+  and import only those; see below.
 - The duplicate-exclusion option skips files already in your library.
 - Use **File Types** to choose photos, movies, both, or all files.
 
 ### Choose where files go
 
 Choose a destination folder with **Browse...**, or select one used
-previously. The dialog opens with the default destination, which is
+previously. The panel remembers the five most recent destinations. The dialog opens with the default destination, which is
 your Pictures folder unless changed in **Options** ▸ **General**. The
 default can be changed in [Settings](beallitasok.md).
 
@@ -58,8 +68,19 @@ Choose what happens to the source after copying:
 - Delete only the photos that were copied.
 - Delete everything from the card.
 
-PicasaPy asks for confirmation before either deletion option. The
-deletion cannot be undone, and removed files do not go to Trash.
+The two deletion options are available only when the source is a
+mounted card or drive with a camera DCIM folder.
+
+For either deletion option, PicasaPy asks once, with **Remove Imported
+Files** (or **Remove All Files**) and Cancel buttons. The question
+cannot be turned off; it appears every time. The deletion cannot be
+undone, and removed files do not go to Trash.
+
+If copying even one photo fails, nothing is deleted from the source. If
+the deletion itself runs into an error, the import does not stop.
+
+The panel remembers the subfolder option and the after-copying choice
+you used last; they are saved when the import starts.
 
 For deleting everything, the warning lists how many files will be
 deleted after import, how many will be skipped because they are already
@@ -70,6 +91,19 @@ other files on the card, not only photos.
 If PicasaPy has not scanned the source yet, it reports that the number
 of files is unknown instead of guessing. Wait for the scan to finish
 before confirming.
+
+### Start the import
+
+Three buttons sit at the bottom of the panel:
+
+- **Import All** imports every included photo.
+- **Import Selected** imports only the selected thumbnails; the button
+  shows the number selected in parentheses.
+- **Close**.
+
+Enter and Esc work as in the original Picasa. A tip line at the bottom
+shows the next step for the chosen subfolder option. The button row
+stays fully visible in smaller window sizes.
 
 ### During import
 

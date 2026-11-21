@@ -7,6 +7,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.166] - 2026-11-21
+
+- A HTML-oldal exportálása futás közben megszakítható; a Mégse előbb rákérdez, mint az eredeti Picasában (#7320).
+- A diavetítés sávján a lista végén megjelenik a nagyító ikon és egy csúszka, amellyel az aktuális kép nagyítható, a Következő nyíl pedig szürke, mint az eredeti Picasában (#7322).
+- Az Időrend kép nélküli könyvtárnál üzenettel zárva marad, a dátumsáv pontjai hónaponként logaritmikusan állnak, a fejléc húzás közben követi a fogantyút, és a nézet áttűnéssel nyílik és zár, mint az eredeti Picasában (#7323).
+- Kutatás: a Beállítások ablak útja az eredeti Picasában, a megjegyzett füllel és a gyorsítótár-ürítés pontos idejével (#7325).
+- Kutatás: a könyvtárnézet rendezésének és megjelenítésének menüi az eredeti Picasával összevetve (#7326).
+- Kutatás: a szerkesztő Alapjavítások eszközeinek útja az eredeti Picasában, a még mérendő pontok listájával (#7327).
+- A Beállítások ablak a legutóbb használt fülre nyílik, és ezt újraindítás után is megjegyzi, mint az eredeti Picasában (#7328).
+- Kutatás: mit tesz az eredeti Picasa a Beállítások fájltípus-váltása után, az OK megnyomásakor (#7329).
+- Kutatás: hová kerül a Beállításokban megadott importcél az eredeti Picasában, az OK megnyomása után (#7330).
+- Kutatás: mit tesz az eredeti Picasa az arcfelismerési küszöb megváltoztatása után, a Beállítások OK-jára (#7331).
+- A Beállítások „Clear cache files” jelölője az OK után azonnal üríti a memóriabeli bélyegképtárat, majd kikapcsolt állapotra áll vissza, mint az eredeti Picasában (#7332).
+- A bélyegkép-méret újraindítás után megmarad, és a Személyek-albumok külön méretet jegyeznek meg, mint az eredeti Picasában (#7333).
+- A Beállítások fájltípus-váltása az OK után azonnal frissíti a könyvtárat, mint az eredeti Picasában (#7338).
+
 ## [1.0.165] - 2026-11-20
 
 ### Javítva

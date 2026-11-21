@@ -271,16 +271,21 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
             self._ops_cache[filters] = entry
         return entry
 
-    def clear_cache(self) -> int:
-        """A bélyegkép-tár ürítése lemezen ÉS memóriában (#598).
+    def clear_memory_cache(self) -> None:
+        """Csak a MEMÓRIABELI bélyegkép-tárak ürítése (#7332).
 
-        A memóriabeli rekeszeket és a lánc-gyorstárat is törli. A
-        `disposepreviews` kilépéskori szabályánál is ezt a meglévő utat
-        használjuk (#5897)."""
-        freed = self._cache.clear()
+        A szűrt bélyegképek rekeszét és a lánc-gyorstárat törli; a lemezes
+        tárhoz nem nyúl. Az eredeti Opciók OK-ja után a `disposepreviews`
+        kapcsolónál pontosan ez történik: a memóriabeli tárak újraindulnak,
+        a lemezes hatás nem igazolt."""
         self._memo.clear()
         with self._ops_lock:
             self._ops_cache.clear()
+
+    def clear_cache(self) -> int:
+        """A bélyegkép-tár ürítése lemezen ÉS memóriában (#598)."""
+        freed = self._cache.clear()
+        self.clear_memory_cache()
         return freed
 
     def level_for(self, cella_px: int) -> int:

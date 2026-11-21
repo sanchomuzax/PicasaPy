@@ -3,27 +3,67 @@
 ## Search field
 
 Type in the field at the right end of the toolbar to search as you
-type. PicasaPy searches file names, captions, tags, and folder names. If
-a folder name matches, all photos in that folder are included.
+type. PicasaPy searches file names, captions, tags, folder names, album
+names, and the author and copyright fields of the photo's EXIF data. If
+a folder name matches, all photos in that folder are included; if an
+album name matches, the album's photos are included.
+
+You do not have to click the field first: when the thumbnail grid or the
+folder list on the left has focus, typing a letter, digit, or symbol
+puts it in the search field and starts the search. Accented letters and
+keys pressed together with Ctrl or Alt do not start a search.
+
+### How your text is read
+
+- With several words, PicasaPy looks for all of them: `lake summer`
+  returns only photos that match both words.
+- A minus sign before a word excludes it: `lake -summer` returns lake
+  photos without the summer ones.
+- Periods, underscores, and most punctuation separate words.
+- You can search by the date taken, separated by colons: `2019:03:08`
+  finds a day, `2019:03` a month, and `2019` a year.
+- Start the text with `tag:` to search only among tags. Without the
+  prefix, file names, captions, tags, and folder names are searched too.
+- While you type, PicasaPy waits until you pause before searching, so
+  fast typing does not slow it down.
+
+The field background shows the result: light green when there are
+matches and light red when there are none. When hidden photos are not
+shown, they are left out of the result count, the left pane, and the
+green bar.
+
+### Suggestion list
 
 While you type, a suggestion list opens below the field, matching its
-width. It shows folders and albums that match the text. Choosing one
-opens that folder or album and clears the search. The left pane narrows
-to matching folders and shows how many results each contains. A total
-row appears in the Albums section, for example, `Results for “lake”
-(12)`.
+width. It lists matching words (tags and other search words), folders,
+and albums. Word rows show how many photos contain the word, with the
+more frequent words first. Only albums that contain photos appear.
+
+- Click a word row to put the word and a space in the field and run the
+  search.
+- Choose a folder or album to open it; the search stays in place.
+
+The left pane narrows to the folders that contain matches and shows how
+many results each contains. A total row appears in the Albums section,
+for example, `Results for “lake” (12)`. Counts above 1,000 use thousands
+separators. When nothing matches, the bar shows **No matches**.
 
 With the cursor still in the field, use the up and down arrow keys to
-move through the suggestions. Press `Enter` to open the highlighted
-item or `Esc` to close the list. If no suggestion is highlighted,
-Enter does not choose one.
+move through the suggestions, and press `Enter` to open the highlighted
+item. If no suggestion is highlighted, Enter does not choose one.
 
-After searching, a green bar appears above the grid with **Back to View
-All**. Click it to leave the search, clear the field, and restore the
-full folder list in the left pane.
+### Leaving the search
 
-The `×` at the right end of the field clears the search and restores
-the previous view.
+- The first `Esc` only closes the suggestion list. The next `Esc` clears
+  the search and keeps the cursor in the field.
+- Pressing `Ctrl+F` a second time also closes the search.
+- After searching, a green bar appears above the grid with **Back to
+  View All**. Click it to leave the search.
+- The `×` at the right end of the field clears the search.
+
+Whichever way you leave, PicasaPy restores the folder and the photo
+selection you had before searching, and the left pane shows the full
+folder list again.
 
 Right-click the field for the usual text-editing commands: **Undo**,
 **Cut**, **Copy**, **Paste**, **Delete**, and **Select All**.
@@ -80,6 +120,12 @@ A fifth, duplicate badge is normally hidden. It appears only while the
 duplicate view is active and lets you leave that view. See
 [Find duplicate photos](duplikatumok.md).
 
+Filters work together with the text in the search field: while you also
+search, only photos that match both the filter and the search remain.
+Turning a filter off keeps the search text, and clearing the text keeps
+the filter on. The movie filter works the same way: after clearing the
+text, the movie view stays.
+
 A green bar shows how many photos remain while filtering. Use **Back to
 View All** to leave the filter.
 
@@ -98,9 +144,14 @@ The green bar shows the active limit, for example “Photos no more than
 9 weeks old”. PicasaPy chooses the unit - days, weeks, months, or years
  - based on the age.
 
+The slider works together with the search text. If you set it while
+searching, the text stays in the field, and the slider stays where it
+is when you change or clear the text. The right end of the green bar
+then shows the limit after the “Date Range:” label.
+
 Drag the slider fully left to turn the filter off. Switching to another
-view, such as a star filter, search, or another folder, resets it to
-the left and removes the age limit from the green bar.
+folder or another filter resets it to the left and removes the age
+limit from the green bar.
 
 ## Find similar photos
 

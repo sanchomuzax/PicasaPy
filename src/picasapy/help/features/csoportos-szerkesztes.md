@@ -24,18 +24,26 @@ hatások, végül a vörösszem-eltávolítás.
 
 Munka közben haladásjelző sáv látszik, ami meg is szakítható.
 
+A kijelölt **videókat** a program kihagyja: azok nem kapnak effektet és
+nem fordulnak el. Ha a kijelölésben videó is volt, a munka végén egy
+**Információ** ablak figyelmeztet rá. Ha semmi nincs kijelölve, a
+program ugyanígy szól, és nem csinál semmit.
+
 A nézőben a menü a **megnyitott képre** hat: ott a kiválasztott művelet
 csak arra az egy képre kerül rá, a rácsban hagyott kijelöléshez nem nyúl.
+Ha a kép a **szerkesztőben** van nyitva, a **Szépia**, a
+**Fekete-fehér**, a **Melegítés**, az **Élesítés** és a **Filmszemcse**
+nem írja át a képet, hanem a szerkesztő **Effektek** fülét nyitja meg,
+ahol magad alkalmazhatod a hatást.
 
 ### Szöveg megjelenítése és elrejtése
 
 Az almenü két külön parancsa, a **Szöveg megjelenítése** és a **Szöveg
 elrejtése** a kijelölt képekre írt **szövegfedvényt** kapcsolja be vagy ki
-— nem törli, csak elrejti vagy újra láthatóvá teszi. Csak azokra a képekre
-hat, amelyeken van szöveg, a többihez nem nyúl. A két parancs a **menü
-megnyitásakor** dől el, hogy aktív-e: a **Szöveg megjelenítése** csak akkor
-kapcsolható, ha a kijelölésben van elrejtett szöveg, a **Szöveg
-elrejtése** pedig akkor, ha van látható. Egy képre ugyanezt a szerkesztő
+- nem törli, csak elrejti vagy újra láthatóvá teszi. Csak azokra a képekre
+hat, amelyeken van szöveg, a többihez nem nyúl. Kijelölt képeknél a két
+parancs mindig elérhető, akkor is, ha egyik képen sincs ráírt szöveg.
+Egy képre ugyanezt a szerkesztő
 **Szöveg megjelenítése** jelölője adja — lásd [A szerkesztő](szerkeszto.md).
 
 Ha meggondolod magad: **Szerkesztés ▸ Csoportos szerkesztés
@@ -67,7 +75,8 @@ Elérhető
 - a kép helyi menüjének **Forgatás jobbra** / **Forgatás balra**
   parancsával,
 - a **Ctrl+R** és **Ctrl+Shift+R** billentyűvel,
-- diavetítés közben ugyanezekkel a billentyűkkel.
+- diavetítés közben a vezérlősáv két forgatógombjával (a billentyűk
+  vetítés közben nem forgatnak).
 
 Videót nem lehet forgatni.
 
