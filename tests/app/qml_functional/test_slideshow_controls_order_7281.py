@@ -146,7 +146,7 @@ def _valodi_kattintas(view: QQuickView, qt_app, item: QQuickItem) -> None:
 def test_a_vezerlosav_sorrendje_es_lista_vegi_tartoeleme_renderelt(
     qt_app, height
 ):
-    """A sáv a mért sorrendben áll, a fenntartott hely üres (#7281, #7284)."""
+    """A sáv a mért sorrendben áll; a hely az első dián üres, a végén csúszka (#7281, #7322)."""
     view = QQuickView()
     view.engine().addImportPath(str(_QML))
     view.setResizeMode(QQuickView.ResizeMode.SizeRootObjectToView)
@@ -206,11 +206,11 @@ def test_a_vezerlosav_sorrendje_es_lista_vegi_tartoeleme_renderelt(
     ), "a vetítő nem érte el a lista utolsó képét"
     QMetaObject.invokeMethod(root, "advance", Qt.ConnectionType.DirectConnection)
     assert root.property("playing") is False
-    # #7284: a csúszka működése nem ismert, ezért a lista végi szünetben
-    # sem rajzolunk működés nélküli vezérlőt; a hely és a sorrend marad.
+    # #7322: a lista végén a fenntartott helyen képikon és csúszka áll; a hely
+    # mérete, a sor szélessége és a gombok sorrendje változatlan marad.
     qt_app.processEvents()
     vegso_kep = _render(view)
-    assert not tartalom.isVisible(), "működés nélküli csúszka jelent meg"
+    assert tartalom.isVisible(), "a lista végén nem jelent meg a csúszka"
     assert tuple(float(item.x()) for item in sorrend) == elso_xek
     assert sorrend[0].parentItem().width() == elso_sor_szelesseg
     assert elso_kep.size() == vegso_kep.size()

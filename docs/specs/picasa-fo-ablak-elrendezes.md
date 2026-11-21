@@ -429,10 +429,13 @@ A lánc mérve:
 be a program fájltípus-táblájába — induláskor, nem csak az importáló
 párbeszédben.**
 
-⚠️ **A lánc utolsó szeme NINCS mérve:** hogy a **figyelt mappák
-pásztázása** ebből a táblából dolgozik-e. A folytatás konkrét: a
-`+0x3dc`-es tömb **olvasóit** kell megkeresni (nem a `Support*`
-sztringeket), és megnézni, a pásztázó ág köztük van-e.
+✅ **A lánc utolsó szeme lezárva (#7329):** a figyelt mappák feldolgozója
+olvassa ezt a táblát. A `0x004e2cc0` a fájl kiterjesztését a `+0x3dc`
+(tömb) / `+0x3e0` (elemszám) listával hasonlítja össze; a
+`0x004fb9c0` ezt az eredményt használja az éppen támogatott kiterjesztésen
+kívüli nyilvántartott rekordok kezelésére. Az eredmény csak az eredeti
+folyamat memóriabeli rekordkezelését bizonyítja; a lemezen lévő fájl vagy az
+SQLite-katalógus törlését nem.
 
 *(Ez nem cáfolja a #2344 következtetését: a mi feltétel nélküli szűrőnk
 továbbra is helyes választás, mert a tulajdonos katalógusa szerint az
@@ -441,6 +444,59 @@ eredeti a PNG-t és a BMP-t az alapérték ellenére is indexeli.)*
 > ⚠️ **A PNG és a GIF alapból KI van kapcsolva.** Ez ellentmond a
 > megérzésnek, de a kód egyértelmű: `0x006e0e83 push 0` → `SupportPNG`,
 > `0x006e0e76 push 0` → `SupportGIF`.
+
+#### A fájltípus-kapcsolók OK utáni hatása (#7329, 2026-11-20)
+
+Az Opciók kezelője (`0x005cf5b0`) a módosított kapcsoló értékével
+frissíti a fájltípus-táblát a `0x004fadb0` útján, majd az OK eseményben
+feltételesen meghívja a két rekordkezelő út egyikét. A kezelőben hamisnak
+vizsgált értéknél a `0x005cfd67`-nél hívott `0x004fb9c0` fut; igaznak
+vizsgált értéknél a `0x005cfd7e`-nél hívott `0x004efb40`. A
+`0x005cfd8f`-nél mindkét ágat követően meghívott `0x004ebe40` zárja a
+szakaszt. E címeket a dekompilált hívó és az utasításszintű hívási sorrend
+is megerősíti.
+
+- **Kikapcsolás:** a `0x004fb9c0` a nyilvántartott rekordokat vizsgálja;
+  a `0x004e2cc0` a rekord kiterjesztését a frissített `+0x3dc` / `+0x3e0`
+  listával hasonlítja össze, és nem találatkor igaz eredményt ad. Az ilyen
+  rekord útja a `0x004f9450` állapotkezelő (itt nulla argumentumokkal), a
+  `0x0040fae0` belső rekordművelet és a nyilvántartott darabszám
+  csökkentése; a rutin ezután figyelőjelzést küld. Ez **memóriabeli
+  rekordkezelés**, nem a fényképfájl törlése. A vizsgált út az SQLite-sor
+  törlését sem bizonyítja.
+- **Bekapcsolás:** a `0x004efb40` beállítja az érintett rekordok
+  állapotjelzőit, majd az objektum `+0x33c` / `+0x340` útvonal-/kéréslistájának
+  elemeire `0x004e31a0`-t hív. A `0x004e31a0` az útvonalat callback-adatba
+  csomagolja és a feldolgozó objektum virtuális metódusát hívja. Tehát az OK-kezelő
+  **azonnal beadja a feldolgozási kérést**; a tényleges háttérmunka
+  befejezési ideje és az index tartós módosításának szabálya a statikus
+  forrásból **NINCS MEG**.
+- **Bizonyíték és korlát:** a közvetlen út a `2026-11-20-koteg-574-579.txt`
+  Ghidra-kimenetben, a `0x004e2cc0` 112 bájtos helyi diszasszemblálása pedig
+  az eredeti binárisban olvasható. Ettől függetlenül a fenti indulási lánc
+  megmutatja a `+0x3dc` / `+0x3e0` tábla írását (`0x004fa590`), a helyi
+  diszasszemblálás pedig ennek a táblának az olvasását; a két adatút
+  egyezik. A cáfoló ellenőrzés a kikapcsoló ág fájl- vagy adatbázis-törlésként
+  való olvasatát próbálta igazolni, de a teljes vizsgált hívási út csak
+  memóriabeli állapotot, darabszámot és figyelőjelzést mutatott.
+
+**PicasaPy-összevetés, fejlesztési eltérés:** az `OptionsDialog.qml`
+piszkozat-írói az OK alatti `optionsDraft.commit()` során hívják a
+`setFileTypeEnabled`-et. A `library_controller_folders.py` QSettings-be
+menti az új értéket, és frissíti a következő scan szűrőpillanatképét;
+a `controller.py` `saveOptionSettings` hívása csak a teljes elfogadott
+beállításképet menti. Ezen az elfogadási útvonalon nincs `_start_rescan`;
+a teljes újraolvasás külön `rescan()` belépési ponttal indul
+(`library_controller_sync_rescan.py`). A PicasaPy ezért az elfogadott
+szűrőt a következő pásztázásra készíti elő, de OK után nem kezdi el a már
+ismert könyvtár azonnali egyeztetését. A következő teljes újraolvasás a
+szűrőaláírás változása miatt a mappákat újraellenőrzi; a `sync_folder`
+csak az engedélyezett médiákat veszi fel, a `_prune_photos` pedig törli az
+indexből az olyan fotósorokat, amelyek nem szerepelnek az új szkennelési
+eredményben. Ha nem marad engedélyezett média és `.picasa.ini` sincs,
+az üres mappasor is kikerül. Ezek indexbeli műveletek, a fotófájlokat nem
+törlik. Az eredeti Picasa azonnali útjának tartós SQLite-szemantikája ettől
+függetlenül **NINCS MEG**.
 
 ### Számértékek
 
@@ -480,7 +536,7 @@ Az `0x004183c0` migrációban a hiányzó `dbVersion` olvasási alapértéke `0`
 | `UITransitions` | bool, `1` (`0x006e0cd8`) | íróút/időzítés: **NINCS MEG** | `view/uiTransitions`; alapértéket olvas, mentés csak explicit setterrel |
 | `ShowTooltips` | bool, `1` (`0x006e0ce5`) | íróút/időzítés: **NINCS MEG** | `view/showTooltips`; alapértéket olvas, mentés csak explicit setterrel |
 | `SingleClickExit` | bool, `0` (`0x006e0cf2`) | íróút/időzítés: **NINCS MEG** | `view/singleClickExit`; alapértéket olvas, mentés csak explicit setterrel |
-| `disposepreviews` | bool, `0` (`0x006e0cff`) | `0x005cf5b0` csak akkor ír `0`-t, ha az olvasott érték nem nulla; az ezt kiváltó pontos esemény **NINCS MEG** | `view/disposePreviewsOnExit`; mentés explicit setterrel; életciklus-párhuzam nyitott |
+| `disposepreviews` | bool, `0` (`0x006e0cff`) | **HELYESBÍTVE (#7325):** a kapcsoló értékét az Opciók OK-ja írja (általános mentés: `0x006e39af` -> `0x009a5b30`), a `0x005cf5b0` az OK után, ha az érték nem nulla, a két memóriabeli bélyegképtárat azonnal újrainicializálja (`0x005cfdeb`-`0x005cfe48`) és `0`-t ír vissza; kilépéskor a kulcsot semmi nem olvassa (a sztring a teljes `.text`-ben csak három helyen áll). Lásd [paritas-folyamat-7325.md](paritas-folyamat-7325.md) 1.4 f sor. | `view/disposePreviewsOnExit`; az OK a memóriatárat üríti és a jelölőt nullázza (#7332); kilépéskor nem ürít |
 | `DoNotConfirmDeleteFromDisk` | bool, `0` (`0x006e0d0c`) | `0x005fd670`: a törlési megerősítő párbeszéd döntési/„ne kérdezze újra” útján | `confirm/delete/remember`; a párbeszéd döntésekor `true`-t és `false`-t is ment |
 | `DoNotConfirmRemoveFromAlbum` | bool, `0` (`0x006e0d19`) | `0x005fd670`: az albumeltávolítás megerősítő párbeszédének döntési útján | `confirm/removeFromAlbum/remember`; a párbeszéd döntésekor `true`-t és `false`-t is ment |
 | `autoexclude` | bool, `1` (`0x006e0d29`) | `0x0051f600`: az importálási művelet a panelen látott értéket kiírja | `import/autoexclude`; alapértéket olvas, mentés csak explicit setterrel |
@@ -546,9 +602,14 @@ javasolja az eredeti nyers értékek bemásolását. A fejlesztési feladat
 konkrét megőrzési szabálya: az adott érték QSettings-feloldása után csak
 akkor írja el az **effektív, a felületen használt értéket**, ha a kulcs még
 nincs jelen; a már mentett felhasználói értéket ne írja felül. A
-`SupportQuicktime` második írásútja és a `disposepreviews` pontos kiváltó
-eseménye nyitott, ezért ezeket nem számoltam a fenti 15 megerősített
-QSettings-hiány közé.
+`SupportQuicktime` második írásútja nyitott, ezért ezt nem számoltam a fenti 15
+megerősített QSettings-hiány közé. A `disposepreviews` kiváltó eseménye a #7325
+óta ismert (az Opciók OK-ja, egyszeri ürítés, a jelölő visszaáll nullára);
+ugyanez a lelet válaszolja meg a táblában azokat az Opciók-kulcsokat, amelyeknek az írója `NINCS MEG` volt
+(`UITransitions`, `ShowTooltips`, `SingleClickExit`, `autoexclude`,
+`LoopSlideshow`, `PlayMP3Tracks`, `SupportRAW`, `SupportTGA`): ezeket az Opciók
+OK-ja írja az általános mentéssel (`0x006e39af` -> `0x009a5b30`), lásd
+[paritas-folyamat-7325.md](paritas-folyamat-7325.md) 1.3.
 
 *Bizonyítottság: feltételes az írási életciklus teljességére.* A teljes
 utasításszintű pásztázás a kulcsnevekre megtalálta a 39/39 regisztrált kulcsot;
@@ -909,7 +970,7 @@ A jegy `0x007fad0a`-ra tett „író ág” megnevezése pontatlan: az a
 | `Show tooltips` | `ShowTooltips` (`0x00ca9a08`) | 1 (`0x006e0ced`) | `optionsShowTooltipsCheck` | `view/showTooltips` | igaz | EGYEZIK |
 | `Single-click to exit Edit View` | `SingleClickExit` (`0x00c8e614`) | 0 (`0x006e0cfa`) | `optionsSingleClickExitCheck` | `view/singleClickExit` | hamis | ELTÉR (felirat: `Single click to exit the editing view`) |
 | `Detect duplicates while importing` | `autoexclude` (`0x00c8875c`) | 1 (`0x006e0d31`) | `optionsAutoExcludeCheck` | `import/autoexclude` | hamis | ELTÉR (alapérték; felirat: `Detect duplicates on import`) |
-| `Clear cache files` | `disposepreviews` (`0x00c95630`) | 0 (`0x006e0d07`) | `optionsClearCacheFilesCheck` | `view/disposePreviewsOnExit` | hamis | EGYEZIK (felirat, kapcsoló, alapérték; az eredeti ürítés pontos időpontja nincs igazolva, PicasaPy kilépéskor ürít #5897) |
+| `Clear cache files` | `disposepreviews` (`0x00c95630`) | 0 (`0x006e0d07`) | `optionsClearCacheFilesCheck` | `view/disposePreviewsOnExit` | hamis | EGYEZIK (felirat, kapcsoló, alapérték; az OK utáni memóriaürítés és a jelölő nullázása a #7332-től, kilépéskor semmi nem ürül) |
 | `Delete from disk without confirmation` | `DoNotConfirmDeleteFromDisk` (`0x00c98f48`) | 0 (`0x006e0d14`) | `optionsSkipDeleteConfirmCheck` | megerősítési döntés: `delete` | hamis | EGYEZIK |
 | `Remove from album without confirmation` | `DoNotConfirmRemoveFromAlbum` (`0x00c98f64`) | 0 (`0x006e0d24`) | `optionsSkipRemoveConfirmCheck` | megerősítési döntés: `removeFromAlbum` | hamis | EGYEZIK |
 | `Send anonymous usage stats to Google` | `ReportStats` (`0x00c80118`), nincs a regisztrálóban | `-1` hiányzó értéknél (`0x006e1327`); a jelölőnégyzet hamis/üres (`0x006e1340-0x006e13dc`), az „nincs tárolva” jelző külön megmarad (`0x006e1354`) | `optionsUsageStatsCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; felirat: `Send anonymous usage statistics`) |
@@ -917,6 +978,47 @@ A jegy `0x007fad0a`-ra tett „író ág” megnevezése pontatlan: az a
 | `Automatic updates:` (popup: `Update automatically`, `Ask before downloading updates`, `Don't check for updates`) | `AutoUpgradeCheck` (`0x00c860e0`, alapérték 1 a `0x006e0cb9`-en), `AutoUpgradeAsk` (`0x00c860d0`, alapérték 0 a `0x006e0cc6`-on) | alapértékük az 1. tétel; a teljes leképezést lásd a 13. szakaszban (`0x006e14a7-0x006e1519`) | `optionsAutomaticUpdatesCheck` (`Check for updates automatically`, működő jelölő) | `updates/autoCheck` | igaz | SAJÁT FUNKCIÓ (#6340): a GitHub-kiadások ellenőrzése, nem az eredeti külső frissítő |
 | `Language:` (popup, Windows) | `language` (`0x00c9fdec`, a 2026-09-24-es szakasz szerint; 42 tétel a `0x006e5e10`-ben) | -1 (nincs beállítva, `0x00406103`) | `optionsLanguageCombo` | `general/language` | rendszer | ELTÉR (2 nyelv a 41 helyett, lásd „A nyelvválasztó” szakaszt) |
 | `Save imported pictures in:` (`Browse...`) | `importdest` (`0x00ca9b0c`), nincs a regisztrálóban | NYITVA | `optionsImportDestField`, `optionsImportDestBrowseButton` | `import/defaultdestination` | NYITVA | ELTÉR (felirat: `Import destination folder:`) |
+
+#### #7330: az `importdest` cél alkalmazása az OK útján (2026-11-20)
+
+`0x006e5820` az `importdest` (`0x00ca9b0c`) kulcs értékét adja vissza. A
+`0x005cf5b0` ezt a sztringet a lokális deltába másolja (`0x005cf9d0`, a
+`0x005c2100` segítségével), majd a delta második szavába `2`-t ír
+(`0x005cf9e1`). A hívó ezt a deltát a `0x004f6a20`-nak adja át
+`0x005cfa4c`-nél: a `__fastcall`-ként visszafejtett hívásban ECX az üres
+vektorra, EDX az egybejegyzéses deltára mutat; a híváshely stacken készíti
+elő a vektor- és tárolómutatókat (`0x005cfa35`-`0x005cfa4c`). A fogadó a
+vektorok második szavát `>> 1`-gyel darabszámmá alakítja
+(`0x004f6a9c`-`0x004f6ab8`), ezért a delta `2` értéke itt **egy** bejegyzést
+jelöl.
+
+A közös tároló mutatója a híváshelyen `[this+0x2bc]+0xf8`
+(`0x005cfa2f`-`0x005cfa47`). Ha a `0x004f6a20` nulla eredménnyel tér vissza,
+a hívó előbb a `0x004f5960`-at, majd a `0x004f5d90`-at hívja ugyanezen
+közös tárolóval (`0x005cfa53`-`0x005cfacf`). A sztring-xrefek ezeket rendre
+a `watchedfolders.txt` és a `frexcludefolders.txt` fájlhoz kötik. Ez az
+OK-út a közös tároló módosítását és az ezt követő két hívást igazolja; **nem**
+bizonyítja, hogy ezen az úton közvetlenül kiíródik a `scanlist.txt`. A
+célzottan diszasszemblált `0x005cf5b0` és `0x004f6a20` egyikében sincs
+közvetlen hívás a `scanlist.txt` kezelőjére, a `0x004f61c0`-ra. Ez a
+negatív eredmény csak a közvetlen hívásra vonatkozik, nem zárja ki a
+közvetett vagy későbbi kiírást.
+
+**PicasaPy:** az Opciók OK-ja lefuttatja a piszkozat íróit
+(`OptionsDialog.qml:60-68,112-115`); az importcél írója a
+`setDefaultDestination` (`OptionsTabGeneral.qml:430-435`), amely a
+létező mappa normalizált útvonalát a `QSettings` `import/defaultdestination`
+kulcsába menti (`import_source_controller_state.py:185-201`). Az
+importpárbeszéd ezt induló célként használja (`ImportSourceDialog.qml:220-224`).
+A bejárt útban közös mappatár-frissítő hívás nem szerepel.
+
+**Bizonyítottság:** a kulcs beolvasása → egybejegyzéses delta → közös
+`+0xf8` tároló út statikusan megerősített: a Ghidra-dekompiláció és a helyi
+utasításszintű visszaolvasás egyezik, továbbá a fogadó oldali `>> 1`
+ellenőrzi az egy bejegyzés értelmezést. A Colab M5 mérés, amely a futás
+közbeni hatást igazolná, ebből a helyi munkamenetből nem érhető el; a
+`scanlist.txt` tényleges kiírásának ideje és közvetett útja nyitott. Az
+`importdest` alapértéke továbbra is **NYITVA**.
 
 ### 3. E-Mail
 

@@ -2391,6 +2391,34 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
 picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
             <translation>bezig met publiceren...</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="312" />
+            <source>Do you want to cancel this operation?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
+            <translation>Wilt u deze bewerking annuleren?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="363" />
+            <source>Want to Cancel?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::canceltitle</extracomment>
+            <translation>Wilt u annuleren?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="366" />
+            <source>Cancel Operation</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::cancelyesbutton</extracomment>
+            <translation>Handeling annuleren</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportDialog.qml" line="369" />
+            <source>Don't Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IBackgroundNotify::cancelnobutton</extracomment>
+            <translation>Niet annuleren</translation>
+        </message>
     </context>
     <context>
         <name>WebExportTemplatePane</name>
@@ -15114,6 +15142,16 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <translation>Alle bestanden</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainTimeline</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainTimeline.qml" line="122" />
+            <source>You must have images in the Picture Tray to do this.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_MUST_SELECT</extracomment>
+            <translation>Deze bewerking kan alleen worden uitgevoerd als het afbeeldingenvak afbeeldingen bevat.</translation>
         </message>
     </context>
     <context>

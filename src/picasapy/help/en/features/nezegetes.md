@@ -235,11 +235,27 @@ until you exit.
 | Key | Action |
 |---|---|
 | Space | Pause or resume |
-| Right arrow or Enter | Next photo |
-| Left arrow | Previous photo |
-| Ctrl+R | Rotate clockwise |
-| Ctrl+Shift+R | Rotate counterclockwise |
+| Right or Down arrow | Next photo |
+| Left or Up arrow | Previous photo |
+| 1-9 | Set the display time to that many seconds (0 gives one second) |
+| Pause | Pause while playing |
+| Play (media key) | Resume while paused |
 | Esc | Exit |
+
+Enter, Ctrl+R, and Ctrl+Shift+R do nothing during a slideshow: they do
+not advance or rotate, as in the original Picasa. Use the control bar
+buttons to rotate.
+
+When you step manually, moving forward from the last photo takes you to
+the first one, but moving back from the first photo does nothing. This
+is the same whether or not repeat is on.
+
+With repeat turned off, the slideshow stays open on the last photo at
+the end of the list. Close it with Esc or the Exit button; the right
+arrow goes to the first photo.
+
+Videos in the folder play too: each video runs between its saved trim
+points, and then the slideshow moves on.
 
 When you exit, the grid and viewer return to the photo where the
 slideshow stopped. The slideshow follows changes to the photo list. If
@@ -256,27 +272,34 @@ Move the pointer noticeably to show the control bar at the bottom; a tiny
 twitch does not bring it up. Once it is visible, any movement keeps it
 there. Without movement it fades out after a second and a half; while
 the pointer is over it, it stays visible. The bar
-provides Exit, previous, play/pause, next, and rotate controls. Previous
-and next respond once on press and do not repeat when held. Rotations
-made during the slideshow are saved.
+shows, from left to right: Exit; a space where a magnifier icon and a
+slider appear when the slideshow has stopped at the end of the list
+(use the slider to zoom the current photo); the rotate buttons;
+previous, play/pause, and next; the Star control; the transition
+selector, which is always shown; the caption-mode control; and the
+display time. Previous and next respond once on press and do not repeat
+when held. At the end of the list, next is greyed out. Rotations made
+during the slideshow are saved.
 
-Depending on the display's color depth and how the slideshow started,
-the bar shows either a Timeline button or a transition selector. A
-caption-mode control cycles between the caption, filename, and no text.
-A Star control toggles the photo's star. Use minus and plus to set the
-display time from 1 to 20 seconds; holding either button repeats the
-change. The transition, caption mode, and display time are remembered
-for the next slideshow and until the application is restarted.
+The caption-mode control cycles between the caption, filename, and no
+text. The Star control toggles the photo's star. Use minus and plus to
+set the display time from 1 to 20 seconds; holding either button
+repeats the change. The transition, caption mode, and display time are
+remembered for the next slideshow and until the application is
+restarted.
 
-Click the narrow strip at the top of the displayed photo to pause or
-resume. It does not cover or hide the picture.
+Click the displayed photo to pause or resume. While paused, the area
+around the control bar at the bottom does not toggle playback, so you
+can use the bar's buttons freely. The control bar also fits in a small,
+800-pixel-wide window and with larger system fonts: the transition
+selector gets narrower, but every button stays available.
 
-When you pause (with Space, the play/pause button, or the top strip), the
-control bar appears at once, without fading in, and stays until you
-resume, even if you do not move the mouse. When you resume, the bar
-disappears at once and the slideshow moves straight to the next photo;
-from there it continues at the set display time. A slideshow started
-from Timeline pauses differently; see below.
+When you pause (with Space, the play/pause button, or a click on the
+photo), the control bar appears at once, without fading in, and stays
+until you resume, even if you do not move the mouse. When you resume,
+the bar disappears at once and the slideshow moves straight to the next
+photo; from there it continues at the set display time. A slideshow
+started from Timeline pauses differently; see below.
 
 ### Transitions
 
@@ -316,13 +339,17 @@ first scanned; photos added to the album later do not move the card.
 Empty albums and hidden photos do not appear. The **Recently Updated**
 album also gets a card when it has visible pictures; that card always
 shows the month in which you opened Timeline. Timeline always
-opens at the first card.
+opens at the first card, fading in from black over about a second; it
+fades to black the same way when you close it. If the library has no
+photos, Timeline does not open and shows a message instead.
 
 Use the left and right arrows or the bar's arrow buttons to move between
 cards; the down arrow moves forward and the up arrow moves back in the
 same way. You can also use the mouse wheel, or grab the row of cards and
 drag it sideways. Drag the bottom slider to move farther through time; the first
-and last library dates appear at its ends. While you drag, the label in
+and last library dates appear at its ends. As in the original Picasa,
+the slider's dots are not evenly spaced: cards from nearby months sit
+closer together, and long gaps in time are compressed. While you drag, the label in
 the top-right corner already shows the folder or album you will land
 on; when you release, the row glides there over a few seconds. Press Space or the play
 button to start a slideshow of the current folder or album. It starts

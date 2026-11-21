@@ -14,6 +14,9 @@ Picasa Web Albums has been discontinued; it remains to match the original
 Picasa layout. The **Check for updates automatically** control works and is
 on by default.
 
+The dialog always opens on the tab you used last, whether you closed it
+with **OK** or **Cancel**. PicasaPy remembers it after a restart, too.
+
 Two buttons appear at the bottom of the dialog, as in Picasa:
 
 - **OK** (or `Enter`) saves changes made on the tabs and closes the dialog.
@@ -166,14 +169,15 @@ other.
 
 ### Clearing cached files
 
-The **Clear cache files** checkbox on the General tab controls whether
-PicasaPy removes cached thumbnails from disk when it exits. It is off by
-default. A change remains a draft in the Options dialog until you choose
-**OK**; **Cancel** discards it. There is no immediate cleanup: the cache is
-cleared only when you close the application.
+The **Clear cache files** checkbox on the General tab clears the
+thumbnails PicasaPy keeps in memory. It is off by default. A change
+remains a draft in the Options dialog; **Cancel** discards it. If you
+choose **OK** with the box checked, PicasaPy clears the thumbnails kept
+in memory at once, and the box returns to unchecked. Thumbnails stored on
+disk are not touched, and nothing is deleted when you exit.
 
-No photos are lost; thumbnails are rebuilt as needed. Folders may open more
-slowly after the next launch until their thumbnails have been rebuilt.
+No photos are lost; thumbnails are loaded again as needed. Right after
+clearing, the grid may take a moment longer to draw.
 
 ### File Types tab
 
@@ -190,9 +194,10 @@ file extensions PicasaPy recognizes. JPEG is always included.
 All formats are enabled by default, including GIF, PNG, and TGA. The
 original Picasa disabled those three by default; PicasaPy does not, so an
 update will not make existing photos disappear. If you have already
-changed a checkbox, PicasaPy keeps your choice. A format you disable is no
-longer added to the library the next time the folders are scanned; the
-files remain on disk.
+changed a checkbox, PicasaPy keeps your choice. When you change the file
+types and choose **OK**, PicasaPy rescans the library at once: newly
+enabled formats appear, and disabled ones disappear from view. The files
+remain on disk.
 
 ### Slideshow tab
 

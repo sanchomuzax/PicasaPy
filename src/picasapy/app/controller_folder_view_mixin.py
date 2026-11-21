@@ -11,6 +11,9 @@ from .controller_signals import AppControllerSignalsMixin as _Signals
 
 # A QML-ből választható bélyegképfeliratok.
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
+_THUMB_SCALE_DEFAULT = 144
+_THUMB_SCALE_KEY = "view/thumbScale"
+_THUMB_SCALE_PEOPLE_KEY = "view/thumbScalePeople"
 
 # A bal oldali mappapanel határai (#322, #587, #2329).
 FOLDER_PANE_WIDTH_DEFAULT = 240
@@ -100,11 +103,32 @@ class FolderViewMixin:
 
         Egy szint több csúszka-fokozatot fed le, ezért a húzás nem kér újra
         minden bélyegképet, csak a szinthatár átlépése."""
+        if cella_px <= 0:
+            return
+        key = (
+            _THUMB_SCALE_PEOPLE_KEY
+            if getattr(self, "currentPersonName", "")
+            else _THUMB_SCALE_KEY
+        )
+        self._get_settings().setValue(key, int(cella_px))
         model = getattr(self, "photos", None)
-        if model is None or cella_px <= 0:
+        if model is None:
             return
         szint = self._provider.level_for(cella_px)
         model.set_thumb_level(None if szint >= self._provider.top_level else szint)
+
+    @Property(int, notify=_Signals.statusChanged)
+    def thumbScale(self):
+        """Az aktív könyvtár- vagy személyalbum-nézet bélyegképmérete."""
+        key = (
+            _THUMB_SCALE_PEOPLE_KEY
+            if getattr(self, "currentPersonName", "")
+            else _THUMB_SCALE_KEY
+        )
+        try:
+            return int(self._get_settings().value(key, _THUMB_SCALE_DEFAULT))
+        except (TypeError, ValueError):
+            return _THUMB_SCALE_DEFAULT
 
     @Slot(int, int, bool, result=int)
     def prefetchThumbnails(  # noqa: N802 — QML-stílus

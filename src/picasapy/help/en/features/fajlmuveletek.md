@@ -134,7 +134,8 @@ manager.
 **Edit** ▸ **Paste** (`Ctrl+V`) copies files from the clipboard into the
 currently selected folder. The files may come from the file manager or
 from either PicasaPy command above. A cut file is moved; a copied file
-is copied.
+is copied. In an album view, Paste works differently: it adds the
+pictures to the album; see [The library](konyvtar.md).
 
 In the viewer, **Copy** (`Ctrl+C` or the **Edit** menu) works
 differently: it puts the displayed picture, with all edits, on the
@@ -142,10 +143,26 @@ clipboard as an image instead of the file, so you can paste it directly
 into an image editor or a document. For a video, or before the picture
 has appeared, the file is copied instead.
 
-If a file with the same name already exists in the destination folder,
-the pasted photo gets a new name. Nothing is overwritten. Paste is
-disabled when the clipboard is empty. If it becomes empty before the
-operation, PicasaPy explains why nothing happened. In a text field, for
+Before pasting into a different folder, PicasaPy asks for
+confirmation. If a file with the same name already exists in the
+destination, you can rename the pasted photo, skip it, or cancel the
+operation. Nothing is overwritten.
+
+If transferring a file fails while pasting, PicasaPy stops there: photos
+already transferred stay, the files after the failed one are not
+started, and a single summary names the error. (Copying and moving by
+dragging or from the menu continue with the other files after an
+error.)
+
+**Cut** and **Paste** are disabled in the viewer, and `Ctrl+X` and
+`Ctrl+V` have no effect there. You cannot paste into the folder the
+files came from: Paste is disabled and no copy is made. After a
+successful paste, Paste becomes disabled.
+
+Paste is disabled when the clipboard is empty. If it becomes empty
+before the operation, PicasaPy explains why nothing happened. If the
+clipboard holds files but no folder or album is selected, a window says
+“A Folder or Album must be selected to do this.” In a text field, for
 example while renaming, `Ctrl+V` pastes text into the field instead of
 files.
 
@@ -234,10 +251,14 @@ Other context-menu commands include:
 ## Folders
 
 The folder context menu lets you move an entire folder. You choose the
-destination in the window titled "Move Folder to" followed by the
-folder's name. It starts in the destination you chose last time (the
-first time, in the folder's current parent folder) and has **OK** and
-**Cancel** buttons. If the move
+destination in the **Browse for Folder** window, which has **OK** and
+**Cancel** buttons. It starts in the destination you chose last time; if
+there is none, in the folder being moved. PicasaPy remembers the chosen
+destination even if the move then fails. You cannot move a folder into
+a hidden folder. The seven known user folders (Pictures, Desktop, Music,
+Videos, Documents, and the user and shared application data folders)
+cannot be moved: the command is disabled on them, but folders below them
+can still be moved. If the move
 stops, the folder remains in its original location and no incomplete
 copy remains at the destination. For one step that cannot be rolled
 back, the error explains where the contents are.

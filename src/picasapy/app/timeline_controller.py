@@ -2,9 +2,9 @@
 
 A mappa- és albumkártyák az indexelt, látható fotókból épülnek. A kártya
 hónap/év felirata és időrendi helye az indexelt felvételi dátumot, ennek
-hiányában a rögzített fájlidőt használja. A qshow `A` tömbjének valódi
-jelentése nyitott (#5401), ezért a QML `sliderPosition` értéke normalizált
-dátumtartomány, nem az eredeti tömb rekonstruálása. A teljes képkockánkénti
+hiányában a rögzített fájlidőt használja. A qshow `A` tömbjét a hónap első
+napjára kerekített kártyadátumok közötti `ln(1 + napi eltérés)` értékekből
+kumuláljuk (38.2.210 §6). A teljes képkockánkénti
 mozgás és rétegrajzolás szintén nyitott; a mért görbe- és transzformációs
 képleteket a `timeline_motion` szolgáltatja.
 """
@@ -12,6 +12,7 @@ képleteket a `timeline_motion` szolgáltatja.
 from __future__ import annotations
 
 from datetime import date, datetime
+from math import log1p
 from pathlib import Path
 
 from PySide6.QtCore import Property, QCoreApplication, QLocale, QObject, Signal, Slot
@@ -337,26 +338,37 @@ class TimelineController(QObject):
         last_date = max(range_dates) if range_dates else None
         first_label = self._date_label(first_date, locale)
         last_label = self._date_label(last_date, locale)
-        first_ordinal = first_date.toordinal() if first_date else None
-        date_span = (
-            last_date.toordinal() - first_ordinal
-            if first_ordinal is not None and last_date is not None
-            else 0
-        )
+        # A qshow a rendezett kártyadátumokat hónap első napjára kerekíti,
+        # majd a napi különbségek logaritmusát halmozza (38.2.210 §6).
+        cumulative_by_collection: dict[str, float] = {}
+        previous_month: date | None = None
+        cumulative = 0.0
+        for collection in prepared:
+            card_date = collection["date"]
+            if card_date is None:
+                continue
+            day = card_date.date() if isinstance(card_date, datetime) else card_date
+            month_start = day.replace(day=1)
+            if previous_month is not None:
+                cumulative += log1p((month_start - previous_month).days)
+            cumulative_by_collection[collection["collectionId"]] = cumulative
+            previous_month = month_start
+        denominator = cumulative
+        has_dated_collection = previous_month is not None
 
         result = []
         for collection in prepared:
             card_date = collection["date"]
             collection_id = collection["collectionId"]
             photos = collection["records"]
-            if card_date is None:
-                slider_position = 1.0 if first_ordinal is not None else 0.0
-            elif first_ordinal is None or date_span <= 0:
+            if denominator <= 0:
                 slider_position = 0.0
+            elif card_date is None:
+                slider_position = 1.0 if has_dated_collection else 0.0
             else:
                 slider_position = (
-                    card_date.toordinal() - first_ordinal
-                ) / date_span
+                    cumulative_by_collection[collection_id] / denominator
+                )
             result.append(
                 {
                     "collectionId": collection_id,

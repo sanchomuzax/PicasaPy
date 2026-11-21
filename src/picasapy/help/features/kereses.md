@@ -3,30 +3,75 @@
 ## A keresőmező
 
 Az eszköztár jobb szélén lévő mezőbe gépelve azonnal keres a program.
-Keres a **fájlnévben**, a **képfeliratban**, a **címkékben** és a
-**mappanévben** is — ha egy mappa neve illeszkedik, a mappa teljes
-tartalma találat lesz.
+Keres a **fájlnévben**, a **képfeliratban**, a **címkékben**, a
+**mappanévben**, az **album nevében**, valamint a kép EXIF-adatai közül a
+**szerző** és a **szerzői jog** mezőben is. Ha egy mappa neve illeszkedik,
+a mappa teljes tartalma találat lesz; ha egy album neve illeszkedik, az
+album képei kerülnek a találatok közé.
+
+Nem kell a mezőbe kattintanod: ha a bélyegképrácson vagy a bal oldali
+mappalistán állsz, és leütsz egy betűt, számot vagy jelet, az a
+keresőmezőbe kerül, és elindul a keresés. Az ékezetes betű, illetve a
+Ctrl vagy Alt billentyűvel együtt leütött gomb nem indít keresést.
+
+### Hogyan értelmezi a beírt szöveget
+
+- Több szó esetén a program **mindegyikre** keres: a `tó nyár` csak
+  azokat a képeket adja, amelyekre mindkét szó illik.
+- A szó elé tett **mínuszjel** kizár: a `tó -nyár` a tavas képeket adja,
+  a nyári képek nélkül.
+- A pont, az aláhúzás és a legtöbb írásjel szóelválasztóként számít.
+- A **felvétel dátumára** is kereshetsz, kettősponttal tagolva: a
+  `2019:03:08` egy napra, a `2019:03` egy hónapra, a `2019` egy évre ad
+  találatot.
+- Ha a szöveget **`tag:`** (vagy `címke:`) előtaggal kezded, a program
+  csak a címkék között keres. Előtag nélkül a fájlnévre, a feliratra, a
+  címkékre és a mappanévre is.
+- Gépelés közben a program kivárja, amíg megállsz, és csak akkor keres,
+  így a gyors gépelés nem lassítja.
+
+A mező háttere jelzi az eredményt: **világoszöld**, ha van találat, és
+**halványpiros**, ha nincs. Ha a rejtett képek megjelenítése ki van
+kapcsolva, a rejtett képek a találatok számában, a bal oldali listában
+és a zöld sávon sem szerepelnek.
+
+### A javaslatlista
 
 Gépelés közben a mező alatt, a mezővel egyező szélességben egy
-javaslatlista nyílik: a beírt szövegre illő **mappákat** és **albumokat**
-mutatja. Egy mappát választva a mappára, egy albumot választva az
-albumra lépsz, és a keresés kiürül. A bal hasáb közben a keresésre
-szűkül, és mappánként mutatja, hány találat van benne. A találatok
-összesített sora az **Albumok** csoportban, album ikonnal áll, például:
-„Találatok a(z) "tó" kifejezésre (12)".
+javaslatlista nyílik. Ebben a beírt szövegre illő **szavak** (címkék és
+más keresőszavak), **mappák** és **albumok** állnak. A szósorok mellett
+látszik, hány képen szerepel az adott szó, és a gyakoribb szó áll elöl.
+Csak olyan album jelenik meg, amelyben van kép.
+
+- Egy **szósorra** kattintva a szó és utána egy szóköz kerül a mezőbe,
+  és a keresés lefut.
+- Egy **mappát** vagy **albumot** választva arra a mappára vagy albumra
+  lépsz, a keresés pedig megmarad.
+
+A bal hasáb közben a keresésre szűkül, és csak azokat a mappákat
+mutatja, amelyekben van találat, mappánként a találatok számával. A
+találatok összesített sora az **Albumok** csoportban, album ikonnal áll,
+például: „Találatok a(z) "tó" kifejezésre (12)". Ezer fölött a
+darabszámok ezres tagolással íródnak. Ha nincs találat, a sáv a
+**Nincs találat** feliratot mutatja.
 
 A javaslatlistát billentyűzettel is kezelheted, miközben a kurzor a
 mezőben van: a **↓** és a **↑** lépked a javaslatok között (a kiemelt sor
-mutatja, hol tartasz), az **Enter** megnyitja a kiemeltet, az **Esc**
-pedig bezárja a listát. Ha egyik javaslatot sem emelted ki, az Enter
-nem választ semmit.
+mutatja, hol tartasz), az **Enter** megnyitja a kiemeltet. Ha egyik
+javaslatot sem emelted ki, az Enter nem választ semmit.
 
-Keresés után a rács fölötti zöld sávon megjelenik a **Vissza az összes
-megtekintéséhez** gomb. Erre kattintva kilépsz a keresésből: a mező
-kiürül, a bal hasáb pedig újra a teljes mappalistát mutatja.
+### Kilépés a keresésből
 
-A mező jobb szélén lévő **×** törli a keresést, és visszaáll az előző
-nézet.
+- Az **Esc** először csak a javaslatlistát zárja be. A következő
+  **Esc** törli a keresést, a kurzor pedig a mezőben marad.
+- A **Ctrl+F** második lenyomása is bezárja a keresést.
+- Keresés után a rács fölötti zöld sávon megjelenik a **Vissza az összes
+  megtekintéséhez** gomb. Erre kattintva kilépsz a keresésből.
+- A mező jobb szélén lévő **×** törli a keresést.
+
+Bármelyik úton lépsz ki, a program visszaállítja a keresés előtti
+mappát és a képek kijelölését, a bal hasáb pedig újra a teljes
+mappalistát mutatja.
 
 A mezőre jobbgombbal kattintva a szokásos szövegszerkesztő parancsok
 jönnek elő: **Visszavonás**, **Kivágás**, **Másolás**, **Beillesztés**,
@@ -94,6 +139,12 @@ nem látszik: csak akkor jelenik meg, ha a másodpéldány-nézet be van
 kapcsolva, és egy kattintással ki is vezet belőle. Lásd
 [Duplikátumok keresése](duplikatumok.md).
 
+A szűrők a keresőmezőbe írt szöveggel **együtt** szűkítenek: ha közben
+keresel is, csak az a kép marad, amely a szűrőnek és a keresésnek is
+megfelel. A szűrőgomb kikapcsolása megtartja a keresőszöveget, a szöveg
+törlése pedig a bekapcsolt szűrőt. A film szűrőnél is így van: a szöveg
+törlése után a filmnézet marad.
+
 Szűrés közben zöld sáv jelzi, hány kép látszik; a sávon a **Vissza az
 összes megtekintéséhez** gombbal lépsz ki a szűrésből.
 
@@ -114,10 +165,14 @@ A zöld sávon megjelenik, mit szűrtél — például **„Legfeljebb 9 hetes
 képek."** A program a kor nagyságához igazítja a mértékegységet: nap,
 hét, hónap vagy év.
 
-A csúszkát **balra, a szélére** húzva kikapcsolod a szűrőt. Ha közben
-másik nézetre váltasz (például csillag-szűrőre, keresésre vagy másik
-mappára), a csúszka magától alaphelyzetbe, balra áll vissza, és a kor
-felirata is eltűnik a zöld sávról.
+A csúszka a keresőszöveggel együtt szűr. Ha keresés közben állítod, a
+szöveg a mezőben marad, és a csúszka akkor is a helyén marad, ha a
+szöveget módosítod vagy törlöd. Ilyenkor a zöld sáv jobb szélén a
+**Dátumtartomány:** felirat után látszik a beállított korhatár.
+
+A csúszkát **balra, a szélére** húzva kikapcsolod a szűrőt. Ha másik
+mappára vagy másik szűrőre váltasz, a csúszka magától alaphelyzetbe,
+balra áll vissza, és a kor felirata is eltűnik a zöld sávról.
 
 ## Hasonló képek keresése
 

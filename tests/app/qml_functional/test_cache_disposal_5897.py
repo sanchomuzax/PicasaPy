@@ -1,4 +1,13 @@
-"""A bélyegkép-cache kiürítése az Opciók kapcsolója alapján (#5897)."""
+"""A „Clear cache files" kapcsoló az Opciókban (#5897, átalakítva a #7332-ben).
+
+Az #5897 a kapcsolót tartósan mentette, és kilépéskor ürítette a lemezes ÉS
+memóriabeli bélyegkép-tárat. A #7332 az eredeti viselkedéshez igazította
+(`0x005cfdeb`-`0x005cfe48`): az OK után, ha a jelölő be van kapcsolva, a
+MEMÓRIABELI tár azonnal ürül és a jelölő kikapcsoltra áll vissza; a lemezes
+tárhoz az OK nem nyúl, kilépéskor semmi nem üríti. Ezért a régi
+„kilépéskor ürít" próba itt az OK utáni hatást méri, és külön őrzi, hogy a
+kilépés már nem töröl.
+"""
 
 from __future__ import annotations
 
@@ -86,8 +95,22 @@ def _kiadaskepekent_mentsd(window, dialog, cel: Path) -> None:
     assert kep.save(str(cel), "PNG"), f"a kiadáskép nem menthető: {cel}"
 
 
+def _memoriatar_kitoltese(controller) -> None:
+    """Egy szűrt bélyegképet tesz a memóriarekeszbe, mint a szerkesztett fotók."""
+    from PySide6.QtGui import QImage
+
+    kep = QImage(8, 8, QImage.Format.Format_RGB32)
+    kep.fill(0x336699)
+    controller._provider._memo.put(("7332",), kep)
+    assert controller._provider._memo.get(("7332",)) is not None
+
+
+def _memoriatar_tele(controller) -> bool:
+    return controller._provider._memo.get(("7332",)) is not None
+
+
 @pytest.mark.parametrize("magassag_eltolas", (-5, 0, 5))
-def test_general_kapcsolo_valodi_kattintassal_mentodik_es_kilepeskor_urit(
+def test_general_kapcsolo_ok_utan_uriti_a_memoriat_es_visszaall(
     cache_app, qt_app, tmp_path, magassag_eltolas
 ):
     window, controller, _engine = cache_app
@@ -98,6 +121,10 @@ def test_general_kapcsolo_valodi_kattintassal_mentodik_es_kilepeskor_urit(
     assert _varj(qt_app, lambda: bool(_cache_fajlok(tmp_path))), (
         "a valódi bélyegkép-szolgáltató nem írt cache-fájlt"
     )
+    _memoriatar_kitoltese(controller)
+    lemezes_elotte = {
+        path: path.read_bytes() for path in _cache_fajlok(tmp_path)
+    }
     dialog = _beallitasok_megnyit(
         window, qt_app, window.property("menuBar")
     )
@@ -108,25 +135,8 @@ def test_general_kapcsolo_valodi_kattintassal_mentodik_es_kilepeskor_urit(
 
     _kattints_ablakban(qt_app, dialog, checkbox)
     assert checkbox.property("checked") is True
-    assert controller.disposePreviewsOnExit is False, (
-        "a jelölő kattintásra azonnal módosította a tartós beállítást"
-    )
-
-    # #5906: a módosítás az OK-ra mentődik
-    ok_button = _gyerek(dialog, "optionsOkButton")
-    _kattints_ablakban(qt_app, dialog, ok_button)
-    assert _varj(qt_app, lambda: dialog.property("visible") is False), (
-        "az Opciók OK gombja nem zárta be a párbeszédet"
-    )
-    assert controller.disposePreviewsOnExit is True
-    controller._get_settings().sync()
-
-    dialog = _beallitasok_megnyit(
-        window, qt_app, window.property("menuBar")
-    )
-    checkbox = _gyerek(dialog, "optionsClearCacheFilesCheck")
-    assert checkbox.property("checked") is True, (
-        "a Clear cache files állapota nem maradt meg újranyitás után"
+    assert _memoriatar_tele(controller), (
+        "a jelölő kattintásra azonnal ürítette a memóriatárat"
     )
 
     if (
@@ -135,11 +145,77 @@ def test_general_kapcsolo_valodi_kattintassal_mentodik_es_kilepeskor_urit(
     ):
         _kiadaskepekent_mentsd(window, dialog, Path(screenshot))
 
-    assert _cache_fajlok(tmp_path), "a kilépési próba előtt nincs cache-fájl"
-    controller.shutdown()
-    assert not _cache_fajlok(tmp_path), (
-        "a bekapcsolt kapcsoló nem ürítette ki a bélyegkép-cache-t kilépéskor"
+    # #5906: a módosítás az OK-ra lép életbe
+    ok_button = _gyerek(dialog, "optionsOkButton")
+    _kattints_ablakban(qt_app, dialog, ok_button)
+    assert _varj(qt_app, lambda: dialog.property("visible") is False), (
+        "az Opciók OK gombja nem zárta be a párbeszédet"
     )
+    assert not _memoriatar_tele(controller), (
+        "az OK nem ürítette a memóriabeli bélyegkép-tárat (#7332)"
+    )
+    assert controller.disposePreviewsOnExit is False, (
+        "az OK nem állította vissza kikapcsoltra a jelölőt (#7332)"
+    )
+    assert {
+        path: path.read_bytes() for path in _cache_fajlok(tmp_path)
+    } == lemezes_elotte, "az OK a lemezes bélyegkép-tárat is módosította"
+
+    dialog = _beallitasok_megnyit(
+        window, qt_app, window.property("menuBar")
+    )
+    checkbox = _gyerek(dialog, "optionsClearCacheFilesCheck")
+    assert checkbox.property("checked") is False, (
+        "a Clear cache files nem állt vissza kikapcsoltra az OK után"
+    )
+
+    controller.shutdown()
+    assert {
+        path: path.read_bytes() for path in _cache_fajlok(tmp_path)
+    } == lemezes_elotte, "kilépéskor már nem ürülhet a lemezes bélyegkép-tár"
+
+
+def test_kikapcsolt_jelolovel_az_ok_nem_urit(cache_app, qt_app, tmp_path):
+    window, controller, _engine = cache_app
+    _elokeszit(window, qt_app, controller)
+    assert _varj(qt_app, lambda: bool(_cache_fajlok(tmp_path)))
+    _memoriatar_kitoltese(controller)
+    dialog = _beallitasok_megnyit(
+        window, qt_app, window.property("menuBar")
+    )
+    checkbox = _gyerek(dialog, "optionsClearCacheFilesCheck")
+    assert checkbox.property("checked") is False
+
+    _kattints_ablakban(qt_app, dialog, _gyerek(dialog, "optionsOkButton"))
+
+    assert _varj(qt_app, lambda: dialog.property("visible") is False)
+    assert _memoriatar_tele(controller), (
+        "kikapcsolt jelölőnél az OK ürítette a memóriatárat"
+    )
+    assert _cache_fajlok(tmp_path)
+
+
+def test_regi_mentett_bejeloles_az_elso_ok_utan_urit_es_nullazodik(
+    cache_app, qt_app
+):
+    """Az #5897-ben mentett `true` érték: a jelölő bejelölve nyílik, és az
+    OK (a jelölő érintése nélkül is) ürít és visszaállítja, mint az eredeti,
+    ahol az OK utáni ág a kulcs aktuális értékét nézi."""
+    window, controller, _engine = cache_app
+    _elokeszit(window, qt_app, controller)
+    controller.setDisposePreviewsOnExit(True)
+    _memoriatar_kitoltese(controller)
+    dialog = _beallitasok_megnyit(
+        window, qt_app, window.property("menuBar")
+    )
+    checkbox = _gyerek(dialog, "optionsClearCacheFilesCheck")
+    assert checkbox.property("checked") is True
+
+    _kattints_ablakban(qt_app, dialog, _gyerek(dialog, "optionsOkButton"))
+
+    assert _varj(qt_app, lambda: dialog.property("visible") is False)
+    assert not _memoriatar_tele(controller)
+    assert controller.disposePreviewsOnExit is False
 
 
 @pytest.mark.parametrize("magassag_eltolas", (-5, 0, 5))
@@ -157,6 +233,7 @@ def test_general_kapcsolo_cancel_elveti_a_valtoztatast(
     checkbox = _gyerek(dialog, "optionsClearCacheFilesCheck")
     assert checkbox.property("checked") is False
     assert controller.disposePreviewsOnExit is False
+    _memoriatar_kitoltese(controller)
 
     _kattints_ablakban(qt_app, dialog, checkbox)
     assert checkbox.property("checked") is True
@@ -171,6 +248,9 @@ def test_general_kapcsolo_cancel_elveti_a_valtoztatast(
     )
     assert controller.disposePreviewsOnExit is False, (
         "a Mégse nem vonta vissza a Clear cache files módosítását"
+    )
+    assert _memoriatar_tele(controller), (
+        "a Mégse ürítette a memóriabeli bélyegkép-tárat"
     )
 
 

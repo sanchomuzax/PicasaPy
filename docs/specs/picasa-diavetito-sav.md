@@ -68,8 +68,9 @@ rögzíti, hogy a két felvételi pont sorrendje egyezik.
 A `oneup.tre` (a 40-143. sorok vezérlőelemei) nem tartalmaz csúszka- vagy
 képikon-elemet, és működésükre sincs adat. A `sszoomsliderclip` név csak a
 külön szerkesztői `editoneup.tre`-ben szerepel, ezért nem bizonyíték a normál
-diavetítő csúszkájának funkciójára. A PicasaPy a mért helyet üresen tartja fenn; a csúszka funkciója, értéke és
-kezelése **nincs megállapítva** (#7284), ezért működés nélküli vezérlőt nem rajzol.
+diavetítő csúszkájának funkciójára. A csúszka funkcióját a #7284 állapította meg
+(lásd az 5. szakaszt), a #7322 pedig megvalósítja: a mért helyen a lista végén
+megállt vetítésnél képikon és csúszka áll, máskor a hely üres.
 
 ## 2. Tételek elemenként
 
@@ -297,6 +298,29 @@ indokolt.
 | | |
 |---|---|
 | **Eredeti** | `editpanel/zoomup_icon` (`editpanel.tre:1288-1289`), `zoomslider/scaleslider` és `zoomslider/thumb` (`editpanel.tre:1291-1296`); a vetítési út az `editoneup/sszoomsliderclip`-et használja (`editoneup.tre:68-69`, a `0x0075de50` vetítési belépési ágában). Húzásra a kép skálája változik. |
-| **Nálunk** | A jelenlegi `src/picasapy/app/qml/PicasaPy/SlideshowControls.qml` lejátszósávjában nincs képnagyító-vezérlő; a `src` alatt a briefben említett `slideshowImageSliderContent` név nem található. A #7281 területe maradjon üres a láthatósági mérésig. |
-| **Teendő** | A #7281-ben a hiányzó zoomvezérlőt akkor add hozzá, amikor a láthatósági feltétel mérésből ismert; az aktuális kép skálaértékéhez kösd, és a mért mutató-/vetítési kaput valósítsd meg. |
-| **Kész, ha** | A csúszka húzása az aktuális kép skáláját változtatja, a diaindexet nem; a vezérlő csak az eredeti Colab-méréssel igazolt feltétel mellett látszik. |
+| **Nálunk** | A #7322 óta megvan: a lista végén megállt vetítésnél a sávon képikon és nagyítócsúszka áll, lásd a következő szakaszt. |
+| **Teendő** | Nincs; a megvalósítás a #7322-ben készült el. |
+| **Kész, ha** | A csúszka húzása az aktuális kép skáláját változtatja, a diaindexet nem; a láthatóság megfelel azonos szünet-, dia-, egér- és képméretfeltételek mellett rögzített eredeti viselkedésnek. |
+
+### #7322: a PicasaPy megvalósítása
+
+A `SlideshowControls.qml` a Kilépés utáni mért helyen (157 képpont: a 24
+képpontos ikon, 6 képpont rés és a 127 képpontos csúszka) a lista végén
+megállt vetítésnél képikont és csúszkát mutat. A `SlideshowView.listaVegen`
+akkor igaz, ha a vetítő látszik és nincs következő kép (ismétlés nélkül az
+utolsó dián). Az első és a középső dián szüneteltetve a hely üres marad
+(`kepernyo__13`-`15`, job-796 `kepernyo__14`-`17`), a lista végén megjelenik
+(`kepernyo__32`-`37`). Ismétléssel nincs lista vége, tehát a csúszka sem látszik.
+
+| Tétel | Megvalósítás | Forrás vagy fok |
+|---|---|---|
+| Ikon és csúszka grafikája | A szerkesztő nagyítósávjának meglévő elemei: `EditorSlider` `scaleslider` családja és a `loupe.svg` (`TrayTopRow.qml`, `viewerZoomUpIcon`, `zoomSlider`). A `loupe.svg` vonala sötét, ezért a sötét vetítősávon világos lap van alatta. | A grafika a projekt saját rajza; az eredeti erőforrás pixelképével nincs összevetve |
+| Csúszka értéke | [0, 1], a húzás a `SlideshowView.imageZoomValue` értékét írja. A diaindexet nem. | `0x005de8e0` → `0x005d2020` → `0x005d1470` (5. szakasz) |
+| Érték és nagyítás | A néző mért leképezése: 0 = illesztés, 0,5 = valódi méret, 1 = 400 % (`skalaErtekbol`, #2492). | Következtetés: a vetítés ugyanazt a zoomláncot használja. A leképezés vetítésbeli használata nincs külön mérve |
+| Nagyítás hatóköre | A `SlideshowCurrentImage.qml` külön `Scale` réteget kap, az átmenetek `scale` tulajdonságától függetlenül. A lista végének elhagyása (léptetés, kilépés) nullázza az értéket. | PicasaPy-döntés: a nagyítás az aktuális képé |
+| Következő nyíl | A lista végén tiltott (szürke). A billentyűs Jobb továbbra is az első képre fordít (#7190). | `kepernyo__32`-`37` (a nyíl szürke) |
+
+Nyitott marad: a csúszkával nagyított kép nem húzható (nincs pásztázás), mert az
+eredeti pásztázásról nincs adat. A lista végén álló vetítés `playing` állapota
+a PicasaPyban igaz marad (az időzítő üresen jár), az eredeti ilyenkor megállt;
+a láthatóság ezért a `playing` állapotától függetlenül a lista végéhez kötött.

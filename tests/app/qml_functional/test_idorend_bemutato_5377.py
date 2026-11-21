@@ -95,6 +95,11 @@ def _open_timeline(window, qt_app):
     assert _wait(qt_app, timeline.isVisible), "a teljes képernyős Időrend nem látszik"
     timeline.requestActivate()
     assert _wait(qt_app, timeline.isActive), "az Időrend nem kapott billentyűfókuszt"
+    fade_cover = _child(timeline, "timelineFadeCover")
+    assert _wait(
+        qt_app,
+        lambda: fade_cover.property("opacity") <= 0.001,
+    ), "az Időrend nyitó áttűnése nem fejeződött be"
     return timeline
 
 

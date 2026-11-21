@@ -44,7 +44,7 @@ class TestTimelineEntryPoints:
         _invoke(qt_app, window, "toggleTimeline")
         assert window.property("timelineOpen") is False
         assert timeline_controller._timeline_open is False
-        assert view.property("visible") is False
+        assert _wait_for(qt_app, lambda: view.property("visible") is False)
 
     @pytest.mark.parametrize("height", [795, 800, 805])
     def test_real_ctrl5_keypress_opens_timeline_without_selection(

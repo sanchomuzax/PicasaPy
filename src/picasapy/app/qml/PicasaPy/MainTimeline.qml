@@ -24,6 +24,14 @@ TimelineView {
             hostWindow.timelineOpen = timelineOpen
         if (hostTimelineController && hostTimelineController.setTimelineOpen)
             hostTimelineController.setTimelineOpen(timelineOpen)
+        if (timelineOpen) {
+            timelineClosingFade.stop()
+            if (timeline.motionMode === "closing")
+                timeline.resetForOpen()
+            timeline.motionMode = "idle"
+            timelineFadeCover.opacity = 1
+            timelineOpeningFade.start()
+        }
     }
     onTimelineSlideshowActiveChanged: {
         if (hostWindow.timelineSlideshowActive !== timelineSlideshowActive)
@@ -53,7 +61,7 @@ TimelineView {
         }
     }
 
-    visible: timelineOpen
+    visible: timelineOpen || timeline.motionMode === "closing"
     collectionsModel: hostTimelineController
         ? hostTimelineController.collections : []
 
@@ -91,6 +99,11 @@ TimelineView {
         // A virtuális friss album a Picasában nem váltja át a főnézetet.
         if (collection && collection.albumToken !== "]updated")
             timeline.selectTimelineCollection(collection)
+        timeline.animating = false
+        timeline.draggingSlider = false
+        timelineOpeningFade.stop()
+        timeline.motionMode = "closing"
+        timelineClosingFade.start()
         hostWindow.timelineOpen = false
     }
 
@@ -101,6 +114,17 @@ TimelineView {
         }
         if (hostTimelineController)
             hostTimelineController.reload()
+        if (hostTimelineController && hostTimelineController.setTimelineOpen) {
+            hostTimelineController.setTimelineOpen(true)
+            if (!hostTimelineController.collections
+                    || hostTimelineController.collections.length === 0) {
+                hostTimelineController.setTimelineOpen(false)
+                hostWindow.errorBanner.notice = true
+                hostWindow.errorBannerText.text = qsTr(
+                    "You must have images in the Picture Tray to do this.")
+                return
+            }
+        }
         hostWindow.timelineOpen = true
     }
 
@@ -118,6 +142,11 @@ TimelineView {
         // Mappakártya vetítéséből kilépve csak a mappa marad kijelölve (#6909).
         if (collection.kind !== "album")
             hostWindow.clearSelection()
+        timeline.animating = false
+        timeline.draggingSlider = false
+        timelineOpeningFade.stop()
+        timeline.motionMode = "closing"
+        timelineClosingFade.start()
         hostWindow.timelineOpen = false
         hostWindow.timelineSlideshowModel = collectionModel
         hostWindow.timelineSlideshowActive = true
@@ -132,5 +161,36 @@ TimelineView {
     onClosed: hostWindow.closeTimeline()
     onSlideshowRequested: function(collectionId) {
         hostWindow.startTimelineSlideshow(collectionId)
+    }
+
+    Rectangle {
+        id: timelineFadeCover
+        objectName: "timelineFadeCover"
+        anchors.fill: parent
+        color: "#000000"
+        opacity: 0
+        z: 1000
+    }
+
+    NumberAnimation {
+        id: timelineOpeningFade
+        objectName: "timelineOpeningFade"
+        target: timelineFadeCover
+        property: "opacity"
+        to: 0
+        duration: 1000
+    }
+
+    NumberAnimation {
+        id: timelineClosingFade
+        objectName: "timelineClosingFade"
+        target: timelineFadeCover
+        property: "opacity"
+        to: 1
+        duration: 1000
+        onFinished: {
+            if (timeline.motionMode === "closing")
+                timeline.motionMode = "idle"
+        }
     }
 }

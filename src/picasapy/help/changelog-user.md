@@ -4,6 +4,121 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-21
+
+**Keresés**
+
+- A kereső az album nevére, a felvétel dátumára (például `2019:03`) és
+  az EXIF szerző és szerzői jog mezőire is talál. Több szó esetén
+  mindegyikre keres, a mínuszjeles szó kizár, a `tag:` előtag csak a
+  címkék között keres. Lásd [Keresés és szűrés](features/kereses.md).
+- A javaslatlista szavakat is mutat, darabszámmal; a szóra kattintva a
+  keresés lefut. Mappa vagy album választásakor a keresés megmarad.
+- A mező háttere zöld, ha van találat, és piros, ha nincs. A rácson vagy
+  a mappalistán gépelve a betű a keresőmezőbe kerül.
+- Az első Esc a javaslatokat zárja, a második a keresést; kilépéskor
+  visszaáll a keresés előtti mappa és kijelölés.
+- A csillag, az arc, a földgömb és a film szűrő, valamint az
+  idő-csúszka a keresőszöveggel együtt szűr.
+- A rejtett képek nem számítanak bele a találatokba, ha nem látszanak.
+
+**Diavetítés és Időrend**
+
+- Új billentyűk: a Fel és a Le is léptet, az 1-9 a megjelenítési időt
+  állítja, a Pause és a Play szüneteltet és folytat. Az Enter, a Ctrl+R
+  és a Ctrl+Shift+R vetítés közben nem csinál semmit. Lásd
+  [Nézegetés](features/nezegetes.md).
+- A vezérlősáv gombjai az eredeti sorrendben állnak, az Időrend gomb
+  kikerült, az átmenet-választó mindig látszik, és a sáv kis ablakban is
+  elfér.
+- A képre kattintva szünetel vagy folytatódik a vetítés.
+- Ismétlés nélkül a vetítés a lista végén nyitva marad az utolsó képen;
+  itt egy csúszkával nagyíthatod a képet. Az utolsó képről előre lépve
+  az elsőre jutsz.
+- A vetítés a mappa videóit is lejátssza, a vágási pontok között.
+- Az Időrend áttűnéssel nyílik és zár, kép nélküli könyvtárnál nem
+  nyílik meg, és a csúszka pontjai az eredeti szerint állnak.
+
+**Importálás**
+
+- Az importálás a főablak paneljén nyílik meg, nagy előnézettel, és
+  bezárás előtt felajánlja a talált képek importját. Lásd
+  [Importálás](features/importalas.md).
+- Külön **Az összes importálása** és **Kijelöltek importálása** gomb van;
+  a bélyegképek többesével is kijelölhetők, és helyi menüjük is van.
+- Az ablak megjegyzi az almappa-módot, a törlési módot és az öt
+  legutóbbi célmappát. A törlő módok egyetlen kérdést tesznek fel, csak
+  DCIM mappás kártyánál választhatók, és sikertelen másolásnál semmit
+  nem törölnek.
+
+**Albumok, mappák, beillesztés**
+
+- A **Fájl ▸ Új album…** mindig üres, mai dátumos albumot készít,
+  kijelölés nélkül is, és az új album rögtön megnyílik. Lásd
+  [A könyvtár](features/konyvtar.md).
+- A **Törlés…** albumnézetben a megnyitott albumot törli (a képek
+  maradnak); az üres album a Delete billentyűvel kérdés nélkül törlődik.
+- Az üres albumlistára ejtett képek az **Album tulajdonságai** ablakot
+  nyitják meg.
+- Albumnézetben a Beillesztés az albumhoz adja a képeket. Más mappába
+  beillesztés előtt a program rákérdez, névütközéskor választhatsz, és
+  hiba esetén megáll. Lásd [Fájlműveletek](features/fajlmuveletek.md).
+- Almappa nélküli mappa sorára duplán kattintva a **Mappa tulajdonságai**
+  ablak nyílik. A mappaáthelyezés célválasztója a **Mappa tallózása**
+  ablak, és a hét ismert rendszermappa nem helyezhető át.
+- A bélyegkép-méret újraindítás után is megmarad, az Emberek-albumok
+  külön méretet jegyeznek meg.
+
+**Címkék**
+
+- Az üres gyorscímke-gomb a **Gyorscímkék konfigurálása** ablakot nyitja,
+  az automatikus kitöltés egyszeri művelet. Üres mezőben az Enter
+  súgóablakot mutat. Sok kijelölt képnél több címkét címkénként külön
+  hagyhatsz jóvá. Lásd
+  [Csillagok, feliratok, címkék](features/csillag-felirat-cimke.md).
+
+**Biztonsági mentés**
+
+- Első megnyitáskor magától létrejön a **Saját mentési készlet**, később
+  az utoljára használt készlet nyílik. Az új készlet űrlapja üres névvel
+  és CD/DVD típussal indul, a **Létrehozás** gomb üres vagy foglalt
+  névnél szürke. Lásd
+  [Képek biztonsági mentése](features/biztonsagi-mentes.md).
+- A mentés másolás előtt ellenőrzi a szabad helyet, újra elviszi a
+  felirat vagy csillag szerint módosult képeket, és egy sikertelen fájl
+  miatt nem áll le.
+
+**Beállítások**
+
+- A Beállítások ablak a legutóbb használt fülön nyílik. A **Gyorsítótárban
+  lévő fájlok törlése** az OK után azonnal üríti a memóriában tartott
+  bélyegképeket, a fájltípus-váltás pedig azonnal frissíti a
+  könyvtárat. Lásd [Beállítások](features/beallitasok.md).
+
+**Létrehozás és exportálás**
+
+- A kollázs a kijelölt képeket a vászonra, a mappa többi képét a Klipek
+  lapra teszi; kijelölés nélkül a teljes mappát veszi. Lásd
+  [Kollázs](features/kollazs.md).
+- Az Ajándék CD alapból a megnyitott mappa képeit viszi fel, a képtálca
+  helyett. Lásd [Ajándék CD](features/ajandek-cd.md).
+- A poszter elkészülte után az utolsó lap megnyílik a szerkesztőben.
+- A HTML-oldal exportálása futás közben megszakítható.
+- A Film almenü első tétele mostantól **Kijelölésből...**.
+
+**Egyéb**
+
+- A **Csoportos szerkesztés** kihagyja a videókat, és figyelmeztet rájuk;
+  a **Szöveg megjelenítése** és a **Szöveg elrejtése** mindig elérhető.
+  Lásd [Csoportos szerkesztés](features/csoportos-szerkesztes.md).
+- A dátummódosítás az XMP- és az IPTC-dátumot is átírja.
+- A nyomtatás előtti ellenőrzés minőség szerint csoportosítja a képeket.
+- A Helyek panel térképhibája már nem a Google Térképet említi.
+- Hálózati mappában (például NAS-on) a képek és a bélyegképek lassú
+  kapcsolaton is megnyílnak, és a program közben nem fagy le.
+- Telepítés utáni első indításkor százalékos folyamatjelző mutatja az
+  előkészítést.
+
 ## 2026-11-16
 
 **Törlés**

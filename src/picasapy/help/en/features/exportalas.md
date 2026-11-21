@@ -69,6 +69,10 @@ remembered until the next export. Choose **Export** to create the
 files; the window reports how many it wrote and where. Choose
 **Cancel** to close the window.
 
+You can stop the export while it runs: if you choose **Cancel** during
+the export, PicasaPy first asks whether you want to cancel the operation
+and stops only after you confirm. A cancelled export shows no result.
+
 ### The seven templates
 
 The list shows seven templates in the same order and with the same names
