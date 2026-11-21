@@ -130,14 +130,17 @@ class TestAFelulet:
         #: az induló fokozat is, különben a rács a felső szintről indulna
         assert "hostController.setThumbCellSize(hostWindow.thumbSize)" in _COMMANDS
 
-    def test_a_cache_kapcsolo_kilepeskor_uritesre_kotott(self):
+    def test_a_cache_kapcsolo_az_ok_utani_uritesre_kotott(self):
+        """#7332: az író az OK-ra a memóriatárat üríti és visszaállítja a
+        jelölőt; a korábbi kilépéskori ürítés (#5897) megszűnt."""
         kezd = _FUL.index('objectName: "optionsClearCacheFilesCheck"')
         blokk = _FUL[kezd : kezd + 1200]
         assert 'text: qsTr("Clear cache files")' in blokk
         assert "controller.disposePreviewsOnExit" in blokk
         assert 'root.setting("general.disposePreviewsOnExit",' in blokk
         assert 'root.stage("general.disposePreviewsOnExit", checked,' in blokk
-        assert "function(value) { controller.setDisposePreviewsOnExit(value) }" in blokk
+        assert "function(value) { controller.acceptClearCacheFiles(value) }" in blokk
+        assert "setDisposePreviewsOnExit" not in blokk
 
     def test_a_komment_sem_hazudik_a_hianyzo_funkciorol(self):
         """A fájl feje korábban a gyorsítótár-törlés HIÁNYÁT sorolta fel."""

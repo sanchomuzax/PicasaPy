@@ -349,8 +349,16 @@ class _LibraryActivityMixin:
             # tovább. A tényt a `LibraryWatcher` naplózza.
             if self._watcher.leallt():
                 self._watcher = None
-        if getattr(self, "disposePreviewsOnExit", False):
-            # A már elfogadott bélyegkép-munkák fejeződjenek be, mielőtt a
-            # közös takarító törli a lemezes és memóriabeli cache-t.
-            self._provider.wait_for_done(10_000)
-            self._provider.clear_cache()
+
+    @Slot(bool)
+    def acceptClearCacheFiles(self, enabled: bool) -> None:  # noqa: N802
+        """Az Opciók OK-ja a „Clear cache files" jelölőre (#7332).
+
+        Az eredeti OK után, ha a `disposepreviews` nem nulla, nullát ír vissza
+        a kulcsba, és a memóriabeli bélyegképtárakat azonnal újrainicializálja.
+        Itt is ez történik: bejelölve a MEMÓRIABELI tár ürül (a lemezes nem),
+        a jelölő mindkét esetben kikapcsoltra áll vissza. A kilépéskori
+        ürítést (#5897) ez váltja ki: kilépéskor semmi nem üríti a tárat."""
+        if enabled:
+            self._provider.clear_memory_cache()
+        self.setDisposePreviewsOnExit(False)
