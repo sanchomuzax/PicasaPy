@@ -110,7 +110,7 @@ Forrás: PhotoViewerGeometryActions.qml:367-378. Az első ágnál a menü a Gyak
 | A paraméteres Apply hozzáfűz, undo-t készít, és ment; Cancel a preview-t dobja el. | NINCS MEG: eredeti és mai, egyező mentett fájlt tartalmazó futásidejű pár. A mai kódút: edit_controller_effects_params_mixin.py:55-130. |
 | A Copy All Effects jelenlegi PicasaPy-forrása több képnél dialógust küld. | NINCS MEG: friss, mai UI-felvétel. A korábbi mérés megelőzi a jelenlegi kódút ellenőrzését; forrás: photo_ops_effect_clipboard_mixin.py:65-70, MainWindowDialogStack.qml:113-117. |
 | A PicasaPy menüjének nézőbeli ága a lapot választja, nem a konkrét vezérlőt. | bináris (0x00579330 és a 0x9d49/0x9d4a/0x9d4c/0x9d5e parancságak); PicasaPy forrásidézet: PhotoViewerGeometryActions.qml:367-377. |
-| A jelvény eredetileg alkalmazott állapot, a jelenlegi forrásban one-click típus. | bináris (0x005d7eca; 0x005d8111/0x005d8116); mérés (#2061 előtte/utána); PicasaPy forrás: editorpanel_logika.js:87-89 és PanelButton.qml:570. |
+| HELYESBÍTVE: a jelvény az eredetiben is a one-click típust jelzi (#1869), nincs eltérés. | bináris (0x005d7eca; 0x005d8111/0x005d8116); mérés (#2061 előtte/utána); PicasaPy forrás: editorpanel_logika.js:87-89 és PanelButton.qml:570. |
 | Ismételt azonos csempealkalmazás és Alaphelyzet utáni állapot. | NINCS MEG. |
 
 ### A két független út
@@ -153,7 +153,10 @@ Két fejlesztői teendő indokolt a kutatás alapján.
 - Könyvtárnézetben ugyanezek a menüpontok a kijelölés képeire futnak.
 - Egy és több kép kijelölésével, valamint egy nyitott nézővel a megfelelő csempe/vezérlő megjelenik; az aktív kép és a kijelölés megmarad.
 
-### D2: alkalmazott effektjelvény
+### D2: alkalmazott effektjelvény (HELYESBÍTVE: nem eltérés)
+
+**Helyesbítés (2026-11-21):** ez a szakasz téves. Az „állapotkód 1” a szűrő leírásának `+4` mezője, vagyis a `mode` attribútum egész értéke (`oneclick` = 1), ahogy a #1869 megfejtése levezeti (`docs/specs/filterdesc-registry.md`, a `mode` attribútum szakasza: `0x008ff847`, `0x005d7ec2`, `0x005d7eca`). Ez a szűrő fajtájától függő, állandó tulajdonság, nem az alkalmazott állapot. A #2061 a csempe előnézetéről szól, nem a jelvényről. A PicasaPy jelenlegi viselkedése egyezik az eredetivel; a #7354 ezért lezárult. Az alábbi eredeti szöveg csak a nyomon követhetőség miatt marad.
+
 
 **Eredeti:** a 0x005d7c20 csak akkor mutatja az fx%d_adorn elemet, ha az effekt állapotkódja 1 (0x005d7eca; megmutat/elrejt: 0x005d8111/0x005d8116).
 
