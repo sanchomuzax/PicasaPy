@@ -73,6 +73,7 @@ class _LibrarySyncDirtyMixin:
             return
 
         enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
+        self._dirty_filetype_scan_snapshot = enabled_filetypes
 
         ujjlenyomatok = self._dirty_ujjlenyomatok_tar()
 
@@ -196,6 +197,7 @@ class _LibrarySyncDirtyMixin:
                 # ragadna. A kapcsoló itt már biztonságos is: az
                 # `open_index` blokk lezárult, ez a szál nem ír többé.
                 self._dirty_running = False
+                self._dirty_filetype_scan_snapshot = None
                 try:
                     reported = getattr(self, "_reported_locked_sync_folders", set())
                     reported.difference_update(synced_folders)
@@ -254,6 +256,7 @@ class _LibrarySyncDirtyMixin:
             # senki nem hozná be: a rács a munkamenet végéig NÉMÁN sosem
             # frissülne magától. Egyetlen tranziens hiba örökre elrontaná.
             self._dirty_running = False
+            self._dirty_filetype_scan_snapshot = None
             raise
 
 
@@ -280,6 +283,7 @@ class _LibrarySyncDirtyMixin:
         a lemaradás némán elveszne az ötperces rescanig. Ezért dobás
         esetén visszatesszük őket — a következő `syncFinished` behozza."""
         if not self._pending_dirty:
+            self._flush_pending_filetype_rescan()
             return
         if getattr(self, "_locked_dirty_retry_pending", False):
             # A syncFinished a worker befejezésekor azonnal érkezik. A zárba
@@ -309,7 +313,9 @@ class _LibrarySyncDirtyMixin:
             self._on_folders_dirty(folders)
         except BaseException:
             self._pending_dirty.update(folders)
+            self._flush_pending_filetype_rescan()
             raise
+        self._flush_pending_filetype_rescan()
 
 
     @Slot()

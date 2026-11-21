@@ -140,6 +140,23 @@ Window {
     onVisibleChanged: if (!visible) saveLastTab()
 
     function acceptOptions() {
+        // #7338: fájltípus-változásnál az OK után azonnal szinkron indul.
+        var fileTypesChanged = false
+        var fileTypeGroups = [
+            "bmp", "gif", "png", "tga", "tiff", "webp", "psd",
+            "raw", "movies", "quicktime"
+        ]
+        if (typeof controller !== "undefined" && controller) {
+            for (var i = 0; i < fileTypeGroups.length; ++i) {
+                var group = fileTypeGroups[i]
+                var current = controller.fileTypeEnabled(group)
+                var accepted = optionsDraft.value("filetypes." + group, current)
+                if (accepted !== current) {
+                    fileTypesChanged = true
+                    break
+                }
+            }
+        }
         // #7332: az eredeti OK utáni ág a kulcs AKTUÁLIS értékét nézi, tehát a
         // jelölő érintetlen, régebben mentett bejelölését is lekezeli. A
         // piszkozatba lépett jelölőt a General fül írója intézi a commitban.
@@ -148,6 +165,8 @@ Window {
         saveAcceptedOptionSettings()
         if (!clearCacheTouched)
             applySavedClearCacheFiles()
+        if (fileTypesChanged && typeof controller.rescan === "function")
+            controller.rescan()
         optionsWindow.visible = false
     }
 
