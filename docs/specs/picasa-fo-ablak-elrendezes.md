@@ -979,6 +979,47 @@ A jegy `0x007fad0a`-ra tett „író ág” megnevezése pontatlan: az a
 | `Language:` (popup, Windows) | `language` (`0x00c9fdec`, a 2026-09-24-es szakasz szerint; 42 tétel a `0x006e5e10`-ben) | -1 (nincs beállítva, `0x00406103`) | `optionsLanguageCombo` | `general/language` | rendszer | ELTÉR (2 nyelv a 41 helyett, lásd „A nyelvválasztó” szakaszt) |
 | `Save imported pictures in:` (`Browse...`) | `importdest` (`0x00ca9b0c`), nincs a regisztrálóban | NYITVA | `optionsImportDestField`, `optionsImportDestBrowseButton` | `import/defaultdestination` | NYITVA | ELTÉR (felirat: `Import destination folder:`) |
 
+#### #7330: az `importdest` cél alkalmazása az OK útján (2026-11-20)
+
+`0x006e5820` az `importdest` (`0x00ca9b0c`) kulcs értékét adja vissza. A
+`0x005cf5b0` ezt a sztringet a lokális deltába másolja (`0x005cf9d0`, a
+`0x005c2100` segítségével), majd a delta második szavába `2`-t ír
+(`0x005cf9e1`). A hívó ezt a deltát a `0x004f6a20`-nak adja át
+`0x005cfa4c`-nél: a `__fastcall`-ként visszafejtett hívásban ECX az üres
+vektorra, EDX az egybejegyzéses deltára mutat; a híváshely stacken készíti
+elő a vektor- és tárolómutatókat (`0x005cfa35`-`0x005cfa4c`). A fogadó a
+vektorok második szavát `>> 1`-gyel darabszámmá alakítja
+(`0x004f6a9c`-`0x004f6ab8`), ezért a delta `2` értéke itt **egy** bejegyzést
+jelöl.
+
+A közös tároló mutatója a híváshelyen `[this+0x2bc]+0xf8`
+(`0x005cfa2f`-`0x005cfa47`). Ha a `0x004f6a20` nulla eredménnyel tér vissza,
+a hívó előbb a `0x004f5960`-at, majd a `0x004f5d90`-at hívja ugyanezen
+közös tárolóval (`0x005cfa53`-`0x005cfacf`). A sztring-xrefek ezeket rendre
+a `watchedfolders.txt` és a `frexcludefolders.txt` fájlhoz kötik. Ez az
+OK-út a közös tároló módosítását és az ezt követő két hívást igazolja; **nem**
+bizonyítja, hogy ezen az úton közvetlenül kiíródik a `scanlist.txt`. A
+célzottan diszasszemblált `0x005cf5b0` és `0x004f6a20` egyikében sincs
+közvetlen hívás a `scanlist.txt` kezelőjére, a `0x004f61c0`-ra. Ez a
+negatív eredmény csak a közvetlen hívásra vonatkozik, nem zárja ki a
+közvetett vagy későbbi kiírást.
+
+**PicasaPy:** az Opciók OK-ja lefuttatja a piszkozat íróit
+(`OptionsDialog.qml:60-68,112-115`); az importcél írója a
+`setDefaultDestination` (`OptionsTabGeneral.qml:430-435`), amely a
+létező mappa normalizált útvonalát a `QSettings` `import/defaultdestination`
+kulcsába menti (`import_source_controller_state.py:185-201`). Az
+importpárbeszéd ezt induló célként használja (`ImportSourceDialog.qml:220-224`).
+A bejárt útban közös mappatár-frissítő hívás nem szerepel.
+
+**Bizonyítottság:** a kulcs beolvasása → egybejegyzéses delta → közös
+`+0xf8` tároló út statikusan megerősített: a Ghidra-dekompiláció és a helyi
+utasításszintű visszaolvasás egyezik, továbbá a fogadó oldali `>> 1`
+ellenőrzi az egy bejegyzés értelmezést. A Colab M5 mérés, amely a futás
+közbeni hatást igazolná, ebből a helyi munkamenetből nem érhető el; a
+`scanlist.txt` tényleges kiírásának ideje és közvetett útja nyitott. Az
+`importdest` alapértéke továbbra is **NYITVA**.
+
 ### 3. E-Mail
 
 | eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |
