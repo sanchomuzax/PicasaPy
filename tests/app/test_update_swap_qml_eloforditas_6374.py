@@ -13,7 +13,7 @@ def _csere_futtatasa(monkeypatch, tmp_path: Path, *, elevated: bool, admin: bool
     stage_root.mkdir()
     monkeypatch.setattr(helper, "wait_for_process", lambda _pid: esemenyek.append("wait"))
     monkeypatch.setattr(helper, "_mkdtemp", lambda **_kw: str(stage_root))
-    monkeypatch.setattr(helper, "extract_update_archive", lambda _archive, stage: stage)
+    monkeypatch.setattr(helper, "extract_update_archive", lambda _archive, stage, **_: stage)
 
     def csere(_staged, _install, *, launch):
         esemenyek.append("ellenorzes")

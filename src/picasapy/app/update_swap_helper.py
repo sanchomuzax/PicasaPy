@@ -7,6 +7,7 @@ mappába történik; a telepített mappa csak teljes staging után cserélődik.
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 import errno
 import getpass
 import json
@@ -115,22 +116,35 @@ def _safe_member_path(root: Path, member: str) -> Path:
     return destination
 
 
-def extract_update_archive(archive: Path, stage: Path) -> Path:
-    """A zipet biztonságosan kicsomagolja, és a program gyökerét adja vissza."""
+def extract_update_archive(
+    archive: Path,
+    stage: Path,
+    haladas: Callable[[int, int], None] | None = None,
+) -> Path:
+    """A zipet biztonságosan kicsomagolja, és a program gyökerét adja vissza.
+
+    #7355: a `haladas(kesz, osszes)` minden tétel után kap jelzést, hogy a
+    frissítő ablak a kicsomagolás alatt is százalékot mutasson.
+    """
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True)
     try:
         with zipfile.ZipFile(archive) as source:
             members = source.infolist()
-            for member in members:
+            osszes = len(members)
+            if haladas is not None:
+                haladas(0, osszes)
+            for sorszam, member in enumerate(members, start=1):
                 destination = _safe_member_path(stage, member.filename)
                 if member.is_dir():
                     destination.mkdir(parents=True, exist_ok=True)
-                    continue
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                with source.open(member) as reader, destination.open("wb") as writer:
-                    shutil.copyfileobj(reader, writer)
+                else:
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    with source.open(member) as reader, destination.open("wb") as writer:
+                        shutil.copyfileobj(reader, writer)
+                if haladas is not None:
+                    haladas(sorszam, osszes)
     except Exception:
         shutil.rmtree(stage, ignore_errors=True)
         raise
@@ -507,7 +521,11 @@ def _telepites(
         started = time.monotonic()
         lepes("kicsomagolas")
         _log_update("Kicsomagolás elkezdődött")
-        staged = extract_update_archive(Path(archive), stage_root / "new")
+        staged = extract_update_archive(
+            Path(archive),
+            stage_root / "new",
+            haladas=getattr(ablak, "kicsomagolas_halad", None),
+        )
         _log_update(f"Kicsomagolás kész; idő: {time.monotonic() - started:.2f} s")
         started = time.monotonic()
         lepes("maradek_folyamatok")
