@@ -361,11 +361,18 @@ class TestARendezesAMaradtHelyenMukodik:
 
 
 class TestAHelyiMenuEgyszerusitettTetele:
-    """`FolderListContextMenu` — a tétel eddig `placeholder: true` volt."""
+    """`FolderListContextMenu` a ▾ gomb legördülőjeként
+    (`toolbarFolderListMenu`), a tétel eddig `placeholder: true` volt.
+
+    A hasáb üres részén nincs menü (#7349): a legördülő egyetlen belépése a
+    ▾ gomb, a próbák ezért a kötött példányt vizsgálják.
+    """
+
+    tetel = "toolbarFolderListMenuSimplifiedTree"
 
     def test_a_tetel_elo(self, qml_app):
         window, _controller, _engine = qml_app
-        item = _child(window, "folderListMenuSimplifiedTree")
+        item = _child(window, self.tetel)
         assert item.property("enabled") is True
 
     def test_kattintasra_valtozik_a_kirajzolt_fa(self, qml_app, qt_app):
@@ -377,14 +384,7 @@ class TestAHelyiMenuEgyszerusitettTetele:
         assert _child(window, "folderHierarchyList").property("visible") is True
         elotte = _rendered_tree_paths(window)
 
-        pane = _child(window, "folderPane")
-        QMetaObject.invokeMethod(
-            pane,
-            "openFolderListContextMenu",
-            Qt.ConnectionType.DirectConnection,
-        )
-        qt_app.processEvents()
-        _trigger(window, "folderListMenuSimplifiedTree")
+        _trigger(window, self.tetel)
         qt_app.processEvents()
 
         assert hier.simplified is True
@@ -394,7 +394,7 @@ class TestAHelyiMenuEgyszerusitettTetele:
 
     def test_a_pipaja_a_vezerlo_allapotat_mutatja(self, qml_app, qt_app):
         window, _controller, engine = qml_app
-        item = _child(window, "folderListMenuSimplifiedTree")
+        item = _child(window, self.tetel)
         assert item.property("checked") is False
 
         _hierarchy(engine).setSimplified(True)

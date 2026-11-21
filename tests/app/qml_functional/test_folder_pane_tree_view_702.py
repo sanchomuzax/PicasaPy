@@ -366,18 +366,17 @@ class TestAJobbklikkASorSajatMenujetAdja:
         # feltétel az, hogy megjelenjen VALAMELYIK menü. Hogy a HELYES
         # nyílt-e meg, azt az alatta lévő két állítás mondja meg.
         hier_menu = _child(pane, "hierFolderContextMenu")
-        lista_menu = _child(pane, "folderListContextMenu")
         assert _var(
-            qt_app,
-            lambda: hier_menu.property("visible")
-            or lista_menu.property("visible"),
-        ), "#2408: egyik menu sem nyilt ki idoben"
+            qt_app, lambda: hier_menu.property("visible")
+        ), "#2408: a fasor menuje nem nyilt ki idoben"
 
         assert hier_menu.property("visible") is True, (
             "a fasor jobbklikkje nem a HierFolder menüt adta (#732-osztály)"
         )
-        assert lista_menu.property("visible") is False, (
-            "a hasáb rendezés-menüje nyílt meg a sor saját menüje helyett"
+        # #7349: a hasábnak nincs saját, üres részre szóló rendezés-menüje,
+        # tehát a sor jobbklikkje mellett sem nyílhat ilyen
+        assert pane.findChild(QObject, "folderListContextMenu") is None, (
+            "a hasábban még van a ▾ gombon kívüli rendezés-menü"
         )
         assert hier_menu.property("folderPath") == "/mnt/photo/Kepek"
 

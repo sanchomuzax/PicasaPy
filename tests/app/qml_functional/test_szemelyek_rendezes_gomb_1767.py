@@ -29,6 +29,17 @@ _TETELEK = {
     "folderListMenuSortPeopleByCount": "count",
     "folderListMenuSortPeopleByTopList": "top",
 }
+#: A ▾ gomb példányának tételei (`objectNamePrefix` = `toolbarFolderListMenu`):
+#: a hasáb üres részén nincs menü (#7349), ez az élő fában az egyetlen példány.
+_ELO_TETELEK = {
+    "toolbarFolderListMenuSortPeopleByName": "name",
+    "toolbarFolderListMenuSortPeopleByCount": "count",
+    "toolbarFolderListMenuSortPeopleByTopList": "top",
+}
+_NEZET_MENU = (
+    Path(__file__).resolve().parents[3]
+    / "src/picasapy/app/qml/PicasaPy/PicasaViewMenu.qml"
+)
 _OBJECTNAME_HORGONYOK = {
     "folderListMenuSortPeopleByName": 'objectNamePrefix + "SortPeopleByName"',
     "folderListMenuSortPeopleByCount": 'objectNamePrefix + "SortPeopleByCount"',
@@ -49,8 +60,11 @@ class TestATetelekELOK:
             )
             assert "onTriggered:" in blokk, f"{nev}: nincs kezelője"
 
-    def test_a_jelzest_a_hasab_elkapja(self):
-        assert "onPeopleSortRequested" in folder_pane_source_text()
+    def test_a_jelzest_a_nezetbeallito_elkapja(self):
+        """A jelzést a ▾ gomb legördülőjének gazdája (`PicasaViewMenu.qml`)
+        kapja el és köti a vezérlőre; a hasáb már nem (#7349)."""
+        assert "onPeopleSortRequested" in _NEZET_MENU.read_text(encoding="utf-8")
+        assert "onPeopleSortRequested" not in folder_pane_source_text()
 
     def test_mindharom_VISSZAKOTI_a_pipat(self):
         """A rádió-csapda ellen — enélkül a menü újranyitásakor egyik
@@ -66,19 +80,19 @@ class TestATetelekELOK:
 class TestAzEloFaban:
     def test_a_harom_tetel_letezik(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
-        for nev in _TETELEK:
+        for nev in _ELO_TETELEK:
             assert window.findChild(QObject, nev) is not None, nev
 
     def test_egyszerre_pontosan_egy_pipa(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         eredeti = controller.peopleSort
         try:
-            for nev, mod in _TETELEK.items():
+            for nev, mod in _ELO_TETELEK.items():
                 controller.setPeopleSort(mod)
                 qt_app.processEvents()
                 pipak = [
                     n
-                    for n in _TETELEK
+                    for n in _ELO_TETELEK
                     if window.findChild(QObject, n).property("checked")
                 ]
                 assert pipak == [nev], (

@@ -462,43 +462,37 @@ class TestKonyvtarNezetAllandoPipaja:
         assert menu.property("opened") is False
 
 
-class TestBalHasabHelyiMenuje:
-    """`FolderListContextMenu` — a rendezés négy kizáró tétele (`paneSort`).
+class TestBalHasabNezetbeallitoMenuje:
+    """`FolderListContextMenu` a ▾ gomb legördülőjeként
+    (`toolbarFolderListMenu`): a rendezés négy kizáró tétele (`paneSort`).
 
-    Itt a menü újranyitása a HOST valódi útján történik
-    (`openFolderListContextMenu`), ami a `sortMode` pillanatfelvételt is
-    frissen átveszi a vezérlőből — épp az a lépés, ami a hibát elfedhetné.
+    A hasáb üres részén nincs menü (#7349), a legördülő egyetlen belépése a
+    ▾ gomb. A pipák a vezérlő `paneSort` állapotát kötik; a próba a menü
+    bezárása és ÚJRANYITÁSA után nézi őket, mert épp az a lépés, ami a hibát
+    elfedhetné.
     """
 
+    menu = "toolbarFolderListMenu"
     nevek = (
-        "folderListMenuSortByDate",
-        "folderListMenuSortByChanged",
-        "folderListMenuSortBySize",
-        "folderListMenuSortByName",
+        "toolbarFolderListMenuSortByDate",
+        "toolbarFolderListMenuSortByChanged",
+        "toolbarFolderListMenuSortBySize",
+        "toolbarFolderListMenuSortByName",
     )
-
-    @staticmethod
-    def _ujranyit(window, qt_app):
-        QMetaObject.invokeMethod(
-            _child(window, "folderPane"),
-            "openFolderListContextMenu",
-            Qt.ConnectionType.DirectConnection,
-        )
-        qt_app.processEvents()
 
     def test_a_mar_aktiv_tetelre_ujra_kattintva_marad_a_pipa(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
-        self._ujranyit(window, qt_app)
+        _ujranyit(window, self.menu, qt_app)
 
-        _trigger(window, "folderListMenuSortByName")
+        _trigger(window, "toolbarFolderListMenuSortByName")
         qt_app.processEvents()
-        self._ujranyit(window, qt_app)
-        _egyetlen_pipa(window, self.nevek, "folderListMenuSortByName")
+        _ujranyit(window, self.menu, qt_app)
+        _egyetlen_pipa(window, self.nevek, "toolbarFolderListMenuSortByName")
 
-        _trigger(window, "folderListMenuSortByName")  # MÁSODSZOR
+        _trigger(window, "toolbarFolderListMenuSortByName")  # MÁSODSZOR
         qt_app.processEvents()
-        self._ujranyit(window, qt_app)
-        _egyetlen_pipa(window, self.nevek, "folderListMenuSortByName")
+        _ujranyit(window, self.menu, qt_app)
+        _egyetlen_pipa(window, self.nevek, "toolbarFolderListMenuSortByName")
 
 
 class TestMappaHelyiMenuje:

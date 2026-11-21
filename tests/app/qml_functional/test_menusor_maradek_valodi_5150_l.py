@@ -244,11 +244,13 @@ class TestNezetMappanezet:
         (a test_nezet_menu_valodi_5150_b mintája)."""
         from picasapy.app import folder_hierarchy_controller as fhc
 
-        utak = {}
-        for kulcs, mappanev in (("mypics", "Kepek"), ("mydocs", "Iratok"), ("desktop", "Asztal")):
-            mappa = tmp_path / "rendszer" / mappanev
-            mappa.mkdir(parents=True, exist_ok=True)
-            utak[kulcs] = str(mappa)
+        # #7350: a Desktop és a My Pictures tétel csak akkor engedélyezett, ha a
+        # könyvtárban van mappa a gyökerük alatt, ezért a Képek és az Asztal
+        # gyökere a könyvtár maga (`tmp_path / "kepek"`, az app-építő hozza létre).
+        iratok = tmp_path / "rendszer" / "Iratok"
+        iratok.mkdir(parents=True, exist_ok=True)
+        konyvtar = str(tmp_path / "kepek")
+        utak = {"mypics": konyvtar, "mydocs": str(iratok), "desktop": konyvtar}
         monkeypatch.setattr(fhc, "_rendszermappa", lambda kulcs: utak.get(kulcs, ""))
 
     def test_a_gyokerek_a_shortcutsban_vannak_nem_felsoszinten(self, menu_app):
