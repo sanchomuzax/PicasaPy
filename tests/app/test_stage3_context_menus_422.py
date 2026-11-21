@@ -55,7 +55,7 @@ def _trigger(menu, name):
 
 
 class TestFolderListContextMenu:
-    """A bal panel saját menüje — rendezés, emberek, Shortcuts és nézetkapcsolók.
+    """A bal panel saját menüje - rendezés, emberek, Shortcuts és nézetkapcsolók.
 
     #757: a spec kétszer is „11 tétel"-t írt, a `Picasa3i18n.dll`
     string-táblájában viszont TIZENKÉT `AlbumList::` sor van — a

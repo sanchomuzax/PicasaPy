@@ -320,6 +320,28 @@ def _alak() -> dict[str, list[str]]:
     view_source = menu_component_source("PicasaViewMenu.qml")
     folder_view_source = menu_component_source("PicasaFolderViewMenu.qml")
 
+    # #7340: a toolbar saját lenyílója a `PicasaViewMenu` QML-objektumának
+    # property-jeként él, de nem része a menüsávi Nézet menü látható sorainak.
+    # A lenti leltár a QML-fa látható menüszerkezetét járja be, ezért ezt a
+    # property-objektumot ki kell hagynia, különben a belső menüsorokat View-
+    # tételekként számolná, és a View fejlécet is a nested blokkban keresné.
+    popup_start = view_source.find(
+        "    property var toolbarFolderOptionsMenu: FolderListContextMenu {"
+    )
+    if popup_start >= 0:
+        popup_open = view_source.index("{", popup_start)
+        popup_depth = 0
+        for popup_end in range(popup_open, len(view_source)):
+            if view_source[popup_end] == "{":
+                popup_depth += 1
+            elif view_source[popup_end] == "}":
+                popup_depth -= 1
+                if popup_depth == 0:
+                    break
+        else:
+            raise AssertionError("a toolbar saját popup-property-je nincs lezárva")
+        view_source = view_source[:popup_start] + view_source[popup_end + 1 :]
+
     def component_root(source: str) -> str:
         kezdet = source.index("PicasaMenu {")
         nyito = source.index("{", kezdet)

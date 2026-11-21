@@ -1,4 +1,4 @@
-"""#1407 / #7340 — a négy gyorsgyökér a Shortcuts almenüben és a hasáb fejléce.
+"""#1407 / #7340 - a négy gyorsgyökér a Shortcuts almenüben és a hasáb fejléce.
 
 A gyökér-váltás MECHANIZMUSÁT a `tests/app/test_hasab_gyokerek_1407.py`
 méri (a vezérlőn, mérésre cserélhető rendszermappa-feloldóval). Ez a lap a

@@ -18,7 +18,7 @@ PicasaMenu {
     readonly property bool simplifiedMode:
         (bar.folderViewCtl && bar.folderViewCtl.simplified !== undefined)
             ? bar.folderViewCtl.simplified : false
-    //: #1407: a választott gyökér tokenje — a Shortcuts négy tételének
+    //: #1407: a választott gyökér tokenje - a Shortcuts négy tételének
     //: pipája ezt olvassa. A `!== undefined` a próbák stub-vezérlőjére véd
     //: (#1572, `scripts/qml_undefined_or.py`).
     readonly property string viewRootToken:

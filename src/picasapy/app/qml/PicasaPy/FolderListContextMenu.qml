@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 
-// A bal panel SAJÁT jobbklikk-menüje — a Picasa `AlbumList` menüosztályának
+// A bal panel SAJÁT jobbklikk-menüje - a Picasa `AlbumList` menüosztályának
 // 14 rekordos nézet- és rendezésmenüje (#7340; #422, 3. lépcső).
 //
 // Forrás: `docs/specs/ui-audit-context-menus.md` A.2 szakasza. Ez a menü a
@@ -267,7 +267,7 @@ PicasaMenu {
         }
     }
     // #1454: a menüsáv `Nézet ▸ Mappanézet` harmadik tételének MÁSIK
-    // belépési pontja (`AlbumList::ID_VIEW_WATCHED`) — ugyanaz a kapcsoló,
+    // belépési pontja (`AlbumList::ID_VIEW_WATCHED`) - ugyanaz a kapcsoló,
     // ezért ugyanaz a vezérlő.
     MenuItem {
         objectName: menu.objectNamePrefix

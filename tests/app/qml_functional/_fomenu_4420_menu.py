@@ -251,6 +251,25 @@ def _menuk(menu_bar) -> list[QObject]:
 
 
 def _almenu(menu_bar, szulo, sor):
+    # Ha a sor tényleges almenü-sor, a Qt közvetlen hivatkozást ad rá.
+    # Egyidejűleg több „Shortcuts” menü is él (a menüsorban és az eszköztár
+    # saját legördülőjében), ezért a felirat szerinti keresés önmagában
+    # kétértelmű; a sorhoz kötött almenü a pontos tulajdonos.
+    if sor.metaObject().indexOfProperty("subMenu") >= 0:
+        kifejezes = QQmlExpression(
+            qmlContext(sor), sor, "subMenu ? subMenu.objectName : ''"
+        )
+        kapcsolt_nev, hiba = kifejezes.evaluate()
+        if hiba:
+            raise AssertionError(kifejezes.error())
+        if kapcsolt_nev:
+            nev = str(kapcsolt_nev)
+            kapcsolt_almenu = next(
+                (menu for menu in _menuk(menu_bar) if menu.objectName() == nev), None
+            )
+            if kapcsolt_almenu is not None:
+                return kapcsolt_almenu
+
     nev = sor.objectName()
     if nev:
         talalat = next(

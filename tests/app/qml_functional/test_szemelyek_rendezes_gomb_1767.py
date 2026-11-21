@@ -29,13 +29,21 @@ _TETELEK = {
     "folderListMenuSortPeopleByCount": "count",
     "folderListMenuSortPeopleByTopList": "top",
 }
+_OBJECTNAME_HORGONYOK = {
+    "folderListMenuSortPeopleByName": 'objectNamePrefix + "SortPeopleByName"',
+    "folderListMenuSortPeopleByCount": 'objectNamePrefix + "SortPeopleByCount"',
+    "folderListMenuSortPeopleByTopList": 'objectNamePrefix + "SortPeopleByTopList"',
+}
 
 
 class TestATetelekELOK:
     def test_egyik_sem_helyfoglalo(self):
         forras = _MENU.read_text(encoding="utf-8")
         for nev in _TETELEK:
-            blokk = blokk_horgonyra(forras, f'objectName: "{nev}"')
+            blokk = blokk_horgonyra(forras, _OBJECTNAME_HORGONYOK[nev])
+            assert f': "{nev}"' in blokk, (
+                f"{nev}: a jobbklikkes példány eredeti objektumneve nem maradt meg"
+            )
             assert "placeholder: true" not in blokk, (
                 f"{nev} még mindig néma helyfoglaló (#1767)"
             )
@@ -49,7 +57,7 @@ class TestATetelekELOK:
         tételen sem állna pipa."""
         forras = _MENU.read_text(encoding="utf-8")
         for nev in _TETELEK:
-            blokk = blokk_horgonyra(forras, f'objectName: "{nev}"')
+            blokk = blokk_horgonyra(forras, _OBJECTNAME_HORGONYOK[nev])
             assert "Qt.binding(" in blokk, (
                 f"{nev}: a `checked` nincs visszakötve a jelzés után"
             )
