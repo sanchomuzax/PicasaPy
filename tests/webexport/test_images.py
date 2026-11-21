@@ -1,6 +1,8 @@
 """Bélyegkép/nagyméretű kép generálás a webexporthoz (#351) — a meglévő
 `picasapy.export.exporter` infrastruktúrára építve."""
 
+import pytest
+
 from picasapy.index import PhotoRecord
 from picasapy.webexport.context import WebExportSettings
 from picasapy.webexport.images import prepare_photo_exports
@@ -33,6 +35,43 @@ def _record(folder, name, **overrides):
 
 
 class TestPreparePhotoExports:
+    def test_cancellation_stops_before_preparing_the_next_picture(self, tmp_path, monkeypatch):
+        from picasapy.webexport import images
+        from picasapy.webexport.context import PhotoExportData
+
+        library = tmp_path / "kepek"
+        library.mkdir()
+        records = (_record(library, "a.jpg"), _record(library, "b.jpg"))
+        prepared = []
+
+        def export_one(record, *_args, **_kwargs):
+            prepared.append(record.name)
+            return PhotoExportData(
+                name=record.name,
+                caption="",
+                original_width=80,
+                original_height=60,
+                size_bytes=record.size,
+                thumbnail_rel_path=f"thumbnail/{record.name}",
+                thumbnail_width=20,
+                thumbnail_height=15,
+                large_rel_path=f"image/{record.name}",
+                large_width=80,
+                large_height=60,
+            )
+
+        checks = iter((False, True))
+        monkeypatch.setattr(images, "_export_record", export_one)
+        with pytest.raises(InterruptedError, match="web export cancelled"):
+            prepare_photo_exports(
+                records,
+                tmp_path / "export",
+                WebExportSettings(),
+                is_cancelled=lambda: next(checks),
+            )
+
+        assert prepared == ["a.jpg"]
+
     def test_generates_thumbnail_and_image_copies(self, tmp_path):
         library = tmp_path / "kepek"
         library.mkdir()

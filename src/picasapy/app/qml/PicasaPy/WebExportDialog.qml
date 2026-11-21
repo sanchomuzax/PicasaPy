@@ -266,6 +266,9 @@ Window {
         if (typeof webExportController === "undefined" || !webExportController)
             return
         webExportWindow.lastError = ""
+        webExportWindow.lastOutputFolder = ""
+        webExportWindow.lastFtpAccount = ""
+        webExportWindow.lastPageCount = 0
         webExportWindow.exporting = true
         webExportWindow.progressDone = 0
         webExportWindow.progressTotal = 0
@@ -301,6 +304,14 @@ Window {
         return qsTr("Cancel")
     }
 
+    function askCancelExport() {
+        webExportCancelConfirm.ask(
+            "",
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:IBackgroundNotify::cancel
+            qsTr("Do you want to cancel this operation?"))
+    }
+
     function titleLabelText() {
         if (webExportWindow.ftpMode) return qsTr("Page title:")
         //: picasapy-origin: picasa
@@ -332,6 +343,36 @@ Window {
         function onWebExportFailed(message) {
             webExportWindow.exporting = false
             webExportWindow.lastError = message
+        }
+        function onWebExportCancelled() {
+            webExportWindow.exporting = false
+            webExportWindow.progressDone = 0
+            webExportWindow.progressTotal = 0
+            webExportWindow.lastOutputFolder = ""
+            webExportWindow.lastFtpAccount = ""
+            webExportWindow.lastPageCount = 0
+        }
+    }
+
+    ConfirmDialog {
+        id: webExportCancelConfirm
+        objectName: "webExportCancelDialog"
+        namePrefix: "webExportCancel"
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:IBackgroundNotify::canceltitle
+        title: qsTr("Want to Cancel?")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:IBackgroundNotify::cancelyesbutton
+        yesText: qsTr("Cancel Operation")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:IBackgroundNotify::cancelnobutton
+        noText: qsTr("Don't Cancel")
+        rememberVisible: false
+        cancelVisible: false
+        focusNoOnOpen: true
+        onConfirmed: {
+            if (typeof webExportController !== "undefined" && webExportController)
+                webExportController.cancelWebExport()
         }
     }
 
@@ -544,8 +585,15 @@ Window {
             PicasaButton {
                 objectName: "webExportCloseButton"
                 text: webExportWindow.closeButtonText()
-                enabled: !webExportWindow.exporting
-                onClicked: webExportWindow.visible = false
+                enabled: !webExportWindow.exporting || !webExportWindow.ftpMode
+                onClicked: {
+                    if (webExportWindow.exporting) {
+                        if (!webExportWindow.ftpMode)
+                            webExportWindow.askCancelExport()
+                    } else {
+                        webExportWindow.visible = false
+                    }
+                }
             }
         }
     }
