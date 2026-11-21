@@ -153,12 +153,12 @@ class TestAMappanezetAlmenuTartalma:
             assert hosszu in texts, f"hiányzik a Nézet-készletből: {hosszu}"
 
     def test_a_menusavban_csak_egy_helyen_marad_a_folderSort(self):
-        """A `Mappa ▸ Sort By` négy szempontja + a megfordítás — és semmi
-        más. Forrásszintű őr: a duplikálás pont így csúszott be."""
+        """A folderSort csak a védett saját tételhez tartozik."""
         # #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma.
         source = _MENU_QML.replace("&", "")
-        assert source.count("controller.setFolderSort(") == 4
-        assert source.count("controller.toggleFolderSortReverse()") == 1
+        assert source.count("controller.sortFolderBy(bar.currentFolder,") == 4
+        assert source.count("controller.setFolderSort(") == 1
+        assert source.count("controller.toggleFolderSortReverse()") == 0
 
 
 class TestEgyszeruEsFaKizaroPar:
@@ -329,25 +329,27 @@ class TestEgyszerusitettFanezetFuggetlenKapcsolo:
 
 
 class TestARendezesAMaradtHelyenMukodik:
-    """A `Mappa ▸ Sort By` regressziós őre — a jegy kifejezetten kiköti."""
+    """A Mappa-menü tartós `folderSort` használata a saját tételre marad."""
 
-    def test_a_mappa_rendezes_tovabbra_is_a_folderSortot_allitja(
+    def test_a_recent_changes_tovabbra_is_a_folderSortot_allitja(
         self, qml_app, qt_app
     ):
         window, controller, engine = qml_app
-        _trigger(window, "menuFolderSortBySize")
+        _trigger(window, "menuFolderSortByChanged")
         qt_app.processEvents()
 
-        assert controller.folderSort == "size"
+        assert controller.folderSort == "changed"
+        changed = _child(window, "menuFolderSortByChanged")
+        assert changed.property("sajat") is True
         # …és a nézetmódhoz nem nyúlt
         assert _hierarchy(engine).treeView is False
 
-    def test_a_megforditas_tovabbra_is_hat(self, qml_app, qt_app):
+    def test_a_reverse_tetel_nem_valtoztatja_a_tartos_rendezest(self, qml_app, qt_app):
         window, controller, _engine = qml_app
-        elotte = controller.folderSortReverse
+        elotte = (controller.folderSort, controller.folderSortReverse)
         _trigger(window, "menuFolderSortReverse")
         qt_app.processEvents()
-        assert controller.folderSortReverse is not elotte
+        assert (controller.folderSort, controller.folderSortReverse) == elotte
 
     def test_a_nezetmod_valtasa_nem_rendez_at(self, qml_app, qt_app):
         window, controller, _engine = qml_app

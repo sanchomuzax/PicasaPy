@@ -14,13 +14,11 @@ motorjuk régóta megvan — csak a mappa HELYI menüjéből lehetett elérni
 Mind a négy a **megnyitott** mappára hat — az eredetiben a „Mappa" menü
 ezt jelenti.
 
-⚠️ **Amit ez a jegy NEM csinál:** a `Rendezés` almenü készletének cseréjét.
-A jegy azt írta, hogy a menüsáv a „rossz" (ötös, hosszú feliratú)
-készletet használja a helyi menü négyes készlete helyett. A kód mérése ezt
-CÁFOLJA: a menüsáv `Rendezés`-e a MAPPÁKAT rendezi (`setFolderSort`,
-#1454), a helyi menü egyszer átrendezi a mappa KÉPEIT (`sortFolderBy`, #4890) — két
-külön funkció, nem ugyanaz kétszer. Az összevonásuk viselkedés-változás
-lenne, nem paritás-javítás.
+⚠️ **A #1595 a `Rendezés` almenü készletét nem cserélte le.** A #7341
+viszont a négy eredeti menütételt ugyanarra az egyszeri képrendezésre köti,
+amelyet a mappasor helyi menüje is használ (`sortFolderBy`). A védett
+„Recent &changes” saját tétel megmarad, és továbbra is a `folderSort`-ot
+állítja.
 """
 
 from __future__ import annotations
@@ -96,8 +94,7 @@ class TestAValodiUt:
 
 
 class TestARendezesValtozatlan:
-    """Regresszió: a menüsáv rendezés-készlete NEM változott — a jegy
-    javaslata a mérés szerint téves volt (ld. a modul docstringjét)."""
+    """A menüsáv rendezés-készlete nem változott; a négy eredeti tétel hatása igen."""
 
     def test_a_menusav_rendezese_otos_marad(self, qml_app):
         window, _controller, _engine = qml_app

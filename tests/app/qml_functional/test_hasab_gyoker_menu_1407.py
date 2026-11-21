@@ -1,10 +1,10 @@
-"""#1407 (5–6. pont) — a négy gyökér-tétel a menüben, és a hasáb fejléce.
+"""#1407 / #7340 - a négy gyorsgyökér a Shortcuts almenüben és a hasáb fejléce.
 
 A gyökér-váltás MECHANIZMUSÁT a `tests/app/test_hasab_gyokerek_1407.py`
 méri (a vezérlőn, mérésre cserélhető rendszermappa-feloldóval). Ez a lap a
 FELÜLET oldala:
 
-- ott van-e mind a négy tétel (spec 2.2), a mért sorrendben,
+- ott van-e mind a négy tétel a Shortcuts almenüben, a mért sorrendben,
 - a rádiógomb-pipa a választott gyökéren áll-e (`0x00574b70`),
 - a Mappák fejléce a mért feliratot mutatja-e (spec 4.2).
 
@@ -19,12 +19,12 @@ from __future__ import annotations
 from PySide6.QtCore import QMetaObject, QObject, Qt
 from support.varakozas import hibaturo_feltetel, var_feltetelre
 
-#: A négy tétel a spec 2.2 sorrendjében: Sajátgép · Képek · Dokumentumok · Asztal
+#: A 2.1/2.2 szerinti sorrend: Asztal · Dokumentumok · Képek · Sajátgép.
 GYOKER_TETELEK = [
-    ("menuViewRootMyComputer", "My &Computer"),
-    ("menuViewRootMyPictures", "My &Pictures"),
-    ("menuViewRootMyDocuments", "My Do&cuments"),
-    ("menuViewRootDesktop", "&Desktop"),
+    ("menuViewShortcutDesktop", "&Desktop"),
+    ("menuViewShortcutMyDocuments", "My Do&cuments"),
+    ("menuViewShortcutMyPictures", "My &Pictures"),
+    ("menuViewShortcutMyComputer", "My &Computer"),
 ]
 
 
@@ -42,7 +42,7 @@ def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
 
 
 class TestANegyTetelOttVan:
-    def test_mind_a_negy_megvan_a_mert_felirattal(self, qml_app):
+    def test_mind_a_negy_gyorsgyoker_megvan_a_mert_felirattal(self, qml_app):
         window, _controller, _e = qml_app
         for nev, felirat in GYOKER_TETELEK:
             tetel = window.findChild(QObject, nev)
@@ -73,12 +73,12 @@ class TestANegyTetelOttVan:
 class TestAPipaAValasztottGyokeren:
     def test_a_sajatgep_tetel_a_fara_valt_es_pipat_kap(self, qml_app, qt_app):
         window, _controller, _e = qml_app
-        sajatgep = window.findChild(QObject, "menuViewRootMyComputer")
+        sajatgep = window.findChild(QObject, "menuViewShortcutMyComputer")
         assert sajatgep.property("checked") is False, (
             "a lapos nézetben nem lehet a Sajátgépen a pipa"
         )
 
-        _trigger(window, "menuViewRootMyComputer")
+        _trigger(window, "menuViewShortcutMyComputer")
 
         assert _var(qt_app, lambda: sajatgep.property("checked") is True), (
             "a Sajátgép-tételen nem jelent meg a pipa"
@@ -90,8 +90,8 @@ class TestAPipaAValasztottGyokeren:
         """MÉRT buktató (#1454): a pipa-visszakötés hiányában a Sajátgép
         pipája ottmaradna, pedig már a lapos nézetben vagyunk."""
         window, _controller, _e = qml_app
-        sajatgep = window.findChild(QObject, "menuViewRootMyComputer")
-        _trigger(window, "menuViewRootMyComputer")
+        sajatgep = window.findChild(QObject, "menuViewShortcutMyComputer")
+        _trigger(window, "menuViewShortcutMyComputer")
         assert _var(qt_app, lambda: sajatgep.property("checked") is True)
 
         _trigger(window, "menuViewFlatFolderView")

@@ -345,25 +345,37 @@ class TestIndexkepFelirat(_KizaroCsoportProba):
     cel = "menuViewThumbCaptionTags"
 
 
-class TestMappaRendezes(_KizaroCsoportProba):
-    """Mappa ▸ Rendezés — négy kizáró tétel (`folderSort`).
-
-    A „Fordított sorrend" SZÁNDÉKOSAN nincs a névsorban: az önálló
-    kapcsoló (`folderSortReverse`), minden kattintásra változik az állapot.
-
-    ŐSZINTE CÍMKE: a `setFolderSort` → `_refresh_view()` szintén feltétel
-    nélkül jelez, ezért — ld. `TestIndexkepFelirat` — ez a két teszt a
-    javítás visszavételekor is zöld marad. Regressziós őr.
-    """
+class TestMappaRendezes:
+    """#7341: az eredeti négy tétel egyszeri művelet, pipa nélkül."""
 
     nevek = (
         "menuFolderSortByDate",
-        "menuFolderSortByChanged",
         "menuFolderSortBySize",
         "menuFolderSortByName",
+        "menuFolderSortReverse",
     )
     menu = "menuFolderSortBy"
-    cel = "menuFolderSortBySize"
+
+    @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
+    def test_a_negy_eredeti_tetel_nem_pipalhato_es_ujranyitva_is_pipa_nelkul_marad(
+        self, qml_app, qt_app, magassag_elteres
+    ):
+        window, _controller, _engine = qml_app
+        window.resize(window.width(), window.height() + magassag_elteres)
+        _ujranyit(window, self.menu, qt_app)
+        for nev in self.nevek:
+            tetel = _child(window, nev)
+            assert tetel.property("checkable") is False
+            assert tetel.property("checked") is False
+
+        _trigger(window, "menuFolderSortBySize")
+        qt_app.processEvents()
+        _ujranyit(window, self.menu, qt_app)
+        assert _pipak(window, self.nevek) == {nev: False for nev in self.nevek}
+
+        changed = _child(window, "menuFolderSortByChanged")
+        assert changed.property("checkable") is True
+        assert changed.property("sajat") is True
 
 
 class TestNyelvvalasztas(_KizaroCsoportProba):
@@ -460,9 +472,9 @@ class TestBalHasabHelyiMenuje:
 
     nevek = (
         "folderListMenuSortByDate",
-        "folderListMenuSortByName",
-        "folderListMenuSortBySize",
         "folderListMenuSortByChanged",
+        "folderListMenuSortBySize",
+        "folderListMenuSortByName",
     )
 
     @staticmethod

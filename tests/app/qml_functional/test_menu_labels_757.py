@@ -135,6 +135,15 @@ FELIRATOK: dict[str, dict[str, tuple[str, str]]] = {
         # viszont 12 `AlbumList::` sor van — ez a tizenkettedik
         "folderListMenuShortcuts": ("&Shortcuts", "AlbumList::Shortcuts"),
         "folderListMenuDesktop": ("&Desktop", "AlbumList::ID_VIEW_DESKTOP"),
+        "folderListMenuMyDocuments": (
+            "My Do&cuments", "AlbumListWin::ID_VIEW_MYDOCS"
+        ),
+        "folderListMenuMyPictures": (
+            "My &Pictures", "AlbumListWin::ID_VIEW_MYPICTURES"
+        ),
+        "folderListMenuMyComputer": (
+            "My &Computer", "AlbumListWin::ID_VIEW_ALL"
+        ),
     },
     "CollectionContextMenu": {
         "collectionMenuRename": (

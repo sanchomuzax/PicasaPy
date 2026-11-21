@@ -84,6 +84,13 @@ screenCaptureController.isListening BELSŐ - az alkalmazásfolyamat figyelőszá
 screenCaptureController.setEnabled BELSŐ - a beállítás Python-API-ja a figyelő indításához/leállításához; a felületi beállításvezérlő nincs a #5639 hatókörében
 screenCaptureController.shutdown BELSŐ - az application.py hívja az alkalmazás leállításakor
 
+# -- #7341: a menü egyszeri képrendezésre vált, a Python API megmarad -----
+# A négy Mappa-rendezés most `sortFolderBy`-t hív, így a tartós fordítási
+# állapot többé nem része ennek a felületnek. A tageket a #242 brief szerint
+# megtartjuk a nyilvános Python API részeként.
+controller.folderSortReverse FELVÁLTVA - #7341: a menü egyszeri `sortFolderBy` műveletre váltott; a Python API megmarad.
+controller.toggleFolderSortReverse FELVÁLTVA - #7341: a menü egyszeri `sortFolderBy` műveletre váltott; a Python API megmarad.
+
 # -- MÉRVE: még el nem döntött esetek (a #1476 zárójelentése sorolja fel) --
 # Ezekre a bevezetéskor NEM volt jegy. Külön-külön kell eldönteni: felület
 # kell hozzá, vagy törölni kell a tagot. Amíg nincs döntés, itt állnak —

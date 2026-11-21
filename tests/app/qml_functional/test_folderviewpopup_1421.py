@@ -11,14 +11,9 @@ scope-kulcsos függvényét** hívja (`0x00575130`), a menü tételei pedig a
 `Nézet ▸ Mappanézet` almenü tételei (spec 4/b, a menüépítő
 `0x00559150` rekordtömbjéből feloldva).
 
-⇒ A ▾ gomb **nem önálló beállítás-panel**, hanem ugyanaz a lenyíló menü.
-
-## Ezért NEM készül új menü
-
-A gomb a menüsor **meglévő** almenüjét nyitja meg
-(`PicasaMenuBar.openFolderViewMenu`). Két menüdefiníció esetén a tételek
-pipái szétcsúszhatnának a két belépési pont között — ez a #1454 mért
-buktatójának (a `checked` imperatív átbillenése) a testvére lenne.
+⇒ A #7340 óta a ▾ gomb az eredeti külön legördülőt nyitja meg; a
+menüsávi Mappanézet-almenü ettől külön marad. A legördülő a közös
+`FolderListContextMenu` komponenst használja.
 
 ## Mért méret
 
@@ -71,34 +66,31 @@ class TestAGomb:
 
 
 class TestAMenutNyitja:
-    def test_a_kattintas_MEGNYITJA_a_Mappanezet_almenut(self, qml_app, qt_app) -> None:
+    def test_a_kattintas_MEGNYITJA_a_sajat_legordulot(self, qml_app, qt_app) -> None:
         window, _controller, _engine = qml_app
-        menu = _child(window, "menuViewFolderView")
+        menu = _child(window, "toolbarFolderListMenu")
         assert menu.property("visible") is False, "a menü alaphelyzetben zárt"
 
         gomb = _child(window, "toolbarFolderViewPopupButton")
-        menusor = window.property("menuBar")
-        assert menusor is not None, "nincs menüsor"
-        menusor.openFolderViewMenu(gomb)
-        qt_app.processEvents()
+        from tests.app.qml_functional._felsomenupontok_helpers_4329 import _kattints
+
+        _kattints(qt_app, gomb)
 
         assert menu.property("visible") is True, (
-            "#1421: a ▾ gomb nem nyitotta meg a Mappanézet-almenüt"
+            "#7340: a ▾ gomb nem nyitotta meg a saját legördülőjét"
         )
         menu.close()
         qt_app.processEvents()
 
-    def test_NINCS_masodik_menudefinicio(self) -> None:
-        """Egy definíció, két belépési pont: az eszköztár nem épít saját
-        Mappanézet-menüt (különben a pipák szétcsúszhatnának)."""
+    def test_a_toolbar_a_kozos_context_menu_komponenst_hasznalja(self) -> None:
+        """A toolbar saját példánya komponensből épül, nem kézzel másolt tételekből."""
         qml = (
             Path(__file__).resolve().parents[3]
-            / "src/picasapy/app/qml/PicasaPy/MainToolbar.qml"
+            / "src/picasapy/app/qml/PicasaPy/PicasaViewMenu.qml"
         ).read_text(encoding="utf-8")
-        assert "menuViewFlatFolderView" not in qml, (
-            "az eszköztár saját Mappanézet-tételeket definiál — a #1454 "
-            "pipa-buktatójának testvére"
+        assert "property var toolbarFolderOptionsMenu: FolderListContextMenu {" in qml, (
+            "a toolbar nem a FolderListContextMenu komponenst használja"
         )
-        assert "folderViewMenuRequested" in qml, (
-            "a gomb nem jelzésen át nyit menüt"
+        assert "toolbarFolderOptionsMenu.popup(anchorItem, 0, anchorItem.height)" in qml, (
+            "a ▾ nem a saját menüjét nyitja meg"
         )

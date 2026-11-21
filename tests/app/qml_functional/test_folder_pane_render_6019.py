@@ -12,6 +12,7 @@ import pytest
 from PySide6.QtCore import QObject, QPointF
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickItem
+from PySide6.QtTest import QSignalSpy
 
 from picasapy.index import open_index, sync_tree
 from tests.support.jpeg_factory import make_jpeg
@@ -40,6 +41,51 @@ def _hibakori_kepmentes(kep: QImage, allapot: str, ablakmagassag_delta: int) -> 
     kimenet.mkdir(parents=True, exist_ok=True)
     assert kep.save(
         str(kimenet / f"{allapot}-{ablakmagassag_delta:+d}.png"), "PNG"
+    )
+
+
+def _gyorsnezet_leszarmazottai(gyoker: QQuickItem):
+    bejarando = [gyoker]
+    while bejarando:
+        elem = bejarando.pop()
+        yield elem
+        bejarando.extend(elem.childItems())
+
+
+def _kijelolt_mappasor_latszik(pane, utvonal: str) -> bool:
+    lista = pane.findChild(QObject, "folderListView")
+    gorgeto = pane.findChild(QObject, "folderPaneFlickable")
+    if not isinstance(lista, QQuickItem) or not isinstance(gorgeto, QQuickItem):
+        return False
+    if lista.property("moving") or gorgeto.property("moving"):
+        return False
+
+    tartalom = lista.property("contentItem")
+    if not isinstance(tartalom, QQuickItem):
+        return False
+    for sor in _gyorsnezet_leszarmazottai(tartalom):
+        if sor.property("path") != utvonal:
+            continue
+        if (
+            not sor.property("isSelectedFolder")
+            or not sor.isVisible()
+            or sor.height() <= 0
+        ):
+            return False
+        pozicio = sor.mapToItem(gorgeto, QPointF(0, 0))
+        return (
+            pozicio.y() >= -0.5
+            and pozicio.y() + sor.height() <= gorgeto.height() + 0.5
+        )
+    return False
+
+
+def _var_ujrarajzolt_kepkockara(ablak, qt_app) -> None:
+    """A már kész UI-állapotot legalább egy új Quick-képkockán kirajzoltatja."""
+    kepkockak = QSignalSpy(ablak.frameSwapped)
+    ablak.update()
+    assert var_feltetelre(qt_app, lambda: kepkockak.count() > 0, 5.0), (
+        "a felület nem rajzolt új képkockát az állapot elkészülte után"
     )
 
 
@@ -191,6 +237,12 @@ def _folder_pane_render_megmarad(ablakmagassag_delta, qml_app, qt_app, tmp_path)
         hibaturo_feltetel(lambda: pane.property("selectedPath") == selected),
         5.0,
     )
+    assert var_feltetelre(
+        qt_app,
+        hibaturo_feltetel(lambda: _kijelolt_mappasor_latszik(pane, selected)),
+        5.0,
+    ), "a kijelölt mappasor még nem látszik nyugalmi görgetési állapotban"
+    _var_ujrarajzolt_kepkockara(ablak, qt_app)
     pillanatkep("kijelolt-sorral")
 
     pane.openFolderContextMenu(selected)
@@ -198,9 +250,12 @@ def _folder_pane_render_megmarad(ablakmagassag_delta, qml_app, qt_app, tmp_path)
     assert menu is not None
     assert var_feltetelre(
         qt_app,
-        hibaturo_feltetel(lambda: menu.property("opened")),
+        hibaturo_feltetel(
+            lambda: menu.property("opened") and menu.property("visible")
+        ),
         5.0,
     )
+    _var_ujrarajzolt_kepkockara(ablak, qt_app)
     pillanatkep("helyi-menuvel")
     assert not hibak, "\n".join(hibak)
 

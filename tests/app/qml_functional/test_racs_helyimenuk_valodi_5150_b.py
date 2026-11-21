@@ -99,6 +99,11 @@ class TestMappalistaMenu:
         controller.setPeopleSort(elozo)
         assert varj(qt_app, lambda: controller.peopleSort == elozo)
 
+        if ertek == "top":
+            fa = gyerek(window, "folderPane").property("hierarchyController")
+            fa.setTreeView(True)
+            assert varj(qt_app, lambda: fa.property("treeView") is True)
+
         jobbklikk_mappalistan(window, qt_app)
         kattints(window, qt_app, gyerek(window, nev))
 

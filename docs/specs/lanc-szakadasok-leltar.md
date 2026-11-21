@@ -100,12 +100,14 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 34.**
+**Felületről el nem ért vezérlő-tag: 36.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
 | `controller` | `setDarkTheme` | Slot | `app/appearance_controller.py` | FELVÁLTVA — a menü a toggleDarkTheme-et hívja (PicasaMenuBar.qml) |
 | `controller` | `setCollageTitle` | Slot | `app/collage_save.py` | BELSŐ — a kollázs-vezérlő állítja (collage_controller.py:437, collage_save.py:918) |
+| `controller` | `folderSortReverse` | Property | `app/controller_folder_view_mixin.py` | FELVÁLTVA - #7341: a menü egyszeri `sortFolderBy` műveletre váltott; a Python API megmarad. |
+| `controller` | `toggleFolderSortReverse` | Slot | `app/controller_folder_view_mixin.py` | FELVÁLTVA - #7341: a menü egyszeri `sortFolderBy` műveletre váltott; a Python API megmarad. |
 | `controller` | `restoreSession` | Slot | `app/controller_navigation_mixin.py` | BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor |
 | `controller` | `folderDateText` | Property | `app/controller_state_mixin.py` | BELSŐ — #1487 (döntés): a fejléc dátumsorát a FEED modellje adja (`LightboxFeed.qml:578` → `modelData.dateText`), tehát a property-nek nincs felületi fogyasztója. Marad, mert a KÖZÖS `formatting.photo_dates`-en át számol az állapotsorral (#2304): a `test_controller.py::test_folder_date_text_matches_header` épp azt őrzi, hogy a két felirat ne mondhasson mást ugyanarról a mappáról. |
 | `controller` | `folderDescription` | Property | `app/controller_state_mixin.py` | FELVÁLTVA — a felület a mappánkénti folderDescriptionOf(path) alakot hívja |

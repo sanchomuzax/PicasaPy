@@ -28,6 +28,8 @@ class AppControllerPhotoListMixin:
         generation = self._initial_feed_generation
         folder_sort = self.folderSort
         folder_sort_reverse = self.folderSortReverse
+        pane_sort = self.paneSort
+        pane_sort_reverse = self.paneSortReverse
         initial_feed_signals = InitialFeedSignals(self)
         initial_feed_signals.ready.connect(
             self._on_initial_feed_ready, Qt.ConnectionType.QueuedConnection
@@ -42,6 +44,8 @@ class AppControllerPhotoListMixin:
                         conn,
                         folder_sort=folder_sort,
                         folder_sort_reverse=folder_sort_reverse,
+                        pane_sort=pane_sort,
+                        pane_sort_reverse=pane_sort_reverse,
                     )
                 after = self._index_stamp()
             except Exception as error:  # noqa: BLE001 — a syncFinished még frissíthet
@@ -88,21 +92,31 @@ class AppControllerPhotoListMixin:
         *,
         folder_sort: str | None = None,
         folder_sort_reverse: bool | None = None,
+        pane_sort: str | None = None,
+        pane_sort_reverse: bool | None = None,
     ) -> tuple:
-        """A teljes könyvtár a Mappa ▸ Rendezés szerint (#64, #321).
+        """A rács mappablokkjai a bal hasáb rendezését követik (#7341).
 
-        A sorrendet KÜLÖN kérdezzük le, nem a bal hasáb modelljéből vesszük:
-        a fa a saját rögzített sorrendjében áll, a rács a beállítást követi.
+        A `folderSort` csak a védett „Recent &changes” tétel aktív
+        (`changed`) módját tartja meg; a korábban mentett többi érték helyett
+        a `paneSort` rendezi a rács mappa-blokkjait is. Az induló háttérfeed
+        minden beállítást a főszálon olvas ki, a többi hívás az aktuális
+        értékeket használja.
         """
-        if folder_sort is None and folder_sort_reverse is None:
-            # A megszokott, főszálas hívások a beállításból olvasnak.
-            sorted_folders = folder_order(conn, self.folderSort, self.folderSortReverse)
-        else:
-            if folder_sort is None:
-                folder_sort = self.folderSort
-            if folder_sort_reverse is None:
-                folder_sort_reverse = self.folderSortReverse
-            sorted_folders = folder_order(conn, folder_sort, folder_sort_reverse)
+        if folder_sort is None:
+            folder_sort = self.folderSort
+        if folder_sort_reverse is None:
+            folder_sort_reverse = self.folderSortReverse
+        if pane_sort is None:
+            pane_sort = self.paneSort
+        if pane_sort_reverse is None:
+            pane_sort_reverse = self.paneSortReverse
+        sort_mode, reverse = (
+            (folder_sort, folder_sort_reverse)
+            if folder_sort == "changed"
+            else (pane_sort, pane_sort_reverse)
+        )
+        sorted_folders = folder_order(conn, sort_mode, reverse)
         order = {path: i for i, path in enumerate(sorted_folders)}
         from . import controller as controller_module
 

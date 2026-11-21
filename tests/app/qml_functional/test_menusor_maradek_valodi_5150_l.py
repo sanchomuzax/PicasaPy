@@ -14,8 +14,11 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QObject, Qt
 
+from picasapy.ini import load_document
+from picasapy.ini.priority import olvasd_a_prioritasokat
+from picasapy.scanner import PICASA_INI_NAME
 from tests.app.qml_functional._menusor_maradek_5150_helpers import (
     billentyu,
     elokeszit,
@@ -248,36 +251,31 @@ class TestNezetMappanezet:
             utak[kulcs] = str(mappa)
         monkeypatch.setattr(fhc, "_rendszermappa", lambda kulcs: utak.get(kulcs, ""))
 
-    @pytest.mark.parametrize(
-        ("nev", "token"),
-        [
-            ("menuViewRootMyComputer", "all"),
-            ("menuViewRootMyPictures", "mypics"),
-            ("menuViewRootMyDocuments", "mydocs"),
-            ("menuViewRootDesktop", "desktop"),
-        ],
-    )
-    def test_a_gyoker_valodi_kattintassal_atallitja_a_gyokeret(self, menu_app, qt_app, nev, token):
-        window, controller, _engine = menu_app
-        elokeszit(window, qt_app, controller)
-        allapot = window.property("menuBar").property("folderViewCtl")
-        elozo = "all" if token != "all" else "desktop"
-        allapot.setViewRoot(elozo)
-        assert varj(qt_app, lambda: allapot.property("viewRoot") == elozo)
-
-        tetel_kattintasa(window, qt_app, "&View", nev, almenu_utvonal=("menuViewFolderView",))
-
-        assert varj(qt_app, lambda: allapot.property("viewRoot") == token), (
-            f"a {nev} kattintás nem állította a fanézet gyökerét: {token}"
-        )
+    def test_a_gyokerek_a_shortcutsban_vannak_nem_felsoszinten(self, menu_app):
+        """#7340: a négy gyorsgyökér csak a Shortcuts almenü része."""
+        window, _controller, _engine = menu_app
+        for nev in (
+            "menuViewRootMyComputer",
+            "menuViewRootMyPictures",
+            "menuViewRootMyDocuments",
+            "menuViewRootDesktop",
+        ):
+            assert window.findChild(QObject, nev) is None, f"felső szintű gyökér maradt: {nev}"
+        for nev in (
+            "menuViewShortcutDesktop",
+            "menuViewShortcutMyDocuments",
+            "menuViewShortcutMyPictures",
+            "menuViewShortcutMyComputer",
+        ):
+            assert window.findChild(QObject, nev) is not None, f"hiányzó Shortcuts tétel: {nev}"
 
     @pytest.mark.parametrize(
         ("nev", "token"),
         [
-            ("menuViewShortcutMyComputer", "all"),
-            ("menuViewShortcutMyPictures", "mypics"),
-            ("menuViewShortcutMyDocuments", "mydocs"),
             ("menuViewShortcutDesktop", "desktop"),
+            ("menuViewShortcutMyDocuments", "mydocs"),
+            ("menuViewShortcutMyPictures", "mypics"),
+            ("menuViewShortcutMyComputer", "all"),
         ],
     )
     def test_a_gyorsgyoker_valodi_kattintassal_atallitja_a_gyokeret(
@@ -335,19 +333,32 @@ class TestMappaRendezes:
             ("menuFolderSortByName", "name"),
         ],
     )
+    @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
     def test_a_mappa_rendezese_valodi_kattintassal_allitja_a_rendezest(
-        self, menu_app, qt_app, nev, ertek
+        self, menu_app, qt_app, nev, ertek, magassag_elteres
     ):
         window, controller, _engine = menu_app
+        window.resize(window.width(), window.height() + magassag_elteres)
         elokeszit(window, qt_app, controller)
         elozo = "name" if ertek != "name" else "date"
         controller.setFolderSort(elozo)
         assert varj(qt_app, lambda: controller.folderSort == elozo)
+        folder_sort_reverse = controller.folderSortReverse
+        mappa = Path(str(controller.photos.photos[0].folder_path))
+        kepek = {photo.name for photo in controller.photos.photos}
 
         tetel_kattintasa(
             window, qt_app, "F&older", nev, almenu_utvonal=("menuFolderSortBy",)
         )
 
-        assert varj(qt_app, lambda: controller.folderSort == ertek), (
-            f"a {nev} kattintás nem állította a mappa-rendezést: {ertek}"
+        prioritasok = olvasd_a_prioritasokat(
+            load_document(mappa / PICASA_INI_NAME)
         )
+        sorrend = [
+            nev for nev, _hely in sorted(prioritasok.items(), key=lambda item: item[1])
+        ]
+        assert set(sorrend) == kepek, f"a {nev} nem írta ki a képek sorrendjét"
+        assert controller.folderSort == elozo, "a menüpont tartós mappa-beállítást írt"
+        assert controller.folderSortReverse is folder_sort_reverse
+        if ertek == "name":
+            assert sorrend == sorted(kepek), "a Name menüpont nem név szerint rendezett"

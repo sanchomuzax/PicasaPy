@@ -18,8 +18,8 @@ PicasaMenu {
     readonly property bool simplifiedMode:
         (bar.folderViewCtl && bar.folderViewCtl.simplified !== undefined)
             ? bar.folderViewCtl.simplified : false
-    //: #1407: a választott gyökér tokenje — a négy gyökér-tétel pipája
-    //: ezt olvassa. A `!== undefined` a próbák stub-vezérlőjére véd
+    //: #1407: a választott gyökér tokenje - a Shortcuts négy tételének
+    //: pipája ezt olvassa. A `!== undefined` a próbák stub-vezérlőjére véd
     //: (#1572, `scripts/qml_undefined_or.py`).
     readonly property string viewRootToken:
         (bar.folderViewCtl && bar.folderViewCtl.viewRoot !== undefined)
@@ -71,82 +71,6 @@ PicasaMenu {
             if (bar.folderViewCtl) bar.folderViewCtl.setTreeView(true)
             checked = Qt.binding(function () {
                 return folderViewMenu.treeMode
-            })
-        }
-    }
-    MenuSeparator {}
-    // #1407: a NÉGY gyökér-tétel. Az eredetiben ezek a mappa-hasáb
-    // HELYI menüjében vannak (`thumbui/folderviewpopup`,
-    // `0x00733480`, spec 2.2) — nálunk a `folderviewpopup` gomb
-    // UGYANEZT a menüt nyitja, ezért egy helyen élnek.
-    //
-    // ⚠️ A spec 4.5/b helyesbítése szerint csak a Sajátgép valódi
-    // gyökér: a másik három ELŐBB a teljes fára vált, és csak utána
-    // ugrik a mappára (`push "all"` mindhárom ágban). Rádiógomb-pipát
-    // mégis mind a négy kap, mert a natív `[+0x2e0]`/`[+0x2f0]`
-    // rekesz a rendszermappa-tokent tárolja.
-    //
-    // A pipa-visszakötés ugyanaz a MÉRT buktató, mint a fenti két
-    // rádiótételnél (#1454): a valódi kattintás imperatívan
-    // átbillenti a `checked`-et, MIELŐTT a `triggered` eldördülne.
-    //: ⚠️ A négy tétel SZÁNDÉKOSAN ki van írva, nem `Repeater`: a
-    //: `Menu` a `Repeater` delegáltjait nem veszi fel a tételei közé
-    //: (ugyanaz a buktató, amit az `EditorTextPanel` igazítás-gombjai
-    //: is kimondanak). Elsőre `Repeater`-rel írtam meg, és a próba
-    //: mind a négy tételt „nem található"-nak látta.
-    MenuItem {
-        objectName: "menuViewRootMyComputer"
-        text: qsTr("My &Computer")
-        //: a KÉT valódi gyökér egyike: a teljes fa. Bekapcsolt
-        //: „Egyszerűsített fanézet" mellett a vezérlő `watched`-et
-        //: ad — az a kapcsoló FÜGGETLEN (spec 3.).
-        checkable: true
-        checked: folderViewMenu.viewRootToken === "all"
-        onTriggered: {
-            if (bar.folderViewCtl) bar.folderViewCtl.setViewRoot("all")
-            checked = Qt.binding(function () {
-                return folderViewMenu.viewRootToken === "all"
-            })
-        }
-    }
-    MenuItem {
-        objectName: "menuViewRootMyPictures"
-        text: qsTr("My &Pictures")
-        //: `CSIDL_MYPICTURES` (0x27) → `QStandardPaths.PicturesLocation`.
-        //: Feloldhatatlan mappánál a vezérlő a Dokumentumokra, majd a
-        //: Sajátgép-gyökérre esik vissza (`0x00996747`, spec 4.6).
-        checkable: true
-        checked: folderViewMenu.viewRootToken === "mypics"
-        onTriggered: {
-            if (bar.folderViewCtl) bar.folderViewCtl.setViewRoot("mypics")
-            checked = Qt.binding(function () {
-                return folderViewMenu.viewRootToken === "mypics"
-            })
-        }
-    }
-    MenuItem {
-        objectName: "menuViewRootMyDocuments"
-        text: qsTr("My Do&cuments")
-        //: `CSIDL_PERSONAL` (0x05) → `QStandardPaths.DocumentsLocation`.
-        checkable: true
-        checked: folderViewMenu.viewRootToken === "mydocs"
-        onTriggered: {
-            if (bar.folderViewCtl) bar.folderViewCtl.setViewRoot("mydocs")
-            checked = Qt.binding(function () {
-                return folderViewMenu.viewRootToken === "mydocs"
-            })
-        }
-    }
-    MenuItem {
-        objectName: "menuViewRootDesktop"
-        text: qsTr("&Desktop")
-        //: `CSIDL_DESKTOP` (0x00) → `QStandardPaths.DesktopLocation`.
-        checkable: true
-        checked: folderViewMenu.viewRootToken === "desktop"
-        onTriggered: {
-            if (bar.folderViewCtl) bar.folderViewCtl.setViewRoot("desktop")
-            checked = Qt.binding(function () {
-                return folderViewMenu.viewRootToken === "desktop"
             })
         }
     }
@@ -234,76 +158,21 @@ PicasaMenu {
         }
     }
     MenuSeparator {}
-    // #4528: az eredeti folderviewpopup a név-, darabszám- és Top 10
-    // szerinti Emberek-rendezést közvetlenül a lista rendezése után
-    // kínálja. A pipa és a tényleges sorrend is az AppController
-    // PeopleMixinjéből jön.
-    MenuItem {
-        objectName: "menuViewSortPeopleByName"
-        text: qsTr("Sort &People by Name")
-        checkable: true
-        checked: folderViewMenu.peopleSort === "name"
-        onTriggered: {
-            if (controllerRef) controllerRef.setPeopleSort("name")
-            checked = Qt.binding(function () {
-                return folderViewMenu.peopleSort === "name"
-            })
-        }
-    }
-    MenuItem {
-        objectName: "menuViewSortPeopleByAmount"
-        text: qsTr("Sort People by &Amount")
-        checkable: true
-        checked: folderViewMenu.peopleSort === "count"
-        onTriggered: {
-            if (controllerRef) controllerRef.setPeopleSort("count")
-            checked = Qt.binding(function () {
-                return folderViewMenu.peopleSort === "count"
-            })
-        }
-    }
-    MenuItem {
-        objectName: "menuViewSortPeopleByTop10"
-        text: qsTr("Sort People by Top &10")
-        checkable: true
-        checked: folderViewMenu.peopleSort === "top"
-        onTriggered: {
-            if (controllerRef) controllerRef.setPeopleSort("top")
-            checked = Qt.binding(function () {
-                return folderViewMenu.peopleSort === "top"
-            })
-        }
-    }
-    MenuSeparator {}
-    // #4528: az AlbumList::Shortcuts almenü. A gyökérválasztók
-    // ugyanazokat a vezérlőműveleteket használják, mint a közvetlen
-    // tételek, ezért a két belépési pont pipája együtt mozog.
+    // #7340: az AlbumList::Shortcuts almenü. Mind a négy gyökérválasztó a
+    // FolderHierarchyController kiválasztott gyökerének pipáját követi.
     PicasaMenu {
         objectName: "menuViewFolderViewShortcuts"
         title: qsTr("&Shortcuts")
         MenuItem {
-            objectName: "menuViewShortcutMyComputer"
-            text: qsTr("My &Computer")
+            objectName: "menuViewShortcutDesktop"
+            text: qsTr("&Desktop")
             checkable: true
-            checked: folderViewMenu.viewRootToken === "all"
+            checked: folderViewMenu.viewRootToken === "desktop"
             onTriggered: {
                 if (bar.folderViewCtl)
-                    bar.folderViewCtl.setViewRoot("all")
+                    bar.folderViewCtl.setViewRoot("desktop")
                 checked = Qt.binding(function () {
-                    return folderViewMenu.viewRootToken === "all"
-                })
-            }
-        }
-        MenuItem {
-            objectName: "menuViewShortcutMyPictures"
-            text: qsTr("My &Pictures")
-            checkable: true
-            checked: folderViewMenu.viewRootToken === "mypics"
-            onTriggered: {
-                if (bar.folderViewCtl)
-                    bar.folderViewCtl.setViewRoot("mypics")
-                checked = Qt.binding(function () {
-                    return folderViewMenu.viewRootToken === "mypics"
+                    return folderViewMenu.viewRootToken === "desktop"
                 })
             }
         }
@@ -321,15 +190,29 @@ PicasaMenu {
             }
         }
         MenuItem {
-            objectName: "menuViewShortcutDesktop"
-            text: qsTr("&Desktop")
+            objectName: "menuViewShortcutMyPictures"
+            text: qsTr("My &Pictures")
             checkable: true
-            checked: folderViewMenu.viewRootToken === "desktop"
+            checked: folderViewMenu.viewRootToken === "mypics"
             onTriggered: {
                 if (bar.folderViewCtl)
-                    bar.folderViewCtl.setViewRoot("desktop")
+                    bar.folderViewCtl.setViewRoot("mypics")
                 checked = Qt.binding(function () {
-                    return folderViewMenu.viewRootToken === "desktop"
+                    return folderViewMenu.viewRootToken === "mypics"
+                })
+            }
+        }
+        MenuSeparator {}
+        MenuItem {
+            objectName: "menuViewShortcutMyComputer"
+            text: qsTr("My &Computer")
+            checkable: true
+            checked: folderViewMenu.viewRootToken === "all"
+            onTriggered: {
+                if (bar.folderViewCtl)
+                    bar.folderViewCtl.setViewRoot("all")
+                checked = Qt.binding(function () {
+                    return folderViewMenu.viewRootToken === "all"
                 })
             }
         }

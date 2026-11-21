@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 
-// A bal panel SAJÁT jobbklikk-menüje — a Picasa `AlbumList` menüosztálya,
-// 12 tétellel (#422, 3. lépcső; a 12. a #757-ben került elő).
+// A bal panel SAJÁT jobbklikk-menüje - a Picasa `AlbumList` menüosztályának
+// 14 rekordos nézet- és rendezésmenüje (#7340; #422, 3. lépcső).
 //
 // Forrás: `docs/specs/ui-audit-context-menus.md` A.2 szakasza. Ez a menü a
 // képernyőképeken nem szerepelt: a `Picasa3i18n.dll` string-táblájából
@@ -18,19 +18,18 @@ import QtQuick.Controls
 // `toggleFolderSortReverse`) — a Picasa is egyetlen parancskészletet
 // használ, a menük abból válogatnak.
 //
-// A személyek rendezése és az egyszerűsített fanézet már a
-// FolderHierarchyController állapotát használja. A #4462 ugyanennek a
-// vezérlőnek a bélyegkép-kapcsolójára köti az „indexképek megjelenítése a
-// könyvtárban" tételt és az Asztal gyökérváltót.
-//
-// A Windows-specifikus Sajátgép/Dokumentumok/Képek tételek szándékosan
-// kimaradnak: a felmérés szerint is csak Windowson léteznek, a PicasaPy
-// pedig Linux-first.
+// A személyek rendezése, a nézetkapcsolók és a gyors gyökérváltók a
+// vezérlők meglévő állapotát használják. A Shortcuts sorrendje és tartalma
+// megegyezik a menüsáv Nézet ▸ Mappanézet almenüjével; a Windowsos
+// rendszermappáknak Linuxon a megfelelő helyi gyökerek felelnek meg.
 //
 // Önálló, signal-alapú komponens: a bekötést a FolderPane.qml végzi.
 PicasaMenu {
     id: menu
     objectName: "folderListContextMenu"
+    // A toolbar külön példányt tart fenn; a nevei ne ütközzenek a jobbklikk
+    // menü azonos nevű tételeivel a teljes ablak objektumfájában.
+    property string objectNamePrefix: ""
 
     // a jelenlegi rendezés — a pipákhoz
     property string sortMode: "date"
@@ -40,6 +39,7 @@ PicasaMenu {
     property bool simplifiedTree: false
     property bool albumThumbs: false
     property string viewRoot: ""
+    property bool treeMode: false
 
     //: #1767 — a Személyek lista rendezési módja: name / count / top
     property string peopleSort: "name"
@@ -63,7 +63,8 @@ PicasaMenu {
     // A `menu.sortMode` itt is PILLANATFELVÉTEL (a gazda a nyitáskor írja),
     // ezért az azonos értékű visszaírás nem élesztené fel a kötést.
     MenuItem {
-        objectName: "folderListMenuSortByDate"
+        objectName: menu.objectNamePrefix
+            ? menu.objectNamePrefix + "SortByDate" : "folderListMenuSortByDate"
         text: qsTr("Sort by &Date")
         checkable: true
         checked: menu.sortMode === "date"
@@ -75,31 +76,8 @@ PicasaMenu {
         }
     }
     MenuItem {
-        objectName: "folderListMenuSortByName"
-        text: qsTr("Sort by &Name")
-        checkable: true
-        checked: menu.sortMode === "name"
-        onTriggered: {
-            menu.sortModeRequested("name")
-            checked = Qt.binding(function () {
-                return menu.sortMode === "name"
-            })
-        }
-    }
-    MenuItem {
-        objectName: "folderListMenuSortBySize"
-        text: qsTr("Sort by &Size")
-        checkable: true
-        checked: menu.sortMode === "size"
-        onTriggered: {
-            menu.sortModeRequested("size")
-            checked = Qt.binding(function () {
-                return menu.sortMode === "size"
-            })
-        }
-    }
-    MenuItem {
-        objectName: "folderListMenuSortByChanged"
+        objectName: menu.objectNamePrefix
+            ? menu.objectNamePrefix + "SortByChanged" : "folderListMenuSortByChanged"
         text: qsTr("Sort by &Recent Changes")
         checkable: true
         checked: menu.sortMode === "changed"
@@ -111,7 +89,34 @@ PicasaMenu {
         }
     }
     MenuItem {
-        objectName: "folderListMenuSortReverse"
+        objectName: menu.objectNamePrefix
+            ? menu.objectNamePrefix + "SortBySize" : "folderListMenuSortBySize"
+        text: qsTr("Sort by &Size")
+        checkable: true
+        checked: menu.sortMode === "size"
+        onTriggered: {
+            menu.sortModeRequested("size")
+            checked = Qt.binding(function () {
+                return menu.sortMode === "size"
+            })
+        }
+    }
+    MenuItem {
+        objectName: menu.objectNamePrefix
+            ? menu.objectNamePrefix + "SortByName" : "folderListMenuSortByName"
+        text: qsTr("Sort by &Name")
+        checkable: true
+        checked: menu.sortMode === "name"
+        onTriggered: {
+            menu.sortModeRequested("name")
+            checked = Qt.binding(function () {
+                return menu.sortMode === "name"
+            })
+        }
+    }
+    MenuItem {
+        objectName: menu.objectNamePrefix
+            ? menu.objectNamePrefix + "SortReverse" : "folderListMenuSortReverse"
         text: qsTr("Re&verse sort")
         checkable: true
         checked: menu.sortReverse
@@ -138,7 +143,9 @@ PicasaMenu {
     // változtat állapotot — a kötés tehát magától soha nem értékelődne
     // újra. Ezért minden tétel a jelzés után VISSZAKÖTI a `checked`-et.
     MenuItem {
-        objectName: "folderListMenuSortPeopleByName"
+        objectName: menu.objectNamePrefix
+            ? menu.objectNamePrefix + "SortPeopleByName"
+            : "folderListMenuSortPeopleByName"
         text: qsTr("Sort &People by Name")
         checkable: true
         checked: menu.peopleSort === "name"
@@ -150,7 +157,9 @@ PicasaMenu {
         }
     }
     MenuItem {
-        objectName: "folderListMenuSortPeopleByCount"
+        objectName: menu.objectNamePrefix
+            ? menu.objectNamePrefix + "SortPeopleByCount"
+            : "folderListMenuSortPeopleByCount"
         text: qsTr("Sort People by &Amount")
         checkable: true
         checked: menu.peopleSort === "count"
@@ -162,9 +171,12 @@ PicasaMenu {
         }
     }
     MenuItem {
-        objectName: "folderListMenuSortPeopleByTopList"
+        objectName: menu.objectNamePrefix
+            ? menu.objectNamePrefix + "SortPeopleByTopList"
+            : "folderListMenuSortPeopleByTopList"
         text: qsTr("Sort People by Top &10")
         checkable: true
+        enabled: menu.treeMode
         checked: menu.peopleSort === "top"
         onTriggered: {
             menu.peopleSortRequested("top")
@@ -175,55 +187,19 @@ PicasaMenu {
     }
     MenuSeparator {}
 
-    // -- 3. blokk: nézet-kapcsolók -------------------------------------------
-
-    // #1454: a menüsáv `Nézet ▸ Mappanézet` harmadik tételének MÁSIK
-    // belépési pontja (`AlbumList::ID_VIEW_WATCHED`) — ugyanaz a kapcsoló,
-    // ezért ugyanaz a vezérlő. A korábbi `folderListMenuFlatView`
-    // objectName félrevezető volt: nem a lapos nézet tétele ez.
-    MenuItem {
-        objectName: "folderListMenuSimplifiedTree"
-        text: qsTr("&Simplified Tree View")
-        checkable: true
-        checked: menu.simplifiedTree
-        onTriggered: {
-            menu.simplifiedTreeRequested()
-            // a kattintás imperatívan átbillenti a `checked`-et, mielőtt a
-            // jelzés eldördülne — ha a gazda nem váltott állapotot (nincs
-            // bekötve, vagy elutasította), a pipa hazudna. Visszakötjük.
-            checked = Qt.binding(function () { return menu.simplifiedTree })
-        }
-    }
-    MenuItem {
-        objectName: "folderListMenuShowThumbnails"
-        text: qsTr("Show &Thumbnails in Library")
-        checkable: true
-        checked: menu.albumThumbs
-        onTriggered: {
-            menu.albumThumbnailsRequested()
-            checked = Qt.binding(function () { return menu.albumThumbs })
-        }
-    }
-    MenuSeparator {}
-
-    // -- 4. blokk: gyors gyökér-váltás ----------------------------------------
+    // -- 3. blokk: gyors gyökér-váltás ----------------------------------------
 
     // #757: az `AlbumList::Shortcuts` az eredetiben ALMENÜ CÍME, nem sor —
-    // a kulcsnak nincs `ID_` előtagja (mint a `Folder::SortFolderBy`-nak és
-    // az `Album::SortAlbumBy`-nak sem), a `ui-audit-mainwindow.md` 1.7 pedig
-    // ki is mondja: „a `Shortcuts` almenüben `AlbumListWin::ID_VIEW_ALL` =
-    // »My &Computer«". Alatta a gyökérváltók ültek: Asztal · Sajátgép ·
-    // Dokumentumok · Képek — utóbbi három Windows-specifikus, ezért nálunk
-    // kimarad, és egyedül az Asztal maradna benne.
-    //
-    // Az Asztal az egyetlen nem Windows-specifikus gyökérváltó. A három
-    // Windows-tételt kihagyjuk, az Asztal a vezérlő meglévő gyökérváltó
-    // műveletét hívja.
+    // a kulcsnak nincs `ID_` előtagja. A gyökerek sorrendje és tartalma
+    // megegyezik a menüsáv Mappanézet almenüjével; a Windowsos
+    // rendszermappák Linuxon a megfelelő helyi gyökerekre oldódnak fel.
     PicasaMenu {
-        objectName: "folderListMenuShortcuts"
+        objectName: menu.objectNamePrefix
+            ? menu.objectNamePrefix + "Shortcuts" : "folderListMenuShortcuts"
         title: qsTr("&Shortcuts")
         MenuItem {
-            objectName: "folderListMenuDesktop"
+            objectName: menu.objectNamePrefix
+                ? menu.objectNamePrefix + "Desktop" : "folderListMenuDesktop"
             text: qsTr("&Desktop")
             checkable: true
             checked: menu.viewRoot === "desktop"
@@ -233,6 +209,75 @@ PicasaMenu {
                     return menu.viewRoot === "desktop"
                 })
             }
+        }
+        MenuItem {
+            objectName: menu.objectNamePrefix
+                ? menu.objectNamePrefix + "MyDocuments" : "folderListMenuMyDocuments"
+            text: qsTr("My Do&cuments")
+            checkable: true
+            checked: menu.viewRoot === "mydocs"
+            onTriggered: {
+                menu.viewRootRequested("mydocs")
+                checked = Qt.binding(function () {
+                    return menu.viewRoot === "mydocs"
+                })
+            }
+        }
+        MenuItem {
+            objectName: menu.objectNamePrefix
+                ? menu.objectNamePrefix + "MyPictures" : "folderListMenuMyPictures"
+            text: qsTr("My &Pictures")
+            checkable: true
+            checked: menu.viewRoot === "mypics"
+            onTriggered: {
+                menu.viewRootRequested("mypics")
+                checked = Qt.binding(function () {
+                    return menu.viewRoot === "mypics"
+                })
+            }
+        }
+        MenuSeparator {}
+        MenuItem {
+            objectName: menu.objectNamePrefix
+                ? menu.objectNamePrefix + "MyComputer" : "folderListMenuMyComputer"
+            text: qsTr("My &Computer")
+            checkable: true
+            checked: menu.viewRoot === "all"
+            onTriggered: {
+                menu.viewRootRequested("all")
+                checked = Qt.binding(function () {
+                    return menu.viewRoot === "all"
+                })
+            }
+        }
+    }
+    MenuSeparator {}
+
+    // -- 4. blokk: nézet-kapcsolók -------------------------------------------
+    MenuItem {
+        objectName: menu.objectNamePrefix
+            ? menu.objectNamePrefix + "ShowThumbnails" : "folderListMenuShowThumbnails"
+        text: qsTr("Show &Thumbnails in Library")
+        checkable: true
+        enabled: !menu.treeMode
+        checked: menu.albumThumbs
+        onTriggered: {
+            menu.albumThumbnailsRequested()
+            checked = Qt.binding(function () { return menu.albumThumbs })
+        }
+    }
+    // #1454: a menüsáv `Nézet ▸ Mappanézet` harmadik tételének MÁSIK
+    // belépési pontja (`AlbumList::ID_VIEW_WATCHED`) - ugyanaz a kapcsoló,
+    // ezért ugyanaz a vezérlő.
+    MenuItem {
+        objectName: menu.objectNamePrefix
+            ? menu.objectNamePrefix + "SimplifiedTree" : "folderListMenuSimplifiedTree"
+        text: qsTr("&Simplified Tree View")
+        checkable: true
+        checked: menu.simplifiedTree
+        onTriggered: {
+            menu.simplifiedTreeRequested()
+            checked = Qt.binding(function () { return menu.simplifiedTree })
         }
     }
 }

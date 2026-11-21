@@ -240,6 +240,8 @@ Item {
 
     FolderListContextMenu {
         id: folderListContextMenu
+        treeMode: folderHierarchyController
+            ? folderHierarchyController.treeView : false
         // #1454: az „Egyszerűsített fanézet" ugyanazt a kapcsolót billenti,
         // mint a menüsáv `Nézet ▸ Mappanézet` harmadik tétele
         simplifiedTree:

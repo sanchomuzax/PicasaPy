@@ -55,7 +55,7 @@ def _trigger(menu, name):
 
 
 class TestFolderListContextMenu:
-    """A bal panel saját menüje — az `AlbumList` osztály 12 tétele.
+    """A bal panel saját menüje - rendezés, emberek, Shortcuts és nézetkapcsolók.
 
     #757: a spec kétszer is „11 tétel"-t írt, a `Picasa3i18n.dll`
     string-táblájában viszont TIZENKÉT `AlbumList::` sor van — a
@@ -63,20 +63,23 @@ class TestFolderListContextMenu:
 
     EXPECTED = [
         "folderListMenuSortByDate",
-        "folderListMenuSortByName",
-        "folderListMenuSortBySize",
         "folderListMenuSortByChanged",
+        "folderListMenuSortBySize",
+        "folderListMenuSortByName",
         "folderListMenuSortReverse",
         "folderListMenuSortPeopleByName",
         "folderListMenuSortPeopleByCount",
         "folderListMenuSortPeopleByTopList",
-        "folderListMenuSimplifiedTree",
-        "folderListMenuShowThumbnails",
         "folderListMenuShortcuts",
         "folderListMenuDesktop",
+        "folderListMenuMyDocuments",
+        "folderListMenuMyPictures",
+        "folderListMenuMyComputer",
+        "folderListMenuShowThumbnails",
+        "folderListMenuSimplifiedTree",
     ]
 
-    def test_all_twelve_commands_are_present_in_order(self, qml_engine):
+    def test_all_commands_are_present_in_order(self, qml_engine):
         menu = _load(qml_engine, "FolderListContextMenu")
         found = [
             child.objectName()
@@ -102,6 +105,9 @@ class TestFolderListContextMenu:
         "folderListMenuShowThumbnails",
         "folderListMenuShortcuts",
         "folderListMenuDesktop",
+        "folderListMenuMyDocuments",
+        "folderListMenuMyPictures",
+        "folderListMenuMyComputer",
     }
 
     def test_unbacked_commands_are_shown_but_disabled(self, qml_engine):

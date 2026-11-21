@@ -30,7 +30,7 @@ _MENUK = (
     ("File", "&File"),
 )
 _MENU_UTVONAL_DARAB = {
-    "View": 54,
+    "View": 47,
     "Folder": 16,
     "Picture": 20,
     "Edit": 13,
@@ -40,13 +40,13 @@ _MENU_UTVONAL_DARAB = {
     "File": 17,
 }
 # #5713: a Közzététel FTP-n új bejárható Tools ▸ Experimental parancs.
-# #4528: hét új bejárható parancs került a Mappanézetbe (3 személyrendezés,
-# 4 Shortcuts-gyökér); maga az almenücím nem külön parancsútvonal.
+# #7340: a Mappanézet 7 közvetlen gyökér- és személyrendező útvonala kikerült;
+# a Shortcut-gyökerek maradtak, az almenücím nem külön parancsútvonal.
 # #5156: a Mappa ▸ Rendezés ▸ Recent changes újra kattintható, ezért a Mappa menü 16.
 # #6440: a Súgó menü új pipás tétele (háttérmunka az állapotsávon) bejárható.
 # #6522: a Nézet menü Effekt-térszelvény almenüje három új parancsútvonal.
-assert sum(_MENU_UTVONAL_DARAB.values()) == 207
-_VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 34, "mappanezet": 20}
+assert sum(_MENU_UTVONAL_DARAB.values()) == 200
+_VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 34, "mappanezet": 13}
 assert sum(_VIEW_UTVONAL_DARAB_CSOPORTONKENT.values()) == _MENU_UTVONAL_DARAB[
     "View"
 ]
@@ -62,10 +62,7 @@ assert sum(_TOOLS_UTVONAL_DARAB_CSOPORTONKENT.values()) == _MENU_UTVONAL_DARAB[
 #: az eredeti szerint csendben a teljes fára esik vissza (spec 4.6), így
 #: nincs látható változás. Létező mappánál a hatást továbbra is megköveteli.
 _RENDSZERGYOKER_TETELEK = {
-    "menuViewRootMyPictures": ("mypics", "mydocs"),
-    "menuViewRootMyDocuments": ("mydocs",),
-    "menuViewRootDesktop": ("desktop",),
-    # #4528: a Mappanézet ▸ Shortcuts almenü ugyanezt a három gyökeret választja
+    # #7340 óta a rendszergyökerek csak a Mappanézet ▸ Shortcuts alatt vannak.
     "menuViewShortcutMyPictures": ("mypics", "mydocs"),
     "menuViewShortcutMyDocuments": ("mydocs",),
     "menuViewShortcutDesktop": ("desktop",),
@@ -254,6 +251,25 @@ def _menuk(menu_bar) -> list[QObject]:
 
 
 def _almenu(menu_bar, szulo, sor):
+    # Ha a sor tényleges almenü-sor, a Qt közvetlen hivatkozást ad rá.
+    # Egyidejűleg több „Shortcuts” menü is él (a menüsorban és az eszköztár
+    # saját legördülőjében), ezért a felirat szerinti keresés önmagában
+    # kétértelmű; a sorhoz kötött almenü a pontos tulajdonos.
+    if sor.metaObject().indexOfProperty("subMenu") >= 0:
+        kifejezes = QQmlExpression(
+            qmlContext(sor), sor, "subMenu ? subMenu.objectName : ''"
+        )
+        kapcsolt_nev, hiba = kifejezes.evaluate()
+        if hiba:
+            raise AssertionError(kifejezes.error())
+        if kapcsolt_nev:
+            nev = str(kapcsolt_nev)
+            kapcsolt_almenu = next(
+                (menu for menu in _menuk(menu_bar) if menu.objectName() == nev), None
+            )
+            if kapcsolt_almenu is not None:
+                return kapcsolt_almenu
+
     nev = sor.objectName()
     if nev:
         talalat = next(

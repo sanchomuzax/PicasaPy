@@ -13005,6 +13005,13 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);prin
             <translation>Nenhuma</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" line="523" />
+            <source>&amp;None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_CAPNONE</extracomment>
+            <translation>&amp;Nenhum</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="133" />
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -18420,6 +18427,24 @@ picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
             <source>&amp;Desktop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>&amp;Área de trabalho</translation>
+        </message>
+        <message>
+            <source>My Do&amp;cuments</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumListWin::ID_VIEW_MYDOCS</extracomment>
+            <translation>Meus do&amp;cumentos</translation>
+        </message>
+        <message>
+            <source>My &amp;Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumListWin::ID_VIEW_MYPICTURES</extracomment>
+            <translation>Minhas &amp;imagens</translation>
+        </message>
+        <message>
+            <source>My &amp;Computer</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumListWin::ID_VIEW_ALL</extracomment>
+            <translation>Meu &amp;computador</translation>
         </message>
         <message>
             <source>&amp;Shortcuts</source>
