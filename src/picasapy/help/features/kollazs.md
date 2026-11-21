@@ -4,15 +4,23 @@ A kollázs több képből egyetlen új képet állít össze.
 
 ## Indítás
 
-Jelöld ki a képeket, majd:
+Indítás:
 
 - **Létrehozás ▸ Képkollázs…**, vagy
 - a képtálca **Kollázs** gombja, vagy
-- a rácsban a mappa fejlécének kollázsgombja: ez a mappában kijelölt
-  képekből nyit kollázst, kijelölés nélkül pedig a mappa összes képéből.
+- a rácsban a mappa fejlécének kollázsgombja.
 
-Ha nincs kijelölés, a program szól: előbb jelölj ki képeket a
-könyvtárban, vagy tedd őket a képtálcára.
+Hogy mi kerül a vászonra:
+
+- Ha képeket jelöltél ki (vagy a képtálcán tartasz képeket), a
+  **kijelölt képek** kerülnek a vászonra, a mappa többi képe pedig a
+  **Klipek** lapra, ahonnan később behúzhatod őket. A lap fülén
+  zárójelben a vászonra nem került képek száma áll.
+- Kijelölés nélkül a **megnyitott mappa összes képe** a vászonra kerül.
+- A mappafejléc gombja a saját mappájának kijelölt képeit veszi, ha
+  legalább kettő ki van jelölve; ha egy sem vagy csak egy, a **teljes
+  mappából** indul. Más mappában kijelölt képek ilyenkor nem kerülnek
+  be.
 
 A kollázs saját lapon nyílik meg, a szerkesztő bal oldali paneljével.
 

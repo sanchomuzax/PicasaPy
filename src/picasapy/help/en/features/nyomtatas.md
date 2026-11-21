@@ -80,8 +80,9 @@ The choice is remembered, and the preview updates when you change it.
 
 ### Review picture quality
 
-If a picture may print poorly, choose **Review** to see every picture,
-sorted from lowest quality, with its resolution and rating:
+If a picture may print poorly, choose **Review** to see every picture
+with its resolution and rating. Pictures are grouped by quality, lowest
+first; within a group they keep the print order:
 
 - Best quality: at least 150 pixels per inch;
 - Good quality: 100-149 pixels per inch;

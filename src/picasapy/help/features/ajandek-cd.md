@@ -1,7 +1,7 @@
 # Ajándék CD
 
-Az **Ajándék CD** a régi Picasa ajándékozó funkciója: fogod a képtálcára
-összegyűjtött képeket, adsz nekik egy nevet és egy méretet, és a program
+Az **Ajándék CD** a régi Picasa ajándékozó funkciója: fogod egy mappa
+vagy a képtálca képeit, adsz nekik egy nevet és egy méretet, és a program
 egyetlen fájlba csomagolja őket, amit lemezre lehet írni.
 
 Indítás: **Létrehozás ▸ Ajándék CD készítése…**
@@ -12,16 +12,22 @@ Indítás: **Létrehozás ▸ Ajándék CD készítése…**
 > eredetihez képest — a lemezre írást a program helyett a rendszeren
 > szokásos lemezíró végzi.
 
-## Amiből dolgozik: a képtálca
+## Amiből dolgozik: a mappa vagy a képtálca
 
-Az Ajándék CD **a képtálca elemeit** viszi fel, nem a rács kijelölését —
-ugyanúgy, mint a kollázs és a mozgófilm. Előbb tehát gyűjtsd össze a
-képeket a tálcára — több mappából a **Kijelölt elemek megőrzése**
-gombbal —, és csak utána nyisd meg a menüpontot. A panel maga is ezt
-írja: „A program a fent pipával kijelölt elemeket másolja az ajándék
-CD-re."
+A menüpont kijelölés és képtálca nélkül is elérhető. A panel alapból a
+**megnyitott mappa** képeit viszi fel: a **Lemezre írás** gomb mellett
+egy jelölő áll a mappa nevével és a képei számával (például
+`Nyaralás (42)`), és ez megnyitáskor be van pipálva, ha a mappában van
+kép.
 
-Üres tálcával a **Lemezre írás** gomb szürke — nincs mit felvinni.
+Ha a pipát leveszed, a panel helyette **a képtálca elemeit** viszi fel,
+ugyanúgy, mint a kollázs és a mozgófilm. Ehhez előbb gyűjtsd össze a
+képeket a tálcára (több mappából a **Kijelölt elemek megőrzése**
+gombbal). A panel maga is ezt írja: „A program a fent pipával kijelölt
+elemeket másolja az ajándék CD-re."
+
+Ha a mappa jelölője nincs bepipálva, és a tálca is üres, a **Lemezre
+írás** gomb szürke: nincs mit felvinni.
 
 ## A panel
 
@@ -44,8 +50,8 @@ Ajándék CD panel becsukódik (a képtálca tartalma megmarad).
 - **CD neve** — ez lesz a lemez neve, **legfeljebb 16 karakter** (a mező
   nem is engedi hosszabbat). Megnyitáskor a megnyitott mappa neve áll
   benne; átírhatod. Ha üresen hagyod, a fájl neve lesz a lemez neve is.
-- **Diavetítéssel együtt** - alapból be van pipálva, és a program megjegyzi
-  az állását. Bekapcsolva a nem-JPEG képek is JPEG-ként kerülnek a lemezre;
+- **Diavetítéssel együtt** - alapból be van pipálva. Ha a panelt a
+  **Mégse** gombbal zárod be, legközelebb újra bepipálva nyílik. Bekapcsolva a nem-JPEG képek is JPEG-ként kerülnek a lemezre;
   kikapcsolva ezek a képek az eredeti formátumukban maradnak.
 
 Jobb oldalon a **Lemezre írás** indítja a munkát. A **Mégse** ugyanúgy

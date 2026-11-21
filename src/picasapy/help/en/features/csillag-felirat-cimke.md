@@ -86,7 +86,8 @@ first, then `Ctrl+T` toggles it again.
   once (for example `summer, sea, family`); empty parts are skipped. If
   one of them cannot be added, the others are still applied, and a line
   below the field says: "Some of the text you entered could not be added
-  as a tag."
+  as a tag." If the field is empty or contains only spaces, Enter adds
+  no tag; a help window says that no text was entered instead.
 - The panel shows which tags belong to the selection. A heading above
   the list explains its scope: for one selected photo it shows that
   photo's name and its tags; for several photos it lists the tags in the
@@ -96,8 +97,8 @@ first, then `Ctrl+T` toggles it again.
   most photos in the selection appears first. Tags used equally often
   are listed in reverse alphabetical order (Z to A).
 - Right-click a tag to open a menu with **Add this tag to entire
-  selection**, **Search for items with this tag**, and **Remove this
-  tag**, in the original Picasa order. The search puts the tag in the search field and
+  selection**, **Search for items with this tag**, and, after a
+  separator line, **Remove this tag**, in the original Picasa order. The search puts the tag in the search field and
   immediately shows matching photos. Clear the search field to return
   to the full view.
 
@@ -110,7 +111,9 @@ Are you sure you want to apply this tag to all (*N*) items?” Click
 unchanged. The confirmation applies whether you use the entry field, a
 quick-tag button, or **Add this tag to entire selection** in the tag
 context menu. The program captures the selection when the question
-appears, so the target set cannot change while you decide.
+appears, so the target set cannot change while you decide. If you entered
+several tags separated by commas, the question appears for each tag
+separately, so you can decide on each one.
 
 ### When a selected photo is read-only
 
@@ -141,9 +144,8 @@ At the bottom of the panel, ten buttons hold your most-used tags. Click
 one to apply its tag to the selection immediately.
 
 An unused button displays a **?**. Hover over it to see the hint “Click
-to configure quick tags”. Clicking it opens an informational message
-that explains how to assign a tag to the button; it does not change any
-photos.
+to configure quick tags”. Clicking it opens the **Configure Quick Tags**
+dialog; it does not change any photos.
 
 Use **Configure Quick Tags** to set the buttons. Open the dialog with
 the gear control beside the Quick Tags heading; its hint has the same
@@ -151,6 +153,9 @@ name. You can reserve the top two buttons for recently used tags. A new
 tag moves to the first button, the previous first moves to the second,
 and the previous second is removed. If you use a tag already on either
 button, their order stays the same. Letter case matters here: `Summer` and `summer` count as two different tags. A button in the dialog can also
-fill empty slots with your frequently used tags. When tracking recent
+fill the empty slots: this is a one-time action that fills the slots
+still empty from the tags in your library. As in the original Picasa, it
+draws from the first hundred different tags in the library and skips
+the two you used most recently. When tracking recent
 tags is turned off, quick-tag use is not recorded; tags used while it is
 off will not appear in those slots if you turn it on later.

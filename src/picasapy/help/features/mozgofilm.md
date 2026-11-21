@@ -7,7 +7,7 @@ megadott ideig látszanak.
 
 Jelöld ki a képeket, majd:
 
-- **Létrehozás ▸ Mozgófilm ▸ Új mozgófilm…**, vagy
+- **Létrehozás ▸ Mozgófilm ▸ Kijelölésből...**, vagy
 - a képtálca **Mozgófilm** gombja, vagy
 - a képrács mappafejlécében a kollázs-gomb mellett álló filmgomb
   (*Mozgófilmes prezentáció létrehozása*). Ha a fejléc mappájában

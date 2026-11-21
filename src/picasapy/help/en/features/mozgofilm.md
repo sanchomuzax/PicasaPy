@@ -5,8 +5,8 @@ sequence for a set amount of time.
 
 ## Start a movie
 
-Select photos, then start a new movie from the **Create** menu or use
-the **Movie** button in the photo tray.
+Select photos, then choose **Create** ▸ **Movie** ▸ **From
+Selection...** or use the **Movie** button in the photo tray.
 
 A movie-presentation command beside the collage control in a folder
 header opens Movie Maker with only the selected photos when at least

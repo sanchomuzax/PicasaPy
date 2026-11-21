@@ -42,8 +42,10 @@ effektek), és a fényképezőgép által megjelölt tájolás szerint helyesen
 áll — álló képből tehát álló poszter lesz.
 
 A végén az ablak kiírja: „A poszterlapok elkészültek.", alatta a
-fájlok listájával. Ha nem sikerült — például nem olvasható a kép, vagy
-nem írható a mappa —, ezt látod: „A poszterlapokat nem sikerült
+fájlok listájával. Az eredeti Picasához hasonlóan a program ezután az
+**utolsó lapot megnyitja a szerkesztőben**, a könyvtárban pedig a
+forráskép kijelölve marad. Ha nem sikerült (például nem olvasható a kép, vagy
+nem írható a mappa), ezt látod: „A poszterlapokat nem sikerült
 létrehozni.", és az ok. Nagy képnél a munka eltarthat egy ideig, de a
 program közben használható; két percnél tovább nem várja meg.
 

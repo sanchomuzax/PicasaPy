@@ -2,6 +2,120 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-21
+
+### Search
+
+- Search also finds album names, the date taken (for example `2019:03`),
+  and the EXIF author and copyright fields. With several words, every
+  word must match; a word with a minus sign excludes results; the `tag:`
+  prefix searches only tags. See [Search and filtering](features/kereses.md).
+- The suggestion list also shows words, with counts; clicking a word
+  runs the search. Choosing a folder or album keeps the search.
+- The field turns green when there are matches and red when there are
+  none. Typing on the grid or the folder list puts the letter in the
+  search field.
+- The first Esc closes the suggestions and the second clears the search;
+  leaving the search restores the folder and selection you had before.
+- The star, face, globe, and movie filters and the age slider work
+  together with the search text.
+- Hidden photos are not counted in results when they are not shown.
+
+### Slideshow and Timeline
+
+- New keys: Up and Down also step, 1-9 set the display time, and Pause
+  and Play pause and resume. Enter, Ctrl+R, and Ctrl+Shift+R do nothing
+  during a slideshow. See [Viewing](features/nezegetes.md).
+- The control bar buttons follow the original order, the Timeline
+  button is gone, the transition selector is always shown, and the bar
+  fits in small windows.
+- Clicking the photo pauses or resumes the slideshow.
+- Without repeat, the slideshow stays open on the last photo at the end
+  of the list, where a slider lets you zoom the photo. Stepping forward
+  from the last photo goes to the first.
+- The slideshow also plays the folder's videos, between their trim
+  points.
+- Timeline fades in and out, does not open for a library without
+  photos, and places the slider dots as in the original.
+
+### Importing
+
+- Import opens as a panel in the main window with large previews and
+  offers to import the photos it found before you close it. See
+  [Importing](features/importalas.md).
+- There are separate **Import All** and **Import Selected** buttons;
+  thumbnails can be multi-selected and have a context menu.
+- The panel remembers the subfolder option, the deletion option, and the
+  five most recent destinations. The deletion options ask once, are
+  available only for cards with a DCIM folder, and delete nothing if
+  copying fails.
+
+### Albums, folders, and pasting
+
+- **File** ▸ **New Album...** always creates an empty album dated
+  today, even with nothing selected, and the new album opens at once.
+  See [The library](features/konyvtar.md).
+- In an album view, **Delete...** deletes the open album (the photos are
+  kept); an empty album is deleted by the Delete key without asking.
+- Photos dropped on the empty album list open **Album Properties**.
+- In an album view, Paste adds the photos to the album. Before pasting
+  into another folder PicasaPy asks first, lets you choose on name
+  conflicts, and stops on an error. See
+  [File operations](features/fajlmuveletek.md).
+- Double-clicking a folder without subfolders opens **Folder
+  Properties**. The folder-move destination picker is the **Browse for
+  Folder** window, and the seven known system folders cannot be moved.
+- The thumbnail size is kept after a restart, and People albums
+  remember a separate size.
+
+### Tags
+
+- An empty quick-tag button opens **Configure Quick Tags**, and autofill
+  is a one-time action. Enter in an empty field shows a help window.
+  With many photos selected, several tags are confirmed one by one. See
+  [Stars, captions, and tags](features/csillag-felirat-cimke.md).
+
+### Backup
+
+- The first time you open it, **My Backup Set** is created; later the
+  set you used last opens. The new-set form starts with an empty name
+  and the CD or DVD type, and **Create** is disabled for an empty or
+  existing name. See [Backing up photos](features/biztonsagi-mentes.md).
+- The backup checks free space before copying, copies photos again
+  after caption or star changes, and does not stop because one file
+  fails.
+
+### Options
+
+- The Options dialog opens on the tab you used last. **Clear cache
+  files** clears the thumbnails kept in memory right after OK, and
+  changing file types refreshes the library at once. See
+  [Options](features/beallitasok.md).
+
+### Create and export
+
+- Collage puts the selected photos on the canvas and the folder's other
+  photos in the clips tab; with nothing selected, it uses the whole
+  folder. See [Collages](features/kollazs.md).
+- Gift CD uses the open folder's photos by default instead of the Photo
+  Tray. See [Create a Gift CD](features/ajandek-cd.md).
+- After a poster is made, the last sheet opens in the editor.
+- The HTML page export can be cancelled while it runs.
+- The first item of the Movie submenu is now **From Selection...**.
+
+### Other
+
+- **Batch Edit** skips videos and warns about them; **Show Text** and
+  **Hide Text** are always available. See
+  [Batch editing](features/csoportos-szerkesztes.md).
+- Changing the date also updates XMP and IPTC dates.
+- The print quality review groups pictures by quality.
+- The Places panel map error no longer mentions Google Maps.
+- In network folders (for example on a NAS), photos and thumbnails open
+  even over a slow connection, and the program does not freeze.
+- On the first start after installation, a percentage progress bar
+  shows the preparation.
+
 ## 2026-11-16
 
 ### Deleting
