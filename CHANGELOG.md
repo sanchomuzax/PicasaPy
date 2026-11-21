@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.167] - 2026-11-21
+
+- A mappapanel képpontos ellenőrzése megvárja a kijelölt sor és a helyi menü kirajzolását (#7336).
+- A View options gomb saját menüt nyit, a nézet- és Shortcuts menük az eredeti sorrendet és tiltásokat követik, az Indexkép felirata pedig mnemonikus (#7340).
+- A Mappa menü négy rendezési parancsa egyszer átrendezi a kijelölt mappa képeit (#7341).
+
 ## [1.0.166] - 2026-11-21
 
 - A HTML-oldal exportálása futás közben megszakítható; a Mégse előbb rákérdez, mint az eredeti Picasában (#7320).
