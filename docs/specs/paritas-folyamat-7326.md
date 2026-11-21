@@ -8,7 +8,7 @@ A lap a Nézet és a Mappa menü rendezési és megjelenítési parancsait köve
 
 **A rendezési szemantika egyezik, a menük szerkezete nem.** A rendezés kulcsai, iránya, alapértéke és a fordítás független tárolása a PicasaPy-ban az eredetit követik, és az Indexkép felirata almenü is egyezik (egy mnemonikus betű hiányát leszámítva). Az eltérés abban van, hogy az eredetinek **két külön menütáblája** van (a ▾ gomb 14 rekordos legördülője és a menüsáv 13 rekordos Mappanézet almenüje), a PicasaPy pedig **egyetlen** `PicasaFolderViewMenu`-t nyit mindkét belépési pontról, ráadásul a két meglévő menüben tételek hiányoznak, többletként vannak jelen, vagy fordított sorrendben állnak. Emellett a menüsáv Mappa ▸ Rendezés tételei nálunk **tartós rácssorrendet** állítanak, az eredetiben viszont **egyszeri átrendezést** végeznek az aktuális mappa képein.
 
-Négy javasolt fejlesztői jegytörzs (J1-J4) és egy felirat-apróság (J5), a 7. szakaszban; a J1-J4 azóta a mainbe került (#7340, #7341). A futásidejű kérdéseket (C1-C5) a Colab-mérés döntötte el (8. szakasz, "Mérési eredmény (Colab)"): a mérés négy újabb eltérést hozott (J6-J9), és egyetlen új mérést nevesít (C5c).
+Négy javasolt fejlesztői jegytörzs (J1-J4) és egy felirat-apróság (J5), a 7. szakaszban; a J1-J4 azóta a fő ágba került (#7340, #7341). A futásidejű kérdéseket (C1-C5) a Colab-mérés döntötte el (8. szakasz, "Mérési eredmény (Colab)"): a mérés négy újabb eltérést hozott (J6-J9), és egyetlen új mérést nevesít (C5c).
 
 ### Az első kör két állításának helyesbítése
 
@@ -299,7 +299,7 @@ A J8 és a J9 ugyanazt a két fájlt érinti (`folder_list_model.py`, `model_hel
 
 - **Eredeti:** nincs menü a hasáb üres részén (Colab job-801, 05-06. és 09-10. kép); az `AlbumList` menü egyetlen belépése a ▾ gomb (`0x005e2000`, hívója `0x005d9cc0`).
 - **Mit ad ma:** `FolderPane.qml:603-607`: `TapHandler {` / `objectName: "folderPaneContextMenuHandler"` / `acceptedButtons: Qt.RightButton` / `gesturePolicy: TapHandler.ReleaseWithinBounds` / `onSingleTapped: pane.openFolderListContextMenu()`; a függvény `FolderPane.qml:373`: `function openFolderListContextMenu() {`.
-- **Teendő:** töröld a kezelőt (a fölötte álló #422-megjegyzéssel együtt) és az `openFolderListContextMenu` függvényt; mivel más hívója nincs, a `FolderPaneMenus.qml` `folderListContextMenu` példányát és aliasát (`:20`, `:241`) is. A ▾ gomb legördülője (`PicasaViewMenu.toolbarFolderOptionsMenu`) marad. Az átírandó tesztek a törölt belépésre épülnek: `test_stage3_menu_wiring_422.py`, `test_racs_maradek_valodi_5150_p.py:203`, `test_menu_radio_pipa_1468.py:469-484`, `test_mappanezet_menu_1454.py:383` (a ▾ példányt vizsgálják, a jobbklikk-próba azt, hogy nem nyílik menü).
+- **Teendő:** töröld a kezelőt (a fölötte álló #422-megjegyzéssel együtt) és az `openFolderListContextMenu` függvényt; mivel más hívója nincs, a `FolderPaneMenus.qml` `folderListContextMenu` példányát és álnevét (`:20`, `:241`) is. A ▾ gomb legördülője (`PicasaViewMenu.toolbarFolderOptionsMenu`) marad. Az átírandó tesztek a törölt belépésre épülnek: `test_stage3_menu_wiring_422.py`, `test_racs_maradek_valodi_5150_p.py:203`, `test_menu_radio_pipa_1468.py:469-484`, `test_mappanezet_menu_1454.py:383` (a ▾ példányt vizsgálják, a jobbklikk-próba azt, hogy nem nyílik menü).
 - **Kész, ha:** renderelt próbában a jobb kattintás a hasáb üres részén (lapos és fanézetben) nem nyit menüt, és a hasáb képkockája változatlan; a mappasor, az Albums és a People sor jobbklikk-menüje (a szomszéd) és a ▾ legördülője változatlan. A próba a nyitást méri, az eredeti képével való vizuális egyezést nem.
 
 #### J7. A Shortcuts almenü Desktop és My Pictures tétele legyen tiltható
@@ -348,7 +348,7 @@ A Colab-mérés (8. szakasz) két további állítást helyesbít:
 - **3.2, a Shortcuts-tiltások:** "a rendszermappa-ellenőrzés csak feltevés, Windows-specifikus, a PicasaPy-ban nincs teendő." **Megdőlt:** a Desktop és a My Pictures tétel a mért képen szürke (job-804 17. kép), és a `0x004f7e40` olvasata szerint a szürkítés a könyvtár mappáitól függ, nem Windows-specifikus; a teendő a J7. A My Documents sosem tiltott, ez a korábbi állítás része volt, és a mérés megerősíti.
 - **4., "Mikor kerül a registrybe? nyitott":** a váltás pillanatában nem (job-805), kényszerített leállás után az alapérték áll (job-806), a szabályos kilépés a C5c mérésére vár.
 
-A 6. szakasz 1-7. sora és a 7. szakasz J1-J4 "Mit ad ma" mezői a #7340 és #7341 beolvasztása előtti állapotot írják; a J1-J4 azóta a mainben van, a mai kód idézetei a 8. szakasz jegyeiben állnak.
+A 6. szakasz 1-7. sora és a 7. szakasz J1-J4 "Mit ad ma" mezői a #7340 és #7341 beolvasztása előtti állapotot írják; a J1-J4 azóta a fő ágban van, a mai kód idézetei a 8. szakasz jegyeiben állnak.
 
 ## 10. Amit kizártam
 
