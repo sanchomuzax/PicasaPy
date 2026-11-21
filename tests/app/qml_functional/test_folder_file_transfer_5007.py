@@ -177,11 +177,16 @@ class TestMappasorraHuzas:
             if item.objectName() == "thumbDragProxy"
             and int(item.property("photoIndex")) == huzott_sor
         )
-        drop_area = next(
-            item
-            for item in _latvanyelemek(window.contentItem())
-            if item.objectName() == f"folderDropArea_{target}"
-        )
+        def _drop_area():
+            # #7342: a bal hasáb delegáltja húzás közben újraépülhet, ezért a
+            # ledobási területet minden használatkor újra megkeressük.
+            return next(
+                item
+                for item in _latvanyelemek(window.contentItem())
+                if item.objectName() == f"folderDropArea_{target}"
+            )
+
+        assert _drop_area() is not None
         # #5105: a termék húzási módját a teszt NEM írja át — pontosan azt
         # húzzuk, amit a felhasználó.
         start = _ablakpont(window, mouse_area)
@@ -216,7 +221,7 @@ class TestMappasorraHuzas:
             row_payload = row_payload.toVariant()
         photo_rows = [int(row) for row in row_payload]
         assert sorted(photo_rows) == kijelolt_sorok
-        assert drop_area.property("enabled") is True
+        assert _drop_area().property("enabled") is True
         QTest.mouseRelease(window, Qt.MouseButton.LeftButton, pos=end)
 
         # #5105: a ledobást a DropArea-nak kell elkapnia — a jelet a teszt
