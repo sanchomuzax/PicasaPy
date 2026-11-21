@@ -30,18 +30,11 @@ from tests.app.qml_functional._nezet_menu_5150_helpers import (
 _FA_ELEM = "menuViewFolderView"
 _SHORTCUTS = "menuViewFolderViewShortcuts"
 
-_GYOKEREK = (
-    ("menuViewRootMyComputer", "all"),
-    ("menuViewRootMyPictures", "mypics"),
-    ("menuViewRootMyDocuments", "mydocs"),
-    ("menuViewRootDesktop", "desktop"),
-)
-
 _GYORS_GYOKEREK = (
-    ("menuViewShortcutMyComputer", "all"),
-    ("menuViewShortcutMyPictures", "mypics"),
-    ("menuViewShortcutMyDocuments", "mydocs"),
     ("menuViewShortcutDesktop", "desktop"),
+    ("menuViewShortcutMyDocuments", "mydocs"),
+    ("menuViewShortcutMyPictures", "mypics"),
+    ("menuViewShortcutMyComputer", "all"),
 )
 
 _RENDEZESEK = (
@@ -105,21 +98,6 @@ class TestFanezetEsGyokerek:
 
         assert varj(qt_app, lambda: allapot.property("treeView") is False), (
             "a Mappanézet ▸ Lapos nézet kattintás nem váltott vissza"
-        )
-
-    @pytest.mark.parametrize(("nev", "token"), _GYOKEREK)
-    def test_a_gyoker_valodi_kattintassal_atallitja_a_gyokeret(self, mappa_app, qt_app, nev, token):
-        window, controller, _engine = mappa_app
-        elokeszit(window, qt_app, controller)
-        allapot = _fa_allapot(window)
-        elozo = _elozo(token, ("all", "desktop"))
-        allapot.setViewRoot(elozo)
-        assert varj(qt_app, lambda: allapot.property("viewRoot") == elozo)
-
-        tetel_kattintasa(window, qt_app, nev, almenu_utvonal=(_FA_ELEM,))
-
-        assert varj(qt_app, lambda: allapot.property("viewRoot") == token), (
-            f"a {nev} kattintás nem állította a gyökeret: {token}"
         )
 
     @pytest.mark.parametrize(("nev", "token"), _GYORS_GYOKEREK)

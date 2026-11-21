@@ -114,12 +114,9 @@ Rectangle {
     //: nincs rajta — ezért van alapértéke.
     property bool treeViewActive: false
     signal flatViewRequested()
-    //: #1421: a `folderviewpopup` (▾) gomb — MÉRVE (a bináris
-    //: `0x005e2000` kezelője, `picasa-konyvtar-eszkoztar-viselkedes.md` 4.):
-    //: NEM önálló beállítás-panelt nyit, hanem UGYANAZT a lenyíló menüt,
-    //: ami a `Nézet ▸ Mappanézet` almenü. A menü ezért NEM készül újra
-    //: itt: a jelzést a Main.qml a menüsor meglévő almenüjének
-    //: megnyitására fordítja — egy definíció, két belépési pont.
+    //: #7340: a `folderviewpopup` (▾) gomb saját, a FolderListContextMenu
+    //: komponensre épülő legördülőt kér; a menüsávi Mappanézet-almenü külön
+    //: marad.
     signal folderViewMenuRequested(var anchorItem)
     signal treeViewRequested()
 

@@ -11,8 +11,54 @@ PicasaMenu {
     property var controllerRef:
         (typeof controller !== "undefined" && controller)
             ? controller : null
+    property var toolbarFolderOptionsMenu: FolderListContextMenu {
+        objectName: "toolbarFolderListMenu"
+        objectNamePrefix: "toolbarFolderListMenu"
+        sortMode: (menuView.controllerRef
+                && menuView.controllerRef.paneSort !== undefined)
+            ? menuView.controllerRef.paneSort : "date"
+        sortReverse: (menuView.controllerRef
+                && menuView.controllerRef.paneSortReverse !== undefined)
+            ? menuView.controllerRef.paneSortReverse : false
+        peopleSort: (menuView.controllerRef
+                && menuView.controllerRef.peopleSort !== undefined)
+            ? menuView.controllerRef.peopleSort : "name"
+        simplifiedTree: (menuView.bar.folderViewCtl
+                && menuView.bar.folderViewCtl.simplified !== undefined)
+            ? menuView.bar.folderViewCtl.simplified : false
+        albumThumbs: (menuView.bar.folderViewCtl
+                && menuView.bar.folderViewCtl.albumThumbs !== undefined)
+            ? menuView.bar.folderViewCtl.albumThumbs : false
+        viewRoot: (menuView.bar.folderViewCtl
+                && menuView.bar.folderViewCtl.viewRoot !== undefined)
+            ? menuView.bar.folderViewCtl.viewRoot : ""
+        treeMode: (menuView.bar.folderViewCtl
+                && menuView.bar.folderViewCtl.treeView !== undefined)
+            ? menuView.bar.folderViewCtl.treeView : false
+        onSortModeRequested: function(mode) {
+            if (menuView.controllerRef)
+                menuView.controllerRef.setPaneSort(mode)
+        }
+        onSortReverseRequested:
+            if (menuView.controllerRef)
+                menuView.controllerRef.togglePaneSortReverse()
+        onPeopleSortRequested: function(mode) {
+            if (menuView.controllerRef)
+                menuView.controllerRef.setPeopleSort(mode)
+        }
+        onSimplifiedTreeRequested:
+            if (menuView.bar.folderViewCtl)
+                menuView.bar.folderViewCtl.toggleSimplified()
+        onAlbumThumbnailsRequested:
+            if (menuView.bar.folderViewCtl)
+                menuView.bar.folderViewCtl.toggleAlbumThumbs()
+        onViewRootRequested: function(token) {
+            if (menuView.bar.folderViewCtl)
+                menuView.bar.folderViewCtl.setViewRoot(token)
+        }
+    }
     function openFolderViewMenu(anchorItem) {
-        folderViewMenu.popup(anchorItem, 0, anchorItem.height)
+        toolbarFolderOptionsMenu.popup(anchorItem, 0, anchorItem.height)
     }
     objectName: "menuView"
     title: qsTr("&View")
@@ -475,7 +521,7 @@ PicasaMenu {
         title: qsTr("Thumbnail &Caption")
         MenuItem {
             objectName: "menuViewThumbCaptionNone"
-            text: qsTr("None")
+            text: qsTr("&None")
             checkable: true
             checked: controllerRef && controllerRef.thumbCaptionMode === "none"
             onTriggered: {

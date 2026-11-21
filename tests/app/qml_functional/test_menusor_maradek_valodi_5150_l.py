@@ -14,7 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QObject, Qt
 
 from tests.app.qml_functional._menusor_maradek_5150_helpers import (
     billentyu,
@@ -248,36 +248,31 @@ class TestNezetMappanezet:
             utak[kulcs] = str(mappa)
         monkeypatch.setattr(fhc, "_rendszermappa", lambda kulcs: utak.get(kulcs, ""))
 
-    @pytest.mark.parametrize(
-        ("nev", "token"),
-        [
-            ("menuViewRootMyComputer", "all"),
-            ("menuViewRootMyPictures", "mypics"),
-            ("menuViewRootMyDocuments", "mydocs"),
-            ("menuViewRootDesktop", "desktop"),
-        ],
-    )
-    def test_a_gyoker_valodi_kattintassal_atallitja_a_gyokeret(self, menu_app, qt_app, nev, token):
-        window, controller, _engine = menu_app
-        elokeszit(window, qt_app, controller)
-        allapot = window.property("menuBar").property("folderViewCtl")
-        elozo = "all" if token != "all" else "desktop"
-        allapot.setViewRoot(elozo)
-        assert varj(qt_app, lambda: allapot.property("viewRoot") == elozo)
-
-        tetel_kattintasa(window, qt_app, "&View", nev, almenu_utvonal=("menuViewFolderView",))
-
-        assert varj(qt_app, lambda: allapot.property("viewRoot") == token), (
-            f"a {nev} kattintás nem állította a fanézet gyökerét: {token}"
-        )
+    def test_a_gyokerek_a_shortcutsban_vannak_nem_felsoszinten(self, menu_app):
+        """#7340: a négy gyorsgyökér csak a Shortcuts almenü része."""
+        window, _controller, _engine = menu_app
+        for nev in (
+            "menuViewRootMyComputer",
+            "menuViewRootMyPictures",
+            "menuViewRootMyDocuments",
+            "menuViewRootDesktop",
+        ):
+            assert window.findChild(QObject, nev) is None, f"felső szintű gyökér maradt: {nev}"
+        for nev in (
+            "menuViewShortcutDesktop",
+            "menuViewShortcutMyDocuments",
+            "menuViewShortcutMyPictures",
+            "menuViewShortcutMyComputer",
+        ):
+            assert window.findChild(QObject, nev) is not None, f"hiányzó Shortcuts tétel: {nev}"
 
     @pytest.mark.parametrize(
         ("nev", "token"),
         [
-            ("menuViewShortcutMyComputer", "all"),
-            ("menuViewShortcutMyPictures", "mypics"),
-            ("menuViewShortcutMyDocuments", "mydocs"),
             ("menuViewShortcutDesktop", "desktop"),
+            ("menuViewShortcutMyDocuments", "mydocs"),
+            ("menuViewShortcutMyPictures", "mypics"),
+            ("menuViewShortcutMyComputer", "all"),
         ],
     )
     def test_a_gyorsgyoker_valodi_kattintassal_atallitja_a_gyokeret(

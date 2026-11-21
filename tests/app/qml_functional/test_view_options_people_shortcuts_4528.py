@@ -1,4 +1,4 @@
-"""#4528: a folderviewpopup embersorrendje és Shortcuts almenüje."""
+"""#4528/#7340: a saját View options menü embersorrendje és Shortcuts almenüje."""
 
 from __future__ import annotations
 
@@ -82,6 +82,20 @@ def _menu_sor(menu, index: int):
     return elem
 
 
+def _menu_sor_neve(menu, index: int) -> str:
+    kifejezes = QQmlExpression(
+        qmlContext(menu),
+        menu,
+        "(function () {"
+        f"  var elem = itemAt({index});"
+        "  return elem.subMenu ? elem.subMenu.objectName : elem.objectName;"
+        "})()",
+    )
+    nev, hiba = kifejezes.evaluate()
+    assert not hiba, kifejezes.error()
+    return str(nev if isinstance(nev, str) else nev.toString())
+
+
 def _menu_sor_nev_szerint(menu, nev: str):
     for index in range(int(menu.property("count"))):
         elem = _menu_sor(menu, index)
@@ -120,11 +134,12 @@ def test_folderviewpopup_people_sort_es_shortcuts(qt_app, tmp_path):
 
         alapmagassag = window.height()
         gomb = _gyerek(window, "toolbarFolderViewPopupButton")
-        menu = _gyerek(window, "menuViewFolderView")
+        menu = _gyerek(window, "toolbarFolderListMenu")
+        tree_button = _gyerek(window, "toolbarTreeViewButton")
         rendezesek = (
-            ("menuViewSortPeopleByName", "name", list(_NEVEK)),
-            ("menuViewSortPeopleByAmount", "count", ["Zoe", *_NEVEK[:-1]]),
-            ("menuViewSortPeopleByTop10", "top", ["Zoe", *_NEVEK[:-2]]),
+            ("toolbarFolderListMenuSortPeopleByName", "name", list(_NEVEK)),
+            ("toolbarFolderListMenuSortPeopleByCount", "count", ["Zoe", *_NEVEK[:-1]]),
+            ("toolbarFolderListMenuSortPeopleByTopList", "top", ["Zoe", *_NEVEK[:-2]]),
         )
 
         for eltolás, (azon, mod, vart_nevek) in zip(
@@ -138,15 +153,23 @@ def test_folderviewpopup_people_sort_es_shortcuts(qt_app, tmp_path):
                 f"az ablakmagasság nem állt be ({eltolás:+} px)"
             )
 
+            if mod == "top":
+                _kattint(tree_button, qt_app)
+                assert _varj(
+                    qt_app,
+                    lambda: window.property("menuBar").property("folderViewCtl")
+                    .property("treeView") is True,
+                ), "a Top 10 próbához nem kapcsolt be a fanézet"
+
             _kattint(gomb, qt_app)
             assert _varj(qt_app, lambda: menu.property("opened") is True), (
-                "a ▾ gomb nem nyitotta meg a Mappanézet menüt"
+                "a ▾ gomb nem nyitotta meg a saját View options menüt"
             )
 
             emberek_tetelek = (
-                "menuViewSortPeopleByName",
-                "menuViewSortPeopleByAmount",
-                "menuViewSortPeopleByTop10",
+                "toolbarFolderListMenuSortPeopleByName",
+                "toolbarFolderListMenuSortPeopleByCount",
+                "toolbarFolderListMenuSortPeopleByTopList",
             )
             for nev in emberek_tetelek:
                 _gyerek(window, nev)
@@ -154,39 +177,43 @@ def test_folderviewpopup_people_sort_es_shortcuts(qt_app, tmp_path):
             menu_sor_nevek = []
             for index in range(int(menu.property("count"))):
                 elem = _menu_sor(menu, index)
-                nev = elem.objectName()
+                nev = _menu_sor_neve(menu, index)
                 if not nev:
                     szoveg = elem.property("text") or elem.property("title") or ""
                     nev = str(szoveg).replace("&", "").strip()
                 menu_sor_nevek.append(nev)
-            vart_sorrend = (
-                "menuViewSortByDate",
-                "menuViewSortByRecent",
-                "menuViewSortBySize",
-                "menuViewSortByName",
-                "menuViewSortReverse",
+            assert menu_sor_nevek == [
+                "toolbarFolderListMenuSortByDate",
+                "toolbarFolderListMenuSortByChanged",
+                "toolbarFolderListMenuSortBySize",
+                "toolbarFolderListMenuSortByName",
+                "toolbarFolderListMenuSortReverse",
+                "",
                 *emberek_tetelek,
-                "Shortcuts",
-                "menuViewAlbumThumbnails",
-                "menuViewSimplifiedTreeView",
-            )
-            sorrendi_indexek = [menu_sor_nevek.index(nev) for nev in vart_sorrend]
-            assert sorrendi_indexek == sorted(sorrendi_indexek), (
-                "a Sort People és Shortcuts tételek sorrendje nem követi a specet"
-            )
+                "",
+                "toolbarFolderListMenuShortcuts",
+                "",
+                "toolbarFolderListMenuShowThumbnails",
+                "toolbarFolderListMenuSimplifiedTree",
+            ], "a View options menü sorrendje vagy elválasztói eltérnek a 2.1 táblától"
 
-            shortcuts = _menu_objektum(window, "menuViewFolderViewShortcuts")
-            gyors_tetelek = (
-                "menuViewShortcutMyComputer",
-                "menuViewShortcutMyPictures",
-                "menuViewShortcutMyDocuments",
-                "menuViewShortcutDesktop",
-            )
+            shortcuts = _menu_objektum(window, "toolbarFolderListMenuShortcuts")
             assert [
                 _menu_sor(shortcuts, index).objectName()
                 for index in range(int(shortcuts.property("count")))
-            ] == list(gyors_tetelek), "a Shortcuts almenü tételeinek sorrendje hibás"
-            for nev in gyors_tetelek:
+            ] == [
+                "toolbarFolderListMenuDesktop",
+                "toolbarFolderListMenuMyDocuments",
+                "toolbarFolderListMenuMyPictures",
+                "",
+                "toolbarFolderListMenuMyComputer",
+            ], "a Shortcuts almenü tételeinek sorrendje hibás"
+            for nev in (
+                "toolbarFolderListMenuDesktop",
+                "toolbarFolderListMenuMyDocuments",
+                "toolbarFolderListMenuMyPictures",
+                "toolbarFolderListMenuMyComputer",
+            ):
                 _gyerek(window, nev)
 
             tetel = _gyerek(window, azon)

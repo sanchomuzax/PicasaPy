@@ -15,7 +15,7 @@ ebben a fájlban nem ismételjük):
 - `menuViewEditControls`: test_editor_maradek_4183.py:199
 - `menuViewDarkTheme`: test_sajat_menu_jeloles_4638.py:110
 - `menuViewSearchOptions`: test_menu_talca_egyeb_valodi_5135.py:144
-- `menuViewSortPeopleBy*`: test_view_options_people_shortcuts_4528.py:106
+- `folderListMenuSortPeopleBy*`: test_view_options_people_shortcuts_4528.py (a #7340 szerinti külön ▾ menü)
 
 A `menuViewDisplayModeRemoteDesktop` tétel nyugdíjazott (`retired: true`),
 ezért nincs kezelője, és csak a tiltottságát ellenőrizzük.

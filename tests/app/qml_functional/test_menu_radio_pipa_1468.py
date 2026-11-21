@@ -460,9 +460,9 @@ class TestBalHasabHelyiMenuje:
 
     nevek = (
         "folderListMenuSortByDate",
-        "folderListMenuSortByName",
-        "folderListMenuSortBySize",
         "folderListMenuSortByChanged",
+        "folderListMenuSortBySize",
+        "folderListMenuSortByName",
     )
 
     @staticmethod
