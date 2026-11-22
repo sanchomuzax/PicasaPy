@@ -292,7 +292,9 @@ def _varj_stabil_lista(window, controller, qt_app) -> None:
     ), "a háttérmunkák nem értek véget"
     assert varj_feltetelre(
         qt_app,
-        lambda: {"year:2023", "year:2021"} <= {n for n, _y in _sorrend(window)},
+        # #7364: a lista első sora fölött nincs fejléc, ezért a két év közül
+        # csak a későbbi csoporté látszik; bármelyik a felülírt dátumokból jön
+        lambda: bool({"year:2023", "year:2021"} & {n for n, _y in _sorrend(window)}),
         60.0,
     ), "a lapos lista nem rendeződött át a felülírt dátumok szerint"
     elozo = None
@@ -365,7 +367,8 @@ class TestLaposLista:
             e for e in _walk(window.contentItem())
             if e.property("kind") == "year" and _tenyleg_latszik(e)
         ]
-        assert len(evek) >= 2, "a lapos listán nem látszanak az év-fejlécek"
+        # #7364: az első sor fölött nincs fejléc, a két évből egy látszik
+        assert len(evek) >= 1, "a lapos listán nem látszik év-fejléc"
         elotte = controller.property("currentFolder")
 
         for fejlec in evek:
