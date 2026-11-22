@@ -717,6 +717,7 @@ ellenőrizte.*
   rekordtömb `CAlbumList` `+0x2c0` listájához vezető kapcsolata sem
   bizonyított. A mezőazonosság önmagában nem bizonyít azonos
   objektumtípust.
+  ⚠️ **HELYESBÍTÉS (#7351, `picasa-hasab-csoportfejlecek-7351.md`):** a `0x004b3770` **nem albumépítő és nem jelölt** a `+0x30 = 4` sor beszúrójának keresésében: a bal hasáb **csoportfejléc-gyártója** (év, illetve `Updated <hónap> <év>` fejléc, típus-2 sorok). A `CAlbumBuilder::updated` kulcs ennek a fejlécnek az előtagja. Az alábbi "Ghidra-kör kell: 0x004b3770" kérdés ezzel lezárva.
 - Következtetés: **nem dőlt el**, hogy a 4-es `newalbumprompt` sor csak
   üres albumlistánál, vagy nem üres listánál is megjelenik, illetve hogy
   melyik vizuális terület fogad ejtést. A listaépítő és a hívási lánc
@@ -743,6 +744,6 @@ ezért ez a kör nem végzett QEMU-futást.
 
 **Cáfoló kör:** az „első album után a sor biztosan eltűnik” állítást próbáltam cáfolni azzal, hogy a `0x00765d30` felirat-olvasóban és a `0x005e39a0` Drop-ágban albumszám-vizsgálatot kerestem. Egyik sem vizsgál albumszámot, de mindkettő már létező listaelemet fogyaszt, ezért ez nem cáfolja a csak üres listánál történő beszúrást. A megfigyelést ugyanazzal a mércével ellenőrizve a két funkció nem a listaépítő; a kérdés nyitva marad.
 
-**Ghidra-kör kell: 0x004b3770 — a `CAlbumBuilder::updated` által másolt 0x38 bájtos rekordtömb azonos-e a `CAlbumList` `+0x2c0` modelljével, és melyik hívó/ág állítja elő a `+0x30 = 4` rekordot meglévő albumok esetén? [blokkoló]**
+**Ghidra-kör kell: 0x004b3770 - a `CAlbumBuilder::updated` által másolt 0x38 bájtos rekordtömb azonos-e a `CAlbumList` `+0x2c0` modelljével, és melyik hívó/ág állítja elő a `+0x30 = 4` rekordot meglévő albumok esetén? [blokkoló]** **LEZÁRVA (#7351):** a `0x004b3770` csoportfejléc-gyártó, nem albumépítő; a `+0x30 = 4` sor beszúrója nem ez a függvény.
 
 **Ghidra-kör kell: 0x00565920 — a `CAlbumList`-konstruktor szülőobjektumának melyik útja tölti fel a `+0x2c0` listát, és a beszúrás függ-e a meglévő albumok számától? [blokkoló]**
