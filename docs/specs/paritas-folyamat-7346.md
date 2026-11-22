@@ -317,7 +317,7 @@ A csempekattintás mintája, amelyet a menünek is követnie kell: `EditorTabCom
 | Warmify | 3. fül, `warm` | `selectTab(2)` | `selectTab(2)`, `effectRequested("warm")` |
 | Sharpen | 3. fül, `unsharp2` (Shift nélkül): paraméteres, a panelt nyitja, nem alkalmaz | `selectTab(2)` | `selectTab(2)`, `tryOpenParamPanel("unsharp2", label)`: a panel nyílik Alkalmaz és Mégse gombbal, a lánc nem változik, amíg az Alkalmaz meg nem történik |
 | Film Grain | 3. fül, `grain2` (a 0x00c7e5a0 csempetábla szerint az 1. fül 5. csempéje a `PicnikGrain`, a `grain2`-nek nincs csempéje) | `selectTab(2)` | `selectTab(2)`, majd a `grain2` egyképes alkalmazása. Az `applyEffect` `_APPLICABLE_EFFECTS` halmaza (`edit_controller_shared.py:305`) a `grain2`-t nem tartalmazza (a fájlban csak a `_ONE_CLICK_KEYS`-ben áll, 212. sor; az `_EFFECT_NAMES`-ben a `grain` áll, 251. sor), tehát `applyEffect("grain2")` `ValueError`-t adna. Vagy a névkészletet kell bővíteni, vagy a #7123 előtti `applyEffectMany([row], "grain2")` utat kell úgy visszaállítani, hogy a nyitott szerkesztési munkamenet frissüljön |
-| Ctrl+Shift+B | `0x005e6370` → `0x005fe370(panel, "bw")`, szerkesztő-állapot vizsgálata nélkül, a megnyitott képre (a Ctrl+Shift+E ikertestvére, `job-810`) | nézőben kikapcsolva | a Ctrl+Shift+E mintájára (`MainKeyboardShortcuts.qml:166-192`) nézőben is él, ugyanazzal a kapuval (`panel.enabled`, nincs móduseszköz, kiegyenesítés vagy paraméterpanel) |
+| Ctrl+Shift+B | `0x005e6370` → `0x005fe370(panel, "bw")`, szerkesztő-állapot vizsgálata nélkül, a megnyitott képre (a Ctrl+Shift+E ikertestvére, `job-810`) | nézőben kikapcsolva | a Ctrl+Shift+E mintájára (`MainKeyboardShortcuts.qml:166-192`) nézőben is él, ugyanazzal a kapuval (`panel.enabled`, nincs aktív módváltó eszköz, kiegyenesítés vagy paraméterpanel) |
 
 **Nem szabad:** a könyvtárnézeti ág (kijelölt képekre köteg) változatlan; a forgatás és a vörösszem-javítás ága változatlan; a Sharpen menüparancs nem alkalmaz hatást a panel Alkalmazása előtt; a Shift-változatok (`unsharp`, `grain`) a menüben nincsenek (nincs felhasználói eset, `picasa-menu-parancsok-viselkedes.md` 33.3).
 
@@ -414,6 +414,6 @@ A lépések a végrehajtó igéit használják (`picasa: indit`, `var_ablak`, `k
 
 - Az első kör "a menü csak navigál, nem alkalmaz" állítását (D1): az öt névvel hívó ág a `0x005f8520`-ra fut, ami a csempe végpontja. Ez az út zárva, ne járja újra senki.
 - Azt, hogy a `0x00579330` navigáló függvény: 37 bájtos feltétel-őr.
-- Azt, hogy az effekt-paraméterpanelen az Alaphelyzet gomb "hiánya a PicasaPy forrásában nem bizonyít semmit": az eredeti erőforrásában is hiányzik, két független úton (resource és felvétel).
+- Azt, hogy az effekt-paraméterpanelen az Alaphelyzet gomb "hiánya a PicasaPy forrásában nem bizonyít semmit": az eredeti erőforrásában is hiányzik, két független úton (erőforrásfájl és felvétel).
 - Azt a feltevést, hogy a #7123 tesztje az eredeti viselkedést rögzítette: a teszt az akkor nyitott kérdést ("kijelöl vagy alkalmaz is") a nem-alkalmazás irányába zárta.
 - Azt, hogy a Copy All Effects többképes ágához új felvétel kell: a #6861 valódi menükattintásos teszt az eredeti mért Info-szövegével egyezik.
