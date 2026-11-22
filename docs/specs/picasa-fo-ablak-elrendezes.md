@@ -510,8 +510,9 @@ másolat bitre egyezik az indexeltével). Csak statikus vizsgálat:
 kiolvasása az EXE-ből, és három teljes `.text` pásztázás a `paszta.py`-val
 (egyenként 2 884 879 utasítás, csúcs-RSS 49 MiB): a szkenner és a figyelő vtábláinak
 közvetlen operandusai, valamint a `[reg+0x344]`, `[reg+0x358]`, `[reg+0x484]`
-hozzáférések. Az eredetit nem futtattam; a futtatott mérés (M4, Colab #799) a
-hívónál fut. A független újralevezetés (#140) **nem** futott le (itt nincs
+hozzáférések. Az eredetit nem futtattam; a futtatott felmérés (M4a, Colab
+job-799) eredménye a lenti K. szakaszban van (2026-11-22), a váltásmérés (M4b)
+még nem futott. A független újralevezetés (#140) **nem** futott le (itt nincs
 engedélyezett független ellenőrző ügynök), ezért a fokok egyetlen, közvetlen diszasszemblátumon
 alapuló olvasatra vonatkoznak.
 
@@ -750,6 +751,230 @@ nézetből azonnal eltűnik-e); statikus alapon nincs kód-teendő. *Kész, ha:*
 az M4 `-shutdown.csv` és `db3` állapota és a PicasaPy index ugyanazt a
 sorsot mutatja a kikapcsolt típusra, és bekapcsolás után a korábban kiszűrt
 fájlok az eredetivel egyező módon visszajönnek.
+
+**K. Mérési eredmény (job-799, 2026-11-22)**
+
+**Hatókör és bizonyosság.** A job-799 az **M4a felmérés**: a Tools > Options >
+File Types fül megnyitása a `video` mintakészlettel, Cancel-lel zárva. **Egyetlen
+fájltípust sem kapcsolt át**, ezért a kikapcsolás és a bekapcsolás könyvtári
+hatása ebből **nem mérhető**; a feladat célja a fül jelölőinek kimérése volt az
+M4b-hez. Kimenet: 15 képernyőkép és az `allapot.json` (ablaklista, OCR; a
+számokat az OCR nem adta vissza, ezért mindent a képről olvastam). db3, registry
+és kepmappa kimenet nem volt kérve. A kép i = az i. lépés ELŐTTI állapot (a 15. a
+vég); a 2-5., 6-7., 8-9., 10-11., 12-13. és 14-15. kép bájtra azonos (md5), mert
+a köztes lépések várakozások. A kattintási koordináták az 1280x1024-es kép
+képpontjai: a Tools `(247,29)`, az Options... `(268,277)`, a File Types fül
+`(490,367)` és a Cancel `(885,672)` a 8., 10. és 12. képen pontosan ezeken a
+pontokon látszik.
+
+**K1. A képek.**
+
+| Kép | Mikor | Mit mutat |
+|---|---|---|
+| 1 | a lépések előtt, a mintakészlet kibontása után | `PicasaTeszt (24)`, `Recently Updated (24)`; státuszsor: `24 pictures`, `4.5 MB on disk`; tálca: `Folder Selected - 24 photos`; videócsempe nincs |
+| 2-5 | 10, 20, 30, 40 s után | `PicasaTeszt (25)`, `Recently Updated (25)`; tálca: `Folder Selected - 25 photos`; a rács végén új csempe: egy színsávos tesztkép (a videó első képkockája); a státuszsor **még** `24 pictures`, `4.5 MB` |
+| 6-7 | a PicasaTeszt sor `(80,215)` kattintása után | a státuszsor frissült: `25 pictures`, `11.1 MB on disk` |
+| 8-9 | a Tools menü nyitva | Folder Manager..., Upload Manager... (szürke), People Manager..., Configure Photo Viewer... (szürke), Configure Screensaver... (szürke), Back Up Pictures..., Batch Upload..., Adjust Date and Time..., Upload >, Geotag >, Experimental >, Configure Buttons..., Options... |
+| 10-11 | az Options... után | az Options ablak 584x345 px (a job-190 szerint rögzített méret), nyolc fül: General, E-Mail, File Types, Slideshow, Printing, Network, Web Albums, Name Tags; a General fül: Use special effects (be), Show tooltips (be), Single-click to exit Edit View (ki), Detect duplicates while importing (be), Clear cache files (ki), Delete from disk without confirmation (ki), Remove from album without confirmation (ki), Send anonymous usage stats to Google (ki), Automatic updates: Update automatically, Language: System Default (en-US), Save imported pictures in: My Pictures |
+| 12-13 | a File Types fül | lásd K2 |
+| 14-15 | a Cancel után | az Options bezárult; a könyvtár változatlan (25, 11.1 MB), nincs üzenet |
+
+**K2. A File Types fül, mérve.** Fejléc: `Display JPEG files and:` (x 547-658,
+y 388-397). Nincs JPEG-jelölő és nincs más vezérlő a fülön; a panel a Quicktime
+sor alatt üres.
+
+| Sor | Felirat (szó szerint) | Állapot | Jelölő közepe (x,y) |
+|---|---|---|---|
+| 1 | `.BMP` | be | `(552,406)` |
+| 2 | `.GIF` | **ki** | `(552,423)` |
+| 3 | `.PNG` | **ki** | `(552,440)` |
+| 4 | `.TGA` | **ki** | `(552,457)` |
+| 5 | `.TIF, .TIFF` | be | `(552,474)` |
+| 6 | `.WEBP` | be | `(552,491)` |
+| 7 | `.PSD (Photoshop)` | be | `(552,508)` |
+| 8 | `RAW formats` és mellette `(Supported Formats)` | be | `(552,526)` |
+| 9 | `Movies (.AVI, .MPG, .ASF, .WMV)` | be | `(552,543)` |
+| 10 | `Quicktime Movies (.MOV)` | **ki és szürke (letiltott)** | `(552,560)` |
+
+Geometria: a jelölő 13x13 px (x 546-558), a felirat x=564-nél kezdődik, a
+sorköz 17 px (a PSD és a RAW sor között 18), a panel kerete x 358-923, y
+376-648. A `(Supported Formats)` zárójele fekete, csak a szó kék és aláhúzott.
+Az alapállapot (GIF, PNG, TGA ki; BMP, TIF, WEBP, PSD, RAW, Movies be) a
+statikus alapértékekkel egyezik: `push 0` a `0x006e0e76` (`SupportGIF`),
+`0x006e0e83` (`SupportPNG`) és `0x006e0e90` (`SupportTGA`) címen, `push 1` a
+többinél.
+
+**K3. Amit a futás a könyvtárról mutat.**
+
+1. **Az új fájl kézi művelet nélkül megjelenik a futó eredetiben.** A mintakészlet
+   a futó Picasa mappájába kerül a lépések előtt; az 1. képen még 24, a 2. képen
+   (10 s-sel később) már 25 elem látszik. Felső korlát: kb. 10 s; alsó korlát
+   nincs mérve (a képek 10 s-ra vannak egymástól).
+2. **A számlálók nem egyszerre frissülnek.** A faág (`PicasaTeszt (25)`,
+   `Recently Updated (25)`) és a tálcafelirat azonnal, a státuszsor (`24
+   pictures`, `4.5 MB`) csak a mappa újrakijelölése után (6. kép: `25 pictures`,
+   `11.1 MB`). A videó "picture"-nek számít (24 + 1).
+3. **A mintában egyetlen videócsempe van.** A státuszsor +6.6 MB-ot mutat. A
+   mintakészlet leírása szerint két fájl készül (`teszt-video.avi`, nyers
+   képpontokkal, és `teszt-video.wmv`); egy 30 képkockás, 320x240-es, 24 bites
+   nyers AVI 6 912 000 bájt (6.59 MiB), ez egyezik a +6.6 MB-tal, tehát a `.wmv`
+   vagy nem készült el, vagy nem számít bele. Ez **következtetés a méretből, nem
+   mérés**: a fájllista nincs a felvételen (N10).
+4. **A Cancel nem változtat semmin** (14-15. kép = 25, 11.1 MB; egyezik a
+   [paritas-folyamat-7325.md](paritas-folyamat-7325.md) 1.5 szakaszával).
+
+**K4. Új statikus leletek a mérés kapcsán.**
+
+- A `SupportMovies` és a `SupportQuicktime` regisztrált alapértékét a `0x00981af0`
+  számolja (`0x006e0e06`, `0x006e0e1c`). Ez **operációsrendszer-verzió-vizsgálat**,
+  nem QuickTime-vizsgálat: `GetVersionExA` (`0x00981b30`, IAT `0x00c40210`), igaz,
+  ha a `dwPlatformId == 2` (NT) és a főverzió 5-nél nagyobb, vagy 5 és az
+  alverzió legalább 1 (`0x00981b3a`-`0x00981b6b`), vagyis Windows XP vagy újabb.
+  A mért Movies bejelölt állapot ezzel egyezik.
+- A Quicktime sor mért letiltott, üres állapotának statikus magyarázata a
+  `0x00544bd0`: a `0x005509e0` hamis eredménye esetén `0`-t ír a
+  `Preferences\SupportQuicktime`-ba (`0x00544c07`-`0x00544c32`, kulcsnév
+  `0xc86358`). A `0x005509e0` a `SOFTWARE\Apple Computer, Inc.\QuickTime\` és a
+  `SOFTWARE\Apple Inc.\Apple Application Support\` kulcs `Version` és
+  `InstallDir` értékét olvassa; a `0x00544d70` a `qtsupport.dll`-t tölti. A
+  jelölő tiltott voltának közvetlen kódútja és a `0x00544bd0` hívója **NINCS MEG**
+  (vtábla-hívás lehet; az index nem látja). Az, hogy a Colab Wine-profiljából
+  hiányzik a QuickTime, következik a mért képből és a kódból, de a registry-kulcs
+  hiánya külön nincs mérve.
+- A `0x004ea360`, `0x0055ece0` és `0x0055ff80` közvetlen IAT-hívásai (index
+  `imports`): `EnterCriticalSection`, `LeaveCriticalSection`,
+  `GetCurrentThreadId`, `InterlockedIncrement`/`Decrement`, a `0x0055ece0`-nál
+  `QueryPerformanceCounter`. **Egyik függvénytestben sincs közvetlen fájl-, registry- vagy
+  adatbázis-API-hívás**; ez csak a közvetlen hívásokra áll, a hívottaikra
+  (`0x0055ece0`: 49, `0x0055ff80`: 24 különböző célpont az index `xrefs`
+  szerint) és a vtábla-hívásokra nem. Az N4 és az N5 ezért a hívottak
+  dekompilálásán marad.
+
+**K5. Következtetés a #7339 kérdésére.** Hogy a kikapcsolt típus **törli,
+megőrzi vagy újraírja** az indexsorokat, és hogy bekapcsolás után **mikor**
+jelennek meg újra, a job-799-ből **nem következik**, mert nem váltott át
+típust; az A-J szakaszok statikus olvasata érvényben marad (szinkron
+memóriabeli kivétel és figyelő-értesítés; a tartós réteg nyitott). Amit a
+job-799 **bizonyít**:
+
+1. az eredeti alapállapota (K2), köztük a három alapból kikapcsolt képtípus és a
+   letiltott Quicktime-sor;
+2. a Movies jelölő pontos helye az M4b-hez: `(552,543)`;
+3. a futó eredeti kézi lépés nélkül felveszi az új videót (K3/1), és a
+   számlálók nem egyszerre frissülnek (K3/2), tehát az M4b-ben a státuszsort
+   csak újrakijelölés után szabad olvasni.
+
+A hiányzó mérés pontosan: **az M4b négy külön feladatban (K9)**, mert a
+végrehajtó a db3-at, a kepmappát és a registryt csak a feladat **végén** menti.
+A mai M4b-feladat (Movies ki, OK, Movies be, OK egyetlen futásban) ezért a
+közbenső db3-állapotot nem rögzítené, és a "megőrzi / törli / újraírja"
+kérdést nem tudná eldönteni.
+
+**K6. Eredeti | Nálunk | Teendő.**
+
+| # | Eredeti (bináris, mérés) | Nálunk (fájl:sor, szó szerint) | Teendő |
+|---|---|---|---|
+| 1 | A fül fejléce és tíz sora a K2 sorrendjében, a feliratok betűre egyeznek (`.TIF, .TIFF`, `.PSD (Photoshop)`, `Movies (.AVI, .MPG, .ASF, .WMV)`, `Quicktime Movies (.MOV)`) | `OptionsTabFileTypes.qml:43`: `text: qsTr("Display JPEG files and:")`; `:127`: `text: qsTr(".TIF, .TIFF")`; `:163`: `text: qsTr(".PSD (Photoshop)")`; `:240`: `text: qsTr("Movies (.AVI, .MPG, .ASF, .WMV)")`; `:258`: `text: qsTr("Quicktime Movies (.MOV)")`; a sorrend az `objectName`-ekben: `:54` Bmp, `:72` Gif, `:90` Png, `:108` Tga, `:126` Tiff, `:144` Webp, `:162` Psd, `:185` Raw, `:239` Movies, `:257` QuickTime | **EGYEZIK.** A 4. szakasz táblájának felirat-megjegyzései (`.bmp`, `Videos (.mov, ...)`) a #5898 óta elavultak. Teendő nincs |
+| 2 | Alapállapot: GIF, PNG, TGA ki; BMP, TIF, WEBP, PSD, RAW, Movies be (K2; `push 0`: `0x006e0e76`, `0x006e0e83`, `0x006e0e90`) | `scanner/filetypes.py:106`: `DEFAULT_ENABLED_FILETYPES = frozenset(FILETYPE_GROUPS)`; `filetype_preferences.py:28`: `default = group in DEFAULT_ENABLED_FILETYPES`; `OptionsTabFileTypes.qml:74`: `checked: root.fileTypeEnabled("gif", true)` (`:92` png, `:110` tga) | **ELTÉR (igazolt: mérés és bináris).** Szándékos kompromisszum (#6060), de tiszta profilon az eredetit kell követni: 1. jegytörzs (K8) |
+| 3 | A Quicktime sor letiltott és üres, ha a `0x005509e0` hamisat ad (K4); az alapérték-számoló (`0x00981af0`) csak az XP+ verziót vizsgálja | `OptionsTabFileTypes.qml:259`: `checked: root.fileTypeEnabled("quicktime", true)`; a `:256-273` CheckBoxnak nincs `enabled:` sora | **Szándékos eltérés, nem jegyezendő:** nincs QuickTime-függőségünk, a `.mov`-ot a saját dekóderünk kezeli, ezért a sor engedélyezett és bekapcsolt marad. Kód-teendő nincs |
+| 4 | Sorköz 17 px, jelölő 13 px, a 584 px-es ablakban (K2) | `OptionsTabFileTypes.qml:48`: `Layout.preferredHeight: 22` | **Nem állítok eltérést:** a #4488 referenciája 744 px széles, a job-799 584 px; 744/584 = 1,274 és 22/17 = 1,294, 2 százalékon belül egyezik. Két különböző skála; azonos skálájú renderelt összevetés NINCS MEG |
+| 5 | A Cancel nem változtat a könyvtáron (14-15. kép) | `OptionsDialog.qml:209-210`: `function cancelOptions() {` / `optionsDraft.discard()` | **EGYEZIK.** Teendő nincs |
+| 6 | A kikapcsolt típus sorainak sorsa és a visszatérés ideje | `OptionsDialog.qml:168-169`: `if (fileTypesChanged && typeof controller.rescan === "function")` / `controller.rescan()`; `sync_photos.py:535`: `"DELETE FROM photos WHERE folder_id = ? AND name NOT IN"` | **NINCS MEG** (N7): az M4b dönti el (K9); eltérést addig nem állítok |
+
+**K7. Nyitott kérdések mérlege (a #7339 egésze).**
+
+| # | Kérdés | Állapot |
+|---|---|---|
+| N1 | Mi a `0x004e31a0` visszahívásának célja, és ír-e katalógust? | **LEZÁRVA** (H szakasz): `SetEvent`, nincs fájl-, registry- vagy adatbázis-hívás |
+| N2 | Ki ébred fel, és mit csinál? | **LEZÁRVA** (H szakasz): `0x004ebff0` főciklus, feldolgozó `0x004ea360` |
+| N3 | Szálat ébreszt-e a kikapcsolás ága? | **LEZÁRVA** (H szakasz): nem, szinkron az OK szálán |
+| N4 | Mit tesz a `0x004ea360` a `Dirty` 1/2 rekordokkal, és mit jelent a `Type == 1`? | **BLOKKOLT, felvehető irány:** a `0x004ea360` és hívottai dekompilálása (Colab Ghidra-sor); a közvetlen importok nem hoznak fájl-API-t (K4) |
+| N5 | A `DBLoader` mely kezelője ír tartós katalógust? | **BLOKKOLT, felvehető irány:** a `0x0055ff80`, `0x0055ece0` és a `0x006d4710` olvasóinak dekompilálása, és az M4b-1 / M4b-3 db3-állapota |
+| N6 | A `0x004e31a0` két extra argumentuma? | **BLOKKOLT:** ugyanaz a dekompilálás, mint az N4 |
+| N7 | A kikapcsolt típus eltűnik-e a nézetből, megmaradnak-e a tartós sorok, és mikor jönnek vissza? | **BLOKKOLT, felvehető mérés:** M4b-0, M4b-1, M4b-2, M4b-3 (K9); a Movies koordinátája kimérve: `(552,543)` |
+| N8 | Mi a fül alapállapota, és mi a Movies / Quicktime alapérték forrása? | **LEZÁRVA:** K2 mérés + `0x006e0e76`, `0x006e0e83`, `0x006e0e90`, `0x00981af0`, `0x00544bd0` |
+| N9 | Hogyan jelenik meg egy új fájl a futó eredetiben? | **LEZÁRVA** a #7339-hez szükséges felbontásban: kézi művelet nélkül, 10 s-on belül (K3/1); a pontosabb időzítés nem kell a kikapcsolás-bekapcsolás kérdéséhez, az M4b 3 s és 13 s után is képet ad |
+| N10 | Elkészült és megjelenik-e a `.wmv` a mintában? | **BLOKKOLT, felvehető mérés:** az M4b-0 `kepmappa` kimenete (fájllista, méretek) |
+| N11 | A Colab-profilból valóban hiányzik-e a QuickTime-kulcs? | **HATÓKÖRÖN KÍVÜL:** a PicasaPy-nak nincs QuickTime-függősége, a kulcs megléte semmilyen kódot nem változtat; a letiltott sor magyarázata statikusan és a képpel egyezik |
+| N12 | A `WriteDirscannerCSV` üzemmód (G szakasz) beállítható-e a Colab-feladatban? | **BLOKKOLT:** a mai végrehajtó nem tud tetszőleges registry-értéket előírni; gépezeti fejlesztés kell, a privát gépezet-jegyekben. Nélküle is eldönthető az N7 (K9), a belső tábla csak az N4/N5-öt segítené |
+
+**Nyitott kérdések: 5 lezárva (N1-N3, N8, N9) · 6 blokkolt (N4-N7, N10, N12) · 1
+hatókörön kívül (N11) · 0 "csak nyitva".**
+
+**K8. Jegytörzs-jelölt (igazolt eltérésre).**
+
+*1. jegy. Cím:* "Új profilon az Options > File Types fülön a .GIF, .PNG és .TGA
+jelölő üresen indul, mint az eredetiben".
+*Eredeti:* a `SupportGIF`, `SupportPNG` és `SupportTGA` regisztrált alapértéke
+`0` (`push 0`: `0x006e0e76`, `0x006e0e83`, `0x006e0e90`; kulcsnevek `0xc81010`,
+`0xc81004`, `0xc86388`); mérés: a Colab job-799 12. képe (alapprofil): a három
+jelölő üres, a BMP, TIF/TIFF, WEBP, PSD, RAW és Movies jelölt. A hiányzó kulcsot az
+eredeti az alapértékkel olvassa, tehát új profilon a `.gif`, `.png` és `.tga`
+fájl nem kerül a könyvtárba, amíg a felhasználó be nem kapcsolja.
+*Nálunk:* `scanner/filetypes.py:106`: `DEFAULT_ENABLED_FILETYPES =
+frozenset(FILETYPE_GROUPS)`; `OptionsTabFileTypes.qml:74`: `checked:
+root.fileTypeEnabled("gif", true)` (`:92` png, `:110` tga). A CHANGELOG szerint ez
+a #6060 óta szándékos: elmentett választás nélkül minden képtípus látszik,
+mert a #5898 átvétele a frissítés után eltüntette a meglévő könyvtár PNG-képeit.
+*Teendő:* csak **tiszta profilon** (nincs `library/fileTypes/*` kulcs, és az
+index még nem tartalmaz fotósort) induljon a három csoport kikapcsolva, a
+kulcsok kiírásával, hogy a szűrő (`enabled_filetypes()`) érvényesüljön. Meglévő
+könyvtárnál vagy kulcs nélküli régi profilnál semmi nem változhat. A tiszta
+profil felismerését a fejlesztő választja; feltétel, hogy téves felismerés ne
+tüntessen el képeket. Alacsony prioritás, mert felhasználói hatása csak új
+telepítésen van.
+*Kész, ha:* (1) tiszta profilon a fül a job-799 12. képével egyező jelölő-
+állapotot mutat (renderelt kép, a két kép egymás mellett); (2) tiszta profilon
+egy `.png` nem kerül a könyvtárba, a jelölő bekapcsolása és az OK után
+bekerül (#7338 útvonal); (3) meglévő indexszel és mentett kulcs nélkül minden
+típus látszik (a #6060 regressziós tesztje zöld); (4) a három kulcs elmentett
+`false` értéke újraindítás után is megmarad.
+
+*Az M4b-ből induló jegy továbbra sincs nyitva:* a J szakasz jegytörzs-jelöltje
+a K9 mérései után tölthető ki.
+
+**K9. M4b: a Colab-feladatok pontos lépéssora.** Közös előtag (E): `var 10`
+négyszer (várakozás a mintakészlet megjelenésére), `kattint (80,215)` (a
+PicasaTeszt sor), `var 4`. Az
+Options megnyitása (O): `kattint (247,29)`, `var 1`, `kattint (268,277)`, `var 3`,
+`kattint (490,367)` (File Types), `var 2`. Az OK `(806,672)`, a Movies jelölő
+`(552,543)`. Mindegyik feladat mintakészlete `video`, kimenete `kepernyokep,
+allapot, db3_teljes, kepmappa, registry` (a `db3_teljes` a db3 minden fájlját adja,
+a keresés ehhez kell), és a **végpillanatkép az utolsó OK után legalább 60 s-sal**
+készül (a db3 írási időzítése nem ismert; a registryé a #7326 C5a feladat
+tervezési feltevése szerint a Wine mentési periódusa, 40 s fölött jelenik meg).
+Minden képről rögzítendő: `PicasaTeszt (N)`, `Recently Updated (N)`, a
+tálcafelirat, a státuszsor, és hogy a rács végén ott van-e a videócsempe. A
+számokat a képről kell olvasni (az OCR nem adja vissza). A mappa újrakijelölése
+beavatkozás: **csak az utolsó mérés előtt** szabad.
+
+1. **M4b-0 (kontroll, nincs váltás):** E, majd `var 10` nyolcszor (így az
+   eltelt idő a többi feladat végpillanatához közelít). Cél: a db3 és a
+   kepmappa viszonyítási állapota videóval, és a fájllista (N10).
+2. **M4b-1 (kikapcsolás):** E, O, `kattint (552,543)`, `var 1` (kép: a Movies
+   jelölő üres, a Quicktime szürke marad), `kattint (806,672)`, `var 3` (kép:
+   közvetlenül az OK után), `var 10` (kép: 13 s után), `kattint (80,215)`, `var 2`
+   (kép: a státuszsor friss), `var 10` ötször. Cél: eltűnik-e a videócsempe és
+   mikor; a db3 a kikapcsolás után.
+3. **M4b-2 (kikapcsolás, majd visszakapcsolás):** E, O, `kattint (552,543)`,
+   `var 1`, `kattint (806,672)`, `var 10`, O újra (kép: a Movies jelölő üres-e,
+   vagyis az OK mentette-e), `kattint (552,543)`, `var 1` (kép: bepipálva),
+   `kattint (806,672)`, `var 3` (kép: visszajött-e a csempe), `var 10` (kép: 13
+   s után), `kattint (80,215)`, `var 2`, `var 10` ötször. Cél: **mikor jelennek
+   meg újra**, és a db3 a visszakapcsolás után.
+4. **M4b-3 (kikapcsolás és újraindítás):** E, O, `kattint (552,543)`, `var 1`,
+   `kattint (806,672)`, `var 10`, `{"picasa":"leallit"}`, `var 5`,
+   `{"picasa":"indit"}`, `var 10` háromszor (a #7326 C5b mintájára). Cél: a
+   kikapcsolt állapot megmarad-e újraindítás után, és a lemezre mentett db3 mit
+   tartalmaz.
+
+*Kiértékelés.* A `db3_teljes` fájljaiban a `teszt-video` bájtsort ANSI és UTF-16LE
+alakban kell keresni, és a fájlok méretét és módosítási idejét az M4b-0-hoz kell
+hasonlítani. **Törli**, ha az M4b-1 / M4b-3 db3-jában a bájtsor eltűnik az
+M4b-0-hoz képest; **megőrzi**, ha a bájtsor és a fájlok változatlanok; **újraírja**,
+ha a bájtsor megvan, de a fájlok módosítási ideje vagy mérete eltér. A `kepmappa`
+listában a videófájlok nem tűnhetnek el és nem változhat a méretük (az eredeti
+nem töröl fájlt).
 
 ### Számértékek
 
