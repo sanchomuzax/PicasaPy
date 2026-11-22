@@ -374,8 +374,10 @@ function selectMenuEffect(name) {
     }
     if (tab < 0) return false
 
-    editorPanel.menuEffectSelection = name
     editorPanel.selectTab(tab)
+    // A fülváltás törli az előző menükijelölést; az új cél csak ezután
+    // kap kiemelést, így a menü saját navigációja nem törli önmagát.
+    editorPanel.menuEffectSelection = name
     return true
 }
 
