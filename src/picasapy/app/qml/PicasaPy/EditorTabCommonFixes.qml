@@ -134,6 +134,7 @@ ColumnLayout {
             toolName: "enhance"; label: qsTr("I'm Feeling Lucky")
             iconFile: "jo-napom-van"
             tooltip: qsTr("One-click fix for lighting and color")
+            active: panel.menuEffectSelection === "enhance"
             tileEnabled: panel.enhanceEnabled
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -148,6 +149,7 @@ ColumnLayout {
             toolName: "autolight"; label: qsTr("Auto Contrast")
             iconFile: "auto-kontraszt"
             tooltip: qsTr("Fix exposure without affecting color")
+            active: panel.menuEffectSelection === "autolight"
             tileEnabled: panel.autolightEnabled
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -162,6 +164,7 @@ ColumnLayout {
             toolName: "autocolor"; label: qsTr("Auto Color")
             iconFile: "auto-szin"
             tooltip: qsTr("Remove color casts automatically")
+            active: panel.menuEffectSelection === "autocolor"
             tileEnabled: panel.autocolorEnabled
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred

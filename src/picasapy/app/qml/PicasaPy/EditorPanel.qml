@@ -58,6 +58,9 @@ Rectangle {
     // NEM vonatkozik: hogy az eredetiben nincs ilyen fül, nem hiba. Lista:
     // docs/decisions/vedett-sajat-funkciok.md
     property int activeTab: 0
+    // A Kép menüből érkező navigáció célcsempéje. Ez csak kijelölés;
+    // effektet a menüút nem alkalmaz.
+    property string menuEffectSelection: ""
 
     property alias cropActive: toolsState.cropActive
     property alias tiltActive: toolsState.tiltActive
@@ -213,6 +216,7 @@ Rectangle {
     // dobja el az előnézetet: a Picasa az első fül letiltott tartalmát
     // mutatja. A kijelölt fül az eredeti effekt füle marad.
     function selectTab(tabIndex) {
+        panel.menuEffectSelection = ""
         if (panel.paramPanelSuspended) return
         if (panel.paramPanelActive) {
             panel.paramPanelSuspended = true
@@ -229,13 +233,19 @@ Rectangle {
 
     function effectAppliedCount(effectName) { return Logika.effectAppliedCount(effectName) }
 
-    function tryOpenParamPanel(name, displayLabel) { return Logika.tryOpenParamPanel(name, displayLabel) }
+    function tryOpenParamPanel(name, displayLabel) {
+        panel.menuEffectSelection = ""
+        return Logika.tryOpenParamPanel(name, displayLabel)
+    }
 
     function openParamPanel(name, displayLabel) { return Logika.openParamPanel(name, displayLabel) }
 
     function updateParamValue(index, value) { return Logika.updateParamValue(index, value) }
 
-    function applyParamPanel() { return Logika.applyParamPanel() }
+    function applyParamPanel() {
+        panel.menuEffectSelection = ""
+        return Logika.applyParamPanel()
+    }
 
     function cancelParamPanel() { return Logika.cancelParamPanel() }
 
@@ -305,7 +315,10 @@ Rectangle {
     function restoreLastCropRatio() { return Logika.restoreLastCropRatio() }
     function selectAspect(index) { return Logika.selectAspect(index) }
 
-    function handleToolClick(tool) { return Logika.handleToolClick(tool) }
+    function handleToolClick(tool) {
+        panel.menuEffectSelection = ""
+        return Logika.handleToolClick(tool)
+    }
 
     EditorPanelToolsState {
         id: toolsState
