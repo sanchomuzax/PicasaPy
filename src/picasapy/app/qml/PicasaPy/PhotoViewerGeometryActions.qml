@@ -359,23 +359,24 @@ function panFromZoomNavigator(deltaX, deltaY) {
 
 function show(index) { viewer.currentIndex = index; viewer.forceActiveFocus() }
 
-// A Kép menü egyes egylépéses javításai szerkesztőben a megfelelő
-// panelfület nyitják meg; a könyvtárnézetben a kijelölésre futnak.
-// #7123: a sepia és a bw az eredetiben (0x00579330, 0x9d4a, 0x9d4c) a
-// warm, unsharp és grain2 ágával azonos hívást futtatja, ezért ők is az
-// Effektek fület választják, nem az egyképes kötegre esnek vissza.
+// A Kép menü effektjei szerkesztőnézetben a megfelelő fület és csempét
+// jelölik ki, alkalmazás nélkül; könyvtárnézetben a kijelölésre futnak.
+// A vezérlőnevek a picasa-menu-parancsok-viselkedes.md §33.2–33.3 és a
+// paritas-ellenorzes-archiv-2.md §8 leképezései.
 function selectMenuEffect(name) {
+    var tab = -1
     if (name === "autolight" || name === "autocolor"
             || name === "enhance") {
-        editorPanel.selectTab(0)
-        return true
+        tab = 0
+    } else if (name === "sepia" || name === "unsharp" || name === "warm"
+               || name === "grain2" || name === "bw") {
+        tab = 2
     }
-    if (name === "sepia" || name === "unsharp" || name === "warm"
-            || name === "grain2" || name === "bw") {
-        editorPanel.selectTab(2)
-        return true
-    }
-    return false
+    if (tab < 0) return false
+
+    editorPanel.menuEffectSelection = name
+    editorPanel.selectTab(tab)
+    return true
 }
 
 // Vágás alkalmazása a kijelölésből. advance=true: Enter-flow -

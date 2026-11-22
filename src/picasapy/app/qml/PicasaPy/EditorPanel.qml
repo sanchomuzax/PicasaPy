@@ -58,6 +58,9 @@ Rectangle {
     // NEM vonatkozik: hogy az eredetiben nincs ilyen fül, nem hiba. Lista:
     // docs/decisions/vedett-sajat-funkciok.md
     property int activeTab: 0
+    // A Kép menüből érkező navigáció célcsempéje. Ez csak kijelölés;
+    // effektet a menüút nem alkalmaz.
+    property string menuEffectSelection: ""
 
     property alias cropActive: toolsState.cropActive
     property alias tiltActive: toolsState.tiltActive
