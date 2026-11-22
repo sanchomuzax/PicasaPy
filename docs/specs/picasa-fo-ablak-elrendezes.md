@@ -829,7 +829,7 @@ többinél.
   számolja (`0x006e0e06`, `0x006e0e1c`). Ez **operációsrendszer-verzió-vizsgálat**,
   nem QuickTime-vizsgálat: `GetVersionExA` (`0x00981b30`, IAT `0x00c40210`), igaz,
   ha a `dwPlatformId == 2` (NT) és a főverzió 5-nél nagyobb, vagy 5 és az
-  alverzió legalább 1 (`0x00981b3a`-`0x00981b6b`), vagyis Windows XP vagy újabb.
+  a kisebbik verziószám legalább 1 (`0x00981b3a`-`0x00981b6b`), vagyis Windows XP vagy újabb.
   A mért Movies bejelölt állapot ezzel egyezik.
 - A Quicktime sor mért letiltott, üres állapotának statikus magyarázata a
   `0x00544bd0`: a `0x005509e0` hamis eredménye esetén `0`-t ír a
@@ -862,7 +862,7 @@ job-799 **bizonyít**:
 2. a Movies jelölő pontos helye az M4b-hez: `(552,543)`;
 3. a futó eredeti kézi lépés nélkül felveszi az új videót (K3/1), és a
    számlálók nem egyszerre frissülnek (K3/2), tehát az M4b-ben a státuszsort
-   csak újrakijelölés után szabad olvasni.
+   csak ismételt kijelölés után szabad olvasni.
 
 A hiányzó mérés pontosan: **az M4b négy külön feladatban (K9)**, mert a
 végrehajtó a db3-at, a `kepmappa` kimenetet és a registryt csak a feladat **végén** menti.
