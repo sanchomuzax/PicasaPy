@@ -31,6 +31,8 @@ from PySide6.QtCore import (
 from PySide6.QtQuick import QQuickItem, QQuickView
 from PySide6.QtTest import QTest
 
+from support.diavetites_sav_7363 import sor as _sor
+from support.diavetites_sav_7363 import szabad_hellyel as _szabad_hellyel
 from support.qt_wait import varj_feltetelre
 
 _ROOT = Path(__file__).resolve().parents[3]
@@ -361,11 +363,97 @@ def test_a_kovetkezo_nyil_valodi_kattintasra_a_lista_vegen_nem_lep(qt_app):
     _lezar(qt_app, view, root)
 
 
+#: a használható csúszka legkisebb helye: ikon (24) + rés (6) + legalább 40 px-es
+#: csúszka (az alatt a csúszka használhatatlanul keskeny)
+_HASZNALHATO_HELY = 24 + 6 + 40
+
+
+def _kilog_a_helyerol(
+    kep, ures_kep, sav: QQuickItem, slot: QQuickItem, tolerancia: int = 1
+) -> bool:
+    """Igaz, ha a két kép a sávban a slot téglalapján KÍVÜL is eltér.
+
+    `kep`: a sáv a csúszka tartalmával; `ures_kep`: ugyanaz a tartalom nélkül
+    (átlátszóra állítva). Ha a tartalom a helyén belül marad, a különbség csak a
+    slot téglalapjában van; ha rálóg a szomszéd gombra, azon kívül is.
+    """
+    skala = kep.devicePixelRatio()
+    sav_bal = sav.mapToScene(QPointF(0, 0))
+    slot_bal = slot.mapToScene(QPointF(0, 0))
+    x0, x1 = floor(sav_bal.x() * skala), ceil((sav_bal.x() + sav.width()) * skala)
+    y0, y1 = floor(sav_bal.y() * skala), ceil((sav_bal.y() + sav.height()) * skala)
+    hely_bal = floor(slot_bal.x() * skala) - tolerancia
+    hely_jobb = ceil((slot_bal.x() + slot.width()) * skala) + tolerancia
+    return any(
+        kep.pixelColor(x, y) != ures_kep.pixelColor(x, y)
+        for y in range(max(0, y0), min(kep.height(), y1))
+        for x in range(max(0, x0), min(kep.width(), x1))
+        if not hely_bal <= x < hely_jobb
+    )
+
+
+@pytest.mark.parametrize("szabad", (70, 120, 160, 226))
+def test_szuk_savban_a_csuszka_vagy_hasznalhato_vagy_nem_latszik(qt_app, szabad):
+    """Szűk helyen a csúszka nem lóghat rá a szomszéd gombra (#7363).
+
+    A lista végén az átmenetválasztó enged előbb (90 px-ig), a csúszkahely a
+    maradékot kapja. Ha az 0 vagy néhány képpont, a hely tartalmát (24 px-es
+    ikon, csúszka) nem szabad kirajzolni: a nulla szélességű hely x-e nem
+    frissül, és az ikon egy szomszéd gombra (Kilépés vagy forgatás) festett
+    volna. A próba renderelt képet néz, nem csak geometriát: a tartalmat
+    átlátszóra állítva a sáv képe a slot téglalapján kívül nem változhat.
+    """
+    view, root, _model = _vetito(qt_app, 1024, 600, sorok=3, loop=False)
+    sav = _inditas_szunetben(qt_app, root, 2)
+    assert root.property("listaVegen") is True
+    _szabad_hellyel(qt_app, view, root, szabad)
+
+    slot = _item(root, "slideshowImageSliderSlot")
+    tartalom = _item(root, "slideshowImageSliderContent")
+    ikon = _item(root, "slideshowImageSliderIcon")
+    csuszka = _item(root, "slideshowImageSlider")
+    assert slot.width() == pytest.approx(max(0.0, min(157.0, szabad - 90.0)), abs=1.0), (
+        "a lista végén a csúszkahely a rugalmas helyből az átmenetválasztó "
+        "90 px-es legkisebb szélessége után maradót kapja"
+    )
+    if slot.width() >= _HASZNALHATO_HELY:
+        assert tartalom.isVisible() and ikon.isVisible() and csuszka.isVisible(), (
+            f"a {slot.width():.1f} px-es helyen elfér a csúszka, mégsem látszik"
+        )
+        assert ikon.x() >= 0 and csuszka.x() + csuszka.width() <= slot.width() + 0.5, (
+            f"a csúszka kilóg a fenntartott helyéből: x={csuszka.x():.1f}, "
+            f"szélesség={csuszka.width():.1f}, hely={slot.width():.1f}"
+        )
+        assert csuszka.width() >= 40, "a csúszka használhatatlanul keskeny"
+    else:
+        assert not tartalom.isVisible(), (
+            f"a {slot.width():.1f} px-es helyen nem fér el a csúszka, mégis kirajzolódik"
+        )
+
+    kep = view.grabWindow()
+    assert not kep.isNull()
+    tartalom.setOpacity(0.0)
+    qt_app.processEvents()
+    ures_kep = view.grabWindow()
+    assert kep.size() == ures_kep.size()
+    assert not _kilog_a_helyerol(kep, ures_kep, sav, slot), (
+        "a csúszkahely tartalma a saját helyén kívülre, szomszéd gombra festett"
+    )
+    _lezar(qt_app, view, root)
+
+
 @pytest.mark.parametrize(("szelesseg", "magassag"), ((800, 600), (1280, 600)))
 def test_a_lista_vegi_csuszka_a_sav_hataran_belul_marad(
     qt_app, szelesseg, magassag
 ):
-    """800 px-en a #7314 elrendezés nem romlik: a csúszka a helyén belül áll."""
+    """800 px-en a #7314 elrendezés nem romlik: a csúszka a helyén belül áll.
+
+    #7363: a csúszka legkisebb használható helye a platformfüggő betűtől függ
+    (a windowsos CI-n a rögzített elemek szélesebbek, a hely 800 px-en 0-ra
+    szorul). Ezért a "van csúszka és legalább 40 px" állítás csak ott él, ahol a
+    hely elég; máshol a tartalomnak nem szabad látszania. Az `availableWidth`-et
+    a sor adja, nem a próba tippeli.
+    """
     view, root, _model = _vetito(
         qt_app, szelesseg, magassag, sorok=3, loop=False
     )
@@ -373,17 +461,32 @@ def test_a_lista_vegi_csuszka_a_sav_hataran_belul_marad(
     slot = _item(root, "slideshowImageSliderSlot")
     csuszka = _item(root, "slideshowImageSlider")
     ikon = _item(root, "slideshowImageSliderIcon")
+    sor = _sor(root)
 
     sav_pont = sav.mapToItem(root, QPointF(0, 0))
     assert sav_pont.x() >= 0 and sav_pont.x() + sav.width() <= root.width(), (
         f"a sáv kilóg a {szelesseg} px-es nézőből"
     )
-    assert csuszka.isVisible() and ikon.isVisible()
-    assert ikon.x() >= 0 and csuszka.x() + csuszka.width() <= slot.width() + 0.5, (
-        f"a csúszka kilóg a fenntartott helyéből: x={csuszka.x():.1f}, "
-        f"szélesség={csuszka.width():.1f}, hely={slot.width():.1f}"
+    meretek = (
+        f"rögzített={float(sor.property('fixedWidth')):.1f}, "
+        f"rugalmas={float(sor.property('availableWidth')):.1f}, "
+        f"hely={slot.width():.1f}, "
+        f"kilépés={_item(root, 'slideshowExitButton').width():.1f}, "
+        f"időblokk={_item(root, 'slideshowTimeBlock').width():.1f}"
     )
-    assert csuszka.width() >= 40, "a csúszka használhatatlanul keskeny"
+    if slot.width() >= _HASZNALHATO_HELY:
+        assert csuszka.isVisible() and ikon.isVisible(), (
+            f"a {slot.width():.1f} px-es helyen nem látszik a csúszka ({meretek})"
+        )
+        assert ikon.x() >= 0 and csuszka.x() + csuszka.width() <= slot.width() + 0.5, (
+            f"a csúszka kilóg a fenntartott helyéből: x={csuszka.x():.1f}, "
+            f"szélesség={csuszka.width():.1f}, hely={slot.width():.1f} ({meretek})"
+        )
+        assert csuszka.width() >= 40, f"a csúszka használhatatlanul keskeny ({meretek})"
+    else:
+        assert not _item(root, "slideshowImageSliderContent").isVisible(), (
+            f"a csúszka kirajzolódik a {slot.width():.1f} px-es helyen ({meretek})"
+        )
     for nev in _KATTINTHATO_GOMBOK:
         gomb = _item(root, nev)
         pont = gomb.mapToItem(root, QPointF(0, 0))

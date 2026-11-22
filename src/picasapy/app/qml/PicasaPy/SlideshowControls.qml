@@ -183,6 +183,10 @@ Item {
             readonly property real preferredSliderSlotWidth: 157
             readonly property real preferredTransitionWidth: 150
             readonly property real minimumTransitionWidth: 90
+            // #7363: a csúszkahely tartalmának legkisebb helye: a 24 px-es
+            // ikon, a 6 px-es rés és legalább 40 px-es csúszka. Ennél
+            // keskenyebb helyen a tartalom nem fér el, ezért nem rajzoljuk ki.
+            readonly property real minimumSliderSlotWidth: 24 + 6 + 40
             // #7314: keskeny ablakban először a funkció nélküli, üres
             // csúszkahely húzódik össze, utána (nagyobb betűs rendszeren,
             // pl. Windowson, #7334) az átmenetválasztó, legfeljebb 90 px-ig.
@@ -236,7 +240,13 @@ Item {
                 Item {
                     objectName: "slideshowImageSliderContent"
                     anchors.fill: parent
+                    //: #7363: a hely a sor rugalmas eleme, szűk sávban (nagyobb
+                    //: betű, keskeny ablak) 0-ra is szorulhat. A nulla szélességű
+                    //: hely x-e nem frissül, a tartalom vágatlan, ezért a 24 px-es
+                    //: ikon és a csúszka a szomszéd gombra festett. Ha a hely
+                    //: nem elég a használható csúszkához, a tartalom nem látszik.
                     visible: slideshow.listaVegen
+                        && imageSliderSlot.width >= controlsRow.minimumSliderSlotWidth
 
                     //: #7322: a szerkesztő nagyítóikonja (`editpanel/zoomup_icon`,
                     //: a nézőben is ez a `loupe.svg`, ld. `TrayTopRow`). Díszítő

@@ -21,6 +21,8 @@ from PySide6.QtCore import (
 from PySide6.QtQuick import QQuickItem, QQuickView
 from PySide6.QtTest import QTest
 
+from support.diavetites_sav_7363 import sor as _sor
+from support.diavetites_sav_7363 import szabad_hellyel as _szabad_hellyel
 from support.qt_wait import varj_feltetelre
 
 _ROOT = Path(__file__).resolve().parents[3]
@@ -142,11 +144,37 @@ def _valodi_kattintas(view: QQuickView, qt_app, item: QQuickItem) -> None:
     qt_app.processEvents()
 
 
-@pytest.mark.parametrize("height", (595, 600, 605))
+#: a csúszkahely és az átmenetválasztó kedvelt szélessége (mért); ennyi rugalmas
+#: hely alatt a kettő osztozik a maradékon
+_KEDVELT_HELY = 157
+_KEDVELT_ATMENET = 150
+
+
+@pytest.mark.parametrize(
+    ("height", "szabad"),
+    (
+        (595, None),
+        (600, None),
+        (605, None),
+        # #7363: szűk sorban (a windowsos betűvel már 1024 px-en is) a rugalmas
+        # hely a csúszkahely és az átmenetválasztó között vándorol
+        (600, 280),
+        (600, 200),
+    ),
+)
 def test_a_vezerlosav_sorrendje_es_lista_vegi_tartoeleme_renderelt(
-    qt_app, height
+    qt_app, height, szabad
 ):
-    """A sáv a mért sorrendben áll; a hely az első dián üres, a végén csúszka (#7281, #7322)."""
+    """A sáv a mért sorrendben áll; a hely az első dián üres, a végén csúszka (#7281, #7322).
+
+    #7363: a "minden x változatlan" állítás csak addig igaz, amíg a sor rugalmas
+    helye a két kedvelt szélességet (157 + 150) kielégíti. Ennél kevesebbnél a
+    #7334 szerint a lista végén az átmenetválasztó enged előbb, a csúszkahely
+    nő, tehát a kettő közötti elemek ugyanannyit eltolódnak, a sor szélessége és
+    az átmenetválasztó utáni elemek helye viszont nem változik. A rugalmas hely a
+    betűtől függ (Linuxon 1024 px-en bőséges, a windowsos CI-n szűk), ezért a
+    próba a mért `availableWidth` alapján mondja ki a megfelelő állítást.
+    """
     view = QQuickView()
     view.engine().addImportPath(str(_QML))
     view.setResizeMode(QQuickView.ResizeMode.SizeRootObjectToView)
@@ -166,6 +194,8 @@ def test_a_vezerlosav_sorrendje_es_lista_vegi_tartoeleme_renderelt(
     assert varj_feltetelre(
         qt_app, lambda: round(root.height()) == height, masodperc=10.0
     ), "a vetítő nem követte az ablakmagasságát"
+    if szabad is not None:
+        _szabad_hellyel(qt_app, view, root, szabad)
 
     QMetaObject.invokeMethod(
         root,
@@ -195,7 +225,11 @@ def test_a_vezerlosav_sorrendje_es_lista_vegi_tartoeleme_renderelt(
     assert slot.width() > 0 and not tartalom.isVisible(), (
         "az első szünetben a fenntartott hely nem üres"
     )
-    elso_sor_szelesseg = sorrend[0].parentItem().width()
+    sor = _sor(root)
+    rugalmas = float(sor.property("availableWidth"))
+    elso_sor_szelesseg = sor.width()
+    elso_slot_szelesseg = slot.width()
+    elso_atmenet_szelesseg = sorrend[8].width()
     elso_kep = _render(view)
 
     QMetaObject.invokeMethod(root, "advance", Qt.ConnectionType.DirectConnection)
@@ -211,8 +245,37 @@ def test_a_vezerlosav_sorrendje_es_lista_vegi_tartoeleme_renderelt(
     qt_app.processEvents()
     vegso_kep = _render(view)
     assert tartalom.isVisible(), "a lista végén nem jelent meg a csúszka"
-    assert tuple(float(item.x()) for item in sorrend) == elso_xek
-    assert sorrend[0].parentItem().width() == elso_sor_szelesseg
+    vegso_xek = tuple(float(item.x()) for item in sorrend)
+    nevesitett = dict(zip(_SORREND, vegso_xek, strict=True))
+    assert all(a < b for a, b in zip(vegso_xek, vegso_xek[1:], strict=False)), (
+        f"a lista végén megváltozott a gombok sorrendje: {nevesitett}"
+    )
+    assert sor.width() == pytest.approx(elso_sor_szelesseg, abs=1e-6), (
+        "a lista végére megváltozott a sor szélessége"
+    )
+    # a csúszkahely és az átmenetválasztó együtt ugyanannyi helyet kap
+    assert slot.width() + sorrend[8].width() == pytest.approx(
+        elso_slot_szelesseg + elso_atmenet_szelesseg, abs=1e-6
+    ), "a rugalmas hely elveszett vagy szaporodott a lista végén"
+    # a Kilépés a sor elején áll, az átmenetválasztó utáni elemek helye nem mozdul
+    assert vegso_xek[0] == elso_xek[0]
+    assert vegso_xek[9:] == pytest.approx(elso_xek[9:], abs=1e-6), (
+        "az átmenetválasztó utáni elemek elmozdultak a lista végén"
+    )
+    # a két szélső között minden elem ugyanannyit tolódik, ahogyan a hely nő
+    eltolas = slot.width() - elso_slot_szelesseg
+    for nev, elotte, utana in zip(_SORREND[2:9], elso_xek[2:9], vegso_xek[2:9], strict=True):
+        assert utana - elotte == pytest.approx(eltolas, abs=1e-6), (
+            f"{nev} nem a csúszkahely változásával együtt mozdult: "
+            f"{elotte:.1f} -> {utana:.1f}, a hely változása {eltolas:.1f}"
+        )
+    if rugalmas >= _KEDVELT_HELY + _KEDVELT_ATMENET:
+        assert vegso_xek == elso_xek, (
+            "bőséges helyen a lista végén egyetlen elem sem mozdulhat"
+        )
+    if szabad is not None:
+        assert rugalmas < _KEDVELT_HELY + _KEDVELT_ATMENET, "a szűk eset nem állt elő"
+        assert eltolas > 0, "szűk sorban a lista végén nem a csúszkahely nőtt"
     assert elso_kep.size() == vegso_kep.size()
 
     QMetaObject.invokeMethod(root, "stop", Qt.ConnectionType.DirectConnection)
