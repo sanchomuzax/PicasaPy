@@ -2,6 +2,28 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-22
+
+### Library
+
+- The toolbar's ▾ (**View options**) button opens its own drop-down menu
+  with the same items as the left pane's context menu.
+- In **View** ▸ **Folder View**, the four destinations (**Desktop**,
+  **My Documents**, **My Pictures**, **My Computer**) moved into the
+  **Shortcuts** submenu; the pane's context menu has all four too.
+  **Sort People by Top 10** and **Show Thumbnails in Library** can be
+  chosen in the context menu only where they make sense.
+- In the grid, folders follow the left pane's sorting.
+- The **Date**, **Name**, **Size**, and **Reverse order** items of
+  **Folder** ▸ **Sort By** sort the selected folder's pictures once, as
+  in the original Picasa. See [Library](features/konyvtar.md).
+
+### Updates
+
+- The bar in the update window shows the percentage of the whole
+  installation from the very first moment. See
+  [Settings](features/beallitasok.md).
+
 ## 2026-11-21
 
 ### Search

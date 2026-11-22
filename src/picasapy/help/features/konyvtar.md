@@ -35,20 +35,18 @@ válthatsz köztük:
   a hosszú útvonalak egyetlen sorba férjenek. Ez a kapcsoló az almenü
   **legalján** áll, elválasztva a másik kettőtől.
 
-Az első kettő között az eszköztár két kis nézetváltó gombjával is
-válthatsz. A két gomb mellett van egy **▾** gomb is: ez **ugyanazt a
-menüt** nyitja le, ami a **Nézet ▸ Mappanézet** almenü — a nézet, a
-sorrend és az indexképek kapcsolója tehát egy helyről vezérelhető, és a
-két belépési pont nem tud szétcsúszni. Keskeny ablakban a ▾ gomb
-elrejtőzik; a menüsorból ilyenkor is elérhető minden.
+Az almenü sorrendje: a két nézet (**Egyszerű mappanézet**, **Fanézet**),
+utána a mappák öt rendezési tétele (lásd lentebb, „A mappák sorrendje"),
+majd a **Gyorsbillentyűk** almenü, végül az **Indexképek megjelenítése a
+könyvtárban** és az **Egyszerűsített fanézet** kapcsoló.
 
-Ebben a menüben a rendezési tételek után az Emberek-lista három rendezése
-áll: **Személyek rendezése név alapján**, **Személyek rendezése mennyiség
-alapján** és **Személyek rendezése a toplista alapján**. A pipa mutatja,
-melyik van érvényben. Alattuk a **Gyorsbillentyűk** almenü a négy
-ugrópontot kínálja (**Sajátgép**, **Képek**, **Dokumentumok**,
-**Asztal**) — ugyanazokat, mint az almenü teteje (lásd lentebb, „Honnan
-induljon a fa").
+Az első kettő között az eszköztár két kis nézetváltó gombjával is
+válthatsz. A két gomb mellett van egy **▾** gomb is
+(**Megjelenítési beállítások**): ez egy saját legördülő menüt nyit,
+ugyanazokkal a tételekkel, mint a hasáb helyi menüje (lásd lentebb). A
+beállítások közösek, tehát amit itt átállítasz, az a menüsorban és a
+helyi menüben is úgy látszik. Keskeny ablakban a ▾ gomb elrejtőzik; a
+menüsorból ilyenkor is elérhető minden.
 
 Fanézetben a mappa sorára jobbgombbal kattintva a menü attól függ, milyen
 sor az: ha a mappában vannak saját képek (vagyis a könyvtár valódi
@@ -56,16 +54,24 @@ mappája), a **teljes mappa-menü** nyílik, ugyanaz, mint a többi nézetben.
 A csak továbbvezető, saját kép nélküli köztes sorokon rövidebb menü jön elő.
 
 A hasáb üres részére jobbgombbal kattintva a hasáb saját menüje nyílik
-meg. Ebben a következők vannak:
+meg (ugyanezt nyitja az eszköztár ▾ gombja is). Ebben a következők vannak,
+ebben a sorrendben:
 
-- a **rendezés** tételei (név, méret, legutóbbi változtatás, fordított
-  sorrend) és az Emberek-lista rendezése,
-- az **Egyszerűsített fanézet** kapcsoló,
+- a **rendezés** tételei: **Rendezés dátum alapján**, **Rendezés a
+  legutóbbi változtatások alapján**, **Rendezés méret alapján**,
+  **Rendezés név alapján** és **Rendezés megfordítása**,
+- az Emberek-lista három rendezése: **Személyek rendezése név alapján**,
+  **Személyek rendezése mennyiség alapján** és **Személyek rendezése a
+  toplista alapján**. A pipa mutatja, melyik van érvényben. A toplista
+  szerinti rendezés csak fanézetben választható, egyébként szürke,
+- a **Gyorsbillentyűk** almenü a négy ugróponttal: **Asztal**,
+  **Dokumentumok**, **Képek** és (elválasztva) **Sajátgép**, ugyanazok,
+  mint a **Nézet ▸ Mappanézet ▸ Gyorsbillentyűk** almenüben (lásd lentebb,
+  „Honnan induljon a fa"). A felirat az eredeti Picasa fordításából való;
+  billentyűkhöz nincs köze,
 - az **Indexképek megjelenítése a könyvtárban** kapcsoló — ugyanaz, mint a
-  **Nézet ▸ Mappanézet** almenüben,
-- a **Gyorsbillentyűk** almenü, benne az **Asztal**: a program az Asztal mappára
-  ugrik, ahogy a **Nézet ▸ Mappanézet ▸ Asztal** pont is teszi. (A
-  felirat az eredeti Picasa fordításából való; billentyűkhöz nincs köze.)
+  **Nézet ▸ Mappanézet** almenüben; fanézetben szürke,
+- az **Egyszerűsített fanézet** kapcsoló.
 
 > Ha a program még nem tudja, melyek a figyelt mappáid, az
 > Egyszerűsített fanézet a **teljes fát** hagyja meg — inkább mutat
@@ -76,12 +82,14 @@ meg. Ebben a következők vannak:
 
 ### Honnan induljon a fa
 
-A **Nézet ▸ Mappanézet** almenü tetején négy ugrópont áll — ezeket az
-eredeti Picasa is ott tartotta:
+A **Nézet ▸ Mappanézet ▸ Gyorsbillentyűk** almenüben (és a hasáb helyi
+menüjének azonos nevű almenüjében) négy ugrópont áll:
 
-- **Sajátgép** — a teljes fa, minden mappával;
-- **Képek**, **Dokumentumok**, **Asztal** — a fa szintén teljes lesz, de
-  a program odaugrik, és kijelöli az adott mappát.
+- **Asztal**, **Dokumentumok**, **Képek**: a fa teljes lesz, de a
+  program odaugrik, és kijelöli az adott mappát;
+- **Sajátgép**: a teljes fa, minden mappával.
+
+A pipa mutatja, melyik kezdőpont van érvényben.
 
 A **Mappák** felirat megmondja, hol állsz: „Alapértelmezett nézet" a
 lapos listában, „Sajátgép" a fanézetben, a három ugróponton pedig a
@@ -225,19 +233,25 @@ A tétel csak mappában látszik - albumban és Emberek albumban nem.
 ### A mappák sorrendje
 
 A **Nézet ▸ Mappanézet** almenü közepén, illetve a hasáb helyi menüjében
-állítható:
+(és az eszköztár ▾ gombjának menüjében) állítható:
 
-- **Rendezés létrehozási dátum alapján**
+- **Rendezés létrehozási dátum alapján** (a helyi menüben: **Rendezés
+  dátum alapján**)
 - **Rendezés a legutóbbi változtatások alapján**
 - **Rendezés méret alapján**
 - **Rendezés név alapján**
 - **Rendezés megfordítása** — mindegyikkel párosítható
 
+Ez a sorrend a bal hasábra **és** a rácsra is érvényes: a rácsban a
+mappák ugyanebben a sorrendben követik egymást, mint a hasábban.
+
 ### Egy mappán belül a képek sorrendje
 
 A mappára jobbgombbal kattintva a **Mappa rendezésének alapja** almenüben:
 **Dátum**, **Név**, **Méret** vagy **Szín** szerint, illetve **Fordított
-sorrend**.
+sorrend**. A főmenü **Mappa ▸ Rendezés** almenüjének **Dátum**, **Név**,
+**Méret** és **Fordított sorrend** tétele ugyanezt teszi a kijelölt
+mappával.
 
 A rendezés **egyszeri**: a program a választott szempont szerint egyszer
 sorba rakja a mappa képeit, és ezt a sorrendet a mappa **kézi
@@ -252,10 +266,12 @@ angol ábécébeli) betűvel kezdődők, és csak ezek után az A-tól Z-ig
 tartó nevek: az `Ábel.jpg` tehát az `alma.jpg` elé kerül. Az eredeti
 Picasa is így rendez.
 
-> A főmenü **Mappa ▸ Rendezés** almenüje mást csinál: azt dönti el, milyen
-> sorrendben kövessék egymást a **mappák** a rácsban (dátum, név, méret
-> vagy **Legutóbbi változtatások** szerint), a mappákon belüli képek
-> sorrendjéhez nem nyúl.
+> A **Mappa ▸ Rendezés ▸ Legutóbbi változtatások** tétel kivétel: ez nem
+> a képeket rendezi, hanem azt, hogy a **mappák** milyen sorrendben
+> kövessék egymást a rácsban, a legutóbb változott mappával kezdve. Ez a
+> tétel saját PicasaPy-funkció (kék felirat jelzi), az eredeti Picasában
+> nem volt meg. Ha ezt választod, pipa áll mellette, és a rács ezt a
+> sorrendet követi a hasáb rendezése helyett.
 
 A **Szín** szerinti rendezés a képek uralkodó színe szerint sorakoztat: a
 színes képek jönnek elöl, a szivárvány sorrendjében, utánuk a
@@ -493,7 +509,7 @@ kikerülnek a listából.
   Emberek-albumok külön méretet jegyeznek meg, így ott más méretet
   használhatsz, mint a mappáidnál.
 - **Nézet ▸ Indexkép felirata** almenüben választhatod, mi legyen a kép
-  alatt: **Egyik sem**, **Fájlnév**, **Képfelirat**, **Címkék** vagy
+  alatt: **Nincs**, **Fájlnév**, **Képfelirat**, **Címkék** vagy
   **Felbontás**.
 
 ### Kis képek: alapból el vannak rejtve

@@ -201,7 +201,9 @@ let an application monitor other windows' keyboard shortcuts. There,
 Context-menu items match the original Picasa. Some items now work:
 
 - *Left pane, folder list:* **Show Thumbnails in Library** is a checked
-  toggle. The Desktop shortcut switches the folder tree to Desktop.
+  toggle. The **Desktop**, **My Documents**, **My Pictures**, and
+  **My Computer** items of the **Shortcuts** submenu switch the starting
+  point of the folder tree.
 - *Viewer:* if a photo has a preserved original on disk, the **Search**
   submenu contains **File on Disk** and **Locate Original on Disk**.
   Otherwise, it contains only **Search**.

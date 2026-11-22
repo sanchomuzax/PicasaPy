@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.168] - 2026-11-21
+
+- A frissítő ablak az első pillanattól a teljes telepítés százalékát mutatja, a kicsomagolás alatt is (#7355).
+
 ## [1.0.167] - 2026-11-21
 
 - A mappapanel képpontos ellenőrzése megvárja a kijelölt sor és a helyi menü kirajzolását (#7336).
