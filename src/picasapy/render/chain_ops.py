@@ -214,6 +214,18 @@ def _effect_float(op: FilterOp, index: int, default: float) -> float:
     return float(op.params[absolute])
 
 
+def _fade_vagy_none(op: FilterOp, index: int, default: float) -> float | None:
+    """Az alfakövetés Fade-olvasója (#7361): értelmezhetetlen értékre ``None``.
+
+    A worker ilyenkor nem használta a mezőt (a hiányos láncot változatlanul
+    adja vissza), ezért a lánc alfaállapota sem változhat.
+    """
+    try:
+        return _effect_float(op, index, default)
+    except ValueError:
+        return None
+
+
 def _apply_glow_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # glow (v1) és glow2 azonos paraméter-alakkal: 1,intenzitás,sugár;
     # paraméter nélkül a v1 golden-kitben mért alapértékei futnak
