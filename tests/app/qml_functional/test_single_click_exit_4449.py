@@ -138,6 +138,8 @@ def test_bekapcsolva_kattintas_kilep_de_huzas_es_aktiv_atfedok_nem(
     assert ablak.property("viewerOpen") is True, "a szöveg-elhelyezés alatti kattintás kiléptetett"
 
     editor_panel.setProperty("textActive", False)
+    # #7370: a pipetta felülete csak a Hangolás fülön él (előbb fület váltunk)
+    editor_panel.setProperty("activeTab", 1)
     editor_panel.setProperty("neutralPickerActive", True)
     pipetta = ablak.findChild(QObject, "neutralPickArea")
     assert pipetta is not None and _varj(qt_app, lambda: pipetta.property("visible"))

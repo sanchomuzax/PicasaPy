@@ -60,6 +60,15 @@ function allitsdAShiftFigyelest() {
                                    && panel.activeTab <= 5)
 }
 
+// #7370: a Hangolás fül belépője (az eredetin `0x005d77d0`) kikapcsolja a
+// pipetta gombját, ha be volt kapcsolva. A fül ELHAGYÁSÁNAK eredeti
+// viselkedése nincs mérve: ott a mintavevő felületet a
+// `neutralPickerSampling` zárja le, az állapot nem változik.
+function hangolasraLepesKikapcsoljaAPipettat() {
+    if (panel.activeTab === 1)
+        panel.neutralPickerActive = false
+}
+
 // #305 null-őr — de ITT szigorúbb annál: az EditorPanel-t önállóan (a
 // `PicasaPy 1.0` modulon át) betöltő tesztek (test_editor_tabs.py,
 // test_editor_effects.py, test_qml_editor_panel.py) az editController

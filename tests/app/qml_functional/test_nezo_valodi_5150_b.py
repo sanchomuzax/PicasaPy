@@ -178,6 +178,9 @@ class TestNezoPhotoViewerVezerlok:
         elokeszit_str(window, qt_app, controller)
         _nezo_nyit(window, qt_app, 0)
         panel = gyerek(window, "viewerEditorPanel")
+        # #7370: a mintavevő felület csak a Hangolás (1.) fülön él; a fülre
+        # lépés kikapcsolja a pipettát, ezért ELŐBB váltunk, UTÁNA élesítünk
+        panel.setProperty("activeTab", 1)
         panel.setProperty("neutralPickerActive", True)
         qt_app.processEvents()
 

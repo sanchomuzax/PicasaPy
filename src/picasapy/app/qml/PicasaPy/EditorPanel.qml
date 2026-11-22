@@ -136,6 +136,8 @@ Rectangle {
     property alias undoAvailable: toolsState.undoAvailable
     property alias redoAvailable: toolsState.redoAvailable
     property alias neutralPickerActive: toolsState.neutralPickerActive
+    // #7370: a mintavevő felület csak a Hangolás (1.) fülön él
+    readonly property bool neutralPickerSampling: neutralPickerActive && activeTab === 1
     property alias neutralColor: toolsState.neutralColor
     signal neutralPickerToggled()
     property alias effectColorPickerTarget: toolsState.effectColorPickerTarget
@@ -274,6 +276,7 @@ Rectangle {
     onFillLightChanged: panel.syncFinetuneSliders()
     onActiveTabChanged: {
         panel.syncFinetuneSliders()
+        Logika.hangolasraLepesKikapcsoljaAPipettat()
         // #2146/#798: az effekt-füleken kell a Shift — ott kapcsoljuk BE a
         // figyelést, máshol KI. A tartalék-olvasás megmarad azoknak a
         // vezérlőknek, amelyek nem ismerik az élő állapotot.
