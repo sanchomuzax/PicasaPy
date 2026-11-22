@@ -377,7 +377,7 @@ A szöveg kiválasztása a 0x00542239-0x00542255 között: az iPhoto-jelző (`[e
 
 **Az általános szöveg elérhetetlen.** A kérdés-szakaszba (0x00542168) a függvényen kívülről csak két ugrás vezet, a 0x00542110 és a 0x00542133, és mindkettő az iPhoto-, illetve az Apple Photos-teszt igaz ága (az összes 64 elágazás elemezve). Az általános ág csak akkor választódna, ha mindkét jelző hamis, de akkor a kapu a 0x00542161-en már 0-val kilépett. A szöveg és a kulcsa az egész képfájlban egy-egy helyről hivatkozott (0x0054217b és 0x00542176).
 
-**"Cancel Edit".** A 0x00542706-0x00542745 szakasz csak sztringfelszabadításokat (`0x00401000`, `0x00412790`) tartalmaz, majd `mov eax, 0xf4242` (0x00542740). Nincs másolás, nincs módosítás; a kilépő érték 1000002.
+**"Cancel Edit".** A 0x00542706-0x00542745 szakasz csak a sztringek felszabadítását (`0x00401000`, `0x00412790`) tartalmazza, majd `mov eax, 0xf4242` (0x00542740). Nincs másolás, nincs módosítás; a kilépő érték 1000002.
 
 **"Make a Copy"** (0x005422cc-0x00542702):
 
