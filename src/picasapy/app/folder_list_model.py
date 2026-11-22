@@ -16,6 +16,7 @@ from .model_helpers import (
     _descending,
     _rejtett_csomopont,
     _sort_key,
+    _with_month_separators,
     _with_year_separators,
 )
 
@@ -182,8 +183,8 @@ class FolderListModel(QAbstractListModel):
         # bekapcsolt kapcsoló mellett nem lehetne megmondani, melyik
         # mappa volt elrejtve.
         rows = (
-            (name, path, count, date, offline, unread)
-            for name, path, count, date, _size, _change, offline, hidden, unread
+            (name, path, count, date, change, offline, unread)
+            for name, path, count, date, _size, change, offline, hidden, unread
             in folders
             if not hidden
         )
@@ -197,12 +198,14 @@ class FolderListModel(QAbstractListModel):
         # méret szerinti rendezésnél a fejlécek értelmüket vesztenék (egy
         # évszám többször, összevissza sorrendben bukkanna fel), ezért ott
         # sima felsorolás áll — ahogy az eredetiben is.
-        if sort_mode in ("date", "changed"):
+        if sort_mode == "date":
             lathato = _with_year_separators(rows)
+        elif sort_mode == "changed":
+            lathato = _with_month_separators(rows)
         else:
             lathato = tuple(
                 ("folder", name, path, count, offline, unread)
-                for name, path, count, _date, offline, unread in rows
+                for name, path, count, _date, _change, offline, unread in rows
             )
         self._set_rows(lathato + _rejtett_csomopont(rejtettek))
 
