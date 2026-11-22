@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.170] - 2026-11-22
+
+- Kutatás: az eredeti Picasa egymás utáni vágásnál a lánc végi vágást frissíti, nem fűz újat; a vágás alkalmazás, visszavonás, újra és mégse lépései mérve (#7327).
+- Kutatás: a bal hasáb csoportfejléceinek képzése (Updated hónap és év, az első sor fölött nincs fejléc) feltárva a binárisból (#7351).
+- A Kép menü effektjei a nézőben közvetlenül kijelölik a hozzájuk tartozó szerkesztőcsempét (#7353).
+- A diavetítés vezérlősávjában szűk helyen (nagyobb betűs rendszeren, keskeny ablakban) a képcsúszka nem festődik rá a szomszéd gombra (#7363).
+- A legutóbbi változtatásoknál a mappák havi fejléceket kapnak, az első sor pedig fejléc nélkül jelenik meg (#7364).
+
 ## [1.0.169] - 2026-11-22
 
 - Kutatás: a nézet rendezésének nyitott kérdései eldöntve futtatott méréssel az eredeti Picasán (#7326).
