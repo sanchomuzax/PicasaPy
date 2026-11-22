@@ -21738,4 +21738,98 @@ picasapy-origin-key: stringres:CThumbUI::ConfirmImmediateDeletion::Message</extr
             <translation>אין אפשרות להעביר קובץ זה לאשפה והוא יימחק מיידית. האם אתה בטוח שברצונך להמשיך?</translation>
         </message>
     </context>
+    <context>
+        <name>FolderListModel</name>
+        <message>
+            <location filename="../model_helpers.py" line="190" />
+            <source>Updated</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumBuilder::updated</extracomment>
+            <translation>מעודכן</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>January</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:January</extracomment>
+            <translation>ינואר</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>February</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:February</extracomment>
+            <translation>פברואר</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>March</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:March</extracomment>
+            <translation>מרס</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>April</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:April</extracomment>
+            <translation>אפריל</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>May</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:May</extracomment>
+            <translation>מאי</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>June</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:June</extracomment>
+            <translation>יוני</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>July</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:July</extracomment>
+            <translation>יולי</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>August</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:August</extracomment>
+            <translation>אוגוסט</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>September</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:September</extracomment>
+            <translation>ספטמבר</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>October</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:October</extracomment>
+            <translation>אוקטובר</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>November</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:November</extracomment>
+            <translation>נובמבר</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>December</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:December</extracomment>
+            <translation>דצמבר</translation>
+        </message>
+    </context>
 </TS>
