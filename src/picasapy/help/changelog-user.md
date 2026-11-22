@@ -4,6 +4,28 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-22
+
+**Könyvtár**
+
+- Az eszköztár ▾ (**Megjelenítési beállítások**) gombja saját legördülő
+  menüt nyit, ugyanazokkal a tételekkel, mint a bal hasáb helyi menüje.
+- A **Nézet ▸ Mappanézet** almenüben a négy ugrópont (**Asztal**,
+  **Dokumentumok**, **Képek**, **Sajátgép**) a **Gyorsbillentyűk**
+  almenübe került; a hasáb helyi menüjében is mind a négy megvan. A
+  **Személyek rendezése a toplista alapján** és az **Indexképek
+  megjelenítése a könyvtárban** a helyi menüben is csak ott választható,
+  ahol értelme van.
+- A rácsban a mappák a bal hasáb rendezését követik.
+- A **Mappa ▸ Rendezés** **Dátum**, **Név**, **Méret** és **Fordított
+  sorrend** tétele egyszer átrendezi a kijelölt mappa képeit, mint az
+  eredeti Picasában. Lásd [Könyvtár](features/konyvtar.md).
+
+**Frissítés**
+
+- A **PicasaPy frissítése** ablak csíkja az első pillanattól a teljes
+  telepítés százalékát mutatja. Lásd [Beállítások](features/beallitasok.md).
+
 ## 2026-11-21
 
 **Keresés**

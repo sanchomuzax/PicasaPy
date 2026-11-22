@@ -107,7 +107,10 @@ circular arrow and the new version number, so you can see the update is
 waiting. Its tooltip reads **Update will be installed when PicasaPy closes.**
 While the update runs, a small window shows which step it is on (for
 example replacing files or checking the new version) and how much time has
-passed. Do not start the program meanwhile: it restarts by itself when the
+passed. Below it, a bar shows the percentage of the whole installation
+from the very first moment, and it never moves backwards. During the two
+longer steps (unpacking the package and preparing the start) it also shows
+how many items are done out of the total. Do not start the program meanwhile: it restarts by itself when the
 update is finished. If something goes wrong, the window tells you what
 happened, and you can close it with its **Close** button. If
 the update stops before it finishes, or an earlier version starts after all,
