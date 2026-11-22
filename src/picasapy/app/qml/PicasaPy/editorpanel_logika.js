@@ -228,38 +228,25 @@ function emitFinetunePreview() {
 function syncFinetuneSliders() {
     panel.suppressFinetune = true
     finetunePanel.fillSlider.value = panel.fillLight
-    fixesTab.fillSlider.value = panel.fillLight   // #337: a másik fül párja
+    fixesTab.fillSlider.value = panel.fixesFillLight   // #7369: a `fill` réteg, nem a Hangolás
     finetunePanel.highlightsSlider.value = panel.highlights
     finetunePanel.shadowsSlider.value = panel.shadows
     finetunePanel.tempSlider.value = panel.colorTemp
     panel.suppressFinetune = false
 }
 
-// #337: a Kitöltő fény KÉT helyen látszik (Gyakori javítások és
-// Finomhangolás), de EGY beállítás — amelyiket húzzák, a másik követi.
-// A visszacsatolást a suppressFinetune zárja ki: a párja beállítása nem
-// vált ki újabb előnézetet, csak a húzott csúszka.
-function fillLightMoved(value) {
-    if (panel.suppressFinetune)
-        return
-    panel.suppressFinetune = true
-    finetunePanel.fillSlider.value = value
-    fixesTab.fillSlider.value = value
-    panel.suppressFinetune = false
-    panel.emitFinetunePreview()
-}
+// #7369: a Derítőfény KÉT helyen látszik, de KÉT külön szűrő: a Gyakori
+// javítások csúszkája a `fill` réteget, a Finomhangolás fülé a `finetune2`
+// 1. paraméterét írja (az eredeti Picasa fülváltáskor más-más szűrőt
+// aktivál, `0x005d7780`). A két csúszka nem osztozik állapoton.
 
-// a négy csúszka aktuális értékének MENTÉSE (a húzás végén) — a
-// Finomhangolás fül minden csúszkája és a Gyakori javítások fülön lévő
-// Derítőfény-párja is ezen az egy ponton megy ki
+// a négy Finomhangolás-csúszka aktuális értékének MENTÉSE (a húzás végén)
 function emitFinetuneCommit() {
     panel.finetuneCommit(finetunePanel.fillSlider.value,
                          finetunePanel.highlightsSlider.value,
                          finetunePanel.shadowsSlider.value,
                          finetunePanel.tempSlider.value)
 }
-
-function fillLightCommitted() { panel.emitFinetuneCommit() }
 
 // #448 `lastCropRatio`: az eszköz megnyitásakor a legutóbb használt
 // arányt tölti vissza (QSettings-ből, `controller` közvetítésével) — a

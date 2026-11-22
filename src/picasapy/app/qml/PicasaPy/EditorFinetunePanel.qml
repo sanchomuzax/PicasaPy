@@ -137,10 +137,12 @@ ColumnLayout {
         Layout.preferredHeight: finetunePanel.csuszkaMagassag
         Layout.leftMargin: finetunePanel.csuszkaEltolas
         from: 0; to: 1; value: 0
-        // #337: a Gyakori javítások fülön lévő párjával közös állapot
-        onValueChanged: panel.fillLightMoved(value)
-        //: #3865: ld. az `EditorTabCommonFixes.qml` párja
-        onVeglegesult: panel.fillLightCommitted()
+        // #7369: a `finetune2` 1. paramétere; a Gyakori javítások fül
+        // Derítőfénye külön (`fill`) réteg, nem osztozik ezzel az állapottal
+        onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
+        //: #3865: a `veglegesult` az egérelengedéssel ÉS a billentyűs
+        //: léptetéssel is tüzel
+        onVeglegesult: panel.emitFinetuneCommit()
     }
 
     // --- Kiemelések + Árnyékok, jobbra a megvilágítás-pálcával ------------

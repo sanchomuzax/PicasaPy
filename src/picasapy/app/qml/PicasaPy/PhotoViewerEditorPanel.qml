@@ -57,6 +57,10 @@ EditorPanel {
     // Finomhangolás (#20): a mentett értékek a kontrollerből —
     // a syncFinetuneSliders() ezekből tölti a csúszkákat
     fillLight: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.fillLight : 0
+    // #7369: a Gyakori javítások Derítőfénye a `fill` réteg, nem a `finetune2`
+    fixesFillLight: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.fixesFillLight : 0
+    onFixesFillPreview: (v) => editController.previewFixesFill(v)
+    onFixesFillCommit: (v) => editController.setFixesFill(v)
     highlights: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.highlights : 0
     shadows: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.shadows : 0
     colorTemp: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.colorTemp : 0
