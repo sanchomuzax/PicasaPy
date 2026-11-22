@@ -1,4 +1,5 @@
-"""#7123: a Sepia és a Fekete-fehér a nézőben az Effektek fület választja.
+"""#7123: a Sepia és a Fekete-fehér a nézőben az Effektek fület választja
+(#7371 óta a nyitott képre alkalmaz is).
 
 ## Az eredeti (Picasa 3.9, `docs/specs/paritas-ellenorzes.md`, #7084)
 
@@ -20,17 +21,26 @@ Minden bemenet valódi: a Kép menü fejlécére, a Csoportos szerkesztés
 almenü sorára, majd a tételre érkezik `QTest.mouseClick`. A hatást a
 renderelt panel `activeTab` állapotán (a fül, amit a felhasználó lát), a
 lemezen maradt `filters=` láncon és a kötegelt visszavonás elérhetőségén
-mérjük. A `0x005f8520` pontos hatása (kijelöl vagy alkalmaz is) örökölt
-nyitott kérdés, ezért a teszt csak az ágak EGYSÉGESSÉGÉT rögzíti.
+mérjük.
+
+## #7371: a `0x005f8520` hatása eldőlt
+
+Az eredeti a fülváltás után a csempekattintás végpontját hívja, tehát a
+nézőben a Sepia és a Fekete-fehér a NYITOTT képre alkalmaz (a korábbi "csak
+fület vált" olvasat téves volt). Ezért a #7123 eredeti "Nem szabad" pontja
+(a nézőben a tétel nem módosítja a láncot) megfordult: ez a fájl a fülválasztást
+és azt rögzíti, hogy a hatás a nézőben egyképes, kötegművelet nélküli; a hatás
+teljes mérése (Undo, csempe-egyezés, billentyű) a
+`test_csoportos_szerkesztes_nezoben_7371.py`-ban van.
 
 ## A „Nem szabad” pontok
 
-- a nézőben a tétel NEM módosítja a `filters=` láncot, és nem indít kötegelt
-  műveletet (nincs visszavonható köteg);
+- a nézőben a tétel egyképes alkalmazás: nem indít kötegelt műveletet (nincs
+  visszavonható köteg), és csak a megnyitott kép láncát módosítja;
 - a könyvtárnézetben a kijelölt képekre a Sepia és a Fekete-fehér továbbra is
   lefut;
 - az Alapvető javítások tételei (`autolight`, `autocolor`, `enhance`) a 0.
-  fület választják, ezt a változtatás nem érinti.
+  fület választják.
 """
 
 from __future__ import annotations
@@ -134,19 +144,22 @@ class TestNezoEffektekFul:
         )
 
     @pytest.mark.parametrize(("tetel", "nev", "kulcs"), _UJ_AGAK)
-    def test_nem_modositja_a_lancot_es_nem_indit_koteget(
+    def test_csak_a_megnyitott_kepre_hat_kotegmuvelet_nelkul(
         self, kep_app, qt_app, tetel, nev, kulcs
     ):
+        """#7371: a nézőben a tétel a nyitott képre alkalmaz (a csempe útján)."""
         _window, controller, _engine = kep_app
         _nezoben_kattint(kep_app, qt_app, tetel)
 
-        # a (hibás) háttérköteg is lefutott volna: kivárjuk a háttérmunkát
+        assert varj(qt_app, lambda: kulcs in szures(controller, 0)), (
+            f"a nézőben a {nev} nem került a megnyitott kép láncára"
+        )
         assert controller.waitForBackgroundWorkers(10.0)
         qt_app.processEvents()
 
-        for sor in range(len(controller.photos.photos)):
+        for sor in range(1, len(controller.photos.photos)):
             assert kulcs not in szures(controller, sor), (
-                f"a nézőben a {nev} a {sor}. kép láncát módosította"
+                f"a nézőben a {nev} a nem megnyitott {sor}. kép láncát is módosította"
             )
         assert _kozben_nincs_kotegmuvelet(controller), (
             f"a nézőben a {nev} kötegelt műveletet indított"

@@ -306,6 +306,8 @@ Rectangle {
     function selectAspect(index) { return Logika.selectAspect(index) }
 
     function handleToolClick(tool) { return Logika.handleToolClick(tool) }
+    //: #7371: menüparancs/billentyű a NYITOTT képre (a csempe útja és kapuja)
+    function runMenuEffect(name) { return Logika.runMenuEffect(name) }
 
     EditorPanelToolsState {
         id: toolsState

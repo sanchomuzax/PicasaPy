@@ -360,22 +360,23 @@ function panFromZoomNavigator(deltaX, deltaY) {
 function show(index) { viewer.currentIndex = index; viewer.forceActiveFocus() }
 
 // A Kép menü egyes egylépéses javításai szerkesztőben a megfelelő
-// panelfület nyitják meg; a könyvtárnézetben a kijelölésre futnak.
+// panelfület választják, majd a csempekattintás útján a NYITOTT képre
+// hatnak (#7371: az eredeti a csempe végpontját hívja, `0x005f8520`); a
+// könyvtárnézetben a kijelölésre futnak.
 // #7123: a sepia és a bw az eredetiben (0x00579330, 0x9d4a, 0x9d4c) a
 // warm, unsharp és grain2 ágával azonos hívást futtatja, ezért ők is az
 // Effektek fület választják, nem az egyképes kötegre esnek vissza.
 function selectMenuEffect(name) {
-    if (name === "autolight" || name === "autocolor"
-            || name === "enhance") {
-        editorPanel.selectTab(0)
-        return true
-    }
-    if (name === "sepia" || name === "unsharp" || name === "warm"
-            || name === "grain2" || name === "bw") {
-        editorPanel.selectTab(2)
-        return true
-    }
-    return false
+    var ful = -1
+    if (name === "autolight" || name === "autocolor" || name === "enhance")
+        ful = 0
+    else if (name === "sepia" || name === "unsharp" || name === "warm"
+             || name === "grain2" || name === "bw")
+        ful = 2
+    if (ful < 0) return false
+    editorPanel.selectTab(ful)
+    editorPanel.runMenuEffect(name)
+    return true
 }
 
 // Vágás alkalmazása a kijelölésből. advance=true: Enter-flow -

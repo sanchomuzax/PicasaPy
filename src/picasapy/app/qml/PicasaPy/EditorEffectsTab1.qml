@@ -31,6 +31,14 @@ ColumnLayout {
     anchors.topMargin: 10
     spacing: 8
 
+    // #7371: a Kép ▸ Csoportos szerkesztés ▸ Sharpen ugyanazt a paraméter-
+    // panelt nyitja, mint a Sharpen csempe (azonos cím, mert a felirat a
+    // csempe fordítása, ezért a függvény itt él). Shift nélküli út: `unsharp2`.
+    function sharpenMenubol() {
+        if (!panel.tryOpenParamPanel("unsharp2", qsTr("Sharpen")))
+            panel.effectRequested("unsharp2")
+    }
+
     // #704: NINCS fejlécsáv a rács fölött. Az eredeti Picasa
     // elrendezés-forrásában (`editpanel.tre:428`) az effekt-fül panelének
     // (`editpanel/tabpanel3`) PONTOSAN EGY gyereke van: a rács konténere

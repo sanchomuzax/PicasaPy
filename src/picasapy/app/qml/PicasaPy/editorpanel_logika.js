@@ -308,6 +308,26 @@ function handleToolClick(tool) {
     if (tool === "crop") panel.cropRequested()
 }
 
+// #7371: a Kép ▸ Csoportos szerkesztés effektparancsai és a Ctrl+Shift+B a
+// szerkesztőben NYITOTT képre hatnak: az eredeti a csempekattintás
+// végpontját hívja (`0x005f8520`, `0x005fe370(panel, "bw")`). Ugyanaz az út,
+// mint a csempéé, és ugyanaz a kapu: ahol a csempe nem használható (videó,
+// mód-eszköz, kiegyenesítés, paraméterpanel), a parancs sem fut. A fülválasztás
+// a hívó dolga. A három alapvető javítás a csempe kattintását kapja (a lánc
+// végén no-op), a Sharpen paraméteres: csak a panelt nyitja, az Alkalmaz előtt
+// a lánc nem változik; a többi egykattintásos effekt a csempe jelét küldi.
+function runMenuEffect(name) {
+    if (!panel.enabled || panel.modeToolActive || panel.tiltActive
+            || panel.paramPanelActive)
+        return
+    if (name === "autolight" || name === "autocolor" || name === "enhance")
+        panel.handleToolClick(name)
+    else if (name === "unsharp")
+        panelTabs.effektLap.sharpenMenubol()
+    else
+        panel.effectRequested(name)
+}
+
 
 // #641/#703: a panel TÉNYLEGES és LÁTHATÓ magassága eltérhet. Egy
 // layout-cella nem zsugorít a kért méret alá, hanem hagyja túlnyúlni a
