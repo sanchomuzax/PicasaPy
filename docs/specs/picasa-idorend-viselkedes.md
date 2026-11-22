@@ -4128,6 +4128,7 @@ NINCS MEG:
 - Az `[L+0x148]` írói és a `0x004b8470` hívója. Ezek adják az `i` értékeket. Ghidra-kör kell: `0x004b8ee0 - a 0x004b8470 hívója és az [L+0x148] írói (U10)`.
 - Az `[L+0x138]` tábla tulajdonosa és a `+0xc == 2` jelentése. Azt is el kell dönteni, hogy az `i == darab` eset valóban olvas-e (a `jbe` miatt). Ghidra-kör kell: `0x004b29d0 - az L osztálya, a sor típusmezőjének jelentése, a darabszám-határ (U11)`.
 - Az EBP és az EBX forrása a többi hívóhelyen. Ghidra-kör kell: `0x004b2e10, 0x004b3770, 0x004b80d0 - a hívott függvények EBP és EBX forrása (U12)`.
+  ⚠️ **U12 részben LEZÁRVA (#7351, `picasa-hasab-csoportfejlecek-7351.md`):** a `0x004b3770` hívóhelyein (`0x004b3886`, `0x004b3b50`) az EBP a builder (a `0x004b8470` veremben épített állapot-struktúrája), az EBX a sor dátumának éve (`0x004b37fd`, a `0x0098b9e0` eredménye), a `0x004b3f4b` a 3-as (útvonal-alapú) mód ága. A `0x004b2e10` és a `0x004b80d0` változatlanul NINCS MEG.
 
 **2. A kattintási út (Q2).**
 

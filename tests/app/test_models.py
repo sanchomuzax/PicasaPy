@@ -47,16 +47,19 @@ class TestFolderListModel:
         model = FolderListModel()
         model.load(conn)
         # dátum-rendezés: a 2025-ös nyaralas évsort kap és elöl áll, a
-        # 2019-es telek a sajátja alatt következik.
+        # 2019-es telek a sajátja alatt következik. Az első sor fölött nincs
+        # fejléc; a 2019-es sor elé csak az évváltás miatt kerül.
         # #2304 előtt a `telek` DÁTUMTALAN volt (nincs benne EXIF), ezért
         # évsort sem kapott, és a lista 3 sorból állt. Azóta a fájlidő a
-        # tartalék, tehát neki is jár fejléc: 2 mappa + 2 évsor.
-        assert model.rowCount() == 4
-        assert model.data(model.index(0, 0), FolderListModel.KindRole) == "year"
-        first = model.index(1, 0)
+        # tartalék, tehát az évváltáskor jár fejléc: 2 mappa + 1 évsor.
+        assert model.rowCount() == 3
+        assert model.data(model.index(0, 0), FolderListModel.KindRole) == "folder"
+        first = model.index(0, 0)
         assert model.data(first, FolderListModel.NameRole) == "nyaralas"
         assert model.data(first, FolderListModel.CountRole) == 2
         assert model.data(first, FolderListModel.PathRole).endswith("nyaralas")
+        assert model.data(model.index(1, 0), FolderListModel.KindRole) == "year"
+        assert model.data(model.index(1, 0), FolderListModel.NameRole) == "2019"
 
     def test_offline_role_and_paths(self, qt_app, conn, library):
         # #459/5: a nem elérhető mappa jelölése kijut a modellig — ebből
@@ -130,7 +133,8 @@ class TestFolderListModel:
         ]
         folder_order = [n for k, n in rows if k == "folder" and n.startswith(("regi", "uj", "kozep"))]
         assert folder_order == ["uj", "kozep", "regi"]
-        assert rows.index(("year", "2025")) < rows.index(("folder", "uj"))
+        assert ("year", "2025") not in rows
+        assert rows.index(("year", "2023")) < rows.index(("folder", "kozep"))
 
     def test_sort_by_name(self, qt_app, conn):
         from picasapy.app.models import FolderListModel
@@ -155,12 +159,23 @@ class TestFolderListModel:
         conn.commit()
         model = FolderListModel()
         model.load(conn, sort_mode="date", reverse=True)
+        assert model.data(model.index(0, 0), FolderListModel.KindRole) == "folder"
+        assert model.data(model.index(0, 0), FolderListModel.NameRole) == "telek"
         names = [
             model.data(model.index(i, 0), FolderListModel.NameRole)
             for i in range(model.rowCount())
             if model.data(model.index(i, 0), FolderListModel.KindRole) == "folder"
         ]
         assert names.index("a") < names.index("b")  # legrégebbi elöl
+        rows = [
+            (
+                model.data(model.index(i, 0), FolderListModel.KindRole),
+                model.data(model.index(i, 0), FolderListModel.NameRole),
+            )
+            for i in range(model.rowCount())
+        ]
+        assert ("year", "2019") not in rows
+        assert rows.index(("year", "2020")) < rows.index(("folder", "a"))
 
     def test_no_year_row_when_all_folders_share_one_year(self, qt_app, tmp_path):
         # Audit (docs/specs/ui-audit-mainwindow.md, 1.1 pont): ha egy adott
@@ -191,6 +206,53 @@ class TestFolderListModel:
             ]
         assert "year" not in kinds
         assert model.rowCount() == 3
+
+    def test_changed_headers_group_by_month_and_skip_years_through_1900(
+        self, qt_app, tmp_path
+    ):
+        from picasapy.app.models import FolderListModel
+
+        root = tmp_path / "valtozasok"
+        for name, when in (
+            ("augusztus_2021", (2021, 8, 10, 12, 0, 0)),
+            ("november_2019_a", (2019, 11, 4, 12, 0, 0)),
+            ("november_2019_b", (2019, 11, 25, 12, 0, 0)),
+            ("1899_december", (1899, 12, 31, 12, 0, 0)),
+        ):
+            folder = root / name
+            folder.mkdir(parents=True)
+            photo = folder / "kep.jpg"
+            make_jpeg(photo)
+            _fajlidot_allit(photo, when)
+
+        with open_index(tmp_path / "valtozasok.db") as changed_conn:
+            sync_tree(changed_conn, root)
+            old_change_ns = int(
+                time.mktime((1899, 12, 31, 12, 0, 0, 0, 0, -1))
+                * 1_000_000_000
+            )
+            changed_conn.execute(
+                "UPDATE photos SET mtime_ns = ? WHERE folder_id = "
+                "(SELECT id FROM folders WHERE path = ?)",
+                (old_change_ns, str(root / "1899_december")),
+            )
+            model = FolderListModel()
+            model.load(changed_conn, sort_mode="changed")
+            rows = [
+                (
+                    model.data(model.index(i, 0), FolderListModel.KindRole),
+                    model.data(model.index(i, 0), FolderListModel.NameRole),
+                )
+                for i in range(model.rowCount())
+            ]
+
+        assert rows == [
+            ("folder", "augusztus_2021"),
+            ("year", "Updated November 2019"),
+            ("folder", "november_2019_b"),
+            ("folder", "november_2019_a"),
+            ("folder", "1899_december"),
+        ]
 
     def test_windows_path_folder_name(self, qt_app, conn):
         # Importált (Windows-os) útvonal is értelmes nevet adjon.
