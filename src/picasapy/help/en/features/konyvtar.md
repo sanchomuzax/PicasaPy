@@ -16,18 +16,19 @@ The pane has three display modes. Choose one from **View** ▸ **Folder View**:
 - **Tree View** - folders are nested according to their locations on disk.
 - **Simplified Tree View** - a tree that shows only the branches containing your watched folders. Folders outside those branches are hidden. Within a branch, levels that only lead to another folder and contain no pictures are combined so long paths fit on one row. This command sits at the very bottom of the menu, separated from the other two.
 
-Two small view buttons on the toolbar switch between the first two modes. A ▾ button next to them opens the same menu as **View** ▸ **Folder View**, so the view, sorting, and thumbnail options can all be controlled in one place. The two entry points stay in sync. The ▾ button is hidden in a narrow window; every option remains available from the menu bar.
+The submenu is ordered like this: the two views (**Flat Folder View**, **Tree View**), then the five folder sorting commands (see “Sorting folders” below), then the **Shortcuts** submenu, and finally **Show Thumbnails in Library** and **Simplified Tree View**.
 
-After the sorting commands in this menu are three ways to sort the People list: **Sort People by Name**, **Sort People by Amount**, and **Sort People by Top 10**. A check mark shows which one is active. Below them, the **Shortcuts** submenu offers four destinations - **My Computer**, **Pictures**, **My Documents**, and **Desktop** - the same destinations shown at the top of the submenu (see “Where the tree starts” below).
+Two small view buttons on the toolbar switch between the first two modes. A ▾ button next to them (**View options**) opens its own drop-down menu with the same items as the pane's context menu (see below). The settings are shared, so a change made here also shows in the menu bar and in the context menu. The ▾ button is hidden in a narrow window; every option remains available from the menu bar.
 
 In Tree View, right-clicking a folder row opens a menu based on the row. A folder that contains your own pictures (a real library folder) gets the full folder menu, as in the other views. A branch row that only leads to other folders and contains no pictures gets a shorter menu.
 
-Right-clicking an empty part of the pane opens the pane's own menu. It contains:
+Right-clicking an empty part of the pane opens the pane's own menu (the toolbar's ▾ button opens the same one). It contains, in this order:
 
-- sorting commands (by name, size, recent changes, or reverse order), and sorting for the People list;
-- **Simplified Tree View**;
-- **Show Thumbnails in Library**, the same option as in **View** ▸ **Folder View**;
-- a **Shortcuts** submenu containing **Desktop**. This jumps to the Desktop folder, just like **View** ▸ **Folder View** ▸ **Desktop**. The label comes from the original Picasa translation; it has nothing to do with keyboard shortcuts.
+- the sorting commands: **Sort by Date**, **Sort by Recent Changes**, **Sort by Size**, **Sort by Name**, and **Reverse sort**;
+- three ways to sort the People list: **Sort People by Name**, **Sort People by Amount**, and **Sort People by Top 10**. A check mark shows which one is active. Sorting by Top 10 can only be chosen in Tree View; otherwise it is grayed out;
+- the **Shortcuts** submenu with four destinations: **Desktop**, **My Documents**, **My Pictures**, and (after a separator) **My Computer** - the same as in **View** ▸ **Folder View** ▸ **Shortcuts** (see “Where the tree starts” below). The label comes from the original Picasa; it has nothing to do with keyboard shortcuts;
+- **Show Thumbnails in Library**, the same option as in **View** ▸ **Folder View**; it is grayed out in Tree View;
+- **Simplified Tree View**.
 
 > Until the program knows which folders you watch, Simplified Tree View keeps the entire tree. It is safer to show too much than to hide your folders. Set watched folders in [Folder Manager](mappakezelo.md).
 
@@ -35,10 +36,12 @@ All three settings are remembered until the next time you start the program.
 
 ### Where the tree starts
 
-Four destinations appear at the top of **View** ▸ **Folder View**. The original Picasa put them there too:
+Four destinations appear in **View** ▸ **Folder View** ▸ **Shortcuts** (and in the submenu of the same name in the pane's context menu):
 
+- **Desktop**, **My Documents**, and **My Pictures** show the whole tree, but jump to and select the chosen folder.
 - **My Computer** shows the whole tree, with every folder.
-- **Pictures**, **My Documents**, and **Desktop** also show the whole tree, but jump to and select the chosen folder.
+
+A check mark shows which starting point is active.
 
 The **Folders** label tells you where you are: “Default View” in the flat list, “My Computer” in Tree View, or the name of the folder at one of the three destinations.
 
@@ -96,23 +99,25 @@ This command is available only in a folder, not in an album or a People album.
 
 ### Sorting folders
 
-Sorting can be changed in the middle of **View** ▸ **Folder View** or from the pane's context menu:
+Sorting can be changed in the middle of **View** ▸ **Folder View**, from the pane's context menu, or from the toolbar's ▾ menu:
 
-- **Sort by Creation Date**
-- **Sort by recent changes**
+- **Sort by Creation Date** (in the context menu: **Sort by Date**)
+- **Sort by Recent Changes**
 - **Sort by Size**
 - **Sort by Name**
 - **Reverse sort** - this can be combined with any of the other choices.
 
+This order applies to the left pane and to the grid: in the grid, folders follow each other in the same order as in the pane.
+
 ### Sorting pictures inside a folder
 
-Right-click a folder and use **Sort Folder By** to sort its pictures by **Date**, **Name**, **Size**, or **Color**, or choose **Reverse order**.
+Right-click a folder and use **Sort Folder By** to sort its pictures by **Date**, **Name**, **Size**, or **Color**, or choose **Reverse order**. The **Date**, **Name**, **Size**, and **Reverse order** items of the main **Folder** ▸ **Sort By** menu do the same for the selected folder.
 
 Sorting is a one-time operation: the program sorts the pictures by the selected criterion and records that order as the folder's **Manual order** (see below). It affects only that folder; other folders keep their order. **Reverse order** reverses the current order. You can then adjust the pictures by dragging them.
 
 Sorting by **Name** treats numbers as numbers: <code>photo2.jpg</code> comes before <code>photo10.jpg</code>, not after it. Uppercase and lowercase do not matter. Names starting with a number come first, followed by accented letters (or letters outside the English alphabet), then names starting with A through Z. So <code>Ábel.jpg</code> comes before <code>alma.jpg</code>. The original Picasa sorts this way too.
 
-> The **Folder** ▸ sorting menu does something different: it decides the order of folders in the grid (by date, name, size, or **Sort by recent changes**). It does not change the order of pictures inside a folder.
+> **Folder** ▸ **Sort By** ▸ **Recent changes** is the exception: it does not sort the pictures, it decides the order of the folders in the grid, starting with the most recently changed one. This item is a PicasaPy feature of its own (shown in blue); the original Picasa did not have it. When you choose it, a check mark appears next to it, and the grid follows this order instead of the pane's sorting.
 
 Sorting by **Color** arranges pictures by their dominant color: colored pictures come first in rainbow order, followed by colorless pictures. The program analyzes colors in the background. If a folder was just scanned and the analysis is not ready, sorting by Color does nothing. Wait a moment and try again.
 

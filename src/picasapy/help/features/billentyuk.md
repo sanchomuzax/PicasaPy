@@ -203,8 +203,9 @@ A helyi menük tételei az eredeti Picasáéval egyeznek. Néhány, ami
 újabban működik:
 
 - **Bal hasáb, mappalista:** az **Indexképek megjelenítése a
-  könyvtárban** tétel pipás kapcsoló; a **Gyorsbillentyűk ▸ Asztal**
-  az Asztalra váltja a mappafa gyökerét.
+  könyvtárban** tétel pipás kapcsoló; a **Gyorsbillentyűk** almenü
+  **Asztal**, **Dokumentumok**, **Képek** és **Sajátgép** tétele a
+  mappafa kezdőpontját váltja.
 - **Néző:** ha a képnek megőrzött eredetije van a lemezen, a
   **Keresés** almenü két tételt ad: **Fájl a lemezen**
   és **Eredeti a lemezen**; egyébként egyetlen **Keresés** tétel áll

@@ -118,7 +118,10 @@ ezt olvasod: **A frissítés a PicasaPy bezárásakor települ.**
 
 Frissítés közben a **PicasaPy frissítése** ablak kiírja, melyik lépésnél
 tart a munka (például a fájlok cseréje vagy az új verzió ellenőrzése), és
-mennyi idő telt el. Ne indítsd el közben a programot: a frissítés végén
+mennyi idő telt el. Alatta egy csík az első pillanattól a **teljes**
+telepítés százalékát mutatja; a csík soha nem lép vissza. A két hosszabb
+lépésnél (a csomag kicsomagolása és az indulás előkészítése) a százalék
+mellett az is látszik, hány tétel van már kész az összesből. Ne indítsd el közben a programot: a frissítés végén
 magától újraindul. Ha valami elromlik, az ablak megírja, mi történt, és a
 **Bezárás** gombbal zárhatod be. Ha a frissítés félbemarad,
 vagy a végén mégis a régi változat indul el, a következő indításkor a
