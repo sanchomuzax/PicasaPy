@@ -1,8 +1,10 @@
 import QtQuick
 import QtQuick.Controls
 
-// A bal panel SAJÁT jobbklikk-menüje - a Picasa `AlbumList` menüosztályának
-// 14 rekordos nézet- és rendezésmenüje (#7340; #422, 3. lépcső).
+// A Picasa `AlbumList` menüosztályának 14 rekordos nézet- és
+// rendezésmenüje (#7340; #422, 3. lépcső). Egyetlen belépése az eszköztár
+// ▾ gombja (`PicasaViewMenu.toolbarFolderOptionsMenu`): a bal hasáb üres
+// részére az eredetiben nincs menü, ezért ott nem nyílik (#7349).
 //
 // Forrás: `docs/specs/ui-audit-context-menus.md` A.2 szakasza. Ez a menü a
 // képernyőképeken nem szerepelt: a `Picasa3i18n.dll` string-táblájából
@@ -23,12 +25,12 @@ import QtQuick.Controls
 // megegyezik a menüsáv Nézet ▸ Mappanézet almenüjével; a Windowsos
 // rendszermappáknak Linuxon a megfelelő helyi gyökerek felelnek meg.
 //
-// Önálló, signal-alapú komponens: a bekötést a FolderPane.qml végzi.
+// Önálló, signal-alapú komponens: a bekötést a gazda (PicasaViewMenu.qml) végzi.
 PicasaMenu {
     id: menu
     objectName: "folderListContextMenu"
-    // A toolbar külön példányt tart fenn; a nevei ne ütközzenek a jobbklikk
-    // menü azonos nevű tételeivel a teljes ablak objektumfájában.
+    // A ▾ gomb példánya saját előtagot kap (`toolbarFolderListMenu`); az
+    // előtag nélküli nevek a komponens közvetlen betöltésére (tesztek) valók.
     property string objectNamePrefix: ""
 
     // a jelenlegi rendezés — a pipákhoz
@@ -40,6 +42,13 @@ PicasaMenu {
     property bool albumThumbs: false
     property string viewRoot: ""
     property bool treeMode: false
+    // #7350: a Shortcuts ▸ Desktop és ▸ My Pictures tétel csak akkor
+    // engedélyezett, ha a könyvtár egy mappája a megfelelő rendszermappa
+    // alatt áll (`0x005e2558`, `0x005e256a`). A My Documents és a My
+    // Computer sosem tiltott. Alapérték: engedélyezett (közvetlen
+    // betöltéskor, vezérlő nélkül).
+    property bool desktopAvailable: true
+    property bool picturesAvailable: true
 
     //: #1767 — a Személyek lista rendezési módja: name / count / top
     property string peopleSort: "name"
@@ -202,6 +211,7 @@ PicasaMenu {
                 ? menu.objectNamePrefix + "Desktop" : "folderListMenuDesktop"
             text: qsTr("&Desktop")
             checkable: true
+            enabled: menu.desktopAvailable
             checked: menu.viewRoot === "desktop"
             onTriggered: {
                 menu.viewRootRequested("desktop")
@@ -228,6 +238,7 @@ PicasaMenu {
                 ? menu.objectNamePrefix + "MyPictures" : "folderListMenuMyPictures"
             text: qsTr("My &Pictures")
             checkable: true
+            enabled: menu.picturesAvailable
             checked: menu.viewRoot === "mypics"
             onTriggered: {
                 menu.viewRootRequested("mypics")

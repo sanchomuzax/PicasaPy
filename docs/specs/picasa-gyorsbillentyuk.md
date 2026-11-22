@@ -579,7 +579,7 @@ A #4398 elején megadott 53-as szám a #4339 korábbi pillanatfelvétele volt; a
 | 6 | `Main.qml` — `findSimilarShortcut` | `Ctrl+F7` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
 | 7 | `Main.qml` — `clearSimilarShortcut` | `Ctrl+F8` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
 | 8 | `Main.qml` — `batchBwShortcut` | `Ctrl+Shift+B` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
-| 9 | `Main.qml` — `batchEnhanceShortcut` | `Ctrl+Shift+E` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
+| 9 | `Main.qml` - `batchEnhanceShortcut` | `Ctrl+Shift+E` | Könyvtárnézetben (`viewerOpen == false`) a kijelölésre; a szerkesztőben (`viewerOpen == true`) a megnyitott képre, a Jó napom van csempe útján (#7352). Nincs fókuszban szövegmező, és nem fut diavetítés. |
 | 10 | `Main.qml` — `helpShortcut` | `F1` | Főablak; nincs fókuszban szövegmező és nincs külön ablakos párbeszéd. |
 | 11 | `Main.qml` — `helpContextShortcut` | `Shift+F1` | Főablak; nincs fókuszban szövegmező és nincs külön ablakos párbeszéd. |
 | 12 | `Main.qml` — `selectAll` | `Ctrl+A` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
@@ -2135,7 +2135,7 @@ Az állapot mező értékei:
 | 29 | Alt+Enter | Tulajdonságok | sequence=Alt+Return → Tulajdonságok panel | **megvan és működik** | Könyvtárnézet; érvényes fotóművelet; szövegfókusz nélkül | tests/app/qml_functional/test_shortcut_focus_4398.py |
 | 30 | F1 | Súgó | sequence=F1 → súgó | **megvan és működik** | Főablak vagy súgóablak; helyi ablak aktív; szövegfókusz nélkül | tests/app/qml_functional/test_sugo_bekotes_2054.py |
 | 31 | Ctrl+Shift+B | Fekete-fehér kötegelt művelet | objectName=batchBwShortcut → meglévő renderlánc-művelet | **megvan és működik** | Könyvtárnézet; szövegfókusz nélkül | tests/app/test_gyorsbillentyu_agak_2163.py |
-| 32 | Ctrl+Shift+E | Jó napom van kötegelt művelet | objectName=batchEnhanceShortcut → meglévő renderlánc-művelet | **megvan és működik** | Könyvtárnézet; szövegfókusz nélkül | tests/app/test_gyorsbillentyu_agak_2163.py |
+| 32 | Ctrl+Shift+E | Jó napom van kötegelt művelet | objectName=batchEnhanceShortcut → meglévő renderlánc-művelet | **megvan és működik** | Könyvtárnézet és szerkesztő (#7352); szövegfókusz nélkül | tests/app/test_gyorsbillentyu_agak_2163.py, tests/app/qml_functional/test_ctrl_shift_e_szerkeszto_7352.py |
 | 33 | Ctrl+F | Keresés | objectName=searchShortcut → keresőmező | **megvan és működik** | Könyvtárnézet; keresőmező fókuszában a billentyű a mezőé | tests/app/qml_functional/test_shortcut_focus_4398.py |
 | 34 | Ctrl+H | Kijelölés megtartása a képtálcán | objectName=trayKeepSelectionShortcut → tálca megtartása | **megvan és működik** | Főablak; nem néző; nem üres tálca-kijelölés; szövegfókusz nélkül | tests/app/qml_functional/test_talca_menu_1917.py |
 | 35 | Ctrl+Shift+H | Vízszintes tükrözés | objectName=flipHorizontalShortcut → vízszintes tükrözés | **megvan és működik** | Kijelölés vagy a néző aktuális képe; szövegfókusz nélkül | tests/app/test_gyorsbillentyu_agak_2163.py |

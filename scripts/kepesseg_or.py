@@ -49,6 +49,14 @@ névterébe könyveli, a jobb oldalát viszont az értékadás saját fájljána
 névterében oldja fel (így marad meg a `Main` → `FolderPane` →
 `FolderHierarchyView` lánc).
 
+**Másik objektumon át (#7349).** A gyerek-menük a vezérlőt a szülő
+komponens aliasán át is hívják (``bar.folderViewCtl.setViewRoot(...)``). Az
+alias a szülő fájljának névterébe tartozik, ezért a gyerek-fájlban a puszta
+névkeresés nem látja. Ha az aliasnevet EGYETLEN fájl deklarálja, és ott
+egyetlen vezérlőre mutat, a ``.<aliasnév>.<tag>`` minősített alak bármelyik
+fájlban egyértelmű, és élő hivatkozásnak számít. Kétszer deklarált névre ez
+nem érvényes (konzervatív irány).
+
 Ha egy aliasnév EGY FÁJLON BELÜL több kontextus-objektumra is mutat (ilyen
 a `Connections` ``target``-je, vagy ugyanannak a komponensnek két, más-más
 vezérlőt kapó példánya), az őr eldobja: onnantól a rajta keresztüli
@@ -783,18 +791,44 @@ def _aliasok(
     return aliasok, tobbertelmu
 
 
+def _egyedi_aliasok(
+    qml_szovegek: dict[str, str], aliasok: dict[tuple[str, str], str]
+) -> dict[str, str]:
+    """Aliasnév → kontextus-objektum azokra a nevekre, amelyeket EGYETLEN fájl
+    deklarál, és ott egyetlen vezérlőre mutatnak.
+
+    Ezeken át a MÁSIK objektum felől is egyértelmű a hivatkozás: a
+    `bar.viewCtl.tag()` `viewCtl`-je a `bar` komponensének tulajdonsága, és
+    ha a nevet csak egy fájl deklarálja, nincs mivel összetéveszteni (#7349).
+    """
+    deklaralok = _deklaralo_fajlok(qml_szovegek)
+    return {
+        nev: cel
+        for (fajl, nev), cel in aliasok.items()
+        if deklaralok.get(nev) == {fajl}
+    }
+
+
 def _hivatkozasok(
-    qml_szovegek: dict[str, str], nevterek: dict[str, dict[str, str]]
+    qml_szovegek: dict[str, str],
+    nevterek: dict[str, dict[str, str]],
+    egyedi_aliasok: dict[str, str] | None = None,
 ) -> set[tuple[str, str]]:
     """A QML-ben MINŐSÍTETT alakban előforduló `(kontextus, tag)` párok.
 
     Minden fájlt a SAJÁT névterével néz végig (#1490): ugyanaz a rövidítés
     a szomszéd fájlban másik vezérlőt — vagy semmit — jelenthet.
+
+    Kivétel az `egyedi_aliasok`: azok pontnélküli előtaggal, MÁS objektumon át
+    is elérhetők (`bar.viewCtl.tag`), bármelyik fájlban.
     """
     talalt: set[tuple[str, str]] = set()
     for fajl, szoveg in qml_szovegek.items():
         for nev, kontextus in nevterek[fajl].items():
             for egyezes in re.finditer(rf"\b{re.escape(nev)}\s*\.\s*(\w+)", szoveg):
+                talalt.add((kontextus, egyezes.group(1)))
+        for nev, kontextus in (egyedi_aliasok or {}).items():
+            for egyezes in re.finditer(rf"\.\s*{re.escape(nev)}\s*\.\s*(\w+)", szoveg):
                 talalt.add((kontextus, egyezes.group(1)))
     return talalt
 
@@ -829,7 +863,9 @@ def elemez(app_gyoker: Path) -> Elemzes:
     nevterek = _ures_nevterek(qml_szovegek, set(kontextusok))
     for (fajl, nev), cel in aliasok.items():
         nevterek[fajl][nev] = cel
-    hivatkozott = _hivatkozasok(qml_szovegek, nevterek)
+    hivatkozott = _hivatkozasok(
+        qml_szovegek, nevterek, _egyedi_aliasok(qml_szovegek, aliasok)
+    )
 
     tagok: list[Tag] = []
     for qml_nev, osztaly in sorted(kontextusok.items()):

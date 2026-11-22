@@ -7,7 +7,7 @@ elvégzi-e a műveletet a teljes alkalmazásban.
 
 from __future__ import annotations
 
-from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtCore import QObject, Qt
 
 
 def _selected(window):
@@ -25,31 +25,28 @@ def _child(root, name):
 
 
 class TestFolderListMenuWiring:
-    def test_pane_has_a_right_click_handler_of_its_own(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
-        handler = _child(window, "folderPaneContextMenuHandler")
-        assert handler.property("acceptedButtons") == Qt.MouseButton.RightButton
+    """A ▾ gomb legördülője (`toolbarFolderListMenu`) a bal hasáb rendezését
+    állítja. A hasáb üres részén NINCS saját menü és kezelő (#7349); a
+    nem-nyitást a `test_hasab_ures_jobbklikk_7349.py` méri valódi kattintással."""
 
-    # #461/3: a bal panel SAJÁT menüje a PANELT rendezi (az eredeti
-    # `AlbumList` menüje is ezt tette — ui-audit-context-menus.md A.2), a
-    # Mappa ▸ Rendezés pedig a RÁCSOT (#321). A kettő külön
-    # beállítás; korábban mindkét menü a rács-rendezést írta, ezért a panel
-    # menüjének pipái hazudtak.
-    def test_opening_the_menu_takes_the_current_sort_state(self, qml_app, qt_app):
+    def test_pane_has_no_right_click_handler_of_its_own(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        assert window.findChild(QObject, "folderPaneContextMenuHandler") is None
+
+    # #461/3: a ▾ legördülő a PANELT rendezi (az eredeti `AlbumList` menüje is
+    # ezt tette, ld. ui-audit-context-menus.md A.2), a Mappa ▸ Rendezés pedig a
+    # RÁCSOT (#321). A kettő külön beállítás; a legördülő pipái a vezérlő
+    # állapotát kötik, nyitáskor nincs külön pillanatfelvétel.
+    def test_the_menu_follows_the_current_sort_state(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         controller.setPaneSort("size")
         qt_app.processEvents()
-        pane = _child(window, "folderPane")
-        QMetaObject.invokeMethod(
-            pane, "openFolderListContextMenu", Qt.ConnectionType.DirectConnection
-        )
-        qt_app.processEvents()
-        assert _child(window, "folderListContextMenu").property("sortMode") == "size"
+        assert _child(window, "toolbarFolderListMenu").property("sortMode") == "size"
 
     def test_sort_request_reaches_the_controller(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         grid_before = controller.folderSort
-        menu = _child(window, "folderListContextMenu")
+        menu = _child(window, "toolbarFolderListMenu")
         menu.sortModeRequested.emit("name")
         qt_app.processEvents()
         assert controller.paneSort == "name"
@@ -58,7 +55,7 @@ class TestFolderListMenuWiring:
     def test_reverse_request_flips_the_controller_state(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         before = controller.paneSortReverse
-        menu = _child(window, "folderListContextMenu")
+        menu = _child(window, "toolbarFolderListMenu")
         menu.sortReverseRequested.emit()
         qt_app.processEvents()
         assert controller.paneSortReverse is not before

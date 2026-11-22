@@ -46,7 +46,7 @@ látható, de szürke tételek billentyűi nem élnek.
 | Ctrl+Shift+H | Tükrözés vízszintesen (balról jobbra) |
 | Ctrl+Shift+V | Tükrözés függőlegesen (fentről le) |
 | Ctrl+Shift+B | A kijelölt képek fekete-fehérré alakítása |
-| Ctrl+Shift+E | „Jó napom van" a kijelölt képekre |
+| Ctrl+Shift+E | „Jó napom van" a kijelölt képekre; a szerkesztőben (nézőben) a megnyitott képre, ugyanúgy, mint a **Jó napom van** csempe |
 | Ctrl+H | A tálca tartalmának megtartása (**Kijelölés megtartása**) — lásd [Könyvtár](konyvtar.md); nézőben nem működik |
 
 A **tükrözésnek nincs menüpontja** — az eredeti Picasában sem volt, csak

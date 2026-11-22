@@ -83,6 +83,16 @@ def _rendszermappa(token: str) -> str:
     return ""
 
 
+def _feloldott_rendszermappa(token: str) -> str:
+    """A rendszermappa útvonala úgy, ahogy a gyökérváltás is használja: a
+    `mypics` feloldhatatlanul a Dokumentumokra esik vissza
+    (`0x00996747  call 0x996230`). Üres, ha nem oldható fel."""
+    ut = _rendszermappa(token)
+    if not ut and token == "mypics":
+        ut = _rendszermappa("mydocs")
+    return ut
+
+
 def _osszehasonlito_alak(path: str) -> str:
     """A két útvonal ÖSSZEHASONLÍTÓ alakja (#1477).
 
@@ -131,6 +141,27 @@ def _is_ancestor(candidate: str, target: str) -> bool:
     return jelolt.endswith("/") or cel[len(jelolt)] == "/"
 
 
+def _gyoker_alak(gyoker: str) -> str:
+    """A rendszermappa összehasonlító alakja a `_alatta_vagy_egyezik`-hez
+    (záró elválasztó nélkül; a `/` gyökér üres alakot ad, ami minden abszolút
+    útvonalra illik)."""
+    return _osszehasonlito_alak(gyoker).rstrip("/") if gyoker else ""
+
+
+def _alatta_vagy_egyezik(gyoker_alak: str, path: str) -> bool:
+    """A `path` a gyökér mappa maga vagy az alatta álló mappa-e.
+
+    `gyoker_alak`: a `_gyoker_alak` eredménye (egyszer számolva, hogy a nagy
+    mappalistán ne ismétlődjön). Útvonal-HATÁRON (komponens szerint) vet
+    össze, nem nyers előtagként: a `/Kepek` nem előtagja a `/KepekMasolat`-nak.
+    Az eredeti `0x004f7e40` nyers előtag-összevetést végez; ez a #7350 egyetlen
+    szándékos eltérése."""
+    if not path:
+        return False
+    alak = _osszehasonlito_alak(path).rstrip("/")
+    return alak == gyoker_alak or alak.startswith(gyoker_alak + "/")
+
+
 class FolderHierarchyController(BackgroundWorkerMixin, QObject):
     """A `FolderHierarchyView.qml` adatforrása."""
 
@@ -145,6 +176,9 @@ class FolderHierarchyController(BackgroundWorkerMixin, QObject):
     #: teljes fára váltás után FELFEDIK és kijelölik a mappát — ez a
     #: jelzés viszi az útvonalat a gazdának (spec 4.5/b).
     rootFolderRevealed = Signal(str)
+    #: #7350: a Shortcuts almenü Desktop és My Pictures tételének
+    #: engedélyezettsége a mappalista cseréjekor változhat.
+    shortcutsAvailabilityChanged = Signal()
 
     #: #2154: a három nézet-kapcsoló `QSettings`-kulcsa. Az eredetiben
     #: mindhárom tartós felhasználói beállítás a `Preferences` alatt
@@ -189,6 +223,8 @@ class FolderHierarchyController(BackgroundWorkerMixin, QObject):
         if self._rendszer_gyoker:
             self._tree_view = True
         self._rows: tuple[dict, ...] = ()
+        #: #7350: (Desktop, My Pictures) engedélyezett-e a mappalista alapján.
+        self._shortcuts_available: tuple[bool, bool] = (False, False)
         self._folder_rebuild_generation = 0
         self._folder_rebuild_result = None
         self._rebuild()
@@ -241,6 +277,7 @@ class FolderHierarchyController(BackgroundWorkerMixin, QObject):
         egyszerűen hatástalanok maradnak a halmazban).
         """
         self._folders = tuple(dict(folder) for folder in folders or ())
+        self._frissit_gyorsparancsok()
         if len(self._folders) < 100:
             self._rebuild()
         else:
@@ -392,9 +429,7 @@ class FolderHierarchyController(BackgroundWorkerMixin, QObject):
             return "Default View"
         if token in ("all", "watched"):
             return "My Computer"
-        ut = _rendszermappa(token)
-        if not ut and token == "mypics":
-            ut = _rendszermappa("mydocs")
+        ut = _feloldott_rendszermappa(token)
         return os.path.basename(ut.rstrip(os.sep)) if ut else "My Computer"
 
     @Slot(str)
@@ -421,11 +456,8 @@ class FolderHierarchyController(BackgroundWorkerMixin, QObject):
         if kert in _RENDSZERMAPPAK:
             # ELŐBB a teljes fa — a sorrend mért
             self.setTreeView(True)
-            ut = _rendszermappa(kert)
-            if not ut and kert == "mypics":
-                #: `0x00996747  call 0x996230` — a Képek feloldó maga esik
-                #: vissza a Dokumentumokra
-                ut = _rendszermappa("mydocs")
+            #: a Képek feloldó maga esik vissza a Dokumentumokra
+            ut = _feloldott_rendszermappa(kert)
             if not ut:
                 #: spec 4.6: visszaesés a Sajátgép-gyökérre, ugrás nélkül
                 self._rendszer_gyokeret_allit("")
@@ -461,6 +493,43 @@ class FolderHierarchyController(BackgroundWorkerMixin, QObject):
         vissza a `SimplifiedHierarchy` kulcsot (`0x005cc63f`:
         olvas → `neg/sbb/add 1` → visszaír)."""
         self.setSimplified(not self._simplified)
+
+    # -- a Shortcuts almenü tiltásai (#7350) ----------------------------
+
+    @Property(bool, notify=shortcutsAvailabilityChanged)
+    def desktopAvailable(self) -> bool:
+        """Engedélyezett-e a Shortcuts ▸ Desktop tétel.
+
+        Az eredeti kezelő a tételt szürkére teszi, ha a Desktop mappa útvonala
+        nem előtagja a mappalista egyik elemének sem (`0x005e256a`,
+        `0x004f7e40`). Nálunk: van-e a könyvtárban mappa az Asztal alatt."""
+        return self._shortcuts_available[0]
+
+    @Property(bool, notify=shortcutsAvailabilityChanged)
+    def picturesAvailable(self) -> bool:
+        """Engedélyezett-e a Shortcuts ▸ My Pictures tétel (`0x005e2558`).
+
+        A My Documents és a My Computer tételhez nincs tulajdonság: az
+        eredetiben a My Documents a Desktop-azonosító kétszeri küldése miatt
+        sosem tiltott, a My Computer pedig sosem."""
+        return self._shortcuts_available[1]
+
+    def _frissit_gyorsparancsok(self) -> None:
+        """A két tétel engedélyezettségének újraszámítása a mappalistából."""
+        utak = tuple(str(mappa.get("path", "")) for mappa in self._folders)
+
+        def van_alatta(token: str) -> bool:
+            gyoker = _feloldott_rendszermappa(token)
+            if not gyoker:
+                return False
+            alak = _gyoker_alak(gyoker)
+            return any(_alatta_vagy_egyezik(alak, ut) for ut in utak)
+
+        ujak = (van_alatta("desktop"), van_alatta("mypics"))
+        if ujak == self._shortcuts_available:
+            return
+        self._shortcuts_available = ujak
+        self.shortcutsAvailabilityChanged.emit()
 
     # -- sorok ----------------------------------------------------------
 

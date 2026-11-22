@@ -1,0 +1,1 @@
+- Kutatás: a nézet rendezésének nyitott kérdései eldöntve futtatott méréssel az eredeti Picasán (#7326).

@@ -323,6 +323,54 @@ def test_az_alias_nem_szivarog_at_masik_fajlba(tmp_path: Path) -> None:
     assert "controller.bekotetlen" in _szakadas_kulcsok(gyoker)
 
 
+def test_a_masik_objektum_aliasan_at_erkezo_hivatkozas_elo(tmp_path: Path) -> None:
+    """`bar.viewCtl.tag()`: a gyerek-menü a SZÜLŐ komponens aliasán át hívja a
+    vezérlőt (a valóságban `bar.folderViewCtl.setViewRoot(...)`, #7349).
+
+    Az alias a `Bar.qml` névterébe tartozik (#1490), a `Menu.qml` csak a
+    `bar` objektumon át éri el. Ha a név EGYETLEN fájlban van deklarálva, a
+    `.viewCtl.` minősített hivatkozás egyértelműen arra az aliasra mutat.
+    """
+    gyoker = _fa(
+        tmp_path,
+        qml={
+            "Bar.qml": "Item {\n readonly property var viewCtl: controller\n}",
+            "Menu.qml": (
+                "Item {\n property var bar: null\n"
+                " onClicked: bar.viewCtl.bekotetlen()\n}"
+            ),
+        },
+    )
+    assert _szakadas_kulcsok(gyoker) == {"controller.bekotott"}
+
+
+def test_a_ketszer_deklaralt_aliasnev_masik_objektumon_at_nem_ad_eletet(
+    tmp_path: Path,
+) -> None:
+    """A konzervatív irány megmarad: ha a név KÉT fájlban is deklarált (két
+    különböző vezérlőre), a `bar.viewCtl.tag()` nem dönthető el, tehát nem ad
+    életet egyiknek sem."""
+    gyoker = _fa(
+        tmp_path,
+        vezerlok={"vezerlok.py": KET_VEZERLO},
+        alkalmazas=KET_REGISZTRACIO,
+        qml={
+            "Elso.qml": "Item {\n readonly property var viewCtl: elsoController\n}",
+            "Masodik.qml": (
+                "Item {\n readonly property var viewCtl: masodikController\n}"
+            ),
+            "Menu.qml": (
+                "Item {\n property var bar: null\n"
+                " onClicked: bar.viewCtl.cancelScan()\n}"
+            ),
+        },
+    )
+    assert _szakadas_kulcsok(gyoker) == {
+        "elsoController.cancelScan",
+        "masodikController.cancelScan",
+    }
+
+
 def test_a_fajlon_beluli_ketertelmuseg_tovabbra_is_eldob(tmp_path: Path) -> None:
     """A konzervatív szabály FÁJLON BELÜL megmarad — ez a `Connections` esete.
 

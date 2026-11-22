@@ -46,7 +46,7 @@ Two general rules from the original Picasa apply:
 | `Ctrl+Shift+H` | Mirror the selected photos horizontally |
 | `Ctrl+Shift+V` | Mirror the selected photos vertically |
 | `Ctrl+Shift+B` | Convert the selected photos to black and white |
-| `Ctrl+Shift+E` | Apply **I'm Feeling Lucky** to the selected photos |
+| `Ctrl+Shift+E` | Apply **I'm Feeling Lucky** to the selected photos; in the editor (viewer) it applies to the open photo, just like the **I'm Feeling Lucky** tile |
 | `Ctrl+H` | Keep the Photo Tray selection; this is the **Hold selected items** control. See [The library](konyvtar.md). It does not work in the viewer. |
 
 Mirroring has no menu item in the original Picasa either; it is available

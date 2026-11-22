@@ -35,6 +35,13 @@ PicasaMenu {
         treeMode: (menuView.bar.folderViewCtl
                 && menuView.bar.folderViewCtl.treeView !== undefined)
             ? menuView.bar.folderViewCtl.treeView : false
+        // #7350: a `!== undefined` a próbák stub-vezérlőjére véd (#1572)
+        desktopAvailable: (menuView.bar.folderViewCtl
+                && menuView.bar.folderViewCtl.desktopAvailable !== undefined)
+            ? menuView.bar.folderViewCtl.desktopAvailable : true
+        picturesAvailable: (menuView.bar.folderViewCtl
+                && menuView.bar.folderViewCtl.picturesAvailable !== undefined)
+            ? menuView.bar.folderViewCtl.picturesAvailable : true
         onSortModeRequested: function(mode) {
             if (menuView.controllerRef)
                 menuView.controllerRef.setPaneSort(mode)

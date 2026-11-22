@@ -24,6 +24,15 @@ PicasaMenu {
     readonly property string viewRootToken:
         (bar.folderViewCtl && bar.folderViewCtl.viewRoot !== undefined)
             ? bar.folderViewCtl.viewRoot : ""
+    // #7350: a Shortcuts ▸ Desktop és ▸ My Pictures tétel engedélyezettsége
+    // (a könyvtárban van-e mappa a rendszermappa alatt). A `!== undefined`
+    // a próbák stub-vezérlőjére véd (#1572).
+    readonly property bool desktopAvailable:
+        (bar.folderViewCtl && bar.folderViewCtl.desktopAvailable !== undefined)
+            ? bar.folderViewCtl.desktopAvailable : true
+    readonly property bool picturesAvailable:
+        (bar.folderViewCtl && bar.folderViewCtl.picturesAvailable !== undefined)
+            ? bar.folderViewCtl.picturesAvailable : true
     //: #2049: a mappa-borítók kapcsolójának állapota. A
     //: `!== undefined` a próbák stub-vezérlőjére véd (#1572).
     readonly property bool albumThumbsMode:
@@ -167,6 +176,7 @@ PicasaMenu {
             objectName: "menuViewShortcutDesktop"
             text: qsTr("&Desktop")
             checkable: true
+            enabled: folderViewMenu.desktopAvailable
             checked: folderViewMenu.viewRootToken === "desktop"
             onTriggered: {
                 if (bar.folderViewCtl)
@@ -193,6 +203,7 @@ PicasaMenu {
             objectName: "menuViewShortcutMyPictures"
             text: qsTr("My &Pictures")
             checkable: true
+            enabled: folderViewMenu.picturesAvailable
             checked: folderViewMenu.viewRootToken === "mypics"
             onTriggered: {
                 if (bar.folderViewCtl)

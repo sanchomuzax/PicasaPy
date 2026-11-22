@@ -50,11 +50,13 @@ def mappa_app(qt_app, tmp_path, monkeypatch):
     # A rendszermappa-gyökerek (Képek, Dokumentumok, Asztal) a futtató gép
     # mappáitól függenek: a CI-gépen nincsenek, és a program akkor helyesen a
     # Sajátgépre esik vissza. Ezért a teszt saját mappákat ad (#1407 mintája).
-    utak = {}
-    for token, nev in (("mypics", "Kepek"), ("mydocs", "Iratok"), ("desktop", "Asztal")):
-        mappa = tmp_path / "rendszer" / nev
-        mappa.mkdir(parents=True)
-        utak[token] = str(mappa)
+    # #7350: a Desktop és a My Pictures tétel csak akkor engedélyezett, ha a
+    # könyvtárban van mappa a gyökerük alatt, ezért a Képek és az Asztal gyökere
+    # a könyvtár maga (`tmp_path / "kepek"`, az app-építő hozza létre).
+    iratok = tmp_path / "rendszer" / "Iratok"
+    iratok.mkdir(parents=True)
+    konyvtar = str(tmp_path / "kepek")
+    utak = {"mypics": konyvtar, "mydocs": str(iratok), "desktop": konyvtar}
     monkeypatch.setattr(fhc, "_rendszermappa", lambda token: utak.get(token, ""))
     yield from nezet_app_epitese(qt_app, tmp_path)
 

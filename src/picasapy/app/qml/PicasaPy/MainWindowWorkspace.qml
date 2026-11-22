@@ -46,6 +46,63 @@ Item {
         return timelineViewLoader.item
     }
 
+    // A háttérszkennelés új képet szúrhat a néző aktuális sora elé. A
+    // kijelölést a MainWindowPhotoSelection már azonosító alapján őrzi;
+    // ugyanezt kell tenni a nézővel is, különben a visszalépés régi sora egy
+    // másik képre mutat (#7356).
+    QtObject {
+        id: viewerPhotoAnchor
+        property string pendingPhotoId: ""
+
+        function capture() {
+            pendingPhotoId = ""
+            var viewer = photoViewerLoader.item
+            var photos = workspace.hostController
+                ? workspace.hostController.photos : null
+            if (!workspace.hostWindow.viewerOpen || !viewer || !photos
+                    || viewer.currentIndex < 0)
+                return
+            pendingPhotoId = String(photos.idAt(viewer.currentIndex))
+        }
+
+        function restore() {
+            var photoId = Number(pendingPhotoId)
+            pendingPhotoId = ""
+            var viewer = photoViewerLoader.item
+            var photos = workspace.hostController
+                ? workspace.hostController.photos : null
+            if (!workspace.hostWindow.viewerOpen || !viewer || !photos
+                    || isNaN(photoId) || photoId <= 0)
+                return
+            var row = photos.rowOfId(photoId)
+            if (row >= 0 && viewer.currentIndex !== row)
+                viewer.currentIndex = row
+        }
+    }
+
+    Connections {
+        target: workspace.hostController ? workspace.hostController.photos : null
+        ignoreUnknownSignals: true
+        function onRowsAboutToBeInserted(parent, first, last) {
+            viewerPhotoAnchor.capture()
+        }
+        function onRowsInserted(parent, first, last) {
+            viewerPhotoAnchor.restore()
+        }
+        function onRowsAboutToBeRemoved(parent, first, last) {
+            viewerPhotoAnchor.capture()
+        }
+        function onRowsRemoved(parent, first, last) {
+            viewerPhotoAnchor.restore()
+        }
+        function onModelAboutToBeReset() {
+            viewerPhotoAnchor.capture()
+        }
+        function onModelReset() {
+            viewerPhotoAnchor.restore()
+        }
+    }
+
     function revealSearchPhoto(row) {
         if (row >= 0 && mainLibraryCanvas && mainLibraryCanvas.grid)
             mainLibraryCanvas.grid.scrollToRow(Number(row))

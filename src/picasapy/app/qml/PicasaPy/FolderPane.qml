@@ -368,18 +368,6 @@ Rectangle {
         paneMenus.folderContextMenu.popup()
     }
 
-    // #422: a bal panel saját menüjének megnyitása — a rendezési pipák
-    // nyitáskor átveszik a vezérlő friss állapotát; a nézetpipák kötöttek.
-    function openFolderListContextMenu() {
-        if (controller) {
-            // #461/3: a BAL HASÁB saját rendezése — az eredetiben ez a
-            // menü (`AlbumList`) a hasábot rendezte, nem a rácsot
-            paneMenus.folderListContextMenu.sortMode = controller.paneSort
-            paneMenus.folderListContextMenu.sortReverse = controller.paneSortReverse
-        }
-        paneMenus.folderListContextMenu.popup()
-    }
-
     // #422 (4. lépcső): az album / Emberek-album jobbklikk-menüje — a
     // sor-delegátumból (Repeater-elem) kiszervezve pane-szintű, névvel
     // hívható függvénybe, a mappa-menü mintájára
@@ -595,16 +583,6 @@ Rectangle {
         paneContent.folderListView.positionViewAtIndex(row, ListView.Contain)
         pane.ensurePaneRowVisible(
             paneContent.folderListView.y + row * pane.rowHeight, pane.rowHeight)
-    }
-
-    // #422: jobbklikk a bal panel üres részén — a Picasa `AlbumList`
-    // menüosztálya (a mappasorok saját menüje hamarabb elkapja az eseményt,
-    // így ez tényleg csak a sorokon kívül fut le).
-    TapHandler {
-        objectName: "folderPaneContextMenuHandler"
-        acceptedButtons: Qt.RightButton
-        gesturePolicy: TapHandler.ReleaseWithinBounds
-        onSingleTapped: pane.openFolderListContextMenu()
     }
 
     // #730: a hasáb EGÉSZE görgethető. Korábban a `ColumnLayout` az ablak
