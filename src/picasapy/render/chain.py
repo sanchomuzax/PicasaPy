@@ -199,7 +199,12 @@ def _alpha_after_worker(key: str, op: FilterOp, alpha_before: int) -> int:
     if key in _ALPHA_SOURCE_PRESERVING_WORKERS:
         return alpha_before
     if key in _ALPHA_FADE_BLENDERS:
-        fade = _effect_float(op, _ALPHA_FADE_BLENDERS[key], 50.0 if key == "soften" else 0.0)
+        try:
+            fade = _effect_float(op, _ALPHA_FADE_BLENDERS[key], 50.0 if key == "soften" else 0.0)
+        except ValueError:
+            # #7361: olvashatatlan Fade mellett a worker nem használta a mezőt
+            # (a hiányos láncot változatlanul adja vissza), az alfa sem változik
+            return alpha_before
         return alpha_before if fade >= 100.0 else _ALPHA_OPAQUE
     return _ALPHA_WORKER_OUTPUTS[key]
 

@@ -156,6 +156,11 @@ def _futtat(
     return jelent
 
 
+@example(
+    eset=_RenderEset(
+        "PicnikFocalPixelate", ("1", "0", "0", "0", "0", "0", "00ffffff"), 1, 1, 3
+    )
+)
 @example(eset=_RenderEset("Border", (), 1, 1, 3))
 @example(eset=_RenderEset("Border", ("1",), 1, 1, 4))
 @example(eset=_RenderEset("Border", ("1", "nan"), 3, 2, 3))
