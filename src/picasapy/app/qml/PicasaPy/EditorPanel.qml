@@ -165,12 +165,15 @@ Rectangle {
     property alias aspectRotated: cropState.aspectRotated
 
     property alias fillLight: finetuneState.fillLight
+    property alias fixesFillLight: finetuneState.fixesFillLight
     property alias highlights: finetuneState.highlights
     property alias shadows: finetuneState.shadows
     property alias colorTemp: finetuneState.colorTemp
     property alias suppressFinetune: finetuneState.suppressFinetune
     signal finetunePreview(real fill, real highlights, real shadows, real temp)
     signal finetuneCommit(real fill, real highlights, real shadows, real temp)
+    signal fixesFillPreview(real value)
+    signal fixesFillCommit(real value)
 
     property alias shiftMasodlagos: effectState.shiftMasodlagos
 
@@ -271,11 +274,9 @@ Rectangle {
     function emitFinetunePreview() { return Logika.emitFinetunePreview() }
     function syncFinetuneSliders() { return Logika.syncFinetuneSliders() }
 
-    function fillLightMoved(value) { return Logika.fillLightMoved(value) }
-
     function emitFinetuneCommit() { return Logika.emitFinetuneCommit() }
-    function fillLightCommitted() { return Logika.fillLightCommitted() }
     onFillLightChanged: panel.syncFinetuneSliders()
+    onFixesFillLightChanged: panel.syncFinetuneSliders()
     onActiveTabChanged: {
         panel.syncFinetuneSliders()
         // #2146/#798: az effekt-füleken kell a Shift — ott kapcsoljuk BE a

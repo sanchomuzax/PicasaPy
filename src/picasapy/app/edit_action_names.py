@@ -86,6 +86,10 @@ def _tools() -> dict[str, str]:
         "autolight": "Auto Contrast",
         "autocolor": "Auto Color",
         "finetune": "Tuning",
+        # #7369: a Gyakori javítások Derítőfény-csúszkája a `fill` réteget
+        # írja; az eredeti szövegtárban `filter_fill_label0` = Fill Light /
+        # Derítőfény (a `finetune2`-é Tuning / Finomhangolás).
+        "fill": "Fill Light",
     }
 
 
