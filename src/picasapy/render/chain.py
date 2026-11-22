@@ -55,6 +55,7 @@ from picasapy.render.chain_ops import (
     _apply_tint_op,
     _apply_unsharp_op,
     _effect_float,
+    _fade_vagy_none,
     _finetune_float as _finetune_float,
     _DEFAULT_TINT_COLOR as _DEFAULT_TINT_COLOR,
 )
@@ -199,8 +200,9 @@ def _alpha_after_worker(key: str, op: FilterOp, alpha_before: int) -> int:
     if key in _ALPHA_SOURCE_PRESERVING_WORKERS:
         return alpha_before
     if key in _ALPHA_FADE_BLENDERS:
-        fade = _effect_float(op, _ALPHA_FADE_BLENDERS[key], 50.0 if key == "soften" else 0.0)
-        return alpha_before if fade >= 100.0 else _ALPHA_OPAQUE
+        fade = _fade_vagy_none(op, _ALPHA_FADE_BLENDERS[key], 50.0 if key == "soften" else 0.0)
+        # #7361: olvashatatlan Fade (None) mellett a worker sem használta a mezőt: az alfa marad
+        return alpha_before if fade is None or fade >= 100.0 else _ALPHA_OPAQUE
     return _ALPHA_WORKER_OUTPUTS[key]
 
 def normalize_crop_ops(

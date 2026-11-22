@@ -173,6 +173,11 @@ def _futtat(
         3,
     )
 )
+@example(
+    eset=_RenderEset(
+        "PicnikFocalPixelate", ("1", "0", "0", "0", "0", "0", "00ffffff"), 1, 1, 3
+    )
+)
 @given(eset=_render_esetek())
 def test_apply_filters_hibas_parameterekkel_es_kepalakkal_is_korlatozott(
     eset, monkeypatch, fuzz_keret, fuzz_kihagyas_merese, caplog
