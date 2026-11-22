@@ -21754,4 +21754,98 @@ picasapy-origin-key: stringres:CThumbUI::ConfirmImmediateDeletion::Message</extr
             <translation>Šo failu nevar pārvietot uz miskasti, un tas nekavējoties tiks dzēsts. Vai tiešām vēlaties turpināt?</translation>
         </message>
     </context>
+    <context>
+        <name>FolderListModel</name>
+        <message>
+            <location filename="../model_helpers.py" line="190" />
+            <source>Updated</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumBuilder::updated</extracomment>
+            <translation>Atjaunināts</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>January</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:January</extracomment>
+            <translation>Janvāris</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>February</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:February</extracomment>
+            <translation>Februāris</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>March</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:March</extracomment>
+            <translation>Marts</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>April</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:April</extracomment>
+            <translation>Aprīlis</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>May</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:May</extracomment>
+            <translation>Maijs</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>June</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:June</extracomment>
+            <translation>Jūnijs</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>July</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:July</extracomment>
+            <translation>Jūl.</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>August</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:August</extracomment>
+            <translation>Augusts</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>September</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:September</extracomment>
+            <translation>Septembris</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>October</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:October</extracomment>
+            <translation>Oktobris</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>November</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:November</extracomment>
+            <translation>Novembris</translation>
+        </message>
+        <message>
+            <location filename="../model_helpers.py" line="34" />
+            <source>December</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:December</extracomment>
+            <translation>Decembris</translation>
+        </message>
+    </context>
 </TS>

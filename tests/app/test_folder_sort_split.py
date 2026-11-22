@@ -11,6 +11,8 @@ követik a `paneSort` értékét.
 
 from __future__ import annotations
 
+import os
+import time
 from pathlib import Path
 
 import pytest
@@ -25,13 +27,16 @@ def library(tmp_path):
     root = tmp_path / "kepek"
     # névsorrend: alma, mokus, zebra — dátumsorrend (legújabb elöl):
     # mokus, zebra, alma. A kettő szándékosan NEM esik egybe.
-    for folder, taken in (
-        ("alma", "2020:01:01 10:00:00"),
-        ("mokus", "2024:01:01 10:00:00"),
-        ("zebra", "2022:01:01 10:00:00"),
+    for folder, taken, changed in (
+        ("alma", "2020:01:01 10:00:00", (2020, 3, 1, 12, 0, 0)),
+        ("mokus", "2024:01:01 10:00:00", (2024, 11, 1, 12, 0, 0)),
+        ("zebra", "2022:01:01 10:00:00", (2022, 8, 1, 12, 0, 0)),
     ):
         (root / folder).mkdir(parents=True)
-        make_jpeg(root / folder / "IMG_0001.jpg", taken_at=taken)
+        photo = root / folder / "IMG_0001.jpg"
+        make_jpeg(photo, taken_at=taken)
+        stamp = time.mktime((*changed, 0, 0, -1))
+        os.utime(photo, (stamp, stamp))
     return root
 
 
@@ -195,6 +200,14 @@ class TestYearHeadersBelongToTheDateView:
         assert "year" not in self._kinds(controller)
 
     def test_changed_view_keeps_them(self, controller):
-        # a „legutóbbi változtatás" is dátum-alapú nézet
+        # A fejléc a változás hónapját és évét viszi tovább, nem a mappa EXIF-dátumát.
         controller.setPaneSort("changed")
-        assert "year" in self._kinds(controller)
+        from picasapy.app.models import FolderListModel
+
+        model = controller.folders
+        headers = [
+            model.data(model.index(i, 0), FolderListModel.NameRole)
+            for i in range(model.rowCount())
+            if model.data(model.index(i, 0), FolderListModel.KindRole) == "year"
+        ]
+        assert headers == ["Updated August 2022", "Updated March 2020"]

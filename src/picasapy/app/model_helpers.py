@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import re
 import zlib
+from datetime import datetime
 
-from PySide6.QtCore import QModelIndex
+from PySide6.QtCore import QCoreApplication, QModelIndex
 
 from picasapy.index import PhotoRecord
 from picasapy.metadata import megjelenitett_meret
@@ -23,6 +24,21 @@ _ROOT_INDEX = QModelIndex()
 
 
 REJTETT_MAPPAK_FEJLEC = "Rejtett mappák"
+
+_MONTH_NAMES = (
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
 
 
 def _felbontas(photo) -> str:
@@ -139,35 +155,55 @@ def _rejtett_csomopont(
 def _with_year_separators(
     folders,
 ) -> tuple[tuple[str, str, str, int, bool, bool], ...]:
-    """Évszám-elválasztók a mappa-dátum évéből (fallback: név-prefix).
-
-    Audit (`docs/specs/ui-audit-mainwindow.md`, 1.1 pont): ha a listában
-    MINDEN mappa dátumos ÉS ugyanabba az egyetlen évbe esik, a Picasa nem
-    rajzol évszám-fejlécet — a mappák egyenesen a gyűjtemény-fejléc alá
-    kerülnek (ez csak a homogén esetben áll fenn; ha akár egyetlen mappa is
-    dátumtalan, vagy legalább két különböző év van jelen, az elválasztók a
-    szokásos módon jelennek meg).
-    """
+    """Évfejlécek a dátumból (fallback: név-prefix), az első sor nélkül."""
     folders = list(folders)
     years = [
         _folder_year(name, date)
-        for name, _path, _count, date, _offline, _unread in folders
+        for name, _path, _count, date, _change, _offline, _unread in folders
     ]
-    distinct_years = {year for year in years if year}
-    if years and len(distinct_years) <= 1 and all(years):
-        return tuple(
-            ("folder", name, path, count, offline, unread)
-            for name, path, count, _date, offline, unread in folders
-        )
-
     rows = []
-    last_year = None
-    for (name, path, count, _date, offline, unread), year in zip(
-        folders, years, strict=True
-    ):
-        if year and year != last_year:
+    last_year = years[0] if years else None
+    for index, (
+        (name, path, count, _date, _change, offline, unread),
+        year,
+    ) in enumerate(zip(folders, years, strict=True)):
+        if index and year and year != last_year:
             rows.append(("year", year, "", 0, False, False))
         last_year = year
+        rows.append(("folder", name, path, count, offline, unread))
+    return tuple(rows)
+
+
+def _with_month_separators(
+    folders,
+) -> tuple[tuple[str, str, str, int, bool, bool], ...]:
+    """Havi fejlécek a fájlok legutóbbi módosítási idejéből.
+
+    A csoportkulcs az év és a hónap. Az első sor elé nem kerül fejléc, és
+    az 1900-as vagy korábbi módosítási év kimarad.
+    """
+    rows = []
+    last_month = None
+    updated = QCoreApplication.translate("FolderListModel", "Updated")
+    # A Windows DATE_YEARMONTH-regionális alakját tudatosan nem követjük.
+    for name, path, count, _date, change_ns, offline, unread in folders:
+        changed_at = datetime.fromtimestamp(change_ns / 1_000_000_000)
+        month_key = (changed_at.year, changed_at.month)
+        if rows and month_key != last_month and changed_at.year > 1900:
+            month_name = QCoreApplication.translate(
+                "FolderListModel", _MONTH_NAMES[changed_at.month - 1]
+            )
+            rows.append(
+                (
+                    "year",
+                    f"{updated} {month_name} {changed_at.year}",
+                    "",
+                    0,
+                    False,
+                    False,
+                )
+            )
+        last_month = month_key
         rows.append(("folder", name, path, count, offline, unread))
     return tuple(rows)
 
