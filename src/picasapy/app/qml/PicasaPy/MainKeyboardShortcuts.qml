@@ -173,12 +173,21 @@ Item {
                      && !hostWindow._szovegmezoneVanFokusz
                      && !hostWindow.slideshowRunning)
         //: `0x005fe370(panel, "enhance")` (`0x005e638b`): a „Jó napom van"
-        //: (keymap 32.); nézőben `applyEnhanceShortcut` (`job-810`).
+        //: (keymap 32.); nézőben `enhanceInViewer` (`job-810`).
         onActivated: {
             if (hostWindow.viewerOpen)
-                hostPhotoViewer.applyEnhanceShortcut()
+                enhanceInViewer(hostPhotoViewer.editorPanel)
             else
                 hostWindow.kotegEffekt("enhance")
+        }
+        // A szerkesztőben a Jó napom van csempe útja (`handleToolClick`): a
+        // lánc végén no-op, visszavonható. Ahol a csempe sem használható
+        // (videó, mód-eszköz, kiegyenesítés, paraméterpanel), a billentyű sem.
+        function enhanceInViewer(panel) {
+            if (!panel || !panel.enabled || panel.modeToolActive
+                    || panel.tiltActive || panel.paramPanelActive)
+                return
+            panel.handleToolClick("enhance")
         }
     }
 

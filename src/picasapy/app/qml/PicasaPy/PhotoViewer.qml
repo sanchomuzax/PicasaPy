@@ -80,7 +80,6 @@ Rectangle {
     readonly property bool editorDrawerAnimationRunning:
         viewerState.editorDrawerAnimationRunning
     function toggleEditorDrawer() { return viewerEditWorkflow.toggleEditorDrawer() }
-    function applyEnhanceShortcut() { return viewerEditWorkflow.applyEnhanceShortcut() }
 
     readonly property bool gpuCapable: GraphicsInfo.api !== GraphicsInfo.Software
                                         && GraphicsInfo.api !== GraphicsInfo.Unknown

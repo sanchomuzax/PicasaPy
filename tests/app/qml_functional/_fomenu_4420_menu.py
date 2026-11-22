@@ -117,6 +117,15 @@ _NINCS_LATHATO_HATAS_UTVONAL = {
     ),
 }
 _LETILTOTT_A_TISZTA_MINTABAN = {
+    "menuViewShortcutDesktop": (
+        "A Shortcuts ▸ Desktop az eredetihez hasonlóan szürke, ha a könyvtárban "
+        "nincs alatta mappa (#7350); a tiszta minta mappája nem az Asztalon áll."
+    ),
+    "menuViewShortcutMyPictures": (
+        "A Shortcuts ▸ My Pictures az eredetihez hasonlóan szürke, ha a "
+        "könyvtárban nincs alatta mappa (#7350); a tiszta minta mappája nem a "
+        "Képek alatt áll."
+    ),
     "menuViewLibraryView": (
         "A Könyvtárnézet csak megnyitott néző mellett aktív; a tiszta minta "
         "könyvtárnézetben indul."
