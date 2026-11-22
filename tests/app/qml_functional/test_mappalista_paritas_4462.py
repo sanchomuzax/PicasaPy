@@ -1,4 +1,7 @@
-"""#4462: a mappalista helyi menüje valódi jobbklikkel és kattintással."""
+"""#4462: a mappalista menüje a ▾ gombról, valódi kattintással.
+
+A hasáb üres részén a jobbklikk nem nyit menüt (#7349, Colab job-801).
+"""
 
 from __future__ import annotations
 
@@ -66,25 +69,18 @@ def _kattint(qt_app, elem, gomb=Qt.MouseButton.LeftButton) -> None:
     qt_app.processEvents()
 
 
-def _jobbklikk_a_mappalista_ures_reszen(window, qt_app) -> None:
-    pane = _gyerek(window, "folderPane")
-    assert pane.width() > 0 and pane.height() > 0
-    pont = pane.mapToScene(QPointF(pane.width() / 2, pane.height() - 8))
-    QTest.mouseClick(
-        window,
-        Qt.MouseButton.RightButton,
-        Qt.KeyboardModifier.NoModifier,
-        QPoint(round(pont.x()), round(pont.y())),
-    )
-    qt_app.processEvents()
-    menu = _gyerek(window, "folderListContextMenu")
+def _nezetbeallito_megnyitasa(window, qt_app) -> None:
+    """Valódi kattintás a ▾ gombra. A hasáb üres részén nincs menü (#7349),
+    a mappalista menüjének egyetlen belépése a nézetbeállító gomb."""
+    _kattint(qt_app, _gyerek(window, "toolbarFolderViewPopupButton"))
+    menu = _gyerek(window, "toolbarFolderListMenu")
     assert _varj(qt_app, lambda: menu.property("opened") is True), (
-        "a bal oldali mappalista üres részén a valódi jobbklikk nem nyitotta meg a menüt"
+        "a ▾ gomb valódi kattintása nem nyitotta meg a mappalista menüjét"
     )
 
 
 @pytest.mark.parametrize("magassag_eltolas", (-5, 0, 5))
-def test_indexkepek_kapcsolo_valodi_jobbkattintas_utan_kattintassal_mukodik(
+def test_indexkepek_kapcsolo_a_nezetbeallito_nyil_utan_kattintassal_mukodik(
     qml_app, qt_app, magassag_eltolas
 ):
     window, _controller, _engine = qml_app
@@ -95,9 +91,9 @@ def test_indexkepek_kapcsolo_valodi_jobbkattintas_utan_kattintassal_mukodik(
     pane = _gyerek(window, "folderPane")
     hierarchy = pane.property("hierarchyController")
     elotte = bool(hierarchy.property("albumThumbs"))
-    _jobbklikk_a_mappalista_ures_reszen(window, qt_app)
+    _nezetbeallito_megnyitasa(window, qt_app)
 
-    tetel = _gyerek(window, "folderListMenuShowThumbnails")
+    tetel = _gyerek(window, "toolbarFolderListMenuShowThumbnails")
     assert tetel.isEnabled(), "az eredeti indexkép-kapcsoló helyfoglaló maradt"
     _kattint(qt_app, tetel)
 
@@ -128,17 +124,24 @@ def test_asztal_gyorsugras_valodi_menukattintassal_mukodik(
         return eredeti_feloldo(token)
 
     monkeypatch.setattr(hierarchy_module, "_rendszermappa", _rendszermappa)
-    _jobbklikk_a_mappalista_ures_reszen(window, qt_app)
+    # #7350: az Asztal tétel engedélyezettsége a mappalista cseréjekor számolódik
+    # újra; a gyökér-csere az app indulása után történt, ezért újratöltjük a
+    # mappalistát (ugyanaz a jel, amit a szinkron végén a program is kiad)
+    controller.syncFinished.emit()
+    assert _varj(qt_app, lambda: hierarchy.property("desktopAvailable") is True), (
+        "az Asztal gyökere alatt van könyvtári mappa, a tételnek engedélyezettnek kell lennie"
+    )
+    _nezetbeallito_megnyitasa(window, qt_app)
 
-    menu = _gyerek(window, "folderListContextMenu")
-    shortcuts = _gyerek(window, "folderListMenuShortcuts")
-    sor = _menu_sor(menu, submenu_name="folderListMenuShortcuts")
+    menu = _gyerek(window, "toolbarFolderListMenu")
+    shortcuts = _gyerek(window, "toolbarFolderListMenuShortcuts")
+    sor = _menu_sor(menu, submenu_name="toolbarFolderListMenuShortcuts")
     _kattint(qt_app, sor)
     assert _varj(qt_app, lambda: shortcuts.property("opened") is True), (
         "a Gyorsbillentyűk almenü nem nyílt meg kattintásra"
     )
 
-    desktop = _gyerek(window, "folderListMenuDesktop")
+    desktop = _gyerek(window, "toolbarFolderListMenuDesktop")
     assert desktop.isEnabled(), "az Asztal gyorsugrás helyfoglaló maradt"
     _kattint(qt_app, desktop)
     assert _varj(

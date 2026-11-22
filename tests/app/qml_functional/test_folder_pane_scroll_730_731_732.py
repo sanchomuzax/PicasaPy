@@ -296,7 +296,6 @@ def _send_wheel(qt_app, view, item, *, angle_delta: int = -120):
 #: A hasáb összes jobbklikk-menüje — a tesztek azt nézik, MELYIK nyílt meg.
 _MENUK = (
     "folderContextMenu",
-    "folderListContextMenu",
     "albumContextMenu",
     "peopleAlbumContextMenu",
     "collectionContextMenu",

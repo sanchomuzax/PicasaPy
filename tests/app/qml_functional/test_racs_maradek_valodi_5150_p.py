@@ -2,8 +2,9 @@
 
 Lefedve (az audit „Rács" csoportjából):
 - Mappa-menü: Delete Folder (megerősítés után a lomtárba), Export as HTML.
-- Mappalista és rács üres része: jobbklikk nyitja a menüt; a mappasor
-  balklikkje kiválasztja a mappát; a lasszó húzással jelöl.
+- Mappalista üres része: a jobbklikk NEM nyit menüt (#7349); a rács üres
+  része: jobbklikk nyitja a mappa-menüt; a mappasor balklikkje kiválasztja a
+  mappát; a lasszó húzással jelöl.
 - Fejléc és mappa-tulajdonságok: a Sync to Web kapcsoló letiltott; a naptár-gomb
   megnyitja a naptárat; a zene-útvonal valódi bevitellel mentődik; a hely mező
   mappa módban szerkeszthető.
@@ -35,7 +36,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QPointF, Qt
+from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
@@ -195,22 +196,30 @@ class TestMappaMenu:
 
 
 class TestMappalista:
-    def test_a_mappalista_uresen_valodi_jobbklikkre_megnyitja_a_menut(
+    def test_a_mappalista_uresen_valodi_jobbklikkre_nem_nyit_menut(
         self, mappa_app, qt_app
     ):
+        """#7349: az eredetiben a hasáb üres részén nincs menü (Colab job-801);
+        a részletes próba a `test_hasab_ures_jobbklikk_7349.py`-ban van."""
         window, controller, _motor = mappa_app
         elokeszit_str(window, qt_app, controller)
-        handler = keres(window, "folderPaneContextMenuHandler")
-        assert handler.property("enabled") is True, "a kezelő le van tiltva"
+        assert window.findChild(QObject, "folderPaneContextMenuHandler") is None, (
+            "a hasáb üres részén még van jobbklikk-kezelő"
+        )
         pane = keres(window, "folderPane")
 
         jobbklikk_a_ponton(
             window, qt_app, pane.mapToScene(QPointF(pane.width() / 2, pane.height() - 8))
         )
 
-        menu = keres(window, "folderListContextMenu")
-        assert varj(qt_app, lambda: menu.property("opened") is True), (
-            "a bal oldali mappalista üres részén a jobbklikk nem nyitotta meg a menüt"
+        nyitva = [
+            nev
+            for nev in ("folderListContextMenu", "toolbarFolderListMenu", "folderContextMenu")
+            if (menu := window.findChild(QObject, nev)) is not None
+            and (menu.property("opened") is True or menu.property("visible") is True)
+        ]
+        assert nyitva == [], (
+            f"a bal oldali mappalista üres részén a jobbklikk menüt nyitott: {nyitva}"
         )
 
     def test_a_mappasor_valodi_balklikkre_kivalasztja_a_mappat(

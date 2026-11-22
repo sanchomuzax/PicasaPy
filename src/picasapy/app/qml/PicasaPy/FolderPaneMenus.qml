@@ -17,7 +17,6 @@ Item {
     property alias deleteAlbumConfirm: deleteAlbumConfirm
     property alias peopleAlbumContextMenu: peopleAlbumContextMenu
     property alias peopleAlbumDeleteConfirmation: peopleAlbumDeleteConfirmation
-    property alias folderListContextMenu: folderListContextMenu
     property alias moveFolderDialog: moveFolderDialog
     property alias folderContextMenu: folderContextMenu
     property alias deleteFolderConfirm: deleteFolderConfirm
@@ -235,41 +234,6 @@ Item {
                         person_id: peopleAlbumDeleteConfirmation.personId
                     }
                 ])
-        }
-    }
-
-    FolderListContextMenu {
-        id: folderListContextMenu
-        treeMode: folderHierarchyController
-            ? folderHierarchyController.treeView : false
-        // #1454: az „Egyszerűsített fanézet" ugyanazt a kapcsolót billenti,
-        // mint a menüsáv `Nézet ▸ Mappanézet` harmadik tétele
-        simplifiedTree:
-            folderHierarchyController ? folderHierarchyController.simplified : false
-        albumThumbs: folderPane.albumThumbs
-        viewRoot: (folderHierarchyController
-                && folderHierarchyController.viewRoot !== undefined)
-            ? folderHierarchyController.viewRoot : ""
-        // #1767: a Személyek lista rendezése — a `!== undefined` a
-        // #1572-őr mintája (a próbák stub-vezérlőjén hiányozhat)
-        peopleSort: (controller && controller.peopleSort !== undefined)
-            ? controller.peopleSort : "name"
-        onPeopleSortRequested: function(mode) {
-            if (controller && controller.setPeopleSort !== undefined)
-                controller.setPeopleSort(mode)
-        }
-        onSortModeRequested: function(mode) {
-            if (controller) controller.setPaneSort(mode)
-        }
-        onSortReverseRequested: if (controller) controller.togglePaneSortReverse()
-        onSimplifiedTreeRequested:
-            if (folderHierarchyController) folderHierarchyController.toggleSimplified()
-        onAlbumThumbnailsRequested:
-            if (folderHierarchyController)
-                folderHierarchyController.toggleAlbumThumbs()
-        onViewRootRequested: function(token) {
-            if (folderHierarchyController)
-                folderHierarchyController.setViewRoot(token)
         }
     }
 

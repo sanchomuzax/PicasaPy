@@ -1,6 +1,7 @@
 """A rács helyi menüi VALÓDI kattintással (#5150, 6. rész, 2. fájl).
 
-Lefedve: a bal panel mappalista-menüje (FolderListContextMenu), az album-menü
+Lefedve: a ▾ gomb mappalista-menüje (FolderListContextMenu; a hasáb üres
+részén nincs menü, #7349), az album-menü
 (AlbumContextMenu), az Emberek-album menü (PeopleAlbumContextMenu) és az
 Emberek-albumban látszó két fotó-menü tétel (PhotoContextMenu). A mappa-menü a
 `test_racs_helyimenuk_valodi_5150.py`-ban, a többi fotó- és a címke-menü a
@@ -18,7 +19,7 @@ from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
     elokeszit_str,
     gyerek,
     jobbklikk_fotón,
-    jobbklikk_mappalistan,
+    nezetbeallito_megnyitasa,
     keres_vizualis,
     kattints,
     kijelolt,
@@ -43,10 +44,10 @@ class TestMappalistaMenu:
     @pytest.mark.parametrize(
         ("nev", "ertek"),
         [
-            ("folderListMenuSortByDate", "date"),
-            ("folderListMenuSortByName", "name"),
-            ("folderListMenuSortBySize", "size"),
-            ("folderListMenuSortByChanged", "changed"),
+            ("toolbarFolderListMenuSortByDate", "date"),
+            ("toolbarFolderListMenuSortByName", "name"),
+            ("toolbarFolderListMenuSortBySize", "size"),
+            ("toolbarFolderListMenuSortByChanged", "changed"),
         ],
     )
     def test_a_bal_hasab_rendezese_valodi_kattintassal_allitja_a_rendezest(
@@ -59,7 +60,7 @@ class TestMappalistaMenu:
         controller.setPaneSort(elozo)
         assert varj(qt_app, lambda: controller.paneSort == elozo)
 
-        jobbklikk_mappalistan(window, qt_app)
+        nezetbeallito_megnyitasa(window, qt_app)
         kattints(window, qt_app, gyerek(window, nev))
 
         assert varj(qt_app, lambda: controller.paneSort == ertek), (
@@ -74,8 +75,8 @@ class TestMappalistaMenu:
         window.requestActivate()
         elozo = controller.paneSortReverse
 
-        jobbklikk_mappalistan(window, qt_app)
-        kattints(window, qt_app, gyerek(window, "folderListMenuSortReverse"))
+        nezetbeallito_megnyitasa(window, qt_app)
+        kattints(window, qt_app, gyerek(window, "toolbarFolderListMenuSortReverse"))
 
         assert varj(qt_app, lambda: controller.paneSortReverse is (not elozo)), (
             "a Reverse order kattintás nem billentette a bal hasáb fordított sorrendjét"
@@ -84,9 +85,9 @@ class TestMappalistaMenu:
     @pytest.mark.parametrize(
         ("nev", "ertek"),
         [
-            ("folderListMenuSortPeopleByName", "name"),
-            ("folderListMenuSortPeopleByCount", "count"),
-            ("folderListMenuSortPeopleByTopList", "top"),
+            ("toolbarFolderListMenuSortPeopleByName", "name"),
+            ("toolbarFolderListMenuSortPeopleByCount", "count"),
+            ("toolbarFolderListMenuSortPeopleByTopList", "top"),
         ],
     )
     def test_az_emberek_rendezese_valodi_kattintassal_allitja_a_rendezest(
@@ -104,7 +105,7 @@ class TestMappalistaMenu:
             fa.setTreeView(True)
             assert varj(qt_app, lambda: fa.property("treeView") is True)
 
-        jobbklikk_mappalistan(window, qt_app)
+        nezetbeallito_megnyitasa(window, qt_app)
         kattints(window, qt_app, gyerek(window, nev))
 
         assert varj(qt_app, lambda: controller.peopleSort == ertek), (
@@ -121,8 +122,8 @@ class TestMappalistaMenu:
         fa = pane.property("hierarchyController")
         elozo = bool(fa.property("simplified"))
 
-        jobbklikk_mappalistan(window, qt_app)
-        kattints(window, qt_app, gyerek(window, "folderListMenuSimplifiedTree"))
+        nezetbeallito_megnyitasa(window, qt_app)
+        kattints(window, qt_app, gyerek(window, "toolbarFolderListMenuSimplifiedTree"))
 
         assert varj(qt_app, lambda: bool(fa.property("simplified")) is (not elozo)), (
             "az Egyszerűsített fanézet kattintás nem billentette a kapcsolót"

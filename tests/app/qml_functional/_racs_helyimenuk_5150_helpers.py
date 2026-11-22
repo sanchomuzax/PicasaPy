@@ -16,7 +16,7 @@ from pathlib import Path
 
 import shutil
 import shiboken6
-from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, Qt
+from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQuick import QQuickItem, QQuickWindow
 from PySide6.QtTest import QTest
@@ -198,20 +198,15 @@ def jobbklikk_mappan(window, qt_app, path):
     return menu
 
 
-def jobbklikk_mappalistan(window, qt_app):
-    """Valódi jobbklikk a bal panel üres részén: a mappalista menüje."""
-    pane = gyerek(window, "folderPane")
-    pont = pane.mapToScene(QPointF(pane.width() / 2, pane.height() - 8))
-    QTest.mouseClick(
-        window,
-        Qt.MouseButton.RightButton,
-        Qt.KeyboardModifier.NoModifier,
-        QPoint(round(pont.x()), round(pont.y())),
-    )
-    qt_app.processEvents()
-    menu = gyerek(window, "folderListContextMenu")
+def nezetbeallito_megnyitasa(window, qt_app):
+    """Valódi kattintás a ▾ (View options) gombra: a bal hasáb nézet- és
+    rendezésmenüje (`toolbarFolderListMenu`).
+
+    A hasáb üres részén nincs menü (#7349); ez a menü egyetlen belépése."""
+    kattints(window, qt_app, gyerek(window, "toolbarFolderViewPopupButton"))
+    menu = gyerek(window, "toolbarFolderListMenu")
     assert varj(qt_app, lambda: menu.property("opened") is True), (
-        "a bal oldali mappalista üres részén a jobbklikk nem nyitotta meg a menüt"
+        "a ▾ gomb kattintása nem nyitotta meg a nézetbeállító legördülőjét"
     )
     return menu
 
