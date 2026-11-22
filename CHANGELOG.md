@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.169] - 2026-11-22
+
+- Kutatás: a nézet rendezésének nyitott kérdései eldöntve futtatott méréssel az eredeti Picasán (#7326).
+- Kutatás: a szerkesztő Alapjavítások lapjának futtatott mérései az eredeti Picasán (#7327) (#7327).
+- Kutatás: mit tesz az eredeti Picasa a fájltípus-váltás után a szkennerrel és a katalógussal (#7339).
+- Kutatás: a szerkesztő Hangolás lapja az eredeti Picasával összevetve, a még mérendő pontok listájával (#7345) (#7345).
+- Kutatás: a szerkesztő három Effektek lapja az eredeti Picasával összevetve (#7346) (#7346).
+- A bal oldali mappalista üres részén a jobb egérgomb már nem nyit menüt, mint az eredeti Picasában; a nézet- és rendezésmenü a ▾ gombról érhető el (#7349).
+- A Shortcuts almenüben a Desktop és a My Pictures tétel szürke, ha a könyvtárban nincs mappa alattuk, mint az eredetiben (#7350).
+- A Ctrl+Shift+E a szerkesztőben is a Jó napom van műveletet futtatja a megnyitott képen, ahogy az eredeti Picasában (#7352).
+- Szkennelés közben a nézőből visszalépve a kijelölés a megnyitott képhez tér vissza. (#7356).
+- A szűrőlánc nem áll le egy hiányos, hibás Fade mezőjű bejegyzésen, hanem kihagyja (#7361).
+
 ## [1.0.168] - 2026-11-21
 
 - A frissítő ablak az első pillanattól a teljes telepítés százalékát mutatja, a kicsomagolás alatt is (#7355).
