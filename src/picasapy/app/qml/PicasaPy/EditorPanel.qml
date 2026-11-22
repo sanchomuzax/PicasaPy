@@ -233,19 +233,13 @@ Rectangle {
 
     function effectAppliedCount(effectName) { return Logika.effectAppliedCount(effectName) }
 
-    function tryOpenParamPanel(name, displayLabel) {
-        panel.menuEffectSelection = ""
-        return Logika.tryOpenParamPanel(name, displayLabel)
-    }
+    function tryOpenParamPanel(name, displayLabel) { panel.menuEffectSelection = ""; return Logika.tryOpenParamPanel(name, displayLabel) }
 
     function openParamPanel(name, displayLabel) { return Logika.openParamPanel(name, displayLabel) }
 
     function updateParamValue(index, value) { return Logika.updateParamValue(index, value) }
 
-    function applyParamPanel() {
-        panel.menuEffectSelection = ""
-        return Logika.applyParamPanel()
-    }
+    function applyParamPanel() { panel.menuEffectSelection = ""; return Logika.applyParamPanel() }
 
     function cancelParamPanel() { return Logika.cancelParamPanel() }
 
@@ -315,10 +309,7 @@ Rectangle {
     function restoreLastCropRatio() { return Logika.restoreLastCropRatio() }
     function selectAspect(index) { return Logika.selectAspect(index) }
 
-    function handleToolClick(tool) {
-        panel.menuEffectSelection = ""
-        return Logika.handleToolClick(tool)
-    }
+    function handleToolClick(tool) { panel.menuEffectSelection = ""; return Logika.handleToolClick(tool) }
 
     EditorPanelToolsState {
         id: toolsState
