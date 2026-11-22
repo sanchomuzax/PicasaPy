@@ -62,19 +62,19 @@ Módszer: statikus olvasás (capstone a `pe_dis.py`/`picasa_dis.py`-n át, biná
 ```
 dt     = (L.mod == 1) ? valtoztatas_datuma(sor)          # 0x00450bd0 (0x004b37b6)
                       : mappa_datuma(sor)                # [[L+0xc4]+0x48] vt+0x20 (0x004b37cb)
-nevesitett_sor(b, dt)                                    # 0x004b34a0 (0x004b37dc), lásd 7/N4
+nevesített_sor(b, dt)                                    # 0x004b34a0 (0x004b37dc), lásd 7/N4
 szoveg = Format2(dt)                                     # 0x0098c780 (0x004b37ea)
 ev     = ev_of(dt)                                       # 0x0098b9e0 (0x004b37f4)
 ha b.elozo_ev == -1                       -> ÁLLAPOT     # 0x004b3802-0x004b3809
 ha b.elozo_szoveg NULL vagy üres          -> ÁLLAPOT     # 0x004b380f-0x004b382a
 ha L.mod == 0 és b.elozo_ev != ev és b.flag1c == 0:      # 0x004b3833-0x004b384c
-      fejlec(típus 2, érték ev, címke "%ld"(ev))         # 0x004b3857-0x004b3886
+      fejléc(típus 2, érték ev, címke "%ld"(ev))         # 0x004b3857-0x004b3886
 különben ha L.mod == 1 és szoveg != b.elozo_szoveg és ev > 1900:
       # 0x004b3a17-0x004b3aad (a 0x76c = 1900 a `cmp ebx, 0x76c; jbe`)
-      elotag = tr("CAlbumBuilder::updated", "Updated ")  # 0x004b3ab3-0x004b3abd
-      ha az elotag nem ' '-ra végződik: hozzáfűz ' '     # 0x004b3ae1-0x004b3b0a
-      címke = elotag + Format2(dt)                       # 0x004b3b0f-0x004b3b30
-      fejlec(típus 2, érték ev, címke)                   # 0x004b3b3e-0x004b3b50
+      előtag = tr("CAlbumBuilder::updated", "Updated ")  # 0x004b3ab3-0x004b3abd
+      ha az előtag nem ' '-ra végződik: hozzáfűz ' '     # 0x004b3ae1-0x004b3b0a
+      címke = előtag + Format2(dt)                       # 0x004b3b0f-0x004b3b30
+      fejléc(típus 2, érték ev, címke)                   # 0x004b3b3e-0x004b3b50
 ÁLLAPOT: b.elozo_szoveg = szoveg; b.elozo_ev = ev        # 0x004b412e-0x004b416a
 ```
 
@@ -137,7 +137,7 @@ A megfordítás (`[L+0x165]`, `albumlistflip`) a gyártóban **nem szerepel**: a
 - **Megerősített** (a kód és az asm egyezik, két független út: a Ghidra-dekompiláció és a közvetlen utasítás-olvasás): a fejléc-gyártó azonossága, a döntési fa, az első sor szabálya, a name/size módok fejléc nélkülisége, a csoportkulcs a Format2 sztring, a `Frissítve ` előtag.
 - **Erős:** az `IDS_LISTUPDATED` nem forrása a fejlécnek; a "változtatás dátuma" mint 64 bites pár maximuma.
 - **Feltételes:** a 150933 minta és az algoritmus egyezése feltételezi, hogy a dátum nélküli mappa "dátuma" érvényes tartományú `ytDateTime` (a legvalószínűbb a `0,0`, ami az OLE-naptárban 1899-12-30). Ha a dátum érvénytelen lenne, az `elozo_szoveg` üres maradna, és a `0x004b3814`-`0x004b382a` őr éppen a következő fejlécet nyelné el, ami ellentmond a mintának. Ez a következtetés a mintából jön, nem a binárisból.
-- **Független újralevezetés (`ujralevezetes.py`, #140) NEM készült:** ez a kör alügynököt nem indíthat. A hívó dönt, kell-e (a fok ettől a "megerősített"-ről nem csökken, de a jegy-blokk hiányzik).
+- **Független újralevezetés nem készült:** a "megerősített" fok a két független forrásúton alapul.
 - **A mechanizmus megfejtése nem azonos a "ettől lesz jó a kimenet" állítással:** a J8 renderelt próbája (a job-802 25. képpel) a bizonyíték a megvalósításra; ezt ebben a körben nem mértem.
 
 ## 7. Nyitott kérdések mérlege
