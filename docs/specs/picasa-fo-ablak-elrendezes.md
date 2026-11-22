@@ -812,7 +812,7 @@ többinél.
    nincs mérve (a képek 10 s-ra vannak egymástól).
 2. **A számlálók nem egyszerre frissülnek.** A faág (`PicasaTeszt (25)`,
    `Recently Updated (25)`) és a tálcafelirat azonnal, a státuszsor (`24
-   pictures`, `4.5 MB`) csak a mappa újrakijelölése után (6. kép: `25 pictures`,
+   pictures`, `4.5 MB`) csak a mappa ismételt kijelölése után (6. kép: `25 pictures`,
    `11.1 MB`). A videó "picture"-nek számít (24 + 1).
 3. **A mintában egyetlen videócsempe van.** A státuszsor +6.6 MB-ot mutat. A
    mintakészlet leírása szerint két fájl készül (`teszt-video.avi`, nyers
@@ -865,7 +865,7 @@ job-799 **bizonyít**:
    csak újrakijelölés után szabad olvasni.
 
 A hiányzó mérés pontosan: **az M4b négy külön feladatban (K9)**, mert a
-végrehajtó a db3-at, a kepmappát és a registryt csak a feladat **végén** menti.
+végrehajtó a db3-at, a `kepmappa` kimenetet és a registryt csak a feladat **végén** menti.
 A mai M4b-feladat (Movies ki, OK, Movies be, OK egyetlen futásban) ezért a
 közbenső db3-állapotot nem rögzítené, és a "megőrzi / törli / újraírja"
 kérdést nem tudná eldönteni.
@@ -940,12 +940,12 @@ Options megnyitása (O): `kattint (247,29)`, `var 1`, `kattint (268,277)`, `var 
 `kattint (490,367)` (File Types), `var 2`. Az OK `(806,672)`, a Movies jelölő
 `(552,543)`. Mindegyik feladat mintakészlete `video`, kimenete `kepernyokep,
 allapot, db3_teljes, kepmappa, registry` (a `db3_teljes` a db3 minden fájlját adja,
-a keresés ehhez kell), és a **végpillanatkép az utolsó OK után legalább 60 s-sal**
+a keresés ehhez kell), és a **végpillanatkép az utolsó OK után legalább 60 másodperccel**
 készül (a db3 írási időzítése nem ismert; a registryé a #7326 C5a feladat
 tervezési feltevése szerint a Wine mentési periódusa, 40 s fölött jelenik meg).
 Minden képről rögzítendő: `PicasaTeszt (N)`, `Recently Updated (N)`, a
 tálcafelirat, a státuszsor, és hogy a rács végén ott van-e a videócsempe. A
-számokat a képről kell olvasni (az OCR nem adja vissza). A mappa újrakijelölése
+számokat a képről kell olvasni (az OCR nem adja vissza). A mappa ismételt kijelölése
 beavatkozás: **csak az utolsó mérés előtt** szabad.
 
 1. **M4b-0 (kontroll, nincs váltás):** E, majd `var 10` nyolcszor (így az
