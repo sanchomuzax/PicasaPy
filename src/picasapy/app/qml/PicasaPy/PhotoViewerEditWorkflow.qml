@@ -57,6 +57,22 @@ Item {
         }
     }
 
+    // #7352: a Ctrl+Shift+E a szerkesztőben a Jó napom van csempe útját
+    // járja (`0x005e638b` -> `0x005fe370(panel, "enhance")`): ugyanaz a
+    // `handleToolClick`, tehát a lánc végén álló Jó napom van után no-op, a
+    // lépés visszavonható, és az Undo felirat nevezi meg. Ahol a csempe sem
+    // használható, a billentyű sem fut: videón (a panel tiltott), mód-eszköz
+    // (vágás, vörösszem, retusálás, szöveg), kiegyenesítés és paraméterpanel
+    // közben (ilyenkor a csempe-rács el van takarva, a mód saját Undo-ja él).
+    function applyEnhanceShortcut() {
+        var panel = editWorkflow.editorPanel
+        if (!panel || !panel.enabled)
+            return
+        if (panel.modeToolActive || panel.tiltActive || panel.paramPanelActive)
+            return
+        panel.handleToolClick("enhance")
+    }
+
     // #4696: a Ctrl+9 a szerkesztő-előnézetben nyitja/zárja a bal fiókot.
     Shortcut {
         id: toggleEditorDrawerShortcut

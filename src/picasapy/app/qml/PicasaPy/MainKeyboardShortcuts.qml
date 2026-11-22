@@ -167,11 +167,19 @@ Item {
         id: shortcutBatchEnhance
         objectName: "batchEnhanceShortcut"
         sequence: "Ctrl+Shift+E"
+        // #7352: nézőben is él (a megnyitott képre); könyvtárban változatlan.
         enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
-        //: `0x005fe370(panel, "enhance")` (`0x005e638b`) — a „Jó napom van"
-        //: (keymap 32.) a kijelölésre; ugyanaz az út, mint a
-        //: Köteg-szerkesztés menütételé.
-        onActivated: hostWindow.kotegEffekt("enhance")
+                 || (hostWindow.viewerOpen && !!hostPhotoViewer
+                     && !hostWindow._szovegmezoneVanFokusz
+                     && !hostWindow.slideshowRunning)
+        //: `0x005fe370(panel, "enhance")` (`0x005e638b`): a „Jó napom van"
+        //: (keymap 32.); nézőben `applyEnhanceShortcut` (`job-810`).
+        onActivated: {
+            if (hostWindow.viewerOpen)
+                hostPhotoViewer.applyEnhanceShortcut()
+            else
+                hostWindow.kotegEffekt("enhance")
+        }
     }
 
     Shortcut {
