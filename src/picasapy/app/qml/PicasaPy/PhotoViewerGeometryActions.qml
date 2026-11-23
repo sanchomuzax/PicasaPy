@@ -385,7 +385,7 @@ function selectMenuEffect(name) {
 function applyCrop(advance) {
     if (!hostEditController) return
     if (!cropOverlay.hasSelection) {
-        if (!advance) editorPanel.cropActive = false
+        if (!advance) { hostEditController.applyEmptyCrop(); editorPanel.cropActive = false }
         return
     }
     var r = cropOverlay.cropRect
