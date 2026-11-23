@@ -532,7 +532,7 @@ folyamatban van, eredménye még nincs.
 4. Kikapcsoláskor a `0x0055ff50` (DBLoader vtable 1. helye) a
    `0x006d4710` útján a memóriabeli sor állapotát 4-re állítja, majd
    nézetértesítést küld. A `0x0055ff70` (vtable 2. hely) a `0x00419240`
-   útján az érvényes rekordok memóriabeli bájtvektorát frissíti; ezt a
+   útján az érvényes rekordok memóriabeli bájttömbjét frissíti; ezt a
    `0x004fbb30` hívja a kikapcsoló ágban szinkron az OK-szálon, és a
    szkenner befejezésénél is az aszinkron szkennerszálon. E két közvetlen
    kezelő törzsében nincs tartós íróhívás. **Megerősített.**
