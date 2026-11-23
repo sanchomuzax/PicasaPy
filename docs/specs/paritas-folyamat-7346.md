@@ -10,6 +10,8 @@ Az eredeti három Effektek lapjának 36 csempéje és mind a kilenc Shift-válto
 
 **Helyesbítés (2026-11-23, C1-C4 futásmérések):** a 35 Colab-felvétel (job-834, job-835, job-861 - job-893) lezárta a menüparancsok, az ismétlés és az újranyitás futásidejű kérdéseit: a Kép ▸ Csoportos szerkesztés parancsai és a Ctrl+Shift+B szerkesztőben a megnyitott képre hatnak, a csempekattintással egyező eredménnyel (a Film Grain kivételével, ahol a menü a `grain2`-t futtatja, a csempe paneles `PicnikGrain`-t nyit); a #7371 ezt már követi. A felvételek négy új, látható eltérést igazoltak (Undo/Redo felirat alakja, a Soft Focus kezdőértéke, a Kép menü letiltása nyitott panelnél, az állapotsor alakja), jegytörzsük a "C1-C4 eredménye" szakaszban van (T5-T8). Az írásvédett-kapu hatása ("Make a Copy") mérhetetlen maradt a végrehajtó mai képességeivel. A mérleg a lap végén: 17 lezárva, 3 blokkolt, 2 hatókörön kívül, 0 csak nyitva.
 
+**Helyesbítés (2026-11-23, Job-926..931 futásmérések):** a hat javított felvétel (job-926..931) lezárta az ini-írás időzítését (1 mp-en belül kiíródik), a lemezre mentés hatását (kép beégése, .picasaoriginals archiválás, "Undo Save" felirat, T10), a sima írásvédett fájl mentését (sikeresen lefut), a paraméterpanelek kezdőértékeit (Glow Radius=3.0 eltérés, T9), és megerősítette a #7388 és #7389 jegyeket. A záró mérleg: 19 lezárva, 2 hatókörön kívül, 1 blokkolt (iPhoto pozitív ág), 0 csak nyitva.
+
 ## Bizonyítottsági fok
 
 **Nyitott az egész folyamatra nézve (a C1-C4 mérés előtti állapot; lásd a fenti helyesbítést).** A csempetábla, a Shift-út, a menükód és a PicasaPy paraméteres alkalmazási útja forrásból azonosított. A már futtatott eredeti képernyőképek a csempéket és hat paraméterpanelt igazolnak, de nem fedik le a kért teljes folyamatot. A két eltérés a bináris/korábbi eredeti mérés és a mai PicasaPy-forrás összevetéséből áll; a teljes interakciós végállapotokat Colab-mérésnek kell ellenőriznie.
@@ -850,3 +852,114 @@ Nyitott paraméterpanelnél tehát a menüparancs "fülkattintásként" felfügg
 | 6., 7. (kiegészítő) | Ctrl+Shift+B és Ctrl+Shift+E nyitott panelnél | `7346-C1-ctrlshiftb-panel`: nyitott Soft Focus panel mellett a két billentyű, kép, panel és ini |
 
 **Kizárva ebben a körben:** az "Undo save and keep edits" tipp (hover lépés nincs); a mappajog (a Picasa rootként fut); az, hogy az `editpanel/writetodisk` gomb látható-e valahol (a szerkesztő panelen nincs, a Mentés a Fájl menü és a Ctrl+S).
+
+## Job-926..931 eredménye (2026-11-23)
+
+### Következtetés
+
+A hat javított futásmérés (job-926..931, Picasa 3.9, Wine, 1280x1024) lezárta az ini-írás időzítését, a Mentés lemezre hatását, a sima írásvédett fájl mentését, a paraméterpanelek kezdőértékeit, valamint a gyorsbillentyűk viselkedését nyitott panel mellett:
+1. **Gyorsbillentyűk nyitott panelnél (job-926):** a nyitott Soft Focus panel mellett kiadott `Ctrl+Shift+B` és `Ctrl+Shift+E` gyorsbillentyűk teljesen hatástalanok (0 eltérő képpont a fotón, 0 eltérő képpont a panelen, a panel zavartalanul nyitva marad). Ez megerősíti a #7389 jegy viselkedési modelljét (`runMenuEffect` kapu: `paramPanelActive`).
+2. **Kezdőértékek (job-927):** az ini kiolvasása (`radblur=1,0.500000,0.500000,0.000000,0.000000;unsharp2=1,0.600000;PicnikGrain=1,10.000000,0;glow2=1,0.650000,3.000000;sat=1,0.161800;`) megerősíti a #7388 jegyet (Soft Focus Size=0.0, Amount=0.0), a Sharpen (Amount=0.6), a Film Grain (Grain=10, Lighten=0) és a Saturation (0.161800) kezdőértékét. A Ragyogás (`glow2`) Radius kezdőértékére új eltérést igazolt: az eredetiben `3.000000`, míg a PicasaPy-ban `20.0` áll (T9 jegytörzs).
+3. **Az ini írásának ideje (job-928, job-929):** a Sepia csempére kattintás után 1 másodperccel a `.picasa.ini` már létezik és lemezre íródott (`filters=sepia=1;`, `backuphash=53560`, méret 57 bájt); 20 és 40 másodpercnél ugyanez a tartalom áll. A program azonnal ír, nem vár képváltásra vagy leállásra (16.a lezárva).
+4. **Mentés lemezre (job-930):** a `Ctrl+S` -> `Save` gomb megnyomása után a képfájl fizikailag átíródik (20557 -> 11639 bájt), az eredeti a `.picasaoriginals/color_patches.jpg` alá kerül, a `.picasaoriginals/.picasa.ini` tartalmazza a mentett láncot (`filters=sepia=1;`), a gyökér `.picasa.ini`-ből a lánc törlődik (csak `backuphash=6918` marad), a szerkesztőben a fotó megjelenítése változatlan szépia marad, a Visszavonás gombon pedig megjelenik az "Undo Save" felirat (16.b lezárva, T10 jegytörzs).
+5. **Csak olvasható kép mentése (job-931):** írható mappában lévő, csak olvasható attribútumú kép esetén a Mentés hibaüzenet nélkül, sikeresen lefut (a képkocka képpontra megegyezik a job-930-cal: 0 eltérő képpont), mert a Picasa az eredetit áthelyezi a `.picasaoriginals`-ba és új fájlt hoz létre. Ez megerősíti a PicasaPy `is_folder_writable` logikáját (20. lezárva).
+
+A 22 tételből 19 LEZÁRVA (vagy fejlesztői jegytörzzsel átadva), 2 HATÓKÖRÖN KÍVÜL, 1 BLOKKOLT (a 19. tétel iPhoto pozitív oldala a tesztkörnyezet képessége miatt; lépéssor: `.tmp/javitott-lepesek3/7346-C4a-iphoto.json`), 0 csak nyitva.
+
+### A hat feladat eredménye tételesen
+
+| Feladat | Job | Döntő kockák / forrás | Mért tény | Következtetés / Állapot |
+|---|---|---|---|---|
+| C1 javított: gyorsbillentyű nyitott panelnél | job-926 | #12, #13, #14, #16, #18 | #13 vs #14 (Ctrl+Shift+B után): 0 eltérő képpont a fotón, 0 a panelen. #15 vs #16 (Ctrl+Shift+E után): 0 eltérő képpont a fotón, 0 a panelen. Nincs ini-írás. | Nyitott paraméterpanelnél a gyorsbillentyűk le vannak tiltva; nem hatnak a képre és nem függesztik fel a panelt. Megerősíti a #7389-et és a PicasaPy `runMenuEffect` kapuját. (21. tétel LEZÁRVA). |
+| C2 javított: panelek kezdőértékei | job-927 | #12..#30; `picasa.ini` | `radblur=1,0.500000,0.500000,0.000000,0.000000; unsharp2=1,0.600000; PicnikGrain=1,10.000000,0; glow2=1,0.650000,3.000000; sat=1,0.161800;` | Soft Focus Size=0.0, Amount=0.0 (megerősíti a #7388-at); Sharpen Amount=0.6; Film Grain Grain=10.0, Lighten=0; Saturation 0.161800; Glow2 Intensity=0.65, Radius=3.0 (eltérés T9). (14. tétel LEZÁRVA). |
+| C3 javított: ini-írás 1 mp | job-928 | `kepmappa__ini_1mp.txt`, `kepmappa__lista.json` | 1 másodperccel Sepia után az `ini_1mp.txt` létezik (57 bájt), tartalma `[color_patches.jpg] filters=sepia=1; backuphash=53560`. | Az ini azonnal, a csempekattintás után kiíródik, nem vár leállásra. (16.a LEZÁRVA). |
+| C3 javított: ini-írás 20 és 40 mp | job-929 | `ini_20mp.txt`, `ini_40mp.txt`, `kepmappa__lista.json` | Mindkét fájl létezik, azonos 57 bájtos tartalommal és időbélyeggel (`12:40:12Z`). | Időbeli megerősítés: az ini az első másodperctől kezdve folyamatosan elérhető a lemezen. (16.a LEZÁRVA). |
+| C3 javított: Mentés lemezre | job-930 | #13, #15, #16, #18; `kepmappa__lista.json` | JPEG 20557 -> 11639 bájt; `.picasaoriginals/` létrejött (20557 bájt JPEG + ini benne `filters=sepia=1;`); gyökér `.picasa.ini`-ben csak `backuphash=6918`; fotó szépia marad; Undo gombon "Undo Save". | A mentés beégeti a képet, archiválja az eredetit a lánccal együtt, és Undo Save műveletet ad. (16.b LEZÁRVA, eltérés T10). |
+| C4b javított: csak olvasható kép mentése | job-931 | #16, #17, #20; `kepmappa__lista.json` | #20 képpontra azonos a job-930 #18-cal (0 eltérő képpont); nincs hibaüzenet; mentés sikeres (JPEG 11639 bájt, originals mentve). | Írható mappában lévő írásvédett fájl mentése lefut, mert a Picasa átmozgatja az eredetit és új fájlt hoz létre. Egyezik a PicasaPy-val. (20. tétel LEZÁRVA). |
+
+### Összevetés a már kiadott jegyekkel (#7388, #7389)
+
+- **#7388 (Lágy fókusz kezdőérték):** A job-927 ini kiolvasása (`radblur=1,0.500000,0.500000,0.000000,0.000000;`) bizonyítja, hogy az eredeti Picasa 3.9-ben mind a Size, mind az Amount kezdőértéke 0.000000 (a [-1; 1] tartomány közepe). A mérés a #7388 jegyet teljes mértékben MEGERŐSÍTI, nem cáfolja.
+- **#7389 (Kép menü letiltása nyitott paraméterpanelnél):** A job-926 képpontelemzése bizonyítja, hogy a nyitott Soft Focus panel mellett a `Ctrl+Shift+B` és `Ctrl+Shift+E` semmilyen hatást nem fejt ki a képre (0 eltérő képpont), a panelt nem zárja be és nem függeszti fel (0 eltérő képpont a panelen). A mérés a #7389 viselkedését MEGERŐSÍTI, nem cáfolja.
+
+### Új igazolt eltérések és fejlesztői jegytörzsek
+
+#### T9. Fejlesztői jegytörzs: a Ragyogás (Glow / glow2) panel Radius kezdőértéke 3.0, nem 20.0
+
+**Cím:** A Ragyogás (Glow) paraméterpanelje a Radius csúszkát az eredeti kezdőértéken (3.0) nyissa, ne 20.0-on
+
+**Mi a hiba:** A PicasaPy katalógusa (`effect_params.py:215`) a `glow2` Radius csúszkájának alapértékét `20.0`-ra állítja. Az eredeti Picasa 3.9-ben az ini-be változtatás nélküli Alkalmazáskor `glow2=1,0.650000,3.000000;` kerül, vagyis a Radius kezdőértéke `3.000000`.
+
+**Eredeti:** job-927 kimenet `picasa.ini`: `glow2=1,0.650000,3.000000;`. Bináris: a szűrőregiszterben a log-skála alapértéke 3.0 (`filterdesc-registry.md`).
+
+**Nálunk:** `src/picasapy/app/effect_params.py:207-216`:
+```python
+    "glow2": (
+        # #2236: az alapérték 0,5 -> 0,65 a regiszterből.
+        _p("intensity", "Intensity", 0.0, 1.0, 0.65, 0.01),
+        # ⚠️ A Radius SZÁNDÉKOSAN marad [0…100]: a regiszter [0…1]-e a
+        # LOG-skálán van (`log_base=250`, az egyetlen ilyen csúszka), az
+        # alapértéke (3,0) pedig a tényleges skálán - ezért is nagyobb a
+        # saját maximumánál. A `chain_report.py` ugyanezért hagyja ki a
+        # tartomány-ellenőrzésből.
+        _p("radius", "Radius", 0.0, 100.0, 20.0),
+    ),
+```
+
+**Teendő:** Az `effect_params.py`-ban a `glow2` Radius alapértékét `20.0`-ról `3.0`-ra kell javítani:
+`_p("radius", "Radius", 0.0, 100.0, 3.0),`
+
+**Nem része:** A Glow algoritmus képpont-paritása vagy a többi effekt kezdőértéke.
+
+**Kész, ha:**
+- [ ] A Ragyogás panel megnyitásakor a Radius csúszka a 3.0 értéken áll.
+- [ ] Változtatás nélküli Alkalmazáskor a mentett láncban `glow2=1,0.650000,3.000000;` jelenik meg.
+- [ ] Mégse utáni újranyitáskor is a 3.0 érték áll be.
+
+#### T10. Fejlesztői jegytörzs: Mentés (Ctrl+S / Save) után a Visszavonás gomb felirata "Undo Save"
+
+**Cím:** Lemezre mentés után a szerkesztő Visszavonás gombja az "Undo Save" (magyarul "Visszavonás: Mentés") műveletet mutassa
+
+**Mi a hiba:** Mentés után a szerkesztőben a műveleti lánc fizikailag beég a képfájlba és átkerül a `.picasaoriginals/.picasa.ini`-be, az aktív lánc kiürül a gyökér `.picasa.ini`-ben, a Visszavonás gomb pedig az eredeti Picasában az "Undo Save" feliratot mutatja. A PicasaPy `edit_action_names.py` `_tools()` szótárában a `save` kulcs nem szerepel, így a felirat nem képződik le.
+
+**Eredeti:** job-930 kocka #18, job-931 kocka #20: a szerkesztőben az Undo gombon a mentés befejezése után "Undo Save" áll.
+
+**Nálunk:** `src/picasapy/app/edit_action_names.py:86-102` (`_tools()`): nincs `"save": "Save"` bejegyzés.
+
+**Teendő:** Az `edit_action_names.py`-ban az `_tools()`-hoz fel kell venni a `"save": "Save"` bejegyzést, és a mentés befejezésekor a szerkesztő Undo akciója a `save` lépést kapja meg, hogy a felirat angolul "Undo Save", magyarul "Visszavonás: Mentés" legyen.
+
+**Nem része:** Az Undo Save végrehajtási folyamatának módosítása.
+
+**Kész, ha:**
+- [ ] `undo_label("save")` angolul "Undo Save", magyarul "Visszavonás: Mentés".
+- [ ] Mentés után a szerkesztő Visszavonás gombja az "Undo Save" feliratot mutatja.
+
+### A 22 kérdés végleges mérlege
+
+| # | Kérdés | Állapot | Indok és bizonyíték |
+|---|---|---|---|
+| 1 | A 36 csempe táblája, sorrendje, kulcsai | LEZÁRVA | 0x00c7e5a0 / 0x005d7c20, két független út (1. kör); PicasaPy `EditorEffectsTab1-3.qml` |
+| 2 | A kilenc Shift-pár | LEZÁRVA | 0x005d6e8f → 0x006021d0 → 0x005f8520 (1. kör, #2456) |
+| 3 | A kék jelvény jelentése | LEZÁRVA | `mode="oneclick"` = 1 (0x005d7eca; 1. kör D2 helyesbítve, #1869). A #2061 felvételek négy jelvényt mutatnak |
+| 4 | Helyi menü, eszköztár: van-e effektparancs | LEZÁRVA | a 36 csempének nincs menü- vagy helyi menü belépője; a nyolc Csoportos szerkesztés tétel a főmenüben van |
+| 5 | Csoportos szerkesztés könyvtárnézetben | LEZÁRVA | őr hamis ág: `0x005fe370(név)` a kijelölésre; PicasaPy `PicasaPictureMenu.qml:43-90`, `batch_effect_controller.py` |
+| 6 | Csoportos szerkesztés nyitott szerkesztőben | LEZÁRVA | fül + csempevégpont; C1 felvételek (`job-862..877`); T1 megvalósítva (1.0.171, #7371) |
+| 7 | Ctrl+Shift+B nyitott szerkesztőben | LEZÁRVA | `0x005e6370` → `0x005fe370(panel, "bw")`; C1 (`job-861`); T1 megvalósítva (#7371) |
+| 8 | Paraméterpanel gombjai, feliratai, tippjei, Escape | LEZÁRVA | `editpanel.tre` `editpanel/ok` és `editpanel/cancel`; Escape bezárja; PicasaPy `EditorParamPanel.qml` |
+| 9 | Alaphelyzet gomb a paraméterpanelen | LEZÁRVA: nincs | `editpanel.tre` csak ok és cancel gombot tartalmaz; hat felvétel (#81-#86) sem mutat ilyet |
+| 10 | Copy All Effects több kijelölt képnél | LEZÁRVA | Info ablak felvételen; nálunk `test_copy_all_effects_6861.py` és `MainWindowDialogStack.qml` |
+| 11 | Azonos egykattintásos csempe ismételt alkalmazása: a lánc | LEZÁRVA | `0x006ac4a0` vektor végére fűz; C2 Sepia kétszer (`job-885`): `filters=sepia=1;sepia=1;` |
+| 12 | Írásvédett kép: a kapu megléte és helye | LEZÁRVA | `0x006021d0` → `0x00541fc0` iPhoto-/Apple Photos-könyvtári kapu (T2/T3) |
+| 13 | A kapu feltétele, a két gomb hatása, a lefedett utak | LEZÁRVA, eltéréssel | útvonal-előtag vizsgálat; Make a Copy / Cancel Edit (T2/T3) |
+| 14 | Paraméteres effekt kezdőértékei és megőrzése | LEZÁRVA, eltéréssel | job-880..882, job-927: újranyitás mindig alapértéken; Soft Focus Size=0, Amount=0 (#7388); Glow Radius=3.0 (eltérés T9) |
+| 15 | Paraméteres effekt ismétlése, Undo/Redo felirat és lépésszám | LEZÁRVA, eltéréssel | láncvégi hozzáfűzés; felirat "Undo <név>" kettőspont nélkül (T5) |
+| 16 | Alkalmaz utáni `.picasa.ini` írása és Mentés lemezre | LEZÁRVA, eltéréssel | job-928..929: ini azonnal, 1 mp-en belül kiíródik; job-930: Save után kép beég, `.picasaoriginals` létrejön, gyökér ini kiürül, "Undo Save" gomb (eltérés T10) |
+| 17 | Csempegrafikák és algoritmusok képpont-paritása | HATÓKÖRÖN KÍVÜL | külön render-kutatás tárgya |
+| 18 | A PicasaPy hatodik, Legacy Effects füle | HATÓKÖRÖN KÍVÜL | saját kiegészítés |
+| 19 | "Make a Copy" pozitív oldala (iPhoto-könyvtári kép) | BLOKKOLT | a mintakép `<Képek mappa>\iPhoto Library\Masters\...` alá helyezése új környezeti képességet igényel; lépéssor: `.tmp/javitott-lepesek3/7346-C4a-iphoto.json` |
+| 20 | Sima írásvédett fájl mentése | LEZÁRVA | job-931: írható mappában lévő írásvédett fájl mentése hiba nélkül lefut, az eredetit archiválja. Egyezik a PicasaPy-val |
+| 21 | Nyitott paraméterpanel mellett menü és gyorsbillentyű | LEZÁRVA | job-878 (Kép menü szürke, #7389); job-926 (Ctrl+Shift+B/E hatástalan, 0 eltérő képpont) |
+| 22 | Állapotsor szerkesztés közben | LEZÁRVA, eltéréssel | rövid alak az első effektparancs után (T8) |
+
+**Záró mérleg: 19 lezárva · 1 blokkolt · 2 hatókörön kívül · 0 nyitva.**
+
