@@ -118,13 +118,18 @@ def save_edited(
     # ha a következő lépés hibázik.
     completed_ini_writes: list[tuple[api.Path, _PhotoIniSnapshot]] = []
     try:
+        def _update_main_document(document: IniDocument) -> IniDocument:
+            sec = api._section_name(image_path)
+            doc = document.with_removed(sec, api._REDO_KEY)
+            if any(op.matches("retouch") for op in filters.ops):
+                doc = doc.with_value(sec, api._FILTERS_KEY, "retouch=1;", carried=True)
+            else:
+                doc = doc.with_removed(sec, api._FILTERS_KEY)
+            return api.with_backuphash(doc, sec)
+
         current_before.written_document = api._update_ini_document(
             image_path,
-            lambda document: api.with_backuphash(
-                document.with_removed(api._section_name(image_path), api._FILTERS_KEY)
-                .with_removed(api._section_name(image_path), api._REDO_KEY),
-                api._section_name(image_path),
-            ),
+            _update_main_document,
             rollback_snapshot=current_before,
             section_name=section,
         )

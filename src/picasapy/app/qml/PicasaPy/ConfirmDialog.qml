@@ -23,6 +23,7 @@ Dialog {
     // adja vissza, így a meglévő hívók változatlanok.
     property string namePrefix: "confirm"
     modal: true
+    dim: root.dimBackground
     focus: true
     // window="fit" (confirm.fen) — a tartalomhoz igazodó méret
     anchors.centerIn: parent ? Overlay.overlay : undefined
@@ -58,6 +59,11 @@ Dialog {
     property bool noVisible: true
     property bool rememberVisible: true
     property bool focusNoOnOpen: false
+    // #7379: az eredeti retusálás-megerősítő alatt (job-838 __35/__36) a háttér
+    // képpontra azonos marad, nem halványul el. Az alapérték igaz, tehát a
+    // modális ablak halványítása (a Popup `dim` alapértéke) a többi hívónál
+    // változatlan.
+    property bool dimBackground: true
     // #6287: a Rejtett mappák jelszóajánlatában (job-331) az igen-gomb a
     // fókuszos, Enterre elfogad.
     property bool focusYesOnOpen: false

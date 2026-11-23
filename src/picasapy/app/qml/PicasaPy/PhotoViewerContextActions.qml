@@ -248,7 +248,31 @@ Item {
                 objectName: "undoDataLossDialog"
                 namePrefix: "undoDataLoss"
                 title: qsTr("Undo")
-                function askFor(key, text) { ask("undo-" + key, text) }
+                function askFor(key, text) {
+                    if (key === "retouch") {
+                        title = qsTr("Confirm")
+                        iconType = "picasa"
+                        yesText = qsTr("Undo")
+                        noText = qsTr("No")
+                        cancelVisible = false
+                        rememberVisible = false
+                        focusNoOnOpen = true
+                        dimBackground = false
+                    } else {
+                        title = qsTr("Undo")
+                        iconType = "none"
+                        yesText = qsTr("Yes")
+                        noText = qsTr("No")
+                        cancelVisible = true
+                        rememberVisible = true
+                        focusNoOnOpen = false
+                        dimBackground = true
+                    }
+                    // #7379: a retusálás megerősítőjén nincs „Do not ask again", ezért
+                    // kulcs nélkül (üres decisionKey) nyílik: egy korábbi verzióban
+                    // elmentett `undo-retouch` elnyomás ne némíthassa el.
+                    ask(key === "retouch" ? "" : "undo-" + key, text)
+                }
                 onConfirmed: editController.undo()
             }
         }

@@ -358,19 +358,18 @@ _EFFECT_INI_NAMES: dict[str, str] = {
     "polaroid": "Polaroid",
 }
 
-#: A retusálás-eszköz (#445) kör alakú ecsetének mérete-csúszkája [1..100]
-#: egész egységben ("Brush Size", ld. `EditorPanel.qml`) — a valódi Picasa
-#: ecsetméret-egysége nem ismert (ld. `picasapy.ini.retouch` docsztring),
-#: ezért ez egy PicasaPy-saját, dokumentált leképezés: a csúszka-érték a
-#: `_BRUSH_SIZE_TO_RELATIVE_DIVISOR`-ral osztva adja a relatív [0..1]
-#: sugarat (a kép rövidebb oldalára vonatkoztatva, ld.
-#: `picasapy.render.retouch.apply_retouch_patches`) — a felső határnál
-#: (100) ez 0.1, azaz a kép rövidebb oldalának 10%-a, ami a legnagyobb
-#: gyakorlati foltnak is elég, anélkül, hogy a fél képet lefedné.
+#: #7379: a retusálás-eszköz kör alakú ecsetének mérete-csúszkája [1..100]
+#: egész egységben ("Brush Size", ld. `EditorRetouchPanel.qml`), alapállása 50 (a sáv közepe).
+#: A 987×247 képpontos megjelenített képen az alapállású kör átmérője 50 képpont (job-838 __12):
+#: 50 / 494.0 * 247 = 25.0 képpont sugár, 50.0 képpont átmérő.
+#: ⚠️ A 494 EGYETLEN mért pontból számolt (ez a kép és nagyítás, ez az egy csúszkaállás). Hogy az
+#: eredetin az átmérő a rövidebb oldalhoz, a szélességhez vagy a nagyításhoz mért-e, és hol
+#: van a csúszka két vége, NYITOTT KÉRDÉS (7327-11): a leképezést ne általánosítsd. A már mentett
+#: foltokat az osztó nem érinti (az ini relatív sugarat tárol, ld. `ini/retouch.py`).
 _BRUSH_SIZE_MIN = 1
 _BRUSH_SIZE_MAX = 100
-_DEFAULT_BRUSH_SIZE = 20
-_BRUSH_SIZE_TO_RELATIVE_DIVISOR = 1000.0
+_DEFAULT_BRUSH_SIZE = 50
+_BRUSH_SIZE_TO_RELATIVE_DIVISOR = 494.0
 
 #: #450 (2. lépcső): tipográfia — a rajzoló (`render.text_fonts`) családja,
 #: méret-szorzója és stílusai. A családnevet a rendszer betűtípus-adatbázisa

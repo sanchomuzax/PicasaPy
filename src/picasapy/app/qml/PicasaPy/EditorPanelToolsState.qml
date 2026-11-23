@@ -14,7 +14,7 @@ QtObject {
     property bool retouchPatchPending: false
     property bool canUndoPatch: false
     property bool canRedoPatch: false
-    property int brushSize: 20
+    property int brushSize: 50
 
     property int redeyeRegionCount: 0
     property bool canUndoRedeyeRegion: false

@@ -200,7 +200,7 @@ EditorPanel {
         ? editorPanel.hostEditCtl.retouchPatchPending : false
     canUndoPatch: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.canUndoPatch : false
     canRedoPatch: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.canRedoPatch : false
-    brushSize: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.brushSize : 20
+    brushSize: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.brushSize : 50
     onBrushSizeEdited: (value) => editController.setBrushSize(value)
     onRetouchUndoPatchRequested: editController.undoPatch()
     onRetouchRedoPatchRequested: editController.redoPatch()
