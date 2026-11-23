@@ -10933,7 +10933,7 @@ picasapy-origin-key: stringres:il_No</extracomment>
             <source>Yes</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
-            <translation type="unfinished" />
+            <translation>Jā</translation>
         </message>
     </context>
     <context>
