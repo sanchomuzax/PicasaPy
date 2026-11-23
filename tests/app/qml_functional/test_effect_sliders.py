@@ -223,7 +223,7 @@ class TestParamSubpanelIsolatedOpening:
 
         params = _as_list(panel.property("paramEffectParams"))
         assert [param["label"] for param in params] == ["Intensity", "Radius"]
-        assert _as_list(panel.property("paramEffectValues")) == [0.65, 20.0]
+        assert _as_list(panel.property("paramEffectValues")) == [0.65, 3.0]
 
     @pytest.mark.parametrize(
         "object_name,key",
