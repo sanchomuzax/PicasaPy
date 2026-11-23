@@ -6272,7 +6272,7 @@ A `job-852` felvételen a bézs folt forrásértéke `c89779` [200, 151, 121]:
 | **25. kocka** (pipetta + temp `1.0`) | [200, 151, 121] | `a09680` [160, 150, 128] | `aba088` [171, 160, 136] | `aba088` [171, 160, 136] | **0** |
 | **23. kocka** (csak temp `1.0` a jobb szélen) | [200, 151, 121] | `d29766` [210, 151, 102] | `cf9c54` [207, 156, 84] | `d29766` [210, 151, 102] | R: 3, G: 5, B: 18* |
 
-*A 23. kockánál a `job-852` képernyőképe a Wine/X11 UI felületén mozgatott csúszka közbenső vagy logaritmikusan skálázott (`<log>250.0</log>`) állapotát rögzíti; a tiszta szűrő kimenete a 92. feketetest-ponttal (`202, 218, 255`) matematikailag egyértelműen `d29766`.
+*A 23. kocka (csak Színhőmérséklet, a végső ini p5 értéke `1.000000`) **NYITOTT KÉRDÉS**: a mai `apply_color_temperature(1.0)` a bézs foltra `d29766`-ot ad, a felvétel `cf9c54`-et (eltérés R 3, G 5, B 18). A pipettával együtt (25. kocka) a lánc pontosan egyezik, ezért a tiszta hőmérséklet-ág képlete vagy a 23. kockán érvényes csúszkaérték a kérdés; a felvétel nem mondja meg, mekkora volt a hőmérséklet a 23. kockán. Külön jegy viszi.*
 A 15. és 25. kockán a javított `apply_neutral_pipette` matematikai hibája **0**.
 
 A `finetune` (v1) ugyanígy épül, csak a `0x0090ea10`-et hívja a

@@ -41,7 +41,6 @@ _LUT_ESETEK = [
     {"temperature": -0.6},
     {"temperature": 0.8},
     {"highlights": 0.1, "shadows": 0.1, "temperature": -0.3},
-    {"neutral": (200, 190, 150), "temperature": 0.1},
 ]
 
 
@@ -161,6 +160,13 @@ class TestBuildFinetune2Lut:
         a GPU-út ilyenkor a CPU-tól ELTÉRŐ képet adna, ezért tiltott."""
         with pytest.raises(ValueError, match="fill"):
             build_finetune2_lut(fill=fill)
+
+    @pytest.mark.parametrize("neutral", [(200, 190, 150), (128, 128, 128)])
+    def test_nonzero_neutral_is_rejected(self, neutral):
+        """#7400: a semlegesítő pipetta 3×3-as CAT mátrix, nem csatorna-LUT —
+        a GPU pontonkénti LUT-út ilyenkor tiltott, visszahullás a CPU-útra."""
+        with pytest.raises(ValueError, match="neutral"):
+            build_finetune2_lut(neutral=neutral)
 
 
 class TestSaturationGain:
