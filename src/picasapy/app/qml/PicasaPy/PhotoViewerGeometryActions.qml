@@ -359,25 +359,23 @@ function panFromZoomNavigator(deltaX, deltaY) {
 
 function show(index) { viewer.currentIndex = index; viewer.forceActiveFocus() }
 
-// A Kép menü effektjei szerkesztőnézetben a megfelelő fület és csempét
-// jelölik ki, alkalmazás nélkül; könyvtárnézetben a kijelölésre futnak.
-// A vezérlőnevek a picasa-menu-parancsok-viselkedes.md §33.2–33.3 és a
-// paritas-ellenorzes-archiv-2.md §8 leképezései.
+// A Kép menü egyes egylépéses javításai szerkesztőben a megfelelő
+// panelfület választják, majd a csempekattintás útján a NYITOTT képre
+// hatnak (#7371: az eredeti a csempe végpontját hívja, `0x005f8520`); a
+// könyvtárnézetben a kijelölésre futnak.
+// #7123: a sepia és a bw az eredetiben (0x00579330, 0x9d4a, 0x9d4c) a
+// warm, unsharp és grain2 ágával azonos hívást futtatja, ezért ők is az
+// Effektek fület választják, nem az egyképes kötegre esnek vissza.
 function selectMenuEffect(name) {
-    var tab = -1
-    if (name === "autolight" || name === "autocolor"
-            || name === "enhance") {
-        tab = 0
-    } else if (name === "sepia" || name === "unsharp" || name === "warm"
-               || name === "grain2" || name === "bw") {
-        tab = 2
-    }
-    if (tab < 0) return false
-
-    editorPanel.selectTab(tab)
-    // A fülváltás törli az előző menükijelölést; az új cél csak ezután
-    // kap kiemelést, így a menü saját navigációja nem törli önmagát.
-    editorPanel.menuEffectSelection = name
+    var ful = -1
+    if (name === "autolight" || name === "autocolor" || name === "enhance")
+        ful = 0
+    else if (name === "sepia" || name === "unsharp" || name === "warm"
+             || name === "grain2" || name === "bw")
+        ful = 2
+    if (ful < 0) return false
+    editorPanel.selectTab(ful)
+    editorPanel.runMenuEffect(name)
     return true
 }
 

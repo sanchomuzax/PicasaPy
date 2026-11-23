@@ -1,9 +1,34 @@
-"""A Kép menü effektjei a nézőben a hozzájuk tartozó csempét jelölik (#7353)."""
+"""A Kép menü effektparancsai a nézőben: a célfülre váltanak, és a NYITOTT képre
+alkalmaznak, a könyvtári kijelölést nem érintik (#7353, #7371).
+
+## Előzmény
+
+A #7353 a menüparancsnál csak kék kiemeléssel jelölte ki a célcsempét,
+alkalmazás nélkül. A #7346 kutatás megdöntötte ezt az olvasatot: az eredeti
+a csempekattintással egyenértékű hatást ad, ezért a #7371 óta a parancs a
+csempe útján azonnal hat. A kiemelés-gépezet (`menuEffectSelection`)
+ezért megszűnt, és ez a fájl a vele járó viselkedést már nem várja.
+
+## Mit mér ez a fájl, és miben egészíti ki a #7371 próbáit
+
+A `test_csoportos_szerkesztes_nezoben_7371.py` azt az esetet méri, amikor a
+megnyitott kép egyben a könyvtári kijelölés első eleme. Itt a néző MÁS képet
+mutat, mint a kijelölés (egy- és kétképes kijelöléssel), és az ablak
+magassága is változik, mert a menükattintás geometriája platformfüggő:
+
+- a célfül kiválasztódik, és az effekt a nyitott kép láncára kerül;
+- a kijelölt és a többi kép lánca nem változik, kötegművelet nem indul;
+- a néző nyitva marad, a kijelölés (`selectedIndex(es)`) változatlan;
+- a Sharpen a csempéjével azonos módon a paraméterpanelt nyitja meg, a
+  lánc az Alkalmazás előtt nem változik;
+- a menüparancs után egyetlen csempe sem marad kiemelve.
+
+A vizuális egyezést (az eredeti Picasa képe vs. a miénk) ez a fájl NEM méri.
+"""
 
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QMetaObject, Qt
 
 from tests.app.qml_functional._mappa_kep_menu_5150_helpers import (
     app_epitese,
@@ -14,21 +39,25 @@ from tests.app.qml_functional._mappa_kep_menu_5150_helpers import (
     tetel_kattintasa,
     varj,
 )
-from tests.app.qml_functional._felsomenupontok_helpers_4329 import _kattints
+from tests.app.qml_functional._szerkeszto_5150_helpers import item, kattint
 
 _BATCH = ("menuPictureBatchEdit",)
 
-# Menütétel, filters-kulcs/vezérlőazonosító, fül, csempe.
+#: A néző ezt a képet mutatja; a kijelölés első eleme MÁS kép (0).
+_NYITOTT_SOR = 1
+
+#: Menütétel, effektnév, fül, csempe, a lánc kulcsa (None: paraméterpanel).
 _EFFEKTEK = (
-    ("menuBatchAutoContrast", "autolight", 0, "editToolAutolight"),
-    ("menuBatchAutoColor", "autocolor", 0, "editToolAutocolor"),
-    ("menuBatchEnhance", "enhance", 0, "editToolEnhance"),
-    ("menuBatchSepia", "sepia", 2, "effectSepia"),
-    ("menuBatchSharpen", "unsharp", 2, "effectUnsharp"),
-    ("menuBatchWarmify", "warm", 2, "effectWarm"),
-    ("menuBatchFilmGrain", "grain2", 2, "effectGrain2"),
-    ("menuBatchBlackWhite", "bw", 2, "effectBw"),
+    ("menuBatchAutoContrast", "autolight", 0, "editToolAutolight", "autolight=1;"),
+    ("menuBatchAutoColor", "autocolor", 0, "editToolAutocolor", "autocolor=1;"),
+    ("menuBatchEnhance", "enhance", 0, "editToolEnhance", "enhance=1;"),
+    ("menuBatchSepia", "sepia", 2, "effectSepia", "sepia=1;"),
+    ("menuBatchSharpen", "unsharp", 2, "effectUnsharp", None),
+    ("menuBatchWarmify", "warm", 2, "effectWarm", "warm=1;"),
+    ("menuBatchFilmGrain", "grain2", 2, "effectGrain2", "grain2=1;"),
+    ("menuBatchBlackWhite", "bw", 2, "effectBw", "bw=1;"),
 )
+_ESETEK = [pytest.param(i, *e, id=e[1]) for i, e in enumerate(_EFFEKTEK)]
 
 
 @pytest.fixture
@@ -36,135 +65,94 @@ def kep_app(qt_app, tmp_path):
     yield from app_epitese(qt_app, tmp_path)
 
 
-def test_nezoben_a_kep_menu_a_celcsempehez_navigal_koteghatas_nelkul(
-    kep_app, qt_app
+def _nezo_a_masodik_kepen(window, qt_app, sorok, eltolas, kezdo_ful):
+    """Néző a második képen, a megadott kijelöléssel és ablakmagassággal."""
+    viewer = gyerek(window, "photoViewer")
+    panel = gyerek(window, "viewerEditorPanel")
+    window.setProperty("viewerOpen", True)
+    viewer.setProperty("currentIndex", _NYITOTT_SOR)
+    qt_app.processEvents()
+    window.resize(window.width(), window.height() + eltolas)
+    kijelol(window, qt_app, sorok)
+    viewer.setProperty("currentIndex", _NYITOTT_SOR)
+    panel.setProperty("activeTab", kezdo_ful)
+    qt_app.processEvents()
+    return viewer, panel
+
+
+@pytest.mark.parametrize(
+    ("index", "tetel", "nev", "ful", "csempe", "kulcs"), _ESETEK
+)
+def test_nezoben_a_menuparancs_a_nyitott_kepre_hat_a_kijelolest_nem_erinti(
+    kep_app, qt_app, index, tetel, nev, ful, csempe, kulcs
 ):
     window, controller, _engine = kep_app
     elokeszit(window, qt_app, controller)
+    sorok = [0] if index % 2 == 0 else [0, 1]
+    # A kiinduló fül a célfüllel ellentétes, így a fülváltás is bizonyít.
+    viewer, panel = _nezo_a_masodik_kepen(
+        window, qt_app, sorok, (-5, 0, 5)[index % 3], 2 if ful == 0 else 0
+    )
+    assert panel.property("activeTab") != ful, (
+        "a kiinduló fül már a célfül: a fülváltás nem bizonyít"
+    )
+    sorok_szama = len(controller.photos.photos)
+    assert [szures(controller, sor) for sor in range(sorok_szama)] == [""] * sorok_szama, (
+        "a kiinduló láncok nem üresek: a teszt nem bizonyít"
+    )
 
-    viewer = gyerek(window, "photoViewer")
-    panel = gyerek(window, "viewerEditorPanel")
-    window.setProperty("viewerOpen", True)
-    viewer.setProperty("currentIndex", 1)
-    qt_app.processEvents()
+    tetel_kattintasa(window, qt_app, "&Picture", tetel, almenu_utvonal=_BATCH)
 
-    alap_lancok = [szures(controller, sor) for sor in range(3)]
-    alap_magassag = window.height()
-
-    for index, (tetel, _kulcs, ful, celcsempe) in enumerate(_EFFEKTEK):
-        # Mindkét kijelölési mód megmarad, miközben a néző a kijelöléstől
-        # különböző, második képet mutat. A három magasság a menükattintást is
-        # ellenőrzi platformfüggetlen geometriával.
-        sorok = [0] if index % 2 == 0 else [0, 1]
-        window.resize(window.width(), alap_magassag + (-5, 0, 5)[index % 3])
-        kijelol(window, qt_app, sorok)
-        viewer.setProperty("currentIndex", 1)
-        panel.setProperty("activeTab", 2 if ful == 0 else 0)
-        qt_app.processEvents()
-
-        tetel_kattintasa(
-            window, qt_app, "&Picture", tetel, almenu_utvonal=_BATCH
+    assert varj(qt_app, lambda: panel.property("activeTab") == ful), (
+        f"a {tetel} nem a célfület választotta (fül={panel.property('activeTab')})"
+    )
+    if kulcs is None:
+        assert varj(qt_app, lambda: panel.property("paramPanelActive") is True), (
+            f"a {tetel} nem nyitotta meg a paraméterpanelt"
         )
-
-        cel = gyerek(window, celcsempe)
+        assert szures(controller, _NYITOTT_SOR) == "", (
+            f"a {tetel} az Alkalmazás előtt a nyitott kép láncára került"
+        )
+        kattint(window, item(window, "effectParamCancelButton"), qt_app)
+        assert varj(qt_app, lambda: panel.property("paramPanelActive") is False)
+    else:
         assert varj(
-            qt_app,
-            lambda ful=ful, cel=cel: panel.property("activeTab") == ful
-            and cel.isVisible()
-            and cel.property("active") is True,
+            qt_app, lambda: szures(controller, _NYITOTT_SOR).endswith(kulcs)
         ), (
-            f"a {tetel} nem a megfelelő csempét jelölte ki "
-            f"(fül={panel.property('activeTab')}, csempe={celcsempe})"
+            f"a {tetel} nem került a nyitott kép láncára: "
+            f"{szures(controller, _NYITOTT_SOR)!r}"
         )
-        for _masik_tetel, _masik_kulcs, _masik_ful, masik_csempe in _EFFEKTEK:
-            if masik_csempe != celcsempe:
-                assert gyerek(window, masik_csempe).property("active") is False, (
-                    f"a {tetel} mellett a {masik_csempe} is kijelölt maradt"
-                )
-
-        assert window.property("viewerOpen") is True
-        assert viewer.property("currentIndex") == 1
-        assert window.property("selectedIndex") == sorok[0]
-        assert list(window.property("selectedIndexes")) == sorok
-        assert [szures(controller, sor) for sor in range(3)] == alap_lancok, (
-            f"a nézőben a {tetel} módosította valamelyik filters= láncot"
-        )
-        assert controller.batchEditActive is False
-        assert controller.canUndoBatchEdit is False
-
-
-def test_menu_kijeloles_torlese_kep_csempe_es_fulvaltas_utan(kep_app, qt_app):
-    window, _controller, _engine = kep_app
-    elokeszit(window, qt_app, _controller)
-
-    viewer = gyerek(window, "photoViewer")
-    panel = gyerek(window, "viewerEditorPanel")
-    window.setProperty("viewerOpen", True)
-    panel.setProperty("activeTab", 0)
-    viewer.setProperty("currentIndex", 1)
-    qt_app.processEvents()
-
-    alap_magassag = window.height()
-    hibak = []
-
-    def menuvalasztas() -> None:
-        panel.setProperty("activeTab", 0)
-        tetel_kattintasa(
-            window,
-            qt_app,
-            "&Picture",
-            "menuBatchSepia",
-            almenu_utvonal=_BATCH,
-        )
-        assert varj(
-            qt_app,
-            lambda: panel.property("menuEffectSelection") == "sepia",
-        ), "a menü nem jelölte ki a Szépia vezérlőt"
-
-    def ellenorizd_torolt(eszemeny: str) -> None:
-        qt_app.processEvents()
-        aktivak = [
-            nev
-            for _tetel, _kulcs, _ful, nev in _EFFEKTEK
-            if gyerek(window, nev).property("active") is True
-        ]
-        if panel.property("menuEffectSelection") != "" or aktivak:
-            hibak.append(
-                f"{eszemeny}: menuEffectSelection="
-                f"{panel.property('menuEffectSelection')!r}, active={aktivak}"
+    for sor in range(sorok_szama):
+        if sor != _NYITOTT_SOR:
+            assert szures(controller, sor) == "", (
+                f"a nézőben a {tetel} a nem nyitott {sor}. kép láncát is módosította"
             )
 
-    for eltol in (-5, 0, 5):
-        window.resize(window.width(), alap_magassag + eltol)
-
-        menuvalasztas()
-        masik_index = 2 if viewer.property("currentIndex") == 1 else 1
-        viewer.setProperty("currentIndex", masik_index)
-        assert varj(
-            qt_app,
-            lambda masik_index=masik_index: viewer.property("currentIndex")
-            == masik_index,
+    assert window.property("viewerOpen") is True
+    assert viewer.property("currentIndex") == _NYITOTT_SOR
+    assert window.property("selectedIndex") == sorok[0]
+    assert list(window.property("selectedIndexes")) == sorok
+    assert controller.batchEditActive is False
+    assert controller.canUndoBatchEdit is False
+    for _t, _n, _f, masik_csempe, _k in _EFFEKTEK:
+        assert gyerek(window, masik_csempe).property("active") is False, (
+            f"a {tetel} után a {masik_csempe} csempe kiemelve maradt"
         )
-        ellenorizd_torolt(f"másik képre lépés ({eltol:+d} px)")
 
-        menuvalasztas()
-        _kattints(qt_app, gyerek(window, "effectBw"))
-        ellenorizd_torolt(f"másik csempe kattintása ({eltol:+d} px)")
 
-        menuvalasztas()
-        _kattints(qt_app, gyerek(window, "editTabFixes"))
-        assert varj(qt_app, lambda: panel.property("activeTab") == 0), (
-            "a Gyakori javítások fül nem nyílt meg valódi kattintásra"
-        )
-        ellenorizd_torolt(f"fülváltás ({eltol:+d} px)")
+def test_a_kep_menu_nem_hagy_menuhoz_kotott_kijelolest_a_panelen(kep_app, qt_app):
+    """A menüparancsnak nincs külön kijelölés-állapota: a csempe útján hat."""
+    window, controller, _engine = kep_app
+    elokeszit(window, qt_app, controller)
+    _viewer, panel = _nezo_a_masodik_kepen(window, qt_app, [0], 0, 0)
 
-    menuvalasztas()
-    assert QMetaObject.invokeMethod(
-        viewer, "kerBezaras", Qt.ConnectionType.DirectConnection
-    ), "a néző bezárási útja nem hívható"
-    assert varj(qt_app, lambda: window.property("viewerOpen") is False), (
-        "a néző bezárási útja nem zárta be a nézőt"
+    tetel_kattintasa(
+        window, qt_app, "&Picture", "menuBatchSepia", almenu_utvonal=_BATCH
     )
-    ellenorizd_torolt("néző bezárása")
-    assert not hibak, "a menüből kijelölt csempe ragadt: " + "; ".join(hibak)
 
+    assert varj(
+        qt_app, lambda: szures(controller, _NYITOTT_SOR).endswith("sepia=1;")
+    ), "a Sepia nem hatott: az állítás nem bizonyít"
+    assert panel.metaObject().indexOfProperty("menuEffectSelection") < 0, (
+        "a panelen megmaradt a Kép menü kiemelés-állapota"
+    )
