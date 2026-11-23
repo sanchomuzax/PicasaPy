@@ -169,6 +169,24 @@ Slider {
     // visszafelé kompatibilis alias a NÉGYZETES fogantyú méretére
     readonly property real handleSize: Math.max(handleWidth, handleHeight)
 
+    //: #7393: a fogantyú KÖZEPE a foglalat TELJES szélességét bejárja: a
+    //: fogantyú a két végállásban fél szélességnyit kilóg a foglalatból.
+    //: A Qt `Slider` a fogantyú KÖZEPÉT csak `availableWidth - handleWidth`
+    //: úton járatja (a 253 px-es foglalaton a 16 px-es fogantyú 237 képpontot),
+    //: és az egérpozíciót is erre az útra képezi le; a mért Kiegyenesítés
+    //: `(x - 690,5) / 126,5` leképezése a teljes 253 képpontot kívánja. A
+    //: negatív vízszintes belső margó a `handleCenterOverhang`-gal bővíti az
+    //: utat; a foglalat (a vezérlő doboza, vagyis a kattintható terület) és
+    //: a sáv rajza ettől nem változik. Alapból 0: minden más csúszka a
+    //: korábbi úton jár. Csak a vízszintes csúszkára hat.
+    property real handleCenterOverhang: 0
+    readonly property real centerOverhangX:
+        control.isHorizontal ? control.handleCenterOverhang : 0
+    leftPadding: control.centerOverhangX !== 0
+                 ? -control.centerOverhangX : control.horizontalPadding
+    rightPadding: control.centerOverhangX !== 0
+                  ? -control.centerOverhangX : control.horizontalPadding
+
     // #659: a méret a FOGANTYÚVAL együtt értendő. Korábban csak a sín
     // vastagsága számított, ezért a vezérlő doboza 4 képpont magas volt, a
     // 14 képpontos, KÖZÉPRE igazított fogantyú pedig alul-felül 5-5
@@ -184,14 +202,15 @@ Slider {
 
     background: Rectangle {
         x: control.leftPadding + (control.isHorizontal
-                                   ? control.grooveInset - control.grooveExtension
+                                   ? control.centerOverhangX
+                                     + control.grooveInset - control.grooveExtension
                                    : (control.availableWidth - width) / 2)
         y: control.topPadding + (control.isHorizontal
                                   ? (control.availableHeight - height) / 2 : 0)
         // a behúzás csak a VÍZSZINTES sávra hat
         width: control.isHorizontal
-               ? control.availableWidth - 2 * control.grooveInset
-                    + 2 * control.grooveExtension
+               ? control.availableWidth - 2 * control.centerOverhangX
+                    - 2 * control.grooveInset + 2 * control.grooveExtension
                : control.grooveThickness
         height: control.isHorizontal ? control.grooveThickness : control.availableHeight
         radius: control.grooveRadius

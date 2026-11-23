@@ -559,8 +559,11 @@ Connections {
     }
 }
 
-// Döntés-csúszka szinkronja a mentett tilt-értékkel (#131): a value
-// beállítását elnyomjuk, hogy az onValueChanged NE váltson ki
+// Döntés-csúszka alaphelyzete (#131, #7393): a Kiegyenesítés MINDEN
+// megnyitáskor és lapozáskor 0 értékről indul - az eredetiben az újranyitott
+// csúszka a már kiegyenesített képen középen áll (job-913 `__16`), a kép a
+// már alkalmazott lánc eredménye, és az Alkalmaz új `tilt` tagot fűz hozzá.
+// A value beállítását elnyomjuk, hogy az onValueChanged NE váltson ki
 // previewTilt-et - a szinkron csak a csúszkát mozgatja, az előnézet
 // már a beginEditCurrent()/_register_preview() óta helyes.
 //: #3234: a szinkron ELNYOMÓJA. Korábban a csúszka saját
@@ -571,17 +574,14 @@ property bool tiltSzinkronFut: false
 //: #4058: az Alkalmaz már mentett és újrarenderelt; az ezt követő
 //: eszközbezárás ne kérje le még egyszer a mentett láncot.
 property bool tiltAlkalmazasFut: false
-//: #3234: a döntés értéke az eszköz NYITÁSAKOR - ezt állítja vissza a
-//: sáv Mégse gombja (`tool_cancel`, `Property escapekey 1`).
-property real tiltErtekNyitaskor: 0
 
 function syncTiltSlider() {
     if (!hostEditController) return
     viewer.tiltSzinkronFut = true
-    editorToolBar.csuszkaErtek = hostEditController.tiltParam
+    editorToolBar.csuszkaErtek = 0
     viewer.tiltSzinkronFut = false
     // #448: a Kiegyenesítés-figyelmeztetés a vágó-panelen - a
-    // tiltParam a mentett döntés-paraméter, 0.0 = nincs aktív tilt
+    // tiltParam az első tilt tag paramétere, 0.0 = nincs aktív tilt
     editorPanel.straightenActive = hostEditController.tiltParam !== 0
 }
 function syncPanelFromController(changedProperties) {
@@ -703,8 +703,8 @@ onCurrentIndexChanged: {
         if (viewer.layoutMode === "ab" && viewer.aktivOldal === "jobb"
                 && viewer.masodikIndex >= 0)
             frissitsdAMasodikSzerkesztest()
-        // lapozáskor a csúszka az ÚJ kép mentett tilt-értékére áll -
-        // suppressPreview miatt ez nem írja felül a preview-t (#131)
+        // lapozáskor a csúszka 0-ra áll (#7393) - a tiltSzinkronFut
+        // miatt ez nem írja felül a preview-t (#131)
         // (a Hangolás-csúszkák alaphelyzete a `finetuneSlidersReset` jelből, #7383)
         syncTiltSlider()
         if (editorPanel.cropActive) {

@@ -146,7 +146,8 @@ class TestEditorWiring(EditorTestHelpers):
     def test_tilt_keyboard_step_then_cancel_restores_opening_value(
         self, qml_app, qt_app, tmp_path
     ):
-        """#3865/#4058: Mégse eldobja a billentyűs előnézetet mentés nélkül."""
+        """#3865/#4058: Mégse eldobja a billentyűs előnézetet mentés nélkül.
+        #7393: a nyitáskori érték 0 (a mentett tilt a láncban marad)."""
         from PySide6.QtCore import Q_ARG, QMetaObject, Qt
         from PySide6.QtTest import QTest
 
@@ -166,7 +167,7 @@ class TestEditorWiring(EditorTestHelpers):
         qt_app.processEvents()
         slider = window.findChild(QObject, "tiltSlider")
         assert slider is not None, "tiltSlider nem található"
-        assert slider.property("value") == pytest.approx(0.1)
+        assert slider.property("value") == 0.0
 
         slider.setProperty("focus", True)
         qt_app.processEvents()
@@ -192,11 +193,12 @@ class TestEditorWiring(EditorTestHelpers):
         )
         assert panel.property("tiltActive") is False
 
-    def test_tilt_tool_opens_with_saved_value_not_zero(
+    def test_tilt_tool_opens_at_zero_and_apply_appends_a_new_tag(
         self, qml_app, qt_app, tmp_path
     ):
-        """#131: a döntés-csúszka a MENTETT tilt-értékről induljon, ne néma
-        0-ról — különben az első érintés kinullázza a mentett döntést."""
+        """#7393 (a #131 helyett): a Kiegyenesítés mentett tilt mellett is 0-ról
+        indul, és az Alkalmaz ÚJ tagot fűz a lánc végére - a mentett döntés a
+        láncban marad, tehát az első érintés ezt sem nullázza ki."""
         from PySide6.QtCore import Q_ARG, QMetaObject, Qt
 
         window, _, _ = qml_app
@@ -215,7 +217,20 @@ class TestEditorWiring(EditorTestHelpers):
         qt_app.processEvents()
         slider = window.findChild(QObject, "tiltSlider")
         assert slider is not None, "tiltSlider nem található"
-        assert slider.property("value") == pytest.approx(0.4)
+        assert slider.property("value") == 0.0
+
+        slider.setProperty("value", 0.2)
+        qt_app.processEvents()
+        apply_button = window.findChild(QObject, "tiltApplyButton")
+        QMetaObject.invokeMethod(
+            apply_button, "buttonClicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        ini_text = ini_path.read_text(encoding="utf-8")
+        assert (
+            "filters=tilt=1,0.400000,0.000000;tilt=1,0.200000,0.000000;" in ini_text
+        ), ini_text
 
     def test_navigation_with_tilt_tool_active_closes_it_for_the_next_photo(
         self, qml_app, qt_app, tmp_path
