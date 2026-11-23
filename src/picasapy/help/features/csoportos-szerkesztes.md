@@ -31,10 +31,15 @@ program ugyanígy szól, és nem csinál semmit.
 
 A nézőben a menü a **megnyitott képre** hat: ott a kiválasztott művelet
 csak arra az egy képre kerül rá, a rácsban hagyott kijelöléshez nem nyúl.
-Ha a kép a **szerkesztőben** van nyitva, a **Szépia**, a
-**Fekete-fehér**, a **Melegítés**, az **Élesítés** és a **Filmszemcse**
-nem írja át a képet, hanem a szerkesztő **Effektek** fülét nyitja meg,
-ahol magad alkalmazhatod a hatást.
+Ha a kép a **szerkesztőben** van nyitva, az **Automatikus kontraszt**,
+az **Automatikus szín**, a **Jó napom van**, a **Szépia**, a
+**Fekete-fehér**, a **Melegítés** és a **Filmszemcse** ugyanazt teszi,
+mint a szerkesztő megfelelő csempéje: a szerkesztő átvált a csempe
+fülére, és a hatás azonnal rákerül a megnyitott képre. Egy
+**Visszavonás** leveszi. Az **Élesítés** a csempéjével azonos
+beállítópanelt nyitja meg; a kép csak az ottani **Alkalmaz** után
+változik. Ahol a csempe éppen nem használható (például nyitott vágás vagy
+Kiegyenesítés közben), ott a menüparancs sem csinál semmit.
 
 ### Szöveg megjelenítése és elrejtése
 

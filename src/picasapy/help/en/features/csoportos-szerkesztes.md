@@ -31,9 +31,14 @@ same way and does nothing.
 
 In the viewer, the menu applies to the open photo only. It does not
 affect the selection left in the grid. If the photo is open in the
-editor, **Sepia**, **B&W**, **Warmify**, **Sharpen**, and **Film Grain**
-do not change the photo; they open the editor's Effects tab, where you
-can apply the effect yourself.
+editor, **Auto Contrast**, **Auto Color**, **I'm Feeling Lucky**,
+**Sepia**, **B&W**, **Warmify**, and **Film Grain** do the same as the
+editor's matching tile: the editor switches to that tile's tab and the
+effect is applied to the open photo at once. A single **Undo** removes
+it. **Sharpen** opens the same settings panel as its tile; the photo
+changes only after you click **Apply** there. Where the tile cannot be
+used at the moment (for example while Crop or Straighten is open), the
+menu command does nothing either.
 
 ### Show or hide text
 

@@ -4,6 +4,43 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-23
+
+**Szerkesztő**
+
+- A **Szöveg** eszközben a szöveget közvetlenül a képre gépeled, mint az
+  eredeti Picasában; a panelből kikerült a szövegmező. A törlőgomb neve
+  **Az összes törlése**. Lásd [A szerkesztő](features/szerkeszto.md).
+- A **Vörösszem** mentett Kiegyenesítés után egy **Információ** ablakban
+  figyelmeztet, és csak az **OK** után nyílik meg. A panel címe
+  **Vörösszem kijavítása**.
+- Az újravágás az eredeti Picasa módján működik: ha az utolsó lépés vágás
+  volt, az új vágás azt írja át, és a vágócsempe felirata ilyenkor
+  **Vágás megismétlése**.
+- A **Gyakori javítások** és a **Finomhangolás** Derítőfény-csúszkája
+  egymástól független.
+- A pipetta csak a **Finomhangolás** fülön vesz mintát, és a fülre lépve
+  kikapcsolt állapotban van.
+- A **Kép ▸ Csoportos szerkesztés** effektparancsai és a Ctrl+Shift+B a
+  szerkesztőben nyitott képre azonnal hatnak, mint a megfelelő csempe.
+  Lásd [Csoportos szerkesztés](features/csoportos-szerkesztes.md).
+
+**Könyvtár**
+
+- A bal hasáb üres részén a jobb egérgomb már nem nyit menüt; a hasáb
+  menüje a ▾ gombról érhető el. Lásd [Könyvtár](features/konyvtar.md).
+- A **Gyorsbillentyűk** almenüben az **Asztal** és a **Képek** szürke,
+  ha a könyvtáradnak nincs mappája alattuk.
+- A legutóbbi változtatások szerinti rendezésnél a hasáb havi
+  fejléceket mutat; az első sor fölött egyik rendezésnél sincs fejléc.
+
+**Nézegetés**
+
+- Szkennelés közben a nézőből visszalépve a kijelölés a nézőben megnyitott
+  képre áll vissza.
+- A diavetítés sávjában szűk helyen a képcsúszka nem lóg rá a szomszéd
+  gombra.
+
 ## 2026-11-22
 
 **Könyvtár**

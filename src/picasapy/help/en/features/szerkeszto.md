@@ -97,7 +97,7 @@ text. Apply, Cancel, Undo, and Redo also have tooltips.
 
 Nine common controls are available:
 
-- **Crop** opens the separate crop tool.
+- **Crop** opens the separate crop tool. If the picture already has a crop, the button reads **Recrop**.
 - **Straighten** levels a tilted horizon with a slider.
 - **Red Eye** corrects red eyes.
 - **I'm Feeling Lucky** applies a general one-click correction.
@@ -105,7 +105,7 @@ Nine common controls are available:
 - **Auto Color** neutralizes color automatically.
 - **Retouch** removes a spot with a brush.
 - **Text** adds text to the picture.
-- **Fill Light** brightens dark areas with a slider.
+- **Fill Light** brightens dark areas with a slider. This slider is independent of the slider of the same name on the **Fine Tuning** tab: each sets its own layer, and moving one does not move the other. The Undo button then reads "Undo Fill Light".
 
 ### Where to find Apply and Cancel
 
@@ -150,6 +150,17 @@ or sides to resize it, or drag inside it to move it.
   non-destructively, **Cancel** discards it, and **Reset** removes a
   crop that was already applied.
 
+### Recrop
+
+If the last edit on a picture was a crop and you crop again, **Apply**
+replaces that crop instead of adding another one. A single **Undo**
+therefore removes both crops, and **Redo** brings back the second one. If
+you made other edits after the crop, the new crop is added after them as
+a separate step.
+
+If you click **Apply** without a frame, the crop that is the last step on
+the picture is removed. You can undo this too.
+
 ### Constrain the crop ratio while dragging
 
 Hold a key while drawing a new frame to constrain its ratio:
@@ -169,8 +180,10 @@ setting again. The same keys constrain red-eye and face-addition frames.
 
 ## Red Eye
 
-Choose **Auto** to find red eyes automatically. PicasaPy reports whether
-it found any and draws a square around each corrected eye, including
+The panel's title is **Redeye Repair**.
+
+Choose **Auto** to find red eyes automatically. If PicasaPy finds any, the
+panel says so, and it draws a square around each corrected eye, including
 automatically corrected ones. Click inside a square to undo only that
 correction. **Reset** undoes all automatic fixes.
 
@@ -180,9 +193,11 @@ detection is unavailable, PicasaPy searches the whole picture as
 before. If the detector gives an implausible eye position, that face is
 skipped while the other corrections continue.
 
-If Straighten has rotated the picture, the panel warns that red-eye
-frames may be inaccurate. Undo Straighten first, correct the eyes, and
-straighten again if needed.
+If Straighten has rotated the picture, clicking Red Eye first opens an
+**Info** window warning that red-eye frames may be inaccurate. Undo
+Straighten first, correct the eyes, and straighten again if needed. The
+panel opens only after you click **OK**; if you close the window with Esc,
+the panel does not open.
 
 You can also drag a frame around an eye. Shift, Ctrl, and Alt constrain
 its ratio as described above. The panel counts the marked areas. Undo
@@ -210,7 +225,13 @@ all.
 
 ## Text
 
-Click the picture where the text should appear and type. A picture can
+You type text directly onto the picture; the panel has no text field.
+Until you click, the middle of the picture shows the hint "Type anywhere
+to add text". Click where the text should go: a text cursor appears at
+that point. What you type appears on the picture inside a rounded frame.
+The text starts below the point you clicked: for left-aligned text its
+top-left corner is at the point, for centered text the middle of the
+line, and for right-aligned text its right edge. A picture can
 have several text boxes: after applying one, click elsewhere to add
 another. Click an existing box to select it, then edit or move it or
 change its settings. **Apply** updates the selected box.
@@ -224,8 +245,9 @@ screen, so it keeps the same proportions on larger pictures. Resizing a
 box selects the nearest size in the list. Set outline thickness
 continuously; zero removes the outline.
 
-**Copy Caption** inserts the picture's existing caption as text. The
-control for removing all existing text clears the text boxes.
+**Copy Caption** inserts the picture's existing caption as text.
+**Clear All** removes all text on the picture (its tooltip reads "Remove
+all existing text").
 
 Text settings, including font, size, bold, outline thickness, and
 colors, are stored in `.picasa.ini`. The caption therefore looks the
@@ -289,6 +311,13 @@ Two one-click corrections adjust exposure and color. Neutral Color
 Picker lets you sample a neutral gray point in the picture so PicasaPy
 can correct the colors around it.
 
+The eyedropper samples only on this tab: on other tabs, clicking the
+picture does not change the colors. When you switch to the **Fine Tuning**
+tab, the eyedropper is off; turn it on again if you want to use it.
+
+The **Fill Light** slider here is independent of the Fill Light slider on
+the Common fixes tab.
+
 ## Histogram
 
 The histogram below the editor shows the distribution of light in the
@@ -340,5 +369,6 @@ also pauses or resumes the rotation, and the program remembers its state.
 ## Undo
 
 **Undo** and **Redo** in the viewer move backward and forward through
-edits one step at a time. **Picture** ▸ **Undo All Edits** removes all
+edits one step at a time. The button names the step without a colon, for
+example "Undo Straighten" or "Redo Crop", as in the original Picasa. **Picture** ▸ **Undo All Edits** removes all
 edits from the selected pictures in one step.

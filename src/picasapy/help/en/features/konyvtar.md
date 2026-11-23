@@ -18,11 +18,11 @@ The pane has three display modes. Choose one from **View** ▸ **Folder View**:
 
 The submenu is ordered like this: the two views (**Flat Folder View**, **Tree View**), then the five folder sorting commands (see “Sorting folders” below), then the **Shortcuts** submenu, and finally **Show Thumbnails in Library** and **Simplified Tree View**.
 
-Two small view buttons on the toolbar switch between the first two modes. A ▾ button next to them (**View options**) opens its own drop-down menu with the same items as the pane's context menu (see below). The settings are shared, so a change made here also shows in the menu bar and in the context menu. The ▾ button is hidden in a narrow window; every option remains available from the menu bar.
+Two small view buttons on the toolbar switch between the first two modes. A ▾ button next to them (**View options**) opens its own drop-down menu with the items described below. The settings are shared, so a change made here also shows in the menu bar. The ▾ button is hidden in a narrow window; every option remains available from the menu bar.
 
 In Tree View, right-clicking a folder row opens a menu based on the row. A folder that contains your own pictures (a real library folder) gets the full folder menu, as in the other views. A branch row that only leads to other folders and contains no pictures gets a shorter menu.
 
-Right-clicking an empty part of the pane opens the pane's own menu (the toolbar's ▾ button opens the same one). It contains, in this order:
+Right-clicking an empty part of the pane opens no menu, as in the original Picasa. The pane's own menu is opened by the toolbar's ▾ button. It contains, in this order:
 
 - the sorting commands: **Sort by Date**, **Sort by Recent Changes**, **Sort by Size**, **Sort by Name**, and **Reverse sort**;
 - three ways to sort the People list: **Sort People by Name**, **Sort People by Amount**, and **Sort People by Top 10**. A check mark shows which one is active. Sorting by Top 10 can only be chosen in Tree View; otherwise it is grayed out;
@@ -36,10 +36,12 @@ All three settings are remembered until the next time you start the program.
 
 ### Where the tree starts
 
-Four destinations appear in **View** ▸ **Folder View** ▸ **Shortcuts** (and in the submenu of the same name in the pane's context menu):
+Four destinations appear in **View** ▸ **Folder View** ▸ **Shortcuts** (and in the submenu of the same name in the ▾ button's menu):
 
 - **Desktop**, **My Documents**, and **My Pictures** show the whole tree, but jump to and select the chosen folder.
 - **My Computer** shows the whole tree, with every folder.
+
+**Desktop** and **My Pictures** are available only if one of your library folders is inside that system folder; otherwise they are disabled. **My Documents** and **My Computer** are always available.
 
 A check mark shows which starting point is active.
 
@@ -59,7 +61,7 @@ Turn on **View** ▸ **Folder View** ▸ **Show Thumbnails in Library** to show 
 
 Thumbnails are always shown in Tree View, regardless of this option, so the menu command is disabled there. The option applies to the simple, single-level list.
 
-The empty pane's **Show Thumbnails in Library** command controls the same option, so the two locations cannot get out of sync.
+The ▾ button menu's **Show Thumbnails in Library** command controls the same option, so the two locations cannot get out of sync.
 
 ### Folder dates
 
@@ -99,15 +101,17 @@ This command is available only in a folder, not in an album or a People album.
 
 ### Sorting folders
 
-Sorting can be changed in the middle of **View** ▸ **Folder View**, from the pane's context menu, or from the toolbar's ▾ menu:
+Sorting can be changed in the middle of **View** ▸ **Folder View**, or from the toolbar's ▾ menu:
 
-- **Sort by Creation Date** (in the context menu: **Sort by Date**)
+- **Sort by Creation Date** (in the ▾ button's menu: **Sort by Date**)
 - **Sort by Recent Changes**
 - **Sort by Size**
 - **Sort by Name**
 - **Reverse sort** - this can be combined with any of the other choices.
 
 This order applies to the left pane and to the grid: in the grid, folders follow each other in the same order as in the pane.
+
+When sorting by date, year headers separate the years in the pane. When sorting by recent changes, a header appears for each month, for example "Updated March 2024": folders that changed in the same month share one header. In both cases there is no header above the first row. Sorting by size or name shows no headers.
 
 ### Sorting pictures inside a folder
 

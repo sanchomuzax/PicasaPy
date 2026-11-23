@@ -118,3 +118,7 @@
 2026-11-21T03:16:55+01:00 sugo frissitve, PR-re kuldve (53bfa91 -> c1bcd72)
 2026-11-22T03:00:45+01:00 elokeszitve (c1bcd726ec4c7fae20210dd4729eca6d33dad1d0 -> 657461e): 87 erintett fajl a src/ alatt
 2026-11-22T03:04:37+01:00 sugo frissitve, PR-re kuldve (c1bcd72 -> 657461e)
+2026-11-23T13:08:52+01:00 elokeszitve (657461e181e464f140d00d5ea93b983a0dad3770 -> 4a83637): 95 erintett fajl a src/ alatt
+2026-11-23T13:26:57+01:00 sugo frissitve, PR-re kuldve (657461e -> 4a83637)
+2026-11-23T13:27:23+01:00 HIBA a lezarasnal: a(z) sugo/auto ag feltoltese nem sikerult
+2026-11-23T13:28:56+01:00 sugo frissitve, PR-re kuldve (657461e -> 4a83637)

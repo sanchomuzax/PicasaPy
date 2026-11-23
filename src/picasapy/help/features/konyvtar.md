@@ -43,9 +43,8 @@ könyvtárban** és az **Egyszerűsített fanézet** kapcsoló.
 Az első kettő között az eszköztár két kis nézetváltó gombjával is
 válthatsz. A két gomb mellett van egy **▾** gomb is
 (**Megjelenítési beállítások**): ez egy saját legördülő menüt nyit,
-ugyanazokkal a tételekkel, mint a hasáb helyi menüje (lásd lentebb). A
-beállítások közösek, tehát amit itt átállítasz, az a menüsorban és a
-helyi menüben is úgy látszik. Keskeny ablakban a ▾ gomb elrejtőzik; a
+a lentebb leírt tételekkel. A beállítások közösek, tehát amit itt
+átállítasz, az a menüsorban is úgy látszik. Keskeny ablakban a ▾ gomb elrejtőzik; a
 menüsorból ilyenkor is elérhető minden.
 
 Fanézetben a mappa sorára jobbgombbal kattintva a menü attól függ, milyen
@@ -53,9 +52,9 @@ sor az: ha a mappában vannak saját képek (vagyis a könyvtár valódi
 mappája), a **teljes mappa-menü** nyílik, ugyanaz, mint a többi nézetben.
 A csak továbbvezető, saját kép nélküli köztes sorokon rövidebb menü jön elő.
 
-A hasáb üres részére jobbgombbal kattintva a hasáb saját menüje nyílik
-meg (ugyanezt nyitja az eszköztár ▾ gombja is). Ebben a következők vannak,
-ebben a sorrendben:
+A hasáb üres részére a jobb egérgombbal kattintva **nem nyílik menü**, ahogy az
+eredeti Picasában sem. A hasáb saját menüjét az eszköztár ▾ gombja nyitja.
+Ebben a következők vannak, ebben a sorrendben:
 
 - a **rendezés** tételei: **Rendezés dátum alapján**, **Rendezés a
   legutóbbi változtatások alapján**, **Rendezés méret alapján**,
@@ -82,12 +81,16 @@ ebben a sorrendben:
 
 ### Honnan induljon a fa
 
-A **Nézet ▸ Mappanézet ▸ Gyorsbillentyűk** almenüben (és a hasáb helyi
+A **Nézet ▸ Mappanézet ▸ Gyorsbillentyűk** almenüben (és a ▾ gomb
 menüjének azonos nevű almenüjében) négy ugrópont áll:
 
 - **Asztal**, **Dokumentumok**, **Képek**: a fa teljes lesz, de a
   program odaugrik, és kijelöli az adott mappát;
 - **Sajátgép**: a teljes fa, minden mappával.
+
+Az **Asztal** és a **Képek** csak akkor választható, ha a könyvtárad
+valamelyik mappája az adott rendszermappán belül van; különben szürke. A
+**Dokumentumok** és a **Sajátgép** mindig választható.
 
 A pipa mutatja, melyik kezdőpont van érvényben.
 
@@ -124,7 +127,7 @@ sorában a mappaikon marad.
 **A fanézetben ez mindig látszik**, a kapcsolótól függetlenül — ott ezért
 a menüpont szürke. A kapcsoló az egyszerű, egyszintű listára vonatkozik.
 
-A hasáb helyi menüjének **Indexképek megjelenítése a könyvtárban** tétele
+A ▾ gomb menüjének **Indexképek megjelenítése a könyvtárban** tétele
 ugyanezt a kapcsolót állítja, tehát a két hely nem csúszhat szét.
 
 ### A mappa dátuma
@@ -232,10 +235,10 @@ A tétel csak mappában látszik - albumban és Emberek albumban nem.
 
 ### A mappák sorrendje
 
-A **Nézet ▸ Mappanézet** almenü közepén, illetve a hasáb helyi menüjében
-(és az eszköztár ▾ gombjának menüjében) állítható:
+A **Nézet ▸ Mappanézet** almenü közepén, illetve az eszköztár ▾
+gombjának menüjében állítható:
 
-- **Rendezés létrehozási dátum alapján** (a helyi menüben: **Rendezés
+- **Rendezés létrehozási dátum alapján** (a ▾ gomb menüjében: **Rendezés
   dátum alapján**)
 - **Rendezés a legutóbbi változtatások alapján**
 - **Rendezés méret alapján**
@@ -244,6 +247,13 @@ A **Nézet ▸ Mappanézet** almenü közepén, illetve a hasáb helyi menüjéb
 
 Ez a sorrend a bal hasábra **és** a rácsra is érvényes: a rácsban a
 mappák ugyanebben a sorrendben követik egymást, mint a hasábban.
+
+Dátum szerinti rendezésnél a hasábban évszámos fejlécek választják el az
+éveket. A legutóbbi változtatások szerinti rendezésnél hónaponként jön egy
+fejléc, például „Frissítve Március 2024": egy fejléc alá kerülnek azok a
+mappák, amelyek ugyanabban a hónapban változtak. Az első sor fölé egyik
+esetben sem kerül fejléc. Méret és név szerinti rendezésnél nincs
+fejléc.
 
 ### Egy mappán belül a képek sorrendje
 
