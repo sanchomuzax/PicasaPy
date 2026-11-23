@@ -83,7 +83,7 @@ _EREDETI_FORRAS_SHA256 = {
     "method:previewTilt": "2e27f0dd84229e8d4bbade33d13bf6b609f5904f5b72e81ad55ab292f1011f87",
     "method:discardTiltPreview": "9e5f4ce898d96640cff35de190c46d9a9d311d9d9e9b6e2798b3d180425a78aa",
     "method:previewFinetune": "f18330782af266eaebb44aa0cde3c43033c4f1fe40a73738b9d14ffecbbc4604",
-    "method:previewFinetuneGpu": "fc7728438ca1b543ca6932e4b61e8eeeca3b751623034fa9658d518ba5653528",
+    "method:previewFinetuneGpu": "ed1a9d9866e61f1f322c762a42a05702d0a0141ad8780c18c477c7679f10ec8d",
     "method:setFinetune": "3117e12d363f402881570a6c3180662f8274768627b38e5990f36e8ca33f26f6",
     "method:applyEffect": "1f42e6a58a0b3004cd0ed92ba540f3a32a8a85e50b122709b809ad8601a079ea",
     "method:effectHasParams": "093e48a706f64a6902a858cb22229e08abb2add1621c1a94bc1f487ad5534a7d",
@@ -102,7 +102,7 @@ _EREDETI_FORRAS_SHA256 = {
     "method:shiftAktiv": "5ff73952e946c6ccb49eff1afb96cecd134bcd47dd198ba2b8d1f8e2e21ccdaa",
     "method:shiftLenyomva": "a30294d1954188418f2d107f5e247e307989a6e2f3a844af021e4328bbf32f80",
     "method:applyColorWand": "974f2269fb4bed0762c408f3b9e1cab2375b6edaf47f324051d060f450ac477f",
-    "method:_gpu_lut_for": "efef115f57051dc80c058c28ecbfa219b2f48b405fc68d023e47f3048d47c383",
+    "method:_gpu_lut_for": "0d9d78eb5007139cbdb925bb0f7d6cf9666ead86f39f4ed2ca3c0a811a5c0ad0",
 }
 
 # A #6267 előtti Qt-lenyomat, csak a mixincsalád saját tagjai. Szándékosan nincs

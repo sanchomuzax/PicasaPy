@@ -262,7 +262,7 @@ A mai modell a kék foltot 29-re viszi, a Picasa 27-re. A sárgát 226-ra, a Pic
 | p1 | **Fill light** (0..1) | LUT-ja *azonos* az önálló `fill` szűrőével (b025≡fill025 stb.) |
 | p2 | **Highlights** (0..1) | 1,0-nál a teljes rámpa fehérbe csap |
 | p3 | **Shadows** (0..1) | 1,0-nál a teljes rámpa feketébe nyomódik |
-| p4 | **Semleges szín pipetta** (AARRGGBB hex) | meleg-szürke (ffccc6b2) megadásakor kékkel kompenzál (ΔB +11,4, ΔR −5,4) |
+| p4 | **Semleges szín pipetta** (AARRGGBB hex) | közvetlen `0x0090eda0` hívás (autocolor 3×3 CAT-mátrix, #7400; nem csatornánkénti zöld-osztás!) |
 | p5 | **Színhőmérséklet-csúszka** (előjeles!) | −0,5: ΔB +20/ΔR −16 (hűtés); +1,0: ΔB −20/ΔR +7 (melegítés) |
 
 Buchinger „brightness"-nek hitte a p1-et — valójában fill light; a p5-öt
@@ -5640,15 +5640,17 @@ A `native-filter-registry.json` szerint a `finetune2` callbackje a
 p_fill = [szűrő+0x28]
 h      = max(1 − [szűrő+0x2c], 0,001)        ; 0xcf3da0 / 0xc7999c = 0,001
 s      = [szűrő+0x30]
-n      = [szűrő+0x3c]                        ; skalár
-c      = [szűrő+0x40]                        ; csomagolt szín
+n      = [szűrő+0x3c]                        ; hőmérséklet skalár [-1..1]
+c      = [szűrő+0x40]                        ; pipetta szín 0xAARRGGBB
 
 1. ha (p_fill != 0):   0x0090ac20(cél, forrás, p_fill, 1,0)      ; DERÍTŐFÉNY
 2. ha (h != 1,0 VAGY s != 0):
                        0x0090c430(…, a0, a1, a2)                 ; CSÚCSFÉNY + ÁRNYÉK
-3. ha (n != 0):
-      ha ((c & 0xffffff) != 0):  0x0090eda0(cél, forrás, c)      ; a színmátrix-alkalmazó
-                                 0x0090e9d0(…, n)                ; a hőmérséklet
+3. ha ((c & 0xffffff) != 0):
+                       0x0090eda0(cél, forrás, c)                ; SEMLEGESÍTŐ PIPETTA (CAT-mátrix, #7400)
+4. ha (n != 0,0):
+                       0x0090e9d0(cél, forrás, n)                ; SZÍNHŐMÉRSÉKLET (feketetest + CAT-mátrix)
+                       ; megjegyzés: ha mindkettő él, a 4. lépés a 3. kimenetén fut
 ```
 
 ### 1. A derítőfény-hívás AZONOS az önálló `fill`-ével
@@ -6197,15 +6199,81 @@ minimálisan meleg, tehát a belőle épített mátrix hűtene egy hajszálnyit.
 elszíneződne: a nulla állás mátrixa mérve `(128,128,128)` →
 `(126,129,126)`.
 
-### A neutrális pipetta UGYANEZ a gépezet
+### A neutrális pipetta UGYANEZ a gépezet: a `0x0090eda0` CAT-mátrix alkalmazása (#7400)
 
-A callback (`0x008f7ee0`) **két egymás utáni** mátrix-menetet futtat:
+A `finetune2` callbackje (`0x008f7ee0`) a pipetta-szín semlegesítéséhez és a színhőmérséklethez
+**két egymás utáni mátrix-menetet** futtat, és mindkettő végső munkásfüggvénye a **`0x0090eda0`**:
 
 ```asm
-0x008f7fe8  test edi, 0xffffff   ; a p4 (pipettával vett szín) nem nulla?
-0x008f7ffd  call 0x90eda0        ; 1. menet: a KIVÁLASZTOTT szín semlegesítése
-0x008f8010  call 0x90e9d0        ; 2. menet: a hőmérséklet-táblából vett szín
+; --- 0x008f7ee0: Szín-ág vezérlése ---
+0x008f7fcd  fld     dword ptr [edi + 0x3c]  ; p5: színhőmérséklet [-1..1]
+0x008f7fd0  mov     edi, dword ptr [edi + 0x40] ; p4: pipetta szín (0xAARRGGBB)
+0x008f7fd7  fldz
+0x008f7fd9  fld     dword ptr [esp + 0x10]
+0x008f7fdd  fucom   st(1)                   ; hőmérséklet == 0.0?
+0x008f7fe3  test    ah, 0x44
+0x008f7fe6  jnp     0x8f8062                ; ha temp == 0.0, átugorja a 0x90e9d0-at
+; --- 1. ág: temp != 0.0 ---
+0x008f7fe8  test    edi, 0xffffff           ; van nem-nulla pipettaszín?
+0x008f7fee  je      0x8f8043                ; ha nincs, közvetlenül a 0x90e9d0-ra ugrik
+0x008f7ffa  push    edi                     ; p4 szín argumentum
+0x008f7ffb  push    eax                     ; forrás puffer (esi vagy ebx)
+0x008f7ffc  push    esi                     ; cél puffer (esi)
+0x008f7ffd  call    0x90eda0                ; 1. MENET: PIPETTA-SZÍN SEMLEGESÍTÉSE (CAT-mátrix)
+0x008f8009  mov     ecx, esi                ; forrás: az 1. menet kimenete
+0x008f800e  mov     edx, esi                ; cél: esi
+0x008f8010  call    0x90e9d0                ; 2. MENET: SZÍNHŐMÉRSÉKLET (feketetest + CAT-mátrix)
+; --- 2. ág: temp == 0.0 (0x8f8062) ---
+0x008f8062  test    edi, 0xffffff           ; van nem-nulla pipettaszín?
+0x008f806a  je      0x8f8088                ; ha nincs semmi, azonnali kilépés (azonosság)
+0x008f8074  push    edi
+0x008f8075  push    eax
+0x008f8076  push    esi
+0x008f8077  call    0x90eda0                ; CSAK PIPETTA SEMLEGESÍTÉS (CAT-mátrix)
 ```
+
+A `0x0090e9d0` (54 bájt) maga is a `0x0090eda0`-at hívja a feketetest-táblából vett színnel:
+```asm
+0x0090e9d3  fld     dword ptr [esp + 0xc]   ; temp
+0x0090e9d7  fmul    qword ptr [0xcf47e0]    ; * 37.0
+0x0090e9dd  fadd    qword ptr [0xcf4610]    ; + 55.0
+0x0090e9e7  fld     dword ptr [esp + 4]
+0x0090e9eb  fistp   dword ptr [esp + 0xc]   ; kerekítés egész indexre: round(temp * 37.0 + 55.0)
+0x0090e9f3  mov     eax, [eax*4 + 0xc7cf98] ; szín kiolvasása a FEKETETEST_TABLA-ból
+0x0090e9fa  push    eax                     ; szín
+0x0090e9fb  push    ecx                     ; forrás
+0x0090e9fc  push    edx                     ; cél
+0x0090e9fd  call    0x90eda0                ; UGYANAZ a CAT-mátrix alkalmazó!
+```
+
+#### A matematikai mag: `0x0090eda0` (autocolor CAT-mátrix)
+A worker egy 32 bites RGB színt (`0x00RRGGBB`) kap:
+1. Kiszámítja a referencia szürke lumáját:
+   $$L = (77 \cdot R + 151 \cdot G + 28 \cdot B) \gg 8$$
+2. A Bradford-szerű $M$ CAT transzformációs térbe vetíti a semleges szürkét és a mintaszínt:
+   $$P = M^{-1} \cdot [L, L, L]^T, \quad Q = M^{-1} \cdot [R, G, B]^T$$
+3. Diagonális skálázót képez: $g = P \oslash Q$.
+4. Felépíti az adaptációs mátrixot: $A = M \cdot \text{diag}(g) \cdot M^{-1}$.
+5. 16.16 fixpontra konvertálja: $A_{16.16} = \text{trunc}(A \cdot 65536)$.
+6. Minden képpontra: $[R', G', B']^T = \text{clip}((A_{16.16} \cdot [R, G, B]^T) \gg 16, 0, 255)$.
+
+#### A korábbi leírás és a bináris eltérése (#7400)
+A PicasaPy korábbi implementációja (`src/picasapy/render/tone.py:apply_neutral_pipette`) a korai #551-es feltevésből indult ki, miszerint a pipetta csupán egy zöld-arányos csatornaszorzás: `k_c = p4_green / p4_c`.
+Ez a modell:
+- nem vette figyelembe a mintavételezett szín saját lumáját ($L$), hanem a zöld csatorna szintjére ($G$) kényszerítette a szürkét;
+- nem képezett kereszt-tagokat (diagonális 1D LUT maradt 3×3-as mátrix helyett).
+
+#### Bizonyítás és mérés a J5a felvételen (`job-852`)
+A `job-852` felvételen a bézs folt forrásértéke `c89779` [200, 151, 121]:
+
+| Állapot / Kocka | Forrás | Régi PicasaPy (`tone.py`) | Eredeti Picasa (`job-852`) | Új natív mátrix (`0x0090eda0`) | Hiba (Δ) |
+|---|---|---|---|---|---|
+| **15. kocka** (csak pipetta, p4=`ffc89779`) | [200, 151, 121] | `979797` [151, 151, 151] | `a1a1a1` [161, 161, 161] | `a1a1a1` [161, 161, 161] | **0** |
+| **25. kocka** (pipetta + temp `1.0`) | [200, 151, 121] | `a09680` [160, 150, 128] | `aba088` [171, 160, 136] | `aba088` [171, 160, 136] | **0** |
+| **23. kocka** (csak temp `1.0` a jobb szélen) | [200, 151, 121] | `d29766` [210, 151, 102] | `cf9c54` [207, 156, 84] | `d29766` [210, 151, 102] | R: 3, G: 5, B: 18* |
+
+*A 23. kocka (csak Színhőmérséklet, a végső ini p5 értéke `1.000000`) **NYITOTT KÉRDÉS**: a mai `apply_color_temperature(1.0)` a bézs foltra `d29766`-ot ad, a felvétel `cf9c54`-et (eltérés R 3, G 5, B 18). A pipettával együtt (25. kocka) a lánc pontosan egyezik, ezért a tiszta hőmérséklet-ág képlete vagy a 23. kockán érvényes csúszkaérték a kérdés; a felvétel nem mondja meg, mekkora volt a hőmérséklet a 23. kockán. Külön jegy viszi.*
+A 15. és 25. kockán a javított `apply_neutral_pipette` matematikai hibája **0**.
 
 A `finetune` (v1) ugyanígy épül, csak a `0x0090ea10`-et hívja a
 `0x0090e9d0` helyett.

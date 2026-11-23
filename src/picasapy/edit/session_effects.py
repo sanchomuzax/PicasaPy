@@ -252,14 +252,25 @@ class _SessionEffectsMixin:
         - egyébként (finetune2 a lánc közepén) `None` — a hívó ilyenkor a
           normál CPU-előnézetre esik vissza, GPU-gyorsítás nélkül.
 
-        **#551: nem nulla Derítőfénynél is `None`.** A mérés kimondta, hogy
-        a Derítőfény a pixel VILÁGOSSÁGÁTÓL függő hozzáadás, nem
-        csatornánkénti tónusgörbe — a GPU pontonkénti (LUT-textúrás) útja
-        ilyenkor a CPU-tól eltérő képet adna, ezért nem alkalmazható.
+        **#551, #7400: nem nulla Derítőfénynél vagy nem semleges pipettánál is `None`.**
+        A mérés kimondta, hogy a Derítőfény világosság-függő, a semlegesítő pipetta
+        pedig 3×3-as CAT mátrix (kereszt-tagokkal), nem csatornánkénti tónusgörbe —
+        a GPU pontonkénti (LUT-textúrás) útja ilyenkor a CPU-tól eltérő képet adna,
+        ezért nem alkalmazható.
         """
         for index, op in enumerate(self.ops):
             if op.name.casefold() in _FINETUNE_NAMES:
-                if index == len(self.ops) - 1 and _finetune_float(op, 1) == 0.0:
+                neutral = op.params[4] if len(op.params) > 4 else None
+                has_neutral = (
+                    neutral is not None
+                    and len(neutral) == 8
+                    and not neutral.startswith("00")
+                )
+                if (
+                    index == len(self.ops) - 1
+                    and _finetune_float(op, 1) == 0.0
+                    and not has_neutral
+                ):
                     return self.ops[:index]
                 return None
         return self.ops

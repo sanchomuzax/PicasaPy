@@ -41,7 +41,7 @@ _MOZGATOTT_FORRASOK = {
     "method:crop": "5896933ef520bf3f2314a80e6914005c22a077a0aebcdbf96ba0a57c4ecacbc3",
     "method:finetune_values": "070940f2e00adf7bec61c0f1f3d5334906bd1e1bc594e601617dc2e19c25d49c",
     "method:from_value": "be9131bc0ce99160202e7d90fe66631fdfcc2b8b4e4e1bd69e22ccb6f9283f09",
-    "method:gpu_finetune_prefix": "ceac8389f014b55801f5f72619c1db4ebec17d85922098514189fa4d51901cd6",
+    "method:gpu_finetune_prefix": "76ab0d2bfff76e81fefa5b68bfa0adc16a28f0a0757869160f2546c7f2bb9583",
     "method:has": "5f6a6322e625d81478b13f21fe09e34d6cea2e44070d14c77fa0a008cc79e95b",
     "method:has_finetune": "7c3de77a4da8b8b28829b29f151e5a53800ce03c54254193b201da44e7ad2321",
     "method:is_empty": "e46902765464fca5e663bec7a53f2f80f34b882471d6d5f8e48b6cc4b4beaa72",

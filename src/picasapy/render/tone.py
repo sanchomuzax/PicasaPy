@@ -547,23 +547,25 @@ def estimate_neutral_color(image: np.ndarray) -> tuple[int, int, int]:
 def apply_neutral_pipette(
     image: np.ndarray, neutral: tuple[int, int, int]
 ) -> np.ndarray:
-    """Fehéregyensúly a semlegesnek jelölt szín alapján (#551).
+    """Fehéregyensúly a semlegesnek jelölt szín alapján (#7400, #551).
 
-    A csatorna-erősítés a ZÖLDHÖZ viszonyít (`k_c = p4_zöld / p4_c`), mert a
-    Picasa a p4-et így normalizálja: a középső bájt mindig 0x80 = 128.
-    Semleges (R=G=B) viszonyítási színnél ez azonosság.
+    A natív `finetune2` callback (`0x008f7ee0`) a pipetta-szín semlegesítéséhez
+    a `0x0090eda0` munkásfüggvényt hívja: ez egy 3×3-as autocolor CAT adaptációs
+    mátrix (`M · diag(g) · M⁻¹`, ld. `autocolor_matrix.py` és `filters-decoded.md`).
+    A referencia szürke lumája és a mintaszín lumája közötti transzformációval
+    számol 16.16 fixpontban.
+
+    A korábbi zöld-osztásos modell (`k_c = p4_green / p4_c`) nem vette figyelembe
+    a mintaszín saját lumáját és nem képezett kereszt-tagokat (a J5a bézs foltja
+    `c89779` az eredetiben `a1a1a1`, nálunk `979797` volt). Az autocolor mátrixszal
+    a J5a kimenete pontosan `a1a1a1` (hiba: 0).
     """
     validate_image(image)
     red, green, blue = neutral
-    if green <= 0:
+    if (red | green | blue) == 0:
         return image.copy()
-    # csatornánkénti gain → csatornánkénti LUT (#140): képméret-független
-    ramp = lut_ramp()
-    luts = [
-        ramp if value <= 0 else ramp * (float(green) / float(value))
-        for value in (red, green, blue)
-    ]
-    return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
+    matrix = autocolor_matrix_16_16(red, green, blue)
+    return apply_autocolor_matrix(image, matrix)
 
 
 def apply_finetune2(

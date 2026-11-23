@@ -264,23 +264,26 @@ class TestNeutralPipette:
         np.testing.assert_array_equal(result, image)
 
     @pytest.mark.parametrize(
-        ("p4", "vart_r", "vart_b"),
+        ("p4", "vart_rgb"),
         [
-            # #551: a Picasa maga írta ki ezeket a p4-eket a .picasa.ini-be
-            # (referencia/szinpalca-proba2/); a szorzók a ZÖLDRE normálva
-            ((107, 128, 136), 128 / 107, 128 / 136),
-            ((132, 128, 128), 128 / 132, 1.0),
-            ((93, 128, 120), 128 / 93, 128 / 120),
+            # #7400: a natív 0x0090eda0 autocolor CAT mátrix leképezése (#7400),
+            # a korábbi zöld-osztásos modell (#551) helyett.
+            ((107, 128, 136), (113, 95, 89)),
+            ((132, 128, 128), (97, 100, 100)),
+            ((93, 128, 120), (125, 90, 96)),
+            # #7400 J5a bézs folt (200, 151, 121) semlegesítése a1a1a1 [161, 161, 161]:
+            ((200, 151, 121), (161, 161, 161)),
         ],
     )
-    def test_a_szorzok_a_zoldhoz_viszonyitanak(
-        self, p4: tuple[int, int, int], vart_r: float, vart_b: float
+    def test_a_szorzok_autocolor_matrix_lekepezese(
+        self, p4: tuple[int, int, int], vart_rgb: tuple[int, int, int]
     ) -> None:
-        image = _uniform_image(100)
+        """#7400: a pipetta 3×3-as CAT mátrixa (0x0090eda0) a mintaszín lumájával
+        számol, kereszt-tagokat képez, a mintavételezett foltot tökéletesen
+        semleges szürkére képezi le."""
+        image = _uniform_image(p4 if p4 == (200, 151, 121) else 100)
         result = apply_neutral_pipette(image, p4)
-        assert abs(int(result[0, 0, 0]) - 100 * vart_r) <= 1.0
-        assert int(result[0, 0, 1]) == 100  # a zöld a viszonyítási alap
-        assert abs(int(result[0, 0, 2]) - 100 * vart_b) <= 1.0
+        np.testing.assert_array_equal(result[0, 0], vart_rgb)
 
 
 class TestApplyFinetune2:

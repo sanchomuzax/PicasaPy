@@ -163,11 +163,13 @@ class EditControllerEffectsFinetuneMixin:
         `previewSource`/`photo` Image-nek a húzás alatt NEM szabad
         újratöltődnie) — csak a `gpuRevisionChanged`-et."""
         self._require_active()
-        if fill != 0.0:
-            # #551: a Derítőfény mért modellje világosság-vezérelt, tehát
-            # nem fejezhető ki csatornánkénti LUT-tal — a GPU-út ilyenkor
-            # más képet adna, mint a mentés. A hívó (QML) ezt már tudja és
-            # nem is kéri, ez a védőkorlát a nem-UI hívók ellen.
+        values = self._visit_values()
+        has_neutral = values is not None and parse_neutral_argb(values.neutral) is not None
+        if fill != 0.0 or has_neutral:
+            # #551, #7400: a Derítőfény mért modellje világosság-vezérelt, a semlegesítő
+            # pipetta pedig 3×3-as CAT mátrix (kereszt-tagokkal), tehát nem fejezhetők
+            # ki csatornánkénti 1D LUT-tal — a GPU-út ilyenkor más képet adna, mint
+            # a mentés. A hívó ilyenkor a CPU-útra esik vissza.
             self.previewFinetune(fill, highlights, shadows, temperature)
             return
         prefix_ops = self._gpu_finetune_prefix()
@@ -176,11 +178,9 @@ class EditControllerEffectsFinetuneMixin:
             # alkalmatlanná vált — néma, biztonságos no-op, a hívó a
             # gpuPrefixSource újraolvasásával úgyis visszavált CPU-ra
             return
-        # #7383: a látogatás rétegének pipetta-színe a LUT-ba is bekerül
-        values = self._visit_values()
         lut = build_finetune2_lut(
             fill=fill, highlights=highlights, shadows=shadows,
-            neutral=parse_neutral_argb(values.neutral) if values is not None else None,
+            neutral=None,
             temperature=temperature,
         )
         self._provider.update_gpu_lut(self._kulcs, lut)
@@ -257,10 +257,13 @@ class EditControllerEffectsFinetuneMixin:
             ramp = np.arange(256, dtype=np.uint8)
             return np.repeat(ramp[:, None], 3, axis=1)
         neutral = parse_neutral_argb(values.neutral)
+        if values.fill != 0.0 or neutral is not None:
+            ramp = np.arange(256, dtype=np.uint8)
+            return np.repeat(ramp[:, None], 3, axis=1)
         return build_finetune2_lut(
             fill=values.fill,
             highlights=values.highlights,
             shadows=values.shadows,
-            neutral=neutral,
+            neutral=None,
             temperature=values.temperature,
         )
