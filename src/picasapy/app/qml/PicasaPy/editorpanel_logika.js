@@ -293,7 +293,16 @@ function handleToolClick(tool) {
     switch (tool) {
     case "crop": panel.cropActive = !panel.cropActive; break
     case "tilt": panel.tiltActive = !panel.tiltActive; break
-    case "redeye": panel.redeyeActive = !panel.redeyeActive; break
+    case "redeye":
+        // #7378: mentett kiegyenesítésnél az eredeti Picasa a panel
+        // megnyitása ELŐTT Info ablakot mutat (`IDS_WARN_REDEYE_ACCURACY`);
+        // a panel nyitása (és vele az automatika) az OK után történik.
+        if (!panel.redeyeActive && panel.straightenActive) {
+            panel.redeyeStraightenInfoRequested()
+            return
+        }
+        panel.redeyeActive = !panel.redeyeActive
+        break
     case "retouch": panel.retouchActive = !panel.retouchActive; break
     case "text": panel.textActive = !panel.textActive; break
     case "enhance": if (!panel.enhanceEnabled) return; break

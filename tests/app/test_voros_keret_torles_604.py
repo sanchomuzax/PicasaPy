@@ -157,7 +157,9 @@ class TestAFelulet:
 
     def test_az_utmutato_kiegeszult_az_eredeti_mondataval(self):
         assert 'objectName: "redeyeFrameHintLabel"' in _PANEL
-        assert "Note: click inside the box to undo the change." in _PANEL
+        assert 'text: qsTr("Note: You can click on a box to delete a change.")' in _PANEL
+        assert 'text: qsTr("Redeye Repair")' in _PANEL
+        assert "No red eye was found automatically." not in _PANEL
 
     def test_a_meglevo_UTAK_megmaradtak(self):
         """A jegy 3. pontja: „Utolsó régió visszavonása" és „Alaphelyzet"

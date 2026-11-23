@@ -250,6 +250,10 @@ Rectangle {
 
     // tool: "crop"|"tilt"|"redeye"|"enhance"|"autolight"|"autocolor"
     signal toolActivated(string tool)
+    // #7378: mentett kiegyenesítésű képen a Vörösszem csempe NEM nyitja meg
+    // a panelt, hanem ezt a jelzést adja: a hívó Info ablakot mutat, és a
+    // panelt csak az OK után nyitja meg (`redeyeActive = true`).
+    signal redeyeStraightenInfoRequested()
     // a vágás külön jelet is kap — a hívó ez alapján nyitja a CropOverlay-t
     signal cropRequested()
     signal undoRequested()

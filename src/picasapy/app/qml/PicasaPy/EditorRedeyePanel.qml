@@ -52,7 +52,8 @@ ColumnLayout {
         }
         Text {
             Layout.fillWidth: true
-            text: qsTr("Redeye")
+            objectName: "redeyeTitleText"
+            text: qsTr("Redeye Repair")
             font.pixelSize: Theme.fontSize + 3
             color: Theme.ink
         }
@@ -78,43 +79,16 @@ ColumnLayout {
         color: Theme.textGray
     }
 
-    // #4542: ugyanaz a Picasa-figyelmeztetés, mint a vörösszem-eszköz
-    // `IDS_WARN_REDEYE_ACCURACY` erőforrása; csak mentett kiegyenesítésnél.
-    Text {
-        objectName: "redeyeStraightenWarning"
-        visible: panel.straightenActive
-        Layout.fillWidth: true
-        wrapMode: Text.WordWrap
-        //: picasapy-origin: picasa
-        //: picasapy-origin-key: stringres:IDS_WARN_REDEYE_ACCURACY
-        text: qsTr("This image's orientation has been modified by the Straighten tool, "
-                   + "which can cause inaccuracies when selecting red eye  rectangles.\n"
-                   + "If your redeye fixes appear to be misaligned (or non-existent), try "
-                   + "undoing the Straighten fix, then reapply red eye fixes, and "
-                   + "Straighten again if necessary.")
-        font.pixelSize: Theme.fontSize - 1
-        color: Theme.textGray
-    }
-
-    //: #604: a keretenkénti visszavonás mondata. MÉRVE, de MÁS forrásból,
-    //: mint a fölötte lévő útmutató: az a panel statikus címkéje
-    //: (`editpanel/redeyetext`), ez pedig az eszköz HÁROM állapotüzenetének
-    //: közös mondata (`RedEye::AutoFixedMessage`,
-    //: `::DragToSelectMessage`, `::AutoFixRedoMessage`). Mindháromban ott
-    //: van, tehát az eszköz nyitva léte alatt mindig érvényes — ezért áll
-    //: külön soron, állapottól függetlenül.
-    //:
-    //: A magyar a Picasa saját erőforrásából, szó szerint; az ANGOL a mi
-    //: megfogalmazásunk (az eredeti angol alakja nincs kimérve).
+    // A keretenkénti visszavonás mondata a hivatalos
+    // `RedEye::DragToSelectMessage` erőforrásból.
     Text {
         objectName: "redeyeFrameHintLabel"
-        //: #3574: a hivatalos sikerüzenet (`RedEye::AutoFixedMessage`) maga
-        //: is tartalmazza ezt a mondatot — amíg az látszik, ez a sor nem
-        //: ismétli meg
         visible: !panel.redeyeAutoReset && !(panel.redeyeFoundCount > 0)
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
-        text: qsTr("Note: click inside the box to undo the change.")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:RedEye::DragToSelectMessage
+        text: qsTr("Note: You can click on a box to delete a change.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
     }
@@ -124,11 +98,9 @@ ColumnLayout {
         objectName: "redeyeAutoResultLabel"
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
-        visible: !panel.redeyeAutoReset && panel.redeyeFoundCount >= 0
-        text: panel.redeyeFoundCount > 0
-              //: #3574: a hivatalos szöveg (`RedEye::AutoFixedMessage`)
-              ? qsTr("PicasaPy has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that PicasaPy may have missed.")
-              : qsTr("No red eye was found automatically.")
+        visible: !panel.redeyeAutoReset && panel.redeyeFoundCount > 0
+        //: #3574: a hivatalos szöveg (`RedEye::AutoFixedMessage`)
+        text: qsTr("PicasaPy has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that PicasaPy may have missed.")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
     }
