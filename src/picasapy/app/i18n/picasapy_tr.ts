@@ -4427,6 +4427,20 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <translation>Yeniden yap</translation>
         </message>
         <message>
+            <location filename="../edit_action_names.py" />
+            <source>Undo %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::undoname</extracomment>
+            <translation>Geri al: %1</translation>
+        </message>
+        <message>
+            <location filename="../edit_action_names.py" />
+            <source>Redo %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::redoname</extracomment>
+            <translation>Yeniden yap: %1</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
             <source>Manual</source>
             <extracomment>picasapy-origin: picasa
@@ -16041,12 +16055,6 @@ picasapy-origin-key: stringres:filter_finetune2_label3;stringres:filter_finetune
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>No red eye was found automatically.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Otomatik olarak kırmızı göz bulunamadı.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>PicasaPy has found and corrected red eye(s).
 
 Note: You can click on a box to delete a change.
@@ -16067,10 +16075,10 @@ PicasaPy uygulamasının gözden kaçırmış olabileceği bir kırmızı gözü
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>Redeye</source>
+            <source>Redeye Repair</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation>Kırmızı Göz</translation>
+picasapy-origin-key: tooltips:Label(editpanel/redeye_label)</extracomment>
+            <translation>Kırmızı Göz Düzeltme</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -16106,16 +16114,10 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
-If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bu resmin yönü Düzleştir aracıyla değiştirilmiştir; bu durum kırmızı göz dikdörtgenlerini seçerken hatalara yol açabilir.
-Kırmızı göz düzeltmeleri yanlış hizalanmış (veya görünmüyor) gibiyse Düzleştir düzeltmesini geri alıp kırmızı göz düzeltmelerini yeniden uygulayın; gerekirse ardından yeniden düzleştirin.</translation>
-        </message>
-        <message>
-            <source>Note: click inside the box to undo the change.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Not: Değişikliği geri almak için kutunun içine tıklayın.</translation>
+            <source>Note: You can click on a box to delete a change.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RedEye::DragToSelectMessage</extracomment>
+            <translation>Not: Yaptığınız değişikliği silmek için kutuyu tıklayabilirsiniz.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -16258,8 +16260,16 @@ picasapy-origin-key: tooltips:Label(editpanel/retouchtext)</extracomment>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Remove all existing text</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mevcut tüm metni kaldır</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/clearall)</extracomment>
+            <translation>Var olan tüm metinleri kaldır</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
+            <source>Clear All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/clearall)</extracomment>
+            <translation>Tümünü Sil</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -16274,12 +16284,6 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);p
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
             <translation>Metin</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
-            <source>Type your text, then click on the photo to place it.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Metninizi yazın, ardından yerleştirmek için fotoğrafa tıklayın.</translation>
         </message>
         <message>
             <source>Font</source>
@@ -20812,6 +20816,16 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
         </message>
     </context>
     <context>
+        <name>PhotoViewerTextInput</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTextInput.qml" />
+            <source>Type anywhere to add text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EditText::GhostText</extracomment>
+            <translation>Metin eklemek için herhangi bir yere yazın</translation>
+        </message>
+    </context>
+    <context>
         <name>PhotoViewerLeftDrawer</name>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerLeftDrawer.qml" />
@@ -20823,6 +20837,29 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
     </context>
     <context>
         <name>PhotoViewerEditorPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>Info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytApp::InfoTitle</extracomment>
+            <translation>Bilgi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
+If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_WARN_REDEYE_ACCURACY</extracomment>
+            <translation>Bu resmin yönü Düzleştirme aracıyla değiştirilmiştir ve bu durum, kırmızı göz dikdörtgenlerini seçerken tutarsızlıklara yol açabilir.
+Kırmızı göz düzeltmeleriniz yanlış hizalı görünürse (veya hiç görünmezse) Düzleştirme düzeltmesini geri almayı deneyin, ardından kırmızı göz düzeltmelerini yeniden uygulayın ve gerekirse yeniden Düzleştirin.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::OK</extracomment>
+            <translation>Tamam</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="52" />
             <source>Undo</source>

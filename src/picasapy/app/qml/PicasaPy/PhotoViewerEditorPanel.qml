@@ -271,6 +271,13 @@ EditorPanel {
     // #450: az összes (ma: az egyetlen) szövegelem törlése —
     // a meglévő clearText útvonalon, a szerkesztőeszköz is zárul
     onTextRemoveAllRequested: {
+        if (!editorPanel.hasTextOverlay) {
+            // #7380: nincs mentett felirat, csak a képre gépelt, még nem
+            // alkalmazott piszkozat - azt dobja el, az eszköz nyitva marad
+            editController.exitTextTool()
+            editorPanel.textDraftContent = ""
+            return
+        }
         editController.clearText()
         editorPanel.textDraftContent = ""
         editorPanel.textActive = false
@@ -293,6 +300,85 @@ EditorPanel {
         editController.setTextOutlineThickness(value)
     onTextFillEnabledEdited: (value) => editController.setTextFillEnabled(value)
     onTextOpacityEdited: (value) => editController.setTextOpacity(value)
+    // A mentett Kiegyenesítés után az eredeti Picasa előbb ezt az Info
+    // ablakot mutatja, és csak az OK után lép be a Vörösszem eszközbe.
+    // Az Esc/kívül kattintás elvetése NINCS lemérve: az Esc bezárja az ablakot
+    // és a panel nem nyílik meg; a kívül kattintás nem zárja (modális ablak).
+    onRedeyeStraightenInfoRequested: redeyeStraightenInfoDialog.open()
+    Dialog {
+        id: redeyeStraightenInfoDialog
+        objectName: "redeyeStraightenInfoDialog"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        focus: true
+        closePolicy: Popup.CloseOnEscape
+        // A `job-837 __22` méréséből: a kliens-terület 320 x 132 px, a szöveg
+        // 10 px-re a címsávtól, az OK gomb 48 x 24 px és vízszintesen középen.
+        implicitWidth: 320
+        topPadding: 10
+        bottomPadding: 0
+        leftPadding: 13
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:ytApp::InfoTitle
+        title: qsTr("Info")
+
+        onOpened: redeyeStraightenInfoOkButton.forceActiveFocus()
+        onAccepted: editorPanel.redeyeActive = true
+
+        footer: DialogButtonBox {
+            objectName: "redeyeStraightenInfoButtonBox"
+            alignment: Qt.AlignHCenter
+            padding: 0
+            topPadding: 9
+            bottomPadding: 8
+
+            Button {
+                id: redeyeStraightenInfoOkButton
+                objectName: "redeyeStraightenInfoOkButton"
+                implicitWidth: 48
+                implicitHeight: 24
+                font.pixelSize: Theme.fontSize - 1
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: stringres:ContactManagerDlg::OK
+                text: qsTr("OK")
+                Keys.priority: Keys.BeforeItem
+                Keys.onReturnPressed: function(event) {
+                    redeyeStraightenInfoDialog.accept()
+                    event.accepted = true
+                }
+                Keys.onEnterPressed: function(event) {
+                    redeyeStraightenInfoDialog.accept()
+                    event.accepted = true
+                }
+                onClicked: redeyeStraightenInfoDialog.accept()
+            }
+        }
+
+        contentItem: Row {
+            spacing: 11
+            Image {
+                objectName: "redeyeStraightenInfoIcon"
+                anchors.verticalCenter: parent.verticalCenter
+                source: "icons/dialog-info.svg"
+                sourceSize: Qt.size(32, 32)
+            }
+            Label {
+                objectName: "redeyeStraightenInfoText"
+                width: 252
+                anchors.verticalCenter: parent.verticalCenter
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize - 1
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: stringres:IDS_WARN_REDEYE_ACCURACY
+                text: qsTr("This image's orientation has been modified by the Straighten tool, "
+                           + "which can cause inaccuracies when selecting red eye  rectangles.\n"
+                           + "If your redeye fixes appear to be misaligned (or non-existent), try "
+                           + "undoing the Straighten fix, then reapply red eye fixes, and "
+                           + "Straighten again if necessary.")
+            }
+        }
+    }
     // #450 (2. lépcső): tipográfia — az ÉRTÉKEKET a
     // syncEditorPanel() tölti (a többi szöveg-stílus
     // mintájára), itt csak a jelzések mennek vissza

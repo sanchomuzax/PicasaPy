@@ -10,6 +10,8 @@ felirata az `EditController.undoLabel`/`redoLabel` kész szövegéből jön.
 import pytest
 from PySide6.QtCore import QObject
 
+from picasapy.app.edit_action_names import action_label
+
 
 class TestUndoLabelWiring:
     def _open_viewer(self, window, qt_app):
@@ -47,7 +49,10 @@ class TestUndoLabelWiring:
 
         label = panel.property("undoLabel")
         assert label == edit.property("undoLabel")
-        assert ": " in label, f"nincs lépésnév a feliratban: {label!r}"
+        # #7381: angolul „Undo <név>", kettőspont nélkül (az eredeti alak)
+        assert label == f"Undo {action_label(effect)}", (
+            f"nincs lépésnév a feliratban: {label!r}"
+        )
         assert effect not in label, (
             f"a nyers ini-kulcs került a gombra: {label!r}"
         )
@@ -64,4 +69,5 @@ class TestUndoLabelWiring:
 
         redo = panel.property("redoLabel")
         assert redo == edit.property("redoLabel")
-        assert ": " in redo and "nightvision" not in redo, redo
+        assert redo == f"Redo {action_label('nightvision')}", redo
+        assert "nightvision" not in redo, redo

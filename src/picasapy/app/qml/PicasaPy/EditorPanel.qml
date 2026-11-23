@@ -88,7 +88,7 @@ Rectangle {
     property alias textDraftContent: textState.textDraftContent
     property alias textPlacementPending: textState.textPlacementPending
     //: #3123: a kép fölötti eszköz-sáv ebből tudja, mikor alkalmazható a
-    //: szöveg (a szövegmező a `EditorTextPanel`-ben él).
+    //: szöveg (#7380: a szöveg a képen áll, a feltétel a `textDraftContent`).
     readonly property bool textApplyEnabled:
         panelOverlays.textApplyEnabled
     property alias captionText: textState.captionText
@@ -177,7 +177,6 @@ Rectangle {
     property alias shiftMasodlagos: effectState.shiftMasodlagos
 
     function frissitsdAShiftAllapotot() { return Logika.frissitsdAShiftAllapotot() }
-
     function allitsdAShiftFigyelest() { return Logika.allitsdAShiftFigyelest() }
 
     Component.onCompleted: {
@@ -250,6 +249,10 @@ Rectangle {
 
     // tool: "crop"|"tilt"|"redeye"|"enhance"|"autolight"|"autocolor"
     signal toolActivated(string tool)
+    // #7378: mentett kiegyenesítésű képen a Vörösszem csempe NEM nyitja meg
+    // a panelt, hanem ezt a jelzést adja: a hívó Info ablakot mutat, és a
+    // panelt csak az OK után nyitja meg (`redeyeActive = true`).
+    signal redeyeStraightenInfoRequested()
     // a vágás külön jelet is kap — a hívó ez alapján nyitja a CropOverlay-t
     signal cropRequested()
     signal undoRequested()

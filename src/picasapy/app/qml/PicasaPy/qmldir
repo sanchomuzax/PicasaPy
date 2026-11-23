@@ -311,6 +311,7 @@ EditorSliderCaption 1.0 EditorSliderCaption.qml
 PhotoViewerLeftDrawer 1.0 PhotoViewerLeftDrawer.qml
 EffectSliceBox 1.0 EffectSliceBox.qml
 PhotoViewerPhotoArea 1.0 PhotoViewerPhotoArea.qml
+PhotoViewerTextInput 1.0 PhotoViewerTextInput.qml
 MainSlideshow 1.0 MainSlideshow.qml
 MainWindowToolbar 1.0 MainWindowToolbar.qml
 MainLibraryCanvas 1.0 MainLibraryCanvas.qml

@@ -336,6 +336,7 @@ class EditControllerSessionMixin:
         self._text_overlay_visible = True
         self._text_draft = ""
         self._text_pending_pos = None
+        self._text_inline_editing = False
         self._text_fill_color = _DEFAULT_TEXT_FILL_COLOR
         self._text_outline_color = _DEFAULT_TEXT_OUTLINE_COLOR
         self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS

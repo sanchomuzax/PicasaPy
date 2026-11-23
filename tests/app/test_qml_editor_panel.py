@@ -912,24 +912,16 @@ class TestTextTool:
         assert panel.findChild(QObject, "textColumn").property("visible") is True
         assert panel.findChild(QObject, "toolsColumn").property("visible") is False
 
-    def test_text_field_seeded_from_draft_content(self, qml_engine, qt_app):
+    def test_a_panelben_nincs_szovegmezo_a_szoveg_a_kepre_gepelheto(
+        self, qml_engine, qt_app
+    ):
+        """#7380: az eredeti Szöveg eszköz panelében NINCS szövegmező
+        (job-839 `__10`); a bevitel a képen él (`PhotoViewerTextInput`)."""
         panel = self._make_panel(qml_engine)
         panel.setProperty("textDraftContent", "Hello")
         panel.setProperty("textActive", True)
         qt_app.processEvents()
-        field = panel.findChild(QObject, "textContentField")
-        assert field.property("text") == "Hello"
-
-    def test_typing_emits_text_draft_edited(self, qml_engine, qt_app):
-        panel = self._make_panel(qml_engine)
-        panel.setProperty("textActive", True)
-        qt_app.processEvents()
-        edited = []
-        panel.textDraftEdited.connect(lambda content: edited.append(content))
-        field = panel.findChild(QObject, "textContentField")
-        field.setProperty("text", "Nyaralás 2026")
-        qt_app.processEvents()
-        assert edited[-1] == "Nyaralás 2026"
+        assert panel.findChild(QObject, "textContentField") is None
 
     def test_az_alkalmazhatosag_felteteltet_a_panel_MONDJA_MEG(
         self, qml_engine, qt_app
@@ -937,8 +929,9 @@ class TestTextTool:
         """#3320: a gomb visszakerült a panelbe, a feltétel ITT lakik.
 
         A `textApplyEnabled` kifelé is megmarad (a gazda EditorPanel adja
-        ki), mert a szövegmező ebben a panelben él — a próbák és a többi
-        kötés ezen a néven olvassák.
+        ki) — a próbák és a többi kötés ezen a néven olvassák. #7380: a
+        feltétel a panel `textDraftContent`-jét nézi (a szöveget a képre
+        gépelik, nem a panelbe).
         """
         panel = self._make_panel(qml_engine)
         panel.setProperty("textActive", True)
@@ -947,8 +940,7 @@ class TestTextTool:
         assert gomb is not None
         assert gomb.property("buttonEnabled") is False
         assert panel.property("textApplyEnabled") is False
-        field = panel.findChild(QObject, "textContentField")
-        field.setProperty("text", "Cím")
+        panel.setProperty("textDraftContent", "Cím")
         panel.setProperty("textPlacementPending", True)
         qt_app.processEvents()
         assert panel.property("textApplyEnabled") is True
