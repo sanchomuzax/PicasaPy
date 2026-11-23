@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.173] - 2026-11-23
+
+- Kutatás: a Hangolás fül eredeti Picasa-felvételei (J0-J7) kiértékelve: az eredetiben a csúszkák mindig alaphelyzetben indulnak, egy látogatás összes húzása egyetlen visszavonási lépés és a betöltött réteg mellé új réteg kerül, a pipetta a forrásképből mintáz és képváltáskor kikapcsol, a Ctrl+3 kijelölés nélkül az 1. képet, két kijelölt képnél a rács szerinti elsőt nyitja; a három eltérés fejlesztésének jegytörzse a lapon van, a megmaradt hat kérdéshez javított lépéssorok készültek; fejlesztés: #7383, #7384, #7385 (#7345).
+- A Vörösszem eszköz mentett kiegyenesítésű képen felugró Info ablakkal figyelmeztet, és a panelt csak az OK után nyitja meg; a panel címe és megjegyzése az eredeti szövegeket követi, a nem létező „találat nélkül” mondat kikerült (#7378).
+- A Szöveg eszközben a szöveg közvetlenül a képre gépelhető, mint az eredeti Picasában: kattintásig a kép közepén a „Szöveg elhelyezéséhez kezdjen el gépelni” felirat áll, a kattintás helyén a szövegkurzor jelenik meg, a begépelt szöveg lekerekített keretben látszik, a betűk pedig a kattintott pont alatt állnak; a panelből kikerült a szövegmező, a törlőgomb felirata pedig „Az összes törlése” lett (#7380).
+- A szerkesztő Visszavonás és Újra gombjának felirata angol felületen kettőspont nélkül áll („Undo Straighten”, „Redo Crop”), mint az eredeti Picasában; a többi nyelven is az eredeti Picasa saját alakja jelenik meg, a magyar „Visszavonás: Kiegyenesítés” változatlan (#7381).
+
 ## [1.0.172] - 2026-11-23
 
 - Kutatás: a Beállítások ablak folyamatlapja négy ponton a #7331 végleges eredményéhez igazítva: az OK csak a javaslatküszöb változásakor egyezteti a személyalbumokat (#7325).
