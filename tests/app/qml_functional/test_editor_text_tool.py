@@ -156,7 +156,18 @@ class TestEditorTextTool(EditorTestHelpers):
             remove_button, "buttonClicked", Qt.ConnectionType.DirectConnection
         )
         qt_app.processEvents()
+        # #7407: a Clear All után az eszköz nyitva marad, a piszkozatban nincs felirat,
+        # de az iniben még megvan, amíg Apply-t nem nyomunk
+        assert panel.property("textActive") is True
         assert edit.property("hasTextOverlay") is False
+        assert remove_button.property("enabled") is False
+        assert apply_button.property("enabled") is True
+        ini_koztes = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
+        assert "text=" in ini_koztes
+        QMetaObject.invokeMethod(
+            apply_button, "buttonClicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
         ini_text = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
         assert "text=" not in ini_text
 

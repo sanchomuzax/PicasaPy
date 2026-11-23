@@ -15,8 +15,10 @@ ColumnLayout {
     //: Az Alkalmaz gomb feltétele. #3320: a gomb visszakerült ide, de a
     //: kifejezés SAJÁT tulajdonságban marad — a `textApplyEnabled` néven a
     //: PhotoViewer is erre kötött, és a próbák is ezt olvassák.
+    //: #7407: Clear All után a szöveg nélküli piszkozat véglegesíthető (Apply aktív)
     readonly property bool applyEngedve:
-        panel.textPlacementPending && panel.textDraftContent.trim().length > 0
+        (panel.textPlacementPending && panel.textDraftContent.trim().length > 0)
+        || panel.textCleared
 
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
@@ -425,8 +427,8 @@ ColumnLayout {
         }
     }
 
-    // #450: az összes szövegelem törlése — a meglévő clearText
-    // (Visszavonás-verem NÉLKÜLI, azonnali) útvonalon.
+    // #450: az összes szövegelem törlése; #7407: csak a piszkozatból,
+    // a Cancel visszahozza, az Apply véglegesíti.
     // #7380: az eredeti felirata „Clear All" (`edittextpanel/clearall`), a
     // régi „Remove all existing text" ennek a TOOLTIPJE. Aktív, ha van
     // mentett felirat VAGY a képre kattintott, még nem alkalmazott hely

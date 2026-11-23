@@ -61,6 +61,12 @@ class EditControllerTextMixin:
         return self._text_draft
 
 
+    @Property(bool, notify=_Signals.textClearedChanged)
+    def textCleared(self) -> bool:
+        """Törölve lett-e a felirat a piszkozatban a Clear All gombbal (#7407)."""
+        return getattr(self, "_text_cleared", False)
+
+
     @Property(bool, notify=_Signals.revisionChanged)
     def textHasPlacement(self) -> bool:
         """Van-e kijelölt vagy új pozícióra váró szövegdoboz."""
@@ -431,15 +437,20 @@ class EditControllerTextMixin:
     def enterTextTool(self) -> None:
         """A szöveg-eszköz megnyitása: az első mentett doboz kijelölődik."""
         self._require_active()
+        self._text_initial_overlay = self._text_overlay
+        self._text_initial_active = self._text_active
+        self._text_cleared = False
         primary = self._text_overlay.primary if self._text_overlay else None
         self._text_selected_index = 0 if primary and primary.content else None
         self._text_draft = primary.content if primary else ""
         self._text_pending_pos = None
+        self._text_inline_editing = False
         if primary:
             self._load_text_settings_from_block(primary)
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.textClearedChanged.emit()
 
 
     @Slot(int)
@@ -461,14 +472,23 @@ class EditControllerTextMixin:
     @Slot()
     def exitTextTool(self) -> None:
         """A Szöveg eszköz bezárása (Mégse): a piszkozat eldobása, visszaáll
-        a ténylegesen mentett előnézetre."""
+        a megnyitáskori mentett előnézetre és állapotra (#7407)."""
         self._require_active()
+        if hasattr(self, "_text_initial_overlay"):
+            self._text_overlay = self._text_initial_overlay
+            self._text_active = self._text_initial_active
+        self._text_cleared = False
         self._text_selected_index = None
         self._text_pending_pos = None
         self._text_draft = ""
+        self._text_inline_editing = False
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.hasTextOverlayChanged.emit()
+        self.textDraftChanged.emit()
+        self.textSelectedIndexChanged.emit()
+        self.textClearedChanged.emit()
 
 
     @Slot(str)
@@ -535,8 +555,34 @@ class EditControllerTextMixin:
 
     @Slot()
     def applyText(self) -> None:
-        """A kijelölt blokk módosítása vagy új blokk hozzáfűzése az ini-hez."""
+        """A kijelölt blokk módosítása vagy új blokk hozzáfűzése az ini-hez.
+
+        #7407: ha a Clear All után üres a piszkozat, a törlést véglegesíti az
+        iniben (a text= és textactive= kulcsok kikerülnek)."""
         self._require_active()
+        if (
+            getattr(self, "_text_cleared", False)
+            and not self._text_draft.strip()
+            and self._text_pending_pos is None
+        ):
+            self._text_overlay = None
+            self._text_active = False
+            self._text_cleared = False
+            self._text_initial_overlay = None
+            self._text_initial_active = False
+            self._text_selected_index = None
+            self._text_pending_pos = None
+            self._text_draft = ""
+            self._text_inline_editing = False
+            self._save_text()
+            self._bump_revision()
+            self.toolsChanged.emit()
+            self.hasTextOverlayChanged.emit()
+            self.textDraftChanged.emit()
+            self.textSelectedIndexChanged.emit()
+            self.textClearedChanged.emit()
+            return
+
         if not self._text_draft.strip():
             return
 
@@ -585,9 +631,14 @@ class EditControllerTextMixin:
         self._text_active = True
         self._text_pending_pos = None
         self._text_size_edited = False
+        self._text_cleared = False
+        self._text_initial_overlay = self._text_overlay
+        self._text_initial_active = self._text_active
         self._save_text()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.hasTextOverlayChanged.emit()
+        self.textClearedChanged.emit()
 
 
     def _text_style_for_apply(self, template: TextStyle | None) -> TextStyle:
@@ -620,24 +671,30 @@ class EditControllerTextMixin:
 
     @Slot()
     def clearText(self) -> None:
-        """A mentett szöveg-overlay eltávolítása (`text=`/`textactive=`
-        kulcsok törlése az iniből).
+        """A mentett vagy piszkozatbeli szöveg eltávolítása az eszközön belül.
 
-        **NEM kerül a Visszavonás-verembe**: a `text=`/`textactive=` a
-        `filters=` láncon KÍVÜLI, önálló ini-kulcs (ld. modul-tetejei
-        megjegyzés), a meglévő perzisztens undo-verem pedig kizárólag a
-        `filters=` lánc egymást követő állapotait tárolja — egy ide tolt
-        „text" lépés a Visszavonás gombon látszana, de a tényleges hatása
-        (a szöveg visszaállítása) nem történne meg, ami félrevezetőbb lenne,
-        mint egyáltalán nem kínálni. A törlés ezért azonnali és végleges."""
+        #7407: a Clear All csak az eszköz piszkozatából veszi le a szöveget,
+        az inibe NEM ír; az eszköz nyitva marad, a „Clear All” tiltott, az
+        „Apply” aktív. A „Cancel” (exitTextTool) visszahozza a megnyitáskori
+        állapotot, az „Apply” (applyText) véglegesíti a törlést."""
         self._require_active()
+        volt_mentett = bool(
+            self._text_initial_overlay
+            and any(block.content for block in self._text_initial_overlay.blocks)
+        )
         self._text_overlay = None
         self._text_selected_index = None
-        self._text_active = False
         self._text_pending_pos = None
-        self._save_text()
+        self._text_draft = ""
+        self._text_inline_editing = False
+        self._text_cleared = volt_mentett
+        self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.hasTextOverlayChanged.emit()
+        self.textDraftChanged.emit()
+        self.textSelectedIndexChanged.emit()
+        self.textClearedChanged.emit()
 
 
     def _current_text_spec(self) -> tuple[TextOverlaySpec, ...] | None:

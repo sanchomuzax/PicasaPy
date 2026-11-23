@@ -87,6 +87,7 @@ Rectangle {
     signal redeyeCancelRequested()
     property alias textDraftContent: textState.textDraftContent
     property alias textPlacementPending: textState.textPlacementPending
+    property alias textCleared: textState.textCleared
     //: #3123: a kép fölötti eszköz-sáv ebből tudja, mikor alkalmazható a
     //: szöveg (#7380: a szöveg a képen áll, a feltétel a `textDraftContent`).
     readonly property bool textApplyEnabled:

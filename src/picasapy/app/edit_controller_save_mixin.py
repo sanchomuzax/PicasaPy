@@ -62,6 +62,9 @@ class EditControllerSaveMixin:
         self._text_overlay_visible = True
         self._text_draft = ""
         self._text_pending_pos = None
+        self._text_cleared = False
+        self._text_initial_overlay = None
+        self._text_initial_active = False
         loaded = overlay.primary if overlay else None
         self._text_fill_color = (
             _argb_to_rgb(loaded.style.fill_argb)
