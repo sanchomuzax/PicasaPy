@@ -362,8 +362,6 @@ EditorPanel {
                 anchors.verticalCenter: parent.verticalCenter
                 source: "icons/dialog-info.svg"
                 sourceSize: Qt.size(32, 32)
-                width: 32
-                height: 32
             }
             Label {
                 objectName: "redeyeStraightenInfoText"

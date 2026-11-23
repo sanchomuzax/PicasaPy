@@ -108,6 +108,17 @@ def test_redeye_csempe_info_ablakot_ad_kiegyenesitett_kepen(
     kep_alap = window.grabWindow()
     assert not kep_alap.isNull(), "a kiinduló nézet nem renderelődött"
 
+    # az előkészítés késői revíziója (aszinkron betöltés) még ne számítson:
+    # a figyelés csak akkor indul, ha tíz körön át nem jött revíziójel
+    kesoi = []
+    edit.revisionChanged.connect(lambda: kesoi.append(1))
+    csend = 0
+    for _ in range(300):
+        elotte = len(kesoi)
+        qt_app.processEvents()
+        csend = csend + 1 if len(kesoi) == elotte else 0
+        if csend >= 10:
+            break
     # a belépés-kilépés zaja (az automatika futtatása) a vezérlőn látszana
     zaj = []
     edit.revisionChanged.connect(lambda: zaj.append(1))
