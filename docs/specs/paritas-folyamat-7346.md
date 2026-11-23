@@ -8,9 +8,11 @@ Az eredeti három Effektek lapjának 36 csempéje és mind a kilenc Shift-válto
 
 **Helyesbítés (2026-11-22, Zárókör):** a D1 állítása megdőlt. A Kép ▸ Csoportos szerkesztés parancsai szerkesztőben nyitott képnél az eredetiben a csempekattintás végpontját is futtatják (az egykattintásos hatás a képre kerül, a Sharpen a paneljét nyitja), nem csak fület váltanak. A kérdések mérlege a Zárókör végén: 12 lezárva, 4 blokkolt, 2 hatókörön kívül, 0 csak nyitva. Az írásvédett-kapu (13. tétel) kiolvasása után: 13 lezárva, 5 blokkolt, 2 hatókörön kívül, 0 csak nyitva (T2).
 
+**Helyesbítés (2026-11-23, C1-C4 futásmérések):** a 35 Colab-felvétel (job-834, job-835, job-861 - job-893) lezárta a menüparancsok, az ismétlés és az újranyitás futásidejű kérdéseit: a Kép ▸ Csoportos szerkesztés parancsai és a Ctrl+Shift+B szerkesztőben a megnyitott képre hatnak, a csempekattintással egyező eredménnyel (a Film Grain kivételével, ahol a menü a `grain2`-t futtatja, a csempe paneles `PicnikGrain`-t nyit); a #7371 ezt már követi. A felvételek négy új, látható eltérést igazoltak (Undo/Redo felirat alakja, a Soft Focus kezdőértéke, a Kép menü letiltása nyitott panelnél, az állapotsor alakja), jegytörzsük a "C1-C4 eredménye" szakaszban van (T5-T8). Az írásvédett-kapu hatása ("Make a Copy") mérhetetlen maradt a végrehajtó mai képességeivel. A mérleg a lap végén: 17 lezárva, 3 blokkolt, 2 hatókörön kívül, 0 csak nyitva.
+
 ## Bizonyítottsági fok
 
-**Nyitott az egész folyamatra nézve.** A csempetábla, a Shift-út, a menükód és a PicasaPy paraméteres alkalmazási útja forrásból azonosított. A már futtatott eredeti képernyőképek a csempéket és hat paraméterpanelt igazolnak, de nem fedik le a kért teljes folyamatot. A két eltérés a bináris/korábbi eredeti mérés és a mai PicasaPy-forrás összevetéséből áll; a teljes interakciós végállapotokat Colab-mérésnek kell ellenőriznie.
+**Nyitott az egész folyamatra nézve (a C1-C4 mérés előtti állapot; lásd a fenti helyesbítést).** A csempetábla, a Shift-út, a menükód és a PicasaPy paraméteres alkalmazási útja forrásból azonosított. A már futtatott eredeti képernyőképek a csempéket és hat paraméterpanelt igazolnak, de nem fedik le a kért teljes folyamatot. A két eltérés a bináris/korábbi eredeti mérés és a mai PicasaPy-forrás összevetéséből áll; a teljes interakciós végállapotokat Colab-mérésnek kell ellenőriznie.
 
 ## A megadott cím helyesbítése
 
@@ -334,6 +336,8 @@ A csempekattintás mintája, amelyet a menünek is követnie kell: `EditorTabCom
 
 **Bizonyítottsági fok:** erős (statikus), futásmérés NINCS (C1). Megfejtve, hogy az eredeti a csempe végpontját hívja; a látható hatás (Undo felirat, jelvény) méréséhez C1 kell.
 
+**Állapot (2026-11-23): MEGVALÓSÍTVA az 1.0.171-ben (#7371), a C1 felvételei megerősítették** (bizonyítottsági fok: mért, a C1-C4 szakasz C1 táblája). A jegytörzs "Film Grain" sora pontosnak bizonyult: a menü a `grain2`-t egyképesen alkalmazza (`job-874`), a csempe paneles `PicnikGrain`-t nyit (`job-866`). A "Kész, ha" vizuális pontja teljesült, az egyetlen új eltérés a nyitott paraméterpanelnél van (T7).
+
 **Mit NEM tudok, de a szöveg alapján tudni látszik:** (1) hogy a menüparancs hogyan viselkedik nyitott paraméterpanel mellett (C1 7. lépés); (2) hogy a `[0x00d67849]` jelző mit jelent (a Shift-ág él-e egyáltalán); (3) hogy a `0x00a54b70` hívás mit frissít; (4) ~~hogy a menüág a `0x006021d0` burkolót megkerüli, ezért az írásvédett-kapu e menüágban nem látszik~~ **LEZÁRVA (T2):** a szerkesztő menüág öt közvetlen hívású parancsa (Sepia, Sharpen, Black and White, Warmify, Film Grain) a `0x005f8520`-at kapu nélkül hívja, tehát iPhoto-/Photos-mappában sem kérdez; a három Auto parancs a csempeelemen át átmegy a kapun (erős következtetés).
 
 **Érintett fájlok:** `PhotoViewerGeometryActions.qml`, `MainMenuBar.qml`, `MainKeyboardShortcuts.qml`, `MainWindowCommands.qml` (csak olvasva), `tests/app/qml_functional/test_sepia_bw_fulvalasztas_7123.py`; a Ctrl+Shift+E nézőbeli tesztje (#7352) a billentyűs teszt mintája.
@@ -511,7 +515,7 @@ Az iPhoto- és Apple Photos-fogalom hiánya: `grep -rniE "iphoto|apple ?photos|I
 - [ ] Vizuális ellenőrzés: C4a felvételei (eredeti) és a PicasaPy képe a kérdésről, egymás mellett; ahol a teszt csak számol, a jegy kimondja, hogy a vizuális egyezést nem méri.
 - [ ] A "Make a Copy" ág a 19. tétel mért értékeivel: célmappa, fájlnevek, a kattintás utáni nézet, és az effekt nem fut ezen a kattintáson.
 
-**Bizonyítottsági fok:** erős (statikus, a T2 két független útja); futásmérés NINCS (C4a).
+**Bizonyítottsági fok:** erős (statikus, a T2 két független útja); futásmérés: csak a negatív oldal (C4a, `job-891`): közönséges mappában a Sepia csempe, az Auto Contrast menüparancs és a Ctrl+Shift+B nem kérdez. A pozitív oldal NINCS MEG (19. tétel, blokkolt), ezért a T3 előfeltétele nem teljesült.
 
 **Érintett fájlok:** `fileops/` (új feltételfüggvény), `EditorEffectsTab1.qml`, `edit_controller_effects_mixin.py`, `batch_effect_controller.py`, `MainKeyboardShortcuts.qml`, `MainMenuBar.qml`, `EditorDialogs.qml` (csak olvasva, a mentéskori jelzés marad).
 
@@ -536,23 +540,25 @@ Az iPhoto- és Apple Photos-fogalom hiánya: `grep -rniE "iphoto|apple ?photos|I
 | 3 | A kék jelvény jelentése | LEZÁRVA | `mode="oneclick"` = 1 (0x005d7eca; 1. kör D2 helyesbítve, #1869). A #2061 felvételek négy jelvényt mutatnak (Szépia, Fekete-fehér, Melegítés, Színinvertálás: `filterdesc-registry.md` "A jelvény azonossága"); a PicasaPy `_ONE_CLICK_KEYS` (`edit_controller_shared.py:204-218`) ugyanezt a négy csempekulcsot (`sepia`, `bw`, `warm`, `invert`) jelöli, a többi egykattintásos kulcsnak nincs csempéje. Az `Invert` XML-módja (`effect`) és a felvétel közti #2125 anomália ismert, a PicasaPy a felvételt követi |
 | 4 | Helyi menü, eszköztár: van-e effektparancs | LEZÁRVA | a 36 csempének nincs menü- vagy helyi menü belépője (1. kör menüleltára; a `job-808` szerkesztői helyi menüje általános kép- és fájlműveleteket mutat, `paritas-folyamat-7327.md` 114. sor); a nyolc Csoportos szerkesztés tétel a főmenüben van |
 | 5 | Csoportos szerkesztés könyvtárnézetben | LEZÁRVA | őr hamis ág: `0x005fe370(név)` a kijelölésre (1. szakasz tábla); PicasaPy `PicasaPictureMenu.qml:43-90`, `batch_effect_controller.py`; `job-807`, `job-809` |
-| 6 | Csoportos szerkesztés nyitott szerkesztőben | LEZÁRVA, eltéréssel | 1. szakasz: fül és csempevégpont. T1 |
-| 7 | Ctrl+Shift+B nyitott szerkesztőben | LEZÁRVA, eltéréssel | `0x005e6370` → `0x005fe370(panel, "bw")`, a Ctrl+Shift+E ikertestvére (`job-810`); T1 |
+| 6 | Csoportos szerkesztés nyitott szerkesztőben | LEZÁRVA (C1 megerősítette; az eltérést a #7371 megszüntette) | 1. szakasz: fül és csempevégpont. A C1 felvételei: mind a nyolc parancs a csempekattintással egyező eredményt ad (a kép 0 eltérő képponttal azonos, azonos `filters=` sor és Undo felirat), a Film Grain kivételével (a menü `grain2`, a csempe paneles `PicnikGrain`); T1 megvalósítva (1.0.171). Új eltérés a nyitott paraméterpanelnél: T7 |
+| 7 | Ctrl+Shift+B nyitott szerkesztőben | LEZÁRVA (C1 megerősítette; az eltérést a #7371 megszüntette) | `0x005e6370` → `0x005fe370(panel, "bw")`, a Ctrl+Shift+E ikertestvére (`job-810`); C1 (`job-861`): a megnyitott képre fekete-fehéret ad, a menüs B&W-vel egyező képpel, `bw=1;` sorral, az 1. fülön marad |
 | 8 | Paraméterpanel gombjai, feliratai, tippjei, Escape | LEZÁRVA | `editpanel.tre` `editpanel/ok` és `editpanel/cancel`, a Mégse `Property escapekey 1`; `editpaneltext.tre`: "Apply" / "Apply Changes", "Cancel" / "Cancel Changes"; a #81-#86 felvételek (`ui-audit-editor.md` 4.0); PicasaPy `EditorParamPanel.qml:498-515` (feliratok, tippek), `PhotoViewerKeyboard.qml:11-14,25-27` (Escape = Mégse). A két `.tre` forrás reprodukálása: `python3 tools/picasa/respack.py tre <respack.yt> <üres mappa>` |
 | 9 | Alaphelyzet gomb a paraméterpanelen | LEZÁRVA: nincs | a közös effektpanel erőforrása (`editpanel.tre`) csak `ok` és `cancel` gombot, `filter_name`, `editslider1-4`, `colorwheel0-1`, `editcircle1`, `droppertoggle` elemet tartalmaz; Reset felirat csak a vágás (`cropdiscard`), a vörösszem (`redeyediscard`) és a retusálás (`retouchreset`) elemhez van (`editpaneltext.tre` 231., 288., 304. sor); hat felvétel (#81-#86) sem mutat ilyet |
 | 10 | Copy All Effects több kijelölt képnél | LEZÁRVA | az eredeti Info ablak felvételen (`paritas-ellenorzes-archiv-1.md:1043`, "Please select a single picture to copy the effects from."); nálunk valódi menükattintásos teszt (`tests/app/qml_functional/test_copy_all_effects_6861.py`: menü, kattintás, dialógus címe "Info", szövege, a vágólap változatlan) és `MainWindowDialogStack.qml:113-117` |
 | 11 | Azonos egykattintásos csempe ismételt alkalmazása: a lánc | LEZÁRVA (erős, statikus) | a `0x006ac4a0` az új szűrőobjektumot a vektor végére írja (0x006ac6b2-0x006ac6d0), azonos nevű bejegyzés keresése nincs a függvényben (a névvizsgálat csak a `moviestart` és a `movieend` sztringekre ág, 0x006ac6fa, 0x006ac807); nálunk a láncvégi hozzáfűzés (`edit_controller_effects_mixin.py:73-88`). Az Undo felirat és lépésszám a 15. tételben |
 | 12 | Írásvédett kép: a kapu megléte és helye | LEZÁRVA | `0x006021d0` → `0x00541fc0` a végpont előtt (T2). A kapu nem írásvédettséget, hanem iPhoto-/Apple Photos-könyvtári mappát vizsgál (13. tétel). Nálunk nincs ilyen kapu: eltérés E1, T3 |
 | 13 | A kapu feltétele, a két gomb hatása, a lefedett utak | LEZÁRVA, eltéréssel | a feltétel az útvonal-előtag (`0x0047cea0` → `0x00987030`, `0x0047cfc0`, 0x00542109-0x00542161), nem fájlattribútum; "Cancel Edit" és "Make a Copy" után a művelet nem fut (0x00542740, 0x00542702, a három hívó `test eax, eax`); az általános szöveg elérhetetlen (két ugrás vezet a kérdéshez, 64 elágazás elemezve); az `AllowReadOnlyEdits` csak a `0x006021d0`-ban és a `0x00602100`-ban olvasott (két hivatkozás); a menü szerkesztő-ágának öt parancsa kapu nélkül fut. Bájtpásztázás: tizenhárom `call`, nincs `jmp` és vtábla-mutató. Nálunk: E1 és E2, T3 |
-| 14 | Paraméteres effekt: Mégse, újranyitás, értékek megőrzése | BLOKKOLT | a sztring-hivatkozásokból és a kezelőkből nem olvasható ki: a panelfelépítő `0x00750ff0` (1702 bájt) és hívottja, a `0x006ac980` (1510 bájt, nincs sztringje) az első jelölt a kezdőértékek forrására; a `0x007518e0` csak elrejti a vezérlőket (hívásai `0x009c2fc0` névkeresések). Kell: C2 Colab-feladat (a mi gépünk, tulajdonosi kérés nincs), vagy Ghidra a két függvényre. Ide tartozik a csúszka dupla kattintásos visszaállítása (C2 7. lépés) |
-| 15 | Paraméteres effekt ismétlése, Undo/Redo felirat és lépésszám ismétlés után | BLOKKOLT | a felirat szövege ismert (`CFilterStackUI::undoname` "Undo ", `redoname` "Redo "; hivatkozza a `0x007533b0`), a lépésszám és a paraméteres ismétlés viselkedése nincs kiolvasva (a `0x00750ff0` ága). Kell: C2 Colab-feladat |
-| 16 | Alkalmaz utáni `.picasa.ini`, Mentés lemezre, Undo/Redo mentés előtt és után, indexhatás | BLOKKOLT | az ini írásának helye nincs kiolvasva: a `0x007533b0` sztringjei a Mentés gombot (`editpanel/writetodisk`, `CFilterStackUI::save`) és az Undo/Redo feliratokat érintik, a lemezre írás helye nem látszik belőlük. Kell: C3 Colab-feladat (`picasa_ini`, `kepmappa`, `db3` kimenet; a végrehajtó mindhármat tudja) |
+| 14 | Paraméteres effekt: Mégse, újranyitás, értékek megőrzése | LEZÁRVA, eltéréssel | C2 (`job-880`, `job-881`, `job-882`): a Mégse és az Escape bezárja a panelt; az Alkalmaz után és a Mégse után is az ÚJRANYITOTT panel az alapértéken áll (nem az elhúzott, nem az utoljára alkalmazott értéken); a csúszkafogantyún a dupla kattintás NEM állít vissza semmit; a panel megnyitáskor azonnal élő előnézetet ad. Nálunk ugyanígy (`editorpanel_logika.js:163-219`); a Soft Focus kezdőértéke eltér: T6 |
+| 15 | Paraméteres effekt ismétlése, Undo/Redo felirat és lépésszám ismétlés után | LEZÁRVA, eltéréssel | C2: a Sepia kétszer két bejegyzés (`filters=sepia=1;sepia=1;`), két Undo és két Redo; az I'm Feeling Lucky kétszer EGY bejegyzés (az első alkalmazás után a csempe halvány, a második kattintás nem hat; `enhance=1;`); a Soft Focus Alkalmaz változtatás nélkül, majd megint két bejegyzés és két Undo (`job-880`). A felirat "Undo <név>" / "Redo <név>" kettőspont nélkül, az üres veremnél szürke "Undo". A lépésszám nálunk egyezik (`edit_controller_effects_params_mixin.py:55-130`, láncvégi hozzáfűzés); a felirat alakja eltér: T5 |
+| 16 | Alkalmaz utáni `.picasa.ini`, Mentés lemezre, Undo/Redo mentés előtt és után, indexhatás | BLOKKOLT (részben mérve) | Mért: az Alkalmaz után az ini `radblur=1,0.500000,0.500000,-0.438596,0.000000;` (`job-879`), az egykattintásos effekt után `sepia=1;`; az ini a kép elhagyásakor és a kilépéskor ott van (`backuphash=` sorral), szerkesztés nélkül (`job-887`) nincs `.picasa.ini`; a Ctrl+S a "Save changes to disk?" kérdést adja (szó szerint a C1-C4 szakaszban), a JPEG a kérdés megválaszolása nélkül változatlan (20557 bájt, a módosítási idő változatlan, nincs másolat). NINCS MEG: (a) az ini ÍRÁSÁNAK ideje (a felvételeken a módosítási idő a feladat előkészítésétől számítva mind az öt Sepiás feladatban 139-140 másodperc, a feladat tartalmától függetlenül, tehát a kattintás ideje nem olvasható ki), (b) a "Save" megnyomása utáni állapot (fájlméret, mentés-másolat, `backuphash`, Undo/Redo sor, bélyegképek). Kell: két javított feladat (ini-időpont, mentés-megerősítés), lásd a C1-C4 szakasz utolsó részét |
 | 17 | A csempegrafikák és az effektalgoritmusok képpont-paritása | HATÓKÖRÖN KÍVÜL | a lap fejléce (3. sor) külön kutatásra utalja; a render-sáv paritás-jegyei viszik (`filterdesc-registry.md`, #626) |
 | 18 | A PicasaPy hatodik, "Legacy Effects" füle | HATÓKÖRÖN KÍVÜL | saját kiegészítés (`EditorTabBar.qml:136-152`), az eredetiben nincs; a szerkesztő fülsávja a tulajdonosi döntés szerint hét fül (`docs/decisions/szerkeszto-bal-panel.md`, 2026-08-15) |
-| 19 | A "Make a Copy" célmappájának utolsó eleme, a másolt fájlok köre és neve, a kattintás utáni nézet | BLOKKOLT | a célmappa szülője kiolvasva (`<Képek mappa>/Picasa/Imported From iPhoto/` illetve `.../Imported From Apple Photos/`), az utolsó elemet és a fájlkört az útvonalszerkezet mezői (`+0x410`, `+0x618`, `+0x820`) adják, ezek nincsenek végigolvasva. Kell: T4 1. és 2. pontja (célzott dekompiláció, vagy C4a mérés, amelyhez fájlattribútum nem kell, csak a mintakép helye). Kitől: a mi gépezetünktől |
-| 20 | Sima írásvédett fájl vagy mappa: mit tesz az eredeti szerkesztéskor és mentéskor | BLOKKOLT | a kapu nem vizsgálja (13. tétel), a mentési hiba szövege és a fájl állapota nincs kiolvasva. Kell: C4b (a végrehajtó új `csak_olvashato` lépése). Kitől: a mi gépezetünktől |
+| 19 | A "Make a Copy" célmappájának utolsó eleme, a másolt fájlok köre és neve, a kattintás utáni nézet | BLOKKOLT | A pozitív oldal a végrehajtó mai képességeivel nem mérhető: a mintaképet a `<Képek mappa>\iPhoto Library\Masters\...` alá kellene tenni, a végrehajtó fájlt csak a tesztmappába (`C:\PicasaTeszt`) tud másolni. A C4a negatív kontrollja lefutott (közönséges mappában a Sepia csempe, az Auto Contrast menüparancs és a Ctrl+Shift+B nem kérdez, `job-891`), de T2 megerősítéséhez ez kevés. Kell: a végrehajtó új `mintakeszlet` értéke (az iPhoto-minta elhelyezése és a mappák felvétele), utána a C4a 1-7. lépése. Kitől: a mi gépezetünktől |
+| 20 | Sima írásvédett fájl vagy mappa: mit tesz az eredeti szerkesztéskor és mentéskor | BLOKKOLT (részben mérve) | C4b (`job-892`, `job-893`): a csak olvasható `color_patches.jpg`-n (a végrehajtó fájllistája szerint `csak_olvashato: true`) a Sepia csempe NEM kérdez, az effekt a szerkesztőben alkalmazódik ("Undo Sepia"), a következő képre lépés nem ad szöveget, az ini megvan (`filters=sepia=1;`); a Ctrl+S ugyanazt a "Save changes to disk?" kérdést adja, mint a nem írásvédett fájlon, írásvédettségre utaló szöveg nélkül. NINCS MEG: a "Save" megnyomása utáni állapot (hibaüzenet vagy sikeres mentés), és a mappajog hatása (a Picasa rootként fut, a mappajog nem mérhető). Kell: javított feladat (C4b mentés-megerősítés) |
+| 21 | Kép ▸ Csoportos szerkesztés nyitott paraméterpanel mellett | LEZÁRVA, eltéréssel | C1 (`job-878`): nyitott Soft Focus panelnél a teljes Kép menü szürke (a Batch Edit nem nyit almenüt), a kép és a panel változatlan; nálunk a menü él, és a parancs a panelt felfüggeszti: T7 |
+| 22 | Állapotsor szerkesztés közben | LEZÁRVA, eltéréssel (kisebb) | az állapotsor az első effektparancs vagy Mégse után "név dátum méret" alakú, Undo, Redo és képváltás után újra "mappa > név ... (n of N)"; nálunk mindig a hosszú alak: T8 |
 
-**Nyitott kérdések: 0 nyílt · 13 lezárva · 5 blokkolt · 2 hatókörön kívül · 0 "csak nyitva".**
+**Nyitott kérdések: 0 nyílt · 17 lezárva · 3 blokkolt · 2 hatókörön kívül · 0 "csak nyitva".**
 
 ### 4. Colab-lépéssorok
 
@@ -608,3 +614,239 @@ A lépések a végrehajtó igéit használják (`picasa: indit`, `var_ablak`, `k
 - Azt, hogy az írásvédett-kapu fájlattribútumot, mappa-írhatóságot vagy hálózati helyet vizsgál: a teljes függvény elolvasva, az egyetlen feltétel az útvonal-előtag (T2). Ez az első kör és a `paritas-ellenorzes-archiv-2.md` 3038. sorának olvasatát megdönti.
 - Azt, hogy az általános "This file is read only..." szöveg a Picasában valaha megjelenik a kapun át: a kérdés-szakaszhoz csak az iPhoto- és Apple Photos-teszt igaz ága vezet, a szöveg egyetlen hivatkozása a kapuban áll.
 - Azt, hogy a fájlattribútum-állító végrehajtó-lépés a T2 megerősítésének előfeltétele: nem az, elég a mintakép helye (C4a); a `csak_olvashato` lépés csak a 20. tételhez kell (C4b).
+
+## C1-C4 eredménye (2026-11-23)
+
+### Következtetés
+
+A 35 felvétel (Picasa 3.9, Wine, 1280x1024, `color_patches.jpg`, a PicasaTeszt mappa 2. képe) lezárta a menü és az ismétlés futásidejű kérdéseit. A Kép ▸ Csoportos szerkesztés nyolc parancsa és a Ctrl+Shift+B szerkesztőben a megnyitott képre hat; a kép képpontra azonos a csempekattintáséval (7 parancsnál 0 eltérő képpont, a nyolcadiknál, a Film Grainnél, a menü és a csempe más szűrőt futtat), az Undo felirat és a `filters=` sor is egyezik. A #7371 ezt már követi, a T1 megerősített. A paraméterpanel újranyitáskor mindig az alapértéken áll (Mégse, Alkalmaz és Escape után is), a dupla kattintás nem állít vissza, az ismétlés láncvégi hozzáfűzés (kivéve az I'm Feeling Luckyt, amelynek csempéje az első alkalmazás után halvány). Négy új, látható eltérést igazoltak a felvételek: az Undo/Redo felirat alakja angolul (T5), a Soft Focus kezdőértéke (T6), a Kép menü letiltása nyitott paraméterpanelnél (T7), az állapotsor alakja szerkesztés közben (T8). Három tétel marad blokkolt (16., 19., 20.): az ini írásának ideje, a Mentés megnyomása utáni állapot, az iPhoto-kapu pozitív oldala; mindháromhoz megnevezett hiány és javított lépéssor van.
+
+### Hogyan olvasd a felvételeket
+
+A `kepernyo__NN` az NN. lépés ELŐTTI állapot; a lépéssor 8. lépésénél a szerkesztő nyitva van (1. fül, Undo és Redo szürke, a státuszsorban "PicasaTeszt > color_patches.jpg ... (2 of 24)"). A képterület a 382-1182 x 88-888 téglalap; az "eltérő képpont" ennek képpontonkénti összevetése. A döntő kockákon ellenőriztem, hogy a kattintás a szándékolt elemre ment-e (az Undo felirat vagy a nyílt panel neve szó szerint a táblákban).
+
+| feladat | job |
+|---|---|
+| kalibrálás: fülek, Soft Focus és Sharpen panel (K1) | 834 |
+| kalibrálás: Kép menü, Batch Edit almenü, Fájl menü (K2) | 835 |
+| C1: Ctrl+Shift+B; menüparancsok; csempe-kontrollok; Soft Focus panel mellett a Sepia menü | 861; 862, 871-877; 863-870; 878 |
+| C2: Soft Focus Alkalmaz+ini; Alkalmaz, újranyitás, Undo; dupla kattintás; Mégse+újranyitás; Lucky ×2; Sepia ×2 | 879; 880; 881; 882; 883, 884; 885, 886 |
+| C3: alap; Sepia (szerkesztőben vég); következő kép; Ctrl+S | 887; 888; 889; 890 |
+| C4a negatív kontroll; C4b írásvédett fájl (Ctrl+S; következő kép) | 891; 892; 893 |
+
+### K: a kalibrálásból (job-834, job-835)
+
+| Kocka | Mit mutat |
+|---|---|
+| job-834 #13 | 3. fül, 12 csempe: Sharpen, Sepia, B&W / Warmify, Film Grain, Tint / Saturation, Soft Focus, Glow / Filtered B&W, Focal B&W, Graduated Tint; a kék "1" jelvény a Sepia, a B&W és a Warmify csempén áll; Undo és Redo szürke (a sor a 3. fülön y=426-on) |
+| job-834 #21 | Soft Focus panel: cím "Soft Focus", csúszkák "Size" és "Amount", gombok "Apply" és "Cancel" (74,241) és (178,241); mindkét fogantyú a sáv közepén |
+| job-834 #23, #25, #27 | a sávra kattintás a fogantyút a kattintás helyére ugratja (Size x=200, Amount x=100); a húzás (200 -> 110) követi az egeret |
+| job-834 #29, #31, #33 | a (178,284) kattintás a gombok alá esett, a panel nyitva maradt; a fülkattintás és a panelen kívüli kattintás nem zárja be (a fülön tooltip: "Fun and useful image processing") |
+| job-834 #35, #41 | az Escape a Soft Focus és a Sharpen panelt is bezárja (Mégse), a csempék visszajönnek, Undo szürke |
+| job-834 #39 | Sharpen panel: cím "Sharpen", egy "Amount" csúszka, "Apply" és "Cancel" (y=199) |
+| job-835 #11, #13 | Kép menü a szerkesztőben: View and Edit Ctrl+3, Batch Edit ▸, Undo All Edits, Hide, Unhide (szürke), Reset Faces, Properties Alt+Enter; a Batch Edit almenü: Rename... F2, Rotate Clockwise Ctrl+R, Rotate Counterclockwise Ctrl+Shift+R, Auto Contrast, Auto Color, I'm Feeling Lucky, Sepia, Sharpen, Warmify, Film Grain, Black and White, Auto Red Eye Correction, Show Text, Hide Text (a nyolc effekttétel a csoportjaiban: Auto Contrast (338,131), Auto Color (329,147), I'm Feeling Lucky (346,163), Sepia (318,188), Sharpen (325,204), Warmify (324,220), Film Grain (329,236), Black and White (343,252)) |
+| job-835 #15, #17 | a `b` mnemonik a Black and White-ot alkalmazta és a 3. fület nyitotta ("Undo B&W", `filters=bw=1;`); a szerkesztő panelen nincs önálló Mentés gomb |
+| job-835 #19, #23 | Fájl menü: a Save (Ctrl+S) elérhető, a Revert szürke; a könyvtárban a mappafejléc mentés-ikonja (hajlékonylemez) szerkesztés előtt szürke, utána aktív |
+
+### C1: menüparancsok és Ctrl+Shift+B a szerkesztőben (T1 megerősítése)
+
+| Parancs | Menü (job: döntő kocka) | Csempe-kontroll (job: kocka) | Fül a parancs után | Kép a kontrollhoz képest | Undo felirat | Csempe, panel | `filters=` |
+|---|---|---|---|---|---|---|---|
+| Auto Contrast | 872 #16 | 864 #12 | 1. (marad) | 0 eltérő képpont | "Undo Auto Contrast" | az Auto Contrast csempe halvány | `autolight=1;` |
+| Auto Color | 871 #16 | 863 #12 | 1. (marad) | 0 | "Undo Auto Color" | az Auto Color csempe halvány | `autocolor=1;` |
+| I'm Feeling Lucky | 875 #16 | 867 #12 | 1. (marad) | 0 | "Undo I'm Feeling Lucky" | a Lucky csempe halvány | `enhance=1;` |
+| Sepia | 862 #16 | 868 #14 | 3. (a menü vált) | 0 | "Undo Sepia" | a csempék az új képből újraszámolva; a kék "1" jelvény a Sepia, B&W, Warmify csempén előtte és utána is áll | `sepia=1;` |
+| Black and White | 873 #16 | 865 #14 | 3. | 0 | "Undo B&W" | mint fent | `bw=1;` |
+| Warmify | 877 #16 | 870 #14 | 3. | 0 | "Undo Warmify" | mint fent | `warm=1;` |
+| Sharpen | 876 #14-15 | 869 #13 | 3. | változatlan; kép és panel is 0 eltérő képpont | az Undo szürke marad | "Sharpen" panel, "Amount" csúszka, "Apply", "Cancel"; az Escape bezárja, a lánc üres | nincs `picasa.ini` |
+| Film Grain | 874 #14-16 | 866 #12-14 | 3. | ELTÉR (lent) | menü: "Undo Film Grain" | menü: azonnal alkalmaz; csempe: "Film Grain" panel ("Grain" csúszka, "Lighten" jelölőnégyzet, "Apply", "Cancel"), a kép előnézetben szemcsés | menü: `grain2=1;`; csempe: nincs ini (az Alkalmaz nem történt meg) |
+| Ctrl+Shift+B | 861 #11-12 | (B&W csempe: 865) | 1. (NEM vált) | 0 a menüs B&W-vel | "Undo B&W" | az 1. fül tartalma | `bw=1;` |
+
+- **A két út egyetlen különbsége** a Sepia, B&W, Warmify és Sharpen esetén a kattintott csempe kék kerete (604 képpont, a csempe peremén): a csempekattintás után az egér a csempén áll (hover-keret), a menüs úton az egér a panelen kívül. A három Auto parancsnál ugyanez a csempeikon árnyalatában jelentkezik (1285-1354 képpont). Állapotkülönbség nincs.
+- **Film Grain:** a menü `grain2`-t futtat, egyképesen (a piros csempe oldal-szórása az alkalmazás előtt 0, utána kb. 1,4 / 0,6 / 0,5 a három csatornán, tehát finom szemcse); a csempe a `PicnikGrain` paneljét nyitja (`0x00c7e5a0` tábla), az előnézet erős szemcsét mutat (szórás kb. 7,8), és az Alkalmaz nélkül nincs ini. A két út tehát nem egyenértékű, pontosan úgy, ahogy a T1 táblája állította.
+- **I'm Feeling Lucky:** a tesztábrán a kép a parancs előtt és után 0 eltérő képponttal azonos (a javítás itt nem látszik), a láncbejegyzés, a felirat és a halvány csempe viszont megvan; képi paritásra ezért a Lucky-felvétel nem használható.
+- **Nyitott panel (job-878):** a Soft Focus panel nyitva (#13), a Kép menü minden tétele szürke, a Batch Edit kijelölve, de nem nyit almenüt (#15, #17); a (318,188) kattintás a menün kívülre esett, a menü bezárult; a kép és a panel a #13 és a #20 kocka között 0 eltérő képpont. A Sepia parancs tehát nyitott paneles állapotban nem érhető el.
+- **A státuszsor** (job-862 #8 és #16): szerkesztés előtt "PicasaTeszt > color_patches.jpg   11/23/2026 4:43:44 AM   800x800 pixels   20 KB   (2 of 24)", az effekt után "color_patches.jpg   11/23/2026 4:43:44 AM   800x800 pixels   20 KB" (T8).
+
+### C2: paraméteres effekt, ismétlés, Undo és Redo
+
+| Mérés | job: kockák | Eredmény |
+|---|---|---|
+| Soft Focus megnyitása | 882 #13, 880 #13, 881 #13 | a két fogantyú sora 0 eltérő képponttal azonos, tehát a két csúszka ugyanazon az értéken áll, a sáv közepén; a kép már megnyitáskor előnézetben elmosott (584686 képpont tér el az eredetitől) |
+| Húzás, Alkalmaz, ini | 879 #17 + ini | a Size húzása (x 137 -> 100) után: `radblur=1,0.500000,0.500000,-0.438596,0.000000;` és `backuphash=`; a sorrend x, y, Size, Amount; az érintetlen Amount értéke 0.000000, a fogantyú-oszlop a húzott sávon 105-nél áll (kezdetben 143) |
+| Mégse, újranyitás | 882 #15, #17, #19, #21, #23 | a két csúszka elhúzva (Size 105, Amount 220); a Cancel (190,241) bezárja a panelt; az újranyitott panelen mindkét fogantyú újra 143-nál áll (alapérték, 0 eltérő képpont a #13-hoz képest); az Escape (#25) is bezárja |
+| Alkalmaz, újranyitás | 880 #17, #19, #21 | az Alkalmaz után a csempék és "Undo Soft Focus"; az újranyitott panel mindkét fogantyúja újra az alapértéken (nem a 100-as helyen) |
+| Dupla kattintás a fogantyún | 881 #15-#21 | a Size fogantyún (100,165) és az Amount fogantyún (215,207) a dupla kattintás után a kép és a fogantyú 0 eltérő képponttal azonos: NEM állít vissza |
+| Alkalmaz változtatás nélkül, Undo sorozat | 880 #17, #23, #25, #27, #31, #35, #39 | két Alkalmaz = két bejegyzés (a második kép 588868 képponttal tér el az elsőtől); az első Undo után az első alkalmazás képe (0 eltérés a #17-hez), "Undo Soft Focus" és "Redo Soft Focus" is aktív; a második Undo után az eredeti kép (0 eltérés a #8-hoz), az Undo szürke, a "Redo Soft Focus" aktív; a harmadik és negyedik Undo a szürke gombon nem hat |
+| Sepia kétszer | 885 #13, #15 + ini; 886 | `filters=sepia=1;sepia=1;`; a második kép minden képpontban eltér az elsőtől (600000); "Undo Sepia" mindkét lépés után |
+| Sepia Undo és Redo | 886 #19, #23, #27, #31 | 1. Undo: az első sepia képe, "Undo Sepia" + "Redo Sepia"; 2. Undo: az eredeti kép, az Undo szürke, "Redo Sepia"; 1. Redo: az első sepia; 2. Redo: a második sepia, a Redo szürke |
+| I'm Feeling Lucky kétszer | 883 #11, #13 + ini; 884 #11-#29 | `enhance=1;` EGYSZER; az első kattintás után a csempe halvány, a második nem hat; EGY Undo: az Undo szürke, "Redo I'm Feeling Lucky", a csempe újra élő; a második Undo a szürke gombon nem hat; Redo: "Undo I'm Feeling Lucky", a Redo szürke |
+
+### C3: mikor ír az ini, és a Mentés
+
+| Mérés | job | Eredmény |
+|---|---|---|
+| szerkesztés nélkül | 887 | nincs `.picasa.ini` a mappában; a `thumbs_0.db` és a `bigthumbs_0.db` 4 bájt (üres) |
+| Sepia, a feladat a szerkesztőben ér véget | 888 | `.picasa.ini` 57 bájt: `[color_patches.jpg]`, `filters=sepia=1;`, `backuphash=`; a `thumbs_0.db` 368440 és a `bigthumbs_0.db` 446989 bájt; a JPEG változatlan (20557 bájt, a módosítási idő 04:43:44) |
+| Sepia, majd a következő kép | 889 | ugyanaz az ini; a következő kép ("rgb_gradient.jpg", 3 of 24) nyílik, kérdés nélkül; az Undo és a Redo szürke (a lánc képenként külön); `thumbs_0.db` 377081 bájt |
+| Sepia, Ctrl+S | 890 #13, #15, #16 | a Ctrl+S modális "Save" ablakot nyit: "Save changes to disk?" / "A backup of this file will be made." / jelölőnégyzet "Do not ask me again." / gombok "Save" (688,553) és "Cancel" (766,553); a feladat nem válaszolt, a JPEG változatlan, nincs mentés-másolat a mappában |
+
+- **Az ini írásának ideje NINCS MEG:** a `.picasa.ini` módosítási ideje a feladat előkészítésétől (a tesztképek visszaállításától) számítva mind az öt Sepiás feladatban 139-140 másodperc (job-888, 889, 890, 892, 893), a feladat tartalmától függetlenül (a szerkesztőben maradás, a képváltás és a Ctrl+S ablak ugyanazt az időt adja), és a C3 feladatokban a `db3` fájlok módosítási idejénél 2 másodperccel későbbi. Ez a leállítás időzítésének lenyomata, a Sepia kattintásáé nem: az utolsó írás ideje látszik, a korábbiaké nem, ezért a "kattintáskor azonnal ír" és a "csak leálláskor ír" ugyanezt a lenyomatot adja.
+- **Az állapot átvészeli a képváltást és a kilépést:** a szerkesztés a `filters=` sorban ott van, "mentés" nélkül is.
+- Az `editpanel/writetodisk` sztringnek (0x00c8ea1c) nincs látható megfelelője a szerkesztő panelen (job-835 #17): a mentés a Fájl ▸ Save és a Ctrl+S.
+
+### C4a és C4b
+
+- **C4a negatív kontroll (job-891):** közönséges mappában a Sepia csempe, a Kép ▸ Csoportos szerkesztés ▸ Auto Contrast és a könyvtárban kijelölt képre a Ctrl+Shift+B kérdés nélkül alkalmaz: az ini `filters=sepia=1;autolight=1;bw=1;`. A pozitív oldal (iPhoto-könyvtári mappa) NEM mérhető a végrehajtóval: a mintaképet a `<Képek mappa>\iPhoto Library\Masters\...` alá kellene tenni, a végrehajtó fájlt csak a tesztmappába tud másolni.
+- **C4b (job-892, job-893):** a végrehajtó fájllistája szerint a `color_patches.jpg` csak olvasható (`csak_olvashato: true`). A Sepia csempe nem kérdez, az effekt a szerkesztőben látszik ("Undo Sepia"); a Ctrl+S ugyanazt a "Save" ablakot adja a fenti szöveggel, írásvédettségre utaló sor nélkül; a következő kép nyílik kérdés nélkül; az ini megvan (`filters=sepia=1;`). A "Save" megnyomása utáni állapotot a felvétel nem tartalmazza.
+
+### Összevetés a PicasaPy mai viselkedésével
+
+| Pont | Eredeti (felvétel) | Nálunk (fájl:sor) | Egyezés |
+|---|---|---|---|
+| Menüparancs szerkesztőben | fül + csempevégpont | `PhotoViewerGeometryActions.qml:369-380` (`selectMenuEffect`), `editorpanel_logika.js:315-326` (`runMenuEffect`) | egyezik |
+| Fülválasztás | Auto hármas: 1. fül; Sepia, B&W, Warmify, Sharpen, Film Grain: 3. fül; Ctrl+Shift+B: nem vált | ugyanaz; a billentyű nem vált fület (`MainKeyboardShortcuts.qml:165-168`, `:171-188`) | egyezik |
+| Film Grain menü | `grain2=1;` egyképesen, "Undo Film Grain" | `_MENU_ONLY_EFFECT_NAMES` (`edit_controller_shared.py:309`), `_APPLICABLE_EFFECTS` | egyezik |
+| Sharpen menü | panel, a lánc üres | `sharpenMenubol` (`EditorEffectsTab1.qml:37-40`) | egyezik |
+| Kép menü nyitott panelnél | minden tétel szürke | `PicasaPictureMenu.qml:19-22`, `MainMenuBar.qml:87`: csak a kijelölés számít | ELTÉR: T7 |
+| Paraméterpanel: élő előnézet, Alkalmaz, Mégse, Escape | előnézet megnyitáskor; újranyitás az alapértéken | `editorpanel_logika.js:163-219`, `PhotoViewerKeyboard.qml:11-14` | egyezik |
+| Dupla kattintás a csúszkán | nincs visszaállítás | `EditorParamPanel.qml`, `EditorSlider.qml`: nincs `onDoubleClicked` | egyezik |
+| Soft Focus kezdőérték | Size 0, Amount 0 | `effect_params.py:218-224`: 0,3 és 0,5 | ELTÉR: T6 |
+| Sharpen és Film Grain kezdőérték | a fogantyú x=91, a sáv 20 százaléka | `effect_params.py:485` (0,6 a [0; 3]-ból), `:471-474` (10 az [0; 50]-ből): mindkettő 20 százalék | egyezik |
+| Ismétlés | Sepia ×2: két bejegyzés; Soft Focus ×2: két bejegyzés; Lucky ×2: egy | `edit_controller_effects_mixin.py:73-88`, `edit_controller_effects_params_mixin.py:80-96` (láncvégi hozzáfűzés), a Lucky csempe letiltása (`EditorTabCommonFixes.qml:140`) | egyezik |
+| Undo és Redo lépések | a lánc minden bejegyzése külön lépés | `edit_controller_history_mixin.py:100-103` | egyezik |
+| Undo és Redo felirat | "Undo Sepia" (angolul, kettőspont nélkül) | `edit_action_names.py:250-255`: `"{felirat}: {név}"` | ELTÉR: T5 |
+| Ctrl+S szövege | "Save changes to disk?" / "A backup of this file will be made." / "Do not ask me again." / Save, Cancel | `SaveDialogs.qml:132-157` ugyanez a három szöveg | egyezik |
+| Írásvédett fájl, Sepia és képváltás | nem kérdez, alkalmaz | `edit_controller_save_mixin.py:145-165`: csak a MAPPA írhatóságát nézi; a fájlét nem | egyezik |
+| Állapotsor szerkesztés közben | rövid alak az első effektparancs után | `controller_content_info_mixin.py:223-248`: mindig hosszú alak | ELTÉR: T8 |
+
+### Igazolt eltérések
+
+- **E3: az Undo és Redo felirat alakja angolul** (T5).
+- **E4: a Soft Focus kezdőértéke** (T6).
+- **E5: a Kép menü nyitott paraméterpanelnél** (T7).
+- **E6: az állapotsor alakja** (T8).
+
+### T5. Fejlesztői jegytörzs: az Undo és Redo felirat angolul kettőspont nélkül áll ("Undo Sepia")
+
+**Cím:** A Visszavonás és Újra gomb felirata a művelet nevével az eredeti alakot kövesse: angolul "Undo Sepia", nem "Undo: Sepia"
+
+**Mi a hiba:** az eredeti gomb a `CFilterStackUI::undoname` (angolul "Undo " záró szóközzel) után fűzi a lépés nevét, kettőspont nélkül; a PicasaPy minden nyelven kettőspontot tesz a fordított "Undo" és a név közé.
+
+**Eredeti:** a felvételeken minden Undo és Redo felirat "Undo <név>" illetve "Redo <név>": "Undo Sepia" (job-862 #16, job-886 #13), "Undo B&W" (job-873 #16, job-861 #12), "Undo Warmify" (job-877 #16), "Undo Auto Color" (job-871 #16), "Undo Auto Contrast" (job-872 #16), "Undo I'm Feeling Lucky" (job-875 #16), "Undo Film Grain" (job-874 #16), "Undo Soft Focus" és "Redo Soft Focus" (job-880 #17, #27), "Redo Sepia" (job-886 #19); üres veremnél csak "Undo" (job-886 #23). Bináris: a kulcsok `CFilterStackUI::undoname` (0x00cb1e98) és `CFilterStackUI::redoname` (0x00cb1ed8), a hivatkozó függvény 0x007533b0; a magyar alak "Visszavonás: " (`docs/specs/picasa-menusor-csoportok.md:215`).
+
+**Nálunk:** `src/picasapy/app/edit_action_names.py:250-255`:
+
+```python
+def _stack_label(base: str, action: str) -> str:
+    label = QCoreApplication.translate(_PANEL_CONTEXT, base)
+    name = action_label(action)
+    return f"{label}: {name}" if name else label
+```
+
+Fordító nélkül (angol forrásszöveg) `undo_label("sepia")` = "Undo: Sepia", `redo_label("sepia")` = "Redo: Sepia" (futtatva kilenc effektkulcsra, mind kettősponttal). A magyar alak ("Visszavonás: Vágás") helyes, a `tests/app/test_undo_labels_465.py` azt őrzi.
+
+**Teendő:** az előtag a nyelvenkénti `undoname` és `redoname` erőforrás szó szerinti értéke legyen (angolul "Undo " és "Redo ", magyarul "Visszavonás: " és "Újra: "), a név utána, a szóközt vagy kettőspontot az erőforrás hozza, ne a kód. Az üres veremnél a puszta "Undo" marad.
+
+**Nem része:** a többi nyelv `undoname` értékének kiolvasása nem mért (a respack tartalmazza: `python3 tools/picasa/respack.py tre <respack.yt> <üres mappa>`; amíg ez nincs meg, a magyar és az angol alak a bizonyított); a Szerkesztés menü visszavonás-tételei és a Kép menü "Undo All Edits" (nem mérve).
+
+**Kész, ha:**
+
+- [ ] Angol felületen a Sepia alkalmazása után a gomb felirata "Undo Sepia", az Undo után a Redo gomb "Redo Sepia"; magyarul "Visszavonás: Szépia" (a meglévő magyar teszt zöld marad).
+- [ ] Üres veremnél "Undo" és "Redo", szürkén.
+- [ ] Vizuális ellenőrzés: a job-886 #13, #19, #23 kockái és a PicasaPy angol felületének képe a gombról egymás mellett; ahol a teszt csak a szöveget számolja, a jegy kimondja, hogy a gomb méretét és betűjét nem méri.
+
+### T6. Fejlesztői jegytörzs: a Soft Focus panel kezdőértéke 0 és 0, nem 0,3 és 0,5
+
+**Cím:** A Lágy fókusz (Soft Focus) paraméterpanelje a Size és Amount csúszkát az eredeti kezdőértéken, a [-1; 1] tartomány közepén (0 és 0) nyissa
+
+**Mi a hiba:** az eredeti Soft Focus panel mindkét csúszkája a sáv közepén nyílik (az érintetlen Amount `0.000000` ini-értéket ad); a PicasaPy katalógusa a Size-t 0,3-ra, az Amount-ot 0,5-re állítja, ezért a megnyitáskori előnézet, az Alkalmazás nélküli (változtatás nélküli) bejegyzés és a fogantyúk helye is más.
+
+**Eredeti:** job-882 #13, job-880 #13, #21 és job-881 #13: a Size és az Amount fogantyú sora 0 eltérő képponttal azonos (a sáv közepén, a legsötétebb oszlop x=143); újranyitás után (job-882 #23, job-880 #21) szintén. job-879: a Size húzása (a fogantyú 143 -> 105) után `radblur=1,0.500000,0.500000,-0.438596,0.000000;`: az érintetlen Amount értéke 0.000000, a húzott Size -0,438596 (a [-1; 1] tartomány 38 képpontos elmozdulása, vagyis kb. 86,6 képpont egységenként). Kontroll: a Sharpen (job-876 #15) és a Film Grain (job-866 #12) fogantyúja x=91-nél áll; ez ugyanezen a skálán a sáv 20 százaléka, és a PicasaPy katalógusa mindkettőnél pontosan ennyi (0,6 a [0; 3]-ból, 10 az [0; 50]-ből), tehát a skála-leképezés igazolt. Egy korábbi valódi export: `radblur=1,0.411585,0.611111,0,0` (`docs/specs/filters-decoded.md:2455`, `src/picasapy/render/effects.py:241`), vagyis Size 0 és Amount 0. Bináris: a panelfelépítő 0x00750ff0 (`editpanel/editslider%d_container`, 0x00c86f98), a kezdőérték forrása a 0x006ac980 körül (nincs végigolvasva).
+
+**Nálunk:** `src/picasapy/app/effect_params.py:218-224` (a megjegyzéssor kihagyva):
+
+```python
+    "radblur": (
+        _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
+        _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
+        _p("size", "Size", -1.0, 1.0, 0.3, 0.01),
+        _p("amount", "Amount", -1.0, 1.0, 0.5, 0.01),
+    ),
+```
+
+A szűrő-regiszter (`src/picasapy/render/registry_data.py:163-164`) a két csúszkához nem ad alapértéket: `_s(0, "Size", -1.0, 1.0)` és `_s(1, "Amount", -1.0, 1.0)`. A katalógus 0,3 és 0,5 értéke egyezik a `docs/specs/filterdesc-registry.md:227` példasorával (egy valódi ini-sor), a regiszter viszont alapértéket nem ad.
+
+**Teendő:** a `radblur` katalógus-alapértéke Size 0,0 és Amount 0,0 (a fókuszpont 0,5 és 0,5 marad); a `radsat` ugyanígy ellenőrizendő a #3826 szerint (ott a Size alapértéke már 0,0).
+
+**Nem része:** a többi panel (Glow, Saturation, Tint, Filtered B&W, Focal B&W, Graduated Tint) kezdőértéke: nem mért, a javított `C2-alapertekek-ini` feladat adja; a render-kimenet képpont-paritása (17. tétel).
+
+**Kész, ha:**
+
+- [ ] A Soft Focus panel megnyitásakor a két csúszka fogantyúja ugyanazon a helyen áll, a sáv közepén (a PicasaPy képén a fogantyú-oszlop a sáv felénél), és az előnézet a 0 és 0 értékekkel számolt.
+- [ ] Az Alkalmaz változtatás nélkül `radblur=1,0.500000,0.500000,0.000000,0.000000;` sort ír.
+- [ ] Mégse és Alkalmaz után az újranyitott panel újra a 0 és 0 értéken áll (a mai viselkedés marad).
+- [ ] Vizuális ellenőrzés: a job-882 #13 és #23 kockája és a PicasaPy panelének képe egymás mellett, a fogantyú-oszlop mért eltérésével; a Sharpen és a Film Grain panel kezdőhelye (x=91) nem változik (regressziós kép).
+
+### T7. Fejlesztői jegytörzs: nyitott paraméterpanelnél a Kép menü minden tétele szürke
+
+**Cím:** Amíg szerkesztőben paraméterpanel (Soft Focus, Sharpen, Film Grain és társai) nyitva áll, a Kép menü tételei és a Csoportos szerkesztés almenü legyenek letiltva, ne a panelt felfüggesztő hatásúak
+
+**Mi a hiba:** az eredetiben nyitott Soft Focus panelnél a teljes Kép menü szürke, a Batch Edit nem nyit almenüt; nálunk a menü él, a Csoportos szerkesztés parancsa a `selectTab` hívással a nyitott panelt felfüggeszti (a panel az első fül letiltott tartalmára vált), és a parancs mégsem fut.
+
+**Eredeti:** job-878 #15 és #17 (a nyitott Soft Focus panel és a Kép menü, 2x nagyítva): a "View and Edit", "Batch Edit", "Undo All Edits", "Hide", "Unhide", "Reset Faces" és "Properties" egyaránt szürke, a Batch Edit kijelölve, de almenü nélkül; a (318,188) kattintás a menün kívülre esett, a menü bezárult, a kép és a panel a #13 és #20 kocka között 0 eltérő képponttal azonos (job-878 #13, #20). Összevetés: ugyanez a menü panel nélkül (job-835 #11, #13) minden tételén élő. Bináris: a menürekord `eMenuPicture::BatchEdit` (0x00c8d874) és `&Batch Edit` (0x00c8d88c) a 0x00559150 menüépítőben, a rekord 0x00d6e4ac, a parancsok kezelője 0x005cb990; a letiltást végző állapot-függvény nincs azonosítva.
+
+**Nálunk:** `PicasaPictureMenu.qml:19-22` (`enabled: bar.photoActionsEnabled`), `MainMenuBar.qml:87` (`photoActionsEnabled: hostWindow.photoActionRows().length > 0`): a menü engedélyezése csak a kijelöléstől függ. A parancs útja `PhotoViewerGeometryActions.qml:369-380` -> `EditorPanel.qml:220-227`:
+
+```qml
+    function selectTab(tabIndex) {
+        if (panel.paramPanelSuspended) return
+        if (panel.paramPanelActive) {
+            panel.paramPanelSuspended = true
+```
+
+Nyitott paraméterpanelnél tehát a menüparancs "fülkattintásként" felfüggeszti a panelt; a `runMenuEffect` ezután a `paramPanelActive` miatt visszatér (`editorpanel_logika.js:315-318`), a hatás nem kerül a képre.
+
+**Teendő:** a Kép menü (a Csoportos szerkesztés almenü és a menü többi tétele, a mért hét tétel) legyen letiltva, amíg a szerkesztőben `paramPanelActive` igaz; a `selectMenuEffect` ilyenkor se hívja a `selectTab`-ot.
+
+**Nem része:** a többi menü (Fájl, Szerkesztés) állapota nyitott panelnél: nem mért; a Ctrl+Shift+B és a Ctrl+Shift+E nyitott panelnél: nem mért (a javított `C1-ctrlshiftb-panel` feladat adja); a menü szürke-állapotának binárisbeli forrása.
+
+**Kész, ha:**
+
+- [ ] Nyitott Soft Focus (és Sharpen, Film Grain) panelnél a Kép menü hét tétele szürke, a Batch Edit nem nyit almenüt; a teszt valódi menükattintással fut.
+- [ ] A panel nem kerül felfüggesztett állapotba, a lánc és a kép változatlan.
+- [ ] A panel bezárása (Alkalmaz, Mégse, Escape) után a menü újra él.
+- [ ] Vizuális ellenőrzés: a job-878 #15 és #17 kockája és a PicasaPy menüjének képe a nyitott panel mellett, egymás mellett; ahol a teszt csak az `enabled` értéket számolja, a jegy kimondja, hogy a szürke szín árnyalatát nem méri.
+
+### T8. Fejlesztői jegytörzs: az állapotsor szerkesztés közben rövid alakú (kisebb)
+
+**Cím:** A szerkesztő állapotsora az első effektparancs vagy Mégse után "név dátum felbontás méret" alakú, Undo, Redo és képváltás után újra a mappás és számlálós alak
+
+**Mi a hiba:** az eredeti sáv az effektek hatására elhagyja a "PicasaTeszt > " előtagot és a "(2 of 24)" számlálót, és az Undo, Redo vagy a képváltás hozza vissza; a PicasaPy a sávot mindig a hosszú alakban adja.
+
+**Eredeti:** a hosszú alak: "PicasaTeszt > color_patches.jpg   11/23/2026 4:43:44 AM   800x800 pixels   20 KB   (2 of 24)" (job-862 #8; panel nyitva job-878 #13, job-882 #13, #17; Sharpen panel nyitva job-876 #14; Undo után job-886 #19, job-880 #27; Redo után job-884 #23; következő képen job-889 #15). A rövid alak: "color_patches.jpg   11/23/2026 4:43:44 AM   800x800 pixels   20 KB" (egykattintásos alkalmazás után job-862 #16, job-863 #12, job-884 #11, job-886 #13; paneles Alkalmaz után job-879 #17, job-880 #17; Mégse után job-882 #21; Escape után job-876 #18, job-869 #16, job-881 #23; billentyű után job-861 #12). A szabály 21 kockából (11 rövid, 10 hosszú alak): a rövid alak az első effekt-alkalmazás vagy panelzárás (Alkalmaz, Mégse, Escape) után áll be, és az Undo, Redo vagy képváltásig marad. Bináris: a számlálós formátum (" (%d of %d)", 0x00c8e964) csak a 0x00566a70 és a 0x0061be40 függvényben áll, a számláló nélküli "%s     %s     %dx%d pixels     %s" (0x00c8e984) a 0x00566a70 és a 0x0056fbc0 függvényben; hogy melyik függvény melyik állapotot írja, nincs végigolvasva.
+
+**Nálunk:** `src/picasapy/app/controller_content_info_mixin.py:223-248` (`viewerInfo`): minden esetben `alap.replace(photo.name, f"{folder} > {photo.name}", 1)` és a számláló.
+
+**Teendő:** a szerkesztő állapotsora kövesse a fenti szabályt: effektparancs vagy panelzárás után a rövid alak, Undo, Redo, képváltás után a hosszú.
+
+**Nem része:** a vágás, a forgatás, a szöveg és a többi eszköz hatása az állapotsorra (nem mért); a könyvtárnézet állapotsora; az, hogy a szabály egyetlen állapotból vagy egy frissítési útból következik-e (a bináris olvasása).
+
+**Kész, ha:**
+
+- [ ] Sepia csempekattintás után a sáv "color_patches.jpg   <dátum>   800x800 pixels   20 KB", számláló és mappa nélkül; az Undo után újra "PicasaTeszt > ... (2 of 24)".
+- [ ] A Soft Focus Mégse után is a rövid alak áll, a panel megnyitásakor még a hosszú.
+- [ ] Vizuális ellenőrzés: a job-862 #8 és #16, job-886 #13 és #19 sávja és a PicasaPy sávja egymás mellett.
+
+### Nyitott: javított lépéssorok (megnevezett hiányok)
+
+| Tétel | Mi hiányzik | Javított lépéssor (fájl a hívónál: `.tmp/javitott-lepesek/`) |
+|---|---|---|
+| 16. (a) | az ini írásának ideje | `7346-C3-ini-idopont-1mp`: Sepia után 1 másodperccel a `fajlrendszer masol` a `.picasa.ini`-t egy `.txt` másolatba viszi (a másolat az ini módosítási idejét és méretét őrzi; hiba esetén a lépés elbukik, ami maga a válasz: még nincs ini). `7346-C3-ini-idopont-20mp`: ugyanez 20 és 40 másodperc múlva. `torles_engedve: true` kell hozzá |
+| 16. (b) | a Save megnyomása utáni állapot | `7346-C3-mentes-megerosit`: Sepia, Ctrl+S, a "Save" gomb (688,553), a kimenet a fájllistát (méret, idő, mentés-másolat), az ini-t (`backuphash`) és a `db3`-at is adja |
+| 20. | a Save megnyomása utáni állapot írásvédett fájlon | `7346-C4b-mentes-megerosit`: a C4b lépései, a Ctrl+S és a "Save" gomb (688,553) után a hibaüzenet vagy a sikeres mentés látszik |
+| 19. | az iPhoto-kapu pozitív oldala | nem írható meg a mai végrehajtóval: új `mintakeszlet` érték kell (például `iphoto`), amely a `<Képek mappa>\iPhoto Library\Masters\Esemeny1\` alatt két képet, a `<Képek mappa>\Esemeny2\` alatt két képet és az `iPhoto Library\Originals\Esemeny3\` alatt egyet helyez el, és felvetet a figyelt mappák közé; utána a C4a 1-7. lépése (a rácshelyek a készlet elkészülte utáni kalibrálásból jönnek). A GUI-úton (Fájl ▸ Move to New Folder) a mappa elhelyezése kalibrálatlan |
+| 14. (kiegészítő) | a többi panel kezdőértéke | `7346-C2-alapertekek-ini`: Soft Focus, Sharpen, Film Grain, Glow, Saturation Alkalmaz változtatás nélkül; az ini az alapértékeket adja. Az Alkalmaz gomb y-helye a csúszkaszámtól függ: 2 csúszka 241 (Soft Focus mérve), 1 csúszka 199 (Sharpen mérve), csúszka és jelölőnégyzet 229 (Film Grain mérve); a Glow és a Saturation helye ebből következik, nem mért, ezért állnak a sor végén |
+| 6., 7. (kiegészítő) | Ctrl+Shift+B és Ctrl+Shift+E nyitott panelnél | `7346-C1-ctrlshiftb-panel`: nyitott Soft Focus panel mellett a két billentyű, kép, panel és ini |
+
+**Kizárva ebben a körben:** az "Undo save and keep edits" tipp (hover lépés nincs); a mappajog (a Picasa rootként fut); az, hogy az `editpanel/writetodisk` gomb látható-e valahol (a szerkesztő panelen nincs, a Mentés a Fájl menü és a Ctrl+S).
