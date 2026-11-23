@@ -426,6 +426,293 @@ A javított lépéssorok a munkafa `.tmp/javitott-lepesek/` mappájában vannak 
 | `7327-8d` (14) | Crop (55,167), húzás (500,400)-(900,580), APPLY (84,403); a futás az első Apply után véget ér, a kimenet az ini | az első Apply után mentett `crop64` téglalap mérete: 187 vagy 188 képpont magas-e (a `job-821` 187→188 kérdése) |
 | `7327-12b` (30) | Text, szöveg, APPLY; újranyitás, kattintás a meglévő szövegre (620,405), gépelés, APPLY; újranyitás, „Clear All” (189,372), APPLY | meglévő blokk szerkesztése, a „Clear All” hatása és az utána következő ini |
 
+### Job-907..913 (a javított lépéssorok kiértékelése: Retusálás, Szöveg, Vágás, Kiegyenesítés)
+
+**Bemenet és olvasat.** Hét felvétel (1280×1024), mind a `PicasaTeszt` mappa `gray_ramp.jpg` képén (1024×256): `job-907` = `7327-11b`, `job-908` = `7327-11`, `job-909` = `7327-12b`, `job-910` = `7327-12`, `job-911` = `7327-8d`, `job-912` = `7327-9b`, `job-913` = `7327-9`. Lépés/kocka: 28/29, 24/25, 30/31, 32/33, 14/15, 18/19, 24/25; a `kepernyo__NN` az (NN-1). lépés utáni állapot. Az `allapot.json` OCR-mezője mind a hétben üres, ezért a feliratokat és a gombállapotokat a képekből olvastam: a döntő kockákat egyenként megnéztem, az azonosakat md5-tel csoportosítottam, a képpontos összevetések a képterületen (x 283-1280, y 364-612) készültek. Az ablaklista két fajta felugró ablakot jelez: `Confirm` (907 `__18-19`, `__22-23`) és `Save` (910 `__30-31`, 913 `__22-23`). A fájlállapotot a `picasa.ini`, a `kepmappa__*` és a `db3__*` fájlokból olvastam; lépésenkénti fájlállapot nincs, csak a záró.
+
+#### Job-907 (`7327-11b`): a Retusálás visszavonásának megerősítése, két ág
+
+| Kocka | Előtte végrehajtott lépés | Kép, panel, ablak |
+|---|---|---|
+| `__10-11` | `kattint (55,275)` (Retouch) | A friss Retusálás panel, bájtra azonos a `job-908 __10`-zel. |
+| `__12-13` | `kattint (600,450)` | Alapállású ecsetkör a kattintás helyén (külső széle x 575-624, y 425-474, 50 képpont). |
+| `__14-15` | `kattint (660,450)` | A folt létrejött: „Reset”, „Undo Patch”, „Apply” aktív. |
+| `__16-17` | `kattint (74,391)` (Apply) | Alapjavítások; **„Undo Retouches”** aktív, „Redo” tiltott. |
+| `__18-19` | `kattint (70,380)` (Undo) | **„Confirm” ablak** (az ablaklistán „Confirm”), a `job-838 __36` ablakával azonos szöveg és alak: „Retouch fixes cannot be recovered with redo.” / „Are you sure you want to undo?”, gombok „Undo” és „No”, a fókuszkeret a „No”-n. |
+| `__20-21` | `kattint (766,543)` („No”) | Az ablak bezárult; az `__16`-hoz képest a képterület **0 képpontban** tér el, az „Undo Retouches” aktív, a „Redo” tiltott (a bal panelen csak az Undo gomb fókuszkerete, 315 képpont, és az állapotsor szövege változik). |
+| `__22-23` | `kattint (70,380)` | A „Confirm” ablak ismét, az `__18`-cal azonos (csak az állapotsor szövege tér el). |
+| `__24-25` | `kattint (687,543)` („Undo”) | Az ablak bezárult; a kép visszaállt (az `__08`-tól 3 705 képpont, legfeljebb 3 szint: ugyanaz a kerekítési zaj, mint a korábbi felvételeken); **az „Undo” és a „Redo” tiltott, a feliratuk csupasz** („Undo”, „Redo”), „Redo Retouches” nem jelenik meg. |
+| `__26-29` | `kattint (207,380)` (Redo), `billentyu ctrl+s` | A hat kocka bájtra azonos az `__24`-gyel: a tiltott Redo nem hat, és a Ctrl+S nem hoz „Save” ablakot (nincs mit menteni). |
+
+**A záró fájlállapot.** `gray_ramp.jpg` 32 017 bájt, módosítási ideje a futás előtti (04:43:44), állapotváltozás-ideje 09:31:00 (a futás közben); `.picasaoriginals/gray_ramp.jpg` **nincs**; `.picasaoriginals/.picasa.ini` 0 bájt (09:31:00). A fő `.picasa.ini` (61 bájt, 09:31:02) szó szerint:
+
+```
+[gray_ramp.jpg]
+backuphash=21665
+moddate=0d7b6c38057bdd01
+```
+
+A `moddate` FILETIME-értéke 2026-11-23 04:43:44,27, vagyis a visszaállított képfájl módosítási ideje; `filters=` és `redo=` nincs. A `db3` `imagedata_filters`, `imagedata_edited`, `imagedata_redo`, `imagedata_revertable` oszlopa üres (30 bájt), az `imagedata_backuphash` oszlopban 21665 áll (az ini értéke).
+
+**Eldőlt (907), nagy bizalommal:** a „No” ág semmit nem változtat (kép 0 képpont, gombállapot azonos); az „Undo” ág visszaállítja az eredeti képet és a fájlt (a módosítási idő az eredeti, a `.picasaoriginals` másolata eltűnik, az eredeti-mappa ini-je kiürül, a fő ini-be a visszaállított fájl `moddate`-je kerül), és **az Undo után az Újra nem érhető el**: letiltott, a felirata csupasz „Redo”. A Ctrl+S ezután nem ad „Save” ablakot. **Közepes bizalommal:** hogy a fájlt az Apply írta és az Undo állította vissza (a `job-908` az Apply-írást külön bizonyítja, a 907-ben az időrend lépésenként nincs felvéve; a fájl állapotváltozás-ideje 09:31:00, az `imagedata` oszlopok időbélyege 09:31:10).
+
+#### Job-908 (`7327-11`): az ecsetméret két széle, két folt, azonnal Apply
+
+| Kocka | Előtte végrehajtott lépés | Kép, panel |
+|---|---|---|
+| `__10-11` | `kattint (55,275)` | Friss panel; a fogantyú közepe x=134 (a sáv 74-196). |
+| `__12-13` | `huz (134,277)-(78,277)` | A fogantyú a bal végén (x 73-88, közép 80,5); minden gomb letiltott a „Cancel” kivételével. |
+| `__14-15` | `kattint (600,450)` | **A legkisebb ecsetkör**: külső széle x 596-603, y 446-453 (8 képpont). |
+| `__16-17` | `kattint (660,450)` | Folt a legkisebb ecsettel (a gombok az `__18`-on: „Reset”, „Undo Patch”, „Apply” aktív). |
+| `__18-19` | `huz (78,277)-(192,277)` | A fogantyú a jobb végén (x 180-195, közép 187,5); a kör nincs a képen (az egér a csúszkán). |
+| `__20-21` | `kattint (600,450)` | **A legnagyobb ecsetkör**: külső széle x 502-697, y 352-547 (196 képpont); a kör a kép felső szélén túlnyúlik (y 352-363 a képen kívül esik). |
+| `__22-23` | `kattint (660,450)` | A kör az egérrel (660,450) mozog; a második folt. Az infosáv még „31 KB”. |
+| `__24-25` | `kattint (74,391)` (Apply) | Alapjavítások, **„Undo Retouches”** aktív; **az infosáv már „29 KB”** (az Apply-kattintás utáni kockán). |
+
+**A záró fájlállapot** (a futás az Apply után 4 másodperccel véget ér, Mentés és Undo nélkül): `gray_ramp.jpg` **30 189 bájt** (módosítás 09:35:47), `.picasaoriginals/gray_ramp.jpg` 32 017 bájt (az eredeti módosítási idővel), `.picasaoriginals/.picasa.ini` 101 bájt (09:35:47), fő `.picasa.ini` 55 bájt (09:35:49). A két ini szó szerint:
+
+```
+.picasa.ini
+[gray_ramp.jpg]
+backuphash=27462
+filters=retouch=1;
+
+.picasaoriginals/.picasa.ini
+[gray_ramp.jpg]
+filters=retouch=1;
+moddate=817321052e7bdd01
+width=1024
+height=256
+textactive=0
+```
+
+A `moddate` (2026-11-23 09:35:47,58) az új képfájl módosítási ideje. A `db3`-ban csak bélyegkép-adatbázisok vannak (`imagedata_0` 4 bájt, `imagedata_*.pmp` nincs): az index ebből nem olvasható.
+
+**Eldőlt (908), nagy bizalommal:** (1) **a retusált kép fájlírása az Apply-kor történik**, nem a Mentéskor és nem az Undo-kor: a futás az Apply-jal véget ér, mégis megvan a módosított kép, a biztonsági másolat és a két ini, és az infosáv az Apply-kattintás utáni kockán már az új méretet mutatja (`__22`: 31 KB, `__24`: 29 KB). (2) A két ini tartalma a `job-838` állapotával egyezik (`filters=retouch=1;` mindkettőben). (3) Az ecsetméret három pontja (lent).
+
+##### KIEMELT: az ecsetméret leképezése a `job-908` alapján
+
+A fehér gyűrű (egy képpontos vonal, belül sötét árnyékkal) vonalának középpontjait mértem: a gyűrű két képpontos fehér párokból áll, az átmérő a két szembenálló pár közepének távolsága; a vízszintes és a függőleges átmérő mindhárom esetben azonos. A képen a „Zoomed to 97%” jelző áll, a megjelenített kép 988×248 képpont a 1024×256-os forrásból.
+
+| Csúszka állása | Fogantyú közepe (x) | Fogantyú a futásban (t) | Kör külső átmérője (képpont) | Gyűrűvonal-átmérő (2R) | R (képernyő) | R a forráson (R/0,97) | R a megjelenített rövidebb oldalhoz (248) |
+|---|---|---|---|---|---|---|---|
+| bal vég | 80,5 | 0 | 8 (x 596-603) | 6,0 | **3,0** | 3,1 | 1,2% |
+| alap (közép) | 134 | 0,5 | 50 (x 575-624) | 48,0 | **24,0** | 24,7 | 9,7% |
+| jobb vég | 187,5 | 1 | 196 (x 502-697) | 194,0 | **97,0** | 100,0 | 39,1% |
+
+(A fogantyú futásának két vége a `job-908` `__12` és `__18` fogantyúdobozaiból mért: 80,5 és 187,5; az alapállás 134, éppen a futás fele. Az alap-kör a `job-907 __12` képén is 50 képpont külső átmérőjű, R = 24,0; a `job-838 __12` korábbi mérése (külső x 575-624) ezzel egyezik.)
+
+**Egy független második mérés.** A #4544 mérőadatai közt van a job #314 képernyőképe (1024×1024-es kép, „Zoomed to 80%”, alapállású csúszka): a gyűrűvonal-középpontok távolsága ott vízszintesen és függőlegesen is 40,0, vagyis **R = 20,0 képpont, R/0,80 = 25,0 a forráson**. Az alapállású csúszkán tehát a forrásképi sugár 25,0 (job #314: 1024×1024 képen, 80%-nál) és 24,7 (itt: 1024×256 képen, 97%-nál): **négyszeres rövidebb oldal és eltérő nagyítás mellett ugyanaz**.
+
+**Az illesztés a korábban kiolvasott bináris képlethez** (`forras-audit-5186-2.md`, #5975, `0x0060b430`; ebben a körben a képletet nem olvastam újra): `R_képernyő = max(3·max(z,1), min(100, min(w,h)/2)·s·z)`, `R_forrás = R_képernyő/z`, ahol `z` a nagyítás, `s` a csúszka mezője (a konstruktor kezdőértéke `0.25`, `0x0060a763`), `w,h` a nézet téglalapja. Ha a nézet rövidebb oldala legalább 200 képpont (itt igen), akkor `R_képernyő = max(3, 100·s·z)`. A három mért pont ebbe **szabad paraméter nélkül** illik (`z` = 0,97, a képernyőn olvasható):
+
+- bal vég: R = 3,0, tehát a 3 képpontos minimum dominál (`3·max(z,1) = 3`); ebből `s ≤ 0,031`;
+- alap: R = 24,0, `s = 24,0/97 = 0,247`, vagyis a konstruktor-érték `0,25` (a számolt 24,25 a mérés ±0,5 képpontos pontosságán belül);
+- jobb vég: R = 97,0, `s = 1,000`;
+- a job #314-en: `s = 0,25`, `z = 0,80` esetén R = 20,0, egyezik a mérttel.
+
+**Mit mond ki ez, és mit nem.**
+
+1. **Nem a kép rövidebb oldalához mért.** Az alapállás sugara 25 forrásképpont egy 1024×1024-es és egy 1024×256-os képen is (négyszeres rövidebb oldal), a jobb vég 100 forrásképpont. A mai leképezés (`sugár = érték/1000 × rövidebb oldal`) és a #7379-es változat (`érték/494 × rövidebb oldal`) is a rövidebb oldalhoz mér: **mindkettő olyan modellt használ, amelyet a mérés nem támaszt alá**.
+2. **A megjelenített kör a nagyítással arányos** (R_képernyő = R_forrás·z): az alapállású kör R-je 24,0 (z = 0,97) és 20,0 (z = 0,80), aránya 0,833, a nagyítások aránya 0,825. Ez két képen, két nagyításon mért, nem külön nagyítás-sorozat.
+3. **A kép szélességéhez mértség nincs kizárva az adatokból**: mindkét mért kép 1024 képpont széles. A bináris képletben nincs képméret (csak a nézet téglalapja a 200 képpontos kapun át). Eldönti: `7327-11d` (a 768×512-es `rgb_gradient.jpg`).
+4. **A csúszka-állás és `s` közti alak nem bizonyított.** Három állás van mérve: a bal vég (csak felső korlát: `s ≤ 0,031`), a közép (`s = 0,25`), a jobb vég (`s = 1`). A legegyszerűbb illeszkedő alak `s = t²` (`t` a fogantyú helye a futásban, 0..1), de pl. az `s = 1,5·t - 0,5` (a bal végen negatív, a 3 képpontos minimumra vágva) is átmegy mindhárom ponton. A két alak t = 0,25-nél 6,1 illetve 3,0 képpontos, t = 0,75-nél 54,6 illetve 60,6 képpontos R-t ad (z = 0,97), tehát **két köztes állással eldönthető**: `7327-11c`.
+
+**A #7379 ecsetméret-változata: a 908 NEM igazolja.** A javasolt 494-es osztó és az 50-es alapállás az alapállást egy pontból találta el (R = 25,1 a 988×248-as képen, mért 24,0), de a két végén és más képméreten cáfolja a mérés:
+
+| | min (érték 1) | alap (érték 50) | max (érték 100) | job #314 (1024×1024, 80%), alap |
+|---|---|---|---|---|
+| **eredeti, mért R (képernyő)** | 3,0 | 24,0 | 97,0 | 20,0 |
+| #7379 (`érték/494 × rövidebb megjelenített oldal`) | 0,5 | 25,1 | 50,2 | 83,0 |
+| mai main (`érték/1000`, alap 20) | 0,2 | 4,96 (érték 20) | 24,8 | 16,4 (érték 20) |
+
+A #7379 a jobb végen fele akkora kört ad, a bal végen hatodakkorát, és egy négyzetes 1024×1024-es képen az alapállás kb. négyszeres (83,0 a mért 20,0 helyett). **Ez dönti el:** a #7379 ecsetméret-változtatása ebben az alakban **nem adható ki**; a #7379 többi része (cím, „Regions selected” sor, megerősítő ablak) a 908-tól független. Két járható út: (a) az ecsetméret-leképezés kimarad a #7379-ből (a mai 20/1000 marad, kimondott eltérésként), vagy (b) a lent megadott G jegytörzs szerinti leképezés kerül be, a `7327-11c` és `7327-11d` mérése után (addig a köztes állások és a képméret-függés nem bizonyított, és félkész dolog nem megy ki).
+
+#### Job-909 (`7327-12b`): meglévő szövegblokk szerkesztése és a Clear All
+
+| Kocka | Előtte végrehajtott lépés | Kép, panel |
+|---|---|---|
+| `__10-11` | `kattint (138,275)` (Text) | Az „Edit Text” panel, bájtra azonos a `job-839 __10`-zel. |
+| `__12-13` | `kattint (600,400)` | I-beam a (600,405) körül; „Clear All” aktív, „Apply” még tiltott. |
+| `__14-15` | `gepel PicasaPy7327` | A szöveg a képen, lekerekített dobozban; „Apply” aktív. |
+| `__16-17` | `kattint (88,406)` (Apply) | Alapjavítások, a szöveg a képen (betűpixelek y 402-407), „Undo” és „Redo” tiltott. |
+| `__18-19` | `kattint (138,275)` (újranyitás) | A panel szerkesztő állapotban, **a meglévő szöveg a képen marad**, a „Type anywhere to add text” felirat nincs; **„Clear All” és „Apply” aktív**, „Copy Caption” tiltott. |
+| `__20-21` | `kattint (620,405)` (a meglévő szövegre) | **A blokk kijelölődik**: vastag lekerekített keret, köré **forgatókorong** (osztásokkal, jobb szélén piros pontos fogantyúval, a pont közepe (708,405)); a szövegkurzor a „Picas|aPy7327” helyén áll. |
+| `__22-23` | `gepel Plusz` | A szöveg **a kurzorhoz szúródik be**: „PicasPluszaPy7327”; a doboz 10 képponttal szélesebb, a korong fogantyúja (718,405). |
+| `__24-25` | `kattint (88,406)` (Apply) | A szöveg a képen, **egyetlen sor** („PicasPluszaPy7327”), „Undo” és „Redo” tiltott. |
+| `__26-27` | `kattint (138,275)` | Szerkesztő panel, a szöveg a képen, „Clear All” és „Apply” aktív. |
+| `__28-29` | `kattint (189,372)` (Clear All) | **A szöveg azonnal eltűnik a képről**, a „Type anywhere to add text” felirat visszajön (x 733-829, y 485-493); **„Clear All” tiltott, „Apply” AKTÍV marad**, a panel nyitva. |
+| `__30-31` | `kattint (88,406)` (Apply) | Alapjavítások; a képterület az induló `__08`-cal **0 képpontban** tér el (a szöveg nyomtalanul eltűnt); „Undo” és „Redo” tiltott. |
+
+**A záró fájlállapot.** `picasa.ini` (35 bájt): `[gray_ramp.jpg]`, `backuphash=36994`; **`text=` és `textactive=` nincs**. A `gray_ramp.jpg` 32 017 bájt és változatlan, `.picasaoriginals` nincs (Mentés nem volt).
+
+**Eldőlt (909), nagy bizalommal:** a meglévő blokk újranyitáskor a képen marad; kattintásra kijelölődik (forgatókoronggal), a kurzor a kattintás helyére kerül, a gépelés oda szúr be, az Apply a blokkot helyben cseréli (egy sor, nincs ismétlődés); a Clear All a szöveget azonnal leveszi a képről, de az eszközben marad és az Apply aktív; a Clear All + Apply után a kép nyomtalanul az induló, az ini-szakaszban se `text=`, se `textactive=` nincs. **Nem dőlt el:** az ini a szerkesztett blokk után (a `text=` pontos tartalma: lépésenkénti ini nincs; vizuálisan egy blokk), a forgatókorong hatása (a `text=` negyedik pozíciómezője, a mért értékekben mindig `0.000000`), és hogy a Clear All utáni „Cancel” visszahozza-e a szöveget (a kérdéses sor `7327-12e`, `7327-12f`).
+
+#### Job-910 (`7327-12`): a formázás megjegyzése Cancel után, Mentés
+
+| Kocka | Előtte végrehajtott lépés | Kép, panel, ablak |
+|---|---|---|
+| `__14-15` | `gepel PicasaProba` | A szöveg a képen, „B”, „I”, „U” nem nyomott, bal igazítás. |
+| `__16-17` | `kattint (185,202)` (B) | A „B” nyomott, a szöveg félkövér. |
+| `__18-19` | `kattint (215,233)` (közép igazítás) | A „B” és a középre igazítás nyomott. |
+| `__20-21` | `kattint (190,406)` (Cancel) | Alapjavítások, a szöveg eltűnt, kérdés nincs; „Undo” és „Redo” tiltott. |
+| `__22-23` | `kattint (138,275)` (újranyitás) | **A „B” és a középre igazítás NYOMVA marad**; az üres kép közepén a „Type anywhere to add text” felirat **félkövér**; „Clear All” és „Apply” tiltott. |
+| `__24-25` | `kattint (600,400)` | I-beam; „Clear All” aktív, „Apply” tiltott. |
+| `__26-27` | `gepel PicasaPy7327` | A szöveg félkövéren a dobozban, „B” és középre igazítás nyomott, „Apply” aktív. |
+| `__28-29` | `kattint (88,406)` (Apply) | A félkövér szöveg a képen; „Undo” és „Redo” tiltott. |
+| `__30-31` | `billentyu ctrl+s` | „Save” ablak (ablaklista: „Save”), a `job-836 __26` ablakával azonos. |
+| `__32-33` | `kattint (687,553)` („Save”) | Az ablak bezárult; **az Undo gomb „Undo Save” feliratú és aktív**, a „Redo” tiltott; az infosáv „20 KB”; a képterület az Apply utánitól csak a szöveg környezetében tér el (681 képpont, x 597-657, y 393-412: a fájlba égetett szöveg újrarajzolása). |
+
+**A záró fájlállapot.** `gray_ramp.jpg` 20 613 bájt (09:44:25), `.picasaoriginals/gray_ramp.jpg` 32 017 bájt (az eredeti módosítási idővel). A fő `.picasa.ini` (35 bájt) csak `backuphash=26742`; **a `text=` és a `textactive=` a fő ini-ből eltűnt**. Az eredeti-mappa ini-je (230 bájt) szó szerint:
+
+```
+[gray_ramp.jpg]
+moddate=f06c8b392f7bdd01
+width=1024
+height=256
+text=1;135;12;PicasaPy7327;Times;0.316406,0.144531,0.033333,0.000000;v1,4294967295,4278190080,128.000000,1.000000,0.000000,1.000000,700,256,49152;;
+textactive=1
+```
+
+**Eldőlt (910), nagy bizalommal:** (1) **a formázás Cancel után megmarad**: a panel a „B”-t és a középre igazítást nyomva mutatja, a következő szöveg ezzel készül (ini: súly `700`, a 8. mező `256`), a szöveg tartalma viszont nem marad meg. A `700` a félkövér súly; a `256` (`0x100`) a `picasa-ini-format.md` bináris-olvasatával egyezik (bit 8-15 = vízszintes igazítás, 1 = közép): **a bináris-olvasat első futásidejű igazolása**. (2) A szöveg Mentéskor a fő ini-ből az eredeti-mappa ini-jébe költözik (`text=`, `textactive=1`, mellé `moddate`, `width`, `height`), a fő ini-be csak a `backuphash` marad. (3) A Mentés megerősítése után az Undo gomb „Undo Save” (a Mentés visszavonható lépés). **Nem dőlt el:** az „Undo Save” gomb hatása (nem nyomták meg): `7327-12d`; az „I”, „U” és a jobb igazítás ini-kódja (a binárisból ismert, futásban nincs mérve).
+
+#### Job-911 (`7327-8d`): a Crop első Apply után mentett téglalap
+
+A `job-821` lépéssorának első fele: Crop (55,167), `huz (500,400)-(900,580)`: `__12-13` a kijelölés „Manual: 415 x 187”, Apply aktív; `__14-15` az Apply után vágott kép, csempe „Recrop”, „Undo Crop” aktív, „Redo” tiltott (a `job-821 __12`, `__14` kockáival egyező). A záró ini (a futás az Apply után 3 másodperccel véget ér):
+
+```
+[gray_ramp.jpg]
+backuphash=29739
+crop=rect64(370025009ebfdfff)
+filters=crop64=1,370025009ebfdfff;
+```
+
+A `370025009ebfdfff` négy 16 bites törtkoordinátája (`0x3700`, `0x2500`, `0x9ebf`, `0xdfff`) a 1024×256 képen **220,003 · 37,001 · 634,994 · 223,9995**, vagyis a téglalap **414,99 × 186,999 képpont: 415 × 187**.
+
+**Döntés (nagy bizalom): az első Apply után mentett `crop64` téglalap 187 képpont magas, nem 188.** A `job-821 __16` újranyitott kijelölésének „415 x 188” felirata ezért **nem a tárolt érték**: az újranyitás utáni megjelenítési úton keletkezik (a tárolt tört 37,0006 és 223,9995 képpontot ad, egy egyszerű lefelé/felfelé kerekítés a 187-et adja, a 188 oka ebből nem adódik). Az ini-oldalnak nincs tennivalója: a mai `encode_rect64` ugyanazt a törtet írja (kerekítéssel, nem csonkolással, `ini/rect64.py:42-48`: a 37/256 tört 9471,99, amit a Picasa is `0x2500`-ra, vagyis 9472-re ír). A felirat egy képpontos eltérése funkcióhatás nélküli, ezért nem vállalt.
+
+#### Job-912 (`7327-9b`): a Vágás csempe aktív kiegyenesítés mellett, Escape
+
+| Kocka | Előtte végrehajtott lépés | Kép, panel, ablak |
+|---|---|---|
+| `__10-13` | Straighten, `huz (680,863)-(740,863)` | Kiegyenesítés mód, majd a húzás utáni előnézet; bájtra azonos a `job-913 __10-13`-mal (fogantyú 689,5, illetve 738,5). |
+| `__14-15` | `kattint (875,863)` (APPLY) | Alapjavítások, kiegyenesített kép, „Undo Straighten” aktív. |
+| `__16-17` | `kattint (55,167)` (Crop) | **A „Crop Photo” panel nyílik meg, felugró ablak nélkül** (az ablaklista végig csak „Picasa 3”), **figyelmeztető szöveg nélkül**: a panel a tilt nélküli Crop panelhez (`job-911 __10`) képest csak a három arány-bélyegkép tartalmában tér el (azok a kiegyenesített képet mutatják, 4 728 képpont a y 267-286 sávban). „Apply”, „Reset”, „Preview” tiltott, „Cancel” aktív. |
+| `__18-19` | `billentyu Escape` | Alapjavítások; a képterület az Apply utánival **0 képpontban** azonos, „Undo Straighten” aktív: az Escape a Crop eszközt Cancel-ként zárja, a kiegyenesítést nem vonja vissza. |
+
+A záró ini (70 bájt): `filters=tilt=1,0.391249,0.000000;`, `backuphash=27090`.
+
+**Eldőlt (912), nagy bizalommal:** aktív (frissen alkalmazott) kiegyenesítés mellett a Vágás csempére **nincs se felugró ablak, se figyelmeztető szöveg a panelben a megnyitáskor**; az Escape Cancel-ként zárja az eszközt. Ez ellentmond a PicasaPy mai viselkedésének (a panel a figyelmeztetést mindig mutatja: I jegytörzs). **Nem dőlt el:** hogy az eredeti a figyelmeztetést (`IDS_WARN_CROP_ACCURACY`) a megnyitás UTÁN (a kijelölés húzásakor vagy az Apply-kor) mutatja-e; a lépéssor Crop-húzást nem tartalmazott: `7327-9c`.
+
+#### Job-913 (`7327-9`): a Kiegyenesítés újranyitása Apply után, második érték, Mentés
+
+| Kocka | Előtte végrehajtott lépés | Kép, panel, ablak |
+|---|---|---|
+| `__10-15` | Straighten, `huz (680,863)-(740,863)`, APPLY | Bájtra azonos a `job-912 __10-15`-tel (fogantyú 738,5; Apply után „Undo Straighten”). |
+| `__16-17` | `kattint (138,160)` (újranyitás) | Kiegyenesítés mód; **a fogantyú a sáv KÖZEPÉN (x 683-696, közép 689,5)**, az előző érték (738,5) nem töltődik vissza; **az alapkép a már kiegyenesített kép** (a friss `__10`-től a képterület szinte teljes egészében eltér). |
+| `__18-19` | `huz (740,863)-(640,863)` | A fogantyú 638,5-nél (x 632-645); az előnézet a második forgatást mutatja a már kiegyenesített képen. |
+| `__20-21` | `kattint (875,863)` (APPLY) | Alapjavítások; „Undo Straighten” aktív, „Redo” tiltott; a kép a két forgatás egymás utáni eredménye (a képterület középső sorának szürkeszintje a bal szélen 5-ről 55-re, a jobb szélen 248-ról 196-ra változott; az első Apply után 33 és 219). |
+| `__22-23` | `billentyu ctrl+s` | „Save” ablak (ablaklista: „Save”). |
+| `__24-25` | `kattint (687,553)` („Save”) | Az ablak bezárult; **az Undo gomb „Undo Save”**, a „Redo” tiltott; a képterület a Mentés előttitől legfeljebb 3 szintre tér el (átlagos eltérés 0,67). |
+
+**A záró fájlállapot.** `gray_ramp.jpg` 23 239 bájt (09:55:10), `.picasaoriginals/gray_ramp.jpg` 32 017 bájt (az eredeti módosítási idővel). A fő `.picasa.ini` (35 bájt) csak `backuphash=37010` (nincs `filters=`). Az eredeti-mappa ini-je (142 bájt) szó szerint:
+
+```
+[gray_ramp.jpg]
+filters=tilt=1,0.391249,0.000000;tilt=1,-0.399233,0.000000;
+moddate=3c9121ba307bdd01
+width=1024
+height=256
+textactive=0
+```
+
+**A csúszka és az ini-szám összefüggése, második pontból.** Az első húzás (egér x=740) `0,391249`-et adott (négy felvételben azonosat), a második (egér x=640) `-0,399233`-at. A két pontra illeszkedő egyenes: `tilt = (x - 690,505)/126,505` (meredekség 0,00790482 /képpont), és mindkét mért érték a `(x - 690,5)/126,5` képlettől 0,0001 alatt tér el (0,391304 és -0,399209). A **126,5 az 253/2**: az eredeti csúszka kattintható foglalata 253 képpont (`EditorToolBar.qml:83-86`), vagyis az érték a **foglalat teljes 253 képpontján át** fut a ±1-ig, és a fogantyú KÖZEPE jár végig rajta (nem a 253-16 képponton). A nulla a foglalat közepe (690,5). A végállás (±1) közvetlenül nincs mérve (`7327-9d`), a két pontra illesztett egyenes linearitása sem több ponttal ellenőrzött.
+
+**Eldőlt (913), nagy bizalommal:** (1) az **újranyitott Kiegyenesítés a csúszkát a KÖZÉPEN indítja** (0 érték), az Apply-kor mentett érték nem töltődik vissza, az alapkép a már kiegyenesített kép; (2) a **második Apply ÚJ `tilt` tagot fűz a lánchoz** (két tag az ini-ben, mindkettő a saját csúszkaértékével), nem cseréli az elsőt; (3) a Mentés megerősítése után: a kép újraírva (23 239 bájt), biztonsági másolat megvan, a lánc az eredeti-mappa ini-jébe költözik (mindkét `tilt` taggal, `moddate`, `width`, `height`, `textactive=0`), a fő ini-ben csak a `backuphash` marad, az Undo gomb „Undo Save”. **Nem dőlt el:** a csúszka végállása (±1) és linearitása (`7327-9d`); a két `tilt` tagú lánc Undo/Redo-ja (`7327-9e`); az index (a `db3`-ban nincsenek `imagedata_*.pmp` oszlopok: a Picasa leállítása kell, `7327-9f`).
+
+#### Összevetés a mai PicasaPy-val (kódolvasás, futtatás nélkül)
+
+| Eredeti (mérés) | Nálunk (fájl:sor) | Ítélet |
+|---|---|---|
+| Ecsetméret: R = 3,0 / 24,0 / 97,0 képernyő-képpont (z = 0,97), a forráson 3,1 / 24,7 / 100, a kép méretétől független, a nagyítással arányos | `edit_controller_shared.py:372-373` (alap 20, osztó 1000), `edit_controller_retouch_mixin.py:64-70`, `:234` (relatív sugár), `PhotoViewerRetouchArea.qml:43-47` (`arány × min(szélesség, magasság)`), `render/retouch.py:68-71` (`round(sugár × rövidebb oldal)`) | **Eltérés** (G jegytörzs); a #7379 változata (494/50) sem igazolt. |
+| A retusálás visszavonása után az Újra letiltott, csupasz „Redo” felirattal | `edit_controller_history_mixin.py:60-70` (`undo()` minden műveletet a redo-verembe tol, a retus-lépést is), `:26` (`canRedo`), `edit_action_names.py:82` (`Retouches` név); a megerősítés `PhotoViewerEditorPanel.qml:119-130`, `PhotoViewerContextActions.qml:244-255` (`onConfirmed: editController.undo()`) | **Eltérés**: nálunk a megerősített visszavonás után „Redo: Retouches” aktív marad (H jegytörzs). |
+| Retusálás Apply: a fájl és a `.picasaoriginals` másolata azonnal megíródik, az infosáv mérete frissül | `edit_controller_retouch_mixin.py:207-222` (az Apply csak az ini-láncot írja, képfájlt nem) | **Fájl-szintű eltérés** (a D jegytörzs része, lent); látható nyoma az infosáv mérete az Apply után. |
+| Aktív kiegyenesítés mellett a Vágás csempe figyelmeztetés nélkül nyílik | `EditorCropPanel.qml:71-87` (`cropStraightenWarning`, `visible: panel.straightenActive`), `PhotoViewerEditWorkflow.qml:582,600` | **Eltérés** (I jegytörzs). |
+| Kiegyenesítés újranyitása: a csúszka a közepén indul, az alapkép a kiegyenesített kép, a második Apply új `tilt` tagot fűz | `PhotoViewerEditWorkflow.qml:578` (`csuszkaErtek = tiltParam`: a mentett érték töltődik vissza), `edit/session_effects.py:22-34` (`set_tilt`: „beállítása vagy cseréje, a láncban legfeljebb egy lehet”), `edit_controller_effects_finetune_mixin.py:80-92` | **Eltérés** (J jegytörzs). |
+| A csúszka foglalata 253 képpont, a fogantyú KÖZEPE járja végig; érték = (x - 690,5)/126,5 | `PicasaSlider.qml:234-236` (a fogantyú x-e `visualPosition × (availableWidth - width)`, vagyis a középpont útja 253-16 = 237 képpont), `EditorToolBar.qml:83-86,215-216` (253 széles sáv, 16 széles fogantyú) | **Eltérés** (J jegytörzs): ugyanarra az egérmozgatásra nálunk 6,7%-kal nagyobb érték (0,418 a mért 0,391 helyett, +49,5 képpontos húzásnál). Egéresemény-próba nem készült. |
+| A formázás (B, igazítás) Cancel után megmarad | `edit_controller_text_mixin.py:426-436` (`exitTextTool` a stílust nem nullázza), `:395-406` (`enterTextTool` csak meglévő blokkból tölt stílust) | Egyezik (kódolvasás, futás nélkül). |
+| Clear All: a szöveg azonnal eltűnik a képről, az eszköz nyitva marad, az Apply aktív | `edit_controller_text_mixin.py:586-607` (`clearText`: azonnali, végleges, az ini-t ír, „Mégse” nem hozza vissza) | **Kérdéses**: a Clear All utáni Cancel hatása nincs mérve (`7327-12f`), ezért jegytörzs még nincs. |
+| Mentés után az Undo gomb „Undo Save” | `edit_action_names.py` (nincs „save” művelet), `_push_undo` hívások (nincs „save”); az „Undo Save” csak a Revert ablakban él (`SaveDialogs.qml:253-268`) | **Eltérés a felirat/állapot szintjén**; a gomb hatása nincs mérve (`7327-12d`), ezért jegytörzs még nincs. |
+| Mentéskor a `text=`, `textactive=` (és `width`, `height`) az eredeti-mappa ini-jébe költözik | `edit/save_operations.py:132-143` (az eredeti-mappa ini-jébe csak `filters=` és `moddate` kerül) | **Fájl-szintű eltérés** (a D jegytörzs kiegészítése). |
+
+#### Új fejlesztői jegytörzsek (job-907..913): G, H, I, J
+
+**(G) Retusálás ecsetméret: a kör és a folt sugara az eredeti szerint (jegy: #7379 helyett/mellett; előfeltétel: `7327-11c`, `7327-11d`)**
+
+> **Mi a hiba:** a Retusálás ecsetkör mérete a kép rövidebb oldalához arányos nálunk (`érték/1000 × rövidebb oldal`; a #7379 változata `érték/494 × rövidebb oldal`). Az eredeti sugara forrásképi képpont, a kép méretétől független, és a megjelenített kör a nagyítással arányos; a mérés (job-908, job #314) a csúszka két végén 3 és 97 képernyő-képpont sugarat mutat az alapállás 24 mellett.
+>
+> **Eredeti:** `job-908 __14` (bal vég: kör külső átmérője 8, R = 3,0), `job-907 __12` (alap: 50, R = 24,0; a `job-838 __12` korábbi mérése azonos), `job-908 __20` (jobb vég: 196, R = 97,0), mind a 988×248-as megjelenített képen, „Zoomed to 97%”; a job #314 képernyőképe (1024×1024 kép, 80%, alap: R = 20,0). Bináris: `0x0060b430` `R_képernyő = max(3·max(z,1), min(100, min(w,h)/2)·s·z)`, `0x0060a980` `R_forrás = R_képernyő/z`, `0x0060a700`/`0x0060a763` alap `s = 0,25`, `0x0060b350` a csúszka-esemény írja `s`-t (`forras-audit-5186-2.md`, #5975).
+>
+> **Nálunk:** `edit_controller_shared.py:372-373` (`_DEFAULT_BRUSH_SIZE = 20`, `_BRUSH_SIZE_TO_RELATIVE_DIVISOR = 1000.0`), `edit_controller_retouch_mixin.py:64-70` és `:234` (a relatív sugár), `PhotoViewerRetouchArea.qml:43-47` (a kör sugara `arány × min(szélesség, magasság)`), `render/retouch.py:68-71` (`round(sugár × rövidebb oldal)`), `EditorRetouchPanel.qml:84-92` (`from: 1; to: 100`).
+>
+> **Teendő:** (1) a csúszka `t ∈ [0,1]` helyzetéből `s`: `s(0,5) = 0,25` és `s(1) = 1` MÉRT; a köztes alakot a `7327-11c` rögzíti (jelölt: `s = t²`, ez illik minden mért ponthoz, de nem bizonyított); a bal végen `s ≤ 0,031` (a 3 képpontos minimum dominál). (2) A forrásképi sugár `r = max(3·max(z,1)/z, 100·s)` képpont, a kép méretétől függetlenül (ha a `7327-11d` mást nem mutat), a megjelenített kör sugara `r·z`; a nézet rövidebb oldalára (200 képpont alatt) a `min(100, min(w,h)/2)` kapu érvényes. (3) Az alap a csúszka közepe (a 1..100 skálán 50: `t = 0,495`, R = 23,8 a mért 24,0 helyett, ±0,5 képponton belül). (4) A mentett folt a saját `retouch=2` tokenben relatív sugarat tárol (`ini/retouch.py`): ezt a létrehozáskor `r / a kép rövidebb oldala`-ként kell számolni, hogy a round-trip formátum ne változzon. (5) A #7379 494-es osztója nem marad. **Nem része:** a folt belső keverése, a csúszka megjelenése.
+>
+> **Kész, ha:** (1) a renderelt próba a kört a `job-908 __14`, `__20` és a `job-907 __12` kockájával veti össze ugyanazon a képen és nagyításon (külső átmérő 8, 196, 50, ±1 képpont); (2) ugyanaz az alapállás a 1024×1024-es képen 80%-nál R = 20,0 (a job #314 mérete); (3) a `7327-11c` két köztes állása és a `7327-11d` más képméretű pontjai egyeznek; (4) a mentett folt képpontsugara a kép rövidebb oldalától független; (5) a szomszéd panelek (Vörösszem, Szöveg) képe változatlan.
+
+**(H) Retusálás visszavonása után az Újra letiltott marad (jegy: #7379 mellett vagy külön)**
+
+> **Mi a hiba:** az eredetiben a „Undo Retouches” megerősített visszavonása után az „Undo” és a „Redo” egyaránt tiltott, a felirat csupasz („Undo”, „Redo”); nálunk a megerősített visszavonás a redo-verembe tolja a lépést, így „Redo: Retouches” aktív marad.
+>
+> **Eredeti:** `job-907 __24` (a megerősített „Undo” után mindkét gomb tiltott, „Redo Retouches” nincs), `__26`-`__29` (a tiltott Redo kattintása és a Ctrl+S hatástalan, a kocka bájtra azonos az `__24`-gyel); a „No” ág (`__20`) semmit nem változtat (a képterület az `__16`-tal 0 képpontban azonos).
+>
+> **Nálunk:** `edit_controller_history_mixin.py:60-70` (`undo()` minden műveletet, a „retouch”-ot is, a `_redo_stack`-re tol), `:26` és `:36-38` (`canRedo`, `redoAction`), `edit_action_names.py:82`; a megerősítés `PhotoViewerEditorPanel.qml:119-130` és `PhotoViewerContextActions.qml:244-255`.
+>
+> **Teendő:** a megerősített retusálás-visszavonás után a redo-verem NE kapjon bejegyzést (az Újra tiltott, csupasz „Redo”); a „No” ág és a többi művelet visszavonása változatlan. A Vörösszem ugyanezt a komponenst használja, de annak eredeti viselkedése nincs mérve (`7327-10`), arra ne terjeszd ki.
+>
+> **Kész, ha:** (1) retusálás Apply, Undo, „Undo” után az „Undo” és a „Redo” tiltott, a feliratuk csupasz; (2) a „No” után a kép és a gombok az Undo előttivel azonosak; (3) a renderelt próba a bal panelt a `job-907 __24`-gyel veti össze; (4) más művelet (pl. Crop) Undo-ja után a Redo továbbra is aktív.
+
+**(I) Vágás panel: aktív kiegyenesítés mellett nincs figyelmeztetés a megnyitáskor (jegy: külön)**
+
+> **Mi a hiba:** a Vágás panel mindig kiírja a Kiegyenesítés-figyelmeztetést, ha a képen van kiegyenesítés; az eredetiben a Vágás csempére aktív kiegyenesítés mellett nincs se ablak, se panelszöveg.
+>
+> **Eredeti:** `job-912 __16` (a Vágás csempe után a „Crop Photo” panel figyelmeztetés nélkül; az `allapot.json` ablaklistája végig csak „Picasa 3”), a panel a tilt nélküli `job-911 __10`-től csak a bélyegképek tartalmában tér el; `__18` (az Escape Cancel-ként zárja az eszközt, a kiegyenesítés megmarad).
+>
+> **Nálunk:** `EditorCropPanel.qml:71-87` (`cropStraightenWarning`, `visible: panel.straightenActive`), `PhotoViewerEditWorkflow.qml:582,600` (`straightenActive = tiltParam !== 0`). Védőteszt: `tests/app/qml_functional/test_aa_kilepesi_utak_3014.py` (említi a `cropStraightenWarning` elemet; a módosítással igazítandó).
+>
+> **Teendő:** a Vágás panel megnyitásakor ne jelenjen meg a figyelmeztetés (a `cropStraightenWarning` sor kerüljön ki a megnyitás állapotából). **Nem része:** hogy az eredeti a figyelmeztetést a megnyitás UTÁN (húzáskor vagy Apply-kor) kiírja-e: ez a `7327-9c` kérdése, addig se új figyelmeztetést ne adj hozzá, se a szöveget ne töröld a forrásból (a `IDS_WARN_CROP_ACCURACY` szövege a `.ts` fordításokban marad).
+>
+> **Kész, ha:** (1) mentett kiegyenesítésű képen a Vágás csempe után a panel figyelmeztető sor nélkül nyílik; (2) a renderelt próba a panelt a `job-912 __16`-tal veti össze (a bélyegképek kivételével képpontra egyezik); (3) az Escape a kiegyenesítést megtartva zár (`__18`); (4) a Vörösszem „Info” ablakához (A jegytörzs) nem nyúltál.
+
+**(J) Kiegyenesítés: újranyitáskor a csúszka közepén indul, a második Apply új `tilt` tagot fűz, és a csúszka 253 képpontos skálája (jegy: külön)**
+
+> **Mi a hiba:** (1) az eredeti Kiegyenesítés újranyitáskor a csúszkát a KÖZEPÉN (0 érték) indítja a már kiegyenesített képen, és a második Apply új `tilt` tagot fűz a lánchoz; nálunk az újranyitott csúszka a mentett értéket veszi fel, és az Apply a meglévő tagot cseréli. (2) Az eredeti csúszka értéke `(x - 690,5)/126,5` (a foglalat teljes 253 képpontján át fut); nálunk a fogantyú középpontja csak 237 képpontot fut be.
+>
+> **Eredeti:** `job-913 __16` (újranyitás: a fogantyú közepe 689,5, az alapkép a kiegyenesített kép), `__18` (a második húzás a fogantyút 638,5-re viszi), a záró eredeti-mappa ini `filters=tilt=1,0.391249,0.000000;tilt=1,-0.399233,0.000000;` (két tag); a csúszka-érték mérése: a 740 és 640 egérpozíció `0,391249` és `-0,399233`, a két pontra illesztett meredekség 2/253 /képpont.
+>
+> **Nálunk:** `PhotoViewerEditWorkflow.qml:578` (`editorToolBar.csuszkaErtek = hostEditController.tiltParam`), `edit/session_effects.py:22-34` (`set_tilt`: csere, legfeljebb egy tag), `edit_controller_effects_finetune_mixin.py:80-92` (`setTilt`), `PicasaSlider.qml:234-236` és `EditorToolBar.qml:83-86,215-216` (253 széles sáv, 16 széles fogantyú: a középpont útja 237).
+>
+> **Teendő:** (1) a Kiegyenesítés eszköz minden megnyitáskor 0 értékről induljon, az alapkép a már alkalmazott lánc eredménye; (2) az Apply új `tilt` tagot fűzzön a lánc végére (a nulla értékű Apply ne írjon tagot, ha az eredeti ezt így teszi: ez nincs mérve, ne általánosítsd); ellenőrizd, hogy a render-lánc két `tilt` tagot sorban alkalmaz-e. (3) A csúszka értéke `(x - 690,5)/126,5` legyen a mért 253 képpontos foglalaton (a fogantyú KÖZEPE járja végig a teljes 253 képpontot). **Nem része:** az Undo/Redo viselkedése két `tilt` tagnál (`7327-9e`), a csúszka végállása (±1, `7327-9d`).
+>
+> **Kész, ha:** (1) kiegyenesített képen az újranyitott eszköz fogantyúja középen áll; (2) két Apply után két `tilt` tag van az ini-ben (a `job-913` értékeivel, `0,391249` és `-0,399233`, ha ugyanazt az egérmozdulatot adjuk); (3) egéreseménnyel a 740-es x-re húzva a csúszka értéke `0,3913 ± 0,001`; (4) a renderelt próba az újranyitott eszközt a `job-913 __16` és `__18` képkockával veti össze; (5) a Vágás panel és a Vörösszem „Info” ablaka változatlan.
+
+**(K) Mérés előbb, nem fejlesztői jegy:** a Mentés után az Undo gomb „Undo Save” feliratú (`job-910 __32`, `job-913 __24`), de a gomb hatása nincs mérve (`7327-12d`); amíg a hatás nincs meg, felületi feliratot nem szabad hozzáadni (félkész nem megy ki). A **D jegytörzs kiegészítése** (fájl-szintű): a retusálás fájlírása az Apply-kor történik (908), és a szöveg Mentéskor a fő ini-ből az eredeti-mappa ini-jébe költözik (910: `text=`, `textactive=1`, `width`, `height`); a kiegyenesítés láncát a mai kód is az eredeti-mappa ini-jébe teszi (913-mal egyezik), a retus-tokent a fő ini-ben meg kell tartani (D szerint).
+
+#### Javított lépéssorok (job-907..913 nyomán)
+
+A javított lépéssorok a munkafa `.tmp/javitott-lepesek2/` mappájában vannak; a közös bevezető (négy `var 10`, `kattint (80,215)`, `var 4`, `dupla (340,272)` vagy a megadott, `var 4`) után:
+
+| Fájl | Lépések | Mit dönt el |
+|---|---|---|
+| `7327-11c` (26) | Retouch; a „Brush Size” fogantyú húzása 134 → 107 (t ≈ 0,25), két kattintás; 107 → 160 (t ≈ 0,75), két kattintás; görgő (780,490) +5; kattintás (600,450) | az ecsetkör mérete két köztes csúszkaállásnál (az `s = t²` és az `s = 1,5·t - 0,5` alak elválasztása: R 6,1 vagy 3,0, illetve 54,6 vagy 60,6 képpont z = 0,97-nél), és a nagyítással arányosság egy másik z-n (a „Zoomed to” jelző olvasható) |
+| `7327-11d` (24) | a rács 3. képe (664,272), a 768×512-es `rgb_gradient.jpg`; Retouch; alap, jobb vég (192), bal vég (78): mindháromnál kör | a kép szélességétől vagy rövidebb oldalától függés (768 széles, 512 rövidebb oldal; z = 100% vagy a jelző szerint): abszolút forrásképpont esetén R = 25 / 100 / 3 (z = 1) |
+| `7327-12d` (24) | Text, szöveg, Apply, `ctrl+s`, „Save” (687,553); Undo (70,380); Redo (207,380); kimenet: ini, képmappa | az „Undo Save” gomb hatása (a fájl, a `.picasaoriginals`, az ini, a szöveg sorsa) és a Redo utána |
+| `7327-12e` (32) | Text, `PicasaPy7327`, Apply; újranyitás, kattintás (620,405), „Plusz”, Apply; újranyitás, kattintás, a forgatókorong fogantyújának húzása (718,405 → 718,445), Apply; kimenet: ini | a `text=` a helyben szerkesztett blokk után (egy blokk-e), és a forgatókorong hatása (a pozíciómező negyedik száma) |
+| `7327-12f` (24) | Text, `PicasaCancelProba`, Apply; újranyitás, „Clear All” (189,372), „Cancel” (191,406); újranyitás | a Clear All utáni Cancel visszahozza-e a szöveget (nálunk a `clearText` azonnali és végleges) |
+| `7327-9c` (20) | Straighten, húzás 680 → 740, APPLY; Crop (55,167), húzás (500,400)-(900,580), Apply (84,403) | a Vágás-figyelmeztetés a megnyitás UTÁN (húzáskor, Apply-kor ablak vagy szöveg) |
+| `7327-9d` (20) | Straighten, húzás 690 → 540 (a bal vég túl), APPLY; újranyitás, húzás 690 → 850, APPLY; kimenet: ini | a csúszka két végállása (a feltevés: `-1,000000` és `1,000000`), a két `tilt` tag az ini-ben |
+| `7327-9e` (28) | a `job-913` két Apply-ja, majd `Undo`, `Undo`, `Redo`, `Redo` | a két `tilt` tagú lánc Undo/Redo-ja (feliratok, kép, ini) |
+| `7327-9f` (20) | Straighten, húzás 680 → 740, APPLY, `ctrl+s`, „Save”, `picasa leallit`; kimenet: `db3` | az index (`imagedata_*.pmp`) a Mentés után; a 908 és 913 `db3`-ja csak bélyegkép-adatbázist tartalmazott |
+
 ### Mért koordináták a további Colab-feladatokhoz
 
 A #798 `kepernyo__23.png` képe 1280 × 1024 felbontású. A gombképek középpontját képpontban mértem; a Crop panelben nincs csúszka.
@@ -502,21 +789,22 @@ A mért koordináták bekerültek a munkafa `.tmp/colab-kitoltott/7327-8a-vagas-
 
 ### Nyitott pontok és következő bizonyító lépés
 
-- **Lezárva a `job-836`..`job-839`-cel:** a Straighten, Redeye, Retouch és Text panel megnyitása, felépítése, alapértéke, koordinátái, a Cancel és az Apply hatása (a `job-798` újrafelvétele helyett). Hátra van a javított lépéssorok lefuttatása: `7327-8d`, `7327-9`, `7327-9b`, `7327-10`, `7327-11`, `7327-11b`, `7327-12`, `7327-12b` (lásd „Job-836..839”).
+- **Lezárva a `job-836`..`job-839`-cel:** a Straighten, Redeye, Retouch és Text panel megnyitása, felépítése, alapértéke, koordinátái, a Cancel és az Apply hatása (a `job-798` újrafelvétele helyett). A javított lépéssorok közül lefutott és kiértékelt: `7327-8d`, `7327-9`, `7327-9b`, `7327-11`, `7327-11b`, `7327-12`, `7327-12b` (`job-907`..`job-913`, lásd „Job-907..913”); hátra van a `7327-10` (vörösszemes tesztkép kell) és a „Javított lépéssorok (job-907..913 nyomán)” kilenc új sora.
 - `job-809` batch útjának ini/DB/export/állapotsor mérése; a képernyőkép kijelölést mutat, de az írásokat nem.
 - **Lezárva a `job-837`-tel:** a Vörösszem tilt-figyelmeztetése (a tilt a feladat saját Kiegyenesítés-lépéséből keletkezett, a záró ini `filters=tilt=1,0.391249,0.000000;`); a `job-811` megismétlése nem kell.
 - `job-821` (két egymás utáni vágás, majd Undo, Redo, Undo, Undo) **lezárta** az ismételt Apply utáni látható Undo/Redo állapotot (a `job-815` csupa fekete kockái és a `job-813 kepernyo__20` hibás előfeltétele helyett). A 29 képkockából a döntők: `__14` (Apply 1 után „Recrop”, aktív „Undo Crop”, 415×187), `__20` (Apply 2 után 415×188), `__22` (EGY Undo után vágatlan kép, „Crop”, tiltott Undo, „Redo Crop”), `__24` (a Redo a második vágást hozza vissza, képpontra azonos az `__20`-szal), `__26` és `__28` (bájtra azonos `__22`-vel, a tiltott gombon az Undo nem hat); a záró ini: `redo=crop64=1,84bf4400ec7fffff;`, `filters=` nincs. A kockánkénti tábla és a döntés a „job-821” alszakaszban. Az első Apply utáni ini és a `redo=` írási időpontja nincs felvéve: lásd a következő pontot.
-- **Lezárva a `job-829`..`job-832` alapján:** a `redo=` az eredetiben a szerkesztés alatti, újranyitáskor eldobott tükör; a látható viselkedés a PicasaPy-ban egyezik, fejlesztői jegy nem kell (részletek a „Job-821 nyomán (B)” pontban). Nyitva: az újranyitott kijelölés 187→188 átállásának oka.
+- **Lezárva a `job-829`..`job-832` alapján:** a `redo=` az eredetiben a szerkesztés alatti, újranyitáskor eldobott tükör; a látható viselkedés a PicasaPy-ban egyezik, fejlesztői jegy nem kell (részletek a „Job-821 nyomán (B)” pontban). A `job-911` lezárta az újranyitott kijelölés 187→188 kérdését: az első Apply után a tárolt téglalap 415×187, a 188 csak az újranyitás utáni megjelenítési úton keletkezik.
 - **Fejlesztői jegytörzs kész:** a Crop csempe „Recrop” felirata („Job-821 nyomán (A)”).
-- A teljes kimenetből a 9-12. feladat után hiányzik: a Straighten Mentés utáni adatútja, a Redeye Apply/Undo/Save, a Retouch fájlírás ideje és Save, a Text formázás megjegyzése, a meglévő blokk és a Save (javított lépéssorok: `7327-9`..`7327-12b`).
+- A teljes kimenetből a `job-907`..`job-913` után hiányzik: a Redeye Apply/Undo/Save (`7327-10`), a Retusálás ecsetméretének köztes állásai és a képméret/nagyítás szerepe (`7327-11c`, `7327-11d`), a Szöveg Clear All utáni Cancel, a helyben szerkesztett blokk ini-je, a forgatókorong és az „Undo Save” gomb hatása (`7327-12d`, `7327-12e`, `7327-12f`), a Vágás-figyelmeztetés a megnyitás után, a Kiegyenesítés végállása és a két `tilt` tagú lánc Undo/Redo-ja (`7327-9c`, `7327-9d`, `7327-9e`), az index a Mentés után (`7327-9f`).
+- **Fejlesztői jegytörzsek kész (`job-907`..`job-913`):** G (ecsetméret, előfeltétele `7327-11c` és `7327-11d`; a #7379 494-es osztója a mérés szerint nem adható ki), H (az Újra a retusálás-visszavonás után letiltott), I (nincs Vágás-figyelmeztetés a megnyitáskor), J (a Kiegyenesítés újranyitása és a csúszka 253 képpontos skálája).
 
 ## Nyitott kérdések mérlege
 
-A pontok száma 11-ről 19-re nőtt, mert a korábbi „Nyílt (6)” sor a „Straighten/Redeye/Retouch/Text panelek és mezők” tételt egyetlen pontként vitte; ezt a kör négy eszközre bontotta, a „fájl/ini/index utóhatás” tételt pedig kettőre (a retusált kép végső fájl- és ini-állapota lezárult). Minden pont pontosan egy csoportban áll.
+A pontok száma 11-ről 19-re nőtt, mert a korábbi „Nyílt (6)” sor a „Straighten/Redeye/Retouch/Text panelek és mezők” tételt egyetlen pontként vitte; ezt a kör négy eszközre bontotta, a „fájl/ini/index utóhatás” tételt pedig kettőre (a retusált kép végső fájl- és ini-állapota lezárult). Minden pont pontosan egy csoportban áll. A `job-907`..`job-913` után a (17) pont lezárult, a (12), (14), (15), (16) pont hiánya szűkült, a (13) változatlan.
 
-- **Lezárva (11):** (1) a szerkesztői `Ctrl+Shift+E` paritáshiánya; (2) Crop Apply/Undo/Redo új, vágatlan képen; (3) Crop Reset, új kijelölés, Cancel, Apply nélkül; (4) a bináris Crop-végrekord szabálya és az eltérés (a #7367 javította); (5) az ismételt Apply utáni látható Undo/Redo gomb- és képállapot (`job-821`); (6) a `redo=` írási ideje és az újranyitás utáni Redo (`job-829`..`job-832`); (7) a Kiegyenesítés panel felépítése, alapállása, húzása, Cancelje és Apply-ja, az Undo/Redo felirat és kép, az ini-sor (`job-836`); (8) a Vörösszem panel alapállapota és a tilt-figyelmeztetés futásidejű feltétele és alakja (`job-837`); (9) a Retusálás panel elemei, a kétkattintásos folt, a helyi Undo/Redo/Reset, a Cancel, az Apply, a megerősítő ablak szövege és alakja (`job-838`); (10) a retusált kép végső fájl- és ini-állapota (`job-838`); (11) a Szöveg panel felépítése, a képre gépelés, a Cancel, az Apply, az Undo hiánya és az ini-sor (`job-839`).
-- **Blokkolt (6):** (12) Kiegyenesítés: a Mentés megerősítése utáni állapot, az újranyitás Apply után, a Crop-figyelmeztetés alakja, az `Escape` hatása. Hiány: a lépéssor nem erősítette meg a „Save” ablakot, nem nyitotta újra az eszközt Apply után, és nem nyitotta meg a Crop-ot kiegyenesítés mellett. Javított lépéssor: `7327-9`, `7327-9b`. (13) Vörösszem: Apply, Undo-megerősítés, mentett fájl. Hiány: valódi vörösszemes tesztkép a PicasaTeszt mappában (a felvétel képén nincs vörösszem, az Apply tiltott maradt). Javított lépéssor: `7327-10`. (14) Retusálás: a fájlírás ideje, a megerősítő ablak két ága, az Újra az Undo után, az ecsetméret szabálya. Hiány: lépésenkénti fájlidő (a javított sor az Apply után azonnal véget ér), az ablak gombjainak megnyomása, a csúszka két vége. Javított lépéssor: `7327-11`, `7327-11b`. (15) Szöveg: a formázás megjegyzése, meglévő blokk szerkesztése, a „Clear All” hatása, a Mentés utáni állapot. Hiány: az első kör semmit nem formázott (a Ctrl+B hatástalan), a Save ablakot nem zárta le, a meglévő blokkot nem nyitotta újra. Javított lépéssor: `7327-12`, `7327-12b`. (16) A fájl/ini/index/DB utóhatás az index tekintetében: a felvételek `picasa_ini` és `kepmappa` kimenetet adtak, `db3`-at nem. Javított lépéssor: `7327-9`, `7327-11`, `7327-11b` (kimenet: `db3`). (17) Az újranyitott kijelölés 187→188 átállásának oka (`job-821` `__16`). Hiány: az első Apply utáni ini nincs felvéve. Javított lépéssor: `7327-8d`.
+- **Lezárva (12):** (1) a szerkesztői `Ctrl+Shift+E` paritáshiánya; (2) Crop Apply/Undo/Redo új, vágatlan képen; (3) Crop Reset, új kijelölés, Cancel, Apply nélkül; (4) a bináris Crop-végrekord szabálya és az eltérés (a #7367 javította); (5) az ismételt Apply utáni látható Undo/Redo gomb- és képállapot (`job-821`); (6) a `redo=` írási ideje és az újranyitás utáni Redo (`job-829`..`job-832`); (7) a Kiegyenesítés panel felépítése, alapállása, húzása, Cancelje és Apply-ja, az Undo/Redo felirat és kép, az ini-sor (`job-836`); (8) a Vörösszem panel alapállapota és a tilt-figyelmeztetés futásidejű feltétele és alakja (`job-837`); (9) a Retusálás panel elemei, a kétkattintásos folt, a helyi Undo/Redo/Reset, a Cancel, az Apply, a megerősítő ablak szövege és alakja (`job-838`); (10) a retusált kép végső fájl- és ini-állapota (`job-838`); (11) a Szöveg panel felépítése, a képre gépelés, a Cancel, az Apply, az Undo hiánya és az ini-sor (`job-839`); (17) a Crop első Apply után mentett téglalap mérete és a 187/188 kérdés (`job-911`: a tárolt `crop64` 415×187, `370025009ebfdfff`; a „415 x 188” felirat az újranyitás utáni megjelenítési úton keletkezik, az ini-oldalnak nincs tennivalója, a felirat egy képpontos eltérése funkcióhatás nélküli).
+- **Blokkolt (5):** (12) Kiegyenesítés: lezárult a `job-912`/`job-913`-mal a Mentés megerősítése utáni állapot, az újranyitás Apply után (a csúszka a közepén indul, a második Apply új `tilt` tagot fűz), a Crop-csempe megnyitása kiegyenesítés mellett (nincs ablak, nincs panelszöveg) és az `Escape` hatása. Hiány: a Vágás-figyelmeztetés a megnyitás UTÁN (a lépéssor nem húzott kijelölést), a csúszka két végállása (±1 feltevés), a két `tilt` tagú lánc Undo/Redo-ja. Javított lépéssor: `7327-9c`, `7327-9d`, `7327-9e`. (13) Vörösszem: Apply, Undo-megerősítés, mentett fájl. Hiány: valódi vörösszemes tesztkép a PicasaTeszt mappában (a felvétel képén nincs vörösszem, az Apply tiltott maradt). Javított lépéssor: `7327-10`. (14) Retusálás: lezárult a `job-907`/`job-908`-cal a fájlírás ideje (az Apply), a megerősítő ablak két ága, az Újra az Undo után (tiltott), az ecsetméret három pontja (R = 3,0 / 24,0 / 97,0 képernyő-képpont) és illesztése a bináris képlethez. Hiány: a csúszka köztes állásai (az `s = t²` alak bizonyítása) és a kép szélességének, rövidebb oldalának, illetve a nagyításnak a szerepe további mérésen (mindkét mért kép 1024 széles). Javított lépéssor: `7327-11c`, `7327-11d`. (15) Szöveg: lezárult a `job-909`/`job-910`-zel a formázás megjegyzése Cancel után, a meglévő blokk szerkesztése, a Clear All + Apply hatása és a Mentés utáni fájl- és ini-állapot (a szöveg az eredeti-mappa ini-jébe költözik). Hiány: a Clear All utáni Cancel hatása, az ini a helyben szerkesztett blokk után, a forgatókorong hatása, az „Undo Save” gomb hatása. Javított lépéssor: `7327-12d`, `7327-12e`, `7327-12f`. (16) A fájl/ini/index/DB utóhatás az index tekintetében: a `job-908` és `job-913` `db3`-ja csak bélyegkép-adatbázist tartalmaz (`imagedata_*.pmp` nincs), a `job-907` oszlopai csak az Undo utáni állapotot adják. Hiány: az index az Apply és a Mentés után, a Picasa leállításával. Javított lépéssor: `7327-9f`.
 - **Hatókörön kívül (2):** (18) a toolbar-gombok súgója: a Colab végrehajtó lépéskészletében nincs egérmozgatás (hover), ezért ezen a csatornán nem mérhető; a súgószöveg a Picasa saját erőforrásaiból (a `stringres` és a `tooltips` táblákból) olvasható, a menü- és helyi menü-állapotokat a `job-807` és a `job-808` már mérte; (19) a hálózati és írásvédett helyek, a teljes hibaszöveg: a Wine-ban csak a `C:` meghajtó látszik, a végrehajtónak nincs hálózati vagy írásvédett helye; a hibaszövegek a binárisból (`IDS_*` sztringek) nyerhetők.
 - **Nyílt névtelen (0).**
 
-Állapotsor: **0 nyílt névtelen · 11 lezárva · 6 blokkolt · 2 hatókörön kívül**; az összeg 19. A blokkolt pontok mindegyikéhez megneveztem a pontos hiányt és a javított lépéssort. A #7327 teljes folyamata nem zárható le.
+Állapotsor: **0 nyílt névtelen · 12 lezárva · 5 blokkolt · 2 hatókörön kívül**; az összeg 19. A blokkolt pontok mindegyikéhez megneveztem a pontos hiányt és a javított lépéssort. A #7327 teljes folyamata nem zárható le.
