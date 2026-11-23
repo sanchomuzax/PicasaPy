@@ -367,6 +367,7 @@ function show(index) { viewer.currentIndex = index; viewer.forceActiveFocus() }
 // warm, unsharp és grain2 ágával azonos hívást futtatja, ezért ők is az
 // Effektek fület választják, nem az egyképes kötegre esnek vissza.
 function selectMenuEffect(name) {
+    if (editorPanel.paramPanelActive) return true
     var ful = -1
     if (name === "autolight" || name === "autocolor" || name === "enhance")
         ful = 0
