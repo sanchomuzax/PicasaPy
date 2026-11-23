@@ -1,6 +1,7 @@
 import QtQml
 import QtQuick
 import QtQuick.Window
+import "../selection.js" as Selection
 
 // A főablak néző- és könyvtári parancsai.
 QtObject {
@@ -92,11 +93,20 @@ QtObject {
         hostWindow.ensurePhotoViewer().show(0)
     }
 
+    //: #7384: az eredeti `Ctrl+3` (`0x005e624f`) a `thumbui/fullview`
+    //: gombot kijelölés-ellenőrzés nélkül kattintja. Kijelölt kép nélkül
+    //: a rács 1. képe nyílik, több kijelölt képnél a RÁCS szerinti első
+    //: (nem a kattintás sorrendje szerinti).
     function nezdEsSzerkeszd() {
         if (hostWindow.viewerOpen) return
-        var sorok = hostWindow.selectedRows()
-        if (sorok.length === 0) return
-        hostWindow.openPhotoViewer(sorok[0])
+        var sor = Selection.firstInGridOrder(hostWindow.selectedRows())
+        if (sor < 0) {
+            if (!hostController || !hostController.photos
+                    || hostController.photos.rowCount() <= 0)
+                return
+            sor = 0
+        }
+        hostWindow.openPhotoViewer(sor)
     }
 
     // #4329: az önálló Kép ▸ Unhide parancs kizárólag a rejtett kijelölt

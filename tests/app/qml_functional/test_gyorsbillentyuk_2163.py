@@ -165,15 +165,24 @@ class TestAMasodikKor:
             sc = _shortcut(window, nev)
             assert sc.property("sequence") == billentyu, nev
 
-    def test_ures_kijelolesre_a_Ctrl3_NEM_nyit_nezot(self, qml_app, qt_app):
-        """Kijelölés nélkül nincs mit szerkeszteni — a néma megnyitás
-        rosszabb lenne, mint a hatástalanság."""
+    def test_ures_kijelolesre_a_Ctrl3_a_racs_elso_kepet_nyitja(self, qml_app, qt_app):
+        """#7384: az eredeti `Ctrl+3` kijelölt kép nélkül (a mappa van
+        kijelölve) az 1. képet nyitja (J1a 9.). A valódi billentyűs próba a
+        `test_ctrl3_racs_elso_kep_7384.py`-ben van."""
         window, _c, _e = qml_app
         window.setProperty("selectedIndexes", [])
+        window.setProperty("selectedIndex", -1)
         window.setProperty("viewerOpen", False)
         qt_app.processEvents()
         _aktival(_shortcut(window, "editViewShortcut"), qt_app)
-        assert window.property("viewerOpen") is False
+        assert _var(qt_app, lambda: window.property("viewerOpen") is True), (
+            "a Ctrl+3 kijelölt kép nélkül nem nyitotta meg a nézőt"
+        )
+        nezo = window.findChild(QObject, "photoViewer")
+        assert nezo is not None, "a photoViewer nem található"
+        assert _var(qt_app, lambda: nezo.property("currentIndex") == 0), (
+            "a Ctrl+3 kijelölés nélkül nem a rács 1. képét nyitotta"
+        )
 
     def test_a_minta_torlese_kijeloles_nelkul_sem_hibazik(self, qml_app, qt_app):
         """A `clearsim` üresen se dobjon kivételt (a `clearSimilarity`
