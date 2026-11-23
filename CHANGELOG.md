@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.176] - 2026-11-23
+
+- A Vörösszem panel gombsora és megjegyzése az eredeti Picasa elrendezését követi, és a szerkesztő fülsávja az eszközpanelek fölött is látszik (#7386).
+- Nyitott effekt-paraméterpanel mellett a Kép menü és a Csoportos szerkesztés almenü tételei le vannak tiltva (#7389).
+- A Kiegyenesítés újranyitáskor a csúszka közepéről (0 értékről) indul a már kiegyenesített képen, és minden Alkalmaz új `tilt` tagot fűz a lánc végére (a korábbi tagok megmaradnak, az előnézet is a mentett lánc és az új tag együttese), mint az eredeti Picasában; a csúszka értéke a foglalat teljes 253 képpontján át fut (a fogantyú közepe a két végállásban a foglalat szélén áll), az egérpozíció és az érték viszonya `(x - 690,5) / 126,5` (#7393).
+- A Hangolás pipettájával semlegesített kép színei most az eredeti Picasa képletével készülnek, a bézs és szürke árnyalatok pontosan egyeznek vele (#7400).
+
 ## [1.0.175] - 2026-11-23
 
 ### Javítva
