@@ -500,20 +500,21 @@ az üres mappasor is kikerül. Ezek indexbeli műveletek, a fotófájlokat nem
 törlik. Az eredeti Picasa azonnali útjának tartós SQLite-szemantikája ettől
 függetlenül **NINCS MEG**.
 
-##### #7339: a `0x004e31a0` visszahívás célja és a fájltípus-váltás hatása a katalógusra (statikus rész, 2026-11-21)
+##### #7339: a `0x004e31a0` visszahívás célja és a fájltípus-váltás hatása a katalógusra (statikus folytatás, 2026-11-23)
 
 **Hatókör és bizonyosság.** Bináris: `Picasa3.exe`, SHA-256
 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96` (a helyi
-másolat bitre egyezik az indexeltével). Csak statikus vizsgálat:
+másolat bitre egyezik az indexeltével). A korábbi statikus vizsgálat
 `picasa_dis.py` / `pe_dis.py` (capstone), a bináris-index (`functions`,
 `xrefs`, `imports`, `rtti`, `string_xrefs`), a vtáblák és az IAT közvetlen
-kiolvasása az EXE-ből, és három teljes `.text` pásztázás a `paszta.py`-val
-(egyenként 2 884 879 utasítás, csúcs-RSS 49 MiB): a szkenner és a figyelő vtábláinak
-közvetlen operandusai, valamint a `[reg+0x344]`, `[reg+0x358]`, `[reg+0x484]`
-hozzáférések. Az eredetit nem futtattam; a futtatott mérés (M4, Colab #799) a
-hívónál fut. A független újralevezetés (#140) **nem** futott le (itt nincs
-engedélyezett független ellenőrző ügynök), ezért a fokok egyetlen, közvetlen diszasszemblátumon
-alapuló olvasatra vonatkoznak.
+kiolvasására, valamint három teljes `.text` pásztázásra épült. Ehhez a
+folytatás a Ghidra-dekompilátumból (580-585. köteg) a teljes `0x004ea360`, `0x0055ff80` és
+`0x0055ece0` dekompilátumát olvasta át, és az eredetivel egyező SHA-256-ú
+binárison célzottan ellenőrizte a `0x0055ff50`, `0x0055ff70`, `0x004f9450`,
+`0x004fbb30` és a mappa-dátum íróút döntő utasításait. Az eredetit nem
+futtattam. A korábbi Colab M4 `job-799` a File Types fül állapotát mérte, nem
+a tartós katalógus sorsát. A katalógusra vonatkozó M4 `job-822..825` mérés
+folyamatban van, eredménye még nincs.
 
 **Rövid válasz.**
 
@@ -528,10 +529,24 @@ alapuló olvasatra vonatkoznak.
 3. A kikapcsolás ága (`0x004fb9c0`) **nem** használja a `0x004e31a0`-t és nem
    ébreszt szálat: az OK szálán, szinkron veszi ki a rekordokat a memóriabeli
    táblából, és ugyanott értesíti a regisztrált figyelőt (`DBLoader`). **Erős.**
-4. Hogy a figyelő értesítéséből tartós katalógusírás (SQLite-sor,
-   `thumbindex.db`, `.picasa.ini`) lesz-e, és mikor, **statikusan NINCS MEG**;
-   a `DBLoader` két nagy kezelője (`0x0055ff80`, `0x0055ece0`) olvasatlan. A
-   tartós hatást az M4 mérés dönti el (mérési javaslat lent).
+4. Kikapcsoláskor a `0x0055ff50` (DBLoader vtable 1. helye) a
+   `0x006d4710` útján a memóriabeli sor állapotát 4-re állítja, majd
+   nézetértesítést küld. A `0x0055ff70` (vtable 2. hely) a `0x00419240`
+   útján az érvényes rekordok memóriabeli bájtvektorát frissíti; ezt a
+   `0x004fbb30` hívja a kikapcsoló ágban szinkron az OK-szálon, és a
+   szkenner befejezésénél is az aszinkron szkennerszálon. E két közvetlen
+   kezelő törzsében nincs tartós íróhívás. **Megerősített.**
+   **Erős:** a `0x0055ff80` és `0x0055ece0` külön DBLoader vtable-metódusok
+   (4. és 0. hely), nem e két kezelő közvetlen hívottjai. Mindkettőnek van
+   feltételes `0x00441e00` hívása; ez a `0x00441ac0` útján a helyi mappa
+   dátumát írhatja a CThumbDB adatbázisába, nem a kikapcsolt fotósort és nem
+   a `.picasa.ini`-t. **Erős az íróút, feltételes, hogy a fájltípus-váltás
+   elindítja ezt a külön mappadátum-ágat.**
+   **Nyitott kérdés:** a `0x006d4710` által 4-esre állított sorállapot
+   későbbi olvasója és a nézetértesítés utáni tartós író nincs megnevezve;
+   ezért a kikapcsolt rekord tartós törlése, megőrzése vagy átírása nem
+   következik a statikus hívási láncból. Ezt a befejezett M4 `job-822..825`
+   katalógus- és felületképei döntik el.
 
 **A. A `0x004e31a0` teste (megerősített).** Hívási forma: a fogadó
 (`ytDirScanner*`) a vermen, az útvonal C-sztring `edx`-ben, két további
@@ -607,10 +622,15 @@ tehát nem "indexelés", hanem az eseményjelzés.**
   (`0x004ec786`-`0x004ec78d`), végül `0x004ea360`.
 
 Ebből következik, hogy az OK-ból beadott kérés és egy mappafigyelő-jelzés
-**ugyanarra a sorra és ugyanarra a szálra** fut ki. A `0x004ea360` (6847 bájt)
-a szkennelés lefolytatója; a testét nem olvastam végig. A közvetlen hívottjai
-között a `0x004e7d10` (mappabejáró), a `0x004ed7d0` (útvonalból rekordkeresés),
-a `0x004e31a0` (újabb kérés) és a figyelőtömböt érintő `0x004e87c0` szerepel.
+**ugyanarra a sorra és ugyanarra a szálra** fut ki. A teljes, 6847 bájtos
+`0x004ea360` dekompilátumot átolvastam. **Erős:** ez a szkennerszál kéréslistáját
+fogyasztja, fájlrendszeri ágakat és mappabejárást indít, majd a feldolgozás
+végén `0x004e87c0`-t és `0x004fbb30`-at hív. A közvetlen hívási listában nincs
+`0x0055ece0`, `0x0055ff80` vagy közvetlen katalógus-fájlíró. **Feltételes:**
+az indirekt figyelő- és nézetkezelők további útja nincs lezárva, ezért ez nem
+bizonyítja, hogy a szkenner eredménye később nem jut tartós adatíróhoz. A
+`0x004e31a0` két extra argumentumának jelentése és a kérésrekordok `Dirty`
+1/2 mezőivel való pontos kapcsolata továbbra sincs meg.
 
 **D. A rekord és amit a `0x004efb40` ír (a mezőnevek erősek, a hatás feltételes).**
 A `WriteDirscannerCSV` hibakereső kiíró (`0x004f25f0`; a `Preferences\
@@ -671,37 +691,88 @@ A figyelő két kezelője (a `DBLoader` vtábla `0xc7f5c0`: [0] `0x55ece0`,
 | Ki hívja | Mikor | Kezelő | Mit tesz |
 |---|---|---|---|
 | `0x004f9450` (`0x004f9714`-`0x004f9724`: `[vtábla+4]`, argumentum: szkenner, index) | rekordonként, kivételkor | `0x0055ff50` | `0x006d4710(tulajdonos+0xf20, index, 4)`: a tulajdonos zárolt, memóriabeli sor-táblájában a sor állapota 4-re áll, majd nézetjelzés (`0x006a2a60`) |
-| `0x004fbb30` (`0x004fbb5b`: `[vtábla+8]`, argumentum: szkenner; csak ha `+0x4dd` igaz) | a ciklus végén | `0x0055ff70` | `0x00419240(tulajdonos)`: a tulajdonos rekordtáblájából egy "érvényes" bájt-tömböt számol (`[rekord+0x1d] != 0`, `0x0041934d`-`0x0041936f`); a `0x004fbb30` ezután a szkenner `+0x470` gyorsítótár-tömbjét üríti (`0x00411cf0`) |
+| `0x004fbb30` (`0x004fbb5b`: `[vtábla+8]`, argumentum: szkenner; csak ha `+0x4dd` igaz) | a kikapcsoló `0x004fb9c0` végén szinkron az OK-szálon; a `0x004ea360` scan-végén aszinkron a szkennerszálon | `0x0055ff70` | `0x00419240(tulajdonos)`: a tulajdonos rekordtáblájából egy "érvényes" bájt-tömböt számol (`[rekord+0x1d] != 0`, `0x0041934d`-`0x0041936f`); a `0x004fbb30` ezután a szkenner `+0x470` gyorsítótár-tömbjét üríti (`0x00411cf0`) |
 
-Ebből a szakaszból egyik függvény sem hív fájl-, registry- vagy
-adatbázis-API-t; a szkenner modul (`0x004e0000`-`0x00510000`) egyetlen függvénye
-sem importál közvetlen fájl-API-t (az index `imports` táblája erre a
-tartományra üres), a fájlműveletek a `0x0099xxxx` csomagolókon át mennek.
-**A `DBLoader` többi kezelőjét (`0x0055ff80`, 2406 bájt; `0x0055ece0`, 4500
-bájt) és a `0x006d4710` sor-állapot olvasóit nem olvastam**, ezért az "indexsor
-törlése / megőrzése / újraírása" kérdés tartós rétege nyitott (N5).
+Az OK-szál kikapcsoló útján (`0x004fb9c0`, `0x004f9450`, `0x004fbb30`) és a
+két közvetlen értesítőben (`0x0055ff50`, `0x0055ff70`) nincs fájl-, registry-
+vagy adatbázis-API-hívás. A szkenner modul (`0x004e0000`-`0x00510000`) nem
+importál közvetlen fájl-API-t; a fájlműveletek csomagolókon át mennek. Ez a
+negatív megállapítás nem terjed ki a lent leírt, külön DBLoader vtable-metódus
+feltételes mappa-dátum hívására.
+**A figyelő utáni tartós írás és annak határa.** A `0x0055ff50`
+(`0x0055ff50`-`0x0055ff68`, vtable 1. hely) közvetlenül csak a
+`0x006d4710`-et hívja. Ez az `owner+0xf20` memóriabeli sor-táblájában állapotot
+állít, majd a `0x006a2a60` nézetértesítésig jut. **Megerősített:** ezen a
+kezelőn nincs SQLite-, fájl- vagy registry-írás. A `0x0055ff70`
+(`0x0055ff70`-`0x0055ff7b`, vtable 2. hely) közvetlenül a `0x00419240`-et
+hívja, amely a `Valid` bájtokból memóriabeli vektort számol és frissít;
+**megerősített**, hogy ez nem tartós törlés vagy rekordátírás. A
+`0x004f9450` hívja a `0x0055ff50`-et az OK-szálon. A `0x004fbb30` hívja a
+`0x0055ff70`-et mind a kikapcsoló `0x004fb9c0` végén, szinkron az OK-szálon,
+mind a `0x004ea360` feldolgozási végén, aszinkron a szkennerszálon. **Erős:**
+a közvetlen callback-törzsekben nincs tartós íróhívás, de a későbbi
+fogyasztók viselkedése nyitott.
+
+**Erős, de külön út:** a DBLoader vtable `0. helyén álló `0x0055ece0` és
+`4. helyén álló `0x0055ff80` nem a fenti két callback közvetlen hívottjai.
+Mindkettő feltételes ágon meghívja a `0x00441e00`-at (`0x0055fea6`, illetve
+`0x005606db`). A `0x00441e00` a `0x00441ac0`-n keresztül a helyi mappa dátumát
+állítja a CThumbDB adatbázisában; a PicasaPy-specifikációban az út
+`0x004481e0` adatbázis-íróként szerepel, és a helyi automatikus dátumág nem ír
+`.picasa.ini`-t (`docs/specs/pmp-database.md`, 12.2). **Feltételes:** a
+dekompilátum nem mutat olyan hívási kapcsolatot, amely ezt a mappadátum-ágat
+a fájltípus-értesítés következményévé tenné. Ez a mellékág nem bizonyítja a
+kikapcsolt fotósorok törlését, megőrzését vagy átírását.
+
+**Nyitott kérdés (N5).** **Megerősített:** a `0x0055ff50` és `0x0055ff70`
+közvetlen törzse nem ír SQLite-sort, `thumbindex.db`-t, `db3`-fájlt vagy
+`.picasa.ini`-t; az előbbi memóriabeli sort és nézetet, az utóbbi a
+memóriabeli érvényességi vektort frissíti. **Erős:** a külön `0x0055ece0` és
+`0x0055ff80` metódusok feltételes `0x00441e00` hívása a `0x00441ac0`-n át
+CThumbDB-adatbázisba írhatja a helyi mappa dátumát; ennek fájltípus-váltás
+általi meghívása nem bizonyított, és ez nem a fotósor írása. **NYITOTT KÉRDÉS:**
+nem azonosítottuk a `0x006d4710` által 4-esre állított állapot későbbi
+olvasóit és a `0x006a2a60` értesítés fogyasztóit, ezért a callback utáni
+közvetett írás (beleértve a felsorolt fájlokat) és az író függvény, illetve
+annak időzítése nem állapítható meg. Ugyancsak nincs lezárva, hogy a
+`0x004ea360`-ból a `0x004e87c0` / `0x004fbb30` felé menő scan-eredmény útja
+vezet-e későbbi tartós fotósor-íráshoz. Emiatt statikusan nem dönthető el, hogy
+a letiltott fotó tartós rekordja törlődik, megmarad vagy átíródik, és az sem,
+hogy a bekapcsolás után mikor kerül vissza a katalógusba.
+
+**A nyitva maradt ágakhoz döntő M4 képkockák:** kikapcsolás előtti katalógus
+és felület alapállapot; OK után azonnal; a teljes feldolgozás után a felület,
+a katalógus összes elérhető adatbázisfájljával és a `WriteDirscannerCSV`
+kimenettel; bekapcsolás után az első megjelenés és a scan végi katalógus;
+végül újraindítás után a tartós állapot. Ezek megmutatják a sor megmaradását,
+törlését vagy újbóli létrehozását és a visszajövetel idejét, de az egyes
+statikus írófüggvényeket nem nevezik meg. A `job-822..825` egyedi
+feladat- és képkocka-hozzárendelése nincs a munkafában, ezért nem tulajdonítok
+képkockát konkrét job-számnak.
 
 **F. Eredeti | Nálunk | Teendő** (a "Nálunk" oszlop a mai main mérése,
 `621643152` a #7338 után):
 
 | # | Eredeti (bináris) | Nálunk (fájl:sor, szó szerint) | Teendő |
 |---|---|---|---|
-| 1 | OK után: kikapcsolás `0x005cfd67` → `0x004fb9c0` (szinkron, az OK szálán); bekapcsolás `0x005cfd7e` → `0x004efb40` (kérés + `SetEvent`, a munka a szkennerszálon); mindkét ág után `0x005cfd8f`: `0x004ebe40` (a `+0x2ec` változásfigyelők `+0x54` listáját üríti és a `0x004e2d30`-cal újraépíti; a `0x004e2d30` testét nem olvastam, tehát a lista tartalma feltételes) | `OptionsDialog.qml:168-169`: `if (fileTypesChanged && typeof controller.rescan === "function")` / `controller.rescan()`; `library_controller_sync_rescan.py:25`: `self._start_rescan(self._manual_rescan_worker)` | Kód-teendő nincs. A #7338 óta az OK azonnali háttér-újraolvasást indít; a #7329 "nincs `_start_rescan`" mondata és a [paritas-folyamat-7325.md](paritas-folyamat-7325.md) 9. sora **elavult**. Időzítési különbség: az eredetinél a kivétel az OK szálán szinkron, nálunk a törlés a háttérkör végén jön (az M4 dönti el, látszik-e) |
-| 2 | Kikapcsoláskor a bizonyított út: memóriabeli rekord kivétele (`0x004f9450`, `0x0040fae0`, `[this+0x4d4]--`) és figyelő-értesítés (`0x004fbb30` → `DBLoader` `0x0055ff50`, `0x0055ff70`); fájltörlés nincs; tartós írás nem bizonyított | `sync_photos.py:185-186`: `nevek = [media.name for media in scan.files]` / `_prune_photos(conn, folder_id, nevek)`; `sync_photos.py:535`: `"DELETE FROM photos WHERE folder_id = ? AND name NOT IN"`; `scanner/filetypes.py:143`: `return kind if group in enabled_filetypes else None` | Nincs kód-teendő statikus alapon. Ha az M4 azt mutatja, hogy az eredeti tartós sorai a kikapcsolás után is megmaradnak (és csak a nézetből tűnnek el), akkor a mi `DELETE FROM photos` **eltér** (a fotósor-törlés és a hozzá kötött indexadatok elvesznek, újrafelvételkor újra kell építeni) |
-| 3 | Bekapcsoláskor: `0x004efb40` jelöl (`Valid != 0`, `Type == 1` rekordok `Dirty := 1`, `Access Time := 0`; a figyelt útvonalak rekordjai `Dirty := 2`) és kérést ad (`0x004e31a0(útvonal,1,1)` → `SetEvent`), a szál `0x004ea360`-nal dolgozza fel | `sync.py:196`: `or folder["filetype_signature"] != filetype_signature` (a típusaláírás eltérése miatt a mappa újraellenőrzése); `library_controller_sync_rescan.py:31`: `with _manual_rescan_file_check():` (a kézi újraolvasás minden fájl mtime-ját ellenőrzi) | Kód-teendő nincs: mindkettő azonnal indul és aszinkron. Különbség: nálunk mindig minden gyökér teljes körű újraolvasása, az eredeti a jelölt (`Dirty`) rekordokra és a figyelt útvonalakra szűkít; a szűkítés pontos köre **NINCS MEG** (N4) |
-| 4 | Induláskor ugyanaz: a `0x004183c0` a típustábla után hívja a `0x004efb40`-et (`0x004186b9`), vagyis az eredeti is minden indulásnál újraolvastat | `controller_initialization.py:84`: `self._filetype_scan_snapshot = load_enabled_filetypes(self._get_settings())`; az indulás is teljes újraolvasás (`library_controller_sync_rescan.py`, a `_start_rescan` leírása) | Nincs; egyezik |
+| 1 | OK után: kikapcsolás `0x005cfd67` → `0x004fb9c0` (szinkron, az OK szálán); bekapcsolás `0x005cfd7e` → `0x004efb40` (kérés + `SetEvent`, a munka a szkennerszálon); mindkét ág után `0x005cfd8f`: `0x004ebe40` (a `+0x2ec` változásfigyelők `+0x54` listáját üríti és a `0x004e2d30`-cal újraépíti; a `0x004e2d30` testét nem olvastam, tehát a lista tartalma feltételes). **Erős** az útvonal és az időzítés; **feltételes** az újraépített lista tartalma. | `src/picasapy/app/qml/OptionsDialog.qml:168-169`: `if (fileTypesChanged && typeof controller.rescan === "function")` / `controller.rescan()`; `src/picasapy/app/library_controller_sync_rescan.py:25`: `self._start_rescan(self._manual_rescan_worker)` | Kód-teendő nincs ebben a hívási eltérésben. A #7338 óta az OK azonnali háttér-újraolvasást indít; a #7329 "nincs `_start_rescan`" mondata és a [paritas-folyamat-7325.md](paritas-folyamat-7325.md) 9. sora elavult. **Erős:** az eredetinél a kivétel az OK szálán szinkron, nálunk az újraolvasás a háttérben indul. |
+| 2 | Kikapcsoláskor a memóriabeli rekord kivétele (`0x004f9450`, `0x0040fae0`, `[this+0x4d4]--`) után az értesítők (`0x0055ff50`, `0x0055ff70`) csak memóriabeli állapotot, érvényességi vektort és nézetet frissítenek. **Megerősített** a közvetlen callback-viselkedés; **NYITOTT KÉRDÉS** a tartós fotósor sorsa, mert a `0x006d4710` állapot 4 olvasói és az értesítés utáni íróút nincsenek meg. | `src/picasapy/index/sync_photos.py:185-186`: `nevek = [media.name for media in scan.files]` / `_prune_photos(conn, folder_id, nevek)`; `src/picasapy/index/sync_photos.py:535-538`: `DELETE FROM photos ... NOT IN`; `src/picasapy/scanner/filetypes.py:143`: `return kind if group in enabled_filetypes else None` | **M4-ig nincs döntés.** Ha a teljes feldolgozás utáni eredeti katalógusban a kikapcsolt fotósor megmarad, fejlesztői jegy kell a PicasaPy törlése miatt. Ha az eredeti sora is törlődik, ezen a ponton nem kell fejlesztői jegy. A `job-822..825` kikapcsolás utáni katalógusképe dönt. |
+| 3 | Bekapcsoláskor a `0x004efb40` kérésbe teszi a jelölt útvonalakat (`0x004e31a0` → `SetEvent`), a szkennerszál a `0x004ea360`-nal dolgozik és a végén értesít (`0x004fbb30` → `0x0055ff70`). **Erős** az aszinkron feldolgozás; **NYITOTT KÉRDÉS**, hogy a teljes út után mikor és melyik tartós fotósort írja. | `src/picasapy/index/sync.py:188-196`: a `filetype_signature` eltérése újraellenőrzést okoz; `src/picasapy/app/library_controller_sync_rescan.py:27-32`: a kézi újraolvasás háttérszálon minden fájl mtime-ját ellenőrzi. | **M4-ig nincs döntés.** A feldolgozás utáni első képkocka dönti el, hogy a korábban szűrt fájlok visszakerülnek-e; a kikapcsolás utáni katalógussal és az újraindítás utáni képpel együtt a `job-822..825` eredményéből dönthető el, kell-e fejlesztői jegy. |
+| 4 | Induláskor a `0x004183c0` a típustábla után hívja a `0x004efb40`-et (`0x004186b9`). **Erős:** az eredeti induláskor is újraolvastat. | `src/picasapy/app/controller_initialization.py:84`: `self._filetype_scan_snapshot = load_enabled_filetypes(self._get_settings())`; `src/picasapy/app/library_controller_sync_rescan.py:25`: `_start_rescan` | Kód-teendő nincs; az induláskori újraolvasási út megegyezik. |
 
-**G. Mérési javaslat az M4-hez (a hívónak).** Az eredeti beépített
-hibakereső kiírója a belső rekordtáblát is láthatóvá teszi: ha a
-`Preferences\WriteDirscannerCSV` kulcs nem nulla, a szkenner a
-`dirscanner-start.csv`, `dirscanner-up.csv` és `dirscanner-shutdown.csv`
-fájlba írja a táblát (`0x004f25f0`; a mód → fájl leképezés és a hívási
-pillanatok, valamint a pontos mappa nincsenek végigkövetve, a függvényben a
-`#db3\` sztring szerepel, tehát feltehetően a `db3` mappában). Az M4-ben ezzel
-az üzemmóddal a nézet és a `db3` mellett a belső tábla is mérhető: kikapcsolás
-előtt és után a `Valid` és `Type` oszlop, a kilépési `-shutdown.csv`, és hogy a
-`db3` fájljai (mérettel, időponttal) megváltoznak-e az OK után. Ez egyetlen
-registry-érték, törlő lépés nélkül.
+**G. A döntő M4 képkockák (`job-822..825`).** A kikapcsolt sor tartós sorsát a
+kikapcsolás előtti alapállapot és az OK utáni, teljes feldolgozást követő
+felületi és katalógus-pillanatkép összevetése dönti el. Az azonnali OK utáni
+képkocka azt mutatja meg, mikor tűnik el az elem a nézetből; a befejezett
+állapotban a belső `Valid` és `Type` tábla is összevethető, ha a
+`Preferences\WriteDirscannerCSV` be van kapcsolva (`0x004f25f0`, kimenetek:
+`dirscanner-start.csv`, `dirscanner-up.csv`, `dirscanner-shutdown.csv`). A
+bekapcsolás után az első megjelenési képkocka és a teljes szkennelés végi
+képkocka különíti el az azonnali megjelenést a feldolgozás utáni
+megjelenéstől. Az újraindítás utáni katalóguskép dönti el, hogy az előző
+állapot tartósan megmaradt-e. **Megerősített:** ezek az állapotok választják
+szét a felületi eltűnést, a tartós sor sorsát és a visszakerülés időzítését;
+a `job-822..825` egyedi sorszám és képkocka-hozzárendelése itt nincs megadva.
 
 **H. Nyitott kérdések mérlege.**
 
@@ -710,10 +781,10 @@ registry-érték, törlő lépés nélkül.
 | N1 | Mi a `0x004e31a0` visszahívásának célja, és ír-e katalógust? | **LEZÁRVA** (megerősített): `0x00706190` = `SetEvent`; a kérés a `+0x298` sorba kerül; nincs fájl-, registry- vagy adatbázis-hívás |
 | N2 | Ki ébred fel, és mit csinál? | **LEZÁRVA** (erős): `0x004ebff0` főciklus, `WaitForMultipleObjects` (`0x007065f0`), feldolgozó `0x004ea360` |
 | N3 | Szálat ébreszt-e a kikapcsolás ága, és szinkron-e? | **LEZÁRVA** (erős): nem hívja a `0x004e31a0`-t, szinkron, az OK szálán; figyelő-értesítéssel zár |
-| N4 | Mit tesz a `0x004ea360` a `Dirty` 1/2 rekordokkal (mi kerül be vagy ki, melyik értesítést adja), és mit jelent a `Type == 1`? | **BLOKKOLT, felvehető statikus irány:** a `0x004ea360` Ghidra-dekompilálása a figyelőtömböt érintő hívóival: `0x004e7d10`, `0x004e87c0`, `0x004f97f0`, `0x005004f0`, `0x00503920`, `0x00507f60` (a `paszta.py` pásztázás szerint mind a `+0x484` tömböt olvassa). Javasolt al-jegy: "a szkenner `0x004ea360` feldolgozásának dekompilálása" |
-| N5 | A `DBLoader` mely kezelője ír tartós katalógust (`0x0055ff80`, `0x0055ece0`, a `0x006d4710` sor-állapot 4 olvasói)? | **BLOKKOLT, felvehető statikus irány:** a három függvény Ghidra-dekompilálása; a tartós réteg tényleges viselkedéséhez M4 is kell (Colab #799, `db3`-állapot) |
-| N6 | A `0x004e31a0` két extra argumentumának jelentése (`(1,1)`, `(0,1)`, `(0,0)`)? | **BLOKKOLT:** a várólista rekordjának olvasója a `0x004ea360`-ban; ugyanaz a Ghidra-kör, mint az N4 |
-| N7 | Az eredetiben a kikapcsolt típus fájljai az OK pillanatában eltűnnek-e a nézetből, megmaradnak-e a tartós sorok, és bekapcsolás után mennyi idő múlva jelennek meg a korábban kiszűrtek? | **BLOKKOLT:** futtatott mérés (M4, Colab #799, a `WriteDirscannerCSV` üzemmóddal); statikusan nem dönthető el, mert a nézetfrissítés a tulajdonos sor-tábláján át megy (`0x006a2a60`), és a tartós réteg az N5 |
+| N4 | Mit tesz a `0x004ea360` a `Dirty` 1/2 rekordokkal (mi kerül be vagy ki, melyik értesítést adja), és mit jelent a `Type == 1`? | **RÉSZBEN FELDOLGOZVA, NYITOTT:** a teljes dekompilátum olvasva; a kéréslistát fogyasztja, scan-ágakat futtat, majd `0x004e87c0`-t és `0x004fbb30`-at hív, közvetlen katalógusírót nem azonosítottam. **NYITOTT KÉRDÉS:** a `Dirty` 1/2 és `Type == 1` pontos szemantikája, valamint a scan-eredmény közvetett írója. A konkrét útvonalakon a `WriteDirscannerCSV` befejezés előtti/utáni sorai és az M4 katalógus-pillanatképek adhatnak viselkedési bizonyítékot; az általános mezőjelentést ezek önmagukban nem bizonyítják. |
+| N5 | A `DBLoader`-értesítés után melyik út ír tartós katalógust, mikor, és mi lesz a kikapcsolt rekorddal? | **RÉSZBEN LEZÁRVA, NYITOTT:** megerősített, hogy `0x0055ff50` memóriabeli sorállapotot és nézetet, `0x0055ff70` memóriabeli érvényességi vektort módosít; ezek közvetlenül nem írnak tartós adatot. `0x0055ece0` és `0x0055ff80` külön metódusok, feltételes mappa-dátum íróággal, de nincs bizonyítva, hogy a fájltípus-váltás eléri őket. **Hiányzó statikus ág:** `0x006d4710` állapot 4 olvasói, `0x006a2a60` fogyasztói, valamint a `0x004ea360` scan-eredményének későbbi íróhoz vezető útja. Az M4 döntő képei a kikapcsolás utáni teljes feldolgozás, bekapcsolás utáni első megjelenés és scan-vég, valamint újraindítás utáni katalógus. |
+| N6 | A `0x004e31a0` két extra argumentumának jelentése (`(1,1)`, `(0,1)`, `(0,0)`)? | **RÉSZBEN FELDOLGOZVA, NYITOTT:** a hívás sorba teszi az útvonalat és a két bájtot, a teljes `0x004ea360` fogyasztja a kérést. **Hiányzó ág:** nem sikerült egyértelműen hozzárendelni a `0x004e3229`-`0x004e322d` helyen összeállított két bájtot és a `0x004e3232`-`0x004e3238` dword-ot a `0x004ea360` konkrét elágazásaihoz; ezért az argumentumok jelentése nem bizonyított. Az M4 az ismert argumentumpárok gyakorlati kimenetét mutathatja, de a mezőnevet és általános szemantikát nem. |
+| N7 | Az eredetiben a kikapcsolt típus fájljai az OK pillanatában eltűnnek-e a nézetből, megmaradnak-e a tartós sorok, és bekapcsolás után mikor jelennek meg a korábban kiszűrtek? | **NYITOTT, futó mérésre vár:** M4 Colab `job-822..825`; a `job-799` csak a File Types fület mérte. Az OK utáni azonnali kép a nézetváltást; a teljes feldolgozás utáni katalógus és CSV a kikapcsolás tartós hatását; az engedélyezés utáni első megjelenési és scan-végi képkocka a visszatérés időzítését; az újraindítás utáni katalógus a tartósságot dönti el. A konkrét job-szám/képkocka párosítás hiányzik a munkafából. |
 
 **Nyitott kérdések: 0 nyílt (örökölt) · 3 lezárva · 4 blokkolt · 0 hatókörön
 kívül · 0 "csak nyitva".**
@@ -733,11 +804,13 @@ kívül · 0 "csak nyitva".**
 - *"A `0x004e31f8` hívás fájlattribútum-lekérdezés."* Cáfolat: az IAT-mutató
   `KERNEL32!InterlockedIncrement` (a `0x00c40558` párja az
   `InterlockedDecrement`): CString-hivatkozásszámláló.
-- *"A kikapcsolás ága szálat ébreszt vagy fájlt töröl."* Cáfolat: a
-  közvetlen hívottak halmaza (`0x0040fae0`, `0x004e2cc0`, `0x004f9450`,
-  `0x004fbb30`) és a figyelő-értesítések olvasott kezelői nem tartalmaznak
-  ilyet; a teljes olvasat feltételes a fenti, olvasatlan `DBLoader`-kezelők
-  miatt.
+- *"A kikapcsolás ága szálat ébreszt vagy fájlt töröl."* **Megerősített:** a
+  közvetlen kikapcsoló hívások (`0x0040fae0`, `0x004e2cc0`, `0x004f9450`,
+  `0x004fbb30`) és a vizsgált két közvetlen DBLoader-kezelő nem tartalmaz
+  fájltörlést vagy tartós katalógusírást; az OK-szálon szinkron memóriabeli
+  kivétel és értesítés történik. **NYITOTT KÉRDÉS:** a `0x006d4710` állapot 4
+  későbbi olvasói, a `0x006a2a60` fogyasztói és a scan-eredmény közvetett
+  íróútja nincs lezárva, ezért ebből nem következik a tartós fotósor sorsa.
 
 **J. Jegytörzs-jelölt (csak az M4 eredménye után nyitható, ma NEM nyitandó).**
 *Cím:* "A kikapcsolt fájltípus sorai az OK pillanatában ... (az M4 szerint)".
