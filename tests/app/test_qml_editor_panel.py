@@ -863,33 +863,45 @@ class TestRedeyeTool:
         qt_app.processEvents()
         seen = []
         panel.redeyeAutoRequested.connect(lambda: seen.append("auto"))
-        panel.redeyeUndoRegionRequested.connect(lambda: seen.append("undo"))
         panel.redeyeResetRequested.connect(lambda: seen.append("reset"))
         panel.redeyeApplyRequested.connect(lambda: seen.append("apply"))
         panel.redeyeCancelRequested.connect(lambda: seen.append("cancel"))
         #: #3123: az Alkalmaz/Mégse MÁR NEM a panelben van (a kép fölé
         #: került), ezért a panel gombsorából kimarad.
         for name in (
-            "redeyeAutoButton", "redeyeUndoRegionButton", "redeyeResetButton",
+            "redeyeAutoButton", "redeyeResetButton",
         ):
             QMetaObject.invokeMethod(
                 panel.findChild(QObject, name),
                 "buttonClicked", Qt.ConnectionType.DirectConnection,
             )
         qt_app.processEvents()
-        assert seen == ["auto", "undo", "reset"]
+        assert seen == ["auto", "reset"]
+        preview = panel.findChild(QObject, "redeyePreviewButton")
+        assert preview.property("label") == "Preview"
+        assert preview.property("enabled") is True
+        QMetaObject.invokeMethod(
+            preview, "buttonClicked", Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+        assert panel.property("redeyeHideOutlines") is True
+        assert panel.findChild(QObject, "redeyeUndoRegionButton") is None
 
-    def test_hide_outlines_checkbox_toggles_panel_property(self, qml_engine, qt_app):
+    def test_preview_disabled_without_regions_and_apply_enabled_with_regions(
+        self, qml_engine, qt_app
+    ):
         panel = self._make_panel(qml_engine)
         qt_app.processEvents()
         panel.setProperty("redeyeActive", True)
         qt_app.processEvents()
-        check = panel.findChild(QObject, "redeyeHideOutlinesCheck")
-        assert panel.property("redeyeHideOutlines") is False
-        check.setProperty("checked", True)
-        QMetaObject.invokeMethod(check, "toggled", Qt.ConnectionType.DirectConnection)
+        preview = panel.findChild(QObject, "redeyePreviewButton")
+        apply = panel.findChild(QObject, "redeyeApplyButton")
+        assert preview.property("enabled") is False
+        assert apply.property("enabled") is False
+        panel.setProperty("redeyeRegionCount", 1)
         qt_app.processEvents()
-        assert panel.property("redeyeHideOutlines") is True
+        assert preview.property("enabled") is True
+        assert apply.property("enabled") is True
 
 
 class TestTextTool:

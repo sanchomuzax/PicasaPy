@@ -24,7 +24,7 @@ Item {
         id: tabBar
         objectName: "editTabBar"
         panel: tabSections.panel
-        visible: !tabSections.panel.modeToolActive
+        visible: true
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right

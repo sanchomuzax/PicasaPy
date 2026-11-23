@@ -6,6 +6,7 @@ import PicasaPy
 Item {
     id: overlaySections
     required property var panel
+    property real modeToolTopInset: 0
 
     readonly property bool textApplyEnabled:
         modeToolScroll.szovegLap ? modeToolScroll.szovegLap.applyEngedve
@@ -19,6 +20,7 @@ Item {
         id: modeToolScroll
         panel: overlaySections.panel
         anchors.fill: parent
+        anchors.topMargin: overlaySections.modeToolTopInset
     }
 
     // #448: a hívó (a "Add Custom Aspect Ratio…" sor) nyitja a párbeszédet;

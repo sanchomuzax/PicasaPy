@@ -533,6 +533,15 @@ def _latszik_es_meretes(item) -> bool:
         return False
 
 
+def _lathato_es_meretes(item) -> bool:
+    if not _ervenyes_qt_elem(item):
+        return False
+    try:
+        return item.isVisible() and item.width() > 0 and item.height() > 0
+    except RuntimeError:
+        return False
+
+
 def _keres(window, nev: str):
     """Mint a _elem, de nem bukik el: None, ha az elem nincs (diagnosztikához, #4929)."""
     try:
@@ -968,7 +977,10 @@ def _lep_vorosszem_javitas_valodi_huzassal(tiszta_app, qt_app, diag: list):
         ))
     assert terulet is not None, "a felületi elem nem található: redeyeDragArea"
     assert gomb is not None, "a felületi elem nem található: redeyeApplyButton"
-    lathato = _var(qt_app, lambda: _latszik_es_meretes(terulet) and _latszik_es_meretes(gomb))
+    assert gomb.property("enabled") is False, (
+        "találat nélkül a Vörösszem Alkalmaz gombjának letiltottnak kell lennie"
+    )
+    lathato = _var(qt_app, lambda: _lathato_es_meretes(terulet) and _lathato_es_meretes(gomb))
     if not lathato:
         diag.append(_vorosszem_diagnosztika(
             window, edit, terulet, gomb, kattintasi_adatok
