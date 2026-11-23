@@ -109,7 +109,9 @@ PhotoContextMenu {
     }
     // #422 (2. lépcső): az eredeti AlbumPhoto-menü többi parancsa
     onOpenRequested: {
-        hostWindow.openPhotoViewer(hostWindow.fileOpTargetRow)
+        var sor = Selection.firstInGridOrder(hostWindow.selectedRows())
+        if (sor < 0) sor = hostWindow.fileOpTargetRow
+        if (sor >= 0) hostWindow.openPhotoViewer(sor)
     }
     onRotateRightRequested: hostController.rotateRightMany(hostWindow.selectedRows())
     onRotateLeftRequested: hostController.rotateLeftMany(hostWindow.selectedRows())
