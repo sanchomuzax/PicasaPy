@@ -199,9 +199,10 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # filterdesc-ből: 0,1618 (nem kerek szám — mérés, nem tipp).
     "sat": (_p("saturation", "Saturation", -1.0, 1.0, 0.1618, 0.01),),
     # #4557: a régi Glow Shift+Ragyogásként ugyanazt a két csúszkát adja.
+    # #7410: a Radius alapértéke 3.0, mint az eredetiben és a glow2-ben.
     "glow": (
         _p("intensity", "Intensity", 0.0, 1.0, 0.65, 0.01),
-        _p("radius", "Radius", 0.0, 100.0, 20.0),
+        _p("radius", "Radius", 0.0, 100.0, 3.0),
     ),
     # glow2=1,intenzitás,sugár
     "glow2": (
@@ -212,7 +213,8 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         # alapértéke (3,0) pedig a tényleges skálán — ezért is nagyobb a
         # saját maximumánál. A `chain_report.py` ugyanezért hagyja ki a
         # tartomány-ellenőrzésből.
-        _p("radius", "Radius", 0.0, 100.0, 20.0),
+        # #7410: a Radius alapértéke 20.0 -> 3.0 a regiszterből (job-927).
+        _p("radius", "Radius", 0.0, 100.0, 3.0),
     ),
     # radblur=1,x,y,méret,mérték
     "radblur": (
