@@ -17,18 +17,6 @@ EditorPanel {
     // a fülsáv helyén a videó-panel (#4566) áll
     enabled: !editorPanel.hostViewer.isCurrentVideo
     visible: !editorPanel.hostViewer.isCurrentVideo
-    Connections {
-        target: editorPanel.hostViewer
-        function onCurrentIndexChanged() {
-            editorPanel.menuEffectSelection = ""
-        }
-        function onAktivSorChanged() {
-            editorPanel.menuEffectSelection = ""
-        }
-        function onClosed() {
-            editorPanel.menuEffectSelection = ""
-        }
-    }
     // #628: a panel a RENDELKEZÉSRE ÁLLÓ magasságot kapja.
     // Korábban itt fix 420 képpont állt, akármekkora az
     // ablak — a 3. fül 12 bélyegképes csempéje (3×4, ≈450
