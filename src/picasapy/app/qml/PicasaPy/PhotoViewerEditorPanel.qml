@@ -204,7 +204,7 @@ EditorPanel {
         ? editorPanel.hostEditCtl.retouchPatchPending : false
     canUndoPatch: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.canUndoPatch : false
     canRedoPatch: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.canRedoPatch : false
-    brushSize: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.brushSize : 20
+    brushSize: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.brushSize : 50
     onBrushSizeEdited: (value) => editController.setBrushSize(value)
     onRetouchUndoPatchRequested: editController.undoPatch()
     onRetouchRedoPatchRequested: editController.redoPatch()
@@ -240,6 +240,8 @@ EditorPanel {
     // engedélyezett, ha már van kattintott pozíció
     textPlacementPending: editorPanel.hostEditCtl
         ? editorPanel.hostEditCtl.textHasPlacement : false
+    textCleared: editorPanel.hostEditCtl
+        ? editorPanel.hostEditCtl.textCleared : false
     // #450: "Copy Caption" gomb — a kép model.revision-re
     // is frissülő mentett feliratát tükrözi (a captionField
     // mintáját követve fent). #4525: kettős nézetben a
@@ -272,19 +274,11 @@ EditorPanel {
             qsTr("The caption will replace the text you have "
                  + "typed. (This operation is not undoable)"))
     }
-    // #450: az összes (ma: az egyetlen) szövegelem törlése —
-    // a meglévő clearText útvonalon, a szerkesztőeszköz is zárul
+    // #7407: a Clear All csak az eszközön belül veszi le a szöveget a képről,
+    // az eszköz nyitva marad; az Apply véglegesíti, a Cancel visszahozza
     onTextRemoveAllRequested: {
-        if (!editorPanel.hasTextOverlay) {
-            // #7380: nincs mentett felirat, csak a képre gépelt, még nem
-            // alkalmazott piszkozat - azt dobja el, az eszköz nyitva marad
-            editController.exitTextTool()
-            editorPanel.textDraftContent = ""
-            return
-        }
         editController.clearText()
         editorPanel.textDraftContent = ""
-        editorPanel.textActive = false
     }
     onTextOverlayVisibleEdited: (visible) =>
         editController.setTextOverlayVisible(visible)

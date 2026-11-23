@@ -89,11 +89,13 @@ def test_retus_ecsetkor_cel_es_forras_latszik_kattintas_utan(
     assert ecset is not None, "a retusáló ecsetkurzor kör-overlaye hiányzik"
     assert _varj(qt_app, lambda: ecset.property("visible"))
     assert _varj(qt_app, lambda: terulet.property("containsMouse"))
-    elvart_sugar = edit.property("retouchBrushRadiusRatio") * min(
-        terulet.width(), terulet.height()
-    )
-    assert abs(float(ecset.width()) / 2 - elvart_sugar) <= 3, (
-        "az ecsetkör sugara nem a retusáló patch aktuális sugarát követi"
+    # #7406: induláskor s = 0,25, a kör sugara a képernyőn max(3, 100 · s · z) képpont, ahol
+    # z = a nézet nagyítása (megjelenített képpont / forrásképpont); a rajzolt kör külső széle a
+    # fehér vonal közepénél 2,5 képponttal tovább van (2 képpontos fekete szegély + a fehér fele)
+    zoom = nezo.property("zoomFactor") * terulet.width() / nezo.property("valodiSzelesseg")
+    elvart_sugar = max(3.0, 100 * 0.25 * zoom) + 2.5
+    assert abs(float(ecset.width()) / 2 - elvart_sugar) <= 1, (
+        "az ecsetkör sugara nem a csúszka és a nagyítás szerinti"
     )
 
     ecset_kep = ablak.grabWindow()

@@ -1,4 +1,4 @@
-"""Retusálás panel és megerősítő ablak paritástesztjei (#7379).
+"""Retusálás panel és megerősítő ablak paritástesztjei (#7379; az ecsetméret #7406).
 
 ⚠️ Ezek a próbák a forrásszöveget olvassák és számolnak: a vizuális egyezést NEM mérik.
 A renderelt képkockát mérő próbák: `tests/app/qml_functional/test_retouch_renderelt_7379.py`.
@@ -10,17 +10,15 @@ from pathlib import Path
 
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 
-from picasapy.app.edit_controller_shared import (
-    _BRUSH_SIZE_TO_RELATIVE_DIVISOR,
-    _DEFAULT_BRUSH_SIZE,
-)
+from picasapy.app import edit_controller_shared
+from picasapy.app.edit_controller_shared import _DEFAULT_BRUSH_SIZE
 
 
-def test_az_ecsetmeret_leképezés_nem_változott() -> None:
-    """#7379 NEM módosítja az ecsetméret-leképezést: az eredeti leképezése nincs lezárva (7327-11,
-    külön jegy: 7327-11c/11d), ezért az osztó és az alapállás a korábbi marad."""
-    assert _DEFAULT_BRUSH_SIZE == 20
-    assert _BRUSH_SIZE_TO_RELATIVE_DIVISOR == 1000.0
+def test_az_ecsetmeret_leképezés_a_7406_szerinti() -> None:
+    """#7406 átvette a #7379 helyét az ecsetméretnél: a csúszka alapállása a futás közepe (50), és sem a
+    #7379 494-es, sem a korábbi 1000-es osztó nem marad (a leképezés: `picasapy.app.retouch_brush`)."""
+    assert _DEFAULT_BRUSH_SIZE == 50
+    assert not hasattr(edit_controller_shared, "_BRUSH_SIZE_TO_RELATIVE_DIVISOR")
 
 
 def test_retouch_panel_structure() -> None:

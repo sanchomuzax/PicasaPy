@@ -223,10 +223,21 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
     original_backup = api.find_original_backup(image_path)
     original_ini_path = api._original_ini_path(image_path, original_backup)
     current_before = api._photo_ini_values(
-        current_ini_path, section, (api._FILTERS_KEY, api._REDO_KEY, "backuphash", api._MODDATE_KEY)
+        current_ini_path,
+        section,
+        (
+            api._FILTERS_KEY,
+            api._REDO_KEY,
+            "backuphash",
+            api._MODDATE_KEY,
+            "text",
+            api._TEXTACTIVE_KEY,
+        ),
     )
     original_before = api._photo_ini_values(
-        original_ini_path, section, (api._FILTERS_KEY, api._MODDATE_KEY)
+        original_ini_path,
+        section,
+        (api._FILTERS_KEY, api._MODDATE_KEY, "text", api._TEXTACTIVE_KEY),
     )
     current_section = current_before.document.section(section)
     original_section = original_before.document.section(section)
@@ -241,8 +252,13 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
     )
     restored_filters = (original_filters or legacy_redo or "")
 
+    snapshot_bytes = snapshot.read_bytes()
     bytes_before = image_path.read_bytes()
-    api._kep_irasa(image_path, snapshot.read_bytes())
+    current_stat = image_path.stat()
+    backup_stat = original_backup.stat() if original_backup is not None else None
+    backup_bytes = original_backup.read_bytes() if backup_stat is not None else None
+    restore_original_copy = backup_bytes == snapshot_bytes and backup_stat is not None
+    api._kep_irasa(image_path, snapshot_bytes)
     completed_ini_writes: list[tuple[api.Path, _PhotoIniSnapshot]] = []
     try:
         def restore_current_metadata(document: IniDocument) -> IniDocument:
@@ -259,6 +275,13 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
                 updated = updated.with_value(
                     section, api._MODDATE_KEY, original_moddate, carried=True
                 )
+            if original_section is not None:
+                for key in ("text", api._TEXTACTIVE_KEY):
+                    value = original_section.get(key)
+                    if value is not None:
+                        updated = updated.with_value(
+                            section, key, value, carried=True
+                        )
             return api.with_backuphash(updated, section)
 
         current_before.written_document = api._update_ini_document(
@@ -268,10 +291,23 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
             section_name=section,
         )
         completed_ini_writes.append((current_ini_path, current_before))
-        if original_filters is not None:
+        original_saved_values = (
+            original_filters is not None
+            or original_moddate is not None
+            or (original_section is not None and any(
+                original_section.get(key) is not None
+                for key in ("text", api._TEXTACTIVE_KEY)
+            ))
+        )
+        if original_saved_values:
             original_before.written_document = api._update_ini_path(
                 original_ini_path,
-                lambda doc: doc.with_removed(section, api._FILTERS_KEY),
+                lambda doc: (
+                    doc.with_removed(section, api._FILTERS_KEY)
+                    .with_removed(section, api._MODDATE_KEY)
+                    .with_removed(section, "text")
+                    .with_removed(section, api._TEXTACTIVE_KEY)
+                ),
                 rollback_snapshot=original_before,
                 section_name=section,
             )
@@ -286,6 +322,10 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
         image_restore_error = None
         try:
             api._restore_image_or_raise(image_path, bytes_before, snapshot, error)
+            api.os.utime(
+                image_path,
+                ns=(image_path.stat().st_atime_ns, current_stat.st_mtime_ns),
+            )
         except api.SaveError as restore_error:
             image_restore_error = restore_error
         if rollback_errors or image_restore_error:
@@ -298,7 +338,17 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
             ) from error
         raise
 
+    # Az ini round-trip API a megváltozott szakaszok képeit megérinti (#643),
+    # ezért csak az összes sikeres ini-írás UTÁN állítjuk vissza az eredeti
+    # kép módosítási idejét.
+    if backup_stat is not None:
+        api.os.utime(
+            image_path,
+            ns=(current_stat.st_atime_ns, backup_stat.st_mtime_ns),
+        )
     snapshot.unlink(missing_ok=True)
+    if restore_original_copy and original_backup is not None:
+        original_backup.unlink(missing_ok=True)
     return api.UndoSaveResult(
         image_path=image_path,
         restored_from=snapshot,

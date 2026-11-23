@@ -1455,6 +1455,7 @@ class TestTextTool:
         assert controller.textDraft == "Cím"
 
     def test_clear_text_removes_ini_keys(self, controller, photo):
+        # #7407: a clearText csak piszkozatból vesz le, az applyText véglegesít az iniben
         controller.beginEdit("1", str(photo))
         controller.enterTextTool()
         controller.setTextDraft("Cím")
@@ -1462,9 +1463,13 @@ class TestTextTool:
         controller.applyText()
         controller.clearText()
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
-        assert "text=" not in ini_text
-        assert "textactive=" not in ini_text
+        assert "text=" in ini_text, "#7407: clearText után az iniben még megvan a szöveg"
         assert controller.hasTextOverlay is False
+        assert controller.textCleared is True
+        controller.applyText()
+        ini_vegso = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "text=" not in ini_vegso
+        assert "textactive=" not in ini_vegso
 
     # -- #371: a kiírt `text=` a VALÓDI Picasa-formátum -------------------
 

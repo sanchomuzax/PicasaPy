@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import logging
+
+from . import retouch_brush as _brush
 from .edit_controller_shared import (
     EditSession,
     Property,
@@ -9,11 +12,17 @@ from .edit_controller_shared import (
     Slot,
     _BRUSH_SIZE_MAX,
     _BRUSH_SIZE_MIN,
-    _BRUSH_SIZE_TO_RELATIVE_DIVISOR,
     _clamp01,
 )
 
 from .edit_controller_signals import EditControllerSignalsMixin as _Signals
+
+_log = logging.getLogger(__name__)
+
+#: Ismeretlen képméretnél (olvashatatlan fejléc) csak ez a menekülő érték
+#: tartja életben a foltot: a relatív sugár ehhez a rövidebb oldalhoz mér, és a
+#: napló figyelmeztet. A mért méret nem ez, hanem a kép fejlécéből jön.
+_FALLBACK_SHORTER_SIDE = 1024
 
 class EditControllerRetouchMixin:
     """A retusáló eszköz és a nem mentett javítófoltok kezelése."""
@@ -60,14 +69,17 @@ class EditControllerRetouchMixin:
         return self._brush_size
 
 
-    @Property(float, notify=_Signals.retouchBrushRadiusRatioChanged)
-    def retouchBrushRadiusRatio(self) -> float:  # noqa: N802 — QML-property
-        """A retusáló ecset sugara a kép rövidebb oldalához mérve.
+    @Property(float, notify=_Signals.retouchBrushSourceRadiusChanged)
+    def retouchBrushSourceRadius(self) -> float:  # noqa: N802 (QML-property)
+        """A retusáló ecset sugara a FORRÁSKÉPEN, képpontban (#7406).
 
-        Ugyanazt a saját, dokumentált méretleképezést adja a felületnek,
-        amelyet a `_build_patch()` a képi javításnál használ.
-        """
-        return self._brush_size / _BRUSH_SIZE_TO_RELATIVE_DIVISOR
+        `r = max(3, 100·s·z) / z`, ahol `s` a csúszka mezője (érintetlen
+        csúszkánál 0,25, utána a fogantyú helye a futásban) és `z` a nézet
+        nagyítása. A kép méretétől nem függ; a felület a gyűrűt `r·z`
+        képernyő-sugárral rajzolja, a `_build_patch()` pedig ebből számolja a
+        mentett folt relatív sugarát."""
+        fraction = _brush.brush_fraction(self._brush_size, touched=self._brush_touched)
+        return _brush.source_radius(fraction, self._retouch_view_zoom)
 
 
     @Slot()
@@ -158,7 +170,20 @@ class EditControllerRetouchMixin:
         """Az ecset méretének beállítása ([1..100]-ra clampelve, #445)."""
         self._require_active()
         self._brush_size = max(_BRUSH_SIZE_MIN, min(_BRUSH_SIZE_MAX, value))
+        self._brush_touched = True
         self.toolsChanged.emit()
+
+
+    @Slot(float)
+    def setRetouchViewZoom(self, zoom: float) -> None:  # noqa: N802 (QML-slot)
+        """A nézet nagyítása (1,0 = 100%, a forrásképhez mérve): a QML adja át,
+        mert a gyűrű és a folt sugarának 3 képernyő-képpontos minimuma ettől
+        függ (#7406). Nézet-állapot: nem kell aktív szerkesztés, nem ír inibe."""
+        zoom = _brush.sanitize_zoom(zoom)
+        if zoom == self._retouch_view_zoom:
+            return
+        self._retouch_view_zoom = zoom
+        self.retouchBrushSourceRadiusChanged.emit()
 
 
     @Slot()
@@ -231,8 +256,22 @@ class EditControllerRetouchMixin:
             target_y=target[1],
             source_x=source[0],
             source_y=source[1],
-            radius=self._brush_size / _BRUSH_SIZE_TO_RELATIVE_DIVISOR,
+            radius=_brush.relative_radius(
+                self.retouchBrushSourceRadius, self._retouch_reference_side()
+            ),
         )
+
+
+    def _retouch_reference_side(self) -> int:
+        """A kép rövidebb oldala képpontban: a forrásképi sugárból ezzel lesz a
+        `retouch=2` token relatív sugara (a formátum változatlan, #7406)."""
+        if self._image_size:
+            return max(1, min(self._image_size))
+        _log.warning(
+            "A retusáláshoz nem ismert a kép mérete, a relatív sugár %d képpont "
+            "rövidebb oldalhoz mér", _FALLBACK_SHORTER_SIDE,
+        )
+        return _FALLBACK_SHORTER_SIDE
 
 
     def _session_with_retouch_pending(self) -> EditSession:

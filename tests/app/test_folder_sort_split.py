@@ -162,6 +162,18 @@ class TestPaneHasItsOwnSort:
         controller.setFolderSort("changed")
         assert seen[-1] == ("changed", controller.folderSortReverse)
 
+    def test_set_pane_sort_clears_recent_changes_mode(self, controller):
+        """#7396: a hasáb rendezésének megváltoztatása kapcsolja ki a changed módot."""
+        controller.setFolderSort("changed")
+        assert controller.folderSort == "changed"
+        assert controller._get_settings().value("view/folderSort") == "changed"
+
+        controller.setPaneSort("name")
+        assert controller.folderSort != "changed"
+        assert controller.folderSort == "date"
+        assert controller._get_settings().value("view/folderSort") != "changed"
+
+
     def test_unknown_mode_is_ignored(self, controller):
         before = controller.folders.folder_paths()
         controller.setPaneSort("mandala")

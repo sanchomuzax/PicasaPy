@@ -47,7 +47,6 @@ from .edit_controller_shared import (
     _APPLICABLE_EFFECTS,
     _BRUSH_SIZE_MAX,
     _BRUSH_SIZE_MIN,
-    _BRUSH_SIZE_TO_RELATIVE_DIVISOR,
     _DEFAULT_BRUSH_SIZE,
     _DEFAULT_TEXT_ALIGN,
     _DEFAULT_TEXT_BOLD,
@@ -236,6 +235,9 @@ class EditController(
         # undo/redo verem (#59): (filters-érték a művelet ELŐTT, művelet-kulcs)
         self._undo_stack: list[tuple[str, str]] = []
         self._redo_stack: list[tuple[str, str]] = []
+        # #7408: a háttérben futó Undo Save alatt a mentés-előzmény maradjon
+        # látható felirattal, de a gomb ne indíthassa el másodszor.
+        self._save_undo_pending = False
         # fényképezőgép-összefoglaló (#25): a forrásfájl EXIF-jéből, csak a
         # beginEdit-kor olvasva — a szerkesztés alatt nem változik, a
         # csúszka-húzás minden egyes revíziójánál újraolvasni felesleges lenne
@@ -276,6 +278,11 @@ class EditController(
         # szöveg-stílushoz hasonlóan NEM kerül a `.picasa.ini`-be), minden
         # szerkesztés-nyitáskor alapértékre áll.
         self._brush_size: int = _DEFAULT_BRUSH_SIZE
+        # #7406: a csúszka megérintéséig az induló `s` él (a fogantyú közben
+        # középen áll); a nézet nagyítását a QML adja át (`setRetouchViewZoom`),
+        # ez nézet-, nem munkamenet-állapot, ezért `beginEdit` nem nullázza.
+        self._brush_touched: bool = False
+        self._retouch_view_zoom: float = 1.0
         # szöveg-overlay (#148): a mentett `text=`/`textactive=` értékek
         # típusos alakja (None, ha nincs — vagy a bejegyzés nem értelmezhető,
         # a #301-elv szerint), plusz a szerkesztés alatti, MÉG NEM mentett
@@ -288,6 +295,9 @@ class EditController(
         self._text_overlay_visible = True
         self._text_draft = ""
         self._text_pending_pos: tuple[float, float] | None = None
+        self._text_cleared: bool = False
+        self._text_initial_overlay: TextOverlay | None = None
+        self._text_initial_active: bool = False
         # #7380: a képre gépelhető QML-doboz látszik-e (ilyenkor a szerkesztett
         # blokkot a doboz rajzolja, nem az előnézeti raszter)
         self._text_inline_editing = False

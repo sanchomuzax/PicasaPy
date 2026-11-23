@@ -62,6 +62,9 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.preferredWidth: 257
         Layout.preferredHeight: 54
+        // #7394: a job-911 __10 képen az útmutató felső széle a fülsáv
+        // tetejétől 77 px-re áll (a szövegdoboz mérete változatlan).
+        Layout.topMargin: 4
         wrapMode: Text.WordWrap
         text: qsTr("Select a dimension below and then click and drag on the "
                    + "image to select the portion of the image you wish to crop.")
@@ -96,6 +99,9 @@ ColumnLayout {
     RowLayout {
         objectName: "cropAspectComboRow"
         Layout.fillWidth: true
+        // #7394: a mért útmutató-doboz után csak 1 px rés marad; az alap
+        // oszlopköz 8 px, ezért ezt a sort 7 px-rel feljebb húzzuk.
+        Layout.topMargin: -7
         spacing: 3
         Rectangle {
             objectName: "cropAspectCombo"
@@ -306,6 +312,9 @@ ColumnLayout {
     RowLayout {
         objectName: "cropSuggestionRow"
         Layout.fillWidth: true
+        // #7394: a job-911 __10 képen a bélyegképsáv a legördülő után
+        // 31 px-re indul.
+        Layout.topMargin: 2
         spacing: 6
         visible: panel.cropSuggestions.length > 0
 
@@ -315,6 +324,9 @@ ColumnLayout {
         // findChild-nek nem látszanak), és a kód is olvashatóbb.
         component SuggestionButton: PanelButton {
             property int slot: 0
+            // #7394: az eredeti cropsug csempék 71 px magasak; a PanelButton
+            // szöveghelyet is fenntartó alapmagassága 20 px-rel túl nagy.
+            Layout.preferredHeight: 71
             readonly property var suggestion: panel.cropSuggestions.length > slot
                 ? panel.cropSuggestions[slot] : null
             visible: suggestion !== null
@@ -344,11 +356,15 @@ ColumnLayout {
         ActionButton {
             objectName: "cropRotateButton"
             label: qsTr("Rotate")
+            // #7394: forgatni csak kijelölés után lehet.
+            buttonEnabled: panel.cropHasSelection
             onButtonClicked: panel.cropRotateRequested()
         }
         ActionButton {
             objectName: "cropPreviewButton"
             label: qsTr("Preview")
+            // #7394: az üres kijelölésnek nincs előnézete.
+            buttonEnabled: panel.cropHasSelection
             // amíg nyomva tartják, a hívó a vágott képet mutatja
             MouseArea {
                 anchors.fill: parent
@@ -390,6 +406,8 @@ ColumnLayout {
         ActionButton {
             objectName: "cropApplyButton"
             label: qsTr("Apply")
+            // #7394: üres kijelölést nem lehet alkalmazni.
+            buttonEnabled: panel.cropHasSelection
             onButtonClicked: panel.cropApplyRequested()
             EditorActionBadge {
                 objectName: "cropApplyIcon"

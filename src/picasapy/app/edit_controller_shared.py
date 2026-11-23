@@ -75,6 +75,7 @@ from picasapy.metadata import read_exif_details
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
+from . import retouch_brush as _brush
 from .edit_action_names import redo_label, undo_label
 from .edit_preview import EditPreviewProvider, TextOverlaySpec
 from .histogram_helper import EMPTY_HISTOGRAM
@@ -359,23 +360,13 @@ _EFFECT_INI_NAMES: dict[str, str] = {
 }
 
 #: A retusálás-eszköz (#445) kör alakú ecsetének mérete-csúszkája [1..100]
-#: egész egységben ("Brush Size", ld. `EditorPanel.qml`) — a valódi Picasa
-#: ecsetméret-egysége nem ismert (ld. `picasapy.ini.retouch` docsztring),
-#: ezért ez egy PicasaPy-saját, dokumentált leképezés: a csúszka-érték a
-#: `_BRUSH_SIZE_TO_RELATIVE_DIVISOR`-ral osztva adja a relatív [0..1]
-#: sugarat (a kép rövidebb oldalára vonatkoztatva, ld.
-#: `picasapy.render.retouch.apply_retouch_patches`) — a felső határnál
-#: (100) ez 0.1, azaz a kép rövidebb oldalának 10%-a, ami a legnagyobb
-#: gyakorlati foltnak is elég, anélkül, hogy a fél képet lefedné.
-#: NYITOTT KÉRDÉS (7327-11): az eredeti ecsetsugár leképezése (a csúszka két vége és
-#: alapállása, a sugár egysége) nincs lezárva. A #7327 lapja a job-907/job-908 felvételei
-#: alapján forrásképi képpontot ír, a kép méretétől függetlenül (a jegytörzs állítása, itt
-#: nem ellenőrizve). A mérés és az átállás külön jegy (7327-11c/11d), ezért ez a
-#: leképezés (osztó 1000, alapállás 20) itt szándékosan változatlan.
-_BRUSH_SIZE_MIN = 1
-_BRUSH_SIZE_MAX = 100
-_DEFAULT_BRUSH_SIZE = 20
-_BRUSH_SIZE_TO_RELATIVE_DIVISOR = 1000.0
+#: egész egységben ("Brush Size", ld. `EditorPanel.qml`). #7406: a csúszka
+#: helyzetéből az eredeti szerinti, a kép méretétől független forrásképi
+#: sugár számolódik (`picasapy.app.retouch_brush`): a csúszka lineáris, a
+#: kör a nagyítással arányos, induláskor a fogantyú középen áll.
+_BRUSH_SIZE_MIN = _brush.SLIDER_MIN
+_BRUSH_SIZE_MAX = _brush.SLIDER_MAX
+_DEFAULT_BRUSH_SIZE = _brush.SLIDER_DEFAULT
 
 #: #450 (2. lépcső): tipográfia — a rajzoló (`render.text_fonts`) családja,
 #: méret-szorzója és stílusai. A családnevet a rendszer betűtípus-adatbázisa

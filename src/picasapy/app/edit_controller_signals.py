@@ -26,9 +26,10 @@ _TOOL_PROPERTY_NAMES = (
     "textItalic",
     "textUnderline",
     "textAlign",
+    "textCleared",
     "hasRetouch",
     "brushSize",
-    "retouchBrushRadiusRatio",
+    "retouchBrushSourceRadius",
     "chainValue",
     "tiltParam",
     "fillLight",
@@ -87,9 +88,10 @@ class EditControllerSignalsMixin:
     textItalicChanged = Signal()
     textUnderlineChanged = Signal()
     textAlignChanged = Signal()
+    textClearedChanged = Signal()
     hasRetouchChanged = Signal()
     brushSizeChanged = Signal()
-    retouchBrushRadiusRatioChanged = Signal()
+    retouchBrushSourceRadiusChanged = Signal()
     chainValueChanged = Signal()
     tiltParamChanged = Signal()
     fillLightChanged = Signal()
@@ -119,6 +121,9 @@ class EditControllerSignalsMixin:
     shiftAktivChanged = Signal()
 
     editSaveReadOnly = Signal()
+
+    #: #7408: privát híd a szerkesztő Undo gombjától a lemez-visszaállításhoz.
+    _undoSaveRequested = Signal(str)
 
     editSaveFailed = Signal(str)
 

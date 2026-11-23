@@ -248,6 +248,11 @@ def action_label(action: str) -> str:
 
 def undo_label(action: str) -> str:
     """A Visszavonás gomb felirata — a két eredeti állapot szerint."""
+    if action == "save":
+        # #7381: a Picasa az „Undo Save” kifejezésnek önálló, nyelvenként
+        # eltérő alakot adott (`CThumbUI::FileRevert::undosave`). A már
+        # használt SaveDialogs-fordítás a mért alakot őrzi.
+        return QCoreApplication.translate("SaveDialogs", "Undo Save")
     name = action_label(action)
     if not name:
         return QCoreApplication.translate(_PANEL_CONTEXT, "Undo")
