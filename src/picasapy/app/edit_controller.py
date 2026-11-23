@@ -284,6 +284,9 @@ class EditController(
         self._text_overlay_visible = True
         self._text_draft = ""
         self._text_pending_pos: tuple[float, float] | None = None
+        # #7380: a képre gépelhető QML-doboz látszik-e (ilyenkor a szerkesztett
+        # blokkot a doboz rajzolja, nem az előnézeti raszter)
+        self._text_inline_editing = False
         # szöveg-megjelenítési stílus (#450): a színek, méret és igazítás
         # munkamenet-szintű állapot; a betűcsalád kivétel, azt a `text=`
         # mezőből visszaolvassuk, és mentéskor oda írjuk.

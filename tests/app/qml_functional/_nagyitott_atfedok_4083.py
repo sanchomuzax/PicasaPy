@@ -214,12 +214,16 @@ def eszkoz_proba(
             window, target, pan_area, qt_app
         )
         elso_pozicio = edit._text_pending_pos
+        # #7380: az első kattintás helyén (0,62 ; 0,62) most a képre gépelhető
+        # szövegdoboz áll, a lenyomást azt a bevitel kapná (kurzor
+        # elhelyezése), nem a kattintási terület - ezért a következő
+        # kattintás a dobozon KÍVÜL, a látható képrészen indul
         _drag(
             window,
             target,
             pan_area,
             qt_app,
-            start_ratio=(0.62, 0.62),
+            start_ratio=(0.5, 0.5),
             finish=(0.78, 0.78),
         )
         masodik_pozicio = edit._text_pending_pos

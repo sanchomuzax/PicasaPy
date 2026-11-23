@@ -85,8 +85,9 @@ Flickable {
     }
 
     // ---- "text" mód: Szöveg-overlay (#148) ----
-    // A pozicionálás is kattintással történik a képen; a szövegmező itt
-    // él, a gépelést a textDraftEdited jel viszi a controllerhez.
+    // A pozicionálás is kattintással történik a képen; #7380: a szöveget
+    // közvetlenül a képre gépelik (PhotoViewerTextInput), a gépelést a
+    // textDraftEdited jel viszi a controllerhez.
     EditorTextPanel {
         id: textModePanel
         panel: modeToolScroll.panel

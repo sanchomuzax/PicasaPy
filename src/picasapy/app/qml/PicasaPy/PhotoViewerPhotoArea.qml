@@ -644,7 +644,7 @@ Item {
             - photoArea.fokuszKep.paintedHeight) / 2
         width: photoArea.fokuszKep.paintedWidth
         height: photoArea.fokuszKep.paintedHeight
-        cursorShape: Qt.CrossCursor
+        cursorShape: Qt.IBeamCursor
         onClicked: function(mouse) {
             if (width <= 0 || height <= 0) return
             if (typeof editController !== "undefined" && editController)
@@ -653,6 +653,12 @@ Item {
         }
 
         PressFeedbackOverlay { pressSource: parent }
+    }
+    //: #7380: a szöveg KÖZVETLENÜL a képre gépelhető: a hint, a
+    //: kurzor és a lekerekített doboz ebben a komponensben él.
+    PhotoViewerTextInput {
+        parent: photoArea.fokuszKep
+        photoArea: photoArea
     }
     // #4545: a mentett szövegdobozok áttetsző, kattintható
     // találati területei a raszter-előnézet fölött vannak.
@@ -672,12 +678,14 @@ Item {
             x: (photoArea.fokuszKep.width
                 - photoArea.fokuszKep.paintedWidth) / 2
                + photoArea.fokuszKep.paintedWidth * modelData.x - 6
+            //: #7380: a `text=` pozíciója a szövegdoboz BAL FELSŐ sarka
+            //: (a rajzoló is így veszi), ezért a találati terület a pontról
+            //: LEFELÉ nyúlik, nem fölé
             y: (photoArea.fokuszKep.height
                 - photoArea.fokuszKep.paintedHeight) / 2
-               + photoArea.fokuszKep.paintedHeight * modelData.y
-               - hitText.implicitHeight - 6
+               + photoArea.fokuszKep.paintedHeight * modelData.y - 6
             rotation: modelData.rotation * 180 / Math.PI
-            transformOrigin: Item.BottomLeft
+            transformOrigin: Item.TopLeft
 
             Text {
                 id: hitText

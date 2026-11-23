@@ -106,11 +106,21 @@ def test_a_legordulobol_kattintott_rendszerbetu_elonezetre_es_inibe_kerul(
     _kattints(row, qt_app)
 
     assert _varj(qt_app, lambda: str(edit.property("textFontFamily")) == chosen)
-    assert calls[-1] == chosen, "a kiválasztott család nem jutott el a képi rajzolóig"
+    # #7380: szerkesztés közben a képre gépelhető doboz rajzolja a szöveget
+    # (az előnézeti raszter a szerkesztett blokkot kihagyja), ezért a család
+    # ELŐSZÖR a dobozba jut...
+    assert _varj(
+        qt_app, lambda: field.property("font").family() == chosen
+    ), "a kiválasztott család nem jutott el a képre gépelhető dobozig"
 
     apply_button = window.findChild(QObject, "textApplyButton")
     assert apply_button is not None and apply_button.property("enabled") is True
     _kattints(apply_button, qt_app)
+    # ...az Alkalmaz után pedig a kész szöveget a képi rajzoló is a
+    # kiválasztott családdal rajzolja
+    assert _varj(
+        qt_app, lambda: bool(calls) and calls[-1] == chosen
+    ), "a kiválasztott család nem jutott el a képi rajzolóig"
 
     ini = load_document(tmp_path / "kepek" / ".picasa.ini")
     saved = parse_text(ini.section("a.jpg").get("text"))
