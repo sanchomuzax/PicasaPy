@@ -219,8 +219,9 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
         # #2236: a tartomány fele elérhetetlen volt (min 0 -> −1).
-        _p("size", "Size", -1.0, 1.0, 0.3, 0.01),
-        _p("amount", "Amount", -1.0, 1.0, 0.5, 0.01),
+        # #7388: az eredeti Soft Focus panel mindkét csúszkája középen indul.
+        _p("size", "Size", -1.0, 1.0, 0.0, 0.01),
+        _p("amount", "Amount", -1.0, 1.0, 0.0, 0.01),
     ),
     # radsat=1,x,y,sugár,élesség
     "radsat": (
