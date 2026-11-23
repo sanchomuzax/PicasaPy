@@ -899,7 +899,7 @@ A 22 tételből 19 LEZÁRVA (vagy fejlesztői jegytörzzsel átadva), 2 HATÓKÖ
         _p("intensity", "Intensity", 0.0, 1.0, 0.65, 0.01),
         # ⚠️ A Radius SZÁNDÉKOSAN marad [0…100]: a regiszter [0…1]-e a
         # LOG-skálán van (`log_base=250`, az egyetlen ilyen csúszka), az
-        # alapértéke (3,0) pedig a tényleges skálán — ezért is nagyobb a
+        # alapértéke (3,0) pedig a tényleges skálán - ezért is nagyobb a
         # saját maximumánál. A `chain_report.py` ugyanezért hagyja ki a
         # tartomány-ellenőrzésből.
         _p("radius", "Radius", 0.0, 100.0, 20.0),
