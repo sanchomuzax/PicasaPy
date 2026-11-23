@@ -196,6 +196,44 @@ class FaceScanControllerSuggestionsMixin:
         return irt
 
 
+    @Slot()
+    def refreshSuggestions(self) -> None:  # noqa: N802 - QML-slot-stílus
+        """A javaslatok újraszámolása a MENTETT javaslatküszöbbel (#7373).
+
+        Az eredeti Picasa OK-kezelője a `FRSuggestionThreshold` változásakor
+        azonnal egyezteti a személyek tagságát, új csoportosítás nélkül. A
+        Beállítások OK-ja ezért csak tényleges küszöbváltozásnál hívja.
+
+        A `moreSuggestions`-tól eltérően a beállítást NEM lazítja, hanem a
+        mentett értéket használja, és háttérszálon fut: nagy könyvtárban az
+        OK nem fagyaszthatja a felületet. A küszöböt a hívó (UI) szálon
+        olvassa ki, a csoportosító worker indításának mintájára.
+
+        Ahogy a `javaslatokat_ujraszamol` is, csak a javaslat nélküli, névtelen
+        arcokra ír: a meglévő javaslatot szigorúbb küszöbnél sem vonja vissza.
+        """
+        if not self.suggestionsEnabled():
+            return
+        self._start_background(
+            self._run_javaslat_frissites,
+            args=(step_to_threshold(self._javaslat_lepcso()),),
+            name="picasapy-face-suggestions",
+        )
+
+
+    def _run_javaslat_frissites(self, kuszob: float) -> None:
+        try:
+            with open_index(self._db_path) as conn:
+                irt = javaslatokat_ujraszamol(conn, kuszob)
+                conn.commit()
+        except Exception as hiba:  # noqa: BLE001 - a háttérmunka ne ejtse ki a kivételt
+            _log.exception("javaslat-frissítés hiba: %s", self._db_path)
+            self.embeddingFailed.emit(str(hiba))
+            return
+        if irt:
+            self.unnamedCountChanged.emit()
+
+
     def _javaslat_lepcso(self) -> int:
         """A tárolt javaslat-lépcső (alapértéken a mért `85`)."""
         return self.suggestionThreshold()

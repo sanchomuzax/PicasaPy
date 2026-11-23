@@ -32,7 +32,7 @@ _QML = {
         markUnnamedWelcomeShown modelDownloadOffer moreSuggestions pendingAmong
         persistFaceToFile personSuggestionCount personSuggestionIdsForPaths
         personSuggestionPaths rejectSuggestion removeAllFaceData
-        removePersonSuggestions resetAllFaces resetFacesForPhotos scanAlbum
+        refreshSuggestions removePersonSuggestions resetAllFaces resetFacesForPhotos scanAlbum
         scanFolder scanForFaces scanNewFaces setAutomaticDetectionEnabled
         setClusterThreshold setPersistFaceToFile setSuggestionThreshold
         setSuggestionsEnabled suggestionThreshold suggestionsEnabled

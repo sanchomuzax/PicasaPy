@@ -161,13 +161,30 @@ Window {
         // jelölő érintetlen, régebben mentett bejelölését is lekezeli. A
         // piszkozatba lépett jelölőt a General fül írója intézi a commitban.
         var clearCacheTouched = optionsDraft.isStaged("general.disposePreviewsOnExit")
+        // #7373: az eredeti OK csak a javaslatküszöb (FRSuggestionThreshold)
+        // tényleges változásánál egyeztet; a csoportküszöb nem számít.
+        var suggestionStepBefore = currentSuggestionStep()
         optionsDraft.commit()
         saveAcceptedOptionSettings()
+        refreshSuggestionsIfStepChanged(suggestionStepBefore)
         if (!clearCacheTouched)
             applySavedClearCacheFiles()
         if (fileTypesChanged && typeof controller.rescan === "function")
             controller.rescan()
         optionsWindow.visible = false
+    }
+
+    function currentSuggestionStep() {
+        return typeof faceScanController !== "undefined" && faceScanController
+                && typeof faceScanController.suggestionThreshold === "function"
+            ? faceScanController.suggestionThreshold() : -1
+    }
+
+    function refreshSuggestionsIfStepChanged(stepBefore) {
+        if (stepBefore < 0 || currentSuggestionStep() === stepBefore)
+            return
+        if (typeof faceScanController.refreshSuggestions === "function")
+            faceScanController.refreshSuggestions()
     }
 
     function applySavedClearCacheFiles() {
