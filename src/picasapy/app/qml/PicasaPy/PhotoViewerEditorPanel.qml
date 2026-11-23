@@ -90,6 +90,8 @@ EditorPanel {
     onEffectRequested: (name) => {
         editorPanel.hostViewer.forceFitForFilter(name)
         editController.applyEffect(name)
+        if (typeof controller !== "undefined" && controller && typeof controller.setViewerInfoShort === "function")
+            controller.setViewerInfoShort(true)
     }
     // #551: a szín-varázspálca a finetune2 p4 mezőjét írja
     onColorWandRequested: editController.applyColorWand()
@@ -131,8 +133,14 @@ EditorPanel {
                 + "Are you sure you want to undo?"))
         else
             editController.undo()
+        if (typeof controller !== "undefined" && controller && typeof controller.setViewerInfoShort === "function")
+            controller.setViewerInfoShort(false)
     }
-    onRedoRequested: editController.redo()
+    onRedoRequested: {
+        editController.redo()
+        if (typeof controller !== "undefined" && controller && typeof controller.setViewerInfoShort === "function")
+            controller.setViewerInfoShort(false)
+    }
     onCropRotateRequested: {
         // rögzített aránynál a fekvő↔álló kapcsoló forgat
         // (a kijelölés az arány-követéssel formálódik át);

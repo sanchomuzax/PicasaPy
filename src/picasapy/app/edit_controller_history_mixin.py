@@ -86,6 +86,7 @@ class EditControllerHistoryMixin:
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.viewerInfoShortRequested.emit(False)
         self._end_finetune_visit()
 
 
@@ -101,6 +102,7 @@ class EditControllerHistoryMixin:
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.viewerInfoShortRequested.emit(False)
         self._end_finetune_visit()
 
 

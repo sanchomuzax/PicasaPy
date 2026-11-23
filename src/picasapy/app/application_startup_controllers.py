@@ -79,6 +79,7 @@ def _startup_step_create_edit_and_file_controllers(state):
     SecondPreview = _app._lazy_app_symbol("SecondPreview")
     second_preview = SecondPreview(edit_controller_masodik)
     controller.set_edit_controllers(edit_controller, edit_controller_masodik)
+    kosd_be_az_allapotsor_alakjat(controller, edit_controller)
     # #3649: a két „aa"-fél összekötése — a fókuszváltás (`swapAaFocus`)
     # ezen át cseréli a festett maszkot a két fél között, ahelyett hogy
     # kiürítené (docs/specs/ui-audit-editor.md 4/b.1).
@@ -343,3 +344,8 @@ def _startup_step_create_library_controllers(state):
     state._lathato_fotok = _lathato_fotok
     state._talca_fotok = _talca_fotok
 
+
+def kosd_be_az_allapotsor_alakjat(controller, edit_controller) -> None:
+    """#7390: a szerkesztő kéri az állapotsor rövid vagy hosszú alakját
+    (effektparancs vagy panelzárás után rövid, Undo, Redo, képváltás után hosszú)."""
+    edit_controller.viewerInfoShortRequested.connect(controller.setViewerInfoShort)
