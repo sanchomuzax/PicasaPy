@@ -113,6 +113,8 @@ Rectangle {
               munkaSzoveg !== "" ? munkaSzoveg
               : (!infoBar.trayController || !trayRoot.appWindow) ? ""
               : (trayRoot.photoRevision,
+                 (infoBar.trayController.viewerInfoShort !== undefined
+                  ? infoBar.trayController.viewerInfoShort : false),
                  (infoBar.trayController.collageRendering === true
                   ? trayRoot.collageWaitText
                   : (trayRoot.appWindow.viewerOpen

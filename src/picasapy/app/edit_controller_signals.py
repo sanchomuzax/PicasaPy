@@ -53,6 +53,8 @@ class EditControllerSignalsMixin:
     revisionChanged = Signal()
 
     toolsChanged = Signal()
+    #: #7390: a szerkesztő állapotsorának rövid/hosszú alakját kérő jelzés
+    viewerInfoShortRequested = Signal(bool)
 
     # A hálózati állapot betöltése nem ébresztheti fel a szerkesztő összes
     # kötését. Ezek a mezőszintű értesítők csak a ténylegesen módosult

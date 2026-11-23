@@ -159,6 +159,8 @@ class EditControllerSessionMixin:
         self.cropSuggestionsChanged.emit()
         # #7383: új kép: a Hangolás-csúszkák alaphelyzetben indulnak
         self._end_finetune_visit()
+        #: #7390: új képnél a szerkesztő állapotsora a hosszú alakot mutatja
+        self.viewerInfoShortRequested.emit(False)
 
 
     def _start_network_edit_state_load(

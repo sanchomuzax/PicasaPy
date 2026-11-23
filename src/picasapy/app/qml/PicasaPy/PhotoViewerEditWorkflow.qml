@@ -495,6 +495,9 @@ onAktivOldalChanged: {
 }
 
 function beginEditCurrent() {
+    if (typeof controller !== "undefined" && controller
+            && typeof controller.setViewerInfoShort === "function")
+        controller.setViewerInfoShort(false)
     if (!hostEditController) return
     //: #3187: a szerkesztett sor a KIJELÖLT oldal sora. Egy képes és
     //: „aa" módban ez maga a jelenlegi kép (az `aktivSor` ott
