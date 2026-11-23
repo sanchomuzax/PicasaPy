@@ -35,6 +35,18 @@ function effectiveRows(selectedIndexes, selectedIndex) {
     return selectedIndex >= 0 ? [selectedIndex] : []
 }
 
+// #7384: a kijelölt sorok közül a RÁCS szerinti első (a legkisebb sorindex),
+// nem a kattintás sorrendje szerinti. Üres kijelölésnél -1. A bemenő listát
+// nem módosítja.
+function firstInGridOrder(rows) {
+    var first = -1
+    for (var k = 0; k < rows.length; ++k) {
+        var row = Number(rows[k])
+        if (first < 0 || row < first) first = row
+    }
+    return first
+}
+
 // #6995: a kijelölt képek útjai a RÁCS sorrendjében, nem a kattintás
 // sorrendjében. A „Locate on Disk" mappánként az ELSŐ kijelölt képet mutatja;
 // az „első" itt a rács szerinti első (tervezői döntés: a Ctrl+katt sorrendje
