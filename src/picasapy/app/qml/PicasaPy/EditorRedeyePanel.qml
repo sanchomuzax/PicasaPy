@@ -13,9 +13,7 @@ import QtQuick.Layouts
 //    végzi a képen, ez a fájl nem ismeri a kép geometriáját (a Retusálás/
 //    Vágás panel mintája).
 //
-// A „Preview changes without square outlines" jelölőnégyzet csak a
-// kijelölő-négyzetek RAJZÁT kapcsolja ki az előnézeten — a javításon nem
-// változtat, ezért tisztán nézet-állapot (nem megy a kontrollerhez).
+//: A „Preview” a jelenlegi körvonal-jelölő nézetállapotát kapcsolja.
 ColumnLayout {
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
@@ -24,7 +22,7 @@ ColumnLayout {
     visible: panel.redeyeActive
     opacity: panel.enabled ? 1 : 0.45
     anchors.margins: 10
-    spacing: 8
+    spacing: 6
 
     // #741: a MÉRT gombgeometria (`docs/specs/szerkeszto-panel-meretek.md`
     // 6.2/7.): `redeyeauto`/`redeyepreview`, `redeyeapply`/`redeyecancel`
@@ -46,6 +44,7 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: 6
         Image {
+            objectName: "redeyeTitleIcon"
             Layout.preferredWidth: 40
             Layout.preferredHeight: 30
             source: "../../assets/tools/redeye.png"
@@ -60,43 +59,55 @@ ColumnLayout {
     }
 
     //: #901: a vörösszem-eszköz BEÉPÍTETT útmutatója — az eredetiben
-    //: `editpanel/text(redeye tip): redeyetext`, MÉRT dobozzal: **242 × 129**.
+    //: `editpanel/text(redeye tip): redeyetext`.
     //: A szöveg az eredeti szó szerinti angolja (az utolsó két mondat eddig
     //: LEMARADT), a magyar a Picasa saját erőforrásából
     //: (`panel-feliratok-hu.tsv:4989`).
-    Text {
-        objectName: "redeyeGuideText"
+    Item {
+        objectName: "redeyeInstructionBlock"
         visible: !panel.redeyeAutoReset
         Layout.fillWidth: true
+        Layout.topMargin: 2
         Layout.preferredWidth: 242
         Layout.preferredHeight: 129
-        wrapMode: Text.WordWrap
-        text: qsTr("Click, hold, and drag the mouse around each eye separately "
-                   + "to select it. A selection box appears over the area. "
-                   + "Release the mouse to complete your selection. The Photo is "
-                   + "displayed with the red-eye removed.")
-        font.pixelSize: Theme.fontSize - 1
-        color: Theme.textGray
-    }
+        Text {
+            id: redeyeGuide
+            objectName: "redeyeGuideText"
+            visible: !panel.redeyeAutoReset
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            wrapMode: Text.WordWrap
+            text: qsTr("Click, hold, and drag the mouse around each eye separately "
+                       + "to select it. A selection box appears over the area. "
+                       + "Release the mouse to complete your selection. The Photo is "
+                       + "displayed with the red-eye removed.")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
 
-    // A keretenkénti visszavonás mondata a hivatalos
-    // `RedEye::DragToSelectMessage` erőforrásból.
-    Text {
-        objectName: "redeyeFrameHintLabel"
-        visible: !panel.redeyeAutoReset && !(panel.redeyeFoundCount > 0)
-        Layout.fillWidth: true
-        wrapMode: Text.WordWrap
-        //: picasapy-origin: picasa
-        //: picasapy-origin-key: stringres:RedEye::DragToSelectMessage
-        text: qsTr("Note: You can click on a box to delete a change.")
-        font.pixelSize: Theme.fontSize - 1
-        color: Theme.textGray
+        // A keretenkénti visszavonás mondata a hivatalos
+        // `RedEye::DragToSelectMessage` erőforrásból.
+        Text {
+            objectName: "redeyeFrameHintLabel"
+            visible: !panel.redeyeAutoReset && !(panel.redeyeFoundCount > 0)
+            anchors.top: redeyeGuide.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            wrapMode: Text.WordWrap
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:RedEye::DragToSelectMessage
+            text: qsTr("Note: You can click on a box to delete a change.")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
     }
 
     // az automatika visszajelzése — a jegy szó szerinti sikerüzenete
     Text {
         objectName: "redeyeAutoResultLabel"
         Layout.fillWidth: true
+        Layout.topMargin: 2
         wrapMode: Text.WordWrap
         visible: !panel.redeyeAutoReset && panel.redeyeFoundCount > 0
         //: #3574: a hivatalos szöveg (`RedEye::AutoFixedMessage`)
@@ -108,6 +119,7 @@ ColumnLayout {
     Text {
         objectName: "redeyeAutoRedoLabel"
         Layout.fillWidth: true
+        Layout.topMargin: 2
         wrapMode: Text.WordWrap
         visible: panel.redeyeAutoReset
         text: qsTr("Click, hold, and drag the mouse around each eye separately "
@@ -120,35 +132,14 @@ ColumnLayout {
         color: Theme.textGray
     }
 
-    Text {
-        objectName: "redeyeRegionCountLabel"
-        Layout.fillWidth: true
-        text: qsTr("Regions selected: %1").arg(panel.redeyeRegionCount)
-        font.pixelSize: Theme.fontSize - 1
-        color: Theme.textGray
-    }
-
-    // #779: `Layout.fillWidth` NÉLKÜL a jelölőnégyzet a saját (a felirat
-    // hosszából adódó) szélességét KÖTELEZŐ minimumként adta az oszlopnak, és
-    // ezzel az EGÉSZ panelt szélesebbre feszítette a tartalom-oszlopnál —
-    // annál jobban, minél szélesebb a betűkészlet. (A CI tartalék betűjével
-    // 18–20, egy 1,5-szeresre nyújtott betűvel már 90 képponttal.) Kitöltővé
-    // téve a felirat a rendelkezésre álló helyhez igazodik, a panel
-    // minimumát pedig nem húzza föl — ugyanaz a megoldás, amit a szöveg-panel
-    // `textFillDisabledCheck`-je használ.
-    CheckBox {
-        objectName: "redeyeHideOutlinesCheck"
-        Layout.fillWidth: true
-        text: qsTr("Preview changes without square outlines")
-        font.pixelSize: Theme.fontSize - 1
-        checked: panel.redeyeHideOutlines
-        onToggled: panel.redeyeHideOutlines = checked
-    }
-
+    // A méretspecifikáció 36 px-t hagy az útmutató-blokk után, majd 6 px-t
+    // a három gombsor között (`szerkeszto-panel-meretek.md`, 6.2). A külső
+    // 6 px-es osztásköz mellé 30 px-es felső margó adja a 36 px-es rést.
     RowLayout {
         Layout.fillWidth: true
         Layout.maximumWidth: 98 + 6 + 98
         Layout.alignment: Qt.AlignHCenter
+        Layout.topMargin: 30
         spacing: 6
         ActionButton {
             objectName: "redeyeAutoButton"
@@ -157,14 +148,15 @@ ColumnLayout {
             onButtonClicked: panel.redeyeAutoRequested()
         }
         ActionButton {
-            objectName: "redeyeUndoRegionButton"
-            label: qsTr("Undo")
-            buttonEnabled: panel.canUndoRedeyeRegion
-            onButtonClicked: panel.redeyeUndoRegionRequested()
+            objectName: "redeyePreviewButton"
+            label: qsTr("Preview")
+            buttonEnabled: panel.redeyeRegionCount > 0
+            active: panel.redeyeHideOutlines
+            onButtonClicked: panel.redeyeHideOutlines = !panel.redeyeHideOutlines
         }
     }
 
-    // #741: a „Reset" az eredetin egyedül, középen áll (`redeyediscard`)
+    // #741: a „Reset" az eredetin egyedül, középen áll (`redeyediscard`).
     ActionButton {
         objectName: "redeyeResetButton"
         label: qsTr("Reset")
@@ -189,6 +181,7 @@ ColumnLayout {
         ActionButton {
             objectName: "redeyeApplyButton"
             label: qsTr("Apply")
+            buttonEnabled: panel.redeyeRegionCount > 0
             onButtonClicked: panel.redeyeApplyRequested()
             EditorActionBadge {
                 objectName: "redeyeApplyIcon"

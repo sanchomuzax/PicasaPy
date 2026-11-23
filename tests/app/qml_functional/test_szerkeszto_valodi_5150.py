@@ -7,7 +7,7 @@ Lefedve (a jegy B-listájának „Szerkesztő" csoportja, Editor*.qml):
   a paraméter nélküli csempe (`warm`, `cinemascope`) egy kattintásra a
   láncra kerül (`effectChainCounts`);
 - vágó: `cropRotateButton`; finomhangolás: a három varázseszköz;
-- vörösszem: `redeyeHideOutlinesCheck`, `redeyeUndoRegionButton`;
+- vörösszem: `redeyePreviewButton`;
 - `effectParamEraserCheckbox` (a radír jelölő a festhető effekt alpaneljén);
 - `editToolEnhance`, `editToolAutocolor` (a csempe az eszközt küldi).
 
@@ -220,22 +220,25 @@ class TestFinomhangolas:
 
 
 class TestVorosszem:
-    def test_korvonal_jelolo_valodi_kattintasra_valt(
+    def test_preview_valodi_kattintasra_elrejti_a_korvonalakat(
         self, qml_app_negyzet_kepek, qt_app
     ):
         window, _c, _viewer, panel = nyitott_panel(qml_app_negyzet_kepek, qt_app)
         vorosszem_nyitva(window, qt_app, panel)
+        lanc = szerkeszto(_viewer)
+        lanc.addRedeyeRegion(0.3, 0.3, 0.2, 0.2)
+        assert varj(qt_app, lambda: lanc.property("redeyeRegionCount") == 1)
         assert panel.property("redeyeHideOutlines") is False, (
             "a próba feltétele: nincs bekapcsolva"
         )
 
-        kattint(window, item(window, "redeyeHideOutlinesCheck"), qt_app)
+        kattint(window, item(window, "redeyePreviewButton"), qt_app)
 
         assert varj(qt_app, lambda: panel.property("redeyeHideOutlines") is True), (
-            "a körvonal-jelölő kattintás nem kapcsolta át az állapotot"
+            "a Preview kattintás nem kapcsolta át a körvonalak nézetét"
         )
 
-    def test_visszavonas_gomb_valodi_kattintasra_visszaveszi_a_regiot(
+    def test_preview_valodi_kattintasa_megtartja_a_regiot(
         self, qml_app_negyzet_kepek, qt_app
     ):
         window, _c, viewer, panel = nyitott_panel(qml_app_negyzet_kepek, qt_app)
@@ -247,10 +250,12 @@ class TestVorosszem:
             "a próba feltétele: egy régió legyen"
         )
 
-        kattint(window, item(window, "redeyeUndoRegionButton"), qt_app)
+        assert panel.property("redeyeHideOutlines") is False
+        kattint(window, item(window, "redeyePreviewButton"), qt_app)
 
-        assert varj(qt_app, lambda: lanc.property("redeyeRegionCount") == 0), (
-            "a Visszavonás kattintás nem vette vissza a vörösszem-régiót"
+        assert varj(qt_app, lambda: panel.property("redeyeHideOutlines") is True)
+        assert lanc.property("redeyeRegionCount") == 1, (
+            "a Preview nem módosíthatja a vörösszem-régiók számát"
         )
 
 

@@ -40,15 +40,16 @@ _TS = (
 #: elemnév → (fájl, MÉRT szélesség, MÉRT magasság, a mért angol szöveg VÉGE)
 UTMUTATOK = {
     "cropGuideText": (
-        "EditorCropPanel.qml", 257, 54,
+        "EditorCropPanel.qml", "cropGuideText", 257, 54,
         "the portion of the image you wish to crop.",
     ),
     "redeyeGuideText": (
-        "EditorRedeyePanel.qml", 242, 129,
+        # A 242×129-as doboz a Guide és a közvetlen Note közös layoutja.
+        "EditorRedeyePanel.qml", "redeyeInstructionBlock", 242, 129,
         "The Photo is displayed with the red-eye removed.",
     ),
     "retouchGuideText": (
-        "EditorRetouchPanel.qml", 258, 96,
+        "EditorRetouchPanel.qml", "retouchGuideText", 258, 96,
         "Note: you can use ctrl-drag to pan.",
     ),
 }
@@ -69,9 +70,9 @@ def _qsTr_szoveg(forras: str, elemnev: str) -> str:
 class TestAMertDoboz:
     @pytest.mark.parametrize("elemnev", sorted(UTMUTATOK))
     def test_a_MERT_dobozmeret_all_a_forrasban(self, elemnev):
-        fajl, szel, mag, _ = UTMUTATOK[elemnev]
+        fajl, doboz_elemnev, szel, mag, _ = UTMUTATOK[elemnev]
         forras = _forras(fajl)
-        i = forras.index(f'objectName: "{elemnev}"')
+        i = forras.index(f'objectName: "{doboz_elemnev}"')
         blokk = forras[i : i + 600]
         assert f"Layout.preferredWidth: {szel}" in blokk, elemnev
         assert f"Layout.preferredHeight: {mag}" in blokk, elemnev
@@ -83,7 +84,7 @@ class TestAMertSzoveg:
         """Ismert negatív: két útmutatóból eddig épp az utolsó mondat(ok)
         maradtak le — a vörösszemnél a befejezés, a retusálásnál a
         `Ctrl`-húzásos pásztázás."""
-        fajl, _, _, veg = UTMUTATOK[elemnev]
+        fajl, _, _, _, veg = UTMUTATOK[elemnev]
         szoveg = _qsTr_szoveg(_forras(fajl), elemnev)
         assert szoveg.endswith(veg), (
             f"{elemnev}: a mért szöveg vége hiányzik: {veg}"
@@ -91,7 +92,7 @@ class TestAMertSzoveg:
 
     @pytest.mark.parametrize("elemnev", sorted(UTMUTATOK))
     def test_a_HIVATALOS_magyar_forditas_all_a_ts_ben(self, elemnev):
-        fajl, _, _, _ = UTMUTATOK[elemnev]
+        fajl, _, _, _, _ = UTMUTATOK[elemnev]
         szoveg = _qsTr_szoveg(_forras(fajl), elemnev)
         assert f"<source>{szoveg}</source>" in _TS, (
             f"{elemnev}: a mért angol szöveg nincs a .ts-ben"
