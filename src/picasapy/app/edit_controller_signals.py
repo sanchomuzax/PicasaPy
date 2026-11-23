@@ -60,6 +60,9 @@ class EditControllerSignalsMixin:
     # hagyományos szerkesztési műveletek gyűjtőjele.
     toolStateChanges = Signal("QStringList")
     editSessionStarted = Signal()
+    # #7383: a Hangolás-látogatás véget ért (Undo/Redo, képváltás, másik
+    # művelet): a panel csúszkái alaphelyzetbe állnak, a kép a láncot mutatja.
+    finetuneSlidersReset = Signal()
     canUndoChanged = Signal()
     canRedoChanged = Signal()
     undoActionChanged = Signal()

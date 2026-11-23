@@ -138,6 +138,8 @@ def test_a_finomhangolas_ful_utoljara_mozgatott_csuszkaja_a_melysegtengely(qt_ap
         _image_size=None,
         _image_path=None,
         _session=EditSession.from_value("contrast=1,0.1;"),
+        # #7383: nyitatlan Hangolás-látogatásnál a réteg a lánc végére kerül
+        _finetune_visit_session=lambda session, **ertekek: session.append_finetune(**ertekek),
     )
 
     controller.request("finetune2", [0.0, 0.0, 0.0, 0.5], 3, "", "", "")

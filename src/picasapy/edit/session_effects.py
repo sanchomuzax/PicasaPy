@@ -100,6 +100,46 @@ class _SessionEffectsMixin:
             lambda op: op.name.casefold() in _FINETUNE_NAMES, new_op
         )
 
+    def append_finetune(
+        self,
+        *,
+        fill: float,
+        highlights: float,
+        shadows: float,
+        temperature: float,
+        neutral: str = _NEUTRAL_DEFAULT,
+    ) -> EditSession:
+        """Új `finetune2` réteg a lánc VÉGÉRE (#7383).
+
+        Az eredeti Picasa a Hangolás-látogatás első húzásakor a betöltött
+        réteg mellé újat fűz (két `finetune2` a láncban, J6c): ez a metódus
+        ezért sosem cserél és sosem dob el meglévő finetune-réteget (a
+        `set_finetune` ellenben a helyén cserél). Az új réteg pipetta-színe
+        alapból `00000000`, a betöltött réteg színét nem örökli.
+
+        Args:
+            fill: Derítőfény (0..1).
+            highlights: Csúcsfények (0..0.48).
+            shadows: Árnyékok (0..0.48).
+            temperature: Színhőmérséklet (-1..1).
+            neutral: A pipetta AARRGGBB hex-e.
+
+        Returns:
+            Új EditSession.
+        """
+        new_op = _new_op(
+            _FINETUNE_CANONICAL,
+            (
+                "1",
+                f"{fill:.6f}",
+                f"{highlights:.6f}",
+                f"{shadows:.6f}",
+                neutral,
+                f"{temperature:.6f}",
+            ),
+        )
+        return EditSession(ops=self.ops + (new_op,))
+
     def clear_finetune(self) -> EditSession:
         """A finomhangolás (finetune/finetune2) réteg eltávolítása."""
         new_ops = [

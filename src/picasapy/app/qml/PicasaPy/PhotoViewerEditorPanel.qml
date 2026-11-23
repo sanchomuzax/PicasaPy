@@ -54,16 +54,13 @@ EditorPanel {
     undoLabel: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.undoLabel : qsTr("Undo")
     redoAvailable: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.canRedo : false
     redoLabel: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.redoLabel : qsTr("Redo")
-    // Finomhangolás (#20): a mentett értékek a kontrollerből —
-    // a syncFinetuneSliders() ezekből tölti a csúszkákat
-    fillLight: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.fillLight : 0
+    // #7383: a csúszkák NEM a mentett értékekre állnak: a Hangolás fül és az
+    // 1. fül Derítőfénye mindig alaphelyzetben indul (syncFinetuneSliders),
+    // a kép a láncot mutatja. A fülváltás lezárja a Hangolás-látogatást.
+    onFinetuneVisitEnded: if (editorPanel.hostEditCtl) editorPanel.hostEditCtl.closeFinetuneVisit()
     // #7369: a Gyakori javítások Derítőfénye a `fill` réteg, nem a `finetune2`
-    fixesFillLight: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.fixesFillLight : 0
     onFixesFillPreview: (v) => editController.previewFixesFill(v)
     onFixesFillCommit: (v) => editController.setFixesFill(v)
-    highlights: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.highlights : 0
-    shadows: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.shadows : 0
-    colorTemp: editorPanel.hostEditCtl ? editorPanel.hostEditCtl.colorTemp : 0
     // GPU élő-előnézet (#22): amíg a lánc GPU-alkalmas ÉS
     // van RHI, a húzás a LUT-only gyors utat hívja (a
     // `GpuPointFilterPreview` réteg jelenik meg a

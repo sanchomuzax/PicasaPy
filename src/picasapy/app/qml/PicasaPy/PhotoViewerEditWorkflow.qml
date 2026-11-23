@@ -606,13 +606,6 @@ function syncPanelFromController(changedProperties) {
         editorPanel.autolightEnabled = hostEditController.autolightEnabled
     if (changed("autocolorEnabled"))
         editorPanel.autocolorEnabled = hostEditController.autocolorEnabled
-    // A toolsChanged gyűjtőjel a rejtett panelek kötéseit is újraértékeltetné.
-    // A Finomhangolás csúszkáit csak a saját fülükön kell szinkronizálni.
-    if (editorPanel.activeTab === 1
-            && (changed("fillLight") || changed("highlights")
-                || changed("shadows") || changed("colorTemp")
-                || changed("neutralColor")))
-        editorPanel.syncFinetuneSliders()
     // #450: "Remove all existing text" gomb tiltási állapota
     if (changed("hasTextOverlay"))
         editorPanel.hasTextOverlay = hostEditController.hasTextOverlay
@@ -706,10 +699,8 @@ onCurrentIndexChanged: {
             frissitsdAMasodikSzerkesztest()
         // lapozáskor a csúszka az ÚJ kép mentett tilt-értékére áll -
         // suppressPreview miatt ez nem írja felül a preview-t (#131)
+        // (a Hangolás-csúszkák alaphelyzete a `finetuneSlidersReset` jelből, #7383)
         syncTiltSlider()
-        // ugyanígy a Finomhangolás-csúszkák is az új kép mentett
-        // értékeire állnak (#20)
-        editorPanel.syncFinetuneSliders()
         if (editorPanel.cropActive) {
             hostEditController.enterCropTool()
             cropOverlay.loadSelection(hostEditController.cropSelection)
@@ -734,6 +725,7 @@ Connections {
     target: hostEditController
     function onToolsChanged() { viewer.syncPanelFromController() }
     function onEditSessionStarted() { viewer.syncPanelFromController() }
+    function onFinetuneSlidersReset() { editorPanel.syncFinetuneSliders() }
     function onToolStateChanges(changedProperties) {
         viewer.syncPanelFromController(changedProperties)
     }

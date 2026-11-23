@@ -157,6 +157,8 @@ class EditControllerSessionMixin:
         # jelezni kell, hogy a helyi számítás és a hálózati várakozás is
         # frissítse a vágás-panelt.
         self.cropSuggestionsChanged.emit()
+        # #7383: új kép: a Hangolás-csúszkák alaphelyzetben indulnak
+        self._end_finetune_visit()
 
 
     def _start_network_edit_state_load(
@@ -394,6 +396,7 @@ class EditControllerSessionMixin:
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+        self._end_finetune_visit()
 
 
     def setChainValue(self, value: str) -> None:
