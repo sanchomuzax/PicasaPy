@@ -58,9 +58,6 @@ Rectangle {
     // NEM vonatkozik: hogy az eredetiben nincs ilyen fül, nem hiba. Lista:
     // docs/decisions/vedett-sajat-funkciok.md
     property int activeTab: 0
-    // A Kép menüből érkező navigáció célcsempéje. Ez csak kijelölés;
-    // effektet a menüút nem alkalmaz.
-    property string menuEffectSelection: ""
 
     property alias cropActive: toolsState.cropActive
     property alias tiltActive: toolsState.tiltActive
@@ -139,6 +136,8 @@ Rectangle {
     property alias undoAvailable: toolsState.undoAvailable
     property alias redoAvailable: toolsState.redoAvailable
     property alias neutralPickerActive: toolsState.neutralPickerActive
+    // #7370: a mintavevő felület csak a Hangolás (1.) fülön él
+    readonly property bool neutralPickerSampling: neutralPickerActive && activeTab === 1
     property alias neutralColor: toolsState.neutralColor
     signal neutralPickerToggled()
     property alias effectColorPickerTarget: toolsState.effectColorPickerTarget
@@ -165,12 +164,15 @@ Rectangle {
     property alias aspectRotated: cropState.aspectRotated
 
     property alias fillLight: finetuneState.fillLight
+    property alias fixesFillLight: finetuneState.fixesFillLight
     property alias highlights: finetuneState.highlights
     property alias shadows: finetuneState.shadows
     property alias colorTemp: finetuneState.colorTemp
     property alias suppressFinetune: finetuneState.suppressFinetune
     signal finetunePreview(real fill, real highlights, real shadows, real temp)
     signal finetuneCommit(real fill, real highlights, real shadows, real temp)
+    signal fixesFillPreview(real value)
+    signal fixesFillCommit(real value)
 
     property alias shiftMasodlagos: effectState.shiftMasodlagos
 
@@ -216,7 +218,6 @@ Rectangle {
     // dobja el az előnézetet: a Picasa az első fül letiltott tartalmát
     // mutatja. A kijelölt fül az eredeti effekt füle marad.
     function selectTab(tabIndex) {
-        panel.menuEffectSelection = ""
         if (panel.paramPanelSuspended) return
         if (panel.paramPanelActive) {
             panel.paramPanelSuspended = true
@@ -233,13 +234,13 @@ Rectangle {
 
     function effectAppliedCount(effectName) { return Logika.effectAppliedCount(effectName) }
 
-    function tryOpenParamPanel(name, displayLabel) { panel.menuEffectSelection = ""; return Logika.tryOpenParamPanel(name, displayLabel) }
+    function tryOpenParamPanel(name, displayLabel) { return Logika.tryOpenParamPanel(name, displayLabel) }
 
     function openParamPanel(name, displayLabel) { return Logika.openParamPanel(name, displayLabel) }
 
     function updateParamValue(index, value) { return Logika.updateParamValue(index, value) }
 
-    function applyParamPanel() { panel.menuEffectSelection = ""; return Logika.applyParamPanel() }
+    function applyParamPanel() { return Logika.applyParamPanel() }
 
     function cancelParamPanel() { return Logika.cancelParamPanel() }
 
@@ -271,13 +272,12 @@ Rectangle {
     function emitFinetunePreview() { return Logika.emitFinetunePreview() }
     function syncFinetuneSliders() { return Logika.syncFinetuneSliders() }
 
-    function fillLightMoved(value) { return Logika.fillLightMoved(value) }
-
     function emitFinetuneCommit() { return Logika.emitFinetuneCommit() }
-    function fillLightCommitted() { return Logika.fillLightCommitted() }
     onFillLightChanged: panel.syncFinetuneSliders()
+    onFixesFillLightChanged: panel.syncFinetuneSliders()
     onActiveTabChanged: {
         panel.syncFinetuneSliders()
+        Logika.hangolasraLepesKikapcsoljaAPipettat()
         // #2146/#798: az effekt-füleken kell a Shift — ott kapcsoljuk BE a
         // figyelést, máshol KI. A tartalék-olvasás megmarad azoknak a
         // vezérlőknek, amelyek nem ismerik az élő állapotot.
@@ -309,7 +309,9 @@ Rectangle {
     function restoreLastCropRatio() { return Logika.restoreLastCropRatio() }
     function selectAspect(index) { return Logika.selectAspect(index) }
 
-    function handleToolClick(tool) { panel.menuEffectSelection = ""; return Logika.handleToolClick(tool) }
+    function handleToolClick(tool) { return Logika.handleToolClick(tool) }
+    //: #7371: menüparancs/billentyű a NYITOTT képre (a csempe útja és kapuja)
+    function runMenuEffect(name) { return Logika.runMenuEffect(name) }
 
     EditorPanelToolsState {
         id: toolsState

@@ -133,6 +133,38 @@ class _SessionEffectsMixin:
         """Van-e finomhangolás (finetune/finetune2) réteg a láncban."""
         return any(op.name.casefold() in _FINETUNE_NAMES for op in self.ops)
 
+    def set_fill(self, value: float) -> EditSession:
+        """A Gyakori javítások Derítőfényének `fill=1,<érték>` rétege (#7369).
+
+        Az eredeti Picasa az 1. fülön a `fill`, a Hangolás fülön a
+        `finetune2` szűrőt aktiválja (`0x005d7780`): a két réteg független.
+        A láncban EGY `fill` lehet: ha már van, a helyén cserélődik,
+        különben a végére fűződik (a `set_finetune` mintájára).
+
+        Args:
+            value: Derítőfény (0..1).
+
+        Returns:
+            Új EditSession.
+        """
+        new_op = _new_op("fill", ("1", f"{value:.6f}"))
+        return self._with_single_layer(lambda op: op.matches("fill"), new_op)
+
+    def clear_fill(self) -> EditSession:
+        """A `fill` réteg eltávolítása (a `finetune2` érintetlen marad)."""
+        return EditSession(ops=tuple(op for op in self.ops if not op.matches("fill")))
+
+    def fill_value(self) -> float | None:
+        """A mentett `fill` réteg erőssége, vagy None, ha nincs ilyen réteg.
+
+        A hibás/hiányzó paramétert semlegesnek (0) vesszük, a `finetune_values`
+        mintájára (round-trip elv: idegen láncból is biztonságosan olvasható).
+        """
+        for op in self.ops:
+            if op.matches("fill"):
+                return _finetune_float(op, 1)
+        return None
+
     def gpu_finetune_prefix(self) -> tuple[FilterOp, ...] | None:
         """A finetune2 réteg ELŐTTI lánc-előtag — a GPU élő-előnézet (#22)
         feltétele.

@@ -13,6 +13,8 @@ Item {
     property alias previewTimer: paramPreviewTimer
     readonly property Item finetunePanel: tabArea.finomhangoloLap
     readonly property Item fixesTab: tabArea.gyakoriLap
+    // #7371: az Effektek fül (a Kép menü Sharpen parancsa a csempe feliratát kéri)
+    readonly property Item effektLap: tabArea.effektLap
 
     // ---------------- fülsáv: Gyakori javítások / Finomhangolás / Effektek /
     // 4. effekt-fül / 5. effekt-fül (#20, #328) — csak "tools" módban,

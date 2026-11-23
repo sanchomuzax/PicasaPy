@@ -60,6 +60,15 @@ function allitsdAShiftFigyelest() {
                                    && panel.activeTab <= 5)
 }
 
+// #7370: a Hangolás fül belépője (az eredetin `0x005d77d0`) kikapcsolja a
+// pipetta gombját, ha be volt kapcsolva. A fül ELHAGYÁSÁNAK eredeti
+// viselkedése nincs mérve: ott a mintavevő felületet a
+// `neutralPickerSampling` zárja le, az állapot nem változik.
+function hangolasraLepesKikapcsoljaAPipettat() {
+    if (panel.activeTab === 1)
+        panel.neutralPickerActive = false
+}
+
 // #305 null-őr — de ITT szigorúbb annál: az EditorPanel-t önállóan (a
 // `PicasaPy 1.0` modulon át) betöltő tesztek (test_editor_tabs.py,
 // test_editor_effects.py, test_qml_editor_panel.py) az editController
@@ -228,38 +237,25 @@ function emitFinetunePreview() {
 function syncFinetuneSliders() {
     panel.suppressFinetune = true
     finetunePanel.fillSlider.value = panel.fillLight
-    fixesTab.fillSlider.value = panel.fillLight   // #337: a másik fül párja
+    fixesTab.fillSlider.value = panel.fixesFillLight   // #7369: a `fill` réteg, nem a Hangolás
     finetunePanel.highlightsSlider.value = panel.highlights
     finetunePanel.shadowsSlider.value = panel.shadows
     finetunePanel.tempSlider.value = panel.colorTemp
     panel.suppressFinetune = false
 }
 
-// #337: a Kitöltő fény KÉT helyen látszik (Gyakori javítások és
-// Finomhangolás), de EGY beállítás — amelyiket húzzák, a másik követi.
-// A visszacsatolást a suppressFinetune zárja ki: a párja beállítása nem
-// vált ki újabb előnézetet, csak a húzott csúszka.
-function fillLightMoved(value) {
-    if (panel.suppressFinetune)
-        return
-    panel.suppressFinetune = true
-    finetunePanel.fillSlider.value = value
-    fixesTab.fillSlider.value = value
-    panel.suppressFinetune = false
-    panel.emitFinetunePreview()
-}
+// #7369: a Derítőfény KÉT helyen látszik, de KÉT külön szűrő: a Gyakori
+// javítások csúszkája a `fill` réteget, a Finomhangolás fülé a `finetune2`
+// 1. paraméterét írja (az eredeti Picasa fülváltáskor más-más szűrőt
+// aktivál, `0x005d7780`). A két csúszka nem osztozik állapoton.
 
-// a négy csúszka aktuális értékének MENTÉSE (a húzás végén) — a
-// Finomhangolás fül minden csúszkája és a Gyakori javítások fülön lévő
-// Derítőfény-párja is ezen az egy ponton megy ki
+// a négy Finomhangolás-csúszka aktuális értékének MENTÉSE (a húzás végén)
 function emitFinetuneCommit() {
     panel.finetuneCommit(finetunePanel.fillSlider.value,
                          finetunePanel.highlightsSlider.value,
                          finetunePanel.shadowsSlider.value,
                          finetunePanel.tempSlider.value)
 }
-
-function fillLightCommitted() { panel.emitFinetuneCommit() }
 
 // #448 `lastCropRatio`: az eszköz megnyitásakor a legutóbb használt
 // arányt tölti vissza (QSettings-ből, `controller` közvetítésével) — a
@@ -306,6 +302,26 @@ function handleToolClick(tool) {
     }
     panel.toolActivated(tool)
     if (tool === "crop") panel.cropRequested()
+}
+
+// #7371: a Kép ▸ Csoportos szerkesztés effektparancsai és a Ctrl+Shift+B a
+// szerkesztőben NYITOTT képre hatnak: az eredeti a csempekattintás
+// végpontját hívja (`0x005f8520`, `0x005fe370(panel, "bw")`). Ugyanaz az út,
+// mint a csempéé, és ugyanaz a kapu: ahol a csempe nem használható (videó,
+// mód-eszköz, kiegyenesítés, paraméterpanel), a parancs sem fut. A fülválasztás
+// a hívó dolga. A három alapvető javítás a csempe kattintását kapja (a lánc
+// végén no-op), a Sharpen paraméteres: csak a panelt nyitja, az Alkalmaz előtt
+// a lánc nem változik; a többi egykattintásos effekt a csempe jelét küldi.
+function runMenuEffect(name) {
+    if (!panel.enabled || panel.modeToolActive || panel.tiltActive
+            || panel.paramPanelActive)
+        return
+    if (name === "autolight" || name === "autocolor" || name === "enhance")
+        panel.handleToolClick(name)
+    else if (name === "unsharp")
+        panelTabs.effektLap.sharpenMenubol()
+    else
+        panel.effectRequested(name)
 }
 
 

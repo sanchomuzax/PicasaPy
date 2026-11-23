@@ -16,9 +16,8 @@ ColumnLayout {
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
 
-    // #337: a Derítőfény csúszkája a Finomhangolás fülön is ott van, és a
-    // kettőt szinkronban kell tartani — a gazda ezen az aliason keresztül
-    // éri el (a `EditorFinetunePanel` `fillSlider`-ének mintája).
+    // A gazda ezen az aliason keresztül tölti a csúszkát a mentett `fill`
+    // értékre (a `EditorFinetunePanel` `fillSlider`-ének mintája).
     property alias fillSlider: fixesFillSlider
 
     objectName: "toolsColumn"
@@ -134,7 +133,6 @@ ColumnLayout {
             toolName: "enhance"; label: qsTr("I'm Feeling Lucky")
             iconFile: "jo-napom-van"
             tooltip: qsTr("One-click fix for lighting and color")
-            active: panel.menuEffectSelection === "enhance"
             tileEnabled: panel.enhanceEnabled
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -149,7 +147,6 @@ ColumnLayout {
             toolName: "autolight"; label: qsTr("Auto Contrast")
             iconFile: "auto-kontraszt"
             tooltip: qsTr("Fix exposure without affecting color")
-            active: panel.menuEffectSelection === "autolight"
             tileEnabled: panel.autolightEnabled
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -164,7 +161,6 @@ ColumnLayout {
             toolName: "autocolor"; label: qsTr("Auto Color")
             iconFile: "auto-szin"
             tooltip: qsTr("Remove color casts automatically")
-            active: panel.menuEffectSelection === "autocolor"
             tileEnabled: panel.autocolorEnabled
             dimmedByTiltModal: panel.tiltActive
             fullStrengthWhenDisabled: panel.paramPanelContentBlurred
@@ -258,9 +254,10 @@ ColumnLayout {
 
     // #337/#405/#411: Kitöltő fény — az eredeti Picasa Alapvető
     // javítások fülén az ikonrács alatt EZ AZ EGYETLEN csúszka, és a
-    // napi használat egyik legfontosabb eszköze. Ugyanaz a beállítás,
-    // mint a Finomhangolás fülén: a két csúszka egymást követi
-    // (fillLightMoved). A címke a csúszka FÖLÖTT, kompakt (#405 6.
+    // napi használat egyik legfontosabb eszköze. #7369: a `fill=1,<érték>`
+    // réteget szerkeszti, NEM a Finomhangolás `finetune2` rétegét: az
+    // eredeti az 1. fülre lépéskor a `fill`-t aktiválja (`0x005d7780`),
+    // a két csúszka nem osztozik állapoton. A címke a csúszka FÖLÖTT, kompakt (#405 6.
     // pont), a saját ikonnal kiegészítve (#411 9. ikonja: deritofeny).
     // #411 (felhasználói visszajelzés): az eredetiben az ikon és a
     // csúszka EGY EGYSÉG — a képecske közvetlenül a csúszka mellett,
@@ -322,11 +319,12 @@ ColumnLayout {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 27
                 from: 0; to: 1; value: 0
-                onValueChanged: panel.fillLightMoved(value)
+                onValueChanged: if (!panel.suppressFinetune)
+                    panel.fixesFillPreview(value)
                 //: #3865: a `veglegesult` az egérelengedéssel ÉS a
                 //: billentyűs léptetéssel is tüzel — a `pressed`-re épülő
                 //: korábbi kezelő a billentyűt sosem érte el.
-                onVeglegesult: panel.fillLightCommitted()
+                onVeglegesult: panel.fixesFillCommit(fixesFillSlider.value)
             }
         }
     }

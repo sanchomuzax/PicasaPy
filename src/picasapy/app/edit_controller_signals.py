@@ -32,6 +32,7 @@ _TOOL_PROPERTY_NAMES = (
     "chainValue",
     "tiltParam",
     "fillLight",
+    "fixesFillLight",
     "highlights",
     "shadows",
     "colorTemp",
@@ -87,6 +88,7 @@ class EditControllerSignalsMixin:
     chainValueChanged = Signal()
     tiltParamChanged = Signal()
     fillLightChanged = Signal()
+    fixesFillLightChanged = Signal()
     highlightsChanged = Signal()
     shadowsChanged = Signal()
     colorTempChanged = Signal()

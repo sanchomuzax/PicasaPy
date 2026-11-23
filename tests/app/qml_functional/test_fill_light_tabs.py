@@ -1,11 +1,15 @@
-"""#337: Kitöltő fény csúszka a Gyakori javítások fülön is.
+"""#337 / #7369: Kitöltő fény csúszka a Gyakori javítások fülön is.
 
 Az eredeti Picasa Alapvető javítások fülén az ikonrács alatt ott a Kitöltő
 fény csúszka — ez az egyetlen csúszka azon a fülön, és a napi használat
 egyik legfontosabb eszköze. Nálunk csak a Finomhangolás fülön volt.
 
-A két csúszka NEM két külön beállítás: ugyanazt az értéket mutatja és
-állítja, bármelyiket húzva a másik követi.
+#7369 óta a két csúszka NEM közös állapot: az eredeti az 1. fülre lépéskor a
+`fill`, a 2. fülre lépéskor a `finetune2` szűrőt aktiválja (`0x005d7780`), ezért
+a Gyakori javítások csúszkája a `fill`, a Finomhangolásé a `finetune2` réteget
+szerkeszti. A húzás utáni lánc-ellenőrzés valódi egérrel a
+`test_fill_light_valodi_eger_7369.py`-ban van; itt a csúszkák helye és
+állapot-függetlensége.
 """
 
 from __future__ import annotations
@@ -41,30 +45,33 @@ class TestFillLightOnBothTabs:
         assert fixes.property("from") == finetune.property("from")
         assert fixes.property("to") == finetune.property("to")
 
-    def test_moving_the_fixes_slider_moves_the_finetune_one(self, panel, qt_app):
+    def test_moving_the_fixes_slider_leaves_the_finetune_one(self, panel, qt_app):
         fixes = _slider(panel, "fixesFillSlider")
         finetune = _slider(panel, "finetuneFillSlider")
         fixes.setProperty("value", 0.4)
         qt_app.processEvents()
-        assert finetune.property("value") == pytest.approx(0.4, abs=1e-6)
+        assert finetune.property("value") == pytest.approx(0.0, abs=1e-6)
 
-    def test_moving_the_finetune_slider_moves_the_fixes_one(self, panel, qt_app):
+    def test_moving_the_finetune_slider_leaves_the_fixes_one(self, panel, qt_app):
         fixes = _slider(panel, "fixesFillSlider")
         finetune = _slider(panel, "finetuneFillSlider")
         finetune.setProperty("value", 0.7)
         qt_app.processEvents()
-        assert fixes.property("value") == pytest.approx(0.7, abs=1e-6)
+        assert fixes.property("value") == pytest.approx(0.0, abs=1e-6)
 
-    def test_panel_state_syncs_both(self, panel, qt_app):
-        """A mentett érték betöltése (kép nyitása/lapozás) mindkettőt állítja."""
-        panel.setProperty("fillLight", 0.25)
+    def test_panel_state_syncs_each_slider_from_its_own_layer(self, panel, qt_app):
+        """A mentett értékek betöltése (kép nyitása/lapozás): a Gyakori
+        javítások csúszka a `fill`, a Finomhangolás a `finetune2` értékét
+        kapja, egymástól függetlenül."""
+        panel.setProperty("fixesFillLight", 0.25)
+        panel.setProperty("fillLight", 0.6)
         qt_app.processEvents()
         assert _slider(panel, "fixesFillSlider").property("value") == pytest.approx(
             0.25, abs=1e-6
         )
         assert _slider(panel, "finetuneFillSlider").property(
             "value"
-        ) == pytest.approx(0.25, abs=1e-6)
+        ) == pytest.approx(0.6, abs=1e-6)
 
     def test_each_slider_lives_on_its_own_tab(self, panel):
         """A csúszkák a saját fülük oszlopában élnek — a fül váltása így

@@ -300,9 +300,22 @@ _EFFECT_NAMES = (
     # itt duplikátum volna.
 )
 
+#: Csak a Kép menü Csoportos szerkesztés parancsa küldi, csempe nincs hozzá
+#: (#7371). A Film Grain menüparancs az eredetiben a `grain2`-t hívja, az 1.
+#: fül 5. csempéje viszont a `PicnikGrain` (`0x00c7e5a0`), ezért a `grain2`
+#: nem tagja az `_EFFECT_NAMES`-nek (a #2141 óta; azt a katalógus-őr a csempék
+#: nevével veti össze). A nyitott szerkesztőben azonban ugyanúgy alkalmazható,
+#: mint az egyképes könyvtári köteg: `grain2=1;`, Visszavonás-felirattal.
+_MENU_ONLY_EFFECT_NAMES = ("grain2",)
+
 #: Amit a szerkesztő ténylegesen a láncra tehet: a felület fülein szereplő
-#: effektek ÉS a „Régi effektek" fül alkalmazható gombjai (#582).
-_APPLICABLE_EFFECTS = frozenset(_EFFECT_NAMES) | frozenset(_LEGACY_EFFECT_NAMES)
+#: effektek, a „Régi effektek" fül alkalmazható gombjai (#582) ÉS a csak
+#: menüből érkező nevek (#7371).
+_APPLICABLE_EFFECTS = (
+    frozenset(_EFFECT_NAMES)
+    | frozenset(_LEGACY_EFFECT_NAMES)
+    | frozenset(_MENU_ONLY_EFFECT_NAMES)
+)
 
 #: A `.picasa.ini`-be írandó betűzés, ahol az eltér a belső kulcstól. A
 #: Picasa a vignette-et NAGYBETŰVEL írja (`Vignette=1,...`); a round-trip

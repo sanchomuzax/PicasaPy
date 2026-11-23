@@ -30,6 +30,14 @@ class EditControllerEffectsFinetuneMixin:
         return self._finetune_field("fill")
 
 
+    @Property(float, notify=_Signals.fixesFillLightChanged)
+    def fixesFillLight(self) -> float:
+        """A Gyakori javítások Derítőfénye: a `fill=1,<érték>` réteg erőssége,
+        vagy 0.0, ha nincs ilyen réteg (#7369). A `finetune2`-től független:
+        az eredeti Picasa a két fülön két külön szűrőt aktivál."""
+        return self._session.fill_value() or 0.0
+
+
     @Property(float, notify=_Signals.highlightsChanged)
     def highlights(self) -> float:
         return self._finetune_field("highlights")
@@ -190,6 +198,37 @@ class EditControllerEffectsFinetuneMixin:
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+
+
+    @Slot(float)
+    def previewFixesFill(self, value: float) -> None:
+        """Élő Derítőfény-előnézet a Gyakori javítások csúszka húzása közben
+        (#7369): NEM ír ini-be, NEM tol undo-lépést; a mentés az elengedéskor
+        hívott `setFixesFill`-lel történik. A GPU-s LUT-út nem használható:
+        a Derítőfény világosság-vezérelt (#551)."""
+        self._require_active()
+        self._register_preview(self._session_with_fill(self._session, value))
+        self._bump_revision()
+
+
+    @Slot(float)
+    def setFixesFill(self, value: float) -> None:
+        """A Gyakori javítások Derítőfényének mentése a `fill` rétegbe (#7369).
+
+        Undo-lépést tol (felirata `Fill Light` / `Derítőfény`) és ini-be ír.
+        Nulla értéknél a réteget eltávolítja, hogy a visszahúzott csúszka ne
+        hagyjon fölösleges no-op `fill`-t. A `finetune2`-höz nem nyúl."""
+        self._require_active()
+        self._push_undo("fill")
+        self._session = self._session_with_fill(self._session, value)
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+
+    @staticmethod
+    def _session_with_fill(session: EditSession, value: float) -> EditSession:
+        return session.clear_fill() if value == 0.0 else session.set_fill(value)
 
 
     def _finetune_field(self, field: str) -> float:

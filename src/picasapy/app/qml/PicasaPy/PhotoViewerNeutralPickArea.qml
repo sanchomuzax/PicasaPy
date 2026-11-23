@@ -12,8 +12,8 @@ MouseArea {
     id: neutralPickArea
     objectName: "neutralPickArea"
     parent: photoArea.fokuszKep
-    visible: photoArea.hostEditorPanel.neutralPickerActive
-    enabled: photoArea.hostEditorPanel.neutralPickerActive
+    visible: photoArea.hostEditorPanel.neutralPickerSampling
+    enabled: photoArea.hostEditorPanel.neutralPickerSampling
     x: (photoArea.fokuszKep.width
         - photoArea.fokuszKep.paintedWidth) / 2
     y: (photoArea.fokuszKep.height
