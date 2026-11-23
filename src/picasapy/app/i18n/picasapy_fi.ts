@@ -16056,12 +16056,6 @@ picasapy-origin-key: stringres:filter_finetune2_label3;stringres:filter_finetune
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>No red eye was found automatically.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Automaattisessa haussa ei löytynyt punasilmäisyyttä.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>PicasaPy has found and corrected red eye(s).
 
 Note: You can click on a box to delete a change.
@@ -16082,10 +16076,10 @@ Voit myös piirtää neliön sellaisten punaisten silmien ympärille, joita Pica
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>Redeye</source>
+            <source>Redeye Repair</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation>Punasilmäisyys</translation>
+picasapy-origin-key: tooltips:Label(editpanel/redeye_label)</extracomment>
+            <translation>Punasilmäisyyden korjaus</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -16121,16 +16115,10 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
-If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tämän kuvan suuntaa on muutettu Suorista-työkalulla, mikä voi heikentää punasilmäisyyden rajausruutujen tarkkuutta.
-Jos punasilmäisyyskorjaukset ovat väärässä kohdassa tai niitä ei näy, kumoa Suorista-korjaus, tee punasilmäisyyskorjaukset uudelleen ja suorista kuva tarvittaessa uudestaan.</translation>
-        </message>
-        <message>
-            <source>Note: click inside the box to undo the change.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Huomaa: voit kumota muutoksen napsauttamalla ruudun sisäpuolta.</translation>
+            <source>Note: You can click on a box to delete a change.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RedEye::DragToSelectMessage</extracomment>
+            <translation>Huomaa: Muutoksen voi poistaa klikkaamalla kenttää.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -20838,6 +20826,29 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
     </context>
     <context>
         <name>PhotoViewerEditorPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>Info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytApp::InfoTitle</extracomment>
+            <translation>Tiedot</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
+If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_WARN_REDEYE_ACCURACY</extracomment>
+            <translation>Tätä kuvaa on muokattu Suorista-työkalulla, joka voi aiheuttaa epätarkkuuksia punasilmäisyyden poistossa.
+Jos punasilmäisyyden korjaus ei ole tarkka (tai sitä ei ole), kokeile Suoristamisen poistamista ja korjaa punasilmäisyys. Suorista sitten tarvittaessa kuva uudelleen.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::OK</extracomment>
+            <translation>OK</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="52" />
             <source>Undo</source>

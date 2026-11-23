@@ -16072,12 +16072,6 @@ picasapy-origin-key: stringres:filter_finetune2_label3;stringres:filter_finetune
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>No red eye was found automatically.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Automaticky nebyly nalezeny žádné červené oči.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>PicasaPy has found and corrected red eye(s).
 
 Note: You can click on a box to delete a change.
@@ -16098,10 +16092,10 @@ Můžete také nakreslit čtverec kolem červeného oka, které PicasaPy možná
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>Redeye</source>
+            <source>Redeye Repair</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation>Červené oči</translation>
+picasapy-origin-key: tooltips:Label(editpanel/redeye_label)</extracomment>
+            <translation>Oprava červených očí</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -16137,16 +16131,10 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
-If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Orientace tohoto obrázku byla změněna nástrojem Vyrovnat, což může znepřesnit označení obdélníků pro opravu červených očí.
-Pokud se opravy červených očí zobrazují posunuté (nebo vůbec), zkuste vrátit úpravu Vyrovnat, znovu použít opravy červených očí a případně obrázek znovu vyrovnat.</translation>
-        </message>
-        <message>
-            <source>Note: click inside the box to undo the change.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Poznámka: Kliknutím dovnitř rámečku vrátíte změnu.</translation>
+            <source>Note: You can click on a box to delete a change.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RedEye::DragToSelectMessage</extracomment>
+            <translation>Poznámka: Kliknutím na rámeček můžete změnu smazat.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -20854,6 +20842,29 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
     </context>
     <context>
         <name>PhotoViewerEditorPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>Info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytApp::InfoTitle</extracomment>
+            <translation>Info</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
+If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_WARN_REDEYE_ACCURACY</extracomment>
+            <translation>Orientace tohoto obrazu byla změněna pomocí nástroje vyrovnání, který může způsobit nepřesnosti při výběru obdélníků červených očí.
+Pokud vaše opravy červených očí vypadají špatně vyrovnané (nebo neexistují), zkuste vrátit zpět opravu vyrovnání, pak znovu aplikujte opravy červených očí a v případě potřeby znovu vyrovnejte.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::OK</extracomment>
+            <translation>OK</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="52" />
             <source>Undo</source>

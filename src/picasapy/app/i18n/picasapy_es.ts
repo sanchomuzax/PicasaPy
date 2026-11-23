@@ -16056,12 +16056,6 @@ picasapy-origin-key: stringres:filter_finetune2_label3;stringres:filter_finetune
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>No red eye was found automatically.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>No se han encontrado ojos rojos automáticamente.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>PicasaPy has found and corrected red eye(s).
 
 Note: You can click on a box to delete a change.
@@ -16082,10 +16076,10 @@ También puedes dibujar un recuadro alrededor de cualquier ojo rojo que PicasaPy
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>Redeye</source>
+            <source>Redeye Repair</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation>Ojos rojos</translation>
+picasapy-origin-key: tooltips:Label(editpanel/redeye_label)</extracomment>
+            <translation>Corregir ojos rojos</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -16121,16 +16115,10 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
-If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Se ha modificado la orientación de esta imagen con la herramienta «Enderezar», lo que puede causar imprecisiones al seleccionar los rectángulos de ojos rojos.
-Si las correcciones de ojos rojos quedan desalineadas (o no aparecen), prueba a deshacer el ajuste de enderezado, vuelve a aplicar las correcciones de ojos rojos y aplica de nuevo «Enderezar» si es necesario.</translation>
-        </message>
-        <message>
-            <source>Note: click inside the box to undo the change.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nota: haz clic dentro del recuadro para deshacer el cambio.</translation>
+            <source>Note: You can click on a box to delete a change.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RedEye::DragToSelectMessage</extracomment>
+            <translation>Nota: puedes hacer clic sobre un cuadro para eliminar el cambio.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -20838,6 +20826,29 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
     </context>
     <context>
         <name>PhotoViewerEditorPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>Info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytApp::InfoTitle</extracomment>
+            <translation>Info.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
+If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_WARN_REDEYE_ACCURACY</extracomment>
+            <translation>La herramienta Enderezar ha modificado la orientación de la imagen, lo que puede provocar imprecisiones al seleccionar rectángulos para eliminar el efecto de ojos rojos.
+Si los arreglos de ojos rojos aparecen mal alineados o no aparecen, intenta deshacer la acción realizada por la herramienta Enderezar y vuelve a aplicar los arreglos de ojos rojos. A continuación, si es necesario, utiliza de nuevo la herramienta Enderezar.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::OK</extracomment>
+            <translation>Aceptar</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="52" />
             <source>Undo</source>

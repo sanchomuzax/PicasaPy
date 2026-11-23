@@ -16041,12 +16041,6 @@ picasapy-origin-key: stringres:filter_finetune2_label3;stringres:filter_finetune
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>No red eye was found automatically.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tidak ditemukan mata merah secara otomatis.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
             <source>PicasaPy has found and corrected red eye(s).
 
 Note: You can click on a box to delete a change.
@@ -16067,10 +16061,10 @@ Anda juga dapat menggambar kotak di sekeliling mata merah yang mungkin terlewat 
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>Redeye</source>
+            <source>Redeye Repair</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation>Mata Merah</translation>
+picasapy-origin-key: tooltips:Label(editpanel/redeye_label)</extracomment>
+            <translation>Koreksi Mata Merah</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -16106,16 +16100,10 @@ picasapy-origin-key: tooltips:Label(editpanel/redeyetext)</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
-            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
-If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Orientasi gambar ini telah diubah dengan alat Pelurusan, yang dapat menyebabkan ketidakakuratan saat memilih kotak mata merah.
-Jika perbaikan mata merah tampak tidak sejajar (atau tidak terlihat), coba urungkan perbaikan Pelurusan, terapkan ulang perbaikan mata merah, lalu luruskan kembali jika perlu.</translation>
-        </message>
-        <message>
-            <source>Note: click inside the box to undo the change.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Catatan: klik di dalam kotak untuk membatalkan perubahan.</translation>
+            <source>Note: You can click on a box to delete a change.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RedEye::DragToSelectMessage</extracomment>
+            <translation>Catatan: Anda dapat mengeklik kotak untuk menghapus perubahan.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRedeyePanel.qml" />
@@ -20823,6 +20811,29 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
     </context>
     <context>
         <name>PhotoViewerEditorPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>Info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytApp::InfoTitle</extracomment>
+            <translation>Info</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>This image's orientation has been modified by the Straighten tool, which can cause inaccuracies when selecting red eye  rectangles.
+If your redeye fixes appear to be misaligned (or non-existent), try undoing the Straighten fix, then reapply red eye fixes, and Straighten again if necessary.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_WARN_REDEYE_ACCURACY</extracomment>
+            <translation>Orientasi gambar ini telah diubah dengan alat Pelurus, yang dapat menimbulkan ketakcermatan pemilihan bidang mata merah.
+Jika koreksi mata merah tampak miring (atau bahkan tak ada), batalkan koreksi Pelurusan, terapkan lagi koreksi mata merah, lalu Pelurusan jika perlu.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ContactManagerDlg::OK</extracomment>
+            <translation>Oke</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="52" />
             <source>Undo</source>
