@@ -47,6 +47,8 @@ Rectangle {
     //: változatlan marad (#3220).
     property alias finomhangoloLap: finetunePanel
     property alias gyakoriLap: fixesTab
+    //: #7371: az Effektek fül (a Kép menü Sharpen parancsa a csempe feliratát kéri)
+    property alias effektLap: effectsTab1
     objectName: "editorTabArea"
     // #4062/#4068: nyitott Kiegyenesítésnél, illetve felfüggesztett
     // effektpanelnél a fülek tartalma letiltott; a fülsáv külön él.

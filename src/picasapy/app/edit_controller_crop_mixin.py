@@ -6,6 +6,7 @@ import logging
 import threading
 
 from PySide6.QtCore import QMetaObject, Qt
+from picasapy.edit.recrop import recrop, vegi_crop_frissitheto
 from picasapy.halozati_ut import fajlrendszer_gyoker
 
 from .edit_controller_shared import (
@@ -107,24 +108,39 @@ class EditControllerCropMixin:
                 f"A clampelt crop üres lenne: ({left}, {top}, {right}, {bottom})"
             )
         rect = Rect64(left=left, top=top, right=right, bottom=bottom)
-        # #1553: az új vágás a lánc VÉGÉRE kerül, a korábbi `crop64`-ek
-        # megmaradnak (az eredeti Picasa halmoz — a bizonyíték az
-        # `EditSession.append_crop` docstringjében). Kivétel a VÁLTOZATLAN
-        # kijelölés: ha a felhasználó semmit nem igazított, az Alkalmaz ne
-        # hizlalja a láncot egy hatástalan, duplikált réteggel. Ez saját,
-        # óvatossági döntés (az eredetiről erre nincs adatunk), és semmit nem
-        # dob el; cserébe a #1550 elvárása („a változtatás nélküli Alkalmaz
-        # nem írhatja át a képet") a fájl szintjén is teljesül: ilyenkor
-        # hozzá sem nyúlunk az inihez.
+        # #7367: az eredeti Picasa a lánc VÉGÉN álló `crop64`-et írja át
+        # (`0x006b4300`), minden más végrekordnál új elemet fűz hozzá (#1553).
+        # A helyben frissítés nem hoz új Visszavonás-lépést és nem ürít redót:
+        # egy Visszavonás a vágás előtti állapotot hozza vissza. A VÁLTOZATLAN
+        # kijelölésnél hozzá sem nyúlunk az inihez (#1550: a változtatás
+        # nélküli Alkalmaz nem írhatja át a képet), ez saját óvatossági
+        # döntés, az eredetiről erre nincs adatunk.
         hatalyos = self.crop()
         if hatalyos is not None and encode_rect64(hatalyos) == encode_rect64(rect):
             return
-        self._push_undo("crop")
-        self._session = self._session.append_crop(rect)
+        if not vegi_crop_frissitheto(self._session):
+            self._push_undo("crop")
+        self._session = recrop(self._session, rect)
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
 
+
+    @Slot()
+    def applyEmptyCrop(self) -> None:
+        """Üres kijelöléssel nyomott Alkalmaz (#7367, `0x006b4300`).
+
+        `crop64` végű láncnál az utolsó vágás törlődik, más végrekordnál a
+        lánc nem változik. Eltérés az eredetitől: a törlés Visszavonás-lépést
+        kap, hogy a kivett vágás ne vesszen el visszahozhatatlanul."""
+        self._require_active()
+        if not vegi_crop_frissitheto(self._session):
+            return
+        self._push_undo("crop")
+        self._session = recrop(self._session, None)
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
 
     @Slot()
     def clearCrop(self) -> None:

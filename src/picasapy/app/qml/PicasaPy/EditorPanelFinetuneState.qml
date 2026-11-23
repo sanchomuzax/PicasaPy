@@ -5,6 +5,7 @@ QtObject {
     required property var editorPanel
 
     property real fillLight: 0
+    property real fixesFillLight: 0
     property real highlights: 0
     property real shadows: 0
     property real colorTemp: 0

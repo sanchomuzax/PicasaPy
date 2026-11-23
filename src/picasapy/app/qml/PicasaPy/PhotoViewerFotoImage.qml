@@ -78,7 +78,7 @@ Image {
     TapHandler {
         id: _pressFeedbackTap26
         enabled: photoArea.hostViewer.layoutMode !== "1up"
-            && !photoArea.hostEditorPanel.neutralPickerActive
+            && !photoArea.hostEditorPanel.neutralPickerSampling
             && photoArea.hostEditorPanel.effectColorPickerTarget < 0
             && !paintMaskArea.aktiv
             && !(photoArea.hostViewer.aktivOldal === "jobb"

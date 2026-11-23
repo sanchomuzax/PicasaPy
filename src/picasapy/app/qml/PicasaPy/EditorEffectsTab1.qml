@@ -31,6 +31,14 @@ ColumnLayout {
     anchors.topMargin: 10
     spacing: 8
 
+    // #7371: a Kép ▸ Csoportos szerkesztés ▸ Sharpen ugyanazt a paraméter-
+    // panelt nyitja, mint a Sharpen csempe (azonos cím, mert a felirat a
+    // csempe fordítása, ezért a függvény itt él). Shift nélküli út: `unsharp2`.
+    function sharpenMenubol() {
+        if (!panel.tryOpenParamPanel("unsharp2", qsTr("Sharpen")))
+            panel.effectRequested("unsharp2")
+    }
+
     // #704: NINCS fejlécsáv a rács fölött. Az eredeti Picasa
     // elrendezés-forrásában (`editpanel.tre:428`) az effekt-fül panelének
     // (`editpanel/tabpanel3`) PONTOSAN EGY gyereke van: a rács konténere
@@ -62,7 +70,6 @@ ColumnLayout {
             label: panel.shiftMasodlagos
                    ? qsTr("Sharpen (Old)") : qsTr("Sharpen")
             tooltip: qsTr("Sharpens edges in your photo")
-            active: panel.menuEffectSelection === "unsharp"
             //: #2146: Shifttel a MÁSODLAGOS szűrő (unsharp) —
             //: az eredeti csempe-táblája (unsharp2 -> unsharp)
             readonly property string szuro: panel.shiftMasodlagos
@@ -77,7 +84,6 @@ ColumnLayout {
             objectName: "effectSepia"
             label: qsTr("Sepia")
             tooltip: qsTr("Converts photo to sepia tone")
-            active: panel.menuEffectSelection === "sepia"
             onButtonClicked: if (!panel.tryOpenParamPanel("sepia", label)) panel.effectRequested("sepia")
             thumbSource: panel.effectThumbSource("sepia")
             badge: panel.hasBadge("sepia")
@@ -86,7 +92,6 @@ ColumnLayout {
             objectName: "effectBw"
             label: qsTr("B&W")
             tooltip: qsTr("Makes your photo black and white")
-            active: panel.menuEffectSelection === "bw"
             onButtonClicked: if (!panel.tryOpenParamPanel("bw", label)) panel.effectRequested("bw")
             thumbSource: panel.effectThumbSource("bw")
             badge: panel.hasBadge("bw")
@@ -95,7 +100,6 @@ ColumnLayout {
             objectName: "effectWarm"
             label: qsTr("Warmify")
             tooltip: qsTr("Improves skintones by boosting warm tones")
-            active: panel.menuEffectSelection === "warm"
             onButtonClicked: if (!panel.tryOpenParamPanel("warm", label)) panel.effectRequested("warm")
             thumbSource: panel.effectThumbSource("warm")
             badge: panel.hasBadge("warm")
@@ -109,7 +113,6 @@ ColumnLayout {
                    ? qsTr("Film Grain (Old)") : qsTr("Film Grain")
             tooltip: panel.shiftMasodlagos
                      ? qsTr("Adds film grain") : qsTr("Simulate film grain")
-            active: panel.menuEffectSelection === "grain2"
             //: #2146: Shifttel a MÁSODLAGOS szűrő (grain) —
             //: az eredeti csempe-táblája (picnikgrain -> grain)
             readonly property string szuro: panel.shiftMasodlagos

@@ -521,26 +521,40 @@ class TestCropToolPreview:
         with pytest.raises(ValueError):
             controller.exitCropTool()
 
-    def test_reopen_and_reapply_appends_second_crop(self, controller, photo):
-        """#1553: az újravágás a lánc VÉGÉRE fűz — a korábbi `crop64` marad.
+    def test_reopen_and_reapply_updates_last_crop_in_place(self, controller, photo):
+        """#7367: a lánc végén álló `crop64`-et az újravágás helyben írja át.
 
-        Ez az állítás 2026-08-27-ig a fordítottja volt
-        (`test_reopen_and_reapply_replaces_crop_in_place`, „az új téglalap a
-        régi HELYÉRE kerül"). Az eredeti Picasa halmoz: a `filters=` maga a
-        visszavonás-verem (`Picasa3.exe` `0x006ad530`), az újravágásnak
-        önálló felirata van (`IDS_RECROP_LABEL` = „Recrop"), és az éles
-        korpusz redo-verme is két `crop64`-et őriz. Bizonyíték:
-        `EditSession.append_crop` docstringje."""
+        Az eredeti Picasa (`0x006b4300`) az utolsó elem nevét a `crop64`
+        literálhoz hasonlítja: egyezéskor a rekord koordinátái cserélődnek,
+        a lánc nem nő."""
         controller.beginEdit("1", str(photo))
         controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+        controller.enterCropTool()
+        controller.applyCrop(0.1, 0.1, 0.4, 0.4)
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert ini_text.count("crop64=") == 1, (
+            "az újravágás új réteget fűzött a láncvégi crop64 mellé:\n" + ini_text
+        )
+        # a tükör-kulcs az UTOLSÓ (hatályos) vágást mutatja (#1544/#1550)
+        assert "crop=rect64(" in ini_text
+        hatalyos = controller._session.crop()
+        assert hatalyos is not None
+        assert f"crop=rect64({encode_rect64(hatalyos)})" in ini_text
+
+    def test_reopen_and_reapply_appends_second_crop_after_other_edit(
+        self, controller, photo
+    ):
+        """#1553: ha a láncvég NEM `crop64`, az újravágás a végére fűz, és a
+        korábbi `crop64` megmarad."""
+        controller.beginEdit("1", str(photo))
+        controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+        controller.toggleTool("autocolor")
         controller.enterCropTool()
         controller.applyCrop(0.1, 0.1, 0.4, 0.4)
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert ini_text.count("crop64=") == 2, (
             "az újravágás eldobta az előző vágás rétegét:\n" + ini_text
         )
-        # a tükör-kulcs az UTOLSÓ (hatályos) vágást mutatja (#1544/#1550)
-        assert "crop=rect64(" in ini_text
         hatalyos = controller._session.crop()
         assert hatalyos is not None
         assert f"crop=rect64({encode_rect64(hatalyos)})" in ini_text

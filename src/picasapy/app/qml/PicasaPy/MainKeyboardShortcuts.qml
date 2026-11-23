@@ -152,15 +152,38 @@ Item {
         onActivated: hostWindow.torolAHasonlosagMintat()
     }
 
+    // #7352/#7371: a megnyitott képre ható billentyűk kapuja a nézőben (a
+    // könyvtárban a `_konyvtariGyorsbillentyuEngedelyezve` dönt).
+    readonly property bool nezoiEffektBillentyuEngedelyezve:
+        hostWindow.viewerOpen && !!hostPhotoViewer
+        && !hostWindow._szovegmezoneVanFokusz
+        && !hostWindow.slideshowRunning
+
+    // A szerkesztőben a csempe útja és kapuja (`runMenuEffect`): ahol a csempe
+    // sem használható (videó, mód-eszköz, kiegyenesítés, paraméterpanel), a
+    // billentyű sem. Fület nem választ (az eredeti `0x005fe370` sem).
+    function effektANezoben(name) {
+        var panel = hostPhotoViewer ? hostPhotoViewer.editorPanel : null
+        if (panel) panel.runMenuEffect(name)
+    }
+
     Shortcut {
         id: shortcutBatchBlackWhite
         objectName: "batchBwShortcut"
         sequence: "Ctrl+Shift+B"
+        // #7371: nézőben is él (a megnyitott képre); könyvtárban változatlan.
         enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
+                 || keyboardShortcuts.nezoiEffektBillentyuEngedelyezve
         //: `0x005fe370(panel, "bw")` (`0x005e6370`) — a fekete-fehér szűrő a
-        //: KIJELÖLÉSRE. Az eredetiben ehhez nincs kiírt menütétel (keymap
-        //: 31.), a billentyű mégis él.
-        onActivated: hostWindow.kotegEffekt("bw")
+        //: KIJELÖLÉSRE, nézőben a megnyitott képre (a Ctrl+Shift+E
+        //: ikertestvére, `job-810`). Az eredetiben ehhez nincs kiírt
+        //: menütétel (keymap 31.), a billentyű mégis él.
+        onActivated: {
+            if (hostWindow.viewerOpen)
+                keyboardShortcuts.effektANezoben("bw")
+            else
+                hostWindow.kotegEffekt("bw")
+        }
     }
 
     Shortcut {
@@ -169,25 +192,14 @@ Item {
         sequence: "Ctrl+Shift+E"
         // #7352: nézőben is él (a megnyitott képre); könyvtárban változatlan.
         enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
-                 || (hostWindow.viewerOpen && !!hostPhotoViewer
-                     && !hostWindow._szovegmezoneVanFokusz
-                     && !hostWindow.slideshowRunning)
+                 || keyboardShortcuts.nezoiEffektBillentyuEngedelyezve
         //: `0x005fe370(panel, "enhance")` (`0x005e638b`): a „Jó napom van"
-        //: (keymap 32.); nézőben `enhanceInViewer` (`job-810`).
+        //: (keymap 32.); nézőben a csempe útja (`job-810`).
         onActivated: {
             if (hostWindow.viewerOpen)
-                enhanceInViewer(hostPhotoViewer.editorPanel)
+                keyboardShortcuts.effektANezoben("enhance")
             else
                 hostWindow.kotegEffekt("enhance")
-        }
-        // A szerkesztőben a Jó napom van csempe útja (`handleToolClick`): a
-        // lánc végén no-op, visszavonható. Ahol a csempe sem használható
-        // (videó, mód-eszköz, kiegyenesítés, paraméterpanel), a billentyű sem.
-        function enhanceInViewer(panel) {
-            if (!panel || !panel.enabled || panel.modeToolActive
-                    || panel.tiltActive || panel.paramPanelActive)
-                return
-            panel.handleToolClick("enhance")
         }
     }
 

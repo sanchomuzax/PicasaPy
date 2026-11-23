@@ -212,7 +212,7 @@ le.
 pedig tiltott, ha nincs mit elvetni (`cropResetEnabled` — kijelölés VAGY
 `hasCrop`). Az elvetés a szokásos visszavonás-veremre kerül `crop` néven,
 tehát a Visszavonás gomb visszahozza (#465).
-## 4/c. Lezárt nyitott kérdés: az Alkalmaz HALMOZ, nem von össze (#1553)
+## 4/c. Lezárt nyitott kérdés: az Alkalmaz a lánc végi `crop64`-et frissíti, más végrekordnál hozzáfűz (#1553, helyesbítve: #7327)
 
 A #1550 mérése közben derült ki, hogy a vágó-eszköz **Alkalmaz** gombja
 összevonta a szerkesztési láncot egyetlen `crop64`-re, tehát egy
@@ -221,15 +221,22 @@ Alkalmaz eldobta a korábbi vágás-rétegeket**. Mérve, a valódi gombra
 kattintva: `crop64=1,0000000080008000;bw=1;crop64=1,c0008000ffffffff;` +
 Alkalmaz → `crop64=1,40004000c000c000;bw=1;`.
 
-**Az eredeti halmoz** — a bizonyítás (a `filters=` mint visszavonás-verem a
-binárisban, a `Recrop`/„Vágás megismétlése" felirat, és a Picasa saját
-`redo=` sora két `crop64`-gyel) teljes terjedelmében:
-`filters-decoded.md` → „Az ÍRÁS oldala: az újravágás HALMOZ (#1553)".
+**Az eredeti feltételesen halmoz.** A `0x006b4300` a lánc utolsó elemének
+nevét a `crop64` literálhoz hasonlítja: egyezésnél (érvényes téglalapnál) a
+rekord koordinátáit helyben írja át, tehát két közvetlenül egymás utáni
+Alkalmaz egyetlen rekord, és egy Visszavonás mindkettőt visszaveszi;
+különben új rekordot fűz a lánc végére és kiüríti a redo-listát, tehát a
+közbeeső művelettel elválasztott újravágás Visszavonása az előző vágást hozza
+vissza. A bizonyítás (bináris-ágak, a Visszavonás `0x006ad860`, és a korpusz
+37 : 1 aránya a közbeeső szűrős és a szomszédos `crop64`-párok között):
+`filters-decoded.md` → „Az ÍRÁS oldala: a lánc végi `crop64` frissül, más
+végrekordnál az újravágás hozzáfűz". A látható Undo/Redo állapot felvétele
+még hátra van (#7327).
 
-A PicasaPy ehhez igazodik: az `EditSession.append_crop()` a lánc végére fűz,
-a Visszavonás rétegenként bont vissza (az újravágás visszavonása a KORÁBBI
-vágást hozza vissza), a `crop=` tükörkulcs pedig továbbra is az utolsót
-tükrözi. Őr: `tests/app/qml_functional/test_vagas_halmozas_1553.py`.
+A PicasaPy mai `EditSession.append_crop()`-ja még feltétel nélkül a lánc
+végére fűz; az igazítás a #7367 feladata. A `crop=` tükörkulcs az utolsó
+`crop64`-et tükrözi. Őr (a régi szabályt rögzíti, az igazítással együtt
+frissítendő): `tests/app/qml_functional/test_vagas_halmozas_1553.py`.
 
 ## 5. Amit az eredetiből átvettünk, és megvan
 

@@ -214,12 +214,16 @@ class TestGpuPreviewMeretKiugras415:
         """#551: a Derítőfény világosság-vezérelt, tehát nem LUT-osítható —
         húzás közben a GPU-réteg meg sem jelenhet, mert a CPU-tól eltérő
         képet mutatna. (A `gpuFinetuneActive` továbbra is igaz: húzás VAN,
-        csak nem a pontonkénti gyors úton.)"""
+        csak nem a pontonkénti gyors úton.)
+
+        #7369: a szabály a Finomhangolás (`finetune2`) Derítőfény-csúszkájára
+        vonatkozik; a Gyakori javítások csúszkája a `fill` réteget írja, és
+        sosem használja a GPU-s LUT-utat (ld. a következő próbát)."""
         window, _controller, _engine = qml_app_portrait
         viewer = _open_viewer(window, qt_app)
         panel = window.findChild(QObject, "viewerEditorPanel")
         gpu_layer = window.findChild(QObject, "gpuFinetunePreview")
-        slider = panel.findChild(QObject, "fixesFillSlider")
+        slider = panel.findChild(QObject, "finetuneFillSlider")
 
         slider.setProperty("pressed", True)
         slider.setProperty("value", 0.5)
@@ -231,6 +235,24 @@ class TestGpuPreviewMeretKiugras415:
         slider.setProperty("value", 0.0)
         qt_app.processEvents()
         assert viewer.property("gpuFinetunePointSafe") is True
+
+    def test_a_gyakori_javitasok_deritofenye_nem_aktivalja_a_gpu_reteget(
+        self, qml_app_portrait, qt_app
+    ):
+        """#7369: a Gyakori javítások csúszka a `fill` réteg élő CPU-előnézetét
+        hívja, a GPU-s finomhangolás-út jelzői nem állnak be, a réteg rejtett."""
+        window, _controller, _engine = qml_app_portrait
+        viewer = _open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        gpu_layer = window.findChild(QObject, "gpuFinetunePreview")
+        slider = panel.findChild(QObject, "fixesFillSlider")
+
+        slider.setProperty("pressed", True)
+        slider.setProperty("value", 0.5)
+        qt_app.processEvents()
+
+        assert viewer.property("gpuFinetuneActive") is False
+        assert gpu_layer.property("visible") is False
 
     def test_allo_kep_szelessege_nem_ugrik_ki(self, qml_app_portrait, qt_app):
         self._run(qml_app_portrait, qt_app, expect_letterbox_width=True)

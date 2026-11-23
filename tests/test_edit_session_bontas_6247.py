@@ -24,6 +24,10 @@ _MOZGATOTT_FORRASOK = {
     "method:apply": "cbdca7c8cdfaa52915e3108637fc3424564c561e2e4cf98e409b1b90b76ee018",
     "method:clear_crop": "92a529ae3ebb9a172edfa7d047f9d3ed31b531c771687573e98d4a48f2d3c219",
     "method:clear_finetune": "13b1283dca764cabd8877eb8d666829bdb0fe7b5cfded236dba21a8271813481",
+    # #7369: a Gyakori javítások Derítőfényének `fill` rétege
+    "method:clear_fill": "4e01e9b8c26ab4adc953425fdfbfa13d545320ecc29d34c144408eca983ac077",
+    "method:fill_value": "2948621e5b23b455c39b832bc72ab5f6d24baefec908253adc368637fa45764a",
+    "method:set_fill": "5da8b3b44771e9b2a7e27a6dc66e8f01e43d965dd736e0bd0a23798565dbf7c5",
     "method:clear_redeye": "ab25bf283d15cfbcbc8fa81a74543a1082ecda66126681cbfb1b3347b5e01e52",
     "method:clear_retouch": "03c9bf8e1e68a408e9249b520fcd2e0a271bde3efe31a7a748fb871607d0f2b1",
     "method:clear_tilt": "bec13be1170bb6c291c621414a61eca6ad7c2daa237c05831185567a0d5b9ec0",
