@@ -45,7 +45,7 @@ látható, de szürke tételek billentyűi nem élnek.
 | Ctrl+Shift+R | Forgatás balra - a rácsban a teljes kijelölést |
 | Ctrl+Shift+H | Tükrözés vízszintesen (balról jobbra) |
 | Ctrl+Shift+V | Tükrözés függőlegesen (fentről le) |
-| Ctrl+Shift+B | A kijelölt képek fekete-fehérré alakítása |
+| Ctrl+Shift+B | A kijelölt képek fekete-fehérré alakítása; a szerkesztőben (nézőben) a megnyitott képre, ugyanúgy, mint a **Fekete-fehér** csempe |
 | Ctrl+Shift+E | „Jó napom van" a kijelölt képekre; a szerkesztőben (nézőben) a megnyitott képre, ugyanúgy, mint a **Jó napom van** csempe |
 | Ctrl+H | A tálca tartalmának megtartása (**Kijelölés megtartása**) — lásd [Könyvtár](konyvtar.md); nézőben nem működik |
 

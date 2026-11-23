@@ -114,7 +114,8 @@ buborékot az **Alkalmaz**, a **Mégse**, a **Visszavonás** és az
 
 Kilenc gomb:
 
-- **Vágás** — külön eszköz, lásd lentebb.
+- **Vágás**: külön eszköz, lásd lentebb. Ha a képen már van vágás, a
+  gomb felirata **Vágás megismétlése**.
 - **Kiegyenesítés** — a ferde horizont igazítása csúszkával.
 - **Vörösszem** — a vörös szemek javítása.
 - **Jó napom van** — egy kattintásos, általános javítás.
@@ -123,7 +124,11 @@ Kilenc gomb:
 - **Automatikus szín** — a színek automatikus semlegesítése.
 - **Retusálás** — folt eltüntetése ecsettel.
 - **Szöveg** — felirat írása a képre.
-- **Derítőfény** — a sötét részek felderítése csúszkával.
+- **Derítőfény**: a sötét részek felderítése csúszkával. Ez a csúszka
+  független a **Finomhangolás** fül azonos nevű csúszkájától: a kettő
+  külön réteget állít, és az egyik mozgatása nem viszi magával a
+  másikat. A Visszavonás gomb ilyenkor „Visszavonás: Derítőfény" feliratot
+  mutat.
 
 ### Hol van az Alkalmaz és a Mégse
 
@@ -184,6 +189,17 @@ oldalainál fogva méretezhető, belül húzva mozgatható.
 - **Alkalmaz** véglegesíti (nem-destruktívan), **Mégse** elveti,
   **Alaphelyzet** eldobja a már alkalmazott vágást.
 
+### Újravágás
+
+Ha egy kép utolsó szerkesztése vágás volt, és újra vágsz, az **Alkalmaz**
+a meglévő vágást írja át, nem tesz mellé egy újabbat. Két egymás utáni
+vágást így egyetlen **Visszavonás** vesz vissza, az **Újra** pedig a
+második vágást hozza vissza. Ha a vágás után más szerkesztést is
+végeztél, az új vágás a többi után, külön lépésként kerül a képre.
+
+Ha keret nélkül kattintasz az **Alkalmaz** gombra, a program leveszi a
+képről az utolsó lépésként álló vágást. Ezt is visszavonhatod.
+
 ### Arány kényszerítése húzás közben
 
 Miközben **új keretet húzol**, a lenyomva tartott billentyű megköti a
@@ -212,9 +228,10 @@ keretének húzásakor is.
 
 ## Vörösszem
 
-Az **Automatikus** gomb magától megkeresi a vörös szemeket. Ha nem talál
-semmit, kiírja: „Az automatika nem talált vörös szemet." Ha talált,
-azt is jelzi, és **minden kijavított szem köré négyzetet rajzol** —
+A panel címe **Vörösszem kijavítása**.
+
+Az **Automatikus** gomb magától megkeresi a vörös szemeket. Ha talált,
+ezt a panelen jelzi, és **minden kijavított szem köré négyzetet rajzol**,
 ugyanúgy, mint a kézzel jelölt szemek köré. Az automatikusan javított
 szemeket így egyenként is visszavonhatod: kattints a négyzetükbe (lásd
 lentebb). Az **Alaphelyzet** az automatikus javítást is visszaveszi.
@@ -225,10 +242,12 @@ Ha az arcfelismerő nem érhető el, a program a korábbi módon, a teljes
 képen keres. Ha az arcfelismerő egy arcnál értelmetlen szemhelyet ad,
 a program azt kihagyja, és a javítás a többi szemmel lefut.
 
-Ha a képet a **Kiegyenesítés** elforgatta, a panelen figyelmeztetés áll:
-a forgatott képen a szem köré húzott keretek pontatlanok lehetnek. Ilyenkor
-vond vissza a Kiegyenesítést, javítsd a vörös szemeket, és szükség esetén
-egyenesítsd ki újra a képet.
+Ha a képet a **Kiegyenesítés** elforgatta, a Vörösszem gombra kattintva
+előbb egy **Információ** ablak figyelmeztet: a forgatott képen a szem köré
+húzott keretek pontatlanok lehetnek. Ilyenkor vond vissza a
+Kiegyenesítést, javítsd a vörös szemeket, és szükség esetén egyenesítsd
+ki újra a képet. A panel csak az **OK** gomb után nyílik meg; ha az
+ablakot Esc-kel zárod be, a panel nem nyílik meg.
 
 Kézzel is jelölhetsz: húzz keretet a szem köré. Húzás közben a
 **Shift**, a **Ctrl** és az **Alt** itt is megköti a keret arányát — ahogy
@@ -268,7 +287,14 @@ sötétebb részről vetted.
 
 ## Szöveg
 
-Kattints a képre, ahova a szöveget szeretnéd, és gépeld be. Egy képre
+A szöveget **közvetlenül a képre** gépeled, a panelben nincs szövegmező.
+Amíg nem kattintottál, a kép közepén ez a felirat áll: „Szöveg
+elhelyezéséhez kezdjen el gépelni". Kattints a képre oda, ahova a szöveget
+szeretnéd: a kattintás helyén megjelenik a szövegkurzor. Amit begépelsz,
+az a képen látszik, lekerekített keretben. A szöveg a kattintott pont
+alatt kezdődik: balra igazított szövegnél a bal felső sarka áll a
+ponton, középre igazítottnál a sor közepe, jobbra igazítottnál a jobb
+széle. Egy képre
 **több szövegdoboz** is felvehető: az **Alkalmaz** után kattints egy másik
 helyre, és írd be a következőt. Egy meglévő szövegre kattintva kijelölöd
 (kék keret jelzi), és átírhatod, áthelyezheted vagy a beállításait
@@ -295,7 +321,8 @@ A **Körvonal vastagsága** csúszka a legvékonyabb és a legvastagabb
 körvonal között folyamatosan állítható; nullára húzva nincs körvonal.
 
 A **Felirat átvétele** gomb a kép meglévő képfeliratát írja be szövegnek.
-A **Minden meglévő szöveg törlése** letörli a képre írt szövegeket.
+Az **Az összes törlése** gomb letörli a képre írt szövegeket (a
+buboréksúgója: „Minden meglévő szöveg törlése").
 
 A beállítások a `.picasa.ini`-be kerülnek — a **betűtípus**, a
 **betűméret**, a **félkövér** állás, a **körvonal vastagsága** és a
@@ -386,6 +413,13 @@ Csúszkák: **Derítőfény**, **Kiemelések**, **Árnyékok**,
 **Színhőmérséklet**. Emellett két egykattintásos javítás (megvilágítás és
 szín), valamint az **Alapszínválasztás**: egy pipettával kijelölsz a
 képen egy semleges szürke pontot, és a program ahhoz igazítja a színeket.
+
+A pipetta csak ezen a fülön vesz mintát: más fülön a képre kattintás nem
+állítja a színeket. Amikor a **Finomhangolás** fülre lépsz, a pipetta
+kikapcsolt állapotban van; ha használni akarod, kapcsold be újra.
+
+Az itteni **Derítőfény** csúszka független a **Gyakori javítások** fül
+Derítőfény-csúszkájától.
 
 ## Hisztogram
 
