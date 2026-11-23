@@ -41,7 +41,7 @@ közvetlenül nem indítunk: nincs `triggered`/`clicked`/`activated` és nincs
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QPoint, QPointF, Qt
+from PySide6.QtCore import QPointF, Qt
 from PySide6.QtTest import QTest
 from support.szinkron_kepszolgaltato import SzinkronKepSzolgaltato
 
