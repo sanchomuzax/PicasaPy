@@ -40,11 +40,41 @@ MouseArea {
     property bool hasRetouchTarget: false
     property bool hasRetouchSource: false
     property bool committingRetouchPatch: false
-    readonly property real brushRadius:
+    // #7406: a nézet VALÓDI nagyítása (megjelenített képpont / forrásképpont,
+    // 1,0 = 100%). A néző `zoomFactor`-a az ILLESZTETT méretre vett szorzó,
+    // az `actualZoomFactor()` pedig a valódi és az illesztett méret aránya
+    // (ugyanez adja a „Zoomed to" százalékot is).
+    readonly property real viewZoom: {
+        var viewer = photoArea.hostViewer
+        var arany = viewer.actualZoomFactor()
+        return (arany > 0 && viewer.zoomFactor > 0)
+            ? viewer.zoomFactor / arany : 1.0
+    }
+    // A forrásképi sugár (képpont) a vezérlőtől: a csúszka és a nagyítás
+    // határozza meg, a kép méretétől nem függ (R_képernyő = max(3, 100·s·z),
+    // R_forrás = R_képernyő / z). A mentett folt ugyanebből számolódik.
+    readonly property real brushSourceRadius:
         (typeof editController !== "undefined" && editController
-         && editController.retouchBrushRadiusRatio !== undefined
-            ? editController.retouchBrushRadiusRatio : 0)
-        * Math.min(width, height)
+         && editController.retouchBrushSourceRadius !== undefined
+            ? editController.retouchBrushSourceRadius : 0)
+    // A gyűrű vonalának KÖZÉPE a képernyőn ennyi képpontra van a közepétől.
+    readonly property real brushRadius: brushSourceRadius * viewZoom
+    // A szülő kép a `zoomFactor`-ral skálázódik: a gyűrűt ellenskálázzuk, hogy
+    // a sugara és a vonalvastagsága a képernyőn pontos maradjon.
+    readonly property real ringScale:
+        1 / Math.max(0.01, photoArea.hostViewer.zoomFactor)
+    // A rajzolt kör külső széle ennyivel túl van a fehér vonal közepén: a
+    // `retouchCircleComponent` 2 képpontos fekete szegélye a külső szélen áll,
+    // a 1 képpontos fehér vonal közvetlenül belül (a fele 0,5), tehát a fehér
+    // vonal közepe a külső szélnél 2,5 képponttal beljebb van.
+    readonly property real ringInset: 2.5
+
+    function pushViewZoom() {
+        if (typeof editController !== "undefined" && editController)
+            editController.setRetouchViewZoom(viewZoom)
+    }
+    onViewZoomChanged: pushViewZoom()
+    Component.onCompleted: pushViewZoom()
 
     function torolRetouchJeloleseket() {
         hasRetouchTarget = false
@@ -55,6 +85,8 @@ MouseArea {
         if (!visible) {
             torolRetouchJeloleseket()
             ctrlPanning = false
+        } else {
+            pushViewZoom()
         }
     }
 
@@ -143,8 +175,9 @@ MouseArea {
         objectName: "retouchTargetCircle"
         sourceComponent: retouchCircleComponent
         visible: retouchClickArea.hasRetouchTarget
-        width: 2 * retouchClickArea.brushRadius
+        width: 2 * (retouchClickArea.brushRadius + retouchClickArea.ringInset)
         height: width
+        scale: retouchClickArea.ringScale
         x: retouchClickArea.retouchTargetX
             * retouchClickArea.width - width / 2
         y: retouchClickArea.retouchTargetY
@@ -157,8 +190,9 @@ MouseArea {
         objectName: "retouchSourceCircle"
         sourceComponent: retouchCircleComponent
         visible: retouchClickArea.hasRetouchSource
-        width: 2 * retouchClickArea.brushRadius
+        width: 2 * (retouchClickArea.brushRadius + retouchClickArea.ringInset)
         height: width
+        scale: retouchClickArea.ringScale
         x: retouchClickArea.retouchSourceX
             * retouchClickArea.width - width / 2
         y: retouchClickArea.retouchSourceY
@@ -172,8 +206,9 @@ MouseArea {
         sourceComponent: retouchCircleComponent
         visible: retouchClickArea.containsMouse
                  && !retouchClickArea.ctrlPanning
-        width: 2 * retouchClickArea.brushRadius
+        width: 2 * (retouchClickArea.brushRadius + retouchClickArea.ringInset)
         height: width
+        scale: retouchClickArea.ringScale
         x: retouchClickArea.mouseX - width / 2
         y: retouchClickArea.mouseY - height / 2
         z: 3

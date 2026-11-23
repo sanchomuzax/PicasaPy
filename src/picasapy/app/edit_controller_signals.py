@@ -28,7 +28,7 @@ _TOOL_PROPERTY_NAMES = (
     "textAlign",
     "hasRetouch",
     "brushSize",
-    "retouchBrushRadiusRatio",
+    "retouchBrushSourceRadius",
     "chainValue",
     "tiltParam",
     "fillLight",
@@ -89,7 +89,7 @@ class EditControllerSignalsMixin:
     textAlignChanged = Signal()
     hasRetouchChanged = Signal()
     brushSizeChanged = Signal()
-    retouchBrushRadiusRatioChanged = Signal()
+    retouchBrushSourceRadiusChanged = Signal()
     chainValueChanged = Signal()
     tiltParamChanged = Signal()
     fillLightChanged = Signal()
