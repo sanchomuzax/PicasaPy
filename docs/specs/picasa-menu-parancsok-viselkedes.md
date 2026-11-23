@@ -4633,7 +4633,7 @@ QML-fa ad, és az eredeti elemleltárában nincs megfelelője:
 | `cropStraightenWarning` (`EditorCropPanel.qml:67`) | figyelmeztetés, ha a kép tájolását az **egyenesítés** módosította |
 | `cropAspectAddRow` + „Add Custom Aspect Ratio…" (203., 210.) | egyéni képarány **hozzáadása** — az eredetiben csak a **törlés** (`crop_delete_custom`) van nevesítve |
 | `quickCropTopleft` · `quickCropLandscape` (280., 285.) | gyors-vágás gombok |
-| „Regions selected: %1" (`EditorRetouchPanel.qml:89`) | a retusált régiók **számlálója** |
+| „Regions selected: %1" (`EditorRetouchPanel.qml:89`) | a retusált régiók **számlálója** (#7379 óta megszűnt: az eredeti panelen nincs ilyen sor, job-838 `__10`) |
 | „Picasa has found and corrected red eye(s)." / „No red eye was found automatically." (`EditorRedeyePanel.qml:79–80`) | az automatikus vörösszem-keresés **visszajelzése** |
 
 ⇒ **A három fül nálunk nem szegényebb, hanem helyenként gazdagabb.**

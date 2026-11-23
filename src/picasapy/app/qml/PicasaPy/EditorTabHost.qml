@@ -133,8 +133,8 @@ Rectangle {
     // ---------------- "retouch" mód: Retusálás (#148) ----------------
     // A Vágás mintáját követi: a kép TELJES panel-területét foglalja el a
     // fülsáv/rács helyett; a kattintások kezelését a hívó (PhotoViewer)
-    // végzi a képen (ez a fájl nem ismeri a kép geometriáját), a puffer
-    // méretét (retouchRegionCount) és az Alkalmaz/Mégse gombokat mutatja.
+    // végzi a képen (ez a fájl nem ismeri a kép geometriáját); a puffer
+    // mérete (retouchRegionCount) a Reset/Alkalmaz gombok állapotát adja.
 
     // ---------------- "redeye" mód: Vörösszem (#445) ----------------
     // Az automatika a panel megnyitásakor lefut; a kézzel húzott

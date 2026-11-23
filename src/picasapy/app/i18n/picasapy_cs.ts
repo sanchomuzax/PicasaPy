@@ -10924,8 +10924,30 @@ picasapy-origin-key: stringres:CThumbUI::UndomovieEdits</extracomment>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerContextActions.qml" line="204" />
             <source>Undo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zpět</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:GenericButtonUndo</extracomment>
+            <translation>Vrátit zpět</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerContextActions.qml" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytApp::ConfirmTitle</extracomment>
+            <translation>Potvrdit</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerContextActions.qml" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_No</extracomment>
+            <translation>Ne</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerContextActions.qml" />
+            <source>Yes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::YesButton;stringres:CRSSPrefs::true;stringres:ContactManagerDlg::Yes;stringres:PicnikWarn::YesButton;stringres:il_Yes;stringres:ytImageMetadata::Yes</extracomment>
+            <translation>Ano</translation>
         </message>
     </context>
     <context>
@@ -16216,6 +16238,13 @@ picasapy-origin-key: tooltips:Text(editpanel/refining_label)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/resetbutton-label);tooltips:Label(editpanel/cropdiscard);tooltips:Label(editpanel/redeyediscard);tooltips:Label(editpanel/retouchreset)</extracomment>
             <translation>Resetovat</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />
+            <source>Retouch blemishes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(editpanel/retouch_label)</extracomment>
+            <translation>Retušovat kazy</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorRetouchPanel.qml" />

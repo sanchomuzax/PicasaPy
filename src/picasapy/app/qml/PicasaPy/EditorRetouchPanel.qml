@@ -34,20 +34,17 @@ ColumnLayout {
         Layout.preferredHeight: 28
     }
 
-    RowLayout {
+    // #7379 (job-838 __10): cím „Retouch blemishes”, középre igazítva,
+    // ikon nélkül (retouch_label 256×16, x 14-270, y 80, szerkeszto-panel-meretek.md:279).
+    Text {
+        objectName: "retouchTitle"
         Layout.fillWidth: true
-        spacing: 6
-        Image {
-            Layout.preferredWidth: 40
-            Layout.preferredHeight: 30
-            source: "../../assets/tools/retouch.png"
-        }
-        Text {
-            Layout.fillWidth: true
-            text: qsTr("Retouch")
-            font.pixelSize: Theme.fontSize + 3
-            color: Theme.ink
-        }
+        Layout.preferredWidth: 256
+        Layout.preferredHeight: 16
+        horizontalAlignment: Text.AlignHCenter
+        text: qsTr("Retouch blemishes")
+        font.pixelSize: Theme.fontSize + 3
+        color: Theme.ink
     }
 
     //: #901: a retusálás BEÉPÍTETT útmutatója — az eredetiben
@@ -89,14 +86,6 @@ ColumnLayout {
         stepSize: 1
         value: panel.brushSize
         onMoved: panel.brushSizeEdited(Math.round(value))
-    }
-
-    Text {
-        objectName: "retouchRegionCountLabel"
-        Layout.fillWidth: true
-        text: qsTr("Regions selected: %1").arg(panel.retouchRegionCount)
-        font.pixelSize: Theme.fontSize - 1
-        color: Theme.textGray
     }
 
     // #445: a Picasa súgószövege szerinti, számítás-alatti előnézetet

@@ -367,6 +367,11 @@ _EFFECT_INI_NAMES: dict[str, str] = {
 #: `picasapy.render.retouch.apply_retouch_patches`) — a felső határnál
 #: (100) ez 0.1, azaz a kép rövidebb oldalának 10%-a, ami a legnagyobb
 #: gyakorlati foltnak is elég, anélkül, hogy a fél képet lefedné.
+#: NYITOTT KÉRDÉS (7327-11): az eredeti ecsetsugár leképezése (a csúszka két vége és
+#: alapállása, a sugár egysége) nincs lezárva. A #7327 lapja a job-907/job-908 felvételei
+#: alapján forrásképi képpontot ír, a kép méretétől függetlenül (a jegytörzs állítása, itt
+#: nem ellenőrizve). A mérés és az átállás külön jegy (7327-11c/11d), ezért ez a
+#: leképezés (osztó 1000, alapállás 20) itt szándékosan változatlan.
 _BRUSH_SIZE_MIN = 1
 _BRUSH_SIZE_MAX = 100
 _DEFAULT_BRUSH_SIZE = 20
