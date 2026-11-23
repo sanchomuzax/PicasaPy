@@ -67,11 +67,11 @@ _EREDETI_FORRAS_SHA256 = {
     "method:autocolorEnabled": "da0d9a935df126b1d4cfbf2198b7c2ad7b6874cfbde3fca93eb6f5aa84739ecf",
     "method:tiltParam": "7e1bef898e69dde9dad1630a360089cede2e133726501b3b53c2c69ba2fce365",
     "method:fillLight": "ed988744d8fd4b2fb671864fbab3038ec1cb8cc1b79810682309a0b735abb10e",
-    # #7369: a Gyakori javítások Derítőfénye külön `fill` réteg (a `finetune2`-től független)
+    # #7369: a Gyakori javítások Derítőfénye külön `fill` réteg (a `finetune2`-től független);
+    # #7397: a húzás új `fill` réteget fűz (a `_session_with_fill` a Derítőfény-látogatás mixinbe költözött)
     "method:fixesFillLight": "4baed149da6d233ef5a706f7fd0aab6e20d170f37df73a0d5e8a10fe5c3097c5",
-    "method:previewFixesFill": "5b1d112aa385dbe1f3085d9ed9fb7a96fd5cb74a11500f640148a8180f2e8799",
-    "method:setFixesFill": "376a50db5918f564fa647fee0c53f05aec179dcac1a66148cbfe5a3e351058d1",
-    "method:_session_with_fill": "3ce319b623cb4dde7e5fe580e813945c6be5a719ee0b7054f976c20c63444ddb",
+    "method:previewFixesFill": "3661e240c4115a3f534fffefbca54a26f1d94a70aee0d883d165a9114728b736",
+    "method:setFixesFill": "c378fc01f2df43d2002aa06bb5aa4f6749e291a30f29387c035f6e9c70c994ec",
     "method:highlights": "10daf37e5d133de924ac0e7d386c0887120582eb880cb6e9046479e39e91957f",
     "method:shadows": "87b72d5c09e4daeea2562d8e060e453dcd8293dcafd76e832a32e0516492db7b",
     "method:colorTemp": "c190cffd835daadf8e5cc9519d497bec5c27717fcecb0aad9c9a9115e7f29813",
