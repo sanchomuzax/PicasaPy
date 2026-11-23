@@ -190,6 +190,15 @@ class _SessionEffectsMixin:
         new_op = _new_op("fill", ("1", f"{value:.6f}"))
         return self._with_single_layer(lambda op: op.matches("fill"), new_op)
 
+    def append_fill(self, value: float) -> EditSession:
+        """Új `fill=1,<érték>` réteg a lánc VÉGÉRE (#7397).
+
+        Az eredeti Picasa a Gyakori javítások Derítőfény-csúszkájának húzásakor
+        a betöltött `fill` mellé újat fűz (E27: `fill=1,0.5;fill=1,0.523364;`,
+        a két réteg halmozódik). Sosem cserél: a `set_fill` a többi hívónak
+        marad (az az első `fill` helyén cserél)."""
+        return EditSession(ops=self.ops + (_new_op("fill", ("1", f"{value:.6f}")),))
+
     def clear_fill(self) -> EditSession:
         """A `fill` réteg eltávolítása (a `finetune2` érintetlen marad)."""
         return EditSession(ops=tuple(op for op in self.ops if not op.matches("fill")))

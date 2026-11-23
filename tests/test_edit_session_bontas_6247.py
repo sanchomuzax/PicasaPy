@@ -25,6 +25,8 @@ _MOZGATOTT_FORRASOK = {
     "method:clear_crop": "92a529ae3ebb9a172edfa7d047f9d3ed31b531c771687573e98d4a48f2d3c219",
     # #7383: a Hangolás-látogatás új finetune2 rétege (a lánc végére, nem cserél)
     "method:append_finetune": "142cdb1e779379fbe4f2d3eff3d32b439db338df5858d6bb11cb40b8ae46e86a",
+    # #7397: a Derítőfény-látogatás új fill rétege (a lánc végére, nem cserél)
+    "method:append_fill": "0ae0a7564618e221509c61f902940e39cf10901d86d4db504d102edfcf1309a2",
     "method:clear_finetune": "13b1283dca764cabd8877eb8d666829bdb0fe7b5cfded236dba21a8271813481",
     # #7369: a Gyakori javítások Derítőfényének `fill` rétege
     "method:clear_fill": "4e01e9b8c26ab4adc953425fdfbfa13d545320ecc29d34c144408eca983ac077",
