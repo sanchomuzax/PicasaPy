@@ -5,11 +5,14 @@ import QtQuick.Layouts
 PicasaMenu {
     id: menuPicture
     property var bar: null
+    // #7389: nyitott paraméterpanelnél a Kép menü hét tétele és a
+    // Csoportos szerkesztés almenü letiltott.
+    readonly property bool pictureActionsEnabled: !!bar && bar.photoActionsEnabled && !bar.paramPanelActive
     title: qsTr("&Picture")
     MenuItem {
         objectName: "menuPictureViewAndEdit"
         text: qsTr("&View and Edit") + "\tCtrl+3"
-        enabled: bar.photoActionsEnabled
+        enabled: menuPicture.pictureActionsEnabled
         onTriggered: bar.viewAndEditRequested()
     }
     // #4701: az almenü sorrendje és 19 rekordja a menüleltárban szereplő
@@ -19,81 +22,81 @@ PicasaMenu {
     PicasaMenu {
         objectName: "menuPictureBatchEdit"
         title: qsTr("&Batch Edit")
-        enabled: bar.photoActionsEnabled
+        enabled: menuPicture.pictureActionsEnabled
         MenuItem {
             objectName: "menuBatchRename"
             text: qsTr("&Rename...") + "\tF2"
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.renameRequested()
         }
         MenuSeparator {}
         MenuItem {
             objectName: "menuBatchRotateRight"
             text: qsTr("R&otate Clockwise")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.batchApplyEffectRequested("rotate_cw")
         }
         MenuItem {
             objectName: "menuBatchRotateLeft"
             text: qsTr("Rotate &Counterclockwise")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.batchApplyEffectRequested("rotate_ccw")
         }
         MenuSeparator {}
         MenuItem {
             objectName: "menuBatchAutoContrast"
             text: qsTr("A&uto Contrast")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.batchApplyEffectRequested("autolight")
         }
         MenuItem {
             objectName: "menuBatchAutoColor"
             text: qsTr("&Auto Color")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.batchApplyEffectRequested("autocolor")
         }
         MenuItem {
             objectName: "menuBatchEnhance"
             text: qsTr("I'm Feeling Lucky")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.batchApplyEffectRequested("enhance")
         }
         MenuSeparator {}
         MenuItem {
             objectName: "menuBatchSepia"
             text: qsTr("&Sepia")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.batchApplyEffectRequested("sepia")
         }
         MenuItem {
             objectName: "menuBatchSharpen"
             text: qsTr("S&harpen")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.batchApplyEffectRequested("unsharp")
         }
         MenuItem {
             objectName: "menuBatchWarmify"
             text: qsTr("&Warmify")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.batchApplyEffectRequested("warm")
         }
         MenuItem {
             objectName: "menuBatchFilmGrain"
             text: qsTr("&Film Grain")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.batchApplyEffectRequested("grain2")
         }
         MenuItem {
             objectName: "menuBatchBlackWhite"
             text: qsTr("&Black and White")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.batchApplyEffectRequested("bw")
         }
         MenuSeparator {}
         MenuItem {
             objectName: "menuBatchAutoRedeye"
             text: qsTr("Auto Red Eye Correction")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.batchApplyEffectRequested("redeye")
         }
         MenuSeparator {}
@@ -104,13 +107,13 @@ PicasaMenu {
         MenuItem {
             objectName: "menuPictureShowText"
             text: qsTr("Show Text")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.textOverlayVisibilityRequested(true)
         }
         MenuItem {
             objectName: "menuPictureHideText"
             text: qsTr("Hide Text")
-            enabled: bar.photoActionsEnabled
+            enabled: menuPicture.pictureActionsEnabled
             onTriggered: bar.textOverlayVisibilityRequested(false)
         }
     }
@@ -123,14 +126,14 @@ PicasaMenu {
     MenuItem {
         objectName: "menuPictureUndoAllEdits"
         text: qsTr("Undo &All Edits")
-        enabled: bar.photoActionsEnabled && bar.undoAllEditsEnabled
+        enabled: menuPicture.pictureActionsEnabled && bar.undoAllEditsEnabled
         onTriggered: bar.undoAllEditsRequested()
     }
     MenuSeparator {}
     MenuItem {
         objectName: "menuPictureHide"
         text: qsTr("&Hide")
-        enabled: bar.photoActionsEnabled
+        enabled: menuPicture.pictureActionsEnabled
         onTriggered: bar.hideToggleRequested()
     }
     // #1774/#4409: az eredetiben az Elrejtés mellett önálló
@@ -139,7 +142,7 @@ PicasaMenu {
     MenuItem {
         objectName: "menuPictureUnhide"
         text: qsTr("&Unhide")
-        enabled: bar.photoActionsEnabled && bar.hasHiddenPhotoSelection
+        enabled: menuPicture.pictureActionsEnabled && bar.hasHiddenPhotoSelection
         onTriggered: bar.unhideRequested()
     }
     // #1774 (mérve): a mentések szerint itt csoporthatár van.
@@ -149,7 +152,7 @@ PicasaMenu {
     MenuItem {
         objectName: "menuPictureResetFaces"
         text: qsTr("Reset &Faces")
-        enabled: bar.photoActionsEnabled
+        enabled: menuPicture.pictureActionsEnabled
         onTriggered: bar.resetFacesRequested()
     }
     // #1774 (mérve): a mentések szerint itt csoporthatár van.
@@ -157,6 +160,7 @@ PicasaMenu {
     MenuItem {
         objectName: "menuPictureProperties"
         text: qsTr("Properties") + "\tAlt+Enter"
+        enabled: !bar || !bar.paramPanelActive
         onTriggered: bar.propertiesPanelRequested()
     }
 }

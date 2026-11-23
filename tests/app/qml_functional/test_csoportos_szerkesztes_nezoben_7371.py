@@ -327,17 +327,28 @@ class TestKapuk:
             "a Sharpen csempe nem nyitotta meg a panelt: a teszt nem bizonyít"
         )
 
-        _menu(window, qt_app, "menuBatchSepia")
+        # #7389: nyitott paraméterpanelnél a Kép ▸ Csoportos szerkesztés
+        # almenü le van tiltva. A közvetlen selectMenuEffect hívás pedig nem
+        # hívhatja a selectTab-ot (nem függeszti fel a panelt) és nem alkalmaz.
+        batch_edit = gyerek(window, "menuPictureBatchEdit")
+        assert batch_edit.property("enabled") is False, (
+            "a Batch Edit almenü nyitott paraméterpanelnél aktív maradt"
+        )
+        nezo = gyerek(window, "photoViewer")
+        assert nezo.selectMenuEffect("sepia") is True
+        qt_app.processEvents()
+        assert panel.property("paramPanelSuspended") is False
 
         assert szures(controller, 0) == "", (
             "a Sepia nyitott paraméterpanel alatt is a láncra került"
         )
-        # pozitív kontroll: a panel elvetése után ugyanez a parancs hat
+        # pozitív kontroll: a panel elvetése után a menü újra él, és ugyanez a parancs hat
         QMetaObject.invokeMethod(
             panel, "cancelParamPanel", Qt.ConnectionType.DirectConnection
         )
         qt_app.processEvents()
         assert panel.property("paramPanelActive") is False
+        assert batch_edit.property("enabled") is True
         _menu(window, qt_app, "menuBatchSepia")
         assert varj(qt_app, lambda: szures(controller, 0).endswith("sepia=1;")), (
             "a panel nélkül sem hatott a Sepia: az előző állítás üres"

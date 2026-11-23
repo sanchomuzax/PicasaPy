@@ -239,6 +239,9 @@ MenuBar {
     //: (`editpanel/preview`, `FUN_0056e1c0`). Nálunk a szerkesztőpanel a
     //: nézőben lakik, tehát a nyitott néző a megfelelője.
     property bool editorActive: false
+    // #7389: nyitott effekt-paraméterpanel mellett a Kép menü tételei
+    // legyenek letiltva.
+    property bool paramPanelActive: false
     // #922: a Létrehozás-tételek forrása a KÉPTÁLCA is lehet (#455), ezért
     // NEM a `photoActionsEnabled`-ből élnek — az a rácsbeli kijelöléshez
     // kötött 27 fotó-műveletet vezérli, és azoknak tényleg kijelölés kell.
