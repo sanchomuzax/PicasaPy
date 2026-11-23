@@ -6199,7 +6199,7 @@ minimálisan meleg, tehát a belőle épített mátrix hűtene egy hajszálnyit.
 elszíneződne: a nulla állás mátrixa mérve `(128,128,128)` →
 `(126,129,126)`.
 
-### A neutrális pipetta UGYANEZ a gépezet — a `0x0090eda0` CAT-mátrix alkalmazása (#7400)
+### A neutrális pipetta UGYANEZ a gépezet: a `0x0090eda0` CAT-mátrix alkalmazása (#7400)
 
 A `finetune2` callbackje (`0x008f7ee0`) a pipetta-szín semlegesítéséhez és a színhőmérséklethez
 **két egymás utáni mátrix-menetet** futtat, és mindkettő végső munkásfüggvénye a **`0x0090eda0`**:
