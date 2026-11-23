@@ -360,20 +360,26 @@ class TestANezoElhagyasa:
 
 
 class TestAFokuszvaltasEszkozallapota:
-    def test_a_kiegyenesites_csuszka_a_KIJELOLT_fel_erteket_mutatja(
+    def test_a_kiegyenesites_csuszka_fokuszvaltas_utan_nullarol_indul(
         self, qml_app, qt_app
     ):
         """#3644 3.: a fókuszváltás után a csúszka nem ragadhat a másik fél
-        döntési értékén."""
+        döntési értékén. #7393: a Kiegyenesítés minden megnyitáskor 0-ról
+        indul, ezért a "másik fél értéke" a felhasználó éppen húzott értéke
+        (kézzel beadva), a mentett tilt-érték pedig nem tölti be a csúszkát."""
         window, _controller, _engine = qml_app
         nezo = _aa(window, qt_app)
         nezo.property("editCtl").setTilt(0.25)
-        # a csúszka a jobb fél értékén áll (ahogy a felhasználó húzta)
+        savo = _gyerek(window, "editorToolBar")
+        # a mentett érték NEM kerül a csúszkára (#7393)
         QMetaObject.invokeMethod(
             nezo, "syncTiltSlider", Qt.ConnectionType.DirectConnection
         )
         qt_app.processEvents()
-        savo = _gyerek(window, "editorToolBar")
+        assert savo.property("csuszkaErtek") == 0
+        # a csúszka a jobb fél húzott értékén áll (ahogy a felhasználó húzta)
+        savo.setProperty("csuszkaErtek", 0.25)
+        qt_app.processEvents()
         assert abs(savo.property("csuszkaErtek") - 0.25) < 1e-6
 
         _szegmens(window, qt_app, "viewerSwapFocus")

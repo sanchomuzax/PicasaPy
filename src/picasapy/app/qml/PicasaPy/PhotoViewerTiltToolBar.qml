@@ -103,10 +103,13 @@ EditorToolBar {
         //: #4058: a Kiegyenesítés egyetlen mentése az
         //: Alkalmazás. Változatlan értéknél ne keletkezzen
         //: fölösleges réteg vagy Visszavonás-lépés.
+        //: #7393: a csúszka mindig 0-ról indul, tehát a
+        //: változatlan érték a 0; minden más érték ÚJ tilt
+        //: taggá válik a lánc végén. (Az eredeti nulla értékű
+        //: Alkalmazása nincs mérve: ez a mai viselkedés.)
         if (tool === "tilt") {
             if (typeof editController !== "undefined" && editController
-                    && editorToolBar.csuszkaErtek
-                    !== photoArea.hostViewer.tiltErtekNyitaskor)
+                    && editorToolBar.csuszkaErtek !== 0)
                 editController.setTilt(
                     editorToolBar.csuszkaErtek)
             photoArea.hostViewer.tiltAlkalmazasFut = true

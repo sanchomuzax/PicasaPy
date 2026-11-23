@@ -32,6 +32,25 @@ class _SessionEffectsMixin:
         new_op = _new_op("tilt", ("1", f"{param:.6f}", f"{scale:.6f}"))
         return self._with_single_layer(lambda op: op.matches("tilt"), new_op)
 
+    def append_tilt(self, param: float, scale: float) -> EditSession:
+        """Új `tilt` tag a lánc VÉGÉRE (#7393).
+
+        Az eredeti Picasa a Kiegyenesítés minden Alkalmaz-ánál új tagot fűz a
+        lánchoz (job-913: `tilt=1,0.391249,0.000000;tilt=1,-0.399233,0.000000;`),
+        a korábbi tag a láncban marad, és a render-lánc a tagokat sorban
+        alkalmazza. Sosem cserél: a `set_tilt` a többi hívónak marad (az az
+        első `tilt` helyén cserél).
+
+        Args:
+            param: A szög paraméter (6 tizedesre formázva).
+            scale: A skála paraméter (6 tizedesre formázva).
+
+        Returns:
+            Új EditSession.
+        """
+        new_op = _new_op("tilt", ("1", f"{param:.6f}", f"{scale:.6f}"))
+        return EditSession(ops=self.ops + (new_op,))
+
     def clear_tilt(self) -> EditSession:
         """Tilt eltávolítása."""
         new_ops = [op for op in self.ops if not op.matches("tilt")]
