@@ -7,8 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.174] - 2026-11-23
+
 ### Javítva
 - Kutatás: a Hangolás fül eredeti Picasa-felvételei (J0-J7) kiértékelve: az eredetiben a csúszkák mindig alaphelyzetben indulnak, egy látogatás összes húzása egyetlen visszavonási lépés és a betöltött réteg mellé új réteg kerül, a pipetta a forrásképből mintáz és képváltáskor kikapcsol, a Ctrl+3 kijelölés nélkül az 1. képet, két kijelölt képnél a rács szerinti elsőt nyitja; a három eltérés fejlesztésének jegytörzse a lapon van, a megmaradt hat kérdéshez javított lépéssorok készültek; fejlesztés: #7383, #7384, #7385 (#7345).
+- Kutatás: az eredeti Picasa Kiegyenesítés, Vörösszem, Retusálás és Szöveg paneljének felvételei lezárták a panelek felépítését; a négy látható eltérés fejlesztése a #7378-#7381; a javított felvételek (job-907..913) megmérték a Retusálás ecsetkörének méretét (a kör sugara a csúszka bal végén 3, közepén 24, jobb végén 97 képpont, a kép rövidebb oldalától független, ezért sem a mai, sem a #7379-es leképezés nem egyezik), a Retusálás visszavonásának két ágát (utána az Újra letiltott), a Szöveg formázásának megjegyzését és a meglévő blokk szerkesztését, a Vágás figyelmeztetésének hiányát kiegyenesítés mellett és a Kiegyenesítés újranyitását; a megmaradt kérdésekhez új lépéssorok készültek (#7327).
+- Kutatás: a Hangolás fül újabb eredeti Picasa-felvételei (job-895..906) kiértékelve: a pipetta területet átlagol, az ini-t fülváltás, visszavonás vagy kilépés írja ki (nem idő), két Hangolás-látogatás két réteg és két visszavonási lépés, a csupa nulla réteg a visszavonási lépésével együtt eltűnik, a betöltött Derítőfény-réteg mellé új réteg kerül; új fejlesztői jegytörzs a lapon, négy javított lépéssor a maradék kérdésekhez (#7345).
+- Kutatás: az eredeti Picasa 35 futásmérése lezárta az effektfülek folyamatát: a Kép menü effektparancsai és a Ctrl+Shift+B szerkesztőben a csempekattintással egyezően hatnak, az ismétlés, a Mégse és az újranyitás viselkedése mért; négy új eltérés (az Undo felirat alakja angolul, a Soft Focus kezdőértéke, a Kép menü letiltása nyitott paneles állapotban, az állapotsor alakja) jegytörzzsel a lapon, három tétel javított lépéssorral blokkolt (#7346).
+- A Retusálás panel címe („Szennyeződések retusálása”, ikon és a kijelölt régiók számlálósora nélkül), a retusálás visszavonásának megerősítő ablaka (Confirm cím, Picasa-logó, fehér Undo és No gomb, a No-n pontozott fókuszkerettel, Cancel és „Do not ask again” nélkül) és a mentés utáni ini-sor (a fő .picasa.ini-ben megmarad a filters=retouch=1;) mostantól az eredeti Picasát követi; az ecsetméret leképezése változatlan, az átállása külön jegy (#7379).
+- A Hangolás fül csúszkái és az 1. fül Derítőfény-csúszkája újranyitáskor, fülváltáskor, képváltáskor és Undo/Redo után alaphelyzetben állnak, a kép a láncot mutatja; egy Hangolás-látogatás egyetlen új `finetune2` réteg és egyetlen visszavonási lépés, mint az eredetiben (#7383).
+- A Ctrl+3 kijelölt kép nélkül a rács első képét nyitja meg, több kijelölt képnél pedig a rács szerinti elsőt (nem a kattintás sorrendje szerintit), mint az eredeti Picasa (#7384).
+- A retusálás megerősített visszavonása után az Újra gomb tiltott, és a felirata csupasz „Újra” (nincs „Újra: Retusálás”), mint az eredeti Picasában; a Vörösszem és a többi művelet visszavonása változatlan (#7391).
+- A Vágás panel mentett kiegyenesítésű képen is figyelmeztető sor nélkül nyílik meg, ahogy az eredetiben; a figyelmeztetés szövege a forrásban és a fordításokban megmarad (#7392).
 
 ## [1.0.173] - 2026-11-23
 
