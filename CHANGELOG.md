@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.171] - 2026-11-23
+
+- Kutatás: az újravágás szabályának helyesbítése: az eredeti Picasa a lánc végén álló vágást helyben frissíti (két egymás utáni vágást egy visszavonás vesz vissza), más művelet után viszont új vágást fűz hozzá; a látható visszavonás és újra állapot felvétele még hátra van (#7327).
+- Kutatás: az eredeti Picasa Beállítások OK ága csak a javaslatküszöb (`FRSuggestionThreshold`, `FRSuggestionSingleThreshold`) változásakor egyezteti a személyalbumok címketagságát, ütemez háttérmunkát és állítja a panel frissítési jelzőjét; a #7325 "minden OK-n" állítása pontosítva, fejlesztői jegytörzzsel, a fejlesztés a #7373 jegyen (#7331).
+- Kutatás: a szerkesztő Hangolás fülének teljes folyamata az eredetivel összevetve: a Gyakori javítások Derítőfény-csúszkája az eredetiben külön réteget ír, a pipetta fülváltáskor kikapcsol, az Alkalmaz és a Mégse nincs a fülön (#7345).
+- Kutatás: az eredeti Picasa Csoportos szerkesztés parancsai szerkesztőben nyitott képnél a csempekattintással egyenértékű hatást adnak (nem csak fület váltanak), a Ctrl+Shift+B is a megnyitott képre hat, az effekt-paraméterpanelen pedig nincs Alaphelyzet gomb. Az írásvédett-kapu az eredetiben nem írásvédettséget vizsgál: csak az iPhoto- vagy Apple Photos-könyvtár alatti mappa képein kérdez a szerkesztés előtt ("Make a Copy" / "Cancel Edit"), sima írásvédett mappánál nem (#7346).
+- A szerkesztőben az újravágás most az eredeti Picasa módján működik: ha a szerkesztési lánc végén már vágás áll, az Alkalmaz azt írja át a hozzáfűzés helyett, így a lánc nem nő feleslegesen, és két egymás utáni vágást egyetlen Visszavonás vesz vissza (az Újra a második vágást hozza vissza); ha más művelet áll a végén, az új vágás a lánc végére kerül. Üres kijelöléssel az Alkalmaz kiveszi a lánc végén álló vágást, és ez visszavonható (#7367).
+- A Gyakori javítások fül Derítőfény-csúszkája mostantól a saját Derítőfény-réteget szerkeszti, nem a Finomhangolás fülét: a két csúszka egymástól független, az eredeti Picasában írt Derítőfény-érték megnyitáskor a csúszkán látszik, és a Visszavonás gomb felirata „Visszavonás: Derítőfény" (#7369).
+- A pipetta a Hangolás fülre lépéskor kikapcsol, és más fülön a képre kattintás nem vesz mintát (#7370).
+- A Kép ▸ Csoportos szerkesztés effektparancsai (Auto Contrast, Auto Color, I'm Feeling Lucky, Sepia, B&W, Warmify, Film Grain) és a Ctrl+Shift+B a szerkesztőben nyitott képre is hatnak, mint a megfelelő csempe, és egy Visszavonással levehetők; a Sharpen a csempéjével azonos paraméterpanelt nyitja meg. A parancsok már nem csak kék kiemeléssel jelölik ki a csempét, ahogy az 1.0.170 a #7353 nyomán tette (#7371).
+
 ## [1.0.170] - 2026-11-22
 
 - Kutatás: az eredeti Picasa egymás utáni vágásnál a lánc végi vágást frissíti, nem fűz újat; a vágás alkalmazás, visszavonás, újra és mégse lépései mérve (#7327).
