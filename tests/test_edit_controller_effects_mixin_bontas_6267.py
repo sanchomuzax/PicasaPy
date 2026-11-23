@@ -83,13 +83,13 @@ _EREDETI_FORRAS_SHA256 = {
     "method:previewFinetune": "f18330782af266eaebb44aa0cde3c43033c4f1fe40a73738b9d14ffecbbc4604",
     "method:previewFinetuneGpu": "fc7728438ca1b543ca6932e4b61e8eeeca3b751623034fa9658d518ba5653528",
     "method:setFinetune": "3117e12d363f402881570a6c3180662f8274768627b38e5990f36e8ca33f26f6",
-    "method:applyEffect": "98af0d726e268e41b042b6e1963bfc35c9a95d1add2f80e631c7ed2b5c212c27",
+    "method:applyEffect": "1f42e6a58a0b3004cd0ed92ba540f3a32a8a85e50b122709b809ad8601a079ea",
     "method:effectHasParams": "093e48a706f64a6902a858cb22229e08abb2add1621c1a94bc1f487ad5534a7d",
     "method:effectParams": "7d399177dc974d6ec3e7c0008ae908b63a5169708c8ec47ddb254c4f42611a66",
     # #6685: a revision csak a háttér-render elkészültekor lép, nem azonnal.
     "method:previewEffect": "c973db81f4f615e3abf64e4243c202a112ee745168451223d5c8a30788ca4c9e",
-    "method:discardEffectPreview": "024721e1a7fe86b0f1ab0b2899e6573c0825f2563ef9e297c3afa24babee6cc1",
-    "method:applyEffectWithParams": "ded91fbb793684be76859b96d1ae53bdbf98563a51b0b2e686feb8da1af32552",
+    "method:discardEffectPreview": "7dd9e1c1281544cee971d805d6974895ae656627d239598da4cc2d4bdb730727",
+    "method:applyEffectWithParams": "c9af74d647baa38f3023de9a8112f90ce02c601747a8d1453464f21ad04b16b8",
     "method:_session_with_effect": "b464866f2c399980312a8784e00a113933a3bbe907629dd28b7de1044a46918e",
     "method:_finetune_field": "79728f2475a5a708354fcac8a92144d6c0694ca6c72f30c1fed51778edfa1a1d",
     # #7385: a pipetta a finetune2 réteg ELŐTTI lánc képéből mintáz
