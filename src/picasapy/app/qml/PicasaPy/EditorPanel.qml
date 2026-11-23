@@ -354,6 +354,7 @@ Rectangle {
     EditorPanelOverlays {
         id: panelOverlays
         panel: panel
+        modeToolTopInset: panelTabs.tabBarItem.y + panelTabs.tabBarItem.height
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right

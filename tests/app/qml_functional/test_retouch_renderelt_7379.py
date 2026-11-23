@@ -21,8 +21,8 @@ eredeti leképezése nincs lezárva (7327-11, külön jegy 7327-11c/11d), ezért
 
 MÉRT, de NEM állított eltérések az eredetitől (a teszt ezeket nem védi, nyitott
 kérdések; a mért értékek a `PICASAPY_7379_KIMENET` naplóból olvashatók):
-- a panel: eszköz-módban a fülsáv nálunk rejtett (az eredetin látszik, halványan),
-  ezért a cím függőlegesen feljebb áll; a „Brush Size" felirat balra igazított
+- a panel: a #7386 után az eszköz-fülsáv a Retusálás panel fölött is látszik,
+  a panel tartalma a sáv alatt kezdődik; a „Brush Size" felirat balra igazított
   (az eredetin a csúszka fölé középre); az útmutató betűje kisebb (4 sor az
   eredeti 5-jével szemben); a tiltott gombok szövege sötétebb;
 - a megerősítő ablak: 332 x 113 képpont (az eredeti 347 x 108, a rendszer
