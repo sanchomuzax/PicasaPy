@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.177] - 2026-11-23
+
+- Kutatás: a harmadik javított felvételkör (job-917..925) kimérte az eredeti Retusálás-ecset leképezését (a csúszka lineáris, a kör sugara 100 × csúszkaállás × nagyítás képpont, a kép méretétől független, induláskor 25 forrásképpont a középen álló csúszka mellett), megmutatta, hogy a Mentés utáni „Undo Save” a Mentés előtti állapotot állítja vissza, hogy a Clear All utáni Cancel visszahozza a szöveget, hogy a Kiegyenesítés csúszkája ±1-ig lineáris és minden Apply külön visszavonási lépés, és hogy a Vágás kiegyenesített képen sehol nem figyelmeztet; a véglegesített ecsetméret-jegytörzs és három új fejlesztői jegytörzs a lapon, öt javított lépéssor a megmaradt hiányokhoz (#7327).
+- Kutatás: a szerkesztő három Effektek lapja folyamatának futásidejű paritása (#7346).
+- A Vágás panel elrendezése és kijelölés nélküli gombállapota az eredetihez igazodik (#7394).
+- A Mappa ▸ Rendezés ▸ Legutóbbi változtatások menütétel ismételt kattintással vagy a bal hasáb átrendezésével kikapcsolható, visszaadva a rács rendezését a hasábnak (#7396).
+- A Retusálás ecsetkörének sugara az eredeti Picasa szerint alakul: a csúszka lineárisan szabályozza (induláskor a fogantyú középen áll, a kör 25 forrásképpont sugarú), a megjelenített kör a nagyítással arányos (legalább 3 képpont sugarú), és a forrásképi sugár a kép méretétől független; a mentett folt ugyanekkora forrásképi sugarat kap, a `retouch=2` formátum változatlan (#7406).
+- A Szöveg eszköz Clear All gombja eszközön belüli piszkozat lett, amelyet a Cancel visszahoz, az Apply pedig véglegesít (#7407).
+- Mentés után a szerkesztő Undo Save gombja visszavonja a mentést, a szerkesztések megmaradnak (#7408).
+- A Ragyogás (Glow) effekt Radius csúszkája az eredetivel egyező 3,0 kezdőértékkel nyílik meg (#7410).
+
 ## [1.0.176] - 2026-11-23
 
 - A Vörösszem panel gombsora és megjegyzése az eredeti Picasa elrendezését követi, és a szerkesztő fülsávja az eszközpanelek fölött is látszik (#7386).
