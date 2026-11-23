@@ -13,6 +13,15 @@ művelet neve** következett, tehát a felhasználó látta, mit fog visszavonni
 („Visszavonás: Vágás"), és nem vaktában nyomkodta a gombot egy hosszú
 szerkesztés-láncban. Üres veremnél maradt a puszta „Visszavonás".
 
+⚠️ **A lépés-alak NYELVENKÉNT más** (#7381): az eredeti a `undoname`
+szövegét a név elé fűzi, és ezt a szöveget a nyelvi erőforrás adja. Angolul
+„Undo " (kettőspont nélkül: „Undo Straighten", „Redo Crop"; az eredeti 3.9
+felvételei), magyarul „Visszavonás: ", törökül „Geri al: ", a japán és a két
+kínai alak szóköz nélküli. Ezért a kettőspontot NEM a kód teszi a név elé:
+az `EditorPanel` kontextus „Undo %1" / „Redo %1" sablonja viszi, nyelvenként
+az eredeti `undoname`/`redoname` + `%1` fordítással (a 41 nyelv táblája és a
+perzsa/litván nyitott kérdés: `tests/app/test_undo_labels_nyelvek_7381.py`).
+
 Ez a modul a második állapothoz tartozó **névtárat** adja. A név nem
 tetszőleges: mindig **ugyanaz a felirat, amit a felhasználó a gombon
 látott**, amikor az adott lépést alkalmazta — így a visszavonás nem egy
@@ -239,20 +248,28 @@ def action_label(action: str) -> str:
 
 def undo_label(action: str) -> str:
     """A Visszavonás gomb felirata — a két eredeti állapot szerint."""
-    return _stack_label("Undo", action)
+    name = action_label(action)
+    if not name:
+        return QCoreApplication.translate(_PANEL_CONTEXT, "Undo")
+    # #7381: a lépés-alak az eredeti `undoname`, NYELVENKÉNT (angolul „Undo
+    # <név>" kettőspont nélkül, magyarul „Visszavonás: <név>"). Szó szerinti
+    # forrásszöveg kell, hogy a `lupdate` kinyerje.
+    return _fill_name(QCoreApplication.translate("EditorPanel", "Undo %1"), name)
 
 
 def redo_label(action: str) -> str:
     """Az Újra gomb felirata — a két eredeti állapot szerint."""
-    return _stack_label("Redo", action)
-
-
-def _stack_label(base: str, action: str) -> str:
-    """Üres veremnél a puszta felirat (`undolabel`), egyébként a
-    „<felirat>: <lépés neve>" alak (`undoname` + a művelet neve)."""
-    label = QCoreApplication.translate(_PANEL_CONTEXT, base)
     name = action_label(action)
-    return f"{label}: {name}" if name else label
+    if not name:
+        return QCoreApplication.translate(_PANEL_CONTEXT, "Redo")
+    return _fill_name(QCoreApplication.translate("EditorPanel", "Redo %1"), name)
+
+
+def _fill_name(template: str, name: str) -> str:
+    """A lépés nevét a sablon `%1` helyére teszi. Az eredeti `undoname` /
+    `redoname` a név ELÉ álló szöveg (a szóközt vagy kettőspontot is a
+    nyelvi erőforrás adja), ezért a sablon az eredeti szöveg + `%1`."""
+    return template.replace("%1", name, 1)
 
 
 __all__ = [

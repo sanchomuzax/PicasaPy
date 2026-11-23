@@ -143,8 +143,9 @@ Rectangle {
 
     // ---------------- "text" mód: Szöveg-overlay (#148) ----------------
     // A pozicionálás is kattintással történik a képen (a hívó feladata,
-    // ld. retouchColumn megjegyzése) — a szövegmező itt él, a tartalom
-    // gépelését a textDraftEdited jel viszi a controllerhez.
+    // ld. retouchColumn megjegyzése) — #7380: a szöveget közvetlenül a képre
+    // gépelik (PhotoViewerTextInput), a gépelést a textDraftEdited jel viszi
+    // a controllerhez.
 
     // ---------------- 6. fül: a további Glimmer-effektek (#422) --------
     EditorEffectsTab4 {

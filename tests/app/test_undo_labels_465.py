@@ -5,7 +5,9 @@ kommentje) rögzíti, hogy a gombpárnak KÉT állapota volt:
 
 - `undolabel` / `redolabel` — „Visszavonás" / „Újra" (üres veremnél),
 - `undoname` / `redoname` — „Visszavonás: " / „Újra: " (**záró szóközzel**),
-  ami után a visszavonandó művelet NEVE következett.
+  ami után a visszavonandó művelet NEVE következett. Angolul „Undo " /
+  „Redo " (kettőspont nélkül, #7381; a 41 nyelv alakja:
+  `test_undo_labels_nyelvek_7381.py`).
 
 A felhasználó tehát látta, mit fog visszavonni. Ez akkor ér valamit, ha a
 lánc MINDEN eleméhez tartozik olvasható név — nem csak egy kézzel gondozott
@@ -240,3 +242,43 @@ class TestMagyarFelirat:
         # #2240: a „(finom)" toldat a MI találmányunk volt — az eredeti
         # szövegtárban a `picnikgrain` felirata sima „Film Grain".
         assert undo_label("picnikgrain") == "Visszavonás: Filmszemcse"
+
+
+class TestAngolFelirat:
+    """#7381: angolul a lépés-alak „Undo <név>" / „Redo <név>", KETTŐSPONT
+    NÉLKÜL, ahogy az eredeti Picasa 3.9 felvételei mutatják (`job-836
+    __20` / `__22`, `job-838 __34`, `job-821 __14` / `__22`)."""
+
+    @pytest.mark.parametrize(
+        ("action", "name"),
+        [
+            ("tilt", "Straighten"),
+            ("retouch", "Retouches"),
+            ("crop", "Crop"),
+        ],
+    )
+    def test_az_undo_felirat_kettospont_nelkul_nevezi_a_lepest(self, action, name):
+        assert undo_label(action) == f"Undo {name}"
+
+    @pytest.mark.parametrize(
+        ("action", "name"),
+        [
+            ("tilt", "Straighten"),
+            ("crop", "Crop"),
+        ],
+    )
+    def test_az_redo_felirat_kettospont_nelkul_nevezi_a_lepest(self, action, name):
+        assert redo_label(action) == f"Redo {name}"
+
+    def test_ures_veremnel_a_puszta_felirat(self):
+        assert undo_label("") == "Undo"
+        assert redo_label("") == "Redo"
+
+    def test_nincs_kettospont_semelyik_lepes_feliratan(self):
+        """Egyetlen név sem hozhat vissza kettőspontot az angol alakba."""
+        for key in ACTION_LABELS:
+            assert ":" not in undo_label(key).replace(action_label(key), ""), key
+            assert ":" not in redo_label(key).replace(action_label(key), ""), key
+
+    def test_az_ismeretlen_kulcs_nyers_neve_is_szokozzel_kovetkezik(self):
+        assert undo_label("valami_ismeretlen") == "Undo valami_ismeretlen"

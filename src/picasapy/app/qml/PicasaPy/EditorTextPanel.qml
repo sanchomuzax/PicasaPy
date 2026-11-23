@@ -2,9 +2,10 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// A szerkesztő „Szöveg" panelje (#148/#450): a szövegmező, a betűméret és
-// az átlátszóság csúszkája, a kitöltés-/körvonalszín választója, valamint a
-// saját Alkalmaz/Mégse pár.
+// A szerkesztő „Szöveg" panelje (#148/#450): a betűméret és az átlátszóság
+// csúszkája, a kitöltés-/körvonalszín választója, valamint a saját
+// Alkalmaz/Mégse pár. #7380: a szöveget NEM itt, hanem közvetlenül a képre
+// kell gépelni (`PhotoViewerTextInput.qml`).
 //
 // #496: kiemelve az EditorPanel.qml-ből — a gazda-panelre a `panel`
 // tulajdonságon át hivatkozik (a `FolderStatePanel.qml` `manager`-mintája).
@@ -15,7 +16,7 @@ ColumnLayout {
     //: kifejezés SAJÁT tulajdonságban marad — a `textApplyEnabled` néven a
     //: PhotoViewer is erre kötött, és a próbák is ezt olvassák.
     readonly property bool applyEngedve:
-        panel.textPlacementPending && textContentField.text.length > 0
+        panel.textPlacementPending && panel.textDraftContent.trim().length > 0
 
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
@@ -49,23 +50,9 @@ ColumnLayout {
         }
     }
 
-    Text {
-        Layout.fillWidth: true
-        wrapMode: Text.WordWrap
-        text: qsTr("Type your text, then click on the photo to place it.")
-        font.pixelSize: Theme.fontSize - 1
-        color: Theme.textGray
-    }
-
-    TextField {
-        id: textContentField
-        objectName: "textContentField"
-        Layout.fillWidth: true
-        text: panel.textDraftContent
-        onTextChanged: panel.textDraftEdited(text)
-        // #422: jobbklikk-menü (Picasa `Address`)
-        TextFieldContextArea {}
-    }
+    //: #7380: az eredetiben a panelben NINCS szövegmező és magyarázó sor
+    //: (job-839 `__10`): a szöveg közvetlenül a képre gépelhető
+    //: (`PhotoViewerTextInput.qml`), a „Type anywhere to add text" hinttel.
 
     // #450: a kép meglévő feliratát tölti a szövegmezőbe — feliratozatlan
     // képnél a gomb tiltott (a jegy szó szerinti szövege szerint)
@@ -438,13 +425,18 @@ ColumnLayout {
         }
     }
 
-    // #450: az összes szövegelem törlése — ma egyetlen szövegelem van,
-    // a meglévő clearText (Visszavonás-verem NÉLKÜLI, azonnali) útvonalon
+    // #450: az összes szövegelem törlése — a meglévő clearText
+    // (Visszavonás-verem NÉLKÜLI, azonnali) útvonalon.
+    // #7380: az eredeti felirata „Clear All" (`edittextpanel/clearall`), a
+    // régi „Remove all existing text" ennek a TOOLTIPJE. Aktív, ha van
+    // mentett felirat VAGY a képre kattintott, még nem alkalmazott hely
+    // (job-839 `__10` tiltott, `__12` aktív).
     PanelButton {
         objectName: "textRemoveAllButton"
         Layout.fillWidth: true
-        label: qsTr("Remove all existing text")
-        buttonEnabled: panel.hasTextOverlay
+        label: qsTr("Clear All")
+        tooltip: qsTr("Remove all existing text")
+        buttonEnabled: panel.hasTextOverlay || panel.textPlacementPending
         onButtonClicked: panel.textRemoveAllRequested()
     }
 }
