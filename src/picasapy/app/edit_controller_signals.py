@@ -122,6 +122,9 @@ class EditControllerSignalsMixin:
 
     editSaveReadOnly = Signal()
 
+    #: #7408: privát híd a szerkesztő Undo gombjától a lemez-visszaállításhoz.
+    _undoSaveRequested = Signal(str)
+
     editSaveFailed = Signal(str)
 
     editChainRejected = Signal(str)

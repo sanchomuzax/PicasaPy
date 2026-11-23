@@ -79,6 +79,10 @@ def _startup_step_create_edit_and_file_controllers(state):
     SecondPreview = _app._lazy_app_symbol("SecondPreview")
     second_preview = SecondPreview(edit_controller_masodik)
     controller.set_edit_controllers(edit_controller, edit_controller_masodik)
+    edit_controller._undoSaveRequested.connect(controller._undo_save_for_editor)
+    edit_controller_masodik._undoSaveRequested.connect(
+        controller._undo_save_for_editor
+    )
     kosd_be_az_allapotsor_alakjat(controller, edit_controller)
     # #3649: a két „aa"-fél összekötése — a fókuszváltás (`swapAaFocus`)
     # ezen át cseréli a festett maszkot a két fél között, ahelyett hogy

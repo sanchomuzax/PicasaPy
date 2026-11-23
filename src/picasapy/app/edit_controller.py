@@ -235,6 +235,9 @@ class EditController(
         # undo/redo verem (#59): (filters-érték a művelet ELŐTT, művelet-kulcs)
         self._undo_stack: list[tuple[str, str]] = []
         self._redo_stack: list[tuple[str, str]] = []
+        # #7408: a háttérben futó Undo Save alatt a mentés-előzmény maradjon
+        # látható felirattal, de a gomb ne indíthassa el másodszor.
+        self._save_undo_pending = False
         # fényképezőgép-összefoglaló (#25): a forrásfájl EXIF-jéből, csak a
         # beginEdit-kor olvasva — a szerkesztés alatt nem változik, a
         # csúszka-húzás minden egyes revíziójánál újraolvasni felesleges lenne
