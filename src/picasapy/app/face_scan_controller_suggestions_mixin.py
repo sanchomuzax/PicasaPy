@@ -196,6 +196,44 @@ class FaceScanControllerSuggestionsMixin:
         return irt
 
 
+    @Slot()
+    @Slot(bool)
+    def recalculateSuggestions(self, sync: bool = False) -> int | None:  # noqa: N802 — QML-slot-stílus
+        """A javaslatok újraszámolása a megváltozott javaslatküszöbbel (#7373).
+
+        A Beállítások OK-ja hívja küszöbváltozáskor. Nagy könyvtárban a
+        felületet nem blokkolja: háttérszálon (BackgroundWorkerMixin) fut.
+        """
+        if not self.suggestionsEnabled():
+            return 0 if sync else None
+        lepcso = self.suggestionThreshold()
+        kuszob = step_to_threshold(lepcso)
+        if sync:
+            return self._run_recalculate_suggestions(kuszob)
+        self._start_background(
+            self._run_recalculate_suggestions,
+            args=(kuszob,),
+            name="picasapy-recalculate-suggestions",
+        )
+        return None
+
+
+    def _run_recalculate_suggestions(self, kuszob: float) -> int:
+        """A javaslatok újraszámolása az adott küszöbbel a háttérszálon."""
+        try:
+            with open_index(self._db_path) as conn:
+                irt = javaslatokat_ujraszamol(conn, kuszob)
+                conn.commit()
+        except Exception as hiba:  # noqa: BLE001 — a nézet ne fagyjon le
+            _log.exception("javaslat-újraszámolás hiba: %s", self._db_path)
+            self.embeddingFailed.emit(str(hiba))
+            return 0
+        if irt:
+            self.unnamedCountChanged.emit()
+            self.faceSuggestionsChanged.emit()
+        return irt
+
+
     def _javaslat_lepcso(self) -> int:
         """A tárolt javaslat-lépcső (alapértéken a mért `85`)."""
         return self.suggestionThreshold()
