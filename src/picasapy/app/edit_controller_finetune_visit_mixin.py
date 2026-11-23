@@ -163,6 +163,35 @@ class EditControllerFinetuneVisitMixin:
         )
         return True
 
+    def _neutral_sample_ops(self) -> tuple[FilterOp, ...]:
+        """A lánc a látogatás rétege ELŐTT: ennek a képéből mintáz a pipetta.
+
+        Nyitott látogatásnál a látogatás ELŐTTI lánc (a réteg `base_length`
+        indexen áll); nyitatlannál a mostani teljes lánc, mert a pipetta új
+        réteget fűz a végére. A betöltött vagy korábbi látogatásból való
+        `finetune2` réteg hatása így benne van a mintában, a látogatás saját
+        rétegéé (csúszkák, korábbi pipetta-szín) nem (#7385, J5a)."""
+        visit = self._finetune_visit
+        if self._finetune_visit_open():
+            return self._session.ops[: visit.base_length]
+        return self._session.ops
+
+    def _sample_neutral_source(self, nx: float, ny: float) -> tuple[int, int, int] | None:
+        """A pipetta mintája a (nx, ny) ponton: a látogatás rétege ELŐTTI lánc
+        képének pontja (#7385). A vágás és az ecset-maszk kezelése a
+        megjelenített képével azonos (ugyanaz a `crop=` érték és festés)."""
+        crop, crop_ini_readable = self._crop_value_for_session(self._session)
+        return self._provider.sample_prefix_color(
+            self._kulcs,
+            self._image_path,
+            self._neutral_sample_ops(),
+            nx,
+            ny,
+            paint_strokes=self._paint_strokes(),
+            crop=crop,
+            crop_ini_readable=crop_ini_readable,
+        )
+
     def _commit_neutral_color(self, neutral: str) -> None:
         """A pipetta (és a szín-varázspálca) színe a látogatás rétegébe: a
         négy csúszka értéke megmarad; nyitatlan látogatásnál a pipetta kezdi

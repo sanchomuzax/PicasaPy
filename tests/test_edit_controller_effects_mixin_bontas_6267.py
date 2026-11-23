@@ -92,7 +92,8 @@ _EREDETI_FORRAS_SHA256 = {
     "method:applyEffectWithParams": "ded91fbb793684be76859b96d1ae53bdbf98563a51b0b2e686feb8da1af32552",
     "method:_session_with_effect": "b464866f2c399980312a8784e00a113933a3bbe907629dd28b7de1044a46918e",
     "method:_finetune_field": "79728f2475a5a708354fcac8a92144d6c0694ca6c72f30c1fed51778edfa1a1d",
-    "method:pickNeutralColor": "2d88180fa236c4d687c98f11dfcac34b0f7bf7fc09d08e2cf2f1d1e326353447",
+    # #7385: a pipetta a finetune2 réteg ELŐTTI lánc képéből mintáz
+    "method:pickNeutralColor": "4c5bddb961b15522c6b28857689f99508894e7fd14e220555f80a6bef555bab3",
     "method:pickEffectColor": "9bc9106f540a20fb9223155e3d2471ad94561caccc3c77f2bd444b349a19ea52",
     "method:figyeldAShiftet": "43741eeb4fbedcddeb9d872b43224b390c9ccb6589834db9451ec3be10227561",
     "method:_allitsd_a_shiftet": "9a38ce944af8830ccd6deb106628ca92a00eef74845ca2d0538d8196d38746a7",
