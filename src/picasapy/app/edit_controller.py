@@ -292,6 +292,9 @@ class EditController(
         self._text_overlay_visible = True
         self._text_draft = ""
         self._text_pending_pos: tuple[float, float] | None = None
+        self._text_cleared: bool = False
+        self._text_initial_overlay: TextOverlay | None = None
+        self._text_initial_active: bool = False
         # #7380: a képre gépelhető QML-doboz látszik-e (ilyenkor a szerkesztett
         # blokkot a doboz rajzolja, nem az előnézeti raszter)
         self._text_inline_editing = False

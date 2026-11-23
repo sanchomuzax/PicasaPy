@@ -6,6 +6,7 @@ QtObject {
 
     property string textDraftContent: ""
     property bool textPlacementPending: false
+    property bool textCleared: false
     property string captionText: ""
     property bool hasTextOverlay: false
     property bool textOverlayVisible: true

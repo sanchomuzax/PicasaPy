@@ -26,6 +26,7 @@ _TOOL_PROPERTY_NAMES = (
     "textItalic",
     "textUnderline",
     "textAlign",
+    "textCleared",
     "hasRetouch",
     "brushSize",
     "retouchBrushSourceRadius",
@@ -87,6 +88,7 @@ class EditControllerSignalsMixin:
     textItalicChanged = Signal()
     textUnderlineChanged = Signal()
     textAlignChanged = Signal()
+    textClearedChanged = Signal()
     hasRetouchChanged = Signal()
     brushSizeChanged = Signal()
     retouchBrushSourceRadiusChanged = Signal()
