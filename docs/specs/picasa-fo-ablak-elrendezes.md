@@ -545,11 +545,21 @@ egyetlen, közvetlen olvasatra vonatkoznak.
    dátumát írhatja a CThumbDB adatbázisába, nem a kikapcsolt fotósort és nem
    a `.picasa.ini`-t. **Erős az íróút, feltételes, hogy a fájltípus-váltás
    elindítja ezt a külön mappadátum-ágat.**
-   **Nyitott kérdés:** a `0x006d4710` által 4-esre állított sorállapot
-   későbbi olvasója és a nézetértesítés utáni tartós író nincs megnevezve;
-   ezért a kikapcsolt rekord tartós törlése, megőrzése vagy átírása nem
-   következik a statikus hívási láncból. Ezt a befejezett M4 `job-822..825`
-   katalógus- és felületképei döntik el.
+   **M4b-mérés (megerősített kimenet):** a `job-823` kikapcsolt állapotában
+   a `teszt-video.wmv` rekord a `thumbindex.db` 37. sorában megmarad
+   (`valid=1`, `size=45537`), miközben az előtte levő AVI-sor kiürül; a fájl
+   2229-ről 2214 bájtra változik. A `job-824` visszakapcsolásakor az AVI
+   csempe visszatér, de a záró db3-ben az AVI-sor továbbra is üres, a WMV-sor
+   megmarad. A WMV-sor megmaradása a Movies-kapcsolóról **nem** mond semmit:
+   a kontroll (`job-822`) nézete 25 elemet mutat, a 24 kép mellett egyetlen
+   videót, a `teszt-video.avi`-t; a WMV (és az MP4) bekapcsolt Movies mellett
+   sem jelenik meg, a sora `kind=4`, az AVI-é `kind=8`. A Movies-csoportba
+   tartozó, megjelenített videó (AVI) sora tehát kikapcsoláskor kiürül.
+   **NYITOTT KÉRDÉS:** a `0x006d4710` által 4-esre állított
+   sorállapot későbbi olvasója és a tartós író útja nincs megnevezve. A
+   `job-825` újraindítás utáni pillanatképe a 51 fájlból csak 10-et tartalmaz,
+   és a `thumbindex.db` hiányzik, ezért a stabil újraindítás utáni sors nem
+   dönthető el.
 
 **A. A `0x004e31a0` teste (megerősített).** Hívási forma: a fogadó
 (`ytDirScanner*`) a vermen, az útvonal C-sztring `edx`-ben, két további
@@ -759,7 +769,7 @@ képkockát konkrét job-számnak.
 | # | Eredeti (bináris) | Nálunk (fájl:sor, szó szerint) | Teendő |
 |---|---|---|---|
 | 1 | OK után: kikapcsolás `0x005cfd67` → `0x004fb9c0` (szinkron, az OK szálán); bekapcsolás `0x005cfd7e` → `0x004efb40` (kérés + `SetEvent`, a munka a szkennerszálon); mindkét ág után `0x005cfd8f`: `0x004ebe40` (a `+0x2ec` változásfigyelők `+0x54` listáját üríti és a `0x004e2d30`-cal újraépíti; a `0x004e2d30` testét nem olvastam, tehát a lista tartalma feltételes). **Erős** az útvonal és az időzítés; **feltételes** az újraépített lista tartalma. | `src/picasapy/app/qml/OptionsDialog.qml:168-169`: `if (fileTypesChanged && typeof controller.rescan === "function")` / `controller.rescan()`; `src/picasapy/app/library_controller_sync_rescan.py:25`: `self._start_rescan(self._manual_rescan_worker)` | Kód-teendő nincs ebben a hívási eltérésben. A #7338 óta az OK azonnali háttér-újraolvasást indít; a #7329 "nincs `_start_rescan`" mondata és a [paritas-folyamat-7325.md](paritas-folyamat-7325.md) 9. sora elavult. **Erős:** az eredetinél a kivétel az OK szálán szinkron, nálunk az újraolvasás a háttérben indul. |
-| 2 | Kikapcsoláskor a memóriabeli rekord kivétele (`0x004f9450`, `0x0040fae0`, `[this+0x4d4]--`) után az értesítők (`0x0055ff50`, `0x0055ff70`) csak memóriabeli állapotot, érvényességi vektort és nézetet frissítenek. **Megerősített** a közvetlen callback-viselkedés; **NYITOTT KÉRDÉS** a tartós fotósor sorsa, mert a `0x006d4710` állapot 4 olvasói és az értesítés utáni íróút nincsenek meg. | `src/picasapy/index/sync_photos.py:185-186`: `nevek = [media.name for media in scan.files]` / `_prune_photos(conn, folder_id, nevek)`; `src/picasapy/index/sync_photos.py:535-538`: `DELETE FROM photos ... NOT IN`; `src/picasapy/scanner/filetypes.py:143`: `return kind if group in enabled_filetypes else None` | **M4-ig nincs döntés.** Ha a teljes feldolgozás utáni eredeti katalógusban a kikapcsolt fotósor megmarad, fejlesztői jegy kell a PicasaPy törlése miatt. Ha az eredeti sora is törlődik, ezen a ponton nem kell fejlesztői jegy. A `job-822..825` kikapcsolás utáni katalógusképe dönt. |
+| 2 | Kikapcsoláskor a memóriabeli rekord kivétele (`0x004f9450`, `0x0040fae0`, `[this+0x4d4]--`) után az értesítők (`0x0055ff50`, `0x0055ff70`) csak memóriabeli állapotot, érvényességi vektort és nézetet frissítenek. **Megerősített** a közvetlen callback-viselkedés; **NYITOTT KÉRDÉS** a tartós fotósor sorsa, mert a `0x006d4710` állapot 4 olvasói és az értesítés utáni íróút nincsenek meg. | `src/picasapy/index/sync_photos.py:185-186`: `nevek = [media.name for media in scan.files]` / `_prune_photos(conn, folder_id, nevek)`; `src/picasapy/index/sync_photos.py:535-538`: `DELETE FROM photos ... NOT IN`; `src/picasapy/scanner/filetypes.py:143`: `return kind if group in enabled_filetypes else None` | **Eldőlt (K10): nem kell fejlesztői jegy.** Az eredeti a megjelenített videó (AVI) sorát kikapcsoláskor kiüríti (`job-823`, `thumbindex.db` 36. sor `valid=0`), tehát a PicasaPy törlése ezen a ponton egyezik. |
 | 3 | Bekapcsoláskor a `0x004efb40` kérésbe teszi a jelölt útvonalakat (`0x004e31a0` → `SetEvent`), a szkennerszál a `0x004ea360`-nal dolgozik és a végén értesít (`0x004fbb30` → `0x0055ff70`). **Erős** az aszinkron feldolgozás; **NYITOTT KÉRDÉS**, hogy a teljes út után mikor és melyik tartós fotósort írja. | `src/picasapy/index/sync.py:188-196`: a `filetype_signature` eltérése újraellenőrzést okoz; `src/picasapy/app/library_controller_sync_rescan.py:27-32`: a kézi újraolvasás háttérszálon minden fájl mtime-ját ellenőrzi. | **M4-ig nincs döntés.** A feldolgozás utáni első képkocka dönti el, hogy a korábban szűrt fájlok visszakerülnek-e; a kikapcsolás utáni katalógussal és az újraindítás utáni képpel együtt a `job-822..825` eredményéből dönthető el, kell-e fejlesztői jegy. |
 | 4 | Induláskor a `0x004183c0` a típustábla után hívja a `0x004efb40`-et (`0x004186b9`). **Erős:** az eredeti induláskor is újraolvastat. | `src/picasapy/app/controller_initialization.py:84`: `self._filetype_scan_snapshot = load_enabled_filetypes(self._get_settings())`; `src/picasapy/app/library_controller_sync_rescan.py:25`: `_start_rescan` | Kód-teendő nincs; az induláskori újraolvasási út megegyezik. |
 
@@ -785,12 +795,11 @@ a `job-822..825` egyedi sorszám és képkocka-hozzárendelése itt nincs megadv
 | N2 | Ki ébred fel, és mit csinál? | **LEZÁRVA** (erős): `0x004ebff0` főciklus, `WaitForMultipleObjects` (`0x007065f0`), feldolgozó `0x004ea360` |
 | N3 | Szálat ébreszt-e a kikapcsolás ága, és szinkron-e? | **LEZÁRVA** (erős): nem hívja a `0x004e31a0`-t, szinkron, az OK szálán; figyelő-értesítéssel zár |
 | N4 | Mit tesz a `0x004ea360` a `Dirty` 1/2 rekordokkal (mi kerül be vagy ki, melyik értesítést adja), és mit jelent a `Type == 1`? | **RÉSZBEN FELDOLGOZVA, NYITOTT:** a teljes dekompilátum olvasva; a kéréslistát fogyasztja, scan-ágakat futtat, majd `0x004e87c0`-t és `0x004fbb30`-at hív, közvetlen katalógusírót nem azonosítottam. **NYITOTT KÉRDÉS:** a `Dirty` 1/2 és `Type == 1` pontos szemantikája, valamint a scan-eredmény közvetett írója. A konkrét útvonalakon a `WriteDirscannerCSV` befejezés előtti/utáni sorai és az M4 katalógus-pillanatképek adhatnak viselkedési bizonyítékot; az általános mezőjelentést ezek önmagukban nem bizonyítják. |
-| N5 | A `DBLoader`-értesítés után melyik út ír tartós katalógust, mikor, és mi lesz a kikapcsolt rekorddal? | **RÉSZBEN LEZÁRVA, NYITOTT:** megerősített, hogy `0x0055ff50` memóriabeli sorállapotot és nézetet, `0x0055ff70` memóriabeli érvényességi vektort módosít; ezek közvetlenül nem írnak tartós adatot. `0x0055ece0` és `0x0055ff80` külön metódusok, feltételes mappa-dátum íróággal, de nincs bizonyítva, hogy a fájltípus-váltás eléri őket. **Hiányzó statikus ág:** `0x006d4710` állapot 4 olvasói, `0x006a2a60` fogyasztói, valamint a `0x004ea360` scan-eredményének későbbi íróhoz vezető útja. Az M4 döntő képei a kikapcsolás utáni teljes feldolgozás, bekapcsolás utáni első megjelenés és scan-vég, valamint újraindítás utáni katalógus. |
+| N5 | A `DBLoader`-értesítés után melyik út ír tartós katalógust, mikor, és mi lesz a kikapcsolt rekorddal? | **RÉSZBEN LEZÁRVA, NYITOTT (a kimenet megerősített, az íróút hiányzik):** M4b-1-ben a `teszt-video.wmv` rekord megmarad a `thumbindex.db` 37. sorában (`valid=1`, `size=45537`), az AVI 36. sora viszont üres; a `thumbindex.db` 2229-ről 2214 bájtra, a `thumbs_0.db` 381862-ről 373221 bájtra változik. M4b-2-ben az AVI-csempe visszatér a nézetbe, de a végső db3-ben az AVI-sor még üres, a WMV-sor megvan. **Hiányzó statikus ág:** `0x006d4710` állapot 4 olvasói, `0x006a2a60` fogyasztói és a `0x004ea360` scan-eredményének későbbi írója; a mért változás írófüggvénye és pontos ideje nem azonosítható. M4b-3 leltára 10 fájlt tartalmaz az M4b-0 51 fájljával szemben, `thumbindex.db` nélkül, ezért az újraindítás utáni stabil állapot nyitott marad. |
 | N6 | A `0x004e31a0` két extra argumentumának jelentése (`(1,1)`, `(0,1)`, `(0,0)`)? | **RÉSZBEN FELDOLGOZVA, NYITOTT:** a hívás sorba teszi az útvonalat és a két bájtot, a teljes `0x004ea360` fogyasztja a kérést. **Hiányzó ág:** nem sikerült egyértelműen hozzárendelni a `0x004e3229`-`0x004e322d` helyen összeállított két bájtot és a `0x004e3232`-`0x004e3238` dword-ot a `0x004ea360` konkrét elágazásaihoz; ezért az argumentumok jelentése nem bizonyított. Az M4 az ismert argumentumpárok gyakorlati kimenetét mutathatja, de a mezőnevet és általános szemantikát nem. |
-| N7 | Az eredetiben a kikapcsolt típus fájljai az OK pillanatában eltűnnek-e a nézetből, megmaradnak-e a tartós sorok, és bekapcsolás után mikor jelennek meg a korábban kiszűrtek? | **NYITOTT, futó mérésre vár:** M4 Colab `job-822..825`; a `job-799` csak a File Types fület mérte. Az OK utáni azonnali kép a nézetváltást; a teljes feldolgozás utáni katalógus és CSV a kikapcsolás tartós hatását; az engedélyezés utáni első megjelenési és scan-végi képkocka a visszatérés időzítését; az újraindítás utáni katalógus a tartósságot dönti el. A konkrét job-szám/képkocka párosítás hiányzik a munkafából. |
+| N7 | Az eredetiben a kikapcsolt típus fájljai az OK pillanatában eltűnnek-e a nézetből, megmaradnak-e a tartós sorok, és bekapcsolás után mikor jelennek meg a korábban kiszűrtek? | **RÉSZBEN LEZÁRVA, ERŐS (az újraindítás utáni stabil állapot nyitott):** M4b-1 képkockáin a könyvtárszám 25-ről 24-re csökken, az AVI-csempe az első OK utáni képen már eltűnt; a 3 és 13 másodperces képen a státuszsor még 25-öt ír, és csak a mappa újbóli kijelölése után frissül 24-re (`job-823`, 16-19. kép). M4b-2-ben a visszakapcsolás első OK utáni képe már 25 elemet és `teszt-video.avi` csempét mutat, tehát a visszatérés 3 másodpercen belüli (`job-824`, 26-29. kép). A WMV katalógussora megmarad, de a WMV a kontrollfutásban sem jelenik meg (`kind=4`), ezért ez nem a kapcsoló hatása. M4b-3 újraindítás utáni képe 24 elemet mutat, de a hiányos db3-leltár miatt a tartós újraindítási állapot nem eldöntött. |
 
-**Nyitott kérdések: 0 nyílt (örökölt) · 3 lezárva · 4 blokkolt · 0 hatókörön
-kívül · 0 "csak nyitva".**
+**Nyitott kérdések: 0 nyílt (örökölt) · 3 lezárva · 2 részben lezárva, nyitott · 2 blokkolt · 0 hatókörön kívül.**
 
 **I. Amit kizártam.**
 
@@ -954,7 +963,7 @@ kérdést nem tudná eldönteni.
 | 3 | A Quicktime sor letiltott és üres, ha a `0x005509e0` hamisat ad (K4); az alapérték-számoló (`0x00981af0`) csak az XP+ verziót vizsgálja | `OptionsTabFileTypes.qml:259`: `checked: root.fileTypeEnabled("quicktime", true)`; a `:256-273` CheckBoxnak nincs `enabled:` sora | **Szándékos eltérés, nem jegyezendő:** nincs QuickTime-függőségünk, a `.mov`-ot a saját dekóderünk kezeli, ezért a sor engedélyezett és bekapcsolt marad. Kód-teendő nincs |
 | 4 | Sorköz 17 px, jelölő 13 px, a 584 px-es ablakban (K2) | `OptionsTabFileTypes.qml:48`: `Layout.preferredHeight: 22` | **Nem állítok eltérést:** a #4488 referenciája 744 px széles, a job-799 584 px; 744/584 = 1,274 és 22/17 = 1,294, 2 százalékon belül egyezik. Két különböző skála; azonos skálájú renderelt összevetés NINCS MEG |
 | 5 | A Cancel nem változtat a könyvtáron (14-15. kép) | `OptionsDialog.qml:209-210`: `function cancelOptions() {` / `optionsDraft.discard()` | **EGYEZIK.** Teendő nincs |
-| 6 | A kikapcsolt típus sorainak sorsa és a visszatérés ideje | `OptionsDialog.qml:168-169`: `if (fileTypesChanged && typeof controller.rescan === "function")` / `controller.rescan()`; `sync_photos.py:535`: `"DELETE FROM photos WHERE folder_id = ? AND name NOT IN"` | **NINCS MEG** (N7): az M4b dönti el (K9); eltérést addig nem állítok |
+| 6 | A kikapcsolt típus sorainak sorsa és a visszatérés ideje | `src/picasapy/app/qml/PicasaPy/OptionsDialog.qml:168-169`: `if (fileTypesChanged && typeof controller.rescan === "function")` / `controller.rescan()`; `src/picasapy/index/sync_photos.py:535-538`: `DELETE FROM photos ... NOT IN`; a `scanner/filetypes.py:97,139-143` a kikapcsolt `movies` csoportba sorolja a `.wmv`-t | **EGYEZIK a felhasználó által látható viselkedésben, teendő nincs.** Az eredeti a megjelenített videó (AVI) katalógussorát kikapcsoláskor kiüríti, a nézetből azonnal kiveszi, és visszakapcsolás után 3 másodpercen belül visszahozza; a PicasaPy újraolvasása ugyanígy törli és visszaveszi a sort. A WMV-sor megmaradása nem eltérés: a WMV az eredetiben a kontrollfutásban sem jelenik meg (`kind=4`, a nézet 25 eleme a 24 kép és az AVI), tehát nem a kapcsoló hatása. Eltérés csak a háttérben van: az eredeti a visszakapcsolás után a végső `thumbindex.db`-be még nem írja vissza az AVI-sort, ez a felületen nem látszik. Az újraindítás utáni tartós állapot (M4b-3) hiányos pillanatkép miatt nyitott, ez fejlesztést nem blokkol. |
 
 **K7. Nyitott kérdések mérlege (a #7339 egésze).**
 
@@ -964,17 +973,16 @@ kérdést nem tudná eldönteni.
 | N2 | Ki ébred fel, és mit csinál? | **LEZÁRVA** (H szakasz): `0x004ebff0` főciklus, feldolgozó `0x004ea360` |
 | N3 | Szálat ébreszt-e a kikapcsolás ága? | **LEZÁRVA** (H szakasz): nem, szinkron az OK szálán |
 | N4 | Mit tesz a `0x004ea360` a `Dirty` 1/2 rekordokkal, és mit jelent a `Type == 1`? | **BLOKKOLT, felvehető irány:** a `0x004ea360` és hívottai dekompilálása (Colab Ghidra-sor); a közvetlen importok nem hoznak fájl-API-t (K4) |
-| N5 | A `DBLoader` mely kezelője ír tartós katalógust? | **BLOKKOLT, felvehető irány:** a `0x0055ff80`, `0x0055ece0` és a `0x006d4710` olvasóinak dekompilálása, és az M4b-1 / M4b-3 db3-állapota |
+| N5 | A `DBLoader` mely kezelője ír tartós katalógust? | **RÉSZBEN LEZÁRVA, NYITOTT:** M4b-1/-2-ben a megjelenített AVI sora kiürül (a WMV-sor megmarad, de a WMV a kontrollban sem jelenik meg, `kind=4`), a db3-fájlok változnak; a konkrét tartós író útja nincs megnevezve. M4b-3-ban nincs `thumbindex.db`, a katalógusleltár 10 fájlos, ezért a stabil újraindítási sors nyitott. Következő statikus irány: `0x006d4710` állapot 4 olvasói, `0x006a2a60` fogyasztói és a `0x004ea360` utáni íróút. |
 | N6 | A `0x004e31a0` két extra argumentuma? | **BLOKKOLT:** ugyanaz a dekompilálás, mint az N4 |
-| N7 | A kikapcsolt típus eltűnik-e a nézetből, megmaradnak-e a tartós sorok, és mikor jönnek vissza? | **BLOKKOLT, felvehető mérés:** M4b-0, M4b-1, M4b-2, M4b-3 (K9); a Movies koordinátája kimérve: `(552,543)` |
+| N7 | A kikapcsolt típus eltűnik-e a nézetből, megmaradnak-e a tartós sorok, és mikor jönnek vissza? | **RÉSZBEN LEZÁRVA, ERŐS:** kikapcsoláskor az AVI-csempe és a könyvtárszám 25-ről 24-re vált; visszakapcsolás után az AVI-csempe az első, 3 másodpercen belüli képen megjelenik. A WMV-sor mindkét végső db3-ben megmarad, de a WMV a kontrollban sem jelenik meg (`kind=4`), így ez nem a kapcsoló hatása. A stabil újraindítás utáni sorállapot nyitott az M4b-3 hiányos katalógusleltára miatt. |
 | N8 | Mi a fül alapállapota, és mi a Movies / Quicktime alapérték forrása? | **LEZÁRVA:** K2 mérés + `0x006e0e76`, `0x006e0e83`, `0x006e0e90`, `0x00981af0`, `0x00544bd0` |
 | N9 | Hogyan jelenik meg egy új fájl a futó eredetiben? | **LEZÁRVA** a #7339-hez szükséges felbontásban: kézi művelet nélkül, 10 s-on belül (K3/1); a pontosabb időzítés nem kell a kikapcsolás-bekapcsolás kérdéséhez, az M4b 3 s és 13 s után is képet ad |
-| N10 | Elkészült és megjelenik-e a `.wmv` a mintában? | **BLOKKOLT, felvehető mérés:** az M4b-0 `kepmappa` kimenete (fájllista, méretek) |
+| N10 | Elkészült és megjelenik-e a `.wmv` a mintában? | **RÉSZBEN LEZÁRVA, MEGERŐSÍTETT a bemenetre és a katalógussorra:** mind a négy futás `kepmappa` listájában szerepel, 45537 bájtos, mindegyik másolata azonos SHA-256-ú; M4b-0/-1/-2-ben a WMV rekord érvényes a `thumbindex.db` 37. sorában. A képen név szerint azonosított, Movies kapcsolóval eltűnő és visszatérő csempe `teszt-video.avi`, nem WMV. **NYITOTT:** a WMV külön látható csempéjét a képek nem bizonyítják; ehhez a WMV fájlnévvel egyértelműen azonosítható képkocka kell. |
 | N11 | A Colab-profilból valóban hiányzik-e a QuickTime-kulcs? | **HATÓKÖRÖN KÍVÜL:** a PicasaPy-nak nincs QuickTime-függősége, a kulcs megléte semmilyen kódot nem változtat; a letiltott sor magyarázata statikusan és a képpel egyezik |
 | N12 | A `WriteDirscannerCSV` üzemmód (G szakasz) beállítható-e a Colab-feladatban? | **BLOKKOLT:** a mai végrehajtó nem tud tetszőleges registry-értéket előírni; gépezeti fejlesztés kell, a privát gépezet-jegyekben. Nélküle is eldönthető az N7 (K9), a belső tábla csak az N4/N5-öt segítené |
 
-**Nyitott kérdések: 5 lezárva (N1-N3, N8, N9) · 6 blokkolt (N4-N7, N10, N12) · 1
-hatókörön kívül (N11) · 0 "csak nyitva".**
+**Nyitott kérdések: 5 lezárva (N1-N3, N8-N9) · 3 részben lezárva, nyitott (N5, N7, N10) · 3 blokkolt (N4, N6, N12) · 1 hatókörön kívül (N11).**
 
 **K8. Jegytörzs-jelölt (igazolt eltérésre).**
 
@@ -1005,8 +1013,8 @@ bekerül (#7338 útvonal); (3) meglévő indexszel és mentett kulcs nélkül mi
 típus látszik (a #6060 regressziós tesztje zöld); (4) a három kulcs elmentett
 `false` értéke újraindítás után is megmarad.
 
-*Az M4b-ből induló jegy továbbra sincs nyitva:* a J szakasz jegytörzs-jelöltje
-a K9 mérései után tölthető ki.
+*Az M4b-ből nem indul fejlesztői jegy:* a K10 szerint az eredeti a kikapcsolt
+és megjelenített videó sorát törli, ahogy a PicasaPy is.
 
 **K9. M4b: a Colab-feladatok pontos lépéssora.** Közös előtag (E): `var 10`
 négyszer (várakozás a mintakészlet megjelenésére), `kattint (80,215)` (a
@@ -1051,6 +1059,148 @@ ha a bájtsor megvan, de a fájlok módosítási ideje vagy mérete eltér. A `k
 listában a videófájlok nem tűnhetnek el és nem változhat a méretük (az eredeti
 nem töröl fájlt).
 
+**K10. M4b eredménye (job-822..825, 2026-11-23).**
+
+Mind a négy feladat a `video` mintával, külön alapállapotból futott. A `kepmappa` leltára mindegyiknél 93 fájlt tartalmaz. A `teszt-video.wmv` bemeneti fájl mind a négyben jelen van, mérete 45537 bájt; a négy másolat SHA-256-a azonos (`c60df6985fbe97cd8eea6633e0b012f14a59b3e5acd0219d30eee13d41ce6536`). A mtime-ok futásonként eltérnek, mert a feladatok külön indulási állapotból futottak; ebből önmagában nem következik, hogy a Movies kapcsoló módosította a forrásfájlt.
+
+**Képkockák és felület.** A `kepernyo__NN.png` az NN. művelet előtti állapot. Az `allapot.json` OCR-je nem adott számlálót, ezért a képekről olvastam le. A státuszsor száma a bal oldali számlálóktól késve frissül.
+
+| Futás | Képkockák | Bal oldali számlálók | Státuszsor | Videócsempe |
+|---|---|---|---|---|
+| M4b-0, kontroll | `job-822`, 15 | `PicasaTeszt (25)`, `Recently Updated (25)` | `25 pictures`, `11.1 MB on disk` | A teszt-videócsempe látható. |
+| M4b-1, Movies ki | `job-823`, 16 az első OK utáni kép, 17 három másodperc után, 18 tizenhárom másodperc után | Az első képen a mappa már 24; az első 3 másodperces képen a Recently Updated még 25, a 13 másodpercesen már 24 | A 3 és 13 másodperces képen még `25 pictures`; a mappa újbóli kijelölése után (`19`) `24 pictures`, `4.5 MB on disk`. A végső kép (`25`) is 24-et mutat. | Az AVI-tesztcsempe az első OK utáni képen már nincs a rácsban; a 13 másodperces és végső képen sem látszik. |
+| M4b-2, ki majd vissza | `job-824`, 17 az első kikapcsolás után; 26 az első visszakapcsolás utáni kép, 27 három, 28 tizenhárom másodperc után, 29 a mappa újbóli kijelölése után, 35 a végén | Kikapcsolva 24; visszakapcsolás után már az első képen 25 | Visszakapcsolás után `25 pictures`, `11.1 MB on disk` | Az első OK utáni képen ismét látható; az eszköztipp neve `teszt-video.avi`. A visszatérés tehát az első felvételig, három másodpercen belül megtörténik. |
+| M4b-3, ki majd újraindítás | `job-825`, 16-17 kikapcsolás után; 21-23 újraindítás után | Újraindítás után `PicasaTeszt (24)`, `Recently Updated (24)` | A mappa nincs kijelölve, ezért nincs számlálós státuszsor | A 24 elemű nézetben nincs videócsempe. |
+
+**A WMV és AVI rekordja.** A 93 fájlos bemeneti leltárban a WMV változatlan. Mindhárom teljes db3-pillanatkép ANSI/ASCII alakban, a `thumbindex.db`-ben tartalmazza a nevét; UTF-16LE találat nincs, más db3-fájlban sem volt ANSI találat. A már meglévő `read_thumb_index` olvasóval ellenőrzött sorok:
+
+| Futás | `teszt-video.avi` | `teszt-video.wmv` | `thumbindex.db` méret és mtime |
+|---|---|---|---|
+| M4b-0 | 36. sor, `valid=1`, `size=6918482` | 37. sor, szülő 5, `kind=4`, `dirty=0`, `valid=1`, `size=45537`; ANSI `0x887` | 2229 B, `01:38:03Z` |
+| M4b-1 | 36. sor üres, `valid=0`; a korábbi AVI rekord kiürült | 37. sor megmarad, azonos `kind`, `valid` és méret; ANSI `0x878` | 2214 B, `01:42:48Z` |
+| M4b-2 | 36. sor továbbra is üres, noha a nézetben az AVI-csempe visszatért | 37. sor megmarad; ANSI `0x878` | 2214 B, `01:48:07Z` |
+| M4b-3 | A `thumbindex.db` nincs a pillanatkép leltárában | A WMV-sor a leltárból nem vizsgálható | A fájl hiányzik |
+
+A K9 döntési szabálya szerint M4b-1-ben a WMV **rekordja megmarad, miközben a db3 katalógusfájl újraírt állapotú**: a `thumbindex.db` mérete és mtime-ja változik, a 36. AVI-sor kiürül. A `thumbs_0.db` 381862-ről 373221 bájtra, a `wordhash.dat` 68244-ről 68220 bájtra változik. M4b-2-ben a WMV-sor továbbra is megmarad; az AVI-csempe visszatér a felületre, de az AVI rekord a végső `thumbindex.db`-ben nem áll vissza.
+
+**M4b-3 korlátja.** Az M4b-0/-1/-2 adatbázisleltára 51 fájlos, az M4b-3-é 10 fájlos. A job-825 ZIP mind a leltárban szereplő 10 fájlt tartalmazza, de ebből nyolc fő adatfájl 4 bájtos üres törzs, a 41 másik fájl, köztük a `thumbindex.db`, nem szerepel a leltárban. A `previews_0.db` és `thumbs2_0.db` módosítási ideje későbbi a leltárban feljegyzett hozzáférési időnél, így a pillanatkép közben is zajlott írásra utal. **Ezért a job-825-ből csak az mondható ki, hogy a gyűjtött pillanatképben nincs WMV-rekord; az újraindítás utáni befejezett katalógus állapota nyitott.**
+
+**Fájlonkénti leltár.** Minden módosítási idő UTC, dátum `2026-11-23`. A WMV bájtsorra csak a `thumbindex.db` adott találatot; az összes többi felsorolt db3-fájlban sem ANSI/ASCII, sem UTF-16LE alak nem található. A `nincs a leltárban` azt jelenti, hogy a job-825 mért db3-leltára nem tartalmazta a fájlt.
+
+| db3-fájl | M4b-0 | M4b-1 | M4b-2 | M4b-3 |
+|---|---|---|---|---|
+| `albumdata_0` | 4 B / 01:34:47Z | 4 B / 01:39:32Z | 4 B / 01:44:52Z | 4 B / 01:51:07Z |
+| `albumdata_category.pmp` | 52 B / 01:38:03Z | 52 B / 01:42:48Z | 52 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_date.pmp` | 84 B / 01:38:03Z | 84 B / 01:42:48Z | 84 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_description.pmp` | 50 B / 01:38:03Z | 50 B / 01:42:48Z | 50 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_filename.pmp` | 43 B / 01:38:03Z | 43 B / 01:42:48Z | 43 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_hascollage.pmp` | 28 B / 01:38:03Z | 28 B / 01:42:48Z | 28 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_location.pmp` | 28 B / 01:38:03Z | 28 B / 01:42:48Z | 28 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_music.pmp` | 27 B / 01:38:03Z | 27 B / 01:42:48Z | 27 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_name.pmp` | 116 B / 01:38:03Z | 116 B / 01:42:48Z | 116 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_token.pmp` | 140 B / 01:38:03Z | 140 B / 01:42:48Z | 140 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_uid.pmp` | 60 B / 01:38:03Z | 60 B / 01:42:48Z | 60 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_unread.pmp` | 28 B / 01:38:03Z | 28 B / 01:42:48Z | 28 B / 01:48:07Z | nincs a leltárban |
+| `albums_0.db` | 43524 B / 01:38:03Z | 43524 B / 01:42:48Z | 43524 B / 01:48:16Z | 4 B / 01:51:07Z |
+| `albums_index.db` | 116 B / 01:38:03Z | 116 B / 01:42:48Z | 116 B / 01:48:07Z | nincs a leltárban |
+| `bigthumbs_0.db` | 446989 B / 01:38:03Z | 446989 B / 01:42:48Z | 446989 B / 01:48:07Z | 4 B / 01:51:07Z |
+| `bigthumbs_index.db` | 452 B / 01:38:03Z | 452 B / 01:42:48Z | 452 B / 01:48:07Z | nincs a leltárban |
+| `catdata_0` | 4 B / 01:34:47Z | 4 B / 01:39:32Z | 4 B / 01:44:52Z | 4 B / 01:51:07Z |
+| `catdata_catpri.pmp` | 29 B / 01:38:03Z | 29 B / 01:42:48Z | 29 B / 01:48:07Z | nincs a leltárban |
+| `catdata_name.pmp` | 136 B / 01:38:03Z | 136 B / 01:42:48Z | 136 B / 01:48:07Z | nincs a leltárban |
+| `catdata_state.pmp` | 29 B / 01:38:03Z | 29 B / 01:42:48Z | 29 B / 01:48:07Z | nincs a leltárban |
+| `facetags.txt` | 0 B / 01:38:03Z | 0 B / 01:42:48Z | 0 B / 01:48:08Z | nincs a leltárban |
+| `facetemplatesV2_0.db` | 6268 B / 01:38:03Z | 6268 B / 01:42:48Z | 6268 B / 01:48:08Z | 4 B / 01:51:07Z |
+| `facetemplatesV2_index.db` | 452 B / 01:38:03Z | 452 B / 01:42:48Z | 452 B / 01:48:08Z | nincs a leltárban |
+| `imagedata_0` | 4 B / 01:34:47Z | 4 B / 01:39:32Z | 4 B / 01:44:52Z | 4 B / 01:51:07Z |
+| `imagedata_avgcolor.pmp` | 168 B / 01:38:03Z | 168 B / 01:42:48Z | 168 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_crop64.pmp` | 308 B / 01:38:03Z | 308 B / 01:42:48Z | 308 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_edit_height.pmp` | 168 B / 01:38:03Z | 168 B / 01:42:48Z | 168 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_edit_width.pmp` | 168 B / 01:38:03Z | 168 B / 01:42:48Z | 168 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_facequality.pmp` | 164 B / 01:38:03Z | 164 B / 01:42:48Z | 164 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_facerect.pmp` | 324 B / 01:38:03Z | 324 B / 01:42:48Z | 324 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_facerectdata.pmp` | 552 B / 01:38:03Z | 552 B / 01:42:48Z | 552 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_filetype.pmp` | 172 B / 01:38:03Z | 172 B / 01:42:48Z | 172 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_height.pmp` | 172 B / 01:38:03Z | 172 B / 01:42:48Z | 172 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_originfast.pmp` | 316 B / 01:38:03Z | 316 B / 01:42:48Z | 316 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_tags.pmp` | 194 B / 01:38:03Z | 194 B / 01:42:48Z | 194 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_width.pmp` | 172 B / 01:38:03Z | 172 B / 01:42:48Z | 172 B / 01:48:07Z | nincs a leltárban |
+| `previews_0.db` | 1558998 B / 01:38:03Z | 1558998 B / 01:42:48Z | 1558998 B / 01:48:07Z | 2201519 B / 01:54:20Z |
+| `previews_index.db` | 380 B / 01:38:03Z | 380 B / 01:42:48Z | 380 B / 01:48:08Z | nincs a leltárban |
+| `profilephotos_0.db` | 4 B / 01:34:47Z | 4 B / 01:39:32Z | 4 B / 01:44:52Z | 4 B / 01:51:07Z |
+| `repository.dat` | 140 B / 01:38:03Z | 140 B / 01:42:48Z | 140 B / 01:48:08Z | nincs a leltárban |
+| `saverlist.txt` | 0 B / 01:38:03Z | 0 B / 01:42:48Z | 0 B / 01:48:08Z | nincs a leltárban |
+| `scanlist.txt` | 6 B / 01:38:03Z | 6 B / 01:42:48Z | 6 B / 01:48:07Z | nincs a leltárban |
+| `starlist.txt` | 0 B / 01:38:03Z | 0 B / 01:42:48Z | 0 B / 01:48:08Z | nincs a leltárban |
+| `tags.txt` | 0 B / 01:38:03Z | 0 B / 01:42:48Z | 0 B / 01:48:08Z | nincs a leltárban |
+| `thumbindex.db` | 2229 B / 01:38:03Z; WMV ANSI 0x887 | 2214 B / 01:42:48Z; WMV ANSI 0x878 | 2214 B / 01:48:07Z; WMV ANSI 0x878 | nincs a leltárban |
+| `thumbs2_0.db` | 104895 B / 01:38:03Z | 104895 B / 01:42:48Z | 104895 B / 01:48:08Z | 122326 B / 01:54:21Z |
+| `thumbs2_index.db` | 464 B / 01:38:03Z | 464 B / 01:42:48Z | 464 B / 01:48:08Z | nincs a leltárban |
+| `thumbs_0.db` | 381862 B / 01:38:03Z | 373221 B / 01:42:48Z | 381862 B / 01:48:07Z | 4 B / 01:51:07Z |
+| `thumbs_index.db` | 464 B / 01:38:03Z | 464 B / 01:42:48Z | 464 B / 01:48:07Z | nincs a leltárban |
+| `usernames.dat` | 8 B / 01:38:03Z | 8 B / 01:42:48Z | 8 B / 01:48:08Z | nincs a leltárban |
+| `wordhash.dat` | 68244 B / 01:38:03Z | 68220 B / 01:42:48Z | 68220 B / 01:48:07Z | nincs a leltárban |
+
+**Következtetés és bizalmi fok.**
+
+- **N5: megerősített a mért sorsra, nyitott a konkrét íróútra.** A kikapcsolt Movies mellett a WMV-sor megmarad; az AVI-sor kiürül, a db3-fájlok változnak. Az M4 nem nevezi meg, melyik közvetett DBLoader/scan-út írta ezeket. A job-825 hiányos leltára miatt az újraindítás utáni állapot is nyitott.
+- **N7: erős a futó felület viselkedésére.** Kikapcsolás után a látható AVI-csempe már az első OK utáni képen eltűnik; visszakapcsolás után az első képen, három másodpercen belül visszajön. A 3 és 13 másodperces státuszsor-frissülés késik a bal oldali számlálóhoz képest. Stabil újraindítási állapotra a job-825 nem ad bizonyítékot.
+- **N10: megerősített a fájl létezésére és katalógusrekordjára; feltételes a felületi megjelenésre.** A WMV fizikai példánya mind a négy futásban azonos bájtú és 45537 bájtos; M4b-0/-1/-2-ben érvényes `thumbindex`-sorral szerepel. A képen azonosítható videócsempe AVI, ezért külön WMV-csempe megléte nem állapítható meg.
+
+**Fejlesztői eltérés.** A PicasaPy `scanner/filetypes.py:97,139-143` szerint a kikapcsolt `movies` csoport a `.wmv`-t is kiszűri; az `OptionsDialog.qml:168-169` újraolvasást indít, az `index/sync_photos.py:185-186,535-538` pedig törli a scanből hiányzó neveket a `photos` táblából. Ez eltér attól, hogy az eredeti a kikapcsolt Movies mellett is érvényes WMV-rekordot tart meg. Fejlesztői jegy szükséges; nem nyitottam meg.
+| db3-fájl | M4b-0 | M4b-1 | M4b-2 | M4b-3 |
+|---|---|---|---|---|
+| `albumdata_0` | 4 B / 01:34:47Z | 4 B / 01:39:32Z | 4 B / 01:44:52Z | 4 B / 01:51:07Z |
+| `albumdata_category.pmp` | 52 B / 01:38:03Z | 52 B / 01:42:48Z | 52 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_date.pmp` | 84 B / 01:38:03Z | 84 B / 01:42:48Z | 84 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_description.pmp` | 50 B / 01:38:03Z | 50 B / 01:42:48Z | 50 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_filename.pmp` | 43 B / 01:38:03Z | 43 B / 01:42:48Z | 43 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_hascollage.pmp` | 28 B / 01:38:03Z | 28 B / 01:42:48Z | 28 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_location.pmp` | 28 B / 01:38:03Z | 28 B / 01:42:48Z | 28 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_music.pmp` | 27 B / 01:38:03Z | 27 B / 01:42:48Z | 27 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_name.pmp` | 116 B / 01:38:03Z | 116 B / 01:42:48Z | 116 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_token.pmp` | 140 B / 01:38:03Z | 140 B / 01:42:48Z | 140 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_uid.pmp` | 60 B / 01:38:03Z | 60 B / 01:42:48Z | 60 B / 01:48:07Z | nincs a leltárban |
+| `albumdata_unread.pmp` | 28 B / 01:38:03Z | 28 B / 01:42:48Z | 28 B / 01:48:07Z | nincs a leltárban |
+| `albums_0.db` | 43524 B / 01:38:03Z | 43524 B / 01:42:48Z | 43524 B / 01:48:16Z | 4 B / 01:51:07Z |
+| `albums_index.db` | 116 B / 01:38:03Z | 116 B / 01:42:48Z | 116 B / 01:48:07Z | nincs a leltárban |
+| `bigthumbs_0.db` | 446989 B / 01:38:03Z | 446989 B / 01:42:48Z | 446989 B / 01:48:07Z | 4 B / 01:51:07Z |
+| `bigthumbs_index.db` | 452 B / 01:38:03Z | 452 B / 01:42:48Z | 452 B / 01:48:07Z | nincs a leltárban |
+| `catdata_0` | 4 B / 01:34:47Z | 4 B / 01:39:32Z | 4 B / 01:44:52Z | 4 B / 01:51:07Z |
+| `catdata_catpri.pmp` | 29 B / 01:38:03Z | 29 B / 01:42:48Z | 29 B / 01:48:07Z | nincs a leltárban |
+| `catdata_name.pmp` | 136 B / 01:38:03Z | 136 B / 01:42:48Z | 136 B / 01:48:07Z | nincs a leltárban |
+| `catdata_state.pmp` | 29 B / 01:38:03Z | 29 B / 01:42:48Z | 29 B / 01:48:07Z | nincs a leltárban |
+| `facetags.txt` | 0 B / 01:38:03Z | 0 B / 01:42:48Z | 0 B / 01:48:08Z | nincs a leltárban |
+| `facetemplatesV2_0.db` | 6268 B / 01:38:03Z | 6268 B / 01:42:48Z | 6268 B / 01:48:08Z | 4 B / 01:51:07Z |
+| `facetemplatesV2_index.db` | 452 B / 01:38:03Z | 452 B / 01:42:48Z | 452 B / 01:48:08Z | nincs a leltárban |
+| `imagedata_0` | 4 B / 01:34:47Z | 4 B / 01:39:32Z | 4 B / 01:44:52Z | 4 B / 01:51:07Z |
+| `imagedata_avgcolor.pmp` | 168 B / 01:38:03Z | 168 B / 01:42:48Z | 168 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_crop64.pmp` | 308 B / 01:38:03Z | 308 B / 01:42:48Z | 308 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_edit_height.pmp` | 168 B / 01:38:03Z | 168 B / 01:42:48Z | 168 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_edit_width.pmp` | 168 B / 01:38:03Z | 168 B / 01:42:48Z | 168 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_facequality.pmp` | 164 B / 01:38:03Z | 164 B / 01:42:48Z | 164 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_facerect.pmp` | 324 B / 01:38:03Z | 324 B / 01:42:48Z | 324 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_facerectdata.pmp` | 552 B / 01:38:03Z | 552 B / 01:42:48Z | 552 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_filetype.pmp` | 172 B / 01:38:03Z | 172 B / 01:42:48Z | 172 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_height.pmp` | 172 B / 01:38:03Z | 172 B / 01:42:48Z | 172 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_originfast.pmp` | 316 B / 01:38:03Z | 316 B / 01:42:48Z | 316 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_tags.pmp` | 194 B / 01:38:03Z | 194 B / 01:42:48Z | 194 B / 01:48:07Z | nincs a leltárban |
+| `imagedata_width.pmp` | 172 B / 01:38:03Z | 172 B / 01:42:48Z | 172 B / 01:48:07Z | nincs a leltárban |
+| `previews_0.db` | 1558998 B / 01:38:03Z | 1558998 B / 01:42:48Z | 1558998 B / 01:48:07Z | 2201519 B / 01:54:20Z |
+| `previews_index.db` | 380 B / 01:38:03Z | 380 B / 01:42:48Z | 380 B / 01:48:08Z | nincs a leltárban |
+| `profilephotos_0.db` | 4 B / 01:34:47Z | 4 B / 01:39:32Z | 4 B / 01:44:52Z | 4 B / 01:51:07Z |
+| `repository.dat` | 140 B / 01:38:03Z | 140 B / 01:42:48Z | 140 B / 01:48:08Z | nincs a leltárban |
+| `saverlist.txt` | 0 B / 01:38:03Z | 0 B / 01:42:48Z | 0 B / 01:48:08Z | nincs a leltárban |
+| `scanlist.txt` | 6 B / 01:38:03Z | 6 B / 01:42:48Z | 6 B / 01:48:07Z | nincs a leltárban |
+| `starlist.txt` | 0 B / 01:38:03Z | 0 B / 01:42:48Z | 0 B / 01:48:08Z | nincs a leltárban |
+| `tags.txt` | 0 B / 01:38:03Z | 0 B / 01:42:48Z | 0 B / 01:48:08Z | nincs a leltárban |
+| `thumbindex.db` | 2229 B / 01:38:03Z; WMV ANSI 0x887 | 2214 B / 01:42:48Z; WMV ANSI 0x878 | 2214 B / 01:48:07Z; WMV ANSI 0x878 | nincs a leltárban |
+| `thumbs2_0.db` | 104895 B / 01:38:03Z | 104895 B / 01:42:48Z | 104895 B / 01:48:08Z | 122326 B / 01:54:21Z |
+| `thumbs2_index.db` | 464 B / 01:38:03Z | 464 B / 01:42:48Z | 464 B / 01:48:08Z | nincs a leltárban |
+| `thumbs_0.db` | 381862 B / 01:38:03Z | 373221 B / 01:42:48Z | 381862 B / 01:48:07Z | 4 B / 01:51:07Z |
+| `thumbs_index.db` | 464 B / 01:38:03Z | 464 B / 01:42:48Z | 464 B / 01:48:07Z | nincs a leltárban |
+| `usernames.dat` | 8 B / 01:38:03Z | 8 B / 01:42:48Z | 8 B / 01:48:08Z | nincs a leltárban |
+| `wordhash.dat` | 68244 B / 01:38:03Z | 68220 B / 01:42:48Z | 68220 B / 01:48:07Z | nincs a leltárban |
 ### Számértékek
 
 | kulcs | alapérték | cím |
