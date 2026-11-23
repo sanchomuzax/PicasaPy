@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.172] - 2026-11-23
+
+- Kutatás: a Beállítások ablak folyamatlapja négy ponton a #7331 végleges eredményéhez igazítva: az OK csak a javaslatküszöb változásakor egyezteti a személyalbumokat (#7325).
+- Kutatás: az eredeti Picasa felvétele megerősítette, hogy két egymás utáni vágás után egyetlen visszavonás mindkét vágást visszaveszi, az újra pedig a második vágást hozza vissza, ahogy az 1.0.171 óta nálunk is; a vágócsempe felirata az eredetiben a vágás meglétekor „Recrop”-ra vált, ennek fejlesztése a #7376 (#7327).
+- Kutatás: a Movies kapcsoló mérése szerint az eredeti a megjelenített videó katalógussorát kikapcsoláskor kiüríti, és visszakapcsolás után 3 másodpercen belül visszahozza a nézetbe, mint a PicasaPy; az újraindítás utáni katalógusállapot nyitott (#7339).
+- A szerkesztő vágócsempéje alkalmazott vágás esetén a „Vágás megismétlése” feliratot mutatja, mint az eredeti Picasa (#7376).
+
 ## [1.0.171] - 2026-11-23
 
 - Kutatás: az újravágás szabályának helyesbítése: az eredeti Picasa a lánc végén álló vágást helyben frissíti (két egymás utáni vágást egy visszavonás vesz vissza), más művelet után viszont új vágást fűz hozzá; a látható visszavonás és újra állapot felvétele még hátra van (#7327).
