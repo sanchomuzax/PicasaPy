@@ -173,6 +173,11 @@ class TestNezoSzovegKijeloles:
         szerkeszto.applyText()
         qt_app.processEvents()
         panel.setProperty("textActive", True)
+        # #7380: a KIJELÖLT blokk szövegét a képre gépelhető bevitel fedi
+        # (arra kattintva a kurzor kerül a szövegbe, a piszkozat megmarad),
+        # ezért a kijelölés próbájához a szerkesztés máshol áll: egy új,
+        # üres helyre kattintás után a mentett szöveg már nincs kijelölve
+        szerkeszto.previewNewTextPlacement(0.7, 0.2)
         # a piszkozat eltér a dobozétól: a kijelölés ezt állítja vissza
         szerkeszto.setTextDraft("Más")
         qt_app.processEvents()

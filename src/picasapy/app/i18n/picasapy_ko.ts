@@ -16258,8 +16258,16 @@ picasapy-origin-key: tooltips:Label(editpanel/retouchtext)</extracomment>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Remove all existing text</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>기존 텍스트 모두 제거</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/clearall)</extracomment>
+            <translation>모든 기존 텍스트를 삭제합니다.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
+            <source>Clear All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/clearall)</extracomment>
+            <translation>모두 지우기</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -16274,12 +16282,6 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);p
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
             <translation>텍스트</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
-            <source>Type your text, then click on the photo to place it.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>텍스트를 입력한 다음 사진을 클릭해 배치하세요.</translation>
         </message>
         <message>
             <source>Font</source>
@@ -20809,6 +20811,16 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <source>Video playback requires the Qt Multimedia module.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>동영상을 재생하려면 Qt Multimedia 모듈이 필요합니다.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerTextInput</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTextInput.qml" />
+            <source>Type anywhere to add text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EditText::GhostText</extracomment>
+            <translation>아무 곳에나 입력하여 텍스트를 추가합니다.</translation>
         </message>
     </context>
     <context>

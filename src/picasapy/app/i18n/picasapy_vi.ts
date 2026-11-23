@@ -16257,8 +16257,16 @@ picasapy-origin-key: tooltips:Label(editpanel/retouchtext)</extracomment>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Remove all existing text</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Xóa toàn bộ văn bản hiện có</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/clearall)</extracomment>
+            <translation>Xóa tất cả văn bản hiện có</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
+            <source>Clear All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/clearall)</extracomment>
+            <translation>Xóa tất cả</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -16273,12 +16281,6 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);p
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
             <translation>Văn bản</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
-            <source>Type your text, then click on the photo to place it.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nhập văn bản rồi nhấp vào ảnh để đặt văn bản.</translation>
         </message>
         <message>
             <source>Font</source>
@@ -20808,6 +20810,16 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <source>Video playback requires the Qt Multimedia module.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Cần có mô-đun Qt Multimedia để phát video.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerTextInput</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTextInput.qml" />
+            <source>Type anywhere to add text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EditText::GhostText</extracomment>
+            <translation>Gõ vào bất cứ đâu để thêm văn bản</translation>
         </message>
     </context>
     <context>

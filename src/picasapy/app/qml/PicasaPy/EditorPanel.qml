@@ -88,7 +88,7 @@ Rectangle {
     property alias textDraftContent: textState.textDraftContent
     property alias textPlacementPending: textState.textPlacementPending
     //: #3123: a kép fölötti eszköz-sáv ebből tudja, mikor alkalmazható a
-    //: szöveg (a szövegmező a `EditorTextPanel`-ben él).
+    //: szöveg (#7380: a szöveg a képen áll, a feltétel a `textDraftContent`).
     readonly property bool textApplyEnabled:
         panelOverlays.textApplyEnabled
     property alias captionText: textState.captionText

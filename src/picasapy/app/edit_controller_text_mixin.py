@@ -67,6 +67,42 @@ class EditControllerTextMixin:
         return self._text_pending_pos is not None or self._text_selected_index is not None
 
 
+    @Property("QVariant", notify=_Signals.revisionChanged)
+    def textEditPlacement(self) -> dict:
+        """HOL áll a képre gépelhető szövegdoboz (#7380): a kattintott pont,
+        vagy - ha nincs új kattintás - a kijelölt mentett felirat bal felső
+        sarka, a képre normalizálva. Üres szótár, ha nincs szerkesztett hely.
+        """
+        if self._text_pending_pos is not None:
+            x, y = self._text_pending_pos
+            return {"x": x, "y": y}
+        index = self._text_selected_index
+        overlay = self._text_overlay
+        if index is None or overlay is None or not 0 <= index < len(overlay.blocks):
+            return {}
+        block = overlay.blocks[index]
+        if not block.content:
+            return {}
+        return {"x": block.geometry.x, "y": block.geometry.y}
+
+
+    @Slot(bool)
+    def setTextInlineEditing(self, active: bool) -> None:
+        """A képre gépelhető QML-doboz látszik-e (#7380).
+
+        Ha igen, a szerkesztett szöveget a doboz maga rajzolja, ezért az
+        előnézeti raszter azt a blokkot nem rajzolja (különben a két szöveg
+        egymásra csúszna). Alapból kikapcsolt: a Python-oldali hívók a
+        piszkozatot változatlanul a raszteren látják.
+        """
+        active = bool(active)
+        if self._text_inline_editing == active:
+            return
+        self._text_inline_editing = active
+        self._register_preview()
+        self._bump_revision()
+
+
     @Property(int, notify=_Signals.textSelectedIndexChanged)
     def textSelectedIndex(self) -> int:
         """A kiválasztott mentett doboz sorszáma, vagy -1, ha nincs."""
@@ -611,6 +647,9 @@ class EditControllerTextMixin:
         specs: list[TextOverlaySpec] = []
         if self._text_active and self._text_overlay:
             for index, block in enumerate(self._text_overlay.blocks):
+                if self._text_inline_editing and index == self._text_selected_index:
+                    # #7380: a szerkesztett blokkot a QML-doboz rajzolja
+                    continue
                 content = (
                     self._text_draft
                     if index == self._text_selected_index
@@ -636,7 +675,11 @@ class EditControllerTextMixin:
                     else self._text_style_kwargs_for_block(block)
                 )
                 specs.append(TextOverlaySpec(content=content, x=x, y=y, **style))
-        if self._text_pending_pos is not None and self._text_selected_index is None:
+        if (
+            self._text_pending_pos is not None
+            and self._text_selected_index is None
+            and not self._text_inline_editing
+        ):
             content = self._text_draft
             if content.strip():
                 x, y = self._text_pending_pos

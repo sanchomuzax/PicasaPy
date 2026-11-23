@@ -16258,8 +16258,16 @@ picasapy-origin-key: tooltips:Label(editpanel/retouchtext)</extracomment>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Remove all existing text</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>حذف همهٔ متن‌های موجود</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/clearall)</extracomment>
+            <translation>حذف همه نوشتار موجود</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
+            <source>Clear All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/clearall)</extracomment>
+            <translation>پاک کردن همه</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -16274,12 +16282,6 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);p
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
             <translation>نوشتار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
-            <source>Type your text, then click on the photo to place it.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>متن را بنویسید، سپس برای قرار دادن آن روی عکس کلیک کنید.</translation>
         </message>
         <message>
             <source>Font</source>
@@ -20809,6 +20811,16 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <source>Video playback requires the Qt Multimedia module.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>پخش ویدیو به ماژول Qt Multimedia نیاز دارد.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerTextInput</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTextInput.qml" />
+            <source>Type anywhere to add text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EditText::GhostText</extracomment>
+            <translation>برای افزودن نوشتار، در قسمتی تایپ کنید</translation>
         </message>
     </context>
     <context>

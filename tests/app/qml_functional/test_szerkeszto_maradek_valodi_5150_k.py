@@ -412,13 +412,17 @@ class TestSzerkesztoPanelek:
         lanc = szerkeszto(viewer)
         szovegeszkoz(window, qt_app)
         assert _varj(qt_app, lambda: panel.property("textActive") is True)
-        mezo = _gyerek_menu(panel, "textContentField")
-        kattints(window, qt_app, mezo)
+        # #7380: a szöveg a KÉPRE gépelhető - a panelben nincs mező; a képre
+        # kattintva a hely jelölt, és a bevitel fókuszt kap
+        terulet = _gyerek_menu(window, "textClickArea")
+        assert _varj(qt_app, lambda: terulet.property("width") > 0)
+        kattints(window, qt_app, terulet)
+        mezo = _gyerek_menu(window, "textContentField")
         assert _varj(qt_app, lambda: mezo.property("activeFocus") is True), (
-            "a próba feltétele: a szöveg-mező fókuszt kapott"
+            "a próba feltétele: a képre gépelhető bevitel fókuszt kapott"
         )
 
-        # a billentyűk az ablakba mennek; a fókusz a kattintással a szöveg-mezőn van
+        # a billentyűk az ablakba mennek; a fókusz a kattintással a bevitelen van
         _gepel(window, qt_app, "Hello")
 
         assert _varj(qt_app, lambda: lanc.property("textDraft") == "Hello"), (

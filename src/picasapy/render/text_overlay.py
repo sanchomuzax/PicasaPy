@@ -79,8 +79,16 @@ def _draw_hershey(
     outline_color, outline_thickness, fill_enabled, has_outline,
 ):
     """A RÉGI út: OpenCV Hershey-fontkészlet — akkor fut, ha a gépen nincs
-    használható TrueType. A stílus-vezérlők ilyenkor hatástalanok."""
+    használható TrueType. A stílus-vezérlők ilyenkor hatástalanok.
+
+    #7380: az `origin` a szövegdoboz FELSŐ sarka; a `putText` alapvonalat
+    kér, ezért az y-t a nagybetű-magassággal toljuk lejjebb.
+    """
     layer = base.copy()
+    (_szelesseg, betumagassag), _alap = cv2.getTextSize(
+        content, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness
+    )
+    origin = (origin[0], origin[1] + betumagassag)
     if has_outline:
         cv2.putText(
             layer, content, origin, cv2.FONT_HERSHEY_SIMPLEX, font_scale,
@@ -107,9 +115,10 @@ def _draw_truetype(
     """
     pil = Image.fromarray(base)
     draw = ImageDraw.Draw(pil)
-    # a `putText` a bal ALSÓ sarokra rajzol, a Pillow a bal FELSŐRE — az
-    # `ls` horgonnyal a két konvenció egybeesik (ld. Pillow anchor-doksi)
-    anchor = {"left": "ls", "center": "ms", "right": "rs"}[align]
+    # #7380: az `origin` a szövegdoboz FELSŐ sarka (az eredeti Picasa
+    # `text=` pozíciója) — az `la`/`ma`/`ra` horgony az ascender-vonalat
+    # (a sor tetejét) teszi a pontra, a betűk tehát a pont ALATT állnak
+    anchor = {"left": "la", "center": "ma", "right": "ra"}[align]
     if has_outline:
         draw.text(
             origin, content, font=font, fill=tuple(outline_color),
@@ -159,8 +168,11 @@ def _draw_qt_font(
         x -= text_width / 2
     elif align == "right":
         x -= text_width
+    # #7380: az `origin` a szövegdoboz FELSŐ sarka; a `QPainterPath.addText`
+    # az ALAPVONALAT kéri, ami a sor tetejétől az ascent-nyire van
+    alapvonal = float(origin[1]) + QFontMetricsF(font).ascent()
     path = QPainterPath()
-    path.addText(QPointF(x, float(origin[1])), font, content)
+    path.addText(QPointF(x, alapvonal), font, content)
     if has_outline:
         pen = QPen(QColor(*map(int, outline_color)))
         pen.setWidthF(max(1.0, float(outline_thickness)))
@@ -214,8 +226,9 @@ def apply_text_overlay(
 ) -> np.ndarray:
     """Szöveg ráírása a képre — kitöltés + opcionális körvonal (#450).
 
-    `x`, `y`: relatív [0..1] pozíció — a szöveg BAL ALSÓ sarka (OpenCV
-    `putText`-konvenció) kerül ide. Üres `content`-nél no-op (a bemenet
+    `x`, `y`: relatív [0..1] pozíció — a szövegdoboz BAL FELSŐ sarka kerül
+    ide (#7380: az eredeti Picasa `text=` pozíciója; a betűk a pont ALATT
+    állnak, a bal szél a ponton). Üres `content`-nél no-op (a bemenet
     másolata). A `font_scale`/`thickness` nem lehet negatív.
 
     A körvonal (#450 — „a legfeltűnőbb hiány", tetszőleges hátterű képen

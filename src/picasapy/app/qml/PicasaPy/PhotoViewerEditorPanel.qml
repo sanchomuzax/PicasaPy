@@ -271,6 +271,13 @@ EditorPanel {
     // #450: az összes (ma: az egyetlen) szövegelem törlése —
     // a meglévő clearText útvonalon, a szerkesztőeszköz is zárul
     onTextRemoveAllRequested: {
+        if (!editorPanel.hasTextOverlay) {
+            // #7380: nincs mentett felirat, csak a képre gépelt, még nem
+            // alkalmazott piszkozat - azt dobja el, az eszköz nyitva marad
+            editController.exitTextTool()
+            editorPanel.textDraftContent = ""
+            return
+        }
         editController.clearText()
         editorPanel.textDraftContent = ""
         editorPanel.textActive = false

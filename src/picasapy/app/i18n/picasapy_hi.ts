@@ -16258,8 +16258,16 @@ picasapy-origin-key: tooltips:Label(editpanel/retouchtext)</extracomment>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Remove all existing text</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>मौजूदा सारा लेख हटाएं</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/clearall)</extracomment>
+            <translation>सभी मौजूदा लेख निकालें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
+            <source>Clear All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/clearall)</extracomment>
+            <translation>सभी साफ़ करें</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -16274,12 +16282,6 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);p
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
             <translation>लेख</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
-            <source>Type your text, then click on the photo to place it.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>अपना लेख लिखें, फिर उसे रखने के लिए फ़ोटो पर क्लिक करें.</translation>
         </message>
         <message>
             <source>Font</source>
@@ -20809,6 +20811,16 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <source>Video playback requires the Qt Multimedia module.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>वीडियो चलाने के लिए Qt Multimedia मॉड्यूल ज़रूरी है.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerTextInput</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTextInput.qml" />
+            <source>Type anywhere to add text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EditText::GhostText</extracomment>
+            <translation>लेख जोड़ने के लिए कहीं भी लिखें</translation>
         </message>
     </context>
     <context>

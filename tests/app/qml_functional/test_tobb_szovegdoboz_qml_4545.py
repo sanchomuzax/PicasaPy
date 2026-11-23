@@ -104,11 +104,14 @@ def test_tobb_doboz_kattintasra_szerkesztheto_es_ini_round_trip(
     )
     second_item = edit.property("textOverlayItems")[1]
     text_height = second_item["size"] * click_area.height() / 360
+    # #7380: a mentett pont a szövegdoboz BAL FELSŐ sarka (az eredeti Picasa
+    # `text=` pozíciója), a betűk a pont ALATT állnak: a felirat közepe a
+    # pont alatt fél betűmagassággal van
     _click(
         window,
         click_area,
-        click_area.width() * second_item["x"],
-        click_area.height() * second_item["y"] - text_height / 2,
+        click_area.width() * second_item["x"] + 2,
+        click_area.height() * second_item["y"] + text_height / 2,
     )
     _var(
         qt_app,

@@ -16258,8 +16258,16 @@ picasapy-origin-key: tooltips:Label(editpanel/retouchtext)</extracomment>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
             <source>Remove all existing text</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>移除所有现有文本</translation>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/clearall)</extracomment>
+            <translation>删除全部现有文本</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
+            <source>Clear All</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/clearall)</extracomment>
+            <translation>全部清除</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
@@ -16274,12 +16282,6 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);p
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
             <translation>文本</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorTextPanel.qml" />
-            <source>Type your text, then click on the photo to place it.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>输入文字，然后点击照片以放置文字。</translation>
         </message>
         <message>
             <source>Font</source>
@@ -20809,6 +20811,16 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <source>Video playback requires the Qt Multimedia module.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>播放视频需要 Qt Multimedia 模块。</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerTextInput</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTextInput.qml" />
+            <source>Type anywhere to add text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EditText::GhostText</extracomment>
+            <translation>在任何位置键入即可添加文本</translation>
         </message>
     </context>
     <context>
