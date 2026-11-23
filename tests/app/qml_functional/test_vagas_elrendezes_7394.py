@@ -182,7 +182,7 @@ def test_a_szomszedos_eszkopanelek_renderelt_kepe(crop_app, qt_app, tmp_path):
     )
     for tile_name, active_name, cancel_name, output_name in eszkozok:
         _click(window, _item(window, tile_name))
-        assert _var(qt_app, lambda: panel.property(active_name) is True), (
+        assert _var(qt_app, lambda active_name=active_name: panel.property(active_name) is True), (
             f"a(z) {tile_name} csempe nem nyitotta meg az eszközt"
         )
         if active_name == "redeyeActive":
@@ -198,6 +198,6 @@ def test_a_szomszedos_eszkopanelek_renderelt_kepe(crop_app, qt_app, tmp_path):
         )
 
         _click(window, _item(window, cancel_name))
-        assert _var(qt_app, lambda: panel.property(active_name) is False), (
+        assert _var(qt_app, lambda active_name=active_name: panel.property(active_name) is False), (
             f"a(z) {cancel_name} nem zárta be a panelt"
         )
