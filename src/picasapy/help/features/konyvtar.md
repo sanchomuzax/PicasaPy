@@ -52,7 +52,7 @@ sor az: ha a mappában vannak saját képek (vagyis a könyvtár valódi
 mappája), a **teljes mappa-menü** nyílik, ugyanaz, mint a többi nézetben.
 A csak továbbvezető, saját kép nélküli köztes sorokon rövidebb menü jön elő.
 
-A hasáb üres részére jobbgombbal kattintva **nem nyílik menü**, ahogy az
+A hasáb üres részére a jobb egérgombbal kattintva **nem nyílik menü**, ahogy az
 eredeti Picasában sem. A hasáb saját menüjét az eszköztár ▾ gombja nyitja.
 Ebben a következők vannak, ebben a sorrendben:
 
