@@ -168,8 +168,7 @@ class TestVagasPanelKiegyenesitve7392:
     def test_a_legordulo_kozvetlenul_az_utmutato_alatt_all(
         self, qml_app, qt_app, tmp_path
     ):
-        """A rejtett sor nem hagy rést: az útmutató és a legördülő között
-        csak az oszlop sorköze (8) van, mint tilt nélkül."""
+        """A #7394 szerinti, 1 px-es rés marad az útmutató és a legördülő között."""
         window, edit = self._kiegyenesitett_es_sima(qml_app, qt_app, tmp_path)
         _nezot_nyit(window, qt_app, 0)
         assert _varj(qt_app, lambda: edit.property("tiltParam") != 0)
@@ -180,7 +179,11 @@ class TestVagasPanelKiegyenesitve7392:
         legordulo = _doboz(window, _elem(window, "cropAspectComboRow"))
         oszlop = _elem(window, "cropColumn")
 
-        assert legordulo.top() - utmutato.bottom() == oszlop.property("spacing")
+        res = legordulo.top() - utmutato.bottom()
+        assert abs(res - 1) <= 0.5, (
+            "az útmutató és a legördülő közötti mért rés nem 1 px: "
+            f"{res:.1f} px (ColumnLayout spacing={oszlop.property('spacing')})"
+        )
 
     def test_a_panel_kepponra_egyezik_a_tilt_nelkuli_kepevel(
         self, qml_app, qt_app, tmp_path

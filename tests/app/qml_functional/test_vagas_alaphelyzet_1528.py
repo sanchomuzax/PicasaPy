@@ -114,10 +114,16 @@ class TestAlaphelyzetElvetiAMentettVagast:
         panel.setProperty("cropActive", True)
         qt_app.processEvents()
         _kattints(window, _child(window, "cropResetButton"), qt_app)
-        _kattints(window, _child(window, "cropApplyButton"), qt_app)
+        apply_button = _child(window, "cropApplyButton")
+        assert apply_button.property("enabled") is False, (
+            "az Alaphelyzet után, üres kijelölésnél az Alkalmaznak tiltva kell lennie"
+        )
+        _kattints(window, apply_button, qt_app)
 
         assert "crop64" not in _ini_szoveg(tmp_path)
-        assert panel.property("cropActive") is False
+        assert panel.property("cropActive") is True, (
+            "a tiltott Alkalmaz kattintása bezárta a Vágás panelt"
+        )
 
 
 class TestAGombTiltasa:
