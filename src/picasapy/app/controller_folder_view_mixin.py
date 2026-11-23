@@ -56,6 +56,8 @@ class FolderViewMixin:
         if mode not in ("date", "changed", "size", "name"):
             return
         self._get_settings().setValue("view/paneSort", mode)
+        if self.folderSort == "changed":
+            self._get_settings().setValue("view/folderSort", "date")
         self._reload_folders()
         self._refresh_view()
 

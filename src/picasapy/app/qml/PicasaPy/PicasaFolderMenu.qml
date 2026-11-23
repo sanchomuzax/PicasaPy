@@ -78,7 +78,9 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.folderSort === "changed"
             onTriggered: {
-                controller.setFolderSort("changed")
+                controller.setFolderSort(
+                    (controllerRef && controllerRef.folderSort === "changed") ? "date" : "changed"
+                )
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.folderSort === "changed"
                 })
