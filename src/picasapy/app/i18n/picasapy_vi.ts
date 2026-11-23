@@ -17337,6 +17337,13 @@ picasapy-origin-key: stringres:IDS_CROP_LABEL;stringres:filter_crop64_label0;str
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
+            <source>Recrop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_RECROP_LABEL</extracomment>
+            <translation>Cắt lại</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml" />
             <source>Straighten</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:filter_tilt_label0;tooltips:Label(editpanel/horizonadjust)</extracomment>

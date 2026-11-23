@@ -88,7 +88,11 @@ ColumnLayout {
             width: toolGrid.cellaSzelesseg
             height: toolGrid.cellaMagassag
             objectName: "editToolCrop"
-            toolName: "crop"; label: qsTr("Crop"); iconFile: "vagas"
+            toolName: "crop"
+            label: (typeof editController !== "undefined"
+                    && editController !== null && editController.hasCrop)
+                   ? qsTr("Recrop") : qsTr("Crop")
+            iconFile: "vagas"
             tooltip: qsTr("Crop this Photo to a different format")
             active: panel.cropActive
             dimmedByTiltModal: panel.tiltActive
