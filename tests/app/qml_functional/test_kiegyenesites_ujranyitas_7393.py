@@ -133,6 +133,22 @@ class Nezo:
         assert _item(self.window, "viewerEditorPanel").property("tiltActive") is True
         self.slider = _item(self.window, "tiltSlider")
         _feldolgoz(self.qt_app)
+        self._helyzet_nyugalomra()
+
+    def _helyzet_nyugalomra(self) -> None:
+        """Az eszköztár animálva csúszik be: a lassabb (CI) gépen a csúszka még
+        mozog, amikor a próba lenyomná az egeret. Addig várunk, amíg a csúszka
+        jelenetbeli helyzete tíz egymás utáni körben nem változik."""
+        elozo, nyugodt = None, 0
+        for _ in range(400):
+            hely = self.slider.mapToScene(QPointF(0, 0))
+            most = (round(hely.x(), 1), round(hely.y(), 1))
+            nyugodt = nyugodt + 1 if most == elozo else 0
+            if nyugodt >= 10:
+                return
+            elozo = most
+            QTest.qWait(10)
+        raise AssertionError("a Kiegyenesítés eszköztára nem állt meg")
 
     def alkalmaz(self) -> None:
         elotte = str(self.edit.property("previewSource"))
