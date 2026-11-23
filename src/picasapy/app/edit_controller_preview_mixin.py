@@ -106,7 +106,7 @@ class EditControllerPreviewMixin:
         """
         if (
             not self._photo_id
-            or self._session.gpu_finetune_prefix() is None
+            or self._gpu_finetune_prefix() is None
             or not self._provider.gpu_preview_ready(self._kulcs)
         ):
             return ""
@@ -119,7 +119,7 @@ class EditControllerPreviewMixin:
         elérhetőségi feltétel, mint `gpuPrefixSource`-nál."""
         if (
             not self._photo_id
-            or self._session.gpu_finetune_prefix() is None
+            or self._gpu_finetune_prefix() is None
             or not self._provider.gpu_preview_ready(self._kulcs)
         ):
             return ""
@@ -214,7 +214,7 @@ class EditControllerPreviewMixin:
         controller közben változó mezőit."""
         assert self._image_path is not None
         active_session = session if session is not None else self._session
-        gpu_prefix_ops = active_session.gpu_finetune_prefix()
+        gpu_prefix_ops = self._gpu_finetune_prefix(active_session)
         gpu_lut = self._gpu_lut_for(active_session) if gpu_prefix_ops is not None else None
         crop, crop_ini_readable = self._crop_value_for_session(active_session)
         return {

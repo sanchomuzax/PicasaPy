@@ -100,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 36.**
+**Felületről el nem ért vezérlő-tag: 41.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -117,6 +117,11 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `removeWatchedFolder` | Slot | `app/library_controller_folders.py` | FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből |
 | `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller_folders.py` | FELVÁLTVA — a QML SAJÁT, olcsóbb tükrét számolja, és ez a #1486-ban ELDŐLT: a Python szabály minden hívásnál `Path(...).resolve()`-t futtat (fájlrendszer!), a mappafa jelvénye pedig soronként hívná. A két szabály nem csúszhat szét: tests/app/test_arc_kizaras_egy_szabaly_1486.py a QML függvényt QJSEngine-ben futtatja, és korpuszon veti össze a Pythonnal. |
 | `controller` | `collapseFolderIntoTray` | Slot | `app/tray_album_controller.py` | MÉRVE — #1919: a token RÉTEGE kész (modell + vezérlő + nézet + fordítás), a MEGJELENÍTÉS KAPCSOLÓJA szándékosan nincs bekötve. Az eredetiben nem parancs kapcsolja, hanem egy minden frissítéskor újraértékelt állapot-delegátus (`0x00572ba4` → `0x00563530`): akkor látszik, ha van mappa-/album-kijelölés, az nem üres, és a FÉNYKÉP-kijelölés üres. A mi mappa-kijelölésünk a megnyitott mappa, ami NEM az eredeti `CAlbumSelectionNode`-ja, ezért az automatikus megjelenítés átírná a tálca mindennapi kinézetét — az a tulajdonos szeme elé tartozó vizuális kör. A szabály szó szerint le van írva a `with_album_token` docstringjében. A #1919 emiatt NYITVA marad. |
+| `editController` | `fillLight` | Property | `app/edit_controller_effects_finetune_mixin.py` | ELDÖNTVE (#7383) - az eredetiben a Hangolás-csúszkák MINDIG alaphelyzetben indulnak (J2a, J3b, J4a), ezért a felület szándékosan nem köti őket a mentett értékre. A property marad: a mentett lánc értékét a finomhangolás-próbák ezen át olvassák. |
+| `editController` | `fixesFillLight` | Property | `app/edit_controller_effects_finetune_mixin.py` | ELDÖNTVE (#7383) - az 1. fül Derítőfénye is alaphelyzetben indul (J2b); a `fill` réteg mentett értékét a #7369 próbái ezen át olvassák. |
+| `editController` | `highlights` | Property | `app/edit_controller_effects_finetune_mixin.py` | ELDÖNTVE (#7383) - ld. `fillLight`. |
+| `editController` | `shadows` | Property | `app/edit_controller_effects_finetune_mixin.py` | ELDÖNTVE (#7383) - ld. `fillLight`. |
+| `editController` | `colorTemp` | Property | `app/edit_controller_effects_finetune_mixin.py` | ELDÖNTVE (#7383) - ld. `fillLight`. |
 | `editController` | `hasFinetune` | Property | `app/edit_controller_effects_finetune_mixin.py` | ELDÖNTVE (#1487) — ugyanaz, mint a `hasRetouch`: a „van finomhangolás” állapotot a felület nem külön jelzőn mutatja (undoLabel #465, nyitott-eszköz kiemelés #116). ⚠️ Az `EditorPanel.qml` deklarált hozzá egy tükör-property-t, amit SENKI nem állított be és senki nem olvasott — az a holt tükör a #1487-ben TÖRÖLVE. A vezérlő property-je marad, a finomhangolás-próbák ezen át olvassák az állapotot. |
 | `editController` | `redoAction` | Property | `app/edit_controller_history_mixin.py` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
 | `editController` | `revision` | Property | `app/edit_controller_preview_mixin.py` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |

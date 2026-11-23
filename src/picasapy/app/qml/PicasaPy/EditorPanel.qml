@@ -163,14 +163,10 @@ Rectangle {
     property alias aspectIndex: cropState.aspectIndex
     property alias aspectRotated: cropState.aspectRotated
 
-    property alias fillLight: finetuneState.fillLight
-    property alias fixesFillLight: finetuneState.fixesFillLight
-    property alias highlights: finetuneState.highlights
-    property alias shadows: finetuneState.shadows
-    property alias colorTemp: finetuneState.colorTemp
     property alias suppressFinetune: finetuneState.suppressFinetune
     signal finetunePreview(real fill, real highlights, real shadows, real temp)
     signal finetuneCommit(real fill, real highlights, real shadows, real temp)
+    signal finetuneVisitEnded()
     signal fixesFillPreview(real value)
     signal fixesFillCommit(real value)
 
@@ -276,10 +272,9 @@ Rectangle {
     function syncFinetuneSliders() { return Logika.syncFinetuneSliders() }
 
     function emitFinetuneCommit() { return Logika.emitFinetuneCommit() }
-    onFillLightChanged: panel.syncFinetuneSliders()
-    onFixesFillLightChanged: panel.syncFinetuneSliders()
     onActiveTabChanged: {
         panel.syncFinetuneSliders()
+        panel.finetuneVisitEnded()   // #7383: a fülváltás lezárja a Hangolás-látogatást
         Logika.hangolasraLepesKikapcsoljaAPipettat()
         // #2146/#798: az effekt-füleken kell a Shift — ott kapcsoljuk BE a
         // figyelést, máshol KI. A tartalék-olvasás megmarad azoknak a

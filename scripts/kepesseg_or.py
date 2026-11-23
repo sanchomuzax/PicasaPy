@@ -161,7 +161,11 @@ _DEFAULT_LELTAR = _REPO_ROOT / "docs" / "specs" / "lanc-szakadasok-leltar.md"
 # lemenetele SZÁNDÉKOS: ha nem követné a törlést, a szám csendben visszahízhatna
 # ugyanezekre a tételekre.
 # #4315: az automatikus arcvizsgálat szinkronjelről indul, nem QML-ből.
-MAX_BASELINE_ENTRIES = 36
+# #7383: 36 → 41, mert a Hangolás-csúszkák és az 1. fül Derítőfénye a mentett
+# értékre kötés helyett alaphelyzetből indulnak (az eredetiben is így, J2a-J4a):
+# a `fillLight`, `fixesFillLight`, `highlights`, `shadows`, `colorTemp`
+# property-t a QML többé nem olvassa, a próbák viszont igen (ELDÖNTVE-sorok).
+MAX_BASELINE_ENTRIES = 41
 
 #: Az osztály-szintű kivételek felső korlátja — ugyanaz a logika.
 MAX_OSZTALY_ENTRIES = 3

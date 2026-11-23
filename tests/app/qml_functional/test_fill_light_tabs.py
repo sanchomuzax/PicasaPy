@@ -15,7 +15,7 @@ szerkeszti. A húzás utáni lánc-ellenőrzés valódi egérrel a
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QMetaObject, QObject, Qt
 
 
 @pytest.fixture
@@ -59,19 +59,21 @@ class TestFillLightOnBothTabs:
         qt_app.processEvents()
         assert fixes.property("value") == pytest.approx(0.0, abs=1e-6)
 
-    def test_panel_state_syncs_each_slider_from_its_own_layer(self, panel, qt_app):
-        """A mentett értékek betöltése (kép nyitása/lapozás): a Gyakori
-        javítások csúszka a `fill`, a Finomhangolás a `finetune2` értékét
-        kapja, egymástól függetlenül."""
-        panel.setProperty("fixesFillLight", 0.25)
-        panel.setProperty("fillLight", 0.6)
+    def test_sync_resets_both_fill_sliders_to_base(self, panel, qt_app):
+        """#7383: belépéskor, képváltáskor, Undo/Redo után mindkét Derítőfény-
+        csúszka alaphelyzetben áll; a mentett `fill`/`finetune2` érték nem
+        számít (a kép a láncot mutatja)."""
+        _slider(panel, "fixesFillSlider").setProperty("value", 0.25)
+        _slider(panel, "finetuneFillSlider").setProperty("value", 0.6)
         qt_app.processEvents()
-        assert _slider(panel, "fixesFillSlider").property("value") == pytest.approx(
-            0.25, abs=1e-6
+
+        QMetaObject.invokeMethod(
+            panel, "syncFinetuneSliders", Qt.ConnectionType.DirectConnection
         )
-        assert _slider(panel, "finetuneFillSlider").property(
-            "value"
-        ) == pytest.approx(0.6, abs=1e-6)
+        qt_app.processEvents()
+
+        assert _slider(panel, "fixesFillSlider").property("value") == pytest.approx(0.0)
+        assert _slider(panel, "finetuneFillSlider").property("value") == pytest.approx(0.0)
 
     def test_each_slider_lives_on_its_own_tab(self, panel):
         """A csúszkák a saját fülük oszlopában élnek — a fül váltása így

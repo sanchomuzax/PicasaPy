@@ -233,14 +233,20 @@ function emitFinetunePreview() {
                            finetunePanel.tempSlider.value)
 }
 
-// a csúszkák a mentett (kontroller) értékekre állnak — előnézet nélkül
+// #7383: a csúszkák (a négy Hangolás-csúszka és az 1. fül Derítőfénye) mindig
+// ALAPHELYZETBEN állnak: belépéskor, képváltáskor, megnyitáskor, Undo és Redo
+// után. A kép a láncot mutatja, a csúszka a látogatás saját rétegét; a
+// Színhőmérséklet alaphelyzete a tartomány közepe (0). Előnézet nélkül. Az
+// alapszín-minta is alaphelyzetbe (fekete) áll: az eredeti Hangolás fülén a
+// betöltött `ffccc6b2` mellett is az (J6c 16. kocka).
 function syncFinetuneSliders() {
     panel.suppressFinetune = true
-    finetunePanel.fillSlider.value = panel.fillLight
-    fixesTab.fillSlider.value = panel.fixesFillLight   // #7369: a `fill` réteg, nem a Hangolás
-    finetunePanel.highlightsSlider.value = panel.highlights
-    finetunePanel.shadowsSlider.value = panel.shadows
-    finetunePanel.tempSlider.value = panel.colorTemp
+    finetunePanel.fillSlider.value = 0
+    fixesTab.fillSlider.value = 0
+    finetunePanel.highlightsSlider.value = 0
+    finetunePanel.shadowsSlider.value = 0
+    finetunePanel.tempSlider.value = 0
+    panel.neutralColor = ""
     panel.suppressFinetune = false
 }
 

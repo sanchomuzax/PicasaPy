@@ -420,13 +420,22 @@ class TestFinetuneSliders:
         qt_app.processEvents()
         assert previews == []
 
-    def test_sync_finetune_sliders_sets_values_without_preview(self, qml_engine, qt_app):
+    def test_sync_finetune_sliders_resets_to_base_without_preview(
+        self, qml_engine, qt_app
+    ):
+        """#7383: a csúszkák mindig ALAPHELYZETBEN állnak (a Színhőmérséklet a
+        tartomány közepén), a mentett értékek nem számítanak, és az
+        alaphelyzetbe állítás nem vált ki élő előnézetet."""
         panel = self._make_panel(qml_engine)
         qt_app.processEvents()
-        panel.setProperty("fillLight", 0.2)
-        panel.setProperty("highlights", 0.3)
-        panel.setProperty("shadows", 0.4)
-        panel.setProperty("colorTemp", -0.1)
+        for name, value in (
+            ("finetuneFillSlider", 0.2),
+            ("finetuneHighlightsSlider", 0.3),
+            ("finetuneShadowsSlider", 0.4),
+            ("finetuneTempSlider", -0.1),
+        ):
+            panel.findChild(QObject, name).setProperty("value", value)
+        qt_app.processEvents()
         previews = []
         panel.finetunePreview.connect(lambda f, h, s, t: previews.append((f, h, s, t)))
         QMetaObject.invokeMethod(
@@ -434,18 +443,10 @@ class TestFinetuneSliders:
         )
         qt_app.processEvents()
         assert previews == []
-        assert panel.findChild(QObject, "finetuneFillSlider").property(
-            "value"
-        ) == pytest.approx(0.2)
-        assert panel.findChild(QObject, "finetuneHighlightsSlider").property(
-            "value"
-        ) == pytest.approx(0.3)
-        assert panel.findChild(QObject, "finetuneShadowsSlider").property(
-            "value"
-        ) == pytest.approx(0.4)
-        assert panel.findChild(QObject, "finetuneTempSlider").property(
-            "value"
-        ) == pytest.approx(-0.1)
+        for name in self.SLIDERS:
+            assert panel.findChild(QObject, name).property("value") == pytest.approx(
+                0.0
+            ), name
 
 
 class TestEffectButtons:

@@ -68,6 +68,7 @@ class EditControllerHistoryMixin:
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+        self._end_finetune_visit()
 
 
     @Slot()
@@ -82,6 +83,7 @@ class EditControllerHistoryMixin:
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+        self._end_finetune_visit()
 
 
     @staticmethod
@@ -98,6 +100,8 @@ class EditControllerHistoryMixin:
 
 
     def _push_undo(self, action: str) -> None:
+        if self._finetune_visit_open():
+            self._end_finetune_visit()   # #7383: a másik lépés lezárja a látogatást
         self._undo_stack.append((self._session.to_value(), action))
         self._redo_stack.clear()
 

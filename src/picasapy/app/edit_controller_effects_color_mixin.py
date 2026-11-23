@@ -55,7 +55,7 @@ class EditControllerEffectsColorMixin:
         finetune2 „semleges szín" paramétere (a lánc 4. paramétere).
 
         A `finetune2` négy csúszkája változatlan marad — a pipetta csak a
-        semleges színt írja át. `False`, ha a pont nem mintavételezhető
+        semleges színt írja át (#7383: a Hangolás-látogatás rétegében). `False`, ha a pont nem mintavételezhető
         (nincs regisztrált előnézet, vagy a pont a képen kívül esik).
         """
         self._require_active()
@@ -63,18 +63,7 @@ class EditControllerEffectsColorMixin:
         if sample is None:
             return False
         red, green, blue = sample
-        values = self._session.finetune_values()
-        self._push_undo("finetune")
-        self._session = self._session.set_finetune(
-            fill=values.fill if values else 0.0,
-            highlights=values.highlights if values else 0.0,
-            shadows=values.shadows if values else 0.0,
-            temperature=values.temperature if values else 0.0,
-            neutral=f"ff{red:02x}{green:02x}{blue:02x}",
-        )
-        self._save()
-        self._bump_revision()
-        self.toolsChanged.emit()
+        self._commit_neutral_color(f"ff{red:02x}{green:02x}{blue:02x}")
         return True
 
 
@@ -115,16 +104,5 @@ class EditControllerEffectsColorMixin:
         if source is None:
             return False
         red, green, blue = estimate_neutral_color(source)
-        values = self._session.finetune_values()
-        self._push_undo("finetune")
-        self._session = self._session.set_finetune(
-            fill=values.fill if values else 0.0,
-            highlights=values.highlights if values else 0.0,
-            shadows=values.shadows if values else 0.0,
-            temperature=values.temperature if values else 0.0,
-            neutral=f"ff{red:02x}{green:02x}{blue:02x}",
-        )
-        self._save()
-        self._bump_revision()
-        self.toolsChanged.emit()
+        self._commit_neutral_color(f"ff{red:02x}{green:02x}{blue:02x}")
         return True

@@ -38,7 +38,7 @@ def test_editor_panel_es_komponenscsaladja_400_sor_alatt_marad() -> None:
     for nev in (
         "cropActive",
         "textDraftContent",
-        "fillLight",
+        "suppressFinetune",
         "aspectIndex",
         "paramPanelActive",
     ):
