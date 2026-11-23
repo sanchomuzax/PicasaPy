@@ -55,11 +55,13 @@ class EditControllerEffectsColorMixin:
         finetune2 „semleges szín" paramétere (a lánc 4. paramétere).
 
         A `finetune2` négy csúszkája változatlan marad — a pipetta csak a
-        semleges színt írja át (#7383: a Hangolás-látogatás rétegében). `False`, ha a pont nem mintavételezhető
-        (nincs regisztrált előnézet, vagy a pont a képen kívül esik).
+        semleges színt írja át (#7383: a Hangolás-látogatás rétegében). A szín
+        a réteg ELŐTTI lánc képéből jön, nem a megjelenített előnézetből
+        (#7385, J5a). `False`, ha a pont nem mintavételezhető (a kép nem
+        dekódolható, vagy a pont a képen kívül esik).
         """
         self._require_active()
-        sample = self._provider.sample_color(self._kulcs, nx, ny)
+        sample = self._sample_neutral_source(nx, ny)
         if sample is None:
             return False
         red, green, blue = sample

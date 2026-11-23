@@ -211,7 +211,7 @@ class EditControllerEffectsFinetuneMixin:
         hívott `setFixesFill`-lel történik. A GPU-s LUT-út nem használható:
         a Derítőfény világosság-vezérelt (#551)."""
         self._require_active()
-        self._register_preview(self._session_with_fill(self._session, value))
+        self._register_preview(self._fill_visit_session(self._session, value))
         self._bump_revision()
 
 
@@ -219,20 +219,16 @@ class EditControllerEffectsFinetuneMixin:
     def setFixesFill(self, value: float) -> None:
         """A Gyakori javítások Derítőfényének mentése a `fill` rétegbe (#7369).
 
-        Undo-lépést tol (felirata `Fill Light` / `Derítőfény`) és ini-be ír.
-        Nulla értéknél a réteget eltávolítja, hogy a visszahúzott csúszka ne
+        A látogatás első mentése ÚJ `fill` réteget fűz a lánc végére (a betöltött
+        `fill` érintetlen, E27) és egy Undo-lépést tol (felirata `Fill Light` /
+        `Derítőfény`); a további mentések ezt a réteget írják felül (#7397).
+        Nulla értéknél a rétegeket eltávolítja, hogy a visszahúzott csúszka ne
         hagyjon fölösleges no-op `fill`-t. A `finetune2`-höz nem nyúl."""
         self._require_active()
-        self._push_undo("fill")
-        self._session = self._session_with_fill(self._session, value)
+        self._commit_fixes_fill(value)
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
-
-
-    @staticmethod
-    def _session_with_fill(session: EditSession, value: float) -> EditSession:
-        return session.clear_fill() if value == 0.0 else session.set_fill(value)
 
 
     def _finetune_field(self, field: str) -> float:

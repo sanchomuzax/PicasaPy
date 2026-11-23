@@ -131,6 +131,7 @@ from .edit_controller_retouch_mixin import EditControllerRetouchMixin
 from .edit_controller_redeye_mixin import EditControllerRedeyeMixin
 from .edit_controller_text_mixin import EditControllerTextMixin
 from .edit_controller_finetune_visit_mixin import EditControllerFinetuneVisitMixin
+from .edit_controller_fill_visit_mixin import EditControllerFillVisitMixin
 from .edit_controller_effects_mixin import EditControllerEffectsMixin
 from .edit_controller_signals import EditControllerSignalsMixin
 
@@ -145,6 +146,7 @@ class EditController(
     EditControllerRedeyeMixin,
     EditControllerTextMixin,
     EditControllerFinetuneVisitMixin,
+    EditControllerFillVisitMixin,
     EditControllerEffectsMixin,
     EditControllerSignalsMixin,
     PaintMaskMixin,
