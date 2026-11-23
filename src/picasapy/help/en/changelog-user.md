@@ -2,6 +2,44 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-23
+
+### Editor
+
+- With the **Text** tool you now type directly onto the picture, as in the
+  original Picasa; the panel no longer has a text field. The delete
+  button is called **Clear All**. See [The editor](features/szerkeszto.md).
+- After a saved Straighten, **Red Eye** first shows a warning in an
+  **Info** window and opens only after **OK**. The panel's title is
+  **Redeye Repair**.
+- Recropping works the original Picasa way: if the last step was a crop,
+  the new crop replaces it, and the crop tile then reads **Recrop**.
+- The **Fill Light** sliders on the Common fixes and **Fine Tuning** tabs
+  are independent of each other.
+- The eyedropper samples only on the **Fine Tuning** tab and is off when
+  you switch to that tab.
+- The effect commands of **Picture** ▸ **Batch Edit** and Ctrl+Shift+B act
+  at once on the photo open in the editor, like the matching tile. See
+  [Batch editing](features/csoportos-szerkesztes.md).
+- The Undo and Redo buttons name the step without a colon, for example
+  "Undo Straighten".
+
+### Library
+
+- Right-clicking an empty part of the left pane no longer opens a menu;
+  the pane's menu is on the ▾ button. See [Library](features/konyvtar.md).
+- In the **Shortcuts** submenu, **Desktop** and **My Pictures** are
+  disabled if none of your library folders is inside them.
+- When sorting by recent changes, the pane shows monthly headers; no sort
+  shows a header above the first row.
+
+### Viewing
+
+- If you go back from the viewer during a scan, the selection returns to
+  the photo that was open in the viewer.
+- In a narrow slideshow bar, the photo slider no longer overlaps the
+  neighboring button.
+
 ## 2026-11-22
 
 ### Library
