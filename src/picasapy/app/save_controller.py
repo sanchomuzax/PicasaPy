@@ -241,3 +241,23 @@ class SaveMixin(
         állapot jön vissza, de a **szerkesztések megmaradnak** - ez a Picasa
         köztes fokozata a Mentés és a Visszaállítás között."""
         self._run_restore(rows, undo_save, self.undoSaveFinished)
+
+    @Slot(str)
+    def _undo_save_for_editor(self, image_path: str) -> None:
+        """A szerkesztő Undo gombját az aktív kép meglévő Undo Save útjára köti."""
+        row = self.photos.rowOfPath(image_path)
+        if row >= 0:
+            self.undoLastSave([row])
+            return
+        target = os.path.normcase(
+            os.path.normpath(str(Path(image_path).resolve(strict=False)))
+        )
+        for editor in getattr(self, "_edit_controllers", ()):
+            editor_path = getattr(editor, "_image_path", None)
+            if editor_path is None:
+                continue
+            current = os.path.normcase(
+                os.path.normpath(str(Path(editor_path).resolve(strict=False)))
+            )
+            if current == target and getattr(editor, "_save_undo_pending", False):
+                editor._finish_save_undo(False)
