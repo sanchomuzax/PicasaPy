@@ -492,7 +492,7 @@ A `moddate` (2026-11-23 09:35:47,58) az új képfájl módosítási ideje. A `db
 
 ##### KIEMELT: az ecsetméret leképezése a `job-908` alapján
 
-A fehér gyűrű (egy képpontos vonal, belül sötét árnyékkal) vonalának középpontjait mértem: a gyűrű két képpontos fehér párokból áll, az átmérő a két szembenálló pár közepének távolsága; a vízszintes és a függőleges átmérő mindhárom esetben azonos. A képen a „Zoomed to 97%” jelző áll, a megjelenített kép 988×248 képpont a 1024×256-os forrásból.
+A fehér gyűrű (egy képpontos vonal, belül sötét árnyékkal) vonalának középpontjait mértem: a gyűrű két képpontos fehér párokból áll, az átmérő a két átellenes pár közepének távolsága; a vízszintes és a függőleges átmérő mindhárom esetben azonos. A képen a „Zoomed to 97%” jelző áll, a megjelenített kép 988×248 képpont a 1024×256-os forrásból.
 
 | Csúszka állása | Fogantyú közepe (x) | Fogantyú a futásban (t) | Kör külső átmérője (képpont) | Gyűrűvonal-átmérő (2R) | R (képernyő) | R a forráson (R/0,97) | R a megjelenített rövidebb oldalhoz (248) |
 |---|---|---|---|---|---|---|---|
@@ -526,7 +526,7 @@ A fehér gyűrű (egy képpontos vonal, belül sötét árnyékkal) vonalának k
 | #7379 (`érték/494 × rövidebb megjelenített oldal`) | 0,5 | 25,1 | 50,2 | 83,0 |
 | mai main (`érték/1000`, alap 20) | 0,2 | 4,96 (érték 20) | 24,8 | 16,4 (érték 20) |
 
-A #7379 a jobb végen fele akkora kört ad, a bal végen hatodakkorát, és egy négyzetes 1024×1024-es képen az alapállás kb. négyszeres (83,0 a mért 20,0 helyett). **Ez dönti el:** a #7379 ecsetméret-változtatása ebben az alakban **nem adható ki**; a #7379 többi része (cím, „Regions selected” sor, megerősítő ablak) a 908-tól független. Két járható út: (a) az ecsetméret-leképezés kimarad a #7379-ből (a mai 20/1000 marad, kimondott eltérésként), vagy (b) a lent megadott G jegytörzs szerinti leképezés kerül be, a `7327-11c` és `7327-11d` mérése után (addig a köztes állások és a képméret-függés nem bizonyított, és félkész dolog nem megy ki).
+A #7379 a jobb végen fele akkora kört ad, a bal végen hatodannyit, és egy négyzetes 1024×1024-es képen az alapállás kb. négyszeres (83,0 a mért 20,0 helyett). **Ez dönti el:** a #7379 ecsetméret-változtatása ebben az alakban **nem adható ki**; a #7379 többi része (cím, „Regions selected” sor, megerősítő ablak) a 908-tól független. Két járható út: (a) az ecsetméret-leképezés kimarad a #7379-ből (a mai 20/1000 marad, kimondott eltérésként), vagy (b) a lent megadott G jegytörzs szerinti leképezés kerül be, a `7327-11c` és `7327-11d` mérése után (addig a köztes állások és a képméret-függés nem bizonyított, és félkész dolog nem megy ki).
 
 #### Job-909 (`7327-12b`): meglévő szövegblokk szerkesztése és a Clear All
 
@@ -537,7 +537,7 @@ A #7379 a jobb végen fele akkora kört ad, a bal végen hatodakkorát, és egy 
 | `__14-15` | `gepel PicasaPy7327` | A szöveg a képen, lekerekített dobozban; „Apply” aktív. |
 | `__16-17` | `kattint (88,406)` (Apply) | Alapjavítások, a szöveg a képen (betűpixelek y 402-407), „Undo” és „Redo” tiltott. |
 | `__18-19` | `kattint (138,275)` (újranyitás) | A panel szerkesztő állapotban, **a meglévő szöveg a képen marad**, a „Type anywhere to add text” felirat nincs; **„Clear All” és „Apply” aktív**, „Copy Caption” tiltott. |
-| `__20-21` | `kattint (620,405)` (a meglévő szövegre) | **A blokk kijelölődik**: vastag lekerekített keret, köré **forgatókorong** (osztásokkal, jobb szélén piros pontos fogantyúval, a pont közepe (708,405)); a szövegkurzor a „Picas|aPy7327” helyén áll. |
+| `__20-21` | `kattint (620,405)` (a meglévő szövegre) | **A blokk kijelölődik**: vastag lekerekített keret, köré **forgatókorong** (osztásokkal, jobb szélén piros pontos fogantyúval, a pont közepe (708,405)); a szövegkurzor a „PicasaPy7327” szövegben, az ötödik betű után áll. |
 | `__22-23` | `gepel Plusz` | A szöveg **a kurzorhoz szúródik be**: „PicasPluszaPy7327”; a doboz 10 képponttal szélesebb, a korong fogantyúja (718,405). |
 | `__24-25` | `kattint (88,406)` (Apply) | A szöveg a képen, **egyetlen sor** („PicasPluszaPy7327”), „Undo” és „Redo” tiltott. |
 | `__26-27` | `kattint (138,275)` | Szerkesztő panel, a szöveg a képen, „Clear All” és „Apply” aktív. |
