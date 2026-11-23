@@ -156,6 +156,7 @@ def test_redeye_renderelt_panel_egyezik_a_job_837_al(
     title = _item(window, "redeyeTitleText")
     title_icon = _item(window, "redeyeTitleIcon")
     guide = _item(window, "redeyeGuideText")
+    instruction_block = _item(window, "redeyeInstructionBlock")
     note = window.findChild(QObject, "redeyeFrameHintLabel")
     cancel = _item(window, "redeyeCancelButton")
     preview = window.findChild(QObject, "redeyePreviewButton")
@@ -210,6 +211,24 @@ def test_redeye_renderelt_panel_egyezik_a_job_837_al(
         }
         if not centers["redeyeAutoButton"] < centers["redeyeResetButton"] < centers["redeyeApplyButton"]:
             hibak.append("a gombsorok sorrendje nem Auto/Preview, Reset, Apply/Cancel")
+
+        column_top = instruction_block.mapToScene(QPointF(0, 0)).y()
+        block_bottom = column_top + instruction_block.height()
+        auto_top = _item(window, "redeyeAutoButton").mapToScene(QPointF(0, 0)).y()
+        reset_top = _item(window, "redeyeResetButton").mapToScene(QPointF(0, 0)).y()
+        apply_top = _item(window, "redeyeApplyButton").mapToScene(QPointF(0, 0)).y()
+        preview_top = _item(window, "redeyePreviewButton").mapToScene(QPointF(0, 0)).y()
+        cancel_top = _item(window, "redeyeCancelButton").mapToScene(QPointF(0, 0)).y()
+        elteresek = {
+            "a Note-blokk és az Auto közötti rés": (auto_top - block_bottom, 36),
+            "a Reset eltolása az Auto sorától": (reset_top - auto_top, 34),
+            "az Apply eltolása az Auto sorától": (apply_top - auto_top, 68),
+            "a Preview függőleges eltolása": (preview_top - auto_top, 0),
+            "a Cancel függőleges eltolása": (cancel_top - apply_top, 0),
+        }
+        for nev, (mert, vart) in elteresek.items():
+            if abs(mert - vart) > _TURES:
+                hibak.append(f"{nev}: {mert:.1f} px, elvárt {vart} px")
 
     for name in ("redeyeAutoButton", "redeyeResetButton", "redeyeApplyButton"):
         button = window.findChild(QObject, name)
@@ -295,7 +314,10 @@ def test_a_fulsav_minden_mod_eszköz_panel_folott_latszik(redeye_app, qt_app):
                 not frame.isNull() and _icon_ink_pixels(frame, tab_icon) >= 4
             )
         _click(window, _item(window, cancel_name))
-        assert _var(qt_app, lambda: panel.property(active) is False)
+        assert _var(
+            qt_app,
+            lambda active_name=active: panel.property(active_name) is False,
+        )
 
     rejtett = [name for name in ("redeye", "retouch", "text", "crop") if not eredmeny[name]]
     assert not rejtett, f"eszköz módban rejtett a fülsáv: {rejtett}; mérés: {eredmeny}"

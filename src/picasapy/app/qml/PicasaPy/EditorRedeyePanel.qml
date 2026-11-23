@@ -22,7 +22,7 @@ ColumnLayout {
     visible: panel.redeyeActive
     opacity: panel.enabled ? 1 : 0.45
     anchors.margins: 10
-    spacing: 8
+    spacing: 6
 
     // #741: a MÉRT gombgeometria (`docs/specs/szerkeszto-panel-meretek.md`
     // 6.2/7.): `redeyeauto`/`redeyepreview`, `redeyeapply`/`redeyecancel`
@@ -67,6 +67,7 @@ ColumnLayout {
         objectName: "redeyeInstructionBlock"
         visible: !panel.redeyeAutoReset
         Layout.fillWidth: true
+        Layout.topMargin: 2
         Layout.preferredWidth: 242
         Layout.preferredHeight: 129
         Text {
@@ -106,6 +107,7 @@ ColumnLayout {
     Text {
         objectName: "redeyeAutoResultLabel"
         Layout.fillWidth: true
+        Layout.topMargin: 2
         wrapMode: Text.WordWrap
         visible: !panel.redeyeAutoReset && panel.redeyeFoundCount > 0
         //: #3574: a hivatalos szöveg (`RedEye::AutoFixedMessage`)
@@ -117,6 +119,7 @@ ColumnLayout {
     Text {
         objectName: "redeyeAutoRedoLabel"
         Layout.fillWidth: true
+        Layout.topMargin: 2
         wrapMode: Text.WordWrap
         visible: panel.redeyeAutoReset
         text: qsTr("Click, hold, and drag the mouse around each eye separately "
@@ -129,10 +132,14 @@ ColumnLayout {
         color: Theme.textGray
     }
 
+    // A méretspecifikáció 36 px-t hagy az útmutató-blokk után, majd 6 px-t
+    // a három gombsor között (`szerkeszto-panel-meretek.md`, 6.2). A külső
+    // 6 px-es osztásköz mellé 30 px-es felső margó adja a 36 px-es rést.
     RowLayout {
         Layout.fillWidth: true
         Layout.maximumWidth: 98 + 6 + 98
         Layout.alignment: Qt.AlignHCenter
+        Layout.topMargin: 30
         spacing: 6
         ActionButton {
             objectName: "redeyeAutoButton"
@@ -149,7 +156,7 @@ ColumnLayout {
         }
     }
 
-    // #741: a „Reset" az eredetin egyedül, középen áll (`redeyediscard`)
+    // #741: a „Reset" az eredetin egyedül, középen áll (`redeyediscard`).
     ActionButton {
         objectName: "redeyeResetButton"
         label: qsTr("Reset")
