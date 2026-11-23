@@ -137,6 +137,7 @@ class EditControllerSessionMixin:
         # forráskép arányát tartjuk)
         self._crop_aspect: float | None = None
         self._brush_size = _DEFAULT_BRUSH_SIZE
+        self._brush_touched = False
         self._restore_text_overlay_state(read_ini=not network_path)
         self._register_preview()
         self._bump_revision()
@@ -334,6 +335,7 @@ class EditControllerSessionMixin:
         self._redeye_reset_message = False
         self._crop_aspect = None
         self._brush_size = _DEFAULT_BRUSH_SIZE
+        self._brush_touched = False
         self._text_overlay = None
         self._text_selected_index = None
         self._text_active = False

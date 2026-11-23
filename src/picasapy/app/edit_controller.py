@@ -47,7 +47,6 @@ from .edit_controller_shared import (
     _APPLICABLE_EFFECTS,
     _BRUSH_SIZE_MAX,
     _BRUSH_SIZE_MIN,
-    _BRUSH_SIZE_TO_RELATIVE_DIVISOR,
     _DEFAULT_BRUSH_SIZE,
     _DEFAULT_TEXT_ALIGN,
     _DEFAULT_TEXT_BOLD,
@@ -276,6 +275,11 @@ class EditController(
         # szöveg-stílushoz hasonlóan NEM kerül a `.picasa.ini`-be), minden
         # szerkesztés-nyitáskor alapértékre áll.
         self._brush_size: int = _DEFAULT_BRUSH_SIZE
+        # #7406: a csúszka megérintéséig az induló `s` él (a fogantyú közben
+        # középen áll); a nézet nagyítását a QML adja át (`setRetouchViewZoom`),
+        # ez nézet-, nem munkamenet-állapot, ezért `beginEdit` nem nullázza.
+        self._brush_touched: bool = False
+        self._retouch_view_zoom: float = 1.0
         # szöveg-overlay (#148): a mentett `text=`/`textactive=` értékek
         # típusos alakja (None, ha nincs — vagy a bejegyzés nem értelmezhető,
         # a #301-elv szerint), plusz a szerkesztés alatti, MÉG NEM mentett
