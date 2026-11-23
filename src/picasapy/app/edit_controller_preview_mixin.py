@@ -227,6 +227,9 @@ class EditControllerPreviewMixin:
             "paint_strokes": self._paint_strokes(),
             "crop": crop,
             "crop_ini_readable": crop_ini_readable,
+            # #7385: a Hangolás pipettájának lánca; ha ez a megjelenített lánc
+            # maga, a háttér-render kész képe a pipetta mintája is
+            "sample_prefix_ops": self._neutral_sample_ops(),
         }
 
 

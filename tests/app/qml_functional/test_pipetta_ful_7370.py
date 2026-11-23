@@ -12,8 +12,10 @@ Elvárás:
 - a meglévő egyszeri használat (kattintás után kikapcsol) változatlan.
 
 Minden kattintás `QTest.mouseClick`; a teszt sosem emittál és nem hív
-`clicked`-et. A mintavételt a `sample_color` lecserélt példánymetódusa
-számolja: ez az egyetlen pont, amin át a `pickNeutralColor` a képhez nyúl.
+`clicked`-et. A mintavételt a `sample_prefix_color` lecserélt példánymetódusa
+számolja: ez az egyetlen pont, amin át a `pickNeutralColor` a képhez nyúl
+(#7385: a pipetta a finetune2 réteg ELŐTTI lánc képéből mintáz, nem a
+megjelenített előnézetből).
 """
 
 from __future__ import annotations
@@ -25,13 +27,13 @@ def _mintavetel_figyelese(viewer) -> list:
     """A mintavételezés hívásait számoló csonk a szerkesztő-vezérlő szolgáltatóján."""
     hivasok: list = []
     szolgaltato = szerkeszto(viewer)._provider
-    eredeti = szolgaltato.sample_color
+    eredeti = szolgaltato.sample_prefix_color
 
-    def csonk(kulcs, nx, ny):
+    def csonk(kulcs, ut, ops, nx, ny, **kwargs):
         hivasok.append((nx, ny))
-        return eredeti(kulcs, nx, ny)
+        return eredeti(kulcs, ut, ops, nx, ny, **kwargs)
 
-    szolgaltato.sample_color = csonk
+    szolgaltato.sample_prefix_color = csonk
     return hivasok
 
 
