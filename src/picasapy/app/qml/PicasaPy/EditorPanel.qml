@@ -177,7 +177,6 @@ Rectangle {
     property alias shiftMasodlagos: effectState.shiftMasodlagos
 
     function frissitsdAShiftAllapotot() { return Logika.frissitsdAShiftAllapotot() }
-
     function allitsdAShiftFigyelest() { return Logika.allitsdAShiftFigyelest() }
 
     Component.onCompleted: {

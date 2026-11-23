@@ -31,6 +31,10 @@ REMAINING_FIXED_LIGHT_COLORS: dict[str, tuple[int, str]] = {
         1,
         "A felirat a képre rajzolt sötét szerkesztőgomb kontrasztszíne.",
     ),
+    "src/picasapy/app/qml/PicasaPy/PhotoViewerTextInput.qml": (
+        1,
+        "A Szöveg eszköz hint-felirata közvetlenül a fényképre rajzolt réteg (#7380).",
+    ),
     "src/picasapy/app/qml/PicasaPy/EffectFocalPuck.qml": (
         3,
         "A fókuszpont és kerete közvetlenül a fényképre rajzolt effektjelölő.",
