@@ -495,6 +495,9 @@ onAktivOldalChanged: {
 }
 
 function beginEditCurrent() {
+    if (typeof controller !== "undefined" && controller
+            && typeof controller.setViewerInfoShort === "function")
+        controller.setViewerInfoShort(false)
     if (!hostEditController) return
     //: #3187: a szerkesztett sor a KIJELÖLT oldal sora. Egy képes és
     //: „aa" módban ez maga a jelenlegi kép (az `aktivSor` ott
@@ -689,6 +692,9 @@ onCurrentIndexChanged: {
         // #3924: a Picasa lapozáskor lezárja a Kiegyenesítést; a rács
         // csak az eszköz nyitott állapotában látszik.
         editorPanel.tiltActive = false
+        // #7385 (J5d): az eredetiben a képváltás felengedi a pipettát; a
+        // következő (vagy visszalépett) képen az első kattintás nem mintáz
+        editorPanel.neutralPickerActive = false
         zoomFit()   // #6: lapozáskor vissza illesztett nézetbe
         beginEditCurrent()
         //: #3773: jobb fókusznál a BAL fél (`currentIndex`) a második

@@ -37,6 +37,10 @@ class FinetuneVisit:
     base_length: int
     """A látogatás ELŐTTI lánc elemszáma: a látogatás rétege ezen az indexen áll."""
 
+    redo_before: tuple[tuple[str, str], ...] = ()
+    """Az Újra-verem a látogatás ELŐTT: az első lépés (`_push_undo`) kiüríti,
+    a csupa nulla látogatás (T6, E26) ezt állítja vissza (#7397)."""
+
 
 class EditControllerFinetuneVisitMixin:
     """A Hangolás-látogatás állapota és a réteg írása (#7383)."""
@@ -46,12 +50,15 @@ class EditControllerFinetuneVisitMixin:
     @Slot()
     def closeFinetuneVisit(self) -> None:  # noqa: N802
         """A Hangolás fül elhagyása (és az újra-belépés): a következő húzás
-        ÚJ réteget kezd. A csúszkák alaphelyzetét a panel maga állítja."""
+        ÚJ réteget kezd. A csúszkák alaphelyzetét a panel maga állítja.
+        A Derítőfény-látogatás (#7397) is itt zárul: az 1. fül elhagyása."""
         self._finetune_visit = None
+        self._close_fill_visit()
 
     def _end_finetune_visit(self) -> None:
         """A látogatás vége: a csúszkák alaphelyzetbe állnak (jelből)."""
         self._finetune_visit = None
+        self._close_fill_visit()
         self.finetuneSlidersReset.emit()
 
     def _finetune_visit_open(self) -> bool:
@@ -124,9 +131,10 @@ class EditControllerFinetuneVisitMixin:
 
         A látogatás első mentése visszavonási lépést tol és új réteget fűz a
         lánc végére; a többi ugyanazt a réteget írja felül, lépés nélkül. Ha
-        mind a négy érték 0 és nincs pipetta-szín, a réteg nem kell: a lánc a
-        látogatás előtti állapotra áll vissza (a látogatás nyitva marad); még
-        nyitatlan látogatásnál az üres húzás semmit sem változtat."""
+        mind a négy érték 0 és nincs pipetta-szín, a réteg nem kell: a lánc, az
+        Undo és az Újra a látogatás előtti állapotra áll vissza, a látogatás
+        lezárul (E26, #7397); még nyitatlan látogatásnál az üres húzás
+        semmit sem változtat."""
         is_open = self._finetune_visit_open()
         layer_values = self._visit_values()
         effective_neutral = (
@@ -145,13 +153,16 @@ class EditControllerFinetuneVisitMixin:
             if is_noop:
                 return False
             base_length = len(self._session.ops)
+            redo_before = tuple(self._redo_stack)
             self._push_undo("finetune")
             self._finetune_visit = FinetuneVisit(
-                entry=self._undo_stack[-1], base_length=base_length
+                entry=self._undo_stack[-1],
+                base_length=base_length,
+                redo_before=redo_before,
             )
         visit = self._finetune_visit
         if is_noop:
-            self._session = EditSession(ops=self._session.ops[: visit.base_length])
+            self._discard_finetune_visit(visit)
             return True
         self._session = self._finetune_visit_session(
             self._session,
@@ -162,6 +173,45 @@ class EditControllerFinetuneVisitMixin:
             neutral=effective_neutral,
         )
         return True
+
+    def _neutral_sample_ops(self) -> tuple[FilterOp, ...]:
+        """A lánc a látogatás rétege ELŐTT: ennek a képéből mintáz a pipetta.
+
+        Nyitott látogatásnál a látogatás ELŐTTI lánc (a réteg `base_length`
+        indexen áll); nyitatlannál a mostani teljes lánc, mert a pipetta új
+        réteget fűz a végére. A betöltött vagy korábbi látogatásból való
+        `finetune2` réteg hatása így benne van a mintában, a látogatás saját
+        rétegéé (csúszkák, korábbi pipetta-szín) nem (#7385, J5a)."""
+        visit = self._finetune_visit
+        if self._finetune_visit_open():
+            return self._session.ops[: visit.base_length]
+        return self._session.ops
+
+    def _sample_neutral_source(self, nx: float, ny: float) -> tuple[int, int, int] | None:
+        """A pipetta mintája a (nx, ny) ponton: a látogatás rétege ELŐTTI lánc
+        képének pontja (#7385). A vágás és az ecset-maszk kezelése a
+        megjelenített képével azonos (ugyanaz a `crop=` érték és festés)."""
+        crop, crop_ini_readable = self._crop_value_for_session(self._session)
+        return self._provider.sample_prefix_color(
+            self._kulcs,
+            self._image_path,
+            self._neutral_sample_ops(),
+            nx,
+            ny,
+            paint_strokes=self._paint_strokes(),
+            crop=crop,
+            crop_ini_readable=crop_ini_readable,
+        )
+
+    def _discard_finetune_visit(self, visit: FinetuneVisit) -> None:
+        """A csupa nulla, pipetta nélküli látogatás nyom nélkül eltűnik (E26,
+        #7397): a lánc a látogatás előtti, a látogatás Undo-bejegyzése
+        törlődik, az Újra-verem a látogatás előtti állapotra áll vissza. A
+        látogatás lezárul: a következő húzás új réteget és új lépést kezd."""
+        self._session = EditSession(ops=self._session.ops[: visit.base_length])
+        self._undo_stack.pop()
+        self._redo_stack[:] = visit.redo_before
+        self._finetune_visit = None
 
     def _commit_neutral_color(self, neutral: str) -> None:
         """A pipetta (és a szín-varázspálca) színe a látogatás rétegébe: a

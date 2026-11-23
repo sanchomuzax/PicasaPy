@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import threading
 
-from PySide6.QtCore import QLocale, QMetaObject, Qt, Signal, Slot
+from PySide6.QtCore import Property, QLocale, QMetaObject, Qt, Signal, Slot
 from pathlib import Path
 from picasapy.halozati_ut import fajlrendszer_gyoker, halozati_gyoker
 from picasapy.ini import load_or_empty
@@ -36,6 +36,23 @@ class ContentInfoMixin:
     """Mappaleírások és a kijelölt képek QML-információi."""
 
     networkPropertiesChanged = Signal()
+    #: #7390: az állapotsor rövid alakja szerkesztés közben (mappa és számláló nélkül)
+    viewerInfoShortChanged = Signal(bool)
+
+    @Property(bool, notify=viewerInfoShortChanged)
+    def viewerInfoShort(self) -> bool:
+        return getattr(self, "_viewer_info_short", False)
+
+    @viewerInfoShort.setter
+    def viewerInfoShort(self, value: bool) -> None:
+        self.setViewerInfoShort(value)
+
+    @Slot(bool)
+    def setViewerInfoShort(self, value: bool) -> None:
+        val = bool(value)
+        if getattr(self, "_viewer_info_short", False) != val:
+            self._viewer_info_short = val
+            self.viewerInfoShortChanged.emit(val)
 
     @staticmethod
     def _read_folder_description(folder_path: str) -> str:
@@ -221,11 +238,18 @@ class ContentInfoMixin:
 
     @Slot(int, result=str)
     def viewerInfo(self, row: int) -> str:
-        """A néző sávja: `mappa > név   dátum   felbontás   méret   (N / i)   címkék`."""
+        """A néző sávja: `mappa > név   dátum   felbontás   méret   (N / i)   címkék` (hosszú)
+        vagy `név   dátum   felbontás   méret` (rövid alak, #7390)."""
         photos = self._photos.photos
         if not 0 <= row < len(photos):
             return ""
         photo = photos[row]
+        if getattr(self, "_viewer_info_short", False):
+            return formatting.photo_info_text(
+                photo,
+                QLocale(),
+                formatting.fordit,
+            )
         folder = formatting.PATH_TAIL.split(photo.folder_path)[-1]
         # #2587: a SZÁMLÁLÓ visszakerült a MÉRT helyére — a fájlméret UTÁN
         # és a címkék ELŐTT (`picasa3-felirat-bekapcsolva. 223224.jpg`,

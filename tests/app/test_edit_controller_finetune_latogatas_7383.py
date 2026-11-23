@@ -227,19 +227,23 @@ class TestLatogatasVege:
 
         assert len(_finetune_sorok(controller)) == 2, controller.chainValue
 
-    def test_a_nulla_ertek_leveszi_a_reteget_a_latogatas_nyitva_marad(
+    def test_a_nulla_ertek_leveszi_a_reteget_es_a_lepest_a_kovetkezo_huzas_ujat_kezd(
         self, controller, photo
     ):
+        """#7397 (E26): a csupa nulla látogatás Undo-lépése is eltűnik, a
+        látogatás lezárul; a következő húzás új réteget és új lépést kezd."""
         controller.beginEdit("1", str(photo))
-        controller.setFinetune(0.5, 0.0, 0.0, 0.0)
         melyseg = len(controller._undo_stack)
+        controller.setFinetune(0.5, 0.0, 0.0, 0.0)
+        assert len(controller._undo_stack) == melyseg + 1
 
         controller.setFinetune(0.0, 0.0, 0.0, 0.0)
         assert controller.hasFinetune is False
+        assert len(controller._undo_stack) == melyseg
         controller.setFinetune(0.2, 0.0, 0.0, 0.0)
 
         assert len(_finetune_sorok(controller)) == 1
-        assert len(controller._undo_stack) == melyseg
+        assert len(controller._undo_stack) == melyseg + 1
 
     def test_nulla_ertek_betoltott_reteg_mellett_semmit_sem_valtoztat(
         self, controller, photo

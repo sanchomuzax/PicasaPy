@@ -76,6 +76,7 @@ class EditControllerEffectsParamsMixin:
         self._require_active()
         self._register_preview()
         self._bump_revision()
+        self.viewerInfoShortRequested.emit(True)
 
 
     @Slot(str, "QVariantList")
@@ -94,6 +95,7 @@ class EditControllerEffectsParamsMixin:
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.viewerInfoShortRequested.emit(True)
 
 
     def _session_with_effect(self, name: str, values) -> EditSession | None:

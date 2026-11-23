@@ -307,15 +307,15 @@ class TestUjReteg:
 
         assert len(_finetune_sorok(edit)) == 2, edit.property("chainValue")
 
-    def test_az_elso_ful_fill_csuszkaja_alaphelyzetbol_indul_a_fill_reteg_marad(
+    def test_az_elso_ful_fill_csuszkaja_alaphelyzetbol_indul_uj_fill_reteg_jon(
         self, app_betoltott_lanccal, qt_app
     ):
-        """A `fill` réteg (1. fül) a mai módon cserélődik: a húzás a betöltött
-        `fill` értékét írja át, nem új réteget kezd (a B11/B6 felvétel dönt)."""
+        """E27 (job-906) és #7397: a betöltött `fill` mellett a húzás ÚJ réteget
+        fűz a lánc végére, a betöltött `fill=1,0.5` érintetlen marad."""
         window, _panel, edit = _megnyit(app_betoltott_lanccal, qt_app)
 
         _huzas(window, _item(window, "fixesFillSlider"), qt_app, 0.1, 0.9)
 
         lanc = str(edit.property("chainValue"))
-        assert lanc.count("fill=1,") == 1, lanc
-        assert "fill=1,0.5" not in lanc, lanc
+        assert lanc.count("fill=1,") == 2, lanc
+        assert lanc.startswith("fill=1,0.5;"), lanc

@@ -18,7 +18,7 @@ from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 import numpy as np
 from PySide6.QtCore import Qt
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from picasapy.render.chain_geometry import TartalomHely
     from picasapy.render.op_geometry import LancHelyzet
 
-from .edit_preview_cache import EditPreviewCacheMixin, _LRU_CAPACITY
+from .edit_preview_cache import EditPreviewCacheMixin, _LRU_CAPACITY, gyors_elonezet_aktiv
 from .edit_preview_redeye import (
     EditPreviewRedeyeMixin,
     _OUTLINE_MAX_PX as _OUTLINE_MAX_PX,
@@ -62,6 +62,7 @@ from .edit_preview_source import (
     _srgb_be as _srgb_be,
     _teljes_hosszabb_el as _teljes_hosszabb_el,
 )
+from .edit_preview_sample import EditPreviewSampleMixin
 from .histogram_helper import EMPTY_HISTOGRAM, compute_rgb_histogram
 
 # #151/7: a placeholder-szürke egyetlen helyen (thumbnail_provider) definiált
@@ -75,6 +76,17 @@ chain_flags = lazy_callable("picasapy.render.registry", "chain_flags")
 apply_text_overlay = lazy_callable("picasapy.render.text_overlay", "apply_text_overlay")
 
 _PLACEHOLDER_SIZE = 16
+
+
+class PreviewRender(NamedTuple):
+    """Egy lánc előnézeti léptékű renderje (#7385): a dekódolt forrás, a kép,
+    a keret-elhelyezés, a teljes felbontású dekód jelzője és az előnézeti arány."""
+
+    source: np.ndarray | None
+    image: np.ndarray | None
+    placement: TartalomHely | None
+    full_res: bool
+    scale: float
 
 
 @dataclass(frozen=True)
@@ -117,7 +129,9 @@ class TextOverlaySpec:
     align: str = "left"
 
 
-class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickImageProvider):
+class EditPreviewProvider(
+    EditPreviewCacheMixin, EditPreviewRedeyeMixin, EditPreviewSampleMixin, QQuickImageProvider
+):
     """`image://editpreview/<photo_id>?rev=<n>` — élő szerkesztési előnézet."""
 
     def __init__(self) -> None:
@@ -186,6 +200,11 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
         # QML-nek, a réteg nem jelenik meg.
         self._gpu_prefix_images: OrderedDict[str, QImage] = OrderedDict()
         self._gpu_lut_images: OrderedDict[str, QImage] = OrderedDict()
+        # #7385: a Hangolás pipettájának mintája, a réteg ELŐTTI lánc képe,
+        # fotónként egy bejegyzés (aláírás, kép, előnézeti arány); ld.
+        # `EditPreviewSampleMixin`. Ugyanazzal az LRU-életciklussal, mint
+        # `_images`, és a `_lock` védi.
+        self._sample_prefixes: OrderedDict[str, tuple] = OrderedDict()
         # #546: EGYETLEN zár, és csak a (rövid) kép-/hisztogram-tárolásra.
         # A dekód-/prefix-gyorsítótárakat (`_sources`, `_prefix_cache`,
         # `_gpu_prefix_cache`) KIZÁRÓLAG a GUI-szál írja: a háttérszálas
@@ -231,6 +250,7 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
             self._color_management = enabled
             self._sources.clear()
             self._prefix_cache = None
+            self._sample_prefixes.clear()
 
     @property
     def color_management(self) -> bool:
@@ -266,6 +286,7 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
         paint_strokes: tuple = (),
         crop: str | None = None,
         crop_ini_readable: bool | None = None,
+        sample_prefix_ops: tuple[FilterOp, ...] | None = None,
     ) -> None:
         """Az aktuálisan szerkesztett fotó renderelése és eltárolása.
 
@@ -286,7 +307,12 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
         megosztott gyorsítótárakhoz hozzá sem nyúl. Az `is_current`
         visszahívás (ha van) közvetlenül a TÁROLÁS előtt fut le, a `_lock`
         alatt — az időközben túlhaladott render így nem írhatja felül a
-        frissebb képet."""
+        frissebb képet.
+
+        `sample_prefix_ops` (#7385): a Hangolás pipettájának lánca (a réteg
+        ELŐTTI lánc). Ha ez maga a megjelenített `ops` (nem megnyitott
+        látogatás), a render szövegréteg nélküli képe a pipetta mintájaként is
+        eltárolódik: az első kattintás így nem renderel újra."""
         self._register_impl(
             photo_id,
             path,
@@ -299,6 +325,7 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
             is_current=is_current,
             crop=crop,
             crop_ini_readable=crop_ini_readable,
+            sample_prefix_ops=sample_prefix_ops,
         )
 
     def _register_impl(
@@ -314,10 +341,14 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
         paint_strokes: tuple = (),
         crop: str | None = None,
         crop_ini_readable: bool | None = None,
+        sample_prefix_ops: tuple[FilterOp, ...] | None = None,
     ) -> None:
         """A `register()` törzse (#546)."""
         key = str(photo_id)
         path = Path(path)
+        # #7385: a megjelenített lánc maga a pipetta mintája, ha a hívó ezt
+        # a láncot mondta a réteg ELŐTTINEK (nem megnyitott látogatás)
+        a_lanc_a_minta = sample_prefix_ops is not None and tuple(sample_prefix_ops) == tuple(ops)
         if crop_ini_readable is None:
             crop, crop_ini_readable = self._crop_reader.read(
                 path.parent / PICASA_INI_NAME, path.name
@@ -336,7 +367,7 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
                 warning_key=str(path),
             )
         try:
-            mtime = path.stat().st_mtime
+            fajl_adat = path.stat()
         except OSError:
             # #548: NAS-on a fájl az ellenőrzés és a `stat()` közt eltűnhet
             # (TOCTOU), és a jogosultsági hiba is ide fut. A `None` azt
@@ -344,19 +375,24 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
             # ilyenkor egyszerűen nem talál, és újra dekódolunk (a dekóder
             # a hiányzó fájlra `None`-nal, azaz helyőrzővel felel).
             mtime = None
-        #: #819: a lánc sáv-jelzői. A `fullres` szűrők csak teljes
-        #: felbontáson helyesek, ezért náluk a dekód korlátja elmarad.
-        teljes_felbontas, _lassu, _ujrameretez = chain_flags([op.name for op in ops])
-        source_array = self._resolve_source(
-            key, path, mtime, shared_cache, full_res=teljes_felbontas
+            meret = None
+        else:
+            mtime, meret = fajl_adat.st_mtime, fajl_adat.st_size
+        # #7385: az aláírás a render ELEJÉN készül - a közben váltott színkezelés
+        # vagy cserélt fájl így elavultnak jelöli a végén tárolt képet
+        minta_alairas = (
+            self._sample_signature(path, meret, ops, paint_strokes) if a_lanc_a_minta else None
         )
-        # #3377: a lánc a kicsinyítés arányával fut — a keret vastagsága így
-        # a mentett képpel arányos marad (az eredeti `imageWidth /
-        # fullResImageWidth` tényezője).
-        with elonezeti_arany(_elonezeti_arany(path, mtime, source_array, teljes_felbontas)):
-            result_array, elhelyezes = self._futtasd_a_lancot(
-                key, source_array, ops, shared_cache, paint_strokes
-            )
+        render = self._render_at_preview_scale(
+            key, path, mtime, ops, shared_cache, shared_cache, paint_strokes
+        )
+        source_array, result_array, elhelyezes = render.source, render.image, render.placement
+        teljes_felbontas = render.full_res
+        #: #7385: a szövegréteg ELŐTTI kép (a szöveg másolatra rajzol), a
+        #: pipetta mintájának tárolásához; a húzás közbeni gyors kép nem pontos
+        minta_bejegyzes = None
+        if minta_alairas is not None and result_array is not None and not gyors_elonezet_aktiv():
+            minta_bejegyzes = (minta_alairas, result_array, render.scale)
         text_specs = (text,) if isinstance(text, TextOverlaySpec) else (text or ())
         if result_array is not None:
             # a szövegek a filters-lánc UTÁN, fájlbeli sorrendben kerülnek
@@ -423,6 +459,42 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
                     self._placements.popitem(last=False)
             self._store_gpu_image(self._gpu_prefix_images, key, gpu_prefix_image)
             self._store_gpu_image(self._gpu_lut_images, key, gpu_lut_image)
+            if minta_bejegyzes is not None:
+                self._store_sample_prefix(key, *minta_bejegyzes)
+
+    def _render_at_preview_scale(
+        self,
+        key: str,
+        path: Path,
+        mtime: float | None,
+        ops: tuple[FilterOp, ...],
+        shared_source: bool,
+        shared_prefix: bool,
+        paint_strokes: tuple,
+    ) -> PreviewRender:
+        """A lánc az ELŐNÉZET léptékében: dekód, arány, lánc (#7385).
+
+        A megjelenített előnézet (`_register_impl`) és a pipetta mintája
+        (`sample_prefix_color`) UGYANEZEN az úton készül, ezért a két kép
+        lépték-azonossága felépítésből adott: ugyanaz a dekód-korlát, ugyanaz
+        az `elonezeti_arany`, ugyanaz a lánc-futtató. A `shared_source` a
+        dekódolt forrás, a `shared_prefix` a lánc-prefix gyorsítótár
+        használatát kapcsolja (a háttér-út egyiket sem használja, #546)."""
+        #: #819: a lánc sáv-jelzői. A `fullres` szűrők csak teljes
+        #: felbontáson helyesek, ezért náluk a dekód korlátja elmarad.
+        teljes_felbontas, _lassu, _ujrameretez = chain_flags([op.name for op in ops])
+        source_array = self._resolve_source(
+            key, path, mtime, shared_source, full_res=teljes_felbontas
+        )
+        # #3377: a lánc a kicsinyítés arányával fut - a keret vastagsága így
+        # a mentett képpel arányos marad (az eredeti `imageWidth /
+        # fullResImageWidth` tényezője).
+        arany = _elonezeti_arany(path, mtime, source_array, teljes_felbontas)
+        with elonezeti_arany(arany):
+            result_array, elhelyezes = self._futtasd_a_lancot(
+                key, source_array, ops, shared_prefix, paint_strokes
+            )
+        return PreviewRender(source_array, result_array, elhelyezes, teljes_felbontas, arany)
 
     def update_gpu_lut(self, photo_id: str, lut: np.ndarray) -> None:
         """A finetune2-LUT (#22) frissítése ÖNMAGÁBAN, a teljes `register()`
@@ -471,6 +543,7 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
             self._placements.pop(key, None)
             self._gpu_prefix_images.pop(key, None)
             self._gpu_lut_images.pop(key, None)
+            self._sample_prefixes.pop(key, None)
 
     def kepet_elenged(self, photo_id: str) -> None:
         """A fotó RENDERELT képeinek elengedése, a dekódolt forrás marad.
@@ -487,6 +560,7 @@ class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickI
             self._placements.pop(key, None)
             self._gpu_prefix_images.pop(key, None)
             self._gpu_lut_images.pop(key, None)
+            self._sample_prefixes.pop(key, None)
 
     def sample_color(self, photo_id: str, nx: float, ny: float):
         """A MEGJELENÍTETT előnézet színe a (nx, ny) normált ponton (#464).

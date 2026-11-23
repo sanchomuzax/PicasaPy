@@ -86,3 +86,4 @@ class EditControllerEffectsMixin(
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.viewerInfoShortRequested.emit(True)

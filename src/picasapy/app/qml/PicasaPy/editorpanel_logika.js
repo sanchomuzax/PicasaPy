@@ -194,6 +194,8 @@ function applyParamPanel() {
     if (panel.hasEffectController())
         editController.applyEffectWithParams(panel.paramEffectName,
                                               panel.paramEffectValues)
+    if (typeof controller !== "undefined" && controller && typeof controller.setViewerInfoShort === "function")
+        controller.setViewerInfoShort(true)
     panel.closeParamPanel()
 }
 
@@ -203,6 +205,8 @@ function cancelParamPanel() {
     panelTabs.previewTimer.stop()
     if (panel.hasEffectController())
         editController.discardEffectPreview()
+    if (typeof controller !== "undefined" && controller && typeof controller.setViewerInfoShort === "function")
+        controller.setViewerInfoShort(true)
     panel.closeParamPanel()
 }
 
