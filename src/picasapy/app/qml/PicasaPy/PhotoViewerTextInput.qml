@@ -27,7 +27,7 @@ Item {
     readonly property var kep: photoArea.fokuszKep
     readonly property var ctl: photoArea.hostEditCtl
     //: a szerkesztett doboz helye a képre normalizálva (üres: nincs)
-    readonly property var hely: ctl ? ctl.textEditPlacement : ({})
+    readonly property var hely: helyErtek()
     readonly property bool eszkozNyitva: !!panel && panel.textActive
     readonly property bool szerkeszt: eszkozNyitva && hely.x !== undefined
 
@@ -45,8 +45,14 @@ Item {
     width: kep.paintedWidth
     height: kep.paintedHeight
 
+    function helyErtek() {
+        return (typeof editController !== "undefined" && editController)
+            ? editController.textEditPlacement : ({})
+    }
+
     onSzerkesztChanged: {
-        if (ctl) ctl.setTextInlineEditing(szerkeszt)
+        if (typeof editController !== "undefined" && editController)
+            editController.setTextInlineEditing(szerkeszt)
     }
 
     Text {
