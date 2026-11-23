@@ -41,6 +41,8 @@ közvetlenül nem indítunk: nincs `triggered`/`clicked`/`activated` és nincs
 from __future__ import annotations
 
 import pytest
+from PySide6.QtCore import QPointF, Qt
+from PySide6.QtTest import QTest
 from support.szinkron_kepszolgaltato import SzinkronKepSzolgaltato
 
 from conftest import _build_qml_app, _negyzet_kepek
@@ -90,6 +92,31 @@ EFFEKT_CSEMPEK = [
     ("editTabEffects4", 5, "effectNightVision", "nightvision", True),
     ("editTabEffects4", 5, "effectLocalContrast", "localcontrast", True),
 ]
+
+
+def _huzd_vagokeretet(window, qt_app):
+    """Valódi egérhúzással jelöljön ki területet az aktív Rotate/Preview-hoz."""
+    overlay = item(window, "cropOverlay")
+    assert overlay.width() > 0 and overlay.height() > 0
+    start_point = overlay.mapToScene(
+        QPointF(overlay.width() * 0.2, overlay.height() * 0.2)
+    ).toPoint()
+    end_point = overlay.mapToScene(
+        QPointF(overlay.width() * 0.8, overlay.height() * 0.8)
+    ).toPoint()
+    QTest.mouseMove(window, start_point, 5)
+    QTest.mousePress(
+        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, start_point
+    )
+    qt_app.processEvents()
+    QTest.mouseMove(window, end_point, 10)
+    qt_app.processEvents()
+    QTest.mouseRelease(
+        window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, end_point
+    )
+    assert varj(qt_app, lambda: overlay.property("hasSelection") is True), (
+        "a valódi egérhúzás nem hozott létre vágókijelölést"
+    )
 
 
 def test_effektcsempe_provider_python_hivatkozasa_az_enginehez_kotott(
@@ -155,6 +182,7 @@ class TestVago:
         assert varj(qt_app, lambda: panel.property("cropActive") is True), (
             "a vágó eszköz nem aktiválódott"
         )
+        _huzd_vagokeretet(window, qt_app)
         kapott = figyel(panel.cropRotateRequested)
 
         kattint(window, item(window, "cropRotateButton"), qt_app)
@@ -167,6 +195,7 @@ class TestVago:
         window, _c, _viewer, panel = nyitott_panel(qml_app_negyzet_kepek, qt_app)
         kattint(window, item(window, "editToolCrop"), qt_app)
         assert varj(qt_app, lambda: panel.property("cropActive") is True)
+        _huzd_vagokeretet(window, qt_app)
         kapott = figyel(panel.cropPreviewHold)
 
         kattint(window, item(window, "cropPreviewButton"), qt_app)

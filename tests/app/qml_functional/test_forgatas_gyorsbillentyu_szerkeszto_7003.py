@@ -82,6 +82,26 @@ def _kattint(window, elem: QQuickItem, qt_app) -> None:
     qt_app.processEvents()
 
 
+def _huzd_vagokeretet(window, qt_app) -> None:
+    """Valódi egérhúzással hozzon létre kijelölést, hogy a Rotate aktív legyen."""
+    atfedes = _objektum(window, "cropOverlay")
+    assert isinstance(atfedes, QQuickItem)
+    assert atfedes.width() > 0 and atfedes.height() > 0
+    kezdo = atfedes.mapToScene(QPointF(atfedes.width() * 0.2, atfedes.height() * 0.2))
+    veg = atfedes.mapToScene(QPointF(atfedes.width() * 0.8, atfedes.height() * 0.8))
+    start = kezdo.toPoint()
+    end = veg.toPoint()
+    QTest.mouseMove(window, start, 5)
+    QTest.mousePress(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, start)
+    qt_app.processEvents()
+    QTest.mouseMove(window, end, 10)
+    qt_app.processEvents()
+    QTest.mouseRelease(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, end)
+    assert _varj(qt_app, lambda: atfedes.property("hasSelection") is True), (
+        "a vágókeret valódi húzása nem hozott létre kijelölést"
+    )
+
+
 def _keszitsd_elo(window, controller, qt_app) -> None:
     _aktivalj(window, qt_app)
     assert _varj(qt_app, lambda: controller.photos.rowCount() >= 3), (
@@ -244,6 +264,7 @@ class TestSzerkeszto:
         assert _varj(qt_app, lambda: panel.property("cropActive") is True), (
             "a vágó eszköz nem aktiválódott"
         )
+        _huzd_vagokeretet(window, qt_app)
         kert: list[int] = []
         panel.cropRotateRequested.connect(lambda: kert.append(1))
 
