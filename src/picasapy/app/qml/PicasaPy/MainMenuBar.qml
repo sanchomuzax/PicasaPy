@@ -163,6 +163,10 @@ PicasaMenuBar {
     //: szerkesztő-előnézet él. Nálunk a szerkesztőpanel a nézőben
     //: lakik, tehát a nyitott néző a megfelelője.
     editorActive: hostWindow.viewerOpen
+    // #7389: nyitott paraméterpanelnél (Soft Focus, Sharpen, Film Grain stb.)
+    // a Kép menü tételei letiltottak.
+    paramPanelActive: editorActive && !!hostPhotoViewer && !!hostPhotoViewer.editorPanel
+                      && !!hostPhotoViewer.editorPanel.paramPanelActive
     // #922: a kollázs/film a TÁLCA tartalmán is dolgozik (#455) —
     // a menüpontnak ezért tálcával, kijelölés nélkül is élnie kell
     createActionsEnabled: !hostWindow.viewerOpen

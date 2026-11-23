@@ -214,6 +214,10 @@ Item {
                 showTicks: false
                 handleWidth: sav.csuszkaFogantyuSzelesseg
                 handleHeight: sav.csuszkaFogantyuMagassag
+                //: #7393: az érték `(x - 690,5) / 126,5` a MÉRT 253 px-es
+                //: foglalaton (job-913): a fogantyú KÖZEPE járja végig a
+                //: teljes foglalatot, nem csak a 237 px-et.
+                handleCenterOverhang: sav.csuszkaFogantyuSzelesseg / 2
                 from: sav.csuszkaMin
                 to: sav.csuszkaMax
                 onValueChanged: sav.csuszkaMozgott(toolCsuszka.value)

@@ -19,9 +19,10 @@ class EditControllerEffectsFinetuneMixin:
 
     @Property(float, notify=_Signals.tiltParamChanged)
     def tiltParam(self) -> float:
-        """A mentett döntés-paraméter (-1..1 Picasa-egység), vagy 0.0, ha
-        nincs tilt-szűrő a láncban. A döntés-csúszka ezzel áll be az eszköz
-        megnyitásakor és lapozáskor a MENTETT értékre, ne 0-ra (#131)."""
+        """A lánc első `tilt` tagjának paramétere (-1..1 Picasa-egység), vagy
+        0.0, ha nincs tilt-szűrő a láncban: a „van-e kiegyenesítés" jelzés
+        (#448). A döntés-csúszkát NEM ez tölti: a Kiegyenesítés minden
+        megnyitáskor 0-ról indul, az eredeti szerint (#7393)."""
         return self._session.tilt_param() or 0.0
 
 
@@ -83,13 +84,14 @@ class EditControllerEffectsFinetuneMixin:
 
     @Slot(float)
     def setTilt(self, param: float) -> None:
-        """A döntés-paraméter (-1..1 tartomány, Picasa-egység) beállítása.
+        """A döntés-paraméter (-1..1 tartomány, Picasa-egység) mentése: ÚJ
+        `tilt` tag a lánc végére (#7393), a korábbi tagok a láncban maradnak.
 
         Picasa-paritás (#73): a skála-mezőbe 0.000000 kerül — a Picasa 3.x
         is így ír, a kitöltő skálát a megjelenítő számolja renderkor."""
         self._require_active()
         self._push_undo("tilt")
-        self._session = self._session.set_tilt(param, 0.0)
+        self._session = self._session.append_tilt(param, 0.0)
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
@@ -99,9 +101,11 @@ class EditControllerEffectsFinetuneMixin:
     def previewTilt(self, param: float) -> None:
         """Élő forgatás-előnézet a csúszka húzása közben (#72): a képet a
         pillanatnyi paraméterrel újrarenderli, de NEM ír ini-be és NEM tol
-        undo-lépést — a tényleges mentést az Alkalmaz gomb indítja."""
+        undo-lépést - a tényleges mentést az Alkalmaz gomb indítja. Az
+        előnézet az Alkalmaz-éval azonos lánc: a mentett lánc + egy új `tilt`
+        a végén (#7393), tehát a már alkalmazott kiegyenesítés a képen marad."""
         self._require_active()
-        preview_session = self._session.set_tilt(param, 0.0)
+        preview_session = self._session.append_tilt(param, 0.0)
         # #3846: húzás közben a gyors mintavevő (a natív 2560 px-en >10× lassabb);
         # az Alkalmazáskor hívott `setTilt` már a natív úton renderel.
         with gyors_elonezet():
@@ -159,11 +163,13 @@ class EditControllerEffectsFinetuneMixin:
         `previewSource`/`photo` Image-nek a húzás alatt NEM szabad
         újratöltődnie) — csak a `gpuRevisionChanged`-et."""
         self._require_active()
-        if fill != 0.0:
-            # #551: a Derítőfény mért modellje világosság-vezérelt, tehát
-            # nem fejezhető ki csatornánkénti LUT-tal — a GPU-út ilyenkor
-            # más képet adna, mint a mentés. A hívó (QML) ezt már tudja és
-            # nem is kéri, ez a védőkorlát a nem-UI hívók ellen.
+        values = self._visit_values()
+        has_neutral = values is not None and parse_neutral_argb(values.neutral) is not None
+        if fill != 0.0 or has_neutral:
+            # #551, #7400: a Derítőfény mért modellje világosság-vezérelt, a semlegesítő
+            # pipetta pedig 3×3-as CAT mátrix (kereszt-tagokkal), tehát nem fejezhetők
+            # ki csatornánkénti 1D LUT-tal — a GPU-út ilyenkor más képet adna, mint
+            # a mentés. A hívó ilyenkor a CPU-útra esik vissza.
             self.previewFinetune(fill, highlights, shadows, temperature)
             return
         prefix_ops = self._gpu_finetune_prefix()
@@ -172,11 +178,9 @@ class EditControllerEffectsFinetuneMixin:
             # alkalmatlanná vált — néma, biztonságos no-op, a hívó a
             # gpuPrefixSource újraolvasásával úgyis visszavált CPU-ra
             return
-        # #7383: a látogatás rétegének pipetta-színe a LUT-ba is bekerül
-        values = self._visit_values()
         lut = build_finetune2_lut(
             fill=fill, highlights=highlights, shadows=shadows,
-            neutral=parse_neutral_argb(values.neutral) if values is not None else None,
+            neutral=None,
             temperature=temperature,
         )
         self._provider.update_gpu_lut(self._kulcs, lut)
@@ -253,10 +257,13 @@ class EditControllerEffectsFinetuneMixin:
             ramp = np.arange(256, dtype=np.uint8)
             return np.repeat(ramp[:, None], 3, axis=1)
         neutral = parse_neutral_argb(values.neutral)
+        if values.fill != 0.0 or neutral is not None:
+            ramp = np.arange(256, dtype=np.uint8)
+            return np.repeat(ramp[:, None], 3, axis=1)
         return build_finetune2_lut(
             fill=values.fill,
             highlights=values.highlights,
             shadows=values.shadows,
-            neutral=neutral,
+            neutral=None,
             temperature=values.temperature,
         )

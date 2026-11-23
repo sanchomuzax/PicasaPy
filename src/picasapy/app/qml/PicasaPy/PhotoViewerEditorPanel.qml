@@ -100,14 +100,13 @@ EditorPanel {
         // csúszka/kattintás-puffer); a többi azonnali
         // ini-művelet az EditControlleren át
         if (tool === "tilt") {
-            // eszköz-nyitáskor a csúszka a MENTETT
-            // tilt-értékről induljon, ne 0-ról (#131)
-            if (editorPanel.tiltActive) {
-                // #3234: a Mégse ehhez az értékhez tér vissza
-                editorPanel.hostViewer.tiltErtekNyitaskor =
-                    editController.tiltParam
+            // #7393: eszköz-nyitáskor a csúszka MINDIG 0-ról
+            // indul (a #131 a mentett értékről indította): a
+            // kép a már alkalmazott lánc eredménye, az Alkalmaz
+            // új tilt tagot fűz hozzá. A Mégse az előnézetet
+            // veti el, a mentett láncot nem érinti.
+            if (editorPanel.tiltActive)
                 editorPanel.hostViewer.syncTiltSlider()
-            }
         } else if (tool === "crop" || tool === "retouch"
                    || tool === "text" || tool === "redeye") {
             // az enter/exit a Connections{target: editorPanel}

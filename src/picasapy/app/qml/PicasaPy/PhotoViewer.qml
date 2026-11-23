@@ -295,7 +295,6 @@ Rectangle {
         viewerEditWorkflow.cropNyitaskoriKijeloles
     property alias tiltSzinkronFut: viewerEditWorkflow.tiltSzinkronFut
     property alias tiltAlkalmazasFut: viewerEditWorkflow.tiltAlkalmazasFut
-    property alias tiltErtekNyitaskor: viewerEditWorkflow.tiltErtekNyitaskor
 
     function _kijeloltSort() { return viewerEditWorkflow._kijeloltSort() }
     function _masodikSort() { return viewerEditWorkflow._masodikSort() }

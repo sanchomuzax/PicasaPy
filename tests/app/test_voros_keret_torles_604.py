@@ -161,10 +161,11 @@ class TestAFelulet:
         assert 'text: qsTr("Redeye Repair")' in _PANEL
         assert "No red eye was found automatically." not in _PANEL
 
-    def test_a_meglevo_UTAK_megmaradtak(self):
-        """A jegy 3. pontja: „Utolsó régió visszavonása" és „Alaphelyzet"
-        maradjon — az eredetiben is mindkettő megvolt."""
-        assert 'objectName: "redeyeUndoRegionButton"' in _PANEL
+    def test_az_eredeti_gombsor_elonezetet_es_alaphelyzetet_tartalmaz(self):
+        """#7386: a Visszavonás helyére az eredeti Preview kerül; a Reset marad."""
+        assert 'objectName: "redeyePreviewButton"' in _PANEL
+        assert 'label: qsTr("Preview")' in _PANEL
+        assert 'objectName: "redeyeUndoRegionButton"' not in _PANEL
         assert 'objectName: "redeyeResetButton"' in _PANEL
 
     def test_az_AUTO_gomb_csak_ujraalkalmazhato_javitasnal_aktiv(self):

@@ -27,6 +27,8 @@ _MOZGATOTT_FORRASOK = {
     "method:append_finetune": "142cdb1e779379fbe4f2d3eff3d32b439db338df5858d6bb11cb40b8ae46e86a",
     # #7397: a Derítőfény-látogatás új fill rétege (a lánc végére, nem cserél)
     "method:append_fill": "0ae0a7564618e221509c61f902940e39cf10901d86d4db504d102edfcf1309a2",
+    # #7393: a Kiegyenesítés új tilt tagja (a lánc végére, nem cserél)
+    "method:append_tilt": "d8c8b4870debc6cab9d130751c9291612b2f0c7f9bf86641a5ad002d66e8d09c",
     "method:clear_finetune": "13b1283dca764cabd8877eb8d666829bdb0fe7b5cfded236dba21a8271813481",
     # #7369: a Gyakori javítások Derítőfényének `fill` rétege
     "method:clear_fill": "4e01e9b8c26ab4adc953425fdfbfa13d545320ecc29d34c144408eca983ac077",
@@ -39,7 +41,7 @@ _MOZGATOTT_FORRASOK = {
     "method:crop": "5896933ef520bf3f2314a80e6914005c22a077a0aebcdbf96ba0a57c4ecacbc3",
     "method:finetune_values": "070940f2e00adf7bec61c0f1f3d5334906bd1e1bc594e601617dc2e19c25d49c",
     "method:from_value": "be9131bc0ce99160202e7d90fe66631fdfcc2b8b4e4e1bd69e22ccb6f9283f09",
-    "method:gpu_finetune_prefix": "ceac8389f014b55801f5f72619c1db4ebec17d85922098514189fa4d51901cd6",
+    "method:gpu_finetune_prefix": "76ab0d2bfff76e81fefa5b68bfa0adc16a28f0a0757869160f2546c7f2bb9583",
     "method:has": "5f6a6322e625d81478b13f21fe09e34d6cea2e44070d14c77fa0a008cc79e95b",
     "method:has_finetune": "7c3de77a4da8b8b28829b29f151e5a53800ce03c54254193b201da44e7ad2321",
     "method:is_empty": "e46902765464fca5e663bec7a53f2f80f34b882471d6d5f8e48b6cc4b4beaa72",

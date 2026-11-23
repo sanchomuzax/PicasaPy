@@ -482,9 +482,8 @@ Item {
     // the area."). A már felvett régiókat a kontroller adja
     // vissza normált [0..1] alakban, ezért a nagyítástól/
     // illesztéstől függetlenül rajzolhatók. A
-    // `redeyeHideOutlines` a jegy „Preview changes without
-    // square outlines" jelölőnégyzete: csak a RAJZOT tünteti
-    // el, a javítást nem.
+    // `redeyeHideOutlines` a „Preview” nézetkapcsoló állapota: csak a
+    // kijelölőkeretek RAJZÁT tünteti el, a javítást nem.
     //: #3741: a `photo` helyett a `photoArea.fokuszKep` a
     //: szülő — a vörösszem-átfedő a TÉNYLEGESEN szerkesztett
     //: félen jelenik meg.
