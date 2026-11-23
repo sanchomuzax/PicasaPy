@@ -185,10 +185,13 @@ class TestHangolasCsuszka:
 
 
 class TestMeglevoFillSor:
-    def test_a_megnyitaskor_a_csuszka_a_mentett_ertekre_all(
+    def test_a_megnyitaskor_a_csuszka_alaphelyzetben_all_a_kep_korrigalt(
         self, app_fill_sorral, qt_app
     ):
-        window, panel, _edit = _megnyit(app_fill_sorral, qt_app)
-        assert _ertek(_item(window, "fixesFillSlider")) == pytest.approx(0.5, abs=1e-6)
+        """#7383 (J2b): `fill=1,0.5` mellett a kép a láncot mutatja, a csúszka
+        mindkét fülön a bal szélen áll."""
+        window, panel, edit = _megnyit(app_fill_sorral, qt_app)
+        assert "fill=1,0.5" in str(edit.property("chainValue"))
+        assert _ertek(_item(window, "fixesFillSlider")) == pytest.approx(0.0)
         _ful(panel, qt_app, 1)
         assert _ertek(_item(window, "finetuneFillSlider")) == pytest.approx(0.0)

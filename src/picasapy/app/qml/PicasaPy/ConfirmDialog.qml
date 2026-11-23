@@ -23,6 +23,7 @@ Dialog {
     // adja vissza, így a meglévő hívók változatlanok.
     property string namePrefix: "confirm"
     modal: true
+    dim: root.dimBackground
     focus: true
     // window="fit" (confirm.fen) — a tartalomhoz igazodó méret
     anchors.centerIn: parent ? Overlay.overlay : undefined
@@ -58,6 +59,16 @@ Dialog {
     property bool noVisible: true
     property bool rememberVisible: true
     property bool focusNoOnOpen: false
+    // #7379: az eredeti retusálás-megerősítő alatt (job-838 __35/__36) a háttér
+    // képpontra azonos marad, nem halványul el. Az alapérték igaz, tehát a
+    // modális ablak halványítása (a Popup `dim` alapértéke) a többi hívónál
+    // változatlan.
+    property bool dimBackground: true
+    // #7379: az eredeti natív (Win32) megerősítő ablak gombjai (job-838 __36):
+    // fehér, keretes gombok 75 x 21 képponttal, a Yes gomb sem zöld, a fókuszos
+    // gombon pontozott keret. OPT-IN: az alapérték hamis, a többi hívó zöld
+    // Yes-gombja és gombmérete változatlan (ezek eredeti alakja nincs mérve).
+    property bool nativeButtons: false
     // #6287: a Rejtett mappák jelszóajánlatában (job-331) az igen-gomb a
     // fókuszos, Enterre elfogad.
     property bool focusYesOnOpen: false
@@ -159,13 +170,15 @@ Dialog {
 
         RowLayout {
             Layout.alignment: Qt.AlignRight
-            spacing: 8
+            // az eredetin a két gomb között 4 képpont a rés (job-838 __36)
+            spacing: root.nativeButtons ? 4 : 8
 
             PicasaButton {
                 id: yesButton
                 objectName: root.namePrefix + "YesButton"
                 text: root.yesText
-                accent: Theme.picasaGreen
+                accent: root.nativeButtons ? "transparent" : Theme.picasaGreen
+                nativeLook: root.nativeButtons
                 enabled: root.yesEnabled
                 Keys.onReturnPressed: root.accept()
                 Keys.onEnterPressed: root.accept()
@@ -175,6 +188,7 @@ Dialog {
                 id: noButton
                 objectName: root.namePrefix + "NoButton"
                 text: root.noText
+                nativeLook: root.nativeButtons
                 visible: root.noVisible
                 Keys.onReturnPressed: root._deny()
                 Keys.onEnterPressed: root._deny()
@@ -184,6 +198,7 @@ Dialog {
                 id: cancelButton
                 objectName: root.namePrefix + "CancelButton"
                 text: qsTr("Cancel")
+                nativeLook: root.nativeButtons
                 visible: root.cancelVisible
                 focus: root.focusCancelOnOpen
                 Keys.priority: Keys.BeforeItem

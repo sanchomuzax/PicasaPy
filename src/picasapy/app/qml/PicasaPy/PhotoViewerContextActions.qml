@@ -247,8 +247,30 @@ Item {
             ConfirmDialog {
                 objectName: "undoDataLossDialog"
                 namePrefix: "undoDataLoss"
-                title: qsTr("Undo")
-                function askFor(key, text) { ask("undo-" + key, text) }
+                // #7379: a retusálás visszavonásának megerősítője az eredeti natív
+                // „Confirm" ablak alakját ölti (job-838 __36): „Confirm" cím, Picasa-
+                // logó, „Undo" / „No" fehér gombok, a fókusz a „No"-n, nincs Cancel és
+                // „Do not ask again", és a háttér nem halványul. A Vörösszem ága a régi
+                // alakot tartja: az eredeti Vörösszem-megerősítő alakja nincs mérve
+                // (7327-10). A tulajdonságok kötések, így nem ragad át állapot egyik
+                // nyitásról a másikra.
+                property bool retouchLook: false
+                title: retouchLook ? qsTr("Confirm") : qsTr("Undo")
+                iconType: retouchLook ? "picasa" : "none"
+                yesText: retouchLook ? qsTr("Undo") : qsTr("Yes")
+                noText: qsTr("No")
+                cancelVisible: !retouchLook
+                rememberVisible: !retouchLook
+                focusNoOnOpen: retouchLook
+                dimBackground: !retouchLook
+                nativeButtons: retouchLook
+                function askFor(key, text) {
+                    retouchLook = key === "retouch"
+                    // a retusálás megerősítőjén nincs „Do not ask again", ezért kulcs nélkül
+                    // (üres decisionKey) nyílik: egy korábbi verzióban elmentett
+                    // `undo-retouch` elnyomás ne némíthassa el.
+                    ask(retouchLook ? "" : "undo-" + key, text)
+                }
                 onConfirmed: editController.undo()
             }
         }

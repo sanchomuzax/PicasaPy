@@ -240,8 +240,13 @@ frissítendő): `tests/app/qml_functional/test_vagas_halmozas_1553.py`.
 
 ## 5. Amit az eredetiből átvettünk, és megvan
 
-- **Kiegyenesítés-figyelmeztetés** (`IDS_WARN_CROP_ACCURACY`) — szó szerinti
-  szöveggel, `cropStraightenWarning`, csak aktív kiegyenesítésnél.
+- **Kiegyenesítés-figyelmeztetés** (`IDS_WARN_CROP_ACCURACY`) - a szó szerinti
+  szöveg és az elem (`cropStraightenWarning`) megvan, de a panel MEGNYITÁSAKOR
+  nem látszik: a `job-912 __16` felvételen mentett kiegyenesítésű képen a
+  Vágás csempe után a panelen nincs figyelmeztető sor, és nincs külön ablak
+  (#7392). Hogy az eredeti a megnyitás UTÁN (húzáskor, Alkalmazáskor) kiírja-e,
+  azt a 7327-9c kérdése dönti el: addig NYITOTT KÉRDÉS, új megjelenítési
+  pont nincs.
 - **Gombkészlet:** Forgatás · Előnézet (nyomva tartva) · Alaphelyzet
   (egyedül, középen — #741) · Alkalmaz · Mégse.
 - **Súgószöveg** a panel tetején.

@@ -63,7 +63,10 @@ class EditControllerEffectsFinetuneMixin:
         `referencia/finomhangolas/shot1.png` képernyőképet) — ez a
         tulajdonság tölti azt.
         """
-        values = self._session.finetune_values()
+        # #7383: a minta a Hangolás-látogatás rétegének színét mutatja; látogatás
+        # nélkül (belépés, Undo/Redo, képváltás) alaphelyzetben áll, mint a
+        # csúszkák - az eredetiben a betöltött `ffccc6b2` mellett is fekete (J6c).
+        values = self._visit_values()
         if values is None:
             return ""
         neutral = parse_neutral_argb(values.neutral)
@@ -128,8 +131,9 @@ class EditControllerEffectsFinetuneMixin:
         undo-lépést — a mentés az elengedéskor hívott setFinetune-nal történik
         (a previewTilt mintájára)."""
         self._require_active()
-        preview_session = self._session.set_finetune(
-            fill=fill, highlights=highlights, shadows=shadows, temperature=temperature
+        preview_session = self._finetune_visit_session(
+            self._session,
+            fill=fill, highlights=highlights, shadows=shadows, temperature=temperature,
         )
         self._register_preview(preview_session)
         self._bump_revision()
@@ -162,14 +166,18 @@ class EditControllerEffectsFinetuneMixin:
             # nem is kéri, ez a védőkorlát a nem-UI hívók ellen.
             self.previewFinetune(fill, highlights, shadows, temperature)
             return
-        prefix_ops = self._session.gpu_finetune_prefix()
+        prefix_ops = self._gpu_finetune_prefix()
         if prefix_ops is None:
             # a lánc időközben (pl. párhuzamos ini-módosítás) GPU-
             # alkalmatlanná vált — néma, biztonságos no-op, a hívó a
             # gpuPrefixSource újraolvasásával úgyis visszavált CPU-ra
             return
+        # #7383: a látogatás rétegének pipetta-színe a LUT-ba is bekerül
+        values = self._visit_values()
         lut = build_finetune2_lut(
-            fill=fill, highlights=highlights, shadows=shadows, temperature=temperature
+            fill=fill, highlights=highlights, shadows=shadows,
+            neutral=parse_neutral_argb(values.neutral) if values is not None else None,
+            temperature=temperature,
         )
         self._provider.update_gpu_lut(self._kulcs, lut)
         self._bump_gpu_revision()
@@ -179,25 +187,21 @@ class EditControllerEffectsFinetuneMixin:
     def setFinetune(
         self, fill: float, highlights: float, shadows: float, temperature: float
     ) -> None:
-        """A finomhangolás négy csúszkájának mentése egy finetune2 rétegbe.
+        """A finomhangolás négy csúszkájának mentése a Hangolás-látogatás
+        `finetune2` rétegébe (#7383).
 
-        A csúszka elengedésekor hívódik: undo-lépést tol és ini-be ír. Ha
-        mind a négy érték semleges (0), a réteget eltávolítja — így a
-        visszahúzott csúszkák nem hagynak fölösleges no-op finetune2-t."""
+        A csúszka elengedésekor hívódik. A látogatás első mentése új réteget
+        fűz a lánc végére és egy visszavonási lépést tol; a további mentések
+        ugyanazt a réteget írják, lépés nélkül. Ha mind a négy érték semleges
+        (0) és nincs pipetta-szín, a réteg nem kell: a lánc a látogatás előtti
+        állapotra áll vissza."""
         self._require_active()
-        self._push_undo("finetune")
-        if fill == 0.0 and highlights == 0.0 and shadows == 0.0 and temperature == 0.0:
-            self._session = self._session.clear_finetune()
-        else:
-            self._session = self._session.set_finetune(
-                fill=fill,
-                highlights=highlights,
-                shadows=shadows,
-                temperature=temperature,
-            )
-        self._save()
-        self._bump_revision()
-        self.toolsChanged.emit()
+        if self._commit_finetune_layer(
+            fill=fill, highlights=highlights, shadows=shadows, temperature=temperature
+        ):
+            self._save()
+            self._bump_revision()
+            self.toolsChanged.emit()
 
 
     @Slot(float)
@@ -233,7 +237,8 @@ class EditControllerEffectsFinetuneMixin:
 
     def _finetune_field(self, field: str) -> float:
         """A mentett finetune2 adott csúszka-értéke, vagy 0.0, ha nincs
-        finomhangolás — a QML-csúszkák így a mentett értékre állnak (#20)."""
+        finomhangolás. A csúszkák #7383 óta NEM ebből töltődnek: a Hangolás
+        fül mindig alaphelyzetben indul, a kép viszont a láncot mutatja."""
         values = self._session.finetune_values()
         return getattr(values, field) if values is not None else 0.0
 

@@ -69,13 +69,19 @@ ColumnLayout {
         color: Theme.textGray
     }
 
-    // #448: a Kiegyenesítés-figyelmeztetés — az eredeti Picasa szó
-    // szerinti szövege (a jegy idézi), csak akkor jelenik meg, ha a
-    // képen MÁR van aktív kiegyenesítés (`straightenActive`, a hívó
-    // tölti az editController.tiltParam-ből).
+    // #448: a Kiegyenesítés-figyelmeztetés - az eredeti Picasa szó
+    // szerinti szövege (a jegy idézi).
+    // #7392: a panel MEGNYITÁSAKOR nem jelenik meg, kiegyenesített képen
+    // sem: a `job-912 __16` felvételen a Vágás csempe után a panelen nincs
+    // figyelmeztető sor, és nincs külön ablak sem. A sor rejtve marad (a
+    // `ColumnLayout` a rejtett elemnek nem ad helyet), a szöveg viszont a
+    // forrásban és a fordításokban megmarad: hogy az eredeti a
+    // figyelmeztetést a megnyitás UTÁN (húzáskor, Alkalmazáskor) kiírja-e,
+    // a 7327-9c kérdése. A `straightenActive` állapotot a Vörösszem panel is
+    // használja, ahhoz itt nem nyúlunk.
     Text {
         objectName: "cropStraightenWarning"
-        visible: panel.straightenActive
+        visible: false
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
         //: #3574: a hivatalos szöveg (`IDS_WARN_CROP_ACCURACY`)

@@ -556,7 +556,9 @@ def test_a_fotonezo_kulon_szerkesztopanelje_elerheto_vezerlo_aliasokat_ad(
     valodi: or_.Elemzes,
 ) -> None:
     """A komponens a gazdától kapott editCtl property-n át hívja a vezérlőt."""
-    assert valodi.elo("editController", "fillLight")
+    # #7383: a `fillLight` többé nem kötés (a csúszkák alaphelyzetből indulnak),
+    # ezért a `redoLabel` a másik, a gazda-alias útján olvasott élő tag.
+    assert valodi.elo("editController", "redoLabel")
     assert valodi.elo("editController", "undoLabel")
 
 

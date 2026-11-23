@@ -32,6 +32,16 @@ Button {
     // A felirat színe, ha a témától eltér (pl. a Mozgófilm X jele piros).
     property color labelColor: "transparent"
 
+    // #7379: az eredeti NATÍV (Win32) megerősítő ablakainak gombja (job-838 `__36`
+    // Retusálás-visszavonás megerősítője): fehér kitöltés, 1 képpontos szürke
+    // keret, 75 x 21 képpont külső méret (73 x 19 belül); a fókuszos gombon
+    // kék keret és a külső széltől 3 képponttal beljebb 1 képpontos pontozott
+    // keret. OPT-IN: az alapérték hamis, a program minden más gombja változatlan.
+    // MÉRVE csak ez az egy angol nyelvű ablak: a lokalizált (hosszabb) felirat
+    // szélessége, a sarokív és a lenyomott állapot nincs mérve, ezért a gomb
+    // a szélességben a felirathoz nőhet, a többi a megszokott gombé marad.
+    property bool nativeLook: false
+
     // A felirat legkisebb betűmérete, ha tördelve sem fér el. A padló
     // RELATÍV: a betűméret platformfüggő (ugyanaz a szöveg Linuxon és
     // Windowson más széles), beégetett képpontszámhoz kötni hamis
@@ -62,8 +72,10 @@ Button {
     // …a gomb IMPLICIT mérete viszont marad a régi, bőkezűbb kitöltésé:
     // a tartalmukhoz igazodó gombok (amikre nincs `width`/`height` írva)
     // így nem zsugorodnak össze az egész alkalmazásban.
-    implicitWidth: control.implicitContentWidth + 20
-    implicitHeight: control.implicitContentHeight + 12
+    implicitWidth: control.nativeLook
+        ? Math.max(75, control.implicitContentWidth + 20)
+        : control.implicitContentWidth + 20
+    implicitHeight: control.nativeLook ? 21 : control.implicitContentHeight + 12
 
     readonly property bool accented: control.accent !== Qt.color("transparent")
 
@@ -92,13 +104,17 @@ Button {
     // #6381: a feladat minden gombnál látható lenyomott képet kér. Ezért
     // az akcentusos gomb is sötétedik, bár az eredeti Picasa zöld képe
     // nem változott lenyomáskor.
-    readonly property color surfaceTop: control.accented
+    readonly property color surfaceTop: control.nativeLook && !control.visiblyDown
+        ? Theme.contentPanel
+        : control.accented
         ? (control.visiblyDown
             ? Qt.darker(Qt.lighter(control.accent, 1.25), 1.2)
             : Qt.lighter(control.accent, 1.25))
         : (control.visiblyDown ? Theme.buttonTopDown
             : (control.greyCheckedLook ? Theme.buttonCheckedTop : Theme.buttonTopNormal))
-    readonly property color surfaceBottom: control.accented
+    readonly property color surfaceBottom: control.nativeLook && !control.visiblyDown
+        ? Theme.contentPanel
+        : control.accented
         ? (control.visiblyDown ? Qt.darker(control.accent, 1.2) : control.accent)
         : (control.visiblyDown ? Theme.buttonBottomDown
             : (control.greyCheckedLook ? Theme.buttonCheckedBottom : Theme.buttonBottomNormal))
@@ -106,8 +122,10 @@ Button {
     //: a rámutatás-árnyék akkor látszik, ha a mutató a gombon van, a gomb
     //: nincs lenyomva, és nem az akcentusos (zöld) változat
     readonly property bool showingHoverShade:
-        control.hovered && !control.visiblyDown && !control.accented
-    readonly property color nyugalmiKeret: control.accented
+        control.hovered && !control.visiblyDown && !control.accented && !control.nativeLook
+    readonly property color nyugalmiKeret: control.nativeLook
+        ? (control.activeFocus ? Theme.thumbSelection : Theme.buttonBorder)
+        : control.accented
         ? Qt.darker(control.accent, 1.3)
         : (control.checked && !control.greyChecked
             ? Theme.buttonToggledBorder : Theme.buttonBorder)
@@ -238,6 +256,10 @@ Button {
     // eredeti; így sötét témán is helyes marad (a #336 tanulsága).
     readonly property color inkColor: control.labelColor !== Qt.color("transparent")
         ? control.labelColor
+        : control.nativeLook
+        // #7379: a natív ablak gombfelirata teli tinta (az eredetin fekete), nem a
+        // 80%-os alfás in-app felirat
+        ? Theme.ink
         : control.accented
             ? "white"
             : Qt.rgba(Theme.ink.r, Theme.ink.g, Theme.ink.b, 0.8)
@@ -307,6 +329,52 @@ Button {
             gradient: Gradient {
                 GradientStop { position: 0.0; color: Theme.buttonCheckedShadeTop }
                 GradientStop { position: 1.0; color: Qt.alpha(Theme.buttonCheckedShadeTop, 0) }
+            }
+        }
+    }
+
+    // #7379: a natív gomb pontozott fókuszkerete (job-838 `__36`, a „No" gomb): 1
+    // képpontos, minden második képpont festett, a külső széltől 3 képponttal
+    // beljebb (a 75 x 21-es gombon x 3..71, y 3..17). Csak a fókuszos natív
+    // gombon áll; a pontokat egyenként rajzoljuk, mert a Qt Quick Shapes a
+    // szoftveres megjelenítőn nem érhető el, a pont-téglalap mindenhol működik.
+    Item {
+        id: fokuszKeret
+        objectName: "picasaButtonNativeFocusFrame"
+        visible: control.nativeLook && control.activeFocus
+        z: 1
+        x: 3
+        y: 3
+        width: Math.max(0, control.width - 6)
+        height: Math.max(0, control.height - 6)
+
+        Repeater {
+            model: fokuszKeret.visible ? Math.ceil(fokuszKeret.width / 2) : 0
+            delegate: Item {
+                required property int index
+                Rectangle {
+                    x: parent.index * 2; y: 0; width: 1; height: 1
+                    color: Theme.ink
+                }
+                Rectangle {
+                    x: parent.index * 2; y: fokuszKeret.height - 1; width: 1; height: 1
+                    color: Theme.ink
+                }
+            }
+        }
+        Repeater {
+            // a sarkokat a vízszintes sorok már festik
+            model: fokuszKeret.visible ? Math.max(0, Math.ceil(fokuszKeret.height / 2) - 2) : 0
+            delegate: Item {
+                required property int index
+                Rectangle {
+                    x: 0; y: (parent.index + 1) * 2; width: 1; height: 1
+                    color: Theme.ink
+                }
+                Rectangle {
+                    x: fokuszKeret.width - 1; y: (parent.index + 1) * 2; width: 1; height: 1
+                    color: Theme.ink
+                }
             }
         }
     }

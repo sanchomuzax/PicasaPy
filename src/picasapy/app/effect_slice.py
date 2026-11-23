@@ -430,8 +430,9 @@ class EffectSliceController(QObject):
         if self._active_effect != "finetune2":
             return self._edit._session_with_effect(self._active_effect, self._active_values)
         values = [self._float_value(index) for index in range(4)]
-        return self._edit._session.set_finetune(
-            fill=values[0], highlights=values[1], shadows=values[2], temperature=values[3]
+        return self._edit._finetune_visit_session(
+            self._edit._session,
+            fill=values[0], highlights=values[1], shadows=values[2], temperature=values[3],
         )
 
     def _float_value(self, index: int) -> float:

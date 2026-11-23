@@ -13,6 +13,13 @@ from .edit_controller_shared import (
 
 from .edit_controller_signals import EditControllerSignalsMixin as _Signals
 
+#: #7391: azok a műveletek, amelyek megerősített visszavonása nem kerül az Újra-
+#: verembe (az eredetin az Undo után az Újra tiltott, csupasz „Redo"). Csak a
+#: retusálás: a Vörösszem eredeti viselkedése nincs mérve (7327-10), ezért az
+#: a megszokott módon az Újra-verembe kerül.
+_REDO_NELKULI_MUVELETEK = frozenset({"retouch"})
+
+
 class EditControllerHistoryMixin:
     """A szerkesztő globális Visszavonás/Újra verem és feliratai."""
 
@@ -58,16 +65,28 @@ class EditControllerHistoryMixin:
 
     @Slot()
     def undo(self) -> None:
-        """Az utolsó művelet visszavonása (a művelet ELŐTTI lánc áll vissza)."""
+        """Az utolsó művelet visszavonása (a művelet ELŐTTI lánc áll vissza).
+
+        #7391: a retusálás megerősített visszavonása után az Újra tiltott és a
+        felirata csupasz (job-907 `__24`): a visszavont retusálás nem kerül az
+        Újra-verembe, és a verem ki is ürül, különben egy korábban visszavont
+        későbbi lépés (a Crop utáni állapot, benne a retusálással) Újrája a
+        retusálást is visszahozná, holott az üzenet szerint nem hozható vissza.
+        Mérve csak az üres Újra-veremmel indított eset; a nem üres veremé a
+        „nem hozható vissza" üzenetből következő döntés."""
         if not self._undo_stack:
             return
         self._require_active()
         previous_value, action = self._undo_stack.pop()
-        self._redo_stack.append((self._session.to_value(), action))
+        if action in _REDO_NELKULI_MUVELETEK:
+            self._redo_stack.clear()
+        else:
+            self._redo_stack.append((self._session.to_value(), action))
         self._session = EditSession.from_value(previous_value)
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+        self._end_finetune_visit()
 
 
     @Slot()
@@ -82,6 +101,7 @@ class EditControllerHistoryMixin:
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+        self._end_finetune_visit()
 
 
     @staticmethod
@@ -98,6 +118,8 @@ class EditControllerHistoryMixin:
 
 
     def _push_undo(self, action: str) -> None:
+        if self._finetune_visit_open():
+            self._end_finetune_visit()   # #7383: a másik lépés lezárja a látogatást
         self._undo_stack.append((self._session.to_value(), action))
         self._redo_stack.clear()
 
