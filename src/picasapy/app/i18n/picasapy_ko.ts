@@ -4427,6 +4427,20 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <translation>다시 실행</translation>
         </message>
         <message>
+            <location filename="../edit_action_names.py" />
+            <source>Undo %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::undoname</extracomment>
+            <translation>실행취소 %1</translation>
+        </message>
+        <message>
+            <location filename="../edit_action_names.py" />
+            <source>Redo %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::redoname</extracomment>
+            <translation>다시실행 %1</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
             <source>Manual</source>
             <extracomment>picasapy-origin: picasa

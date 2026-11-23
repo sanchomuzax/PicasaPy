@@ -4433,6 +4433,20 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <translation>Uveljavi</translation>
         </message>
         <message>
+            <location filename="../edit_action_names.py" />
+            <source>Undo %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::undoname</extracomment>
+            <translation>Razveljavi %1</translation>
+        </message>
+        <message>
+            <location filename="../edit_action_names.py" />
+            <source>Redo %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::redoname</extracomment>
+            <translation>Uveljavi %1</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
             <source>Manual</source>
             <extracomment>picasapy-origin: picasa

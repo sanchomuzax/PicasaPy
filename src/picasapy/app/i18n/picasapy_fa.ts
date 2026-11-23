@@ -4427,6 +4427,18 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <translation>ازنو</translation>
         </message>
         <message>
+            <location filename="../edit_action_names.py" />
+            <source>Undo %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>واگرد: %1</translation>
+        </message>
+        <message>
+            <location filename="../edit_action_names.py" />
+            <source>Redo %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ازنو: %1</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
             <source>Manual</source>
             <extracomment>picasapy-origin: picasa

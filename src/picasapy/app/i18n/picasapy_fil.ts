@@ -4427,6 +4427,20 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <translation>I-redo</translation>
         </message>
         <message>
+            <location filename="../edit_action_names.py" />
+            <source>Undo %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::undoname</extracomment>
+            <translation>Undo %1</translation>
+        </message>
+        <message>
+            <location filename="../edit_action_names.py" />
+            <source>Redo %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::redoname</extracomment>
+            <translation>Gawing Muli %1</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
             <source>Manual</source>
             <extracomment>picasapy-origin: picasa
