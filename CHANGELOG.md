@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Kutatás: az eredeti Picasa Beállítások OK ága csak a javaslatküszöb (`FRSuggestionThreshold`, `FRSuggestionSingleThreshold`) változásakor egyezteti a személyalbumok címketagságát, ütemez háttérmunkát és állítja a panel frissítési jelzőjét; a #7325 "minden OK-n" állítása pontosítva, fejlesztői jegytörzzsel, a fejlesztés a #7373 jegyen (#7331).
+
 ## [1.0.177] - 2026-11-23
 
 - Kutatás: a harmadik javított felvételkör (job-917..925) kimérte az eredeti Retusálás-ecset leképezését (a csúszka lineáris, a kör sugara 100 × csúszkaállás × nagyítás képpont, a kép méretétől független, induláskor 25 forrásképpont a középen álló csúszka mellett), megmutatta, hogy a Mentés utáni „Undo Save” a Mentés előtti állapotot állítja vissza, hogy a Clear All utáni Cancel visszahozza a szöveget, hogy a Kiegyenesítés csúszkája ±1-ig lineáris és minden Apply külön visszavonási lépés, és hogy a Vágás kiegyenesített képen sehol nem figyelmeztet; a véglegesített ecsetméret-jegytörzs és három új fejlesztői jegytörzs a lapon, öt javított lépéssor a megmaradt hiányokhoz (#7327).
@@ -62,7 +65,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [1.0.171] - 2026-11-23
 
 - Kutatás: az újravágás szabályának helyesbítése: az eredeti Picasa a lánc végén álló vágást helyben frissíti (két egymás utáni vágást egy visszavonás vesz vissza), más művelet után viszont új vágást fűz hozzá; a látható visszavonás és újra állapot felvétele még hátra van (#7327).
-- Kutatás: az eredeti Picasa Beállítások OK ága csak a javaslatküszöb (`FRSuggestionThreshold`, `FRSuggestionSingleThreshold`) változásakor egyezteti a személyalbumok címketagságát, ütemez háttérmunkát és állítja a panel frissítési jelzőjét; a #7325 "minden OK-n" állítása pontosítva, fejlesztői jegytörzzsel, a fejlesztés a #7373 jegyen (#7331).
 - Kutatás: a szerkesztő Hangolás fülének teljes folyamata az eredetivel összevetve: a Gyakori javítások Derítőfény-csúszkája az eredetiben külön réteget ír, a pipetta fülváltáskor kikapcsol, az Alkalmaz és a Mégse nincs a fülön (#7345).
 - Kutatás: az eredeti Picasa Csoportos szerkesztés parancsai szerkesztőben nyitott képnél a csempekattintással egyenértékű hatást adnak (nem csak fület váltanak), a Ctrl+Shift+B is a megnyitott képre hat, az effekt-paraméterpanelen pedig nincs Alaphelyzet gomb. Az írásvédett-kapu az eredetiben nem írásvédettséget vizsgál: csak az iPhoto- vagy Apple Photos-könyvtár alatti mappa képein kérdez a szerkesztés előtt ("Make a Copy" / "Cancel Edit"), sima írásvédett mappánál nem (#7346).
 - A szerkesztőben az újravágás most az eredeti Picasa módján működik: ha a szerkesztési lánc végén már vágás áll, az Alkalmaz azt írja át a hozzáfűzés helyett, így a lánc nem nő feleslegesen, és két egymás utáni vágást egyetlen Visszavonás vesz vissza (az Újra a második vágást hozza vissza); ha más művelet áll a végén, az új vágás a lánc végére kerül. Üres kijelöléssel az Alkalmaz kiveszi a lánc végén álló vágást, és ez visszavonható (#7367).
