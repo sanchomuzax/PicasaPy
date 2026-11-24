@@ -87,7 +87,8 @@ class SaveFeedbackMixin:
 
     @Slot(int, int)
     def _on_undo_save_finished(self, done: int, failed: int) -> None:
-        """Az Undo Save lezárása után mindkét szerkesztőverem tiltott (#7408)."""
+        """Az Undo Save lezárása után az Undo-verem a visszaállított láncból
+        épül újra, a Redo-verem üres (#7408, #7416)."""
         self._on_disk_operation_finished(done, failed)
         successful_paths = getattr(self, "_disk_operation_success_paths", set())
         for editor in getattr(self, "_edit_controllers", ()):
