@@ -201,12 +201,15 @@ class TestEditorRetouch(EditorTestHelpers):
         assert panel.property("retouchPatchPending") is True
 
         scroll = window.findChild(QObject, "editorModeToolScroll")
-        content_h = scroll.property("contentHeight")
-        assert content_h + 20 < scroll.height(), (
-            "a próba a tartalom alatti üres sávot méri; ilyen sáv nincs"
+        cancel_button = window.findChild(QObject, "retouchCancelButton")
+        buttons_bottom = cancel_button.mapToItem(
+            scroll, QPointF(0, cancel_button.height())
+        ).y()
+        assert buttons_bottom + 20 < scroll.height(), (
+            "a próba a gombsor alatti üres sávot méri; ilyen sáv nincs"
         )
         below = scroll.mapToScene(
-            QPointF(scroll.width() / 2, (content_h + scroll.height()) / 2)
+            QPointF(scroll.width() / 2, (buttons_bottom + scroll.height()) / 2)
         )
         QTest.mouseClick(
             window,
