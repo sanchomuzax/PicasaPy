@@ -52,6 +52,42 @@ Flickable {
     boundsBehavior: Flickable.StopAtBounds
     ScrollBar.vertical: PicasaScrollBar {}
 
+    // A Retusálás panel vezérlőre nem eső területének kattintása eldobja a
+    // félbehagyott foltot. A MouseArea a vezérlők mögött van, így a gombok és
+    // a csúszka saját kattintásai változatlanul működnek. A magassága a
+    // látható terület egésze: a gombsor alatti üres sáv is ide tartozik,
+    // nem csak a panel tartalommagassága.
+    MouseArea {
+        id: retouchPendingCancelArea
+        width: modeToolScroll.width
+        height: Math.max(modeToolScroll.contentHeight, modeToolScroll.height)
+        z: -1
+        enabled: modeToolScroll.panel.retouchActive
+            && modeToolScroll.panel.retouchPatchPending
+        acceptedButtons: Qt.LeftButton
+
+        function hitsRetouchControl(item, point) {
+            const child = item.childAt(point.x, point.y)
+            if (!child)
+                return false
+            if (["retouchBrushSizeSlider", "retouchResetButton",
+                 "retouchUndoPatchButton", "retouchRedoPatchButton",
+                 "retouchApplyButton", "retouchCancelButton"]
+                    .indexOf(child.objectName) !== -1)
+                return true
+            return hitsRetouchControl(
+                child, child.mapFromItem(item, point.x, point.y))
+        }
+
+        onClicked: function(mouse) {
+            const point = retouchModePanel.mapFromItem(
+                retouchPendingCancelArea, mouse.x, mouse.y)
+            if (hitsRetouchControl(retouchModePanel, point))
+                return
+            modeToolScroll.panel.retouchCancelRequested()
+        }
+    }
+
     // ---- "crop" mód: Fotó vágása ----
     EditorCropPanel {
         id: cropModePanel
