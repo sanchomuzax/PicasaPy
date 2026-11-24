@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import zlib
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from PySide6.QtCore import QCoreApplication, QModelIndex
 
@@ -174,20 +174,47 @@ def _with_year_separators(
     return tuple(rows)
 
 
+_EPOCH_UTC = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def _changed_at(change_ns: int) -> datetime | None:
+    """A módosítási idő helyi naptári ideje, Windowson is (#7430).
+
+    Windowson a `datetime.fromtimestamp` 1970 előtti értékre `OSError`-t
+    (vagy `OverflowError`-t) dob, Linuxon ez működik. Ilyenkor az epochhoz
+    mért számtan adja a naptári időt UTC-ben: a helyi időzóna-eltolás itt
+    nem váltható át, a hónaphatáron legfeljebb egy fejléc kerül máshová,
+    de a lista nem dől el. Ha az érték így sem ábrázolható, `None`.
+    """
+    seconds = change_ns / 1_000_000_000
+    try:
+        return datetime.fromtimestamp(seconds)
+    except (OSError, OverflowError, ValueError):
+        pass
+    try:
+        return (_EPOCH_UTC + timedelta(seconds=seconds)).replace(tzinfo=None)
+    except (OverflowError, ValueError):
+        return None
+
+
 def _with_month_separators(
     folders,
 ) -> tuple[tuple[str, str, str, int, bool, bool], ...]:
     """Havi fejlécek a fájlok legutóbbi módosítási idejéből.
 
     A csoportkulcs az év és a hónap. Az első sor elé nem kerül fejléc, és
-    az 1900-as vagy korábbi módosítási év kimarad.
+    az 1900-as vagy korábbi módosítási év kimarad. Az át nem váltható
+    módosítási idejű sor fejléc nélkül, de megmarad a listában.
     """
     rows = []
     last_month = None
     updated = QCoreApplication.translate("FolderListModel", "Updated")
     # A Windows DATE_YEARMONTH-regionális alakját tudatosan nem követjük.
     for name, path, count, _date, change_ns, offline, unread in folders:
-        changed_at = datetime.fromtimestamp(change_ns / 1_000_000_000)
+        changed_at = _changed_at(change_ns)
+        if changed_at is None:
+            rows.append(("folder", name, path, count, offline, unread))
+            continue
         month_key = (changed_at.year, changed_at.month)
         if rows and month_key != last_month and changed_at.year > 1900:
             month_name = QCoreApplication.translate(

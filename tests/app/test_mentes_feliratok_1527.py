@@ -81,6 +81,8 @@ HIVATALOS: dict[tuple[str, str], str] = {
     ("PicasaFileMenu", "Save a Cop&y"): "&Másolat mentése",
     # eMenuFile::ID_FILE_EXIT
     ("PicasaFileMenu", "E&xit"): "&Kilépés",
+    # ytApp::ErrorTitle: a mentési hibaablak címe (#7443)
+    ("SaveDialogs", "Error"): "Hiba",
 }
 
 
@@ -139,3 +141,37 @@ def test_az_egyes_es_a_tobbes_szam_KET_kulon_bejegyzes():
     tobbes = forditasok.get(("SaveDialogs", "A backup of these files will be made."))
     assert egyes and tobbes, "az egyik alak hiányzik a .ts-ből"
     assert egyes != tobbes, "a két alak azonos — összevonták őket"
+
+
+def _mind_a_nyelvi_fajl() -> list[Path]:
+    return sorted(_TS_PATH.parent.glob("picasapy_*.ts"))
+
+
+@pytest.mark.parametrize("ts_utvonal", _mind_a_nyelvi_fajl(), ids=lambda p: p.stem)
+def test_a_hibaablak_cime_minden_nyelven_a_hivatalos_error_title(ts_utvonal):
+    """#7443: a `SaveDialogs` „Error" bejegyzése MINDEN nyelvi fájlban
+    ugyanaz a hivatalos fordítás, mint az `ExportDialogs` ugyanazon
+    forrásszövegéé (`ytApp::ErrorTitle`), és nincs befejezetlen."""
+    gyokér = ET.parse(ts_utvonal).getroot()
+    talalt: dict[str, ET.Element] = {}
+    for context in gyokér.findall("context"):
+        nev = (context.findtext("name") or "").strip()
+        if nev not in ("SaveDialogs", "ExportDialogs"):
+            continue
+        for message in context.findall("message"):
+            if message.findtext("source") == "Error":
+                talalt[nev] = message
+    assert "SaveDialogs" in talalt, f"{ts_utvonal.name}: a SaveDialogs „Error” hiányzik"
+    assert "ExportDialogs" in talalt, f"{ts_utvonal.name}: a hivatalos forrás hiányzik"
+    mentes, hivatalos = talalt["SaveDialogs"], talalt["ExportDialogs"]
+    fordit = mentes.find("translation")
+    assert fordit is not None and (fordit.text or "").strip(), (
+        f"{ts_utvonal.name}: üres a fordítás"
+    )
+    assert fordit.get("type") != "unfinished", f"{ts_utvonal.name}: befejezetlen"
+    assert fordit.text == hivatalos.findtext("translation"), (
+        f"{ts_utvonal.name}: nem a hivatalos `ytApp::ErrorTitle` fordítás"
+    )
+    assert "stringres:ytApp::ErrorTitle" in (mentes.findtext("extracomment") or ""), (
+        f"{ts_utvonal.name}: hiányzik a picasapy-origin-key jelölés"
+    )
