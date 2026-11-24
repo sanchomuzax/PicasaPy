@@ -56,6 +56,9 @@ class AppControllerSyncMixin:
         darabszámot mutatott, miközben a rács már helyesen frissült.
         A szöveget a `_show` közben kimenő `statusChanged` viszi ki, ezért
         a beállítás sorrendben ELŐTTE áll."""
+        # #7414: a zöld sáv darabszáma is a látható (típus szerint szűrt) halmazt
+        # számolja, nem az indexben megmaradt kikapcsolt típusú sorokat.
+        records = self._without_disabled_filetypes(records)
         self._filter_active = True
         self._filter_status = formatting.filter_status_text(
             records, elapsed, QLocale(), formatting.fordit

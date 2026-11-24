@@ -16,8 +16,10 @@ amíg az első tagságuk be nem kerül az ini-be (#6278).
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Collection
 from dataclasses import dataclass
 
+from .filetype_scope import enabled_type_clause
 from .hidden_scope import visible_folder_sql
 from .queries import PhotoRecord, _records, _select, recently_updated_photos
 from picasapy.ini import RECENT_ALBUM_TOKEN
@@ -143,12 +145,19 @@ def _remove_empty_album(conn: sqlite3.Connection, token: str) -> bool:
     return cursor.rowcount > 0
 
 
-def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
+def albums_in_index(
+    conn: sqlite3.Connection,
+    enabled_filetypes: Collection[str] | None = None,
+) -> tuple[AlbumRecord, ...]:
     """Az összes ismert album, NÉV szerint rendezve (kis-nagybetű-tűrően).
 
     A névtelen albumok a lista végére kerülnek — a Picasa is így mutatja a
     hiányos definíciókat.
+
+    #7414: az `enabled_filetypes` szerint kikapcsolt típusú képek (az indexben
+    megmaradt sorai) nem számítanak bele a darabszámba.
     """
+    tipus_feltetel, tipus_parameterek = enabled_type_clause(enabled_filetypes)
     # #4887: a darabszám csak a LÁTHATÓ mappák képeit számolja — különben
     # az album a rejtett mappa képeinek számát is elárulná.
     rows = conn.execute(
@@ -161,7 +170,7 @@ def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
                   JOIN photos p ON p.id = pa.photo_id
                   JOIN folders f ON f.id = p.folder_id
                    AND {visible_folder_sql(conn)}
-                 WHERE pa.token = a.token)
+                 WHERE pa.token = a.token{tipus_feltetel})
                    AS n
         FROM (
             SELECT token, name, date FROM albums
@@ -171,7 +180,8 @@ def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
         LEFT JOIN album_timeline_dates d ON d.token = a.token
         GROUP BY a.token
         ORDER BY (max(a.name) IS NULL), lower(max(a.name)), a.token
-        """
+        """,
+        tipus_parameterek,
     ).fetchall()
     return tuple(
         AlbumRecord(

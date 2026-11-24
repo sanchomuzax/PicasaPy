@@ -139,11 +139,80 @@ def test_mappaszamlalo_kikapcsolt_tipus_eseten_helyes(tmp_path):
         assert str(folder2) not in counts_szurt
 
 
+def test_mappaszamlalo_rejtett_kikapcsolt_tipust_nem_von_le_ketszer(tmp_path):
+    """A mappaszám csak a látható képeket számolja: a rejtett, kikapcsolt típusú
+    kép nem csökkentheti, és a mappa nem tűnhet el miatta."""
+    from picasapy.app.folder_list_model import FolderListModel
+
+    root = tmp_path / "kepek"
+    folder = root / "vegyes"
+    folder.mkdir(parents=True)
+    (folder / "kep.jpg").write_bytes(b"jpeg")
+    (folder / "film.mp4").write_bytes(b"movie")
+
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, root, incremental=False, enabled_filetypes=set(FILETYPE_GROUPS))
+        conn.execute("UPDATE photos SET hidden = 1 WHERE name = 'film.mp4'")
+        conn.commit()
+
+        model = FolderListModel()
+        model.load(conn, enabled_filetypes=set(FILETYPE_GROUPS) - {"movies"})
+        counts = {row[2]: row[3] for row in model._rows if row[0] == "folder"}
+
+    assert counts[str(folder)] == 1
+
+
+def test_albumszamlalo_es_recently_updated_levonja_a_kikapcsolt_tipust(tmp_path):
+    """A bal sáv album- és Recently Updated számlálója ugyanazt a látható
+    halmazt számolja, mint a rács: a kikapcsolt típus sora az indexben marad,
+    a számlálóba viszont nem kerülhet bele."""
+    from picasapy.index import albums_in_index, count_recently_updated_photos
+
+    token = "604c294a68b0de9cc9222c4714f289d5"
+    root = tmp_path / "kepek"
+    folder = root / "nyaralas"
+    folder.mkdir(parents=True)
+    (folder / "kep.jpg").write_bytes(b"jpeg")
+    (folder / "film.mp4").write_bytes(b"movie")
+    (folder / ".picasa.ini").write_text(
+        f"[.album:{token}]\nname=Nyar\ntoken={token}\n"
+        f"[kep.jpg]\nalbums={token}\n[film.mp4]\nalbums={token}\n",
+        encoding="utf-8",
+    )
+    mind = set(FILETYPE_GROUPS)
+    film_nelkul = mind - {"movies"}
+
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, root, incremental=False, enabled_filetypes=mind)
+        conn.execute("UPDATE photos SET mtime_ns = ?", (10**18,))
+        conn.commit()
+
+        assert [a.photo_count for a in albums_in_index(conn)] == [2]
+        assert (
+            [a.photo_count for a in albums_in_index(conn, enabled_filetypes=mind)]
+            == [2]
+        )
+        assert (
+            [a.photo_count for a in albums_in_index(conn, enabled_filetypes=film_nelkul)]
+            == [1]
+        )
+        osszes = count_recently_updated_photos(conn, cutoff_ns=0)
+        assert osszes == 2
+        assert (
+            count_recently_updated_photos(
+                conn, cutoff_ns=0, enabled_filetypes=film_nelkul
+            )
+            == 1
+        )
+        # az index sora végig megmarad
+        assert conn.execute("SELECT count(*) FROM photos").fetchone()[0] == 2
+
+
 def test_kereses_szuri_a_kikapcsolt_tipusokat(tmp_path):
-    from picasapy.app.search_controller import AppControllerSearchMixin
+    from picasapy.app.search_controller import SearchMixin
     from picasapy.index.queries import PhotoRecord
 
-    class DummySearchController(AppControllerSearchMixin):
+    class DummySearchController(SearchMixin):
         def __init__(self, enabled_types):
             self._filetype_scan_snapshot = enabled_types
             self.showHidden = False
@@ -185,6 +254,7 @@ def test_kereses_szuri_a_kikapcsolt_tipusokat(tmp_path):
     )
 
     filtered = controller._filter_search_hidden([rec1, rec2])
-    # A film.mp4 ki van kapcsolva (csak bmp + jpeg engedélyezett)
+    # A film.mp4 ki van kapcsolva (csak a bmp csoport engedélyezett; a JPEG
+    # nem kapcsolható ki, ezért a kep.jpg mindig látszik)
     assert [r.name for r in filtered] == ["kep.jpg"]
 

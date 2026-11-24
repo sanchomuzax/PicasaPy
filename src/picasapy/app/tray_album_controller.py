@@ -61,6 +61,8 @@ class TrayAlbumMixin(_TraySignalsMixin):
             raise RuntimeError(
                 f"a mappa fotói nem olvashatók az indexből: {folder_path}"
             ) from hiba
+        # #7414: a kikapcsolt fájltípusok nem számítanak a tokenbe
+        rekordok = self._without_disabled_filetypes(rekordok)
         if not rekordok:
             return False
         self._tray_apply(
@@ -81,6 +83,8 @@ class TrayAlbumMixin(_TraySignalsMixin):
         self._ensure_tray_wired()
         with open_index(self._db_path) as conn:
             records = photos_in_folder(conn, folder_path)
+        # #7414: a kikapcsolt fájltípusok nem számítanak a tokenbe
+        records = self._without_disabled_filetypes(records)
         if not records:
             return False
         self._tray_apply(
@@ -130,6 +134,9 @@ class TrayAlbumMixin(_TraySignalsMixin):
             raise RuntimeError(
                 f"az album képei nem olvashatók az indexből: {album_token}"
             ) from hiba
+        # #7414: a kikapcsolt fájltípusok nem számítanak a tokenbe, és nem
+        # lehetnek a borítókép sem
+        rekordok = self._without_disabled_filetypes(rekordok)
         if not rekordok:
             self._tray_apply(allapot)
             return False
@@ -185,6 +192,18 @@ class TrayAlbumMixin(_TraySignalsMixin):
             )
         )
         return True
+
+    def _refresh_auto_album_tokens(self) -> None:
+        """#7414: a már kint álló automatikus album-tokenek újraszámolása.
+
+        Egy fájltípus ki- vagy bekapcsolása után a token darabszáma és borítója
+        a látható halmazra áll át, a szabály (`showSelectedAlbumToken`) szerint.
+        Csak azt a tokent érinti, amely már kint állt, tehát a kijelölési
+        feltételt nem írja felül."""
+        self._ensure_tray_wired()
+        for token in tray.album_tokens(self._tray):
+            if not token.held and token.is_album:
+                self.showSelectedAlbumToken(token.key)
 
     def _tray_nelkul_auto_token(self):
         """A tálca állapota az AUTOMATIKUS album-tokenek nélkül (#2741).

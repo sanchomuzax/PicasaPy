@@ -123,16 +123,34 @@ def _kikapcsolt_tipusok_nelkul(
     conn: sqlite3.Connection,
     folders: list,
     enabled_filetypes: Collection[str] | None,
+    *,
+    include_hidden: bool = False,
 ) -> list:
-    """#7414: a kikapcsolt fájltípusok levonása a mappaszámlálóból."""
+    """#7414: a kikapcsolt fájltípusok levonása a mappaszámlálóból.
+
+    A kikapcsolt típus sorai az indexben megmaradnak (a visszakapcsolás
+    újraolvasás nélkül működjön), ezért a mappa darabszámából itt kell
+    levonni őket. A mappaszám (`sorted_folder_rows`) csak a látható képeket
+    számolja, ezért a levonás is csak azokat veszi: egy rejtett, kikapcsolt
+    típusú kép nem csökkentheti a számot, mert eleve nem volt benne.
+    """
     if enabled_filetypes is None:
         return folders
-    from picasapy.scanner.filetypes import media_kind_if_enabled
+    from picasapy.scanner.filetypes import disabled_extensions, media_kind_if_enabled
 
+    # SQL-előszűrés a kikapcsolt csoportok kiterjesztéseire: a teljes `photos`
+    # táblát nem kell Pythonban végigjárni. A végső döntést a
+    # `media_kind_if_enabled` hozza, mint a rácson és a keresésen.
+    kikapcsolt_kiterjesztesek = disabled_extensions(enabled_filetypes)
+    if not kikapcsolt_kiterjesztesek:
+        return folders
+    feltetel = " OR ".join("p.name LIKE ?" for _ in kikapcsolt_kiterjesztesek)
+    lathatosag = "" if include_hidden else " AND p.hidden = 0"
     kikapcsolt: dict[str, int] = {}
     for path, name in conn.execute(
         "SELECT f.path, p.name FROM photos p "
-        "JOIN folders f ON f.id = p.folder_id"
+        f"JOIN folders f ON f.id = p.folder_id WHERE ({feltetel}){lathatosag}",
+        [f"%{extension}" for extension in kikapcsolt_kiterjesztesek],
     ):
         if media_kind_if_enabled(name, enabled_filetypes) is None:
             kikapcsolt[path] = kikapcsolt.get(path, 0) + 1
@@ -206,7 +224,9 @@ class FolderListModel(QAbstractListModel):
             if sor[1] not in kizart
         ]
         if enabled_filetypes is not None:
-            folders = _kikapcsolt_tipusok_nelkul(conn, folders, enabled_filetypes)
+            folders = _kikapcsolt_tipusok_nelkul(
+                conn, folders, enabled_filetypes, include_hidden=include_hidden
+            )
         if kis_kepek_rejtve:
             folders = _kis_kepek_nelkul(conn, folders)
         # #1637/2: a rejtett mappák nem VEGYÜLNEK vissza a listába — a

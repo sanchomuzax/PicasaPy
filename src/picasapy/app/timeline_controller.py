@@ -234,15 +234,11 @@ class TimelineController(QObject):
         with open_index(self._db_path) as conn:
             from picasapy.scanner.filetypes import media_kind_if_enabled
 
-            enabled_types = None
-            if self._sync_controller is not None:
-                enabled_types = getattr(
-                    self._sync_controller, "_filetype_scan_snapshot", None
-                )
-            if enabled_types is None and hasattr(self, "_settings"):
-                from picasapy.app.filetype_preferences import enabled_filetypes
-
-                enabled_types = enabled_filetypes(self._settings)
+            # #7414: a kikapcsolt típusok sorai az indexben maradnak, ezért az
+            # időrend a vezérlő fájltípus-pillanatképe szerint szűr.
+            enabled_types = getattr(
+                self._sync_controller, "_filetype_scan_snapshot", None
+            )
 
             records = tuple(
                 r
