@@ -7388,6 +7388,12 @@ error(%2)</source>
 خطا(%2)</translation>
         </message>
         <message>
+            <source>Error</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: autocomplete_errors:autocomplete_errors/column6.title;stringres:CExportPrefsPage::errortitle;stringres:RestoreDialog::error;stringres:RestoreProc::error;stringres:downloader::error3;stringres:il_ErrorTitle;stringres:uploadmgr::defaulterror;stringres:ytApp::ErrorTitle</extracomment>
+            <translation>خطا</translation>
+        </message>
+        <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>ذخیره</translation>
