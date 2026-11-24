@@ -149,11 +149,13 @@ class AppControllerPhotoListMixin:
 
     def _refresh_after_filetype_change(self) -> None:
         """#7414: egy fájltípus ki- vagy bekapcsolása után a felület azonnal
-        az új látható halmazt mutatja: rács, mappaszámláló, album- és Recently
-        Updated számláló. Az indexet nem írja és a lemezt nem olvassa."""
+        az új látható halmazt mutatja: rács, mappaszámláló, projektek,
+        Other Stuff, album- és Recently Updated számláló. Az indexet nem írja
+        és a lemezt nem olvassa."""
         self._refresh_view()
-        self._reload_folders()
         with open_index(self._db_path) as conn:
+            if not self._refresh_side_pane_filetype_counts(conn):
+                self._reload_folders()
             self._load_albums(conn)
         if hasattr(self, "_refresh_auto_album_tokens"):
             self._refresh_auto_album_tokens()

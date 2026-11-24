@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 import threading
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,7 +21,7 @@ from picasapy.scanner import PICASA_INI_NAME
 
 from . import folder_ini
 from .people import FaceData, PersonRecord, people_in_index
-from .project_folders import ProjectFolder, project_folders_from_paths
+from .project_folders import ProjectFolder, _project_folders_from_paths
 
 
 @dataclass(frozen=True)
@@ -181,6 +181,16 @@ def refresh_side_pane_cache(
 def cached_side_pane_collections(
     conn: sqlite3.Connection, *, central_path=None
 ) -> SidePaneCollections | None:
+    """Az összes fájltípust tartalmazó oldalpanel-gyűjtemények a meleg gyorsítótárból."""
+    return _cached_side_pane_collections(conn, central_path=central_path)
+
+
+def _cached_side_pane_collections(
+    conn: sqlite3.Connection,
+    *,
+    central_path=None,
+    enabled_filetypes: Collection[str] | None = None,
+) -> SidePaneCollections | None:
     """A teljes oldalpanel-állapot előállítása kizárólag memóriabeli ini-adatból.
 
     Hiányos gyorstárnál `None` a visszatérés. Ez az út nem végez fájl-I/O-t,
@@ -221,9 +231,13 @@ def cached_side_pane_collections(
     )
     return SidePaneCollections(
         people=people_in_index(conn, face_rows, central_path=central_path),
-        project_folders=project_folders_from_paths(conn, project_paths),
+        project_folders=_project_folders_from_paths(
+            conn, project_paths, enabled_filetypes=enabled_filetypes
+        ),
         custom_collection_folders=custom_collections,
-        other_stuff_folders=project_folders_from_paths(conn, other_stuff_paths),
+        other_stuff_folders=_project_folders_from_paths(
+            conn, other_stuff_paths, enabled_filetypes=enabled_filetypes
+        ),
     )
 
 
