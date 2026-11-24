@@ -27,6 +27,8 @@ hivatkozik, aminek a Linuxos megfelelője gépenként más.
 
 from __future__ import annotations
 
+import math
+
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 from PIL import Image, ImageDraw
@@ -205,6 +207,30 @@ def _draw_underline(draw, origin, content, font, anchor, colour) -> None:
     draw.rectangle((left, y, right, y + line_height - 1), fill=tuple(colour))
 
 
+def _text_box_size(content: str, qt_font, pillow_font, font_scale: float) -> tuple[float, float]:
+    """A forgatáshoz szükséges szövegdoboz-méret az aktív betűút szerint."""
+    lines = content.splitlines() or [""]
+    if qt_font is not None:
+        from PySide6.QtGui import QFontMetricsF
+
+        metrics = QFontMetricsF(qt_font)
+        return (
+            max(metrics.horizontalAdvance(line) for line in lines),
+            metrics.lineSpacing() * len(lines),
+        )
+    if pillow_font is not None:
+        bounds = [pillow_font.getbbox(line, anchor="la") for line in lines]
+        return (
+            max(right - left for left, _top, right, _bottom in bounds),
+            max(bottom - top for _left, top, _right, bottom in bounds)
+            * len(lines),
+        )
+    meret, _ = cv2.getTextSize(
+        max(lines, key=len), cv2.FONT_HERSHEY_SIMPLEX, font_scale, 2
+    )
+    return float(meret[0]), float(meret[1] * len(lines))
+
+
 def apply_text_overlay(
     image: np.ndarray,
     content: str,
@@ -222,6 +248,7 @@ def apply_text_overlay(
     outline_thickness: int = 0,
     fill_enabled: bool = True,
     opacity: float = 1.0,
+    rotation: float = 0.0,
     font_family: str = DEFAULT_FAMILY,
     bold: bool = False,
     italic: bool = False,
@@ -230,10 +257,12 @@ def apply_text_overlay(
 ) -> np.ndarray:
     """Szöveg ráírása a képre — kitöltés + opcionális körvonal (#450).
 
-    `x`, `y`: relatív [0..1] pozíció — a szövegdoboz BAL FELSŐ sarka kerül
+    `x`, `y`: relatív képkoordináta — a szövegdoboz BAL FELSŐ sarka kerül
     ide (#7380: az eredeti Picasa `text=` pozíciója; a betűk a pont ALATT
     állnak, a bal szél a ponton). Üres `content`-nél no-op (a bemenet
     másolata). A `font_scale`/`thickness` nem lehet negatív.
+    Elforgatásnál a tárolt befoglaló sarok kilóghat a képből; a rajzolás
+    ilyenkor a kép határánál levágódik.
 
     A körvonal (#450 — „a legfeltűnőbb hiány", tetszőleges hátterű képen
     olvasható felirathoz) a szöveg ELŐSZÖR `outline_color` színnel, a
@@ -254,8 +283,10 @@ def apply_text_overlay(
     bitre pontosan változatlan marad.
     """
     validate_image(image)
-    if not 0.0 <= x <= 1.0 or not 0.0 <= y <= 1.0:
-        raise ValueError(f"x/y a [0..1] tartományon kívül: x={x}, y={y}")
+    if not math.isfinite(x) or not math.isfinite(y):
+        raise ValueError(f"x/y csak véges szám lehet: x={x}, y={y}")
+    if not math.isfinite(rotation):
+        raise ValueError(f"A rotation csak véges szám lehet: {rotation}")
     if font_scale <= 0:
         raise ValueError(f"A font_scale pozitív kell legyen: {font_scale}")
     if thickness <= 0:
@@ -292,6 +323,37 @@ def apply_text_overlay(
         italic=italic,
         underline=underline,
     )
+    center = None
+    if rotation:
+        pillow_font = None
+        if qt_font is None:
+            pillow_font = load_font(
+                font_family, meret_px, bold=bold, italic=italic
+            )
+        text_width, text_height = _text_box_size(
+            content, qt_font, pillow_font, meret_px / _SCALE_TO_PIXELS
+        )
+        theta = float(rotation)
+        rotated_width = (
+            text_width * abs(math.cos(theta))
+            + text_height * abs(math.sin(theta))
+        )
+        rotated_height = (
+            text_width * abs(math.sin(theta))
+            + text_height * abs(math.cos(theta))
+        )
+        center = (
+            origin[0] + rotated_width / 2,
+            origin[1] + rotated_height / 2,
+        )
+        box_left = center[0] - text_width / 2
+        if align == "center":
+            origin_x = center[0]
+        elif align == "right":
+            origin_x = center[0] + text_width / 2
+        else:
+            origin_x = box_left
+        origin = (round(origin_x), round(center[1] - text_height / 2))
     if qt_font is not None:
         layer = _draw_qt_font(
             result,
@@ -318,6 +380,22 @@ def apply_text_overlay(
                 result, content, origin, font, color, outline_color,
                 outline_thickness, fill_enabled, has_outline, underline, align,
             )
+    if center is not None:
+        delta = layer.astype(np.float32) - result.astype(np.float32)
+        matrix = cv2.getRotationMatrix2D(
+            center, -math.degrees(float(rotation)), 1.0
+        )
+        delta = cv2.warpAffine(
+            delta,
+            matrix,
+            (width, height),
+            flags=cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=0,
+        )
+        layer = np.clip(result.astype(np.float32) + delta, 0, 255).astype(
+            np.uint8
+        )
     changed = np.any(layer != result, axis=-1)
     if not changed.any():
         return result

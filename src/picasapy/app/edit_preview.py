@@ -127,6 +127,8 @@ class TextOverlaySpec:
     italic: bool = False
     underline: bool = False
     align: str = "left"
+    #: #7457: a text= negyedik mezője radiánban, óramutató szerinti előjellel.
+    rotation: float = 0.0
 
 
 class EditPreviewProvider(
@@ -410,6 +412,7 @@ class EditPreviewProvider(
                     outline_thickness=_outline_px(text_spec.outline_thickness),
                     fill_enabled=text_spec.fill_enabled,
                     opacity=text_spec.opacity,
+                    rotation=text_spec.rotation,
                     font_family=text_spec.font_family,
                     font_scale=text_spec.font_scale,
                     font_size_pt=text_spec.font_size_pt,
