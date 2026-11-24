@@ -106,9 +106,15 @@ class EditControllerHistoryMixin:
 
 
     def _finish_save_undo(self, succeeded: bool) -> None:
-        """Az Undo Save sikerénél üríti mindkét vermet, hibánál újrapróbálhatóvá teszi."""
+        """Az Undo Save sikerénél az Undo-vermet a visszaállított láncból építi
+        újra, hibánál újrapróbálhatóvá teszi (#7416).
+
+        Az eredeti az Undo Save után a lánc szerint állítja be a gombot
+        (job-940 `__20`): láncszerkesztésnél (Kiegyenesítés) „Undo Straighten"
+        és aktív, szövegnél (nincs lánc-elem) tiltott és csupasz (job-919
+        `__22`). A Redo-verem üres marad (`__22`: a Redo tiltott)."""
         if succeeded:
-            self._undo_stack.clear()
+            self._undo_stack = self._seed_undo_from_chain(self._session)
             self._redo_stack.clear()
         self._save_undo_pending = False
         self.toolsChanged.emit()
