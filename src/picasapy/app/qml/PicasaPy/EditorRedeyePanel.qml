@@ -17,7 +17,10 @@ import QtQuick.Layouts
 ColumnLayout {
     //: a gazda EditorPanel — az állapot és a jelzések gazdája
     required property var panel
+    //: #7431: a panel szövegeinek mért sorköze (`job-837 __10`), képpont
+    readonly property int sorkoz: 14
 
+    id: redeyePanel
     objectName: "redeyeColumn"
     visible: panel.redeyeActive
     opacity: panel.enabled ? 1 : 0.45
@@ -83,6 +86,12 @@ ColumnLayout {
                        + "Release the mouse to complete your selection. The Photo is "
                        + "displayed with the red-eye removed.")
             font.pixelSize: Theme.fontSize - 1
+            // #7431: rögzített, az eredetiben mért 14 képpontos sorköz
+            // (`job-837 __10`: a sorok kezdete 14 képpontonként); így a
+            // windowsos betűmetrika sem nyújtja meg a szöveget, és nem lóg
+            // ki a dobozból 260 és 280 képpontos panelszélességnél sem
+            lineHeightMode: Text.FixedHeight
+            lineHeight: redeyePanel.sorkoz
             color: Theme.textGray
         }
 
@@ -99,6 +108,8 @@ ColumnLayout {
             //: picasapy-origin-key: stringres:RedEye::DragToSelectMessage
             text: qsTr("Note: You can click on a box to delete a change.")
             font.pixelSize: Theme.fontSize - 1
+            lineHeightMode: Text.FixedHeight
+            lineHeight: redeyePanel.sorkoz
             color: Theme.textGray
         }
     }
@@ -113,6 +124,8 @@ ColumnLayout {
         //: #3574: a hivatalos szöveg (`RedEye::AutoFixedMessage`)
         text: qsTr("PicasaPy has found and corrected red eye(s).\n\nNote: You can click on a box to delete a change.\n\nYou can also draw a square around any red eye that PicasaPy may have missed.")
         font.pixelSize: Theme.fontSize - 1
+        lineHeightMode: Text.FixedHeight
+        lineHeight: redeyePanel.sorkoz
         color: Theme.textGray
     }
 
@@ -129,6 +142,8 @@ ColumnLayout {
                    + "Note: You can click on a box to delete a change.\n\n"
                    + "You can also click 'auto' to reapply the auto-corrections.")
         font.pixelSize: Theme.fontSize - 1
+        lineHeightMode: Text.FixedHeight
+        lineHeight: redeyePanel.sorkoz
         color: Theme.textGray
     }
 

@@ -161,3 +161,21 @@ def test_nagy_foto_abszurd_kerete_kiesik():
         glimmer_frame_ops._ellenoriz_keret_kimenetet(
             _CsakMeret(5477, 7303), 7303 + 40000, 5477 + 40000
         )
+
+
+def test_polaroid_aprokepen_korlaton_belul_marad_vagy_kiesik_7429():
+    """#7429: 3×2-es képen a Polaroid 11 fokos forgatással nem lépheti túl a 768 képpontos korlátot."""
+    image = np.zeros((3, 2, 3), dtype=np.uint8)
+    report = apply_filters(image, parse_filters("Polaroid=1,11;"))
+    assert report.skipped == ("Polaroid",)
+    assert report.image is image
+
+
+def test_apply_polaroid_tulmeretes_kimenet_hibat_dob_7429():
+    """#7429: az apply_polaroid közvetlen hívása túlméretes kimenetnél ValueError-t dob."""
+    from picasapy.render.glimmer_frames import apply_polaroid
+
+    image = np.zeros((3, 2, 3), dtype=np.uint8)
+    with pytest.raises(ValueError, match="A keret kimenete túl nagy"):
+        apply_polaroid(image, rotate=11.0)
+

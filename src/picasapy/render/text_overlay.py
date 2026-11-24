@@ -161,25 +161,29 @@ def _draw_qt_font(
         QImage.Format.Format_RGB888,
     ).copy()
     painter = QPainter(qimage)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-    text_width = QFontMetricsF(font).horizontalAdvance(content)
-    x = float(origin[0])
-    if align == "center":
-        x -= text_width / 2
-    elif align == "right":
-        x -= text_width
-    # #7380: az `origin` a szövegdoboz FELSŐ sarka; a `QPainterPath.addText`
-    # az ALAPVONALAT kéri, ami a sor tetejétől az ascent-nyire van
-    alapvonal = float(origin[1]) + QFontMetricsF(font).ascent()
-    path = QPainterPath()
-    path.addText(QPointF(x, alapvonal), font, content)
-    if has_outline:
-        pen = QPen(QColor(*map(int, outline_color)))
-        pen.setWidthF(max(1.0, float(outline_thickness)))
-        painter.strokePath(path, pen)
-    if fill_enabled:
-        painter.fillPath(path, QColor(*map(int, color)))
-    painter.end()
+    # #7432: a festőt kivétel esetén is le kell zárni, különben a megtartott
+    # traceback miatt a kép a festő ELŐTT szabadul fel (szegmenshiba)
+    try:
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        text_width = QFontMetricsF(font).horizontalAdvance(content)
+        x = float(origin[0])
+        if align == "center":
+            x -= text_width / 2
+        elif align == "right":
+            x -= text_width
+        # #7380: az `origin` a szövegdoboz FELSŐ sarka; a `QPainterPath.addText`
+        # az ALAPVONALAT kéri, ami a sor tetejétől az ascent-nyire van
+        alapvonal = float(origin[1]) + QFontMetricsF(font).ascent()
+        path = QPainterPath()
+        path.addText(QPointF(x, alapvonal), font, content)
+        if has_outline:
+            pen = QPen(QColor(*map(int, outline_color)))
+            pen.setWidthF(max(1.0, float(outline_thickness)))
+            painter.strokePath(path, pen)
+        if fill_enabled:
+            painter.fillPath(path, QColor(*map(int, color)))
+    finally:
+        painter.end()
 
     raw = np.frombuffer(
         qimage.bits(), dtype=np.uint8, count=qimage.sizeInBytes()
