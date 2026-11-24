@@ -39,6 +39,8 @@ MUNKANEVEK: dict[str, str] = {
     "picasapy-movie": QT_TRANSLATE_NOOP(KONTEXTUS, "Creating movie"),
     "picasapy-dedup": QT_TRANSLATE_NOOP(KONTEXTUS, "Searching for duplicates"),
     "picasapy-face-embed": QT_TRANSLATE_NOOP(KONTEXTUS, "Scanning faces"),
+    # #7373: a javaslatküszöb változása utáni újraszámolás arcmunka; a meglévő felirat
+    "picasapy-recalculate-suggestions": QT_TRANSLATE_NOOP(KONTEXTUS, "Scanning faces"),
     "picasapy-face-model-download": QT_TRANSLATE_NOOP(KONTEXTUS, "Downloading face model"),
     "picasapy-discovery-startup": QT_TRANSLATE_NOOP(KONTEXTUS, "Searching for a Picasa library"),
     "picasapy-discovery": QT_TRANSLATE_NOOP(KONTEXTUS, "Searching for a Picasa library"),

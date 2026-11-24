@@ -8,7 +8,6 @@ teljes renderelést (#301).
 from __future__ import annotations
 
 import logging
-import threading
 
 import numpy as np
 
@@ -18,7 +17,6 @@ from picasapy.ini.filter_registry import (
     max_param_count,
 )
 from picasapy.ini.filters import FilterOp
-from picasapy.ini.rect64 import decode_rect64
 from picasapy.render import chain_glimmer_handlers as glimmer
 from picasapy.render import chain_native_handlers as native
 from picasapy.render.chain_geometry import (
@@ -72,6 +70,7 @@ from picasapy.render.chain_policy import (
     _AUTOBACKLIGHT_FILL as _AUTOBACKLIGHT_FILL,
     _NOOP_MARKERS,
 )
+from picasapy.render.chain_crop import normalize_crop_ops  # noqa: F401  (régi név)
 from picasapy.render.chain_report import ChainReport, validate_and_clamp_op
 from picasapy.render.dinamikus_csuszka import dinamikus_csuszka_ertek, fel_rovidebb_el
 from picasapy.render.elonezeti_arany import (
@@ -86,8 +85,6 @@ from picasapy.render.registry import FILTER_REGISTRY, chain_flags
 from picasapy.render.color import apply_bw, apply_sepia, apply_warm
 
 _log = logging.getLogger(__name__)
-_CROP_WARNING_LOCK = threading.Lock()
-_CROP_WARNINGS: set[tuple[str, str]] = set()
 _ALPHA_TRANSPARENT = 0
 _ALPHA_OPAQUE = 255
 _ALPHA_WORKER_OUTPUTS = {
@@ -205,69 +202,6 @@ def _alpha_after_worker(key: str, op: FilterOp, alpha_before: int) -> int:
         # #7361: olvashatatlan Fade (None) mellett a worker sem használta a mezőt: az alfa marad
         return alpha_before if fade is None or fade >= 100.0 else _ALPHA_OPAQUE
     return _ALPHA_WORKER_OUTPUTS[key]
-
-def normalize_crop_ops(
-    ops: tuple[FilterOp, ...],
-    crop: str | None,
-    *,
-    crop_ini_readable: bool = True,
-    warning_key: str | None = None,
-) -> tuple[FilterOp, ...]:
-    """A képszekció `crop=` értékéhez igazítja a `crop64` előzményeket.
-
-    A szabály a #4008 óta exportban használt viselkedés: olvasható ini és
-    hiányzó `crop=` mellett minden láncbeli `crop64` kimarad; érvényes kulcs
-    mellett az utolsó `crop64` a helyén a kulcs értékére áll. A lánc többi
-    tagja és eredeti sorrendje változatlan. Hibás kulcs vagy olvashatatlan
-    ini esetén a teljes lánc marad meg; az ini-olvasó naplóz, ha szükséges.
-    Hibás crop= esetén képenként legfeljebb egyszer figyelmeztetünk.
-
-    Ez csak a lánc előkészítése; a renderelés továbbra is az
-    `apply_filters(..., mert_sorrend=True)` mért sorrendjében fut.
-    """
-    if not crop_ini_readable:
-        return ops
-
-    crop_indices = [index for index, op in enumerate(ops) if op.name == "crop64"]
-    if crop is None:
-        return tuple(op for op in ops if op.name != "crop64")
-
-    try:
-        current_rect = decode_rect64(crop)
-    except ValueError:
-        fallback = (
-            "a lánc utolsó crop64 elemére esünk vissza"
-            if crop_indices
-            else "nem alkalmazunk kivágást"
-        )
-        warning = ("invalid-crop", warning_key or "<unknown>")
-        with _CROP_WARNING_LOCK:
-            first_warning = warning not in _CROP_WARNINGS
-            _CROP_WARNINGS.add(warning)
-        if first_warning:
-            _log.warning("Érvénytelen crop= érték (%r); %s", crop, fallback)
-        return ops
-
-    if not crop_indices:
-        return ops
-
-    last_index = crop_indices[-1]
-    last_crop = ops[last_index]
-    try:
-        last_rect = decode_rect64(last_crop.params[1])
-    except (IndexError, ValueError):
-        last_rect = None
-    if last_rect == current_rect:
-        return ops
-
-    params = list(last_crop.params)
-    if len(params) < 2:
-        params = ["1", crop]
-    else:
-        params[1] = crop
-    updated = list(ops)
-    updated[last_index] = FilterOp(last_crop.name, tuple(params))
-    return tuple(updated)
 
 # Megfejtve (golden 4. kör): a tilt szöge θ = p·0,2 radián (= p·11,459°).
 _TILT_RADIANS_PER_UNIT = 0.2
