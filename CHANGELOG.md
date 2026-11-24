@@ -7,6 +7,24 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.180] - 2026-11-24
+
+- A futásidő-tábla pótlása a hiányzó 160 app-tesztfájllal (#7454).
+- Kiderült, hogyan viselkedik az eredeti Picasa Retusálás eszköze Mégse gombra félbehagyott foltnál, és hogy a Szöveg forgatókorongja a 15° többszörösei körül tapad, a forgatást pedig radiánban tárolja (#7327).
+- Kiderült, hogy az eredeti Picasa az Opciókban beállított importcélt a figyelt mappák közé veszi fel (#7330).
+- Kiderült, mely kódrészek írják az eredeti Picasa Hangolás-színmintakorongjának színét; hogy a pipettával vett semleges szín jut-e a korongra, az még nyitott kérdés (#7345).
+- Lezárult a Hangolás színmintakorongjának vizsgálata: az eredeti Picasa binárisában nincs eltérésre utaló út, ezért a PicasaPy a pipettával vett semleges színt mutatja a korongon, ahogy eddig (#7422).
+- A Retusálás Mégse gombja félbehagyott foltnál csak a foltot dobja el, és az eszköz nyitva marad; a panel üres területére kattintás is eldobja a foltot (#7426).
+- Kiderült, hogy írásvédett fájl mentésekor az eredeti Picasa a sikertelen csere után otthagyja az új kimenetet „.jpg.jpg” néven, és biztonsági másolatot sem készít (#7428).
+- A Polaroid effekt apró képen a renderlánc méretkorlátján belül marad (#7429).
+- A bal hasáb hónapos fejlécei Windowson is működnek 1970 előtti módosítási időnél, nem dől el a lista (#7430).
+- A Vörösszem panel szövegének sorköze az eredetiben mért 14 képpont, így Windowson keskeny panelnél sem lóg ki a szöveg (#7431).
+- A Szöveg eszköz rajzolója hiba esetén is rendesen lezárja a festést, így egy rajzolási hiba nem omlasztja össze a programot (#7432).
+- Kiderült az eredeti Picasa Szöveg-forgatásának szögképlete és a 45° és 15° körüli lágy tapadás szabálya; a pontos visszajátszás még kutatás alatt (#7435).
+- A Retusálás panel háttérterülete nem lóg ki a görgethető részből (#7440).
+- A mentési hibaablak címe lemezhiba, névütközés és formátumhiba esetén „Error” (magyarul „Hiba”), mint az eredetiben, nem „Save” (#7443).
+- A mentési lemezhiba-ablak hibaszáma mostantól az eredeti Picasa belső számát mutatja: írásvédett célnál `hiba(11)`, hiányzó fájlnál vagy útnál `hiba(10)`, minden más hibánál `hiba(2)` (a rendszer saját kódja helyett; a tele lemez száma egyelőre változatlan) (#7449).
+
 ## [1.0.179] - 2026-11-24
 
 ### Javítva
