@@ -1125,15 +1125,15 @@ Tesztkép: a 1024×256-os `gray_ramp.jpg`. Szöveg: `PicasaPy7327` (12 karakter)
 | `__16-17` | `kattint (88,406)` (Apply) | Alapjavítások fül, szöveg a képen rögzítve. |
 | `__18-19` | `kattint (138,275)` (Text újranyitás) | Text panel nyitva. |
 | `__20-21` | `kattint (620,405)` | A blokk kijelölve: **forgatókorong 24 osztással** (középpont kb. (627, 405), sugár R = 81), a piros pont a fogantyú közepén pontosan **(708,0; 405,0)**. |
-| `__22-23` | `huz (708,405)-(708,422)` (1. húzás) | Nyers egérmozgás dy = 17, dx = 81 -> nyers szög = atan(17/81) = **11,85°**. A piros fogantyú pozíciója: **(707,7; 414,8)**, középpontból dy = 9,8, dx = 80,7 -> elfordulási szög **6,95°..7,13°** (Hough medián 6,65°). |
+| `__22-23` | `huz (708,405)-(708,422)` (1. húzás) | Nyers egérmozgás dy = 17, dx = 81 -> nyers szög = `atan(17/81)` = **11,85°**. A piros fogantyú pozíciója: **(707,7; 414,8)**, középpontból dy = 9,8, dx = 80,7 -> elfordulási szög **6,95°..7,13°** (Hough medián 6,65°). |
 | `__24-25` | `kattint (191,406)` (Cancel) | Alapjavítások fül, az 1. forgatás elvetve. |
 | `__26-27` | Text újranyitás | Text panel. |
 | `__28-29` | `kattint (620,405)` | Blokk kijelölve, piros fogantyú újra (708,0; 405,0). |
-| `__30-31` | `huz (708,405)-(708,445)` (2. húzás) | Nyers egérmozgás dy = 40, dx = 81 -> nyers szög = atan(40/81) = **26,28°**. A korong eltűnt, a forgatott keret és szöveg látható: a keret hosszú élének dőlése **30,17°**, Hough vonalak mediánja **30,02°** (pontosan a **30,000°** = π/6 rad 15°-os főosztás!). |
+| `__30-31` | `huz (708,405)-(708,445)` (2. húzás) | Nyers egérmozgás dy = 40, dx = 81 -> nyers szög = `atan(40/81)` = **26,28°**. A korong eltűnt, a forgatott keret és szöveg látható: a keret hosszú élének dőlése **30,17°**, Hough vonalak mediánja **30,02°** (pontosan a **30,000°** = π/6 rad 15°-os főosztás!). |
 | `__32-33` | `kattint (191,406)` (Cancel) | Alapjavítások fül, a 2. forgatás elvetve. |
 | `__34-35` | Text újranyitás | Text panel. |
 | `__36-37` | `kattint (620,405)` | Blokk kijelölve, piros fogantyú újra (708,0; 405,0). |
-| `__38-39` | `huz (708,405)-(708,458)` (3. húzás) | Nyers egérmozgás dy = 53, dx = 81 -> nyers szög = atan(53/81) = **33,20°**. A keret hosszú élének dőlése **38,52°**, Hough vonalak mediánja **38,07°**. |
+| `__38-39` | `huz (708,405)-(708,458)` (3. húzás) | Nyers egérmozgás dy = 53, dx = 81 -> nyers szög = `atan(53/81)` = **33,20°**. A keret hosszú élének dőlése **38,52°**, Hough vonalak mediánja **38,07°**. |
 | `__40-41` | `kattint (88,406)` (Apply) | Alapjavítások fül, forgatott szöveg rögzítve a képen. |
 
 A záró `picasa.ini` szó szerint:
