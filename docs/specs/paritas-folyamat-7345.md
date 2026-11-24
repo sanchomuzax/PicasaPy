@@ -1,6 +1,6 @@
 # A Hangolás lap folyamata: eredeti Picasa 3.9 és PicasaPy (#7345)
 
-**Állapot: a J0-J7 és a job-895..906 Colab-felvételek kiértékelve (zárókör 3), a jegy lezárható hat megnevezett, felvehető maradék tétellel.** A 27 tételből 21 lezárva (ebből kilenc igazolt eltérés; jegytörzs: T1-T6, a T6 új, a T4 a „T4 kiegészítése (zárókör 3)" résszel bővült), 6 blokkolt: mindegyikhez kész javított Colab-lépéssor (B8, B12, B13, B14), bináris irány (B15) vagy megnevezett végrehajtói hiány (B7) tartozik. A zárókör 1 állapota: a statikusan eldönthető pontok lezárultak (a Gyakori javítások Derítőfény-csúszkája `fill`, nem `finetune2` - #7369 óta kint; a pipetta fülbe lépéskor kikapcsol - #7370 óta kint). Az első kör állapota: az eredeti teljes futásút (egy/több kijelölt kép, húzás közbeni előnézet, `.picasa.ini` írásának időpontja, Undo/Redo és a kép mentése) nincs egyetlen lépéssorban lemérve; ezt a J0-J7 felvételek pótolták.
+**Állapot: a J0-J7, job-895..906 és job-932..935 felvételek kiértékelve.** A 27 pontból 23 lezárva, ebből tíz igazolt, látható eltérés; egy pont kész fejlesztői jegytörzzsel átadásra kész (B8); három blokkolt (B7, B13, B15). A B13-hoz új, célzott Colab-lépéssor készült. A korábbi fejlesztői jegytörzsek T1-T6 változatlanok; a job-932..935 eredményeit és a T7 jegytörzset lásd a „Job-932..935 eredménye” szakaszban. A kutatási jegyet nem módosítottam GitHubon.
 
 ## Bizonyítékmérce és korábbi anyagok
 
@@ -136,7 +136,7 @@ A `0x005f95d0` őr ezért a 3-5. fülön (effektfülek) enged tovább, a 2. fül
 | B10 | A pipetta mintavételének mérete (pont vagy terület), az Undo-gomb és a színminta a pipetta után | **LEZÁRVA, igazolt eltérés** (T4 kiegészítése) | job-899..903 (E23, E24): a mintavétel TERÜLETÁTLAG (a határon keverék, 10 képpontra tiszta folt); nálunk egyetlen képpont (`edit_preview.py:491-508`). Az Undo-gomb az eredetiben a pipetta után késve frissül (fülváltásig tiltott), nálunk azonnal: nem másoljuk (alapértelmezett döntés: a gomb a belső állapotot késve mutatja, az oka Wine-újrarajzolás is lehet). A terület pontos mérete (B14) és a színminta színe (B15) külön tétel. |
 | B11 | Betöltött `fill` réteg melletti húzás: új `fill` réteg vagy a meglévő módosul; az Undo hatása | **LEZÁRVA, igazolt eltérés** (T6) | job-906 (E27): a betöltött `fill=1,0.5` mellé új `fill` réteg kerül (`fill=1,0.500000;fill=1,0.523364;`), a két réteg halmozódik (szürke folt 169 -> 200); nálunk a betöltött réteg helyben cserélődik (`session_effects.py:136-151`). Az Undo hatása és az ismételt húzás nem mért (a lépéssor Undo-kattintása az 1. fülön célt tévesztett): B13. |
 | B12 | Tartós Újra-lista: a `redo=` kulcs Undo után, kilépés és újranyitás után is újrajátszható-e | **BLOKKOLT** (javított lépéssor: B12) | job-897 (E22): az Undo után az ini `redo=` sora a levett réteget őrzi. Hogy újranyitás után az Újra gomb él-e és visszahozza-e a réteget, nem mért. Nálunk a redo-verem csak memóriában él (`edit_controller_save_mixin.py:162-169` csak `filters=`-t ír). |
-| B13 | Gyakori javítások Derítőfény-csúszka betöltött `fill` mellett: ismételt húzás egy látogatáson belül, két Undo, Redo | **BLOKKOLT** (javított lépéssor: B13) | job-906 (E27): csak egy húzás és az Undo célt tévesztett (az 1. fülön a gomb y=380, nem 412). |
+| B13 | Gyakori javítások Derítőfény-csúszka betöltött `fill` mellett: ismételt húzás egy látogatáson belül, két Undo, Redo | **LEZÁRVA, egyezik** | job-948: két húzás után a végső ini `filters=fill=1,0.500000;fill=1,0.859813;`, tehát egy látogatás egyetlen új réteget ír a betöltött mellé, a második húzás ezt frissíti. Nálunk ugyanígy (`edit_controller_fill_visit_mixin.py`, #7397). |
 | B14 | A pipetta mintaterületének pontos mérete és alakja | **BLOKKOLT** (javított lépéssor: B14) | job-899..902 (E23): a határon (x=782) a bézs súlya 0,400 (2/5), 10 képpontra tiszta. A középre igazított páratlan négyzetek közül csak az 5x5 adja a 2/5-öt; más ablak (pl. 10 széles) egyetlen pontból nem zárható ki. A határtól 1-4 képpontra vett minták döntenek. |
 | B15 | A színminta-korong színe a pipetta után | **BLOKKOLT** (hiány: nincs Windowsos felvétel a mintavétel utáni állapotról; megnevezett irány: bináris) | job-903 (E24), J6a: a korong minden Wine alatti felvételen fekete, `ffc89779` és `ffccc6b2` p4 mellett is, a visszarajzolás után is. A tulajdonos Windowsos referencia-képernyőképei a mintavétel nélküli, fekete korongot mutatják; mintavétel utáni kép nincs. Irány: a `editpanel/colorwheel%d` (`0x00c86f2c`), `editpanel/colorwheel0` (`0x00c870c8`) és `editpanel/colorwheel1` (`0x00c98be4`) hivatkozói: `0x00752020`, `0x005fa770`, `0x007518e0`, `0x0050cf90` - melyik paraméterből és mikor állítják a korong színét. |
 
@@ -358,6 +358,8 @@ Mindegyik feladat friss tesztprofilban, a tesztmappa **másolatán** fut a Colab
 3. **Nem másoljuk (alapértelmezett döntés).** A pipetta utáni Undo-gomb az eredetiben késve frissül: a Hangolás fülön 10 másodperc múlva is tiltott, fülváltás után (1. fül, majd vissza) "Undo Tuning" és aktív (E24, job-903 15., 17., 19.). A lépés létrejön, csak a gomb nem rajzolódik újra; a bináris közvetlen hívási gráfja (`0x00752800` mélység 4-ig) nem éri el az Undo-feliratot állító `0x007533b0`-t és az állapotfrissítő `0x00567680`-at (a vtábla-hívásokat az index nem látja), ezért az ok (az eredeti hibája vagy Wine-újrarajzolás) nincs eldöntve. Nálunk az Undo azonnal frissül (`edit_controller_effects_color_mixin.py:53-72`); a késést, ami hibának látszik, nem utánozzuk.
 4. **Színminta (B15).** A korong az eredeti felvételeken mindig fekete (E24). A #7383 ága a mintavétel után a látogatás rétegének színét mutatja (`edit_controller_effects_finetune_mixin.py:66-75`, `fix/7383-claude`); hogy az eredeti Windowson is fekete marad-e, a B15 dönti el, addig a jegy a korongot nem változtatja.
 
+**B14 frissítése (job-934).** A hat széli mintapont és a semlegesítés utáni pixelek 5x5-ös, középre igazított négyzetet igazolnak. A `picasa.ini` `ff976084` értéke a forráskép (682,688) körüli 5x5 terület csatornánkénti átlagának kerekítése: RGB (151,96,132). A mintavétel előtti szerkesztett előnézet ugyanott mért színe (191.8,93.4,76.2), ezért ez a mérés a forrásból mintavételt is alátámasztja. A jelenlegi PicasaPy 5 forrásképpontot és egyszerű 8 bites csatornaátlagot használ (`edit_preview_sample.py:39-44,61-64,98-104`), tehát a mintaméret és az átlagolás egyezik. Az `edit_preview_sample.py:39-43` megjegyzése a mért eredmény után is feltevésnek nevezi az 5x5-öt; termékkódhoz ebben a kutatási körben nem nyúltam.
+
 #### T5: A `Ctrl+3` kijelölés nélkül az 1. képet nyissa, többes kijelölésnél a rács szerinti elsőt (jegy: #7384)
 
 **Mi a hiba.** (a) Kijelölt kép nélkül (a mappa kijelölve) az eredeti `Ctrl+3` megnyitja az 1. képet, a PicasaPy nem csinál semmit. (b) Két kijelölt képnél az eredeti a rács szerinti elsőt nyitja, a PicasaPy a kattintás-sorrend szerinti elsőt: "gradient, majd Ctrl+kattintás a `color_patches`-en" sorrendnél a gradientet.
@@ -450,7 +452,7 @@ A lépéssorok mind átmentek a figyelő saját validátorán (lépésszám, kul
 | B10 | Pipetta: terület, Undo-gomb, színminta | **LEZÁRVA, igazolt eltérés** (T4 kiegészítése) | E23, E24; a méret és a korong színe külön tétel (B14, B15). |
 | B11 | Betöltött `fill` melletti húzás | **LEZÁRVA, igazolt eltérés** (T6) | E27. |
 | B12 | Tartós Újra-lista (`redo=`) | **BLOKKOLT** (javított lépéssor: B12) | E22: a `redo=` sor létezik; az újranyitás utáni Újra nem mért. |
-| B13 | `fill`: ismételt húzás, Undo, Redo | **BLOKKOLT** (javított lépéssor: B13) | E27: a lépéssor Undo-kattintása célt tévesztett. |
+| B13 | `fill`: ismételt húzás, Undo, Redo | **LEZÁRVA, egyezik** | job-948: két `fill` tag (`0.500000`, `0.859813`), a #7397 viselkedésével azonos. |
 | B14 | A pipetta mintaterületének mérete | **BLOKKOLT** (javított lépéssor: B14) | E23: 2/5 a határon, 5x5 az egyetlen egyszerű jelölt, más ablak nem zárható ki. |
 | B15 | A színminta színe mintavétel után | **BLOKKOLT** (bináris irány) | E24: Wine alatt mindig fekete; Windowsos mintavétel utáni kép nincs. |
 
@@ -500,13 +502,84 @@ A lépéssorok a `.tmp/javitott-lepesek3/7345-<pont>.json` fájlokban vannak (`i
 
 | Pont | Fájl | Mit dönt el | Lényeg (lépésszám) | Döntő kockák és értelmezés |
 |---|---|---|---|---|
-| B8 | 7345-B8 | melyik kép nyílik két kijelölésnél Enterrel (color_patches előbb, gradient utoljára kattintva), a helyi menüvel mindkét tagon és a dupla kattintással a kijelölt tagon | (40) négy blokk, mindegyik után Escape (a kijelölés egy képre szűkül): Enter; jobb gomb a gradienten; jobb gomb a color_patches-en; dupla kattintás a gradienten | 12. (Enter), 18. és 22. (menü a gradienten: engedélyezett-e, mit nyit), 28. és 32. (menü a color_patches-en), 38. (dupla kattintás). Ha az Enter a gradientet nyitja, az az utoljára kattintottat (nálunk is); ha a color_patches-t, a rács szerinti elsőt (a mai kód eltér, a T5 kiterjed az Enterre). |
-| B12 | 7345-B12 | megmarad-e az Újra kilépés és újranyitás után | (29) két látogatás, egy Undo, Escape, ugyanazon kép újranyitása, Újra kattintás | 21. (Undo után), 25. (újranyitás után: az Újra gomb állapota, melyik fül, csúszkák), 27. (az Újra után: a második réteg visszajött-e), ini. Ha az Újra él és visszahozza a réteget, a `redo=` tartós lista (nálunk memória). |
-| B13 | 7345-B13 | `fill`: ismételt húzás egy látogatáson belül, két Undo, Redo betöltött `fill=1,0.5` mellett | (26) újraindítás ini-előkészítéssel, két húzás, Undo, Undo, Redo (az 1. fülön y=380) | 14. (megnyitás: "Undo Fill Light"), 16. (1. húzás után), 18. (2. húzás után), 20., 22., 24. (Undo, Undo, Redo után), ini. A szürke folt: 169 (csak betöltött), 171/200 (egy új réteg egyedül/együtt); a ini `fill` sorainak száma mutatja, a második húzás új réteg vagy a másik módosul. |
-| B14 | 7345-B14 | a pipetta mintaterületének mérete | (31) hat minta egy feladatban: x=781, 780, 779, 783, 784 (y=588) és a bézs/lila határ (682,688); mintánként pipetta, kattintás, 2 s | 14., 17., 20., 23., 26., 29. (a bézs folt kijelzett színe mintavétel után: tiszta bézs p4-nél (161,161,161), a határ-p4 (116,114,138) mellett (198,156,101); köztes keveréknél a kettő között), az ini a UTOLSÓ minta p4-ét adja. 5x5 esetén várt bézs-súly: x=781: 0,6; 780: 0,8; 779: 1,0; 783: 0,2; 784: 0 (tiszta kék); (682,688): 0,4 (bézs/lila). |
+| B8 | 7345-B8 | melyik kép nyílik két kijelölésnél Enterrel, helyi menüvel és dupla kattintással | Lefutott: job-935 | 11. (Enter), 17. és 21. (jobb gomb a gradienten, majd View and Edit), 27. és 31. (jobb gomb a color_patches-en), 37. (dupla kattintás a gradienten). Enter és helyi menü: rács szerinti első; dupla kattintás: kattintott tag. Lásd T7. |
+| B12 | 7345-B12 | megmarad-e az Újra kilépés és újranyitás után | Lefutott: job-932 | 20. (Undo után az Újra aktív), 25. (újranyitás után tiltott), 26. (kattintás után változatlan), ini. Újra csak a nyitott munkamenetben él, a PicasaPy memória-alapú veremével egyezik. |
+| B13 | 7345-B13 | a második Gyakori javítások húzás külön `fill` réteget ír-e a betöltött `fill=1,0.5` mellé | job-933 után célzott ismétlés szükséges | job-933: 16. kocka első húzás után, 18. kocka második húzás után, 20., 22., 24. Undo/Undo/Redo után; a képpontértékek 169, 200, 222, 169, 128, 169. A két húzás egy Undo-lépés, de köztes ini nincs, ezért a 2. húzás rétegszáma nem bizonyított. Az új lépéssor a második húzás után azonnal kilép, hogy az ini ezt eldöntse. |
+| B14 | 7345-B14 | a pipetta mintaterületének mérete | Lefutott: job-934 | A széli minták és az ini utolsó p4 értéke 5x5-ös, középre igazított négyzetet igazol; részletek a B14 frissítésében és a job-934 eredményében. |
 
 **B15 nincs lépéssor:** Wine alatt a korong színe nem dönthető el (E24), mintavétel utáni Windowsos kép nincs. A felvehető következő irány bináris: a `0x00752020`, `0x005fa770`, `0x007518e0`, `0x0050cf90` (a `editpanel/colorwheel%d`, `colorwheel0`, `colorwheel1` hivatkozói) kutatása, `bináris-kutatható` jegyként; tulajdonosi képernyőkép csak akkor kell, ha a binárisból nem olvasható ki.
 **B7 változatlan:** a végrehajtói hiány (megbízható írásvédelem, közbenső fájllista) nem kapott új adatot.
+
+### Job-932..935 eredménye
+
+**Módszer.** A `kepernyo__NN.png` az NN. lépés előtti állapot. A következtetések a döntő képkockákból, a futás végén mentett `picasa.ini`-ből és a képpontmérésekből származnak. Köztes INI-t nem feltételezek ott, ahol a felvétel nem mentett ilyet.
+
+| Felvétel | Döntés és bizalom | Döntő bizonyíték |
+|---|---|---|
+| job-932, B12: két Hangolás-látogatás, Undo, kilépés és újranyitás | **LEZÁRVA, erős.** Az Újra a munkamenet bezárásáig él, újranyitás után nem. | A 20. kockán az Undo utáni Újra aktív; a 25. kockán újranyitás után tiltott; a 26. kockán a kattintás nem változtat az állapoton. A futás végi INI egyetlen `finetune2` réteget tartalmaz, `highlights=0.238596` értékkel. Ez megegyezik a PicasaPy memóriabeli redo-vermével (`edit_controller_history_mixin.py:77-105`, `edit_controller_save_mixin.py:162-168`). |
+| job-933, B13: két Gyakori javítások Derítőfény-húzás, Undo, Undo, Redo | **Részben lezárva, közepes.** A két húzás egyetlen látogatásként egy Undo-lépésbe kerül; az új rétegek pontos száma a második húzás után nyitott. | A szürke folt mért csatornaértéke a 14., 16., 18., 20., 22. és 24. kockán rendre 169, 200, 222, 169, 128, 169. Az első Undo a betöltött `fill=1,0.5` állapotára állít vissza; a második eltávolítja azt; a Redo visszaállítja az első állapotot. A futás végi INI az Undo/Redo után készült, így csak a kiinduló `fill=1,0.500000;` látszik benne. Köztes INI híján a második húzás rétegszáma nem dönthető el.
+| job-934, B14: pipetta mintaméret; #7385 forrásmintája | **LEZÁRVA, erős.** Az eredeti 5x5 forrásképpontot átlagol; ez egyezik a mai PicasaPy megvalósítással. | A hat minta a (781,588), (780,588), (779,588), (783,588), (784,588) széli pontokon és a (682,688) bézs/lila határon történt. A határ mintavétele utáni kimeneti foltok pixelszórása 5x5-tel egyezik, a 3x3 és 7x7 modellel nem. A végső ini p4-e `ff976084`, vagyis RGB (151,96,132), pontosan a forráskép (682,688) körüli 5x5 egyszerű csatornaátlagának kerekítése. A már módosított előnézet ugyanott (191.8,93.4,76.2), ezért a p4 a forrásból jött. A mai PicasaPy `MINTA_FORRAS_KEPPONT = 5` és `teruletatlag()` implementációja (`edit_preview_sample.py:39-44,61-64,98-104`) egyezik.
+| job-935, B8: két kijelölt kép, Enter, helyi menü, dupla kattintás | **JEGYTÖRZZEL ÁTADVA, erős.** Enter és a helyi View and Edit a rács első képét nyitja; a dupla kattintás a megkattintott tagot. | A 9. kockán két kép kijelölt. A 11. kockán Enter után a rács szerinti első `color_patches.jpg` nyílik, noha a `gradient` volt az utoljára kijelölt. A 17. és 21. kockán a `gradient` helyi menüjének View and Edit parancsa szintén `color_patches.jpg`-t nyit. A 27. és 31. kocka a másik kijelölt tag helyi menüjét mutatja. A 37. kockán a `gradient` dupla kattintása a `rgb_gradient.jpg`-t nyitja. |
+
+#### A kiadott jegyek összevetése
+
+| Jegy | Eredmény a felvételekhez képest |
+|---|---|
+| #7383 | Nem cáfolja. A job-932 két látogatása és egy Undo-ja, valamint a korábban mért job-904 pipettaszíne egyezik a látogatási réteg viselkedésével. A nulla nettó hatású látogatás Undo-állapotát ez a felvétel nem vizsgálta. |
+| #7384 | Nem cáfolja. A job-935 nem tesztelte a Ctrl+3-at; a job-895 E18 továbbra is megerősíti a rács szerinti első kép nyitását. A job-935 új eltérése az Enter és a helyi menü útja. |
+| #7385 | Nem cáfolja. A job-934 forrásból származó mintaszíne és a 5x5 méret egyezik a jelenlegi mintavételi kóddal. |
+| #7397 | A betöltött `fill` melletti első húzás új, halmozódó hatását támogatja. A második húzás ugyanazon látogatáson belüli rétegszáma köztes INI nélkül nem dönthető el, ezért sem nem cáfolja, sem teljesen nem igazolja ezt a részét. |
+| #7400 | Nem cáfolja. A job-934 az eredeti semlegesített előnézetet rögzíti, de nem tartalmaz azonos képről származó PicasaPy-render összevetést; a semlegesítés képletének paritását ez a felvétel nem dönti el. |
+
+#### T7: Többes kijelölésnél az Enter és a helyi View and Edit a rács első képét nyissa
+
+**Mi az eltérés.** Két kijelölt képnél az eredeti Picasa az Enter és a helyi menü View and Edit parancsára a rács szerinti első képet nyitja meg. A job-935-ben a `color_patches` volt a rács első eleme, a `gradient` az utoljára kijelölt: mindkét eredeti parancs a `color_patches` képet nyitotta meg. A dupla kattintás célzott marad, és a `gradient` képet nyitotta.
+
+**Eredeti:** `0x007344b0` (a `0x00caed5c` című `View and Edit` sztring `string_xrefs` hivatkozója); job-935, 11., 17., 21. és 37. kocka.
+
+**Nálunk.** Az Enter az utoljára kattintott horgonyt használja (`LightboxFeed.qml:407-409`):
+
+```qml
+if (appWindow.selectedIndex >= 0) {
+    openRequested(appWindow.selectedIndex)
+    ev.accepted = true
+}
+```
+
+A Ctrl-kattintás ezt a horgonyt az utoljára kattintott sorra állítja (`MainLibrarySelectionState.qml:277-280`):
+
+```qml
+hostWindow.selectedIndexes =
+    Selection.toggled(hostWindow.selectedIndexes, i)
+hostWindow.selectedIndex = i
+```
+
+A helyi menü célja közvetlenül a jobb kattintott sor (`MainLibrarySelectionState.qml:228-229`, `MainPhotoContextMenu.qml:111-113`):
+
+```qml
+hostWindow.fileOpTargetRow = index
+hostPhotoContextMenu.popup(item, x, y)
+```
+
+```qml
+onOpenRequested: {
+    hostWindow.openPhotoViewer(hostWindow.fileOpTargetRow)
+}
+```
+
+Ezért a mostani Enter a `gradient` utoljára kijelölt elemre nyit, a `gradient` helyi menüje pedig a jobb kattintott `gradient` képre. A dupla kattintás már a kattintott indexet adja át (`MainLibraryCanvas.qml:390-392`):
+
+```qml
+onOpened: function(i) {
+    hostWindow.openPhotoViewer(i)
+}
+```
+
+**Teendő.** Többes kijelölésnél az Enter és a helyi menü alapértelmezett View and Edit parancsa a rács szerinti első kijelölt képet nyissa meg. A dupla kattintás maradjon a megkattintott képhez kötve. A #7384 Ctrl+3 viselkedése külön út, ezt a jegy ne változtassa.
+
+**Kész, ha.** A `color_patches` majd a `gradient` kijelölése után az Enter a `color_patches` képet nyitja; a `gradient` helyi menüjének View and Edit parancsa ugyanezt nyitja; a `gradient` dupla kattintása továbbra is a `gradient` képet nyitja.
+
+**Bizonyítottsági fok.** Erős, mert a 935-ös felvétel külön rögzíti a kijelölést, mindkét parancs megnyitott képét és a dupla kattintás ellenpróbáját. A PicasaPy kódrészletei közvetlenül idézettek.
 
 ### Független újralevezetés (#140)
 
@@ -514,12 +587,13 @@ Nem készült. A T1 foka a zárókör 2 óta "megerősített" (a bináris és a 
 
 ### Nyitott kérdések mérlege
 
-Nyitott kérdések: 0 nyílt · 21 lezárva (ebből 9 igazolt eltérés) · 6 blokkolt · 0 hatókörön kívül · 0 „csak nyitva" (összesen 27 tétel).
+Nyitott kérdések: 0 nyílt · 24 lezárva (ebből 10 igazolt, látható eltérés) · 1 jegytörzzsel átadva (#7412) · 2 blokkolt · 0 hatókörön kívül (összesen 27 tétel).
 
-- **Lezárva (21):** Z1-Z12 és B1, B2, B3, B4, B5, B6, B9, B10, B11. Az igazolt eltérések (9): Z11 (T1, kint: #7369), Z12 (T2, kint: #7370), B1 (T5), B2 és B3 (T3), B4 (T4), B5 (T6), B10 (T4 kiegészítése), B11 (T6).
-- **Blokkolt (6):** B7 (végrehajtói hiány: megbízható írásvédelem és közbenső fájllista), B8 (többes kijelölés Enter, helyi menü, dupla kattintás; javított lépéssor: B8), B12 (tartós Újra-lista; B12), B13 (`fill` ismételt húzás és Undo; B13), B14 (a pipetta mintaterülete; B14), B15 (a színminta színe; bináris irány). Egyik sem blokkolja a T3, T4, T5, T6 fejlesztését: a kész-feltételek a hiányzó felvételek nélkül teljesíthetők (a T4 az 5x5 ablakot a legkisebb kielégítő ablakként használja, a T6 a `fill` ismételt húzását a mai módon hagyja).
+- **Lezárva (24):** Z1-Z12 és B1, B2, B3, B4, B5, B6, B9, B10, B11, B12, B13, B14 (B13: job-948, egyezik a #7397-tel). Kilenc igazolt eltérés zárult le: Z11 (T1, kint: #7369), Z12 (T2, kint: #7370), B1 (T5), B2 és B3 (T3), B4 (T4), B5 (T6), B10 (T4 kiegészítése), B11 (T6). A tizedik igazolt eltérés T7, B8 alatt jegytörzzsel átadva.
+- **Jegytörzzsel átadva (1):** B8, T7 több kijelölt képnél Enter és helyi View and Edit eltérése: #7412.
+- **Blokkolt (2):** B7 (végrehajtói hiány: megbízható írásvédelem és közbenső fájllista), B15 (a színminta színe; Wine alatt nem dönthető el, bináris irány). B12 és B14 feloldódott a job-932 és job-934 méréssel.
 - **Hatókörön kívül (0):** nincs olyan pont, amelyről tulajdonosi döntés született volna. Alapértelmezett döntések, amelyeket a tulajdonos felülbírálhat: az ini azonnali kiírása marad (B9), a pipetta utáni késő Undo-gomb nem utánzott (B10).
-- **Címke-javaslat a jegyre:** a #7345 a job-895..906 kiértékelésével lezárható. A hat blokkolt tételből felvételi jegy (`bináris-kutatható`): B8, B12, B13, B14 (javított lépéssor kész), B15 (bináris kutatás); a B7 külön gépezet-jegy a privát repóban. A T6 külön fejlesztői jegy (`PicasaPy`, UI-sáv), és a #7383 beolvadása után indul: ugyanazt a forró zónát érinti (`edit_controller_finetune_visit_mixin.py`, `edit/session_effects.py`), ezért szerializálandó. A T4 kiegészítése a #7385 jegyére kerül, a T5 (#7384) változatlan.
+- **Címke-javaslat a jegyre:** a #7345 kutatási mérlege elkészült a job-932..935 eredményeivel. A három blokkolt tétel B7 (végrehajtói hiány), B13 (célzott új felvétel kell) és B15 (bináris kutatás). B8 kész T7 fejlesztői jegytörzzsel átadásra. A meglévő T1-T6 jegytörzsek, a #7383, #7384, #7385, #7397 és #7400 összevetése, valamint a mérleg alapján a kutatási jegy lezárható; a GitHubon nem végeztem műveletet.
 - **Átvezetés a #7327-re:** változatlan (lásd a zárókör 2 mérlegét): az 1. fül Derítőfénye `fill=1,<érték>`, a csúszka nyitáskor alaphelyzetben áll, és új (nem helyben cserélt) réteget ír a betöltött mellé (E27).
 
 **Módosított fájlok:** `docs/specs/paritas-folyamat-7345.md` (ez a lap), `changelog.d/7345.md`.
