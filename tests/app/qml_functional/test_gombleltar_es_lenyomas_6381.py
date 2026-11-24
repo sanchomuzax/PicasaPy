@@ -182,6 +182,12 @@ _NEM_GOMB_KEZELOK = {
         "a kattintásukat. Lenyomott kép a teljes vetítőt elsötétítené, ami "
         "nincs az eredetiben"
     ),
+    ("PicasaPy/EditorModeTools.qml", "retouchPendingCancelArea"): (
+        "#7426: a Retusálás panel vezérlői MÖGÖTTI (z: -1) láthatatlan terület; "
+        "csak félbehagyott foltnál él, a panel üres részére kattintva eldobja a "
+        "foltot (az eredeti `job-949 __20`). Nincs rajzolt felülete, a gombok és "
+        "a csúszka fölötte állnak, tehát nem veszi el a kattintásukat"
+    ),
 }
 
 
