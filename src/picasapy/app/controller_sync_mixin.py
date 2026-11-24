@@ -287,7 +287,13 @@ class AppControllerSyncMixin:
         if mode not in ("search", "search-folder"):
             with open_index(self._db_path) as conn:
                 # #321: a fa sorrendje rögzített; #6751: a kis képek szűrője itt is
-                self._folders.load(conn, kis_kepek_rejtve=self.showOnlyBigImages)
+                self._folders.load(
+                    conn,
+                    kis_kepek_rejtve=self.showOnlyBigImages,
+                    enabled_filetypes=getattr(
+                        self, "_filetype_scan_snapshot", None
+                    ),
+                )
                 self._load_albums(conn)  # #9: a bal hasáb albumlistája
                 # #26 (Emberek) + #1029 (Projektek): mindkettő a `.picasa.ini`-kből
                 # él, ezért EGY söprésből áll elő (#1601). Induláskor pedig

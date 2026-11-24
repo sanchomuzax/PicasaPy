@@ -93,13 +93,22 @@ class SearchMixin:
             self._show(records)
 
     def _filter_search_hidden(self, records: tuple | list) -> tuple:
-        """A rejtett képek szűrése a keresési találatokból (#7194).
+        """A rejtett képek és kikapcsolt fájltípusok szűrése a keresési találatokból (#7194, #7414).
 
         Az eredetiben a keresés eleve kizárja a rejtett képeket
-        (`Preferences\\ShowHidden` hiányában, 0x00660ca2). A bal hasáb, a
-        darabszám és a zöld sáv előtt szűrünk, hogy mind ugyanazt a látható
-        halmazt mutassa.
+        (`Preferences\\ShowHidden` hiányában, 0x00660ca2) és a letiltott típusokat.
+        A bal hasáb, a darabszám és a zöld sáv előtt szűrünk, hogy mind ugyanazt a
+        látható halmazt mutassa.
         """
+        from picasapy.scanner.filetypes import media_kind_if_enabled
+
+        enabled_types = getattr(self, "_filetype_scan_snapshot", None)
+        if enabled_types is not None:
+            records = tuple(
+                r
+                for r in records
+                if media_kind_if_enabled(r.name, enabled_types) is not None
+            )
         if not self.showHidden:
             return tuple(r for r in records if not r.hidden)
         return tuple(records)

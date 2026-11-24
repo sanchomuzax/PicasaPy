@@ -232,7 +232,27 @@ class TimelineController(QObject):
     def _do_reload(self) -> None:
         self._dirty = False
         with open_index(self._db_path) as conn:
-            records = tuple(r for r in all_photos(conn) if not r.hidden)
+            from picasapy.scanner.filetypes import media_kind_if_enabled
+
+            enabled_types = None
+            if self._sync_controller is not None:
+                enabled_types = getattr(
+                    self._sync_controller, "_filetype_scan_snapshot", None
+                )
+            if enabled_types is None and hasattr(self, "_settings"):
+                from picasapy.app.filetype_preferences import enabled_filetypes
+
+                enabled_types = enabled_filetypes(self._settings)
+
+            records = tuple(
+                r
+                for r in all_photos(conn)
+                if not r.hidden
+                and (
+                    enabled_types is None
+                    or media_kind_if_enabled(r.name, enabled_types) is not None
+                )
+            )
             albums = albums_in_index(conn)
             visible_by_id = {record.id: record for record in records}
             photos_by_album: dict[str, list[PhotoRecord]] = {

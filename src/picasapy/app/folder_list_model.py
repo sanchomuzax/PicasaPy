@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 
 from PySide6.QtCore import Property, QAbstractListModel, Qt, Signal, Slot
 
@@ -118,6 +118,36 @@ def _kis_kepek_nelkul(conn: sqlite3.Connection, folders: list) -> list:
         eredmeny.append((name, path, count - kiszurt, *tobbi))
     return eredmeny
 
+
+def _kikapcsolt_tipusok_nelkul(
+    conn: sqlite3.Connection,
+    folders: list,
+    enabled_filetypes: Collection[str] | None,
+) -> list:
+    """#7414: a kikapcsolt fájltípusok levonása a mappaszámlálóból."""
+    if enabled_filetypes is None:
+        return folders
+    from picasapy.scanner.filetypes import media_kind_if_enabled
+
+    kikapcsolt: dict[str, int] = {}
+    for path, name in conn.execute(
+        "SELECT f.path, p.name FROM photos p "
+        "JOIN folders f ON f.id = p.folder_id"
+    ):
+        if media_kind_if_enabled(name, enabled_filetypes) is None:
+            kikapcsolt[path] = kikapcsolt.get(path, 0) + 1
+    if not kikapcsolt:
+        return folders
+    eredmeny = []
+    for sor in folders:
+        name, path, count, *tobbi = sor
+        kiszurt = kikapcsolt.get(path, 0)
+        if kiszurt and count - kiszurt <= 0:
+            continue
+        eredmeny.append((name, path, count - kiszurt, *tobbi))
+    return eredmeny
+
+
 class FolderListModel(QAbstractListModel):
     """Mappa-lista évszám-elválasztó sorokkal (Picasa-minta).
 
@@ -150,6 +180,7 @@ class FolderListModel(QAbstractListModel):
         include_hidden: bool = False,
         exclude_paths: Iterable[str] = (),
         kis_kepek_rejtve: bool = False,
+        enabled_filetypes: Collection[str] | None = None,
     ) -> None:
         """Mappalista Picasa-rendezéssel.
 
@@ -174,6 +205,8 @@ class FolderListModel(QAbstractListModel):
             )
             if sor[1] not in kizart
         ]
+        if enabled_filetypes is not None:
+            folders = _kikapcsolt_tipusok_nelkul(conn, folders, enabled_filetypes)
         if kis_kepek_rejtve:
             folders = _kis_kepek_nelkul(conn, folders)
         # #1637/2: a rejtett mappák nem VEGYÜLNEK vissza a listába — a

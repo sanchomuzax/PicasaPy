@@ -6,6 +6,7 @@ import logging
 
 from PySide6.QtCore import QLocale, QObject, Qt, Signal, Slot
 from picasapy.index import albums_in_index, count_recently_updated_photos, open_index
+from picasapy.scanner.filetypes import media_kind_if_enabled
 from . import formatting
 from .models import folder_order
 from .search_button_filter import AGE_KEEPING_MODES
@@ -132,6 +133,14 @@ class AppControllerPhotoListMixin:
         )
 
     def _show(self, records) -> None:
+        # #7414: a kikapcsolt típusú elemek azonnal elrejtődnek a felületről
+        enabled_types = getattr(self, "_filetype_scan_snapshot", None)
+        if enabled_types is not None:
+            records = tuple(
+                r
+                for r in records
+                if media_kind_if_enabled(r.name, enabled_types) is not None
+            )
         # #4526: a kor-szűrő felirata és csúszkája csak a kor-nézethez
         # tartozik. Bármely más nézet betöltése törölje, így a szűrőgombok és
         # mappaváltások után sem maradhat régi kor-felirat. #7255: a keresés

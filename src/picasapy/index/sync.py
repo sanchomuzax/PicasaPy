@@ -217,7 +217,21 @@ def _scan_matches_index(
         media.name: (media.kind, media.size, media.mtime_ns)
         for media in scan.files
     }
-    return indexed == scanned
+    scanned_names = set(scanned)
+    all_disk_names = set(getattr(scan, "all_media_names", ())) or scanned_names
+    for row_name, row_info in indexed.items():
+        if row_name not in all_disk_names:
+            return False
+        if row_name in scanned_names and row_info != scanned[row_name]:
+            return False
+    for media in scan.files:
+        if media.name not in indexed or indexed[media.name] != (
+            media.kind,
+            media.size,
+            media.mtime_ns,
+        ):
+            return False
+    return True
 
 
 @contextmanager
