@@ -81,7 +81,8 @@ class ViewFilterMixin:
         self._view_mode = ("recent_album", RECENT_ALBUM_TOKEN)
         started = time.perf_counter()
         with open_index(self._db_path) as conn:
-            records = recently_updated_photos(conn)
+            # #7414: a kikapcsolt fájltípusok nem számítanak bele a darabszámba
+            records = self._without_disabled_filetypes(recently_updated_photos(conn))
             self._recently_updated_count = len(records)
         self._show_filtered(records, time.perf_counter() - started)
 

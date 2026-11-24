@@ -941,6 +941,8 @@ class TestFileTypesTab:
         self, dialog, qt_app, tmp_path, height_offset
     ):
         from picasapy.index import open_index, sync_tree
+        from picasapy.scanner import scan_tree
+        from picasapy.scanner.filetypes import media_kind_if_enabled
         from support.jpeg_factory import make_jpeg
 
         window, controller, *_ = dialog
@@ -1013,7 +1015,24 @@ class TestFileTypesTab:
                 for sor in conn.execute("SELECT name FROM photos").fetchall()
             }
 
-        assert uj_nevek == {"kep.jpg"}
+        # #7414: a kikapcsolt típus sora NEM törlődik az indexből (az eredeti
+        # a tartós adatbázisból sem törli, 0x004fb9c0), hogy a visszakapcsolás
+        # újraolvasás nélkül működjön. A teszt eredeti szándéka, hogy a
+        # kikapcsolt típus kikerül az újraolvasásból és a felületről, ezért
+        # azt most a bejárás eredményén és a felületi szűrőn mérjük.
+        assert uj_nevek == {"kep.jpg", "kep.cr2"}
+        beolvasott = {
+            media.name
+            for scan in scan_tree(root, enabled_filetypes=enabled)
+            for media in scan.files
+        }
+        assert beolvasott == {"kep.jpg"}
+        lathato = {
+            nev
+            for nev in uj_nevek
+            if media_kind_if_enabled(nev, enabled) is not None
+        }
+        assert lathato == {"kep.jpg"}
         assert ini.read_text(encoding="utf-8") == ini_tartalom
         if height_offset == 0:
             screenshot = window.grabWindow()

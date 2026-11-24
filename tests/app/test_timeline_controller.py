@@ -224,3 +224,50 @@ class TestTimelineCollectionCards:
         assert model.filePathAt(0) == "/library/earlier/earlier.jpg"
         assert model.filePathAt(1) == "/library/earlier/next.jpg"
         assert model.filePathAt(2) == "/library/earlier/last.jpg"
+
+
+class _FakeProvider:
+    def __init__(self):
+        self.registered: tuple = ()
+
+    def register_photos(self, records) -> None:
+        self.registered = tuple(records)
+
+
+class _FakeSync:
+    def __init__(self, snapshot):
+        self._filetype_scan_snapshot = snapshot
+
+
+def test_idorend_a_kikapcsolt_fajltipus_sorait_elrejti_de_az_index_megtartja(
+    qt_app, tmp_path
+):
+    """#7414: a kikapcsolt típus sora az indexben marad, az időrend mégsem mutatja."""
+    from picasapy.index import open_index, sync_tree
+    from picasapy.scanner.filetypes import FILETYPE_GROUPS
+
+    root = tmp_path / "kepek"
+    folder = root / "nyaralas"
+    folder.mkdir(parents=True)
+    (folder / "kep.jpg").write_bytes(b"jpeg")
+    (folder / "film.mp4").write_bytes(b"movie")
+    db_path = tmp_path / "index.db"
+    with open_index(db_path) as conn:
+        sync_tree(conn, root, incremental=False, enabled_filetypes=set(FILETYPE_GROUPS))
+
+    provider = _FakeProvider()
+    sync = _FakeSync(frozenset(FILETYPE_GROUPS) - {"movies"})
+    controller = TimelineController(
+        db_path, provider=provider, sync_controller=sync
+    )
+    controller._do_reload()
+
+    assert {record.name for record in provider.registered} == {"kep.jpg"}
+    with open_index(db_path) as conn:
+        indexben = {row["name"] for row in conn.execute("SELECT name FROM photos")}
+    assert indexben == {"kep.jpg", "film.mp4"}
+
+    # visszakapcsolva az időrend újra mutatja, az indexet nem kell újraépíteni
+    sync._filetype_scan_snapshot = frozenset(FILETYPE_GROUPS)
+    controller._do_reload()
+    assert {record.name for record in provider.registered} == {"kep.jpg", "film.mp4"}

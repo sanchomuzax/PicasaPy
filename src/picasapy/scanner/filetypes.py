@@ -112,6 +112,25 @@ _EXTENSION_FILETYPE_GROUP = {
 }
 
 
+def disabled_extensions(
+    enabled_filetypes: Collection[str] | None,
+) -> tuple[str, ...]:
+    """A kikapcsolt csoportok kiterjesztései (rendezve, ponttal), #7414.
+
+    `None` (nincs szűrő) esetén üres. A JPEG nem kapcsolható ki, ezért sosem
+    szerepel benne."""
+    if enabled_filetypes is None:
+        return ()
+    return tuple(
+        sorted(
+            extension
+            for group, extensions in FILETYPE_GROUP_EXTENSIONS.items()
+            if group not in enabled_filetypes
+            for extension in extensions
+        )
+    )
+
+
 def media_kind_of(name: str) -> str | None:
     """'photo' / 'raw' / 'video', vagy None, ha nem Picasa-média."""
     extension = PurePath(name).suffix.lower()

@@ -208,6 +208,10 @@ class _LibraryFoldersMixin:
         settings = self._get_settings()
         set_file_type_enabled(settings, group, enabled)
         self._filetype_scan_snapshot = enabled_filetype_groups(settings)
+        # #7414: az eredeti Picasa paritása szerint (0x004fb9c0) a letiltott típus
+        # elemei azonnal eltűnnek a felületről, a sorok megmaradnak az indexben.
+        if hasattr(self, "_refresh_after_filetype_change"):
+            self._refresh_after_filetype_change()
 
     @Slot(result=list)
     def supportedRawExtensions(self) -> list[str]:  # noqa: N802 — QML-slot

@@ -121,5 +121,6 @@ def test_filetipusvaltas_invalidatealja_az_inkrementalis_kiolvasast(
             sor["name"] for sor in conn.execute("SELECT name FROM photos").fetchall()
         }
 
-    assert nevek == {"kep.jpg"}
+    # #7414: fájltípus-kikapcsoláskor az indexben a sor megmarad, nem törlődik.
+    assert nevek == {"kep.jpg", "kep.cr2"}
     assert ini.read_text(encoding="utf-8") == ini_tartalom

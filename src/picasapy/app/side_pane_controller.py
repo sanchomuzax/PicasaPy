@@ -46,11 +46,12 @@ from PySide6.QtCore import Property, QMetaObject, Qt, Signal, Slot
 from picasapy.index import open_index
 from picasapy.index.side_pane import (
     SidePaneCollections,
-    cached_side_pane_collections,
+    _cached_side_pane_collections,
     refresh_side_pane_cache,
     side_pane_cache_coverage,
     side_pane_cache_ready,
 )
+from picasapy.index.project_folders import _project_folders_from_paths
 from picasapy.ini import central_contacts_path
 
 logger = logging.getLogger(__name__)
@@ -94,13 +95,16 @@ class SidePaneMixin:
         self, folder_path: str, category: str | None
     ) -> None:
         """A sikeres ini-írást azonnal átvezeti a két mappás gyűjteménybe."""
-        from picasapy.index.project_folders import project_folders_from_paths
         from picasapy.ini import OTHER_STUFF_CATEGORY, PROJECTS_CATEGORY
 
         with open_index(self._db_path) as conn:
             by_path = {
                 row.path: row
-                for row in project_folders_from_paths(conn, (folder_path,))
+                for row in _project_folders_from_paths(
+                    conn,
+                    (folder_path,),
+                    getattr(self, "_filetype_scan_snapshot", None),
+                )
             }
         self._project_folders = tuple(
             folder for folder in getattr(self, "_project_folders", ())
@@ -147,8 +151,12 @@ class SidePaneMixin:
                 refresh_side_pane_cache(
                     conn, folders, central_path=central_path
                 )
-            collections = cached_side_pane_collections(
-                conn, central_path=central_path
+            collections = _cached_side_pane_collections(
+                conn,
+                central_path=central_path,
+                enabled_filetypes=getattr(
+                    self, "_filetype_scan_snapshot", None
+                ),
             )
             if collections is None:
                 return False
@@ -176,6 +184,27 @@ class SidePaneMixin:
 
     def _side_pane_cache_ready(self, conn: sqlite3.Connection) -> bool:
         return side_pane_cache_ready(conn)
+
+    def _refresh_side_pane_filetype_counts(
+        self, conn: sqlite3.Connection
+    ) -> bool:
+        """A típusváltás után újraszámolja a gyűjteményeket a meleg ini-gyorstárból.
+
+        A függőben lévő gyűjtemény-pillanatkép a korábbi fájltípus-beállítást
+        tartalmazhatja, ezért eldobás után a mostani beállítással épül újra.
+        Ez az út csak SQLite-t olvas; az ini-fájlokhoz nem nyúl.
+        """
+        self._take_side_pane_stash()
+        collections = _cached_side_pane_collections(
+            conn,
+            central_path=central_contacts_path(self._db_path),
+            enabled_filetypes=getattr(self, "_filetype_scan_snapshot", None),
+        )
+        if collections is None:
+            self._schedule_side_pane_warmup()
+            return False
+        self._apply_side_pane(collections)
+        return True
 
     def _finish_index_sync(
         self,
@@ -230,8 +259,12 @@ class SidePaneMixin:
             missing, total = side_pane_cache_coverage(conn)
             if not missing or (missing < total and missing <= _HELYBEN_POTOLHATO_MAPPA):
                 refresh_side_pane_cache(conn, central_path=central_path)
-            collections = cached_side_pane_collections(
-                conn, central_path=central_path
+            collections = _cached_side_pane_collections(
+                conn,
+                central_path=central_path,
+                enabled_filetypes=getattr(
+                    self, "_filetype_scan_snapshot", None
+                ),
             )
         if collections is None:
             self._schedule_side_pane_warmup()

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import Property, Signal
 
-from picasapy.index.project_folders import project_folders
+from picasapy.index.project_folders import _project_folders_for_filetypes
 
 
 class ProjectFoldersMixin:
@@ -38,7 +38,9 @@ class ProjectFoldersMixin:
         ⚠️ #1601: a `_reload()` már NEM ezt hívja, hanem a
         `SidePaneMixin._load_side_pane`-t — az az Emberek gyűjteménnyel
         KÖZÖS, egyetlen `.picasa.ini`-söprésből állítja elő mindkettőt."""
-        self._project_folders = project_folders(conn)
+        self._project_folders = _project_folders_for_filetypes(
+            conn, getattr(self, "_filetype_scan_snapshot", None)
+        )
         self.projectFoldersChanged.emit()
 
     @Property(list, notify=projectFoldersChanged)
