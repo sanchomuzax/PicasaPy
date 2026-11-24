@@ -401,11 +401,13 @@ ListView {
         } else if (ev.key === Qt.Key_Return || ev.key === Qt.Key_Enter) {
             // #1417: az Enter a rács helyi menüjének FÉLKÖVÉR,
             // alapértelmezett tétele („Megjelenítés és szerkesztés\tEnter",
-            // PhotoContextMenu.qml) — ugyanazt teszi, mint a dupla
-            // kattintás. Kijelölés nélkül nincs mit megnyitni, olyankor az
-            // eseményt sem vesszük el (mehet tovább a fókuszláncon).
-            if (appWindow.selectedIndex >= 0) {
-                openRequested(appWindow.selectedIndex)
+            // PhotoContextMenu.qml) — a többes kijelölés rács szerinti első
+            // képét nyitja meg. A dupla kattintás külön, a megkattintott
+            // indexet adja át. Üres kijelölésnél az esemény mehet tovább a
+            // fókuszláncon.
+            var row = Selection.firstInGridOrder(appWindow.selectedRows())
+            if (row >= 0) {
+                openRequested(row)
                 ev.accepted = true
             }
         }
