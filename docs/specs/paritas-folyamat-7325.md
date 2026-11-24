@@ -61,7 +61,7 @@ A mentés után, a megnyitó még ugyanabban a hívásban, ebben a sorrendben:
 | Sorrend | Feltétel | Hatás | Cím | Fok |
 |---|---|---|---|---|
 | a | a főablak `[ebp+0xeb0]` mutatója nem üres | a mutatott objektumon jelzőbit-állítás (`+8` `|= 2`, `+0x290` bájt = 1); jelentése **NINCS MEG** | `0x005cf73c`-`0x005cf76b` | a cím és az írás erős, a jelentés nyitott |
-| b | az importcél szövege változott (`0x006e5740`) | az új célmappa **felvétele a mappatárba**: `0x004ef8f0` (keresés; `9` = nincs találat), `0x004f1e50` (kis-nagybetűtlen útvonal-összehasonlítás egy listában), majd `0x004f6a20` (a `scanlist.txt` kezelő, [picasa-mappakezelo.md](picasa-mappakezelo.md) 11. szakasz), és a `0x004f5960` (`watchedfolders.txt`), `0x004f5d90` (`frexcludefolders.txt`) újraírása. Hiba esetén a megnyitó a hibakódot adja vissza (a menükezelő eldobja, **nincs üzenet**). A felvétel pontos módja (egyszeri vagy folyamatos figyelés) **NINCS MEG**. | `0x005cf772`-`0x005cfaf1` | feltételes |
+| b | az importcél szövege változott (`0x006e5740`) | az új célmappa **felvétele a mappatárba**: `0x004ef8f0` (keresés; `9` = nincs találat), `0x004f1e50` (kis-nagybetűtlen útvonal-összehasonlítás egy listában), majd `0x004f6a20` (a `scanlist.txt` kezelő, [picasa-mappakezelo.md](picasa-mappakezelo.md) 11. szakasz), és a `0x004f5960` (`watchedfolders.txt`), `0x004f5d90` (`frexcludefolders.txt`) újraírása. Hiba esetén a megnyitó a hibakódot adja vissza (a menükezelő eldobja, **nincs üzenet**). A felvétel módja **folyamatos figyelés**: az új importcél a Folder Manager „Watched Folders” listájában jelenik meg (M5: `job-958`, kontroll `job-962`), a `scanlist.txt` nem változik. | `0x005cf772`-`0x005cfaf1` | erős (bináris + mérés) |
 | c | mindig | a `SingleClickExit` kiolvasása (alapérték 0) az **élő** jelzőbe: `[ebp+0x31ac]` | `0x005cfafc`-`0x005cfb27` | erős |
 | d | a 12 fájltípus-kapcsoló összevetése a kezdő pillanatképpel | minden megváltozott típusra a szűrő frissítése (`0x004fadb0`, típus-kódokkal, a 30 ágú táblát a [picasa-mappakezelo.md](picasa-mappakezelo.md) 2521. sora írja); ha volt **letiltott** típus: `0x004fb9c0`; ha volt **engedélyezett**: `0x004efb40`; végül mindig `0x004ebe40`. A film-típusnál a `searchoptions/moviesearch` elem frissítése is (`0x005d4a90`, `SupportMovies`). A `0x004fb9c0` a memóriabeli aktív kollekció rekordjain megy végig, és a típus-egyezés (`0x004e2cc0`) esetén a rekordot azonnal kiveszi a listából (`0x004f9450`, `0x0040fae0`), majd `0x004fbb30`-cal értesíti a nézetet; a lemezes tartós katalógust (`db3`) a gombnyomás nem törli. Bekapcsolásnál a `0x004efb40` végigmegy a figyelt mappákon és mindegyikre meghívja a `0x004e31a0`-t, amely a könyvtárfigyelő/szkenner interfészének (`[ebp+0x344]+0x10`) küld újraolvasási kérést (lezárva: #7339). | `0x005cfb50`-`0x005cfd8f` | erős (a #7339 szerint) |
 | e | a `thumbui/printpanel` elem létezik (`0x005cfda3`-`0x005cfdad`) és a `+0x20c` bájtja nulla (`0x005cfdb1`) | a gyorsméret-gombok újracímkézése (`0x00743700`) és a panel frissítése (`0x00745980`); a köteg végén az egérkurzor nyílra áll (`LoadCursorA(0, 0x7f00)`, `SetCursor`) | `0x005cfd94`-`0x005cfde5` | erős a szerkezetre; a `+0x20c` bájt jelentése nyitott |
@@ -106,7 +106,7 @@ A "Nálunk" oszlop a munkafa (`research/7325-claude`, `main` 6afb212f3) szó sze
 
 - Nem állítom, hogy a `0x004fb9c0` **törli a fájlt**: a rekordot a mappatárból veszi ki; a lemezen lévő fájl sorsa nem vizsgált.
 - Nem állítom, hogy a `0x006b8710` a **lemezes** cache-t törli: törzsében nincs fájl-API, a hívott segédek (`0x006b5bc0`, `0x00980ec0` stb.) nincsenek megnézve.
-- Nem állítom, hogy az importcél felvétele **folyamatos figyelés**: a `scanlist.txt` kezelő hívása egyszeri beolvasást is jelenthet; a mód NINCS MEG.
+- Az importcél felvétele **folyamatos figyelés** (M5, lásd „M5 eredménye”). Nem állítom, hogy a `watchedfolders.txt` az OK-kor íródik: a `job-958` db3-mappájában a feladat végéig nincs ilyen fájl, a figyelt lista forrása az `AcquirePath` registry-érték lehet; ezt a fejlesztői jegy nem igényli.
 - A `usagestats` vezérlőnév a kötött listában van (`0x006e1392`), tehát az általános mentés feltehetően a `Preferences\usagestats` kulcsot is kiírná; a registryben való tényleges megjelenése **NINCS MEG** (M3 mérés).
 
 ## 4. A két független út és a cáfoló kísérlet
@@ -208,13 +208,35 @@ A #7339 kérdésére (mit tesz az eredeti Picasa a tartós katalógussal fájlt�
 | 2 | Melyik fülre nyit az Opciók, és megmarad-e az újraindítás után? | **LEZÁRVA** (erős): `LastUsedOptionsPage`, minden lezáráskor mentve. M2 csak megerősít. |
 | 3 | Van-e hibaág vagy üzenet az Opciók mentési láncában? | **LEZÁRVA** (feltételes): nincs a `0x006e3990` és a `0x005cf5b0` saját sztringjei között, a nyelvváltás megerősítésén kívül. |
 | 4 | Törli-e a `0x006b8710` a lemezes cache-t, és mit tesz a `0x004fb9c0`/`0x004efb40` a lemezen lévő fájlokkal? | **LEZÁRVA** (erős): a `0x004fb9c0` csak a memóriabeli kollekcióból veszi ki az elemeket (`db3` lemezre nem nyúl), a `0x004efb40` pedig a `0x004e31a0`-n át háttérbeli mappa-újrapásztázással olvassa vissza őket (#7339). A `0x006b8710` lemezes cache-t nem töröl. |
-| 5 | Milyen módban veszi fel az importcélt a mappatárba? | **BLOKKOLT:** Ghidra (D jegy) és M5. |
+| 5 | Milyen módban veszi fel az importcélt a mappatárba? | **LEZÁRVA** (erős): folyamatos figyelés, a „Watched Folders” listába kerül (M5: `job-958` a `job-962` kontrollal). Fejlesztői jegytörzs: E (#7437). |
 | 6 | Mit számol újra a `0x00487590` az OK után? | **LEZÁRVA** (erős): a `0x0048aab0(0)` csak a `FRSuggestionThreshold` vagy a `FRSuggestionSingleThreshold` változásakor ad `0xf4240`-et, különben nullát (`0x0048adc4` `xor eax, eax`; `0x0048ae7e`); a `0x00487590` a `0x00449a90` személyalbum-listája alapján egyezteti az albumok címketagságát (`0x0045ecf0` törlés, `0x004d9aa0` hozzáadás). Lásd a #7331 lapot ([paritas-folyamat-7331.md](paritas-folyamat-7331.md), `docs/specs/paritas-folyamat-7331.md`), fejlesztői jegy: #7373. |
 | 7 | Mikor zárolja a menüsort a `0x007615d0`? | **BLOKKOLT:** M6, vagy a CThumbUI 5. vtábla-helyének hívóit kereső Ghidra-pásztázás. |
 | 8 | Kiírja-e a generikus mentés a `Preferences\usagestats` kulcsot? | **BLOKKOLT:** M3. |
 | 9 | Megvan-e a `ReportStats` "nincs tárolva" háromállapotú viselkedése nálunk? | **LEZÁRVA** (a #5470 és ez a lap): az eredeti nem írja a kulcsot jelölés nélkül, a PicasaPy-ban a jelölő letiltott, tehát nincs eltérés a hiányzó funkció miatt. |
 
 **Nyitott kérdések: 0 nyílt (örökölt) · 5 lezárva · 4 blokkolt · 0 hatókörön kívül · 0 "csak nyitva".**
+
+### M5 eredménye (#7330)
+
+**Felvétel.** `job-956`, `job-958`: Options... ▸ General ▸ Browse... ▸ `C:\users\picasa\Music` ▸ OK ▸ OK, majd Tools ▸ Folder Manager...; kontroll `job-962`: ugyanaz a Folder Manager az importcél módosítása nélkül.
+
+| | `job-958` (importcél: Music) | `job-962` (kontroll) |
+|---|---|---|
+| registry `AcquirePath` | `C:\users\picasa\Music\` | nincs |
+| `db3/scanlist.txt` | `+C:\` (6 bájt) | `+C:\` (6 bájt) |
+| Folder Manager „Watched Folders” (a lista vége) | My Videos, `C:\PicasaTeszt\`, **My Music** | Desktop, My Videos, `C:\PicasaTeszt\` |
+
+**Következtetés.** Az Opciók OK-ja a megváltozott importcélt a figyelt mappák közé veszi fel (folyamatos figyelés), a `scanlist.txt` (egyszeri beolvasás) nem változik. A mezőt csak a Browse... állíthatja (a mező csak olvasható, `job-826`).
+
+##### (E) Az Opciókban beállított importcél kerüljön a figyelt mappák közé (jegy: #7437)
+
+> **Eredeti:** `0x005cf772`-`0x005cfaf1` (az importcél változásakor `0x004ef8f0` keresés, felvétel a mappatárba); mérés: `job-958` „Watched Folders” listájában a „My Music”, a `job-962` kontrollban nincs.
+>
+> **Nálunk:** `src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml:424-437` (a Browse csak a `general.importDestination` beállítást rögzíti), `src/picasapy/app/import_source_controller_state.py:186-201` (`setDefaultDestination` csak a beállítást menti); a figyelt gyökerek listájához nem nyúl.
+>
+> **Teendő:** az Opciók OK gombjának megnyomásakor, ha az importcél megváltozott és még nincs a figyelt mappák között, vedd fel figyelt mappaként (a Folder Manager „Scan Always” állapotával egyezően); ha már figyelt vagy egy figyelt mappa alatt van, ne vedd fel újra. Hibát üzenet nélkül nyeld el, mint az eredeti.
+>
+> **Kész, ha:** (1) új importcél Browse-zal és OK-val, majd a Folder Manager „Watched Folders” listájában megjelenik; (2) Cancel-lel nem; (3) már figyelt mappánál nincs ismétlődő bejegyzés; (4) próba mindhárom esetre.
 
 ## 7. Módosított fájlok
 
