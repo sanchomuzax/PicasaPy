@@ -38,7 +38,10 @@ effect is applied to the open photo at once. A single **Undo** removes
 it. **Sharpen** opens the same settings panel as its tile; the photo
 changes only after you click **Apply** there. Where the tile cannot be
 used at the moment (for example while Crop or Straighten is open), the
-menu command does nothing either.
+menu command does nothing either. While an effect's settings panel is
+open in the editor, the **Picture** menu items and the **Batch Edit**
+submenu are disabled; they become available again when you close the
+panel.
 
 ### Show or hide text
 

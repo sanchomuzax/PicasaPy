@@ -105,7 +105,7 @@ Nine common controls are available:
 - **Auto Color** neutralizes color automatically.
 - **Retouch** removes a spot with a brush.
 - **Text** adds text to the picture.
-- **Fill Light** brightens dark areas with a slider. This slider is independent of the slider of the same name on the **Fine Tuning** tab: each sets its own layer, and moving one does not move the other. The Undo button then reads "Undo Fill Light".
+- **Fill Light** brightens dark areas with a slider. This slider is independent of the slider of the same name on the **Fine Tuning** tab: each sets its own layer, and moving one does not move the other. The Undo button then reads "Undo Fill Light". If the picture already has Fill Light, the new adjustment is added next to it, and the two effects add up.
 
 ### Where to find Apply and Cancel
 
@@ -127,6 +127,11 @@ straightening and adds it to the edit history only if the value changed.
 as it was when the tool opened. While Straighten is open, the left panel
 is disabled and its Undo/Redo row is hidden. After applying, Undo is
 available and identifies the edit.
+
+If you open Straighten again on a picture that is already straightened,
+the slider starts from the middle, at 0. Applying again does not replace
+the earlier straightening; it adds a new one after it, and each is a
+separate **Undo** step.
 
 ## Crop
 
@@ -150,6 +155,9 @@ or sides to resize it, or drag inside it to move it.
   non-destructively, **Cancel** discards it, and **Reset** removes a
   crop that was already applied.
 
+**Rotate**, **Preview**, and **Apply** are disabled until you drag a crop
+frame on the picture.
+
 ### Recrop
 
 If the last edit on a picture was a crop and you crop again, **Apply**
@@ -157,9 +165,6 @@ replaces that crop instead of adding another one. A single **Undo**
 therefore removes both crops, and **Redo** brings back the second one. If
 you made other edits after the crop, the new crop is added after them as
 a separate step.
-
-If you click **Apply** without a frame, the crop that is the last step on
-the picture is removed. You can undo this too.
 
 ### Constrain the crop ratio while dragging
 
@@ -210,18 +215,30 @@ outlines to show the result clearly.
 
 ## Retouch
 
-Use the **Brush Size** slider to set the spot size. Click the area to
+The panel title is **Retouch blemishes**.
+
+Use the **Brush Size** slider to set the spot size. When the panel opens,
+the slider handle is in the middle. The slider grows the brush evenly, and
+the brush size does not depend on the picture's resolution. When you zoom
+in, the circle grows with the zoom, and when you zoom out it shrinks, but
+it always covers the same part of the picture. Click the area to
 repair, move the pointer to preview the replacement, then click again
 to apply it. A circle shows the brush size; after the first click, the
 target and source circles remain visible until the repair finishes.
-When zoomed in, hold Ctrl and drag to pan. The panel reports the number
-of repaired spots.
+When zoomed in, hold Ctrl and drag to pan.
 
 Retouching matches the source texture, such as skin or grass, while
 adjusting its brightness and color to the target area. This helps it
 blend in even when the source was lighter or darker. **Undo Patch** and
 **Redo Patch** move through individual repairs; **Reset** removes them
 all.
+
+If you remove an applied retouch with the editor's **Undo** button, the
+program first asks in a **Confirm** window: "Retouch fixes cannot be
+recovered with redo. Are you sure you want to undo?" The two buttons are
+**Undo** and **No**; **No** has the focus. If you choose to undo, the
+**Redo** button is disabled afterwards: the retouch cannot be brought
+back.
 
 ## Text
 
@@ -247,7 +264,9 @@ continuously; zero removes the outline.
 
 **Copy Caption** inserts the picture's existing caption as text.
 **Clear All** removes all text on the picture (its tooltip reads "Remove
-all existing text").
+all existing text"). Until you apply, the removal exists only inside the
+tool: **Cancel** brings the text back, and **Apply** makes the removal
+final.
 
 Text settings, including font, size, bold, outline thickness, and
 colors, are stored in `.picasa.ini`. The caption therefore looks the
@@ -313,7 +332,18 @@ can correct the colors around it.
 
 The eyedropper samples only on this tab: on other tabs, clicking the
 picture does not change the colors. When you switch to the **Fine Tuning**
-tab, the eyedropper is off; turn it on again if you want to use it.
+tab, or move to another picture, the eyedropper is off; turn it on again
+if you want to use it. The eyedropper reads the color from the picture as
+it was before the settings on this tab, and it does not look at a
+single pixel but averages a small area around the point you click. The
+neutralized colors match the original Picasa.
+
+The sliders always start from their default position: when you open
+the tab, after switching tabs or pictures, and after **Undo** or
+**Redo**. Earlier adjustments stay on the picture. One visit to the tab
+is a single new edit, and a single **Undo** removes it. If you change
+nothing on the tab (or drag everything back to zero), no undo step is
+left behind.
 
 The **Fill Light** slider here is independent of the Fill Light slider on
 the Common fixes tab.

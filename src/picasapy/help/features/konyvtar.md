@@ -10,7 +10,7 @@ csillaggal**, a címke pedig **szürke címke**.
 
 A **Nézet ▸ Könyvtárnézet** pipa mutatja, hogy a főablak a könyvtárat
 mutatja. Ez a pipa mindig be van kapcsolva. A párja, a **Nézet ▸
-Szerkesztési nézet** (Ctrl+3) a kijelölt képet (többnél az elsőt) megnyitja a nézőben, ahol
+Szerkesztési nézet** (Ctrl+3) a kijelölt képet (többnél a rácsban elöl állót) megnyitja a nézőben, ahol
 szerkesztheted — lásd [Nézegetés](nezegetes.md). Ugyanezt teszi a
 **Kép ▸ Megjelenítés és szerkesztés** is. Mindkettő szürke, amíg nincs
 kijelölt kép. A **Nézet ▸ Szerkesztési vezérlők megjelenítése** kapcsoló
@@ -281,7 +281,9 @@ Picasa is így rendez.
 > kövessék egymást a rácsban, a legutóbb változott mappával kezdve. Ez a
 > tétel saját PicasaPy-funkció (kék felirat jelzi), az eredeti Picasában
 > nem volt meg. Ha ezt választod, pipa áll mellette, és a rács ezt a
-> sorrendet követi a hasáb rendezése helyett.
+> sorrendet követi a hasáb rendezése helyett. Kikapcsolni úgy tudod, ha
+> újra rákattintasz, vagy ha a bal hasáb rendezését átállítod: ilyenkor a
+> rács ismét a hasáb sorrendjét követi.
 
 A **Szín** szerinti rendezés a képek uralkodó színe szerint sorakoztat: a
 színes képek jönnek elöl, a szivárvány sorrendjében, utánuk a

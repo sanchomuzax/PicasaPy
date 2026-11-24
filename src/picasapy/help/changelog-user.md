@@ -4,6 +4,42 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-24
+
+**Szerkesztő**
+
+- Mentés után a szerkesztő **Visszavonás** gombja **Mentés visszavonása**
+  lesz: visszahozza a mentés előtti fájlt, a szerkesztések megmaradnak.
+  Lásd [Mentés](features/mentes.md).
+- A **Szöveg** eszköz **Az összes törlése** gombja után a **Mégse**
+  visszahozza a szövegeket; a törlés csak az **Alkalmaz** után végleges.
+- A **Retusálás** panel címe **Szennyeződések retusálása**. Az ecset
+  mérete a csúszkával egyenletesen nő, a nagyítással együtt változik, és
+  nem függ a kép felbontásától. Az alkalmazott retusálás visszavonása előtt
+  a program rákérdez (**Visszavonás** / **Nem**), és utána az **Újra**
+  szürke. Lásd [A szerkesztő](features/szerkeszto.md).
+- A **Vágás** panelen a **Forgatás**, az **Előnézet** és az **Alkalmaz**
+  szürke, amíg nincs vágókeret a képen.
+- A **Kiegyenesítés** egy már kiegyenesített képen 0-ról indul, és minden
+  újabb **ALKALMAZ** külön, visszavonható lépés.
+- A **Finomhangolás** csúszkái minden látogatáskor alaphelyzetből
+  indulnak; egy látogatás egy visszavonási lépés, a változtatás nélküli
+  látogatás nem hagy lépést. A pipetta a fül állításai előtti színből,
+  kis terület átlagával mintáz, és képváltáskor kikapcsol.
+- Nyitott effekt-beállítópanel mellett a **Kép** menü és a **Csoportos
+  szerkesztés** almenü szürke.
+- A **Lágy fókusz** csúszkái középen, 0-ról, a **Ragyogás** **Sugár**
+  csúszkája 3,0-ról indul.
+- Effektparancs után a szerkesztő állapotsora rövidebb alakra vált.
+
+**Könyvtár**
+
+- A **Ctrl+3** kijelölés nélkül a rács első képét nyitja meg, több
+  kijelölt képnél a rácsban elöl állót. Lásd
+  [Billentyűparancsok](features/billentyuk.md).
+- A **Mappa ▸ Rendezés ▸ Legutóbbi változtatások** újabb kattintással
+  vagy a bal hasáb rendezésének átállításával kikapcsolható.
+
 ## 2026-11-23
 
 **Szerkesztő**

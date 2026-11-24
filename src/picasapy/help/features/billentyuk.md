@@ -74,7 +74,7 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | Ctrl+K | Címkék panel (ugyanaz, mint a Ctrl+T) |
 | Ctrl+Shift+G | A Helyek panel megnyitása - lásd [Helyek és geocímkék](helyek.md); csak a könyvtárban |
 | Ctrl+0 | A jobb oldali panel be- és kikapcsolása |
-| Ctrl+3 | A kijelölt kép megnyitása a nézőben |
+| Ctrl+3 | A kijelölt kép megnyitása a nézőben; több kijelölt képnél a rácsban elöl állót, kijelölés nélkül a rács első képét nyitja meg |
 | Ctrl+F | A kereső mezőre ugrik |
 | F3 | A kereső mezőre ugrik (ugyanaz, mint a Ctrl+F); a nézőben nem működik |
 | F4 | Csillag adása vagy elvétele a kijelölt képeken, mint a képtálca csillag-gombja; a nézőben is működik, diavetítés alatt és gépelés közben nem |
@@ -89,7 +89,9 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 
 > A **Ctrl+3** ugyanazt csinálja, mint a **Nézet ▸ Szerkesztési nézet**
 > és a **Kép ▸ Megjelenítés és szerkesztés** menüpont: megnyitja a
-> kijelölt képet a nézőben. A két menüpont csak kijelölt képnél élénk.
+> kijelölt képet a nézőben. A két menüpont csak kijelölt képnél élénk,
+> a **Ctrl+3** viszont kijelölés nélkül is működik: ilyenkor a rács első
+> képét nyitja meg.
 
 A **Ctrl+0** azt a panelt zárja be, amelyik éppen nyitva van a jobb
 oldalon (Címkék, Helyek, Tulajdonságok vagy Emberek), és újranyitáskor

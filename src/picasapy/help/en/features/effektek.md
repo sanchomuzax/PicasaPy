@@ -190,6 +190,9 @@ focus point and the pointer becomes a crosshair. Click or drag with the
 left mouse button to move the center. The marker jumps to that point,
 and the **Center X** and **Center Y** sliders follow it.
 
+The **Soft Focus** panel opens with the **Size** and **Amount** sliders in
+the middle of the track, at 0, as in the original Picasa.
+
 For **Graduated Tint**, the marker also has a short line showing the
 gradient direction. It turns slightly as the point moves horizontally.
 
@@ -242,7 +245,8 @@ way.
 | Legacy Effects | Film Grain | Film Grain (Old) |
 
 **Glow (Old)** opens a slider panel like other effects; adjust it with
-**Intensity** and **Radius**.
+**Intensity** and **Radius**. **Radius** starts at 3.0 on both the
+**Glow** and the **Glow (Old)** panel, as in the original.
 
 **Focal Pixelate** pixelates only the area around a point, leaving a
 spot in the photo sharp and gradually pixelating outward. Selecting it
