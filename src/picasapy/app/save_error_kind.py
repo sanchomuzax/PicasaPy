@@ -62,18 +62,70 @@ def save_error_kind(error: BaseException, *, is_copy: bool = False) -> str:
     return KIND_COPY_DISK if is_copy else KIND_DISK
 
 
-def save_error_code(error: BaseException) -> int:
-    """A `filesaveerr-win` `%2$d` helyére kerülő hibakód.
+#: Az eredeti Picasa belső státuszai a lemezhiba-ablak `hiba(%d)` mezőjében
+#: (#7449). A `0x0099cd30` a Windows-hibakódot képezi le erre; mérve: az
+#: írásvédett cél mentési hibája `error(11)` (`job-957`).
+STATUS_ACCESS_DENIED = 11
+STATUS_NOT_FOUND = 10
+#: minden le nem képezett hibakód (az eredeti alapága)
+STATUS_OTHER = 2
 
-    `OSError`-nál a rendszer `errno`-ja; minden más ágon 0 — a hivatalos
-    üzenet ezt a mezőt csak a lemezhiba-ágon jeleníti meg, tehát ott is
-    csak akkor ír számot, ha a rendszer adott egyet.
+#: a hozzáférés-hibák rendszerszintű kódjai (`PermissionError` is ide tartozik)
+_ACCESS_ERRNOS = frozenset({_errno.EACCES, _errno.EPERM, _errno.EROFS})
+#: ERROR_ACCESS_DENIED, ERROR_SHARING_VIOLATION
+_ACCESS_WINERRORS = frozenset({5, 32})
+#: ERROR_FILE_NOT_FOUND, ERROR_PATH_NOT_FOUND
+_NOT_FOUND_WINERRORS = frozenset({2, 3})
+#: ERROR_DISK_FULL
+_DISK_FULL_WINERROR = 112
+
+
+def _is_disk_full(error: OSError) -> bool:
+    return (
+        getattr(error, "errno", None) == _errno.ENOSPC
+        or getattr(error, "winerror", None) == _DISK_FULL_WINERROR
+    )
+
+
+def _is_access_denied(error: OSError) -> bool:
+    return (
+        isinstance(error, PermissionError)
+        or getattr(error, "errno", None) in _ACCESS_ERRNOS
+        or getattr(error, "winerror", None) in _ACCESS_WINERRORS
+    )
+
+
+def _is_not_found(error: OSError) -> bool:
+    return (
+        isinstance(error, FileNotFoundError)
+        or getattr(error, "errno", None) == _errno.ENOENT
+        or getattr(error, "winerror", None) in _NOT_FOUND_WINERRORS
+    )
+
+
+def save_error_code(error: BaseException) -> int:
+    """A `filesaveerr-win` `%2$d` helyére kerülő hibakód (#7449).
+
+    Az eredeti Picasa itt NEM a rendszer `errno`-ját írja ki, hanem a saját
+    belső státuszát: hozzáférés-hiba (`PermissionError`, `EACCES`, `EPERM`,
+    `EROFS`, Windowson `winerror` 5 vagy 32) -> 11; hiányzó fájl vagy út
+    (`FileNotFoundError`, `ENOENT`, `winerror` 2 vagy 3) -> 10; minden más
+    le nem képezett `OSError` -> 2.
+
+    A tele lemez (`ENOSPC`, `winerror` 112) belső státusza NINCS MEG (#7428:
+    12 vagy 2, attól függ, melyik úton fogy el a hely), ezért az továbbra is
+    az `errno` marad, amíg a mérés el nem dönti.
+
+    Nem `OSError`-nál (ini-hibák, formátumhiba) 0 - a hivatalos üzenet ezt
+    a mezőt csak a lemezhiba-ágon jeleníti meg, és ott sem TALÁLGATUNK
+    kódot: 0 = „nincs kód".
     """
-    kod = getattr(error, "errno", None)
-    if isinstance(kod, int):
-        return kod
-    # Az ini-réteg saját hibái nem hoznak errno-t; a lemez tele/írásvédett
-    # eset a leggyakoribb ok, de TALÁLGATNI nem szabad — 0 = „nincs kód".
-    if isinstance(error, (IniSaveError, IniConflictError)):
+    if not isinstance(error, OSError):
         return 0
-    return getattr(_errno, "EIO", 5) if isinstance(error, OSError) else 0
+    if _is_disk_full(error):
+        return _errno.ENOSPC
+    if _is_access_denied(error):
+        return STATUS_ACCESS_DENIED
+    if _is_not_found(error):
+        return STATUS_NOT_FOUND
+    return STATUS_OTHER

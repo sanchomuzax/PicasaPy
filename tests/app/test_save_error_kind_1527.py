@@ -78,12 +78,91 @@ class TestAgak:
         assert save_error_kind(FileNameCollisionError("x")) != KIND_FORMAT
 
 
+def _winhiba(winerror: int, *, errno_: int | None = None) -> OSError:
+    """Windows-hibát utánzó `OSError`: Linuxon a `winerror` nem állítható a
+    konstruktorral, ezért attribútumként kapja (ahogy Windowson olvassuk)."""
+    hiba = OSError(errno_, "szimulált Windows-hiba") if errno_ is not None else OSError("szimulált")
+    hiba.winerror = winerror  # type: ignore[attr-defined]
+    return hiba
+
+
 class TestHibakod:
-    def test_az_OSError_errno_ja_megy_at(self):
+    """#7449: a hibaablak `hiba(%d)` száma az eredeti BELSŐ státusza, nem az
+    `errno` (a `0x0099cd30` leképezése; `job-957` írásvédett cél: `error(11)`)."""
+
+    @pytest.mark.parametrize(
+        "hiba",
+        [
+            PermissionError(errno.EACCES, "Permission denied"),
+            PermissionError(errno.EPERM, "Operation not permitted"),
+            OSError(errno.EROFS, "Read-only file system"),
+            OSError(errno.EACCES, "Permission denied"),
+        ],
+        ids=["EACCES", "EPERM", "EROFS", "OSError-EACCES"],
+    )
+    def test_az_iras_elleni_vedelem_11(self, hiba):
+        assert save_error_code(hiba) == 11
+
+    @pytest.mark.parametrize(
+        "hiba",
+        [
+            FileNotFoundError(errno.ENOENT, "No such file or directory"),
+            OSError(errno.ENOENT, "No such file or directory"),
+        ],
+        ids=["FileNotFoundError", "OSError-ENOENT"],
+    )
+    def test_a_hianyzo_ut_10(self, hiba):
+        assert save_error_code(hiba) == 10
+
+    @pytest.mark.parametrize("winerror", [5, 32])
+    def test_windows_hozzaferes_es_megosztas_11(self, winerror):
+        assert save_error_code(_winhiba(winerror)) == 11
+        assert save_error_code(_winhiba(winerror, errno_=errno.EACCES)) == 11
+
+    @pytest.mark.parametrize("winerror", [2, 3])
+    def test_windows_hianyzo_fajl_vagy_ut_10(self, winerror):
+        assert save_error_code(_winhiba(winerror)) == 10
+        assert save_error_code(_winhiba(winerror, errno_=errno.ENOENT)) == 10
+
+    def test_a_tele_lemez_kodja_valtozatlan_errno(self):
+        """A tele lemez belső státusza NINCS MEG (#7428): a régi érték marad."""
         assert save_error_code(OSError(errno.ENOSPC, "tele")) == errno.ENOSPC
+
+    def test_a_tele_lemez_windowson_is_ugyanaz(self):
+        assert save_error_code(_winhiba(112, errno_=errno.ENOSPC)) == errno.ENOSPC
+        assert save_error_code(_winhiba(112)) == errno.ENOSPC
+
+    @pytest.mark.parametrize(
+        "hiba",
+        [
+            OSError(errno.EIO, "Input/output error"),
+            OSError(errno.EMFILE, "Too many open files"),
+            OSError("errno nélküli"),
+            _winhiba(80),
+            _winhiba(1117, errno_=errno.EIO),
+        ],
+        ids=["EIO", "EMFILE", "errno-nelkuli", "winerror-80", "winerror-1117"],
+    )
+    def test_minden_mas_OSError_2_az_eredeti_alapaga(self, hiba):
+        assert save_error_code(hiba) == 2
 
     def test_errno_nelkuli_hibanal_nulla(self):
         assert save_error_code(SaveError("nincs kódja")) == 0
 
     def test_az_ini_hibanal_sem_TALALGATUNK(self):
         assert save_error_code(IniSaveError("x")) == 0
+        assert save_error_code(IniConflictError("x")) == 0
+
+    def test_a_nem_OSError_errno_attributuma_nem_szamit(self):
+        """Csak a fájlrendszer-hibának van belső státusza; más kivétel 0."""
+        hiba = SaveError("nincs kódja")
+        hiba.errno = errno.EACCES  # type: ignore[attr-defined]
+        assert save_error_code(hiba) == 0
+
+    def test_a_besorolas_nem_valtozott(self):
+        """A hibakód leképezése nem érinti az ágat: az írásvédett cél továbbra
+        is lemezhiba, a névütközés és a formátumhiba külön ág marad."""
+        assert save_error_kind(PermissionError(errno.EACCES, "x")) == KIND_DISK
+        assert save_error_kind(FileNotFoundError(errno.ENOENT, "x")) == KIND_DISK
+        assert save_error_kind(FileNameCollisionError("x")) == KIND_COLLISION
+        assert save_error_kind(SaveError("x")) == KIND_FORMAT
