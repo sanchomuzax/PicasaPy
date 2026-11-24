@@ -6270,9 +6270,20 @@ A `job-852` felvételen a bézs folt forrásértéke `c89779` [200, 151, 121]:
 |---|---|---|---|---|---|
 | **15. kocka** (csak pipetta, p4=`ffc89779`) | [200, 151, 121] | `979797` [151, 151, 151] | `a1a1a1` [161, 161, 161] | `a1a1a1` [161, 161, 161] | **0** |
 | **25. kocka** (pipetta + temp `1.0`) | [200, 151, 121] | `a09680` [160, 150, 128] | `aba088` [171, 160, 136] | `aba088` [171, 160, 136] | **0** |
-| **23. kocka** (csak temp `1.0` a jobb szélen) | [200, 151, 121] | `d29766` [210, 151, 102] | `cf9c54` [207, 156, 84] | `d29766` [210, 151, 102] | R: 3, G: 5, B: 18* |
+| **23. kocka** (csak temp; a p5 értéke nem került rögzítésre) | [200, 151, 121] | `d29766` [210, 151, 102] p5=`1.0`-nál | `cf9c54` [207, 156, 84] | `d29766` [210, 151, 102] p5=`1.0`-nál | a p5-érték nem ismert |
 
-*A 23. kocka (csak Színhőmérséklet, a végső ini p5 értéke `1.000000`) **NYITOTT KÉRDÉS**: a mai `apply_color_temperature(1.0)` a bézs foltra `d29766`-ot ad, a felvétel `cf9c54`-et (eltérés R 3, G 5, B 18). A pipettával együtt (25. kocka) a lánc pontosan egyezik, ezért a tiszta hőmérséklet-ág képlete vagy a 23. kockán érvényes csúszkaérték a kérdés; a felvétel nem mondja meg, mekkora volt a hőmérséklet a 23. kockán. Külön jegy viszi.*
+**#7403 - a 23. kocka p5-értéke nincs megmérve.** A felvétel `cf9c54`-et mutat, a végső ini p5=`1.000000` értéke viszont csak a felvétel végállapotát írja le, nem bizonyítja a 23. kocka csúszkaállását. Ezért a táblázat korábbi „temp `1.0` a jobb szélen” címkéje nem tekinthető mért adatnak.
+
+A `Picasa3.exe` eredeti kódját a helyi `qemu-i386` harness futtatta, közvetlenül a `finetune2` callbacken (`0x008f7ee0`), nulla pipettával és nulla fill/highlights/shadows értékkel. A nem nulla p5 útja a callback `0x008f7fee` ágán a `0x008f8043`-hoz, onnan a `0x008f8051` hívással a `0x0090e9d0`-hez vezet; az a `0xcf47e0` (`×37`), `0xcf4610` (`+55`) és `0x00c7cf98` feketetest-tábla alapján képez indexet, majd a `0x0090eda0` CAT-mátrixot alkalmazza. Az eredeti callback QEMU-kimenete a `c89779` `[200,151,121]` egypixeles bemenetre:
+
+| p5 | Eredeti callback QEMU RGB | Hex |
+|---:|---:|---|
+| -0,5 | [179, 154, 144] | `b39a90` |
+| 0,0 | [200, 151, 121] - a callback átugorja a hőmérséklet-ágat | `c89779` |
+| +0,5 | [205, 151, 108] | `cd976c` |
+| +1,0 | [210, 151, 102] | `d29766` |
+
+A jelenlegi `apply_color_temperature` ugyanezeket az RGB-értékeket adja mind a négy vizsgált p5-nél. Ez megerősíti a meglévő hőmérséklet-képletet ezeken az állásokon; a `cf9c54` kimenethez tartozó, a felvétel 23. kockáján érvényes p5-öt nem azonosítja. A képletet és a #7400-ból származó pipettás ágat ezért nem módosítottam. Nyitva marad: a J5a képen a jobb vég, a közép és egy köztes csúszkaállás tényleges p5-értékének és 40×40-es kimeneti átlagának együttes rögzítése.
 A 15. és 25. kockán a javított `apply_neutral_pipette` matematikai hibája **0**.
 
 A `finetune` (v1) ugyanígy épül, csak a `0x0090ea10`-et hívja a

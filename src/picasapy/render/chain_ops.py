@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import numpy as np
 
 from picasapy.ini.filters import FilterOp
@@ -87,6 +89,25 @@ def _apply_crop_op_lekepezve(
             f"Üres kivágás a leképezés után: rect={rect} -> ({bal}, {fent}, {jobb}, {lent})"
         )
     return image[fent:lent, bal:jobb].copy()
+
+
+def _apply_crop_op_tilt_utani(
+    forras: np.ndarray,
+    op: FilterOp,
+    tilt_ops: tuple[FilterOp, ...],
+    tilt_renderer: Callable[[np.ndarray, FilterOp], np.ndarray],
+) -> np.ndarray:
+    """Forrásképi crop után, a saját ablakméreten újraalkalmazza a tilt-et.
+
+    A `tilt` utáni `crop64` koordinátái forrásképi törtkoordináták. Az
+    eredeti Picasa a forrásablakot vágja ki, majd arra futtatja a
+    kiegyenesítést; így a kitöltő skála az ablak, nem a teljes fotó méretéből
+    számolódik (#7415).
+    """
+    result = _apply_crop_op(forras, op)
+    for tilt_op in tilt_ops:
+        result = tilt_renderer(result, tilt_op)
+    return result
 
 
 def _apply_redeye_op(image: np.ndarray, op: FilterOp) -> np.ndarray:

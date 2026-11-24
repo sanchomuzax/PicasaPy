@@ -31,7 +31,7 @@ _QML = {
         ignoreFaces ignoredGroups isAvailable isEmbeddingAvailable
         markUnnamedWelcomeShown modelDownloadOffer moreSuggestions pendingAmong
         persistFaceToFile personSuggestionCount personSuggestionIdsForPaths
-        personSuggestionPaths rejectSuggestion removeAllFaceData
+        personSuggestionPaths recalculateSuggestions rejectSuggestion removeAllFaceData
         removePersonSuggestions resetAllFaces resetFacesForPhotos scanAlbum
         scanFolder scanForFaces scanNewFaces setAutomaticDetectionEnabled
         setClusterThreshold setPersistFaceToFile setSuggestionThreshold
