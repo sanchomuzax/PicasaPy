@@ -1146,7 +1146,7 @@ textactive=1
 
 A 3. húzás után a tárolt negyedik mező: **0.669879 radián = 38,3812°** (a renderelt szöveg dőlése Kocka 40-ben 38,4°..39,5°)!
 
-#### Job-953..955 (`7327-12ka`, `12kb`, `12kc`): Szöveg forgatásának húzásszög-leképezése nyolc szöggel és a mágneses rászaladás
+#### Job-953..955 (`7327-12ka`, `12kb`, `12kc`): Szöveg forgatásának húzásszög-leképezése nyolc szöggel (első mérés; a „mágneses rászaladás” értelmezését a „Job-959..961 és egységes újramérés” szakasz felülírja)
 
 Tesztkép: a 1024×256-os `gray_ramp.jpg`, Szöveg: `PicasaPy7327`. Nyolc különböző függőleges elmozdulású húzás a (708, 405) alapállásból a forgató fogantyún (R = 81):
 - `job-953` (`7327-12ka`): dy = 6 (405→411), dy = 11 (405→416), dy = 22 (405→427), mindegyik után Cancel;
@@ -1178,7 +1178,7 @@ textactive=1
 ```
 A negyedik mező értéke: `0.300780` radián, amely pozitív előjellel (óramutató szerinti irány) pontosan megfelel a 30-as húzás mért szögének (0,300780 rad = 17,2335° = 17,234°).
 
-##### KIEMELT: A Szöveg forgatásának szögtérképe és geometriája, LEZÁRVA (nagy bizalom)
+##### A Szöveg forgatásának első szögtérképe (a `job-959`..`job-961` utáni újramérés felülírja, lásd lent)
 
 Az összeállított szögtérkép és leképezés:
 
@@ -1202,27 +1202,52 @@ Az összeállított szögtérkép és leképezés:
    - 17,234° (0,300780 rad): `x=0.317762, y=0.110521, s=0.035546, rot=0.300780`
    - 38,381° (0,669879 rad): `x=0.322397, y=0.066892, s=0.039834, rot=0.669879`
    A függőleges eltolódás aránya a forgatási szöghöz képest szinte tökéletesen konstans lineáris: `dy / rad = -0,1131` (17,2°-nál) és `-0,1159` (38,4°-nál), vagyis `dy ≈ -0,115 · rad`. A vízszintes pozíció kismértékben nő (`dx / rad ≈ +0,0045..+0,0089`), a méretszorzó `s / s0` 1,0664 (17,2°) és 1,1950 (38,4°). A tárolt pont a forgatott szövegdoboz bal felső befoglaló sarka.
-4. **Az L jegytörzs (Szöveg forgatókorong) ezzel véglegesítve.**
+4. *(Felülírva: az alábbi újramérés szerint a 30° és a 45° körül nincs kemény rászaladás, és a húzásszabály nyitott; az L jegytörzs FÉLKÉSZ.)*
 
-#### Összevetés a mai PicasaPy-val és fejlesztői jegytörzsek (job-949..950): L véglegesítve, W
+#### Job-959..961 és egységes újramérés (`7327-12la`, `12lb`, `12lc`): tapadó sávok, a szabály nyitott
+
+**Módszer.** Minden kockán ugyanaz a mérés: a szövegdoboz semleges sötétszürke belsejének (az `|B-R| ≤ 4`, 50..105 szürkeségű, a szöveg közepéhez kötött összefüggő terület) konvex burkára illesztett legkisebb befoglaló téglalap szöge (OpenCV `minAreaRect`). Kalibráció: `job-955 __22` 45,00° (a korong nélküli, pontosan 45°-os kocka), `job-954 __22` és `job-955 __38` 17,24° (az ini 0,300780 rad = 17,234°), `job-950 __38` 38,42° (az ini 0,669879 rad = 38,381°); az eltérés legfeljebb 0,04°. A Hough-alapú első mérés 30°-nál és 45°-nál kerekített (a `job-954 __38` itt 30,96°, nem 30,0°).
+
+| dy (képpont) | szög | kocka |
+|---|---|---|
+| 6, 11, 13 | 0,00° | `job-953 __22`, `__30`; `job-959 __22` |
+| 15 | 3,47° | `job-959 __30` |
+| 17 | 6,71° | `job-950 __22` |
+| 22 | 14,74° | `job-953 __38` |
+| 30 | 17,24° | `job-954 __22`, `job-955 __38` |
+| 35 | 24,68° | `job-954 __30` |
+| 37 | 27,30° | `job-959 __38` |
+| 39 | 29,98° | `job-960 __22` |
+| 40 | 30,07° | `job-950 __30` |
+| 47 | 30,96° | `job-954 __38` |
+| 49 | 33,34° | `job-960 __30` |
+| 51 | 36,03° | `job-960 __38` |
+| 53 | 38,42° | `job-950 __38` |
+| 55 | 40,76° | `job-961 __22` |
+| 57 | 43,09° | `job-961 __30` |
+| 60, 81 | 45,00° | `job-955 __22`, `__30` |
+
+**Mit mond ki.** (1) A sávok között a szög 1,2..1,7°/képpont meredekséggel nő, gyorsabban, mint a geometriai `atan2(dy, 81)`. (2) A 0°, 15°, 30° és 45° körül tapadó sáv van: 0° a dy ≤ 13 holtsávban; 15° körül dy 22..30 között csak 14,74°..17,24°; 30° körül dy 39..47 között 29,98°..30,96°; 45° dy 60-tól. (3) A tapadás nem szimmetrikus és nem kemény rászaladás (a 30,96° nem 15 többszöröse), tehát a korábbi „mágneses rászaladás” megfogalmazás nem pontos. (4) A húzás 8 részlépésben (egéreseményben) halad; a szabály valószínűleg eseményenkénti, ezért függőleges söpréssel nem határozható meg. **A húzásszabály NINCS MEG**; a következő irány a bináris: #7435.
+
+#### Összevetés a mai PicasaPy-val és fejlesztői jegytörzsek (job-949..950): L, W
 
 | Eredeti (mérés) | Nálunk (fájl:sor) | Ítélet |
 |---|---|---|
 | A Cancel gomb függő kijelölés mellett a félbehagyott foltot dobja el, kilépés nélkül; a panelre kattintás szintén eldobja; függő kijelölés nélkül kilép az Alapjavítások fülre (`job-949`, `job-939`) | `PhotoViewerEditorPanel.qml:216` (`onRetouchCancelRequested: editorPanel.retouchActive = false`: azonnal kilép a `retouchPatchPending` vizsgálata nélkül); a panel semleges kattintása nem dobja el a félbehagyott foltot (`cancelRetouchPatch()`) | **Eltérés** (W jegytörzs). |
 | A Retusálás ecsetmérete újranyitáskor megőrzi az előzőleg beállított csúszkapozíciót (`job-949 __16, __30`) | `edit_controller_retouch_mixin.py:86-99` (`enterRetouchTool`: nem nullázza a `_brush_size`-t) | **Egyezik a kontrollerben**, a felületi őrök és a Cancel-viselkedés köti be helyesen. |
-| A szövegblokk kijelölésekor forgatókorong jelenik meg (24 osztás, R = 81), folyamatos forgatással és 15°-os snap-pel, a `text=` negyedik mezőjébe radián kerül, az y eltolódás lineáris (`job-950`, `job-942`, `job-920`) | `PhotoViewerPhotoArea.qml:667-722` (nincs forgatókorong, csak 1 px kék keret, nem forgatható) | **Eltérés** (L jegytörzs, véglegesítve). |
+| A szövegblokk kijelölésekor forgatókorong jelenik meg (24 osztás, R = 81), folyamatos forgatással és 15°-os snap-pel, a `text=` negyedik mezőjébe radián kerül, az y eltolódás lineáris (`job-950`, `job-942`, `job-920`) | `PhotoViewerPhotoArea.qml:667-722` (nincs forgatókorong, csak 1 px kék keret, nem forgatható) | **Eltérés** (L jegytörzs; a húzásszabály nyitott, #7435). |
 
-##### (L) Szöveg: a kijelölt blokk forgatókorongja és a forgatás tárolása (jegy: külön; FÉLKÉSZ, a rászaladási sávok határait a `job-959`..`job-961` dönti el, addig nem megy ki)
+##### (L) Szöveg: a kijelölt blokk forgatókorongja és a forgatás tárolása (jegy: külön; FÉLKÉSZ, a húzásszabályt a #7435 bináris kutatás adja, addig nem megy ki)
 
-> **Mi a hiba:** az eredeti Szöveg eszközben a képen kattintással kijelölt blokk köré forgatókorong rajzolódik (24 osztás, 15°-onként, R = 81 fogantyú-sugár), amelynek piros fogantyúját húzva a blokk finoman, folyamatosan elfordul; a 15° többszöröseire mágneses rászaladás (snap) lép fel (0°-nál dy=6 és 11 esetén 0,0°; 30°-nál dy=40 és 47 esetén 30,000°; 45°-nál dy=60 és 81 esetén 45,000°), míg a köztes szög finoman és folytonosan követi az elmozdulást (dy=17-nél 7,1°, dy=22-nél 14,7°..15,0°, dy=30-nál 17,234°, dy=35-nél 24,4°, dy=53-nál 38,381°), a rászaladási sáv pontos határai a mért diszkrét pontokból **NINCS MEG** (0°-nál dy 11..17 [7,7°..11,9°], 30°-nál dy 35..40 [23,4°..26,3°] és dy 47..53 [30,1°..33,2°], 45°-nál dy 53..60 [33,2°..36,5°]), és az elfordulás a `text=` sor geometriájának negyedik mezőjébe kerül radiánban, miközben a tárolt pozíció a forgatott blokk bal felső sarkaként módosul (`dy ≈ -0,115 · rad`). Nálunk a kijelölt blokk csak egy vékony kék keretet kap, forgatókorong nincs, forgatni nem lehet.
+> **Mi a hiba:** az eredeti Szöveg eszközben a képen kattintással kijelölt blokk köré forgatókorong rajzolódik (24 osztás, 15°-onként, R = 81 fogantyú-sugár), amelynek piros fogantyúját húzva a blokk elfordul; a 0°, 15°, 30° és 45° körül tapadó sáv van, köztük a szög 1,2..1,7°/képpont meredekséggel nő (a mért sor a „Job-959..961 és egységes újramérés” szakaszban; a húzásszabály **NINCS MEG**, #7435), és az elfordulás a `text=` sor geometriájának negyedik mezőjébe kerül radiánban, miközben a tárolt pozíció a forgatott blokk bal felső sarkaként módosul (`dy ≈ -0,115 · rad`). Nálunk a kijelölt blokk csak egy vékony kék keretet kap, forgatókorong nincs, forgatni nem lehet.
 >
 > **Eredeti:** `job-920 __28` (korong 24 osztással, fogantyú 81 px-re), `job-942 __20-22` (tárolt 17,234° = 0,300780 rad), `job-950 __20-23` (nyers 11,85° → látható 6,95°..7,13°), `job-950 __30` (nyers 26,28° → 30,000° snap), `job-950 __38-40` (nyers 33,20° → tárolt 38,381° = 0,669879 rad), `job-953 __22` (dy=6 → 0,0°), `job-953 __30` (dy=11 → 0,0°), `job-953 __38` (dy=22 → 14,7°..15,0°), `job-954 __22` (dy=30 → 17,2°), `job-954 __30` (dy=35 → 24,4°), `job-954 __38` (dy=47 → 30,8°..30,0°), `job-955 __22` (dy=60 → 45,000° snap), `job-955 __30` (dy=81 → 45,000° snap), `job-955 __38` (dy=30 → 17,234° = 0,300780 rad); geometriák: 0° `(0.316406, 0.144531, 0.033333)`, 17,2° `(0.317762, 0.110521, 0.035546)`, 38,4° `(0.322397, 0.066892, 0.039834)`.
 >
 > **Nálunk:** `src/picasapy/app/qml/PicasaPy/PhotoViewerPhotoArea.qml:667-722` (a kijelölt blokk 1 képpontos kék kerete; a `rotation` a fájlból olvasott érték, `transformOrigin: Item.TopLeft`, fogantyú és interakció nincs), `src/picasapy/app/edit_controller_text_mixin.py:446-470` (`selectTextOverlay`), `src/picasapy/ini/text_overlay.py:123-137,406-415` (a forgatás radiánban parszolva és írva).
 >
-> **Teendő:** (1) a kijelölt szövegblokk köré forgatókorong rajzolása: 24 osztásvonal (15°-onként), a kör sugara a `job-920 __28` kockáján mérendő (**NINCS MEG**), a fogantyú nyíllal a vízszintes tengelyen 81 képpontra a középponttól, piros fogantyúponttal; (2) a fogantyú húzása a mért folytonos szögleképezés szerint forgassa el a blokkot: dy=17-nél 7,1° (`job-950 __22`), dy=22-nél 14,7°..15,0° (`job-953 __38`), dy=30-nál 17,234° = 0,300780 rad (`job-942 __21`, `job-954 __22`, `job-955 __38`), dy=35-nél 24,4° (`job-954 __30`), dy=53-nál 38,381° = 0,669879 rad (`job-950 __38`), miközben a 15° többszöröseire mágnesesen rászalad: 0°-nál dy=6 és 11 esetén 0,0° (`job-953 __22, __30`), 30°-nál dy=40 és 47 esetén 30,000° (`job-950 __30`, `job-954 __38`), 45°-nál dy=60 és 81 esetén 45,000° (`job-955 __22, __30`); a snap zóna pontos szélessége **NINCS MEG** (határai: 0°-nál dy 11-17 [7,7°..11,9°], 30°-nál dy 35-40 [23,4°..26,3°] és dy 47-53 [30,1°..33,2°], 45°-nál dy 53-60 [33,2°..36,5°]); (3) az elforgatás radiánban a `text=` negyedik mezőjébe kerüljön pozitív (óramutató szerinti) előjellel, a tárolt `x`, `y` a forgatott befoglaló bal felső sarkaként frissüljön; (4) Apply után a forgatott szöveg maradjon a képen, az Undo és Redo maradjon tiltott (szöveg-invariáns).
+> **Teendő:** (1) a kijelölt szövegblokk köré forgatókorong rajzolása: 24 osztásvonal (15°-onként), a kör sugara a `job-920 __28` kockáján mérendő (**NINCS MEG**), a fogantyú nyíllal a vízszintes tengelyen 81 képpontra a középponttól, piros fogantyúponttal; (2) a fogantyú húzása a #7435 által a binárisból kiolvasott szabály szerint forgassa el a blokkot, a tapadással együtt; a szabálynak a „Job-959..961 és egységes újramérés” szakasz mért sorát 0,1°-on belül vissza kell adnia; (3) az elforgatás radiánban a `text=` negyedik mezőjébe kerüljön pozitív (óramutató szerinti) előjellel, a tárolt `x`, `y` a forgatott befoglaló bal felső sarkaként frissüljön; (4) Apply után a forgatott szöveg maradjon a képen, az Undo és Redo maradjon tiltott (szöveg-invariáns).
 >
-> **Kész, ha:** (1) meglévő vagy friss szövegre kattintva megjelenik a 24 osztásos forgatókorong és a piros fogantyú; (2) a fogantyú húzásakor a szöveg elfordul, 30° környékén rászalad a 30,000°-ra (`0.523599`), köztes szögnél finoman beállítható (pl. 17,2° és 38,4°); (3) Apply után a `text=` negyedik mezője a beállított radiánértéket kapja; (4) a renderelt próba a forgatott blokkot a `job-950 __40` képével veti össze.
+> **Kész, ha:** (1) meglévő vagy friss szövegre kattintva megjelenik a 24 osztásos forgatókorong és a piros fogantyú; (2) a fogantyú 8 részlépéses függőleges húzása a mért sor szögeit adja (pl. dy 30 → 17,24°, dy 47 → 30,96°, dy 53 → 38,42°, dy 60 → 45,00°), 0,1°-on belül; (3) Apply után a `text=` negyedik mezője a beállított radiánértéket kapja; (4) a renderelt próba a forgatott blokkot a `job-950 __40` képével veti össze.
 
 ##### (W) Retusálás: Cancel függő kijelölésnél és semleges panelkattintás (jegy: külön)
 
@@ -1341,7 +1366,7 @@ A mért koordináták bekerültek a munkafa `.tmp/colab-kitoltott/7327-8a-vagas-
 
 ## Nyitott kérdések mérlege
 
-A pontok száma 19. A `job-949`..`job-950` és a `job-953`..`job-955` után a (14) Retusálás lezárult, a (15) Szöveg a forgatás rászaladási sávhatárain kívül lezárult (a rászaladás 0°, 30° és 45° értékre és a radiánban, pozitív előjellel tárolt szög igazolt); a sávhatárokat a `job-959`..`job-961` méri. Egyetlen blokkolt pont maradt: a (13) Vörösszem (vörösszemes tesztképre vár). Minden pont pontosan egy csoportban áll.
+A pontok száma 19. A `job-949`..`job-950` és a `job-953`..`job-955` után a (14) Retusálás lezárult, a (15) Szöveg a forgatás húzásszabályán kívül lezárult (a tárolás radiánban, pozitív előjellel, és a tapadó sávok mért sora a `job-959`..`job-961` után igazolt); a húzásszabály a binárisból jön: #7435. Egyetlen blokkolt pont maradt: a (13) Vörösszem (vörösszemes tesztképre vár). Minden pont pontosan egy csoportban áll.
 
 - **Lezárva (15):**
   1. a szerkesztői `Ctrl+Shift+E` paritáshiánya;
@@ -1360,8 +1385,8 @@ A pontok száma 19. A `job-949`..`job-950` és a `job-953`..`job-955` után a (1
   15. **Szöveg lezárva:** az Undo Save hatása szövegnél és láncszerkesztésnél (N és V jegytörzs), a Clear All utáni Cancel (M), a helyben szerkesztett blokk (egy blokk, a szerkesztés a geometriát nem változtatja, a kattintás a kurzort a karakterhatárra teszi, `job-941`), a forgatás tárolása (a negyedik mező radián, pozitív előjellel, `job-942`, `job-950`, `job-955`), a forgatás folytonos finom szögtérképe (7,1°, 14,7°, 17,234°, 24,4°, 38,381°) és mágneses rászaladása a 15° többszöröseire (0°, 30°, 45°, `job-953`..`job-955`, L jegytörzs);
   17. a Crop első Apply után mentett téglalap mérete és a 187/188 kérdés (`job-911`).
 - **Blokkolt (1):** (13) Vörösszem: Apply, Undo-megerősítés, mentett fájl. **Kell még mérés**: a #7378 és a #7386 a `job-837` felvételét (panel, megjegyzés, tilt-Info) valósítja meg, az Apply/Undo/Mentés nincs mérve, tehát nem fedik. Hiány: valódi vörösszemes tesztkép a PicasaTeszt mesterpéldányban; irány: szabadon használható vörösszemes fotó stockfotó-tárból, utána `7327-10`.
-- **Nyitott részkérdés a (15)-ön belül:** a Szöveg forgatókorongjának rászaladási sávhatárai (L jegytörzs). A `job-953`..`job-955` igazolta a rászaladást a 0°, 30° és 45° értékre, de a határokat csak intervallumra szűkítette. Irány: a `job-959`..`job-961` (`7327-12la..c`) söprése a dy = 13, 15, 37, 39, 49, 51, 55, 57 értékekkel; utána az L véglegesíthető.
+- **Nyitott részkérdés a (15)-ön belül:** a Szöveg forgatókorongjának húzásszabálya és a 15°-os tapadás módja (L jegytörzs). A `job-950`, `job-953`..`job-955` és `job-959`..`job-961` kalibrált mért sora megvan, de a szabály eseményenkénti, függőleges söpréssel nem határozható meg. Irány: bináris kutatás, #7435; utána az L véglegesíthető.
 - **Hatókörön kívül (3):** (16) a Picasa saját PMP/db3 indexének írása a Mentés és a leállítás után (`job-925`: oszlopfájl nincs; a PicasaPy saját SQLite indexet ír, az eredeti adatbázist csak olvassa); (18) a toolbar-gombok súgója: a Colab végrehajtó lépéskészletében nincs egérmozgatás (hover), ezért ezen a csatornán nem mérhető; a súgószöveg a Picasa saját erőforrásaiból (a `stringres` és a `tooltips` táblákból) olvasható, a menü- és helyi menü-állapotokat a `job-807` és a `job-808` már mérte; (19) a hálózati és írásvédett helyek, a teljes hibaszöveg: a Wine-ban csak a `C:` meghajtó látszik, a végrehajtónak nincs hálózati vagy írásvédett helye; a hibaszövegek a binárisból (`IDS_*` sztringek) nyerhetők.
 - **Nyílt névtelen (0).**
 
-Állapotsor: **0 nyílt névtelen · 15 lezárva · 1 blokkolt · 3 hatókörön kívül**; az összeg 19. A blokkolt (13) pont kivételével a #7327 minden kérdése lezárult. A feltárt eltérésekre kész fejlesztői jegytörzsek (G, H, I, J, L, M, N, T, V, W) önálló fejlesztési jegyként vihetők át kódba; az L csak a `job-959`..`job-961` után.
+Állapotsor: **0 nyílt névtelen · 15 lezárva · 1 blokkolt · 3 hatókörön kívül**; az összeg 19. A blokkolt (13) pont kivételével a #7327 minden kérdése lezárult. A feltárt eltérésekre kész fejlesztői jegytörzsek (G, H, I, J, L, M, N, T, V, W) önálló fejlesztési jegyként vihetők át kódba; az L csak a #7435 után.
