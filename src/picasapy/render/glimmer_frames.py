@@ -12,11 +12,14 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_frame_ops import (
     _compose_drop_shadow,
+    _ellenoriz_keret_kimenetet,
     add_border_sides,
     compose_drop_shadow,
     draw_border,
@@ -196,12 +199,24 @@ def apply_polaroid(
         raise ValueError(f"A Polaroid alfaállapota csak 0 vagy 255 lehet: {alpha}")
     height, width = image.shape[:2]
     crop_size = min(height, width)
-    top = (height - crop_size) // 2
-    left = (width - crop_size) // 2
-    cropped = image[top : top + crop_size, left : left + crop_size].copy()
     side_border = round(crop_size * 0.0645)
     top_border = round(crop_size * 0.0968)
     bottom_border = round(crop_size * 0.258)
+    bordered_w = crop_size + 2 * side_border
+    bordered_h = crop_size + top_border + bottom_border
+    szog = 90.0 - rotate
+    _, _, pads = drop_shadow_padding(_POLAROID_SHADOW_DISTANCE_PX, szog, _POLAROID_SHADOW_BLUR_PX)
+    shadowed_w = bordered_w + pads[0] + pads[2]
+    shadowed_h = bordered_h + pads[1] + pads[3]
+    radian = math.radians(rotate)
+    cos_a, sin_a = math.cos(radian), math.sin(radian)
+    cel_w = int(math.floor(shadowed_w * abs(cos_a) + shadowed_h * abs(sin_a)))
+    cel_h = int(math.floor(shadowed_w * abs(sin_a) + shadowed_h * abs(cos_a)))
+    _ellenoriz_keret_kimenetet(image, cel_w, cel_h)
+
+    top = (height - crop_size) // 2
+    left = (width - crop_size) // 2
+    cropped = image[top : top + crop_size, left : left + crop_size].copy()
     # #3420: a képkeret FEHÉR (`SimpleBorderImageOperation color="0xffffff"`);
     # a `color` csak az árnyék hátterére és a forgatás kitöltésére megy
     bordered = add_border_sides(
@@ -216,8 +231,6 @@ def apply_polaroid(
         ] = 0
     # shadowAlpha = 0,4 rögzített → fade_alpha(fade) = 0,4 ⇒ fade = 60.
     # #3809: a vászon az eredeti és az eltolt-kiterjesztett doboz UNIÓJA
-    szog = 90.0 - rotate
-    _, _, pads = drop_shadow_padding(_POLAROID_SHADOW_DISTANCE_PX, szog, _POLAROID_SHADOW_BLUR_PX)
     shadowed = compose_drop_shadow(
         bordered,
         (0, 0, 0),
