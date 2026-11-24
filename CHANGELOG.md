@@ -7,12 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.179] - 2026-11-24
+
 ### Javítva
 - Kutatás: a szerkesztő Hangolás lapja az eredeti Picasával összevetve, a még mérendő pontok listájával (#7345) (#7345).
 - Kutatás: a szerkesztő Hangolás fülének teljes folyamata az eredetivel összevetve: a Gyakori javítások Derítőfény-csúszkája az eredetiben külön réteget ír, a pipetta fülváltáskor kikapcsol, az Alkalmaz és a Mégse nincs a fülön (#7345).
 - Kutatás: a Hangolás fül újabb eredeti Picasa-felvételei (job-895..906) kiértékelve: a pipetta területet átlagol, az ini-t fülváltás, visszavonás vagy kilépés írja ki (nem idő), két Hangolás-látogatás két réteg és két visszavonási lépés, a csupa nulla réteg a visszavonási lépésével együtt eltűnik, a betöltött Derítőfény-réteg mellé új réteg kerül; új fejlesztői jegytörzs a lapon, négy javított lépéssor a maradék kérdésekhez (#7345).
 - Kutatás: a Hangolás fül eredeti Picasa-felvételei (J0-J7) kiértékelve: az eredetiben a csúszkák mindig alaphelyzetben indulnak, egy látogatás összes húzása egyetlen visszavonási lépés és a betöltött réteg mellé új réteg kerül, a pipetta a forrásképből mintáz és képváltáskor kikapcsol, a Ctrl+3 kijelölés nélkül az 1. képet, két kijelölt képnél a rács szerinti elsőt nyitja; a három eltérés fejlesztésének jegytörzse a lapon van, a megmaradt hat kérdéshez javított lépéssorok készültek; fejlesztés: #7383, #7384, #7385 (#7345).
 - Kutatás: lezártam a Hangolás-paritás felmérését, rögzítettem a pipetta 5x5-ös mintáját és a többes kijelölés Enter/helyi menü eltérését (#7345).
+- Frissítettem a Hangolás-paritáslapot a pipetta 5×5-ös mérésével, a többes kijelölés eltérésével és a B15 bináris vizsgálatának nyitott bizonyítási pontjával (#7345).
+- Fájltípus kikapcsolásakor az index sorai megmaradnak, és visszakapcsoláskor a fájlok újraolvasás nélkül jelennek meg (#7414).
 
 ## [1.0.178] - 2026-11-24
 
