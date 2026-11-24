@@ -10,11 +10,18 @@ from PySide6.QtCore import QSettings
 
 from picasapy.app.filetype_preferences import enabled_filetypes, file_type_enabled
 from picasapy.index import open_index, sync_tree
+from picasapy.index.filetype_scope import enabled_type_clause
 from picasapy.scanner.filetypes import FILETYPE_GROUPS
 
 
 def _nevek(conn):
     return {row["name"] for row in conn.execute("SELECT name FROM photos")}
+
+
+def _lathato_nevek(conn, enabled):
+    feltetel, parameterek = enabled_type_clause(enabled)
+    sql = "SELECT p.name FROM photos p WHERE 1=1" + feltetel
+    return {row["name"] for row in conn.execute(sql, parameterek)}
 
 
 def test_hianyzo_beallitasnal_minden_csoport_bekapcsolt(tmp_path):
@@ -42,7 +49,8 @@ def test_tiszta_profilban_png_gif_tga_indexelodik_elmentett_tiltas_szur(tmp_path
         assert _nevek(conn) == {"kep.gif", "kep.png", "kep.tga", "kep.jpg"}
 
         settings.setValue("library/fileTypes/png", False)
-        sync_tree(
-            conn, root, incremental=False, enabled_filetypes=enabled_filetypes(settings)
-        )
-        assert _nevek(conn) == {"kep.gif", "kep.tga", "kep.jpg"}
+        enabled = enabled_filetypes(settings)
+        sync_tree(conn, root, incremental=False, enabled_filetypes=enabled)
+        # #7414: a kikapcsolt típus sora az indexben megmarad, a látható halmazból kiesik
+        assert _nevek(conn) == {"kep.gif", "kep.png", "kep.tga", "kep.jpg"}
+        assert _lathato_nevek(conn, enabled) == {"kep.gif", "kep.tga", "kep.jpg"}
