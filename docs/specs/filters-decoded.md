@@ -6272,14 +6272,14 @@ A `job-852` felvételen a bézs folt forrásértéke `c89779` [200, 151, 121]:
 | **25. kocka** (pipetta + temp `1.0`) | [200, 151, 121] | `a09680` [160, 150, 128] | `aba088` [171, 160, 136] | `aba088` [171, 160, 136] | **0** |
 | **23. kocka** (csak temp; a p5 értéke nem került rögzítésre) | [200, 151, 121] | `d29766` [210, 151, 102] p5=`1.0`-nál | `cf9c54` [207, 156, 84] | `d29766` [210, 151, 102] p5=`1.0`-nál | a p5-érték nem ismert |
 
-**#7403 — a 23. kocka p5-értéke nincs megmérve.** A felvétel `cf9c54`-et mutat, a végső ini p5=`1.000000` értéke viszont csak a felvétel végállapotát írja le, nem bizonyítja a 23. kocka csúszkaállását. Ezért a táblázat korábbi „temp `1.0` a jobb szélen” címkéje nem tekinthető mért adatnak.
+**#7403 - a 23. kocka p5-értéke nincs megmérve.** A felvétel `cf9c54`-et mutat, a végső ini p5=`1.000000` értéke viszont csak a felvétel végállapotát írja le, nem bizonyítja a 23. kocka csúszkaállását. Ezért a táblázat korábbi „temp `1.0` a jobb szélen” címkéje nem tekinthető mért adatnak.
 
 A `Picasa3.exe` eredeti kódját a helyi `qemu-i386` harness futtatta, közvetlenül a `finetune2` callbacken (`0x008f7ee0`), nulla pipettával és nulla fill/highlights/shadows értékkel. A nem nulla p5 útja a callback `0x008f7fee` ágán a `0x008f8043`-hoz, onnan a `0x008f8051` hívással a `0x0090e9d0`-hez vezet; az a `0xcf47e0` (`×37`), `0xcf4610` (`+55`) és `0x00c7cf98` feketetest-tábla alapján képez indexet, majd a `0x0090eda0` CAT-mátrixot alkalmazza. Az eredeti callback QEMU-kimenete a `c89779` `[200,151,121]` egypixeles bemenetre:
 
 | p5 | Eredeti callback QEMU RGB | Hex |
 |---:|---:|---|
-| −0,5 | [179, 154, 144] | `b39a90` |
-| 0,0 | [200, 151, 121] — a callback átugorja a hőmérséklet-ágat | `c89779` |
+| -0,5 | [179, 154, 144] | `b39a90` |
+| 0,0 | [200, 151, 121] - a callback átugorja a hőmérséklet-ágat | `c89779` |
 | +0,5 | [205, 151, 108] | `cd976c` |
 | +1,0 | [210, 151, 102] | `d29766` |
 
