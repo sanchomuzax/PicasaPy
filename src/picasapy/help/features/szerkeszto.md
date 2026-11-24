@@ -128,7 +128,8 @@ Kilenc gomb:
   független a **Finomhangolás** fül azonos nevű csúszkájától: a kettő
   külön réteget állít, és az egyik mozgatása nem viszi magával a
   másikat. A Visszavonás gomb ilyenkor „Visszavonás: Derítőfény" feliratot
-  mutat.
+  mutat. Ha a képen már van Derítőfény, az újabb állítás mellé kerül, és a
+  kettő hatása összeadódik.
 
 ### Hol van az Alkalmaz és a Mégse
 
@@ -155,6 +156,10 @@ program, hogy a horizontot a vonalakhoz igazíthasd. A sáv a kép alján áll,
   kattintható; a panel alján a Visszavonás/Újra sor nem látszik.
 - Az **ALKALMAZ** után a **Visszavonás** gomb azonnal aktív, és megnevezi a
   lépést.
+- Ha egy már kiegyenesített képen újra megnyitod, a csúszka **középről, 0
+  értékről** indul. Az újabb **ALKALMAZ** nem írja át a korábbi
+  kiegyenesítést, hanem mögé tesz egy újat, és mindegyik külön
+  **Visszavonás**-lépés.
 
 ## Vágás
 
@@ -189,6 +194,9 @@ oldalainál fogva méretezhető, belül húzva mozgatható.
 - **Alkalmaz** véglegesíti (nem-destruktívan), **Mégse** elveti,
   **Alaphelyzet** eldobja a már alkalmazott vágást.
 
+A **Forgatás**, az **Előnézet** és az **Alkalmaz** gomb szürke, amíg nem
+húztál vágókeretet a képre.
+
 ### Újravágás
 
 Ha egy kép utolsó szerkesztése vágás volt, és újra vágsz, az **Alkalmaz**
@@ -196,9 +204,6 @@ a meglévő vágást írja át, nem tesz mellé egy újabbat. Két egymás után
 vágást így egyetlen **Visszavonás** vesz vissza, az **Újra** pedig a
 második vágást hozza vissza. Ha a vágás után más szerkesztést is
 végeztél, az új vágás a többi után, külön lépésként kerül a képre.
-
-Ha keret nélkül kattintasz az **Alkalmaz** gombra, a program leveszi a
-képről az utolsó lépésként álló vágást. Ezt is visszavonhatod.
 
 ### Arány kényszerítése húzás közben
 
@@ -268,14 +273,19 @@ eredményt.
 
 ## Retusálás
 
-Az **Ecset mérete** csúszkával állítod a folt méretét. Kattintással
+A panel címe **Szennyeződések retusálása**.
+
+Az **Ecset mérete** csúszkával állítod a folt méretét. Megnyitáskor a
+csúszka fogantyúja középen áll. A csúszka egyenletesen növeli az ecsetet,
+és az ecset mérete nem függ a kép felbontásától. Nagyított képen a kör
+a nagyítással együtt nő, kicsinyített képen kisebb, de mindig ugyanakkora
+részt fed le a képből. Kattintással
 jelölöd ki a javítandó területet; utána az egeret mozgatva előnézetben
 látod, mivel pótolná a program, és egy újabb kattintás véglegesíti.
 Az egérmutató helyén az ecset méretű **kör** látszik (a rendszermutató
 ilyenkor nem jelenik meg); az első kattintás után a **cél** körét, a
 másodiknál a **forrásét** is látod a képen, amíg a javítás el nem készül.
-Nagyított képen a **Ctrl** lenyomva tartásával húzva pásztázhatsz. A
-panel kiírja, hány foltot javítottál.
+Nagyított képen a **Ctrl** lenyomva tartásával húzva pásztázhatsz.
 
 A retusálás nem egyszerűen átmásolja a forrás részletét a foltra: a
 mintázatát (például a bőr vagy a fű szerkezetét) átveszi, a világosságát
@@ -284,6 +294,13 @@ akkor sem üt el a környékétől, ha a forrást egy világosabb vagy
 sötétebb részről vetted.
 **Folt visszavonása** és **Folt újra** léptet a foltok között, az
 **Alaphelyzet** mindet törli.
+
+Ha az alkalmazott retusálást a szerkesztő **Visszavonás** gombjával
+veszed le, a program előbb rákérdez egy **Jóváhagyás** ablakban: „A
+retusálási javítások nem állíthatók helyre ismételt alkalmazással.
+Biztosan visszavonja a műveletet?" A két gomb **Visszavonás** és
+**Nem**; a kijelölés a **Nem**-en áll. Ha a visszavonást választod, az
+**Újra** gomb utána szürke: a retusálás nem hozható vissza.
 
 ## Szöveg
 
@@ -322,7 +339,9 @@ körvonal között folyamatosan állítható; nullára húzva nincs körvonal.
 
 A **Felirat átvétele** gomb a kép meglévő képfeliratát írja be szövegnek.
 Az **Az összes törlése** gomb letörli a képre írt szövegeket (a
-buboréksúgója: „Minden meglévő szöveg törlése").
+buboréksúgója: „Minden meglévő szöveg törlése"). A törlés addig csak az
+eszközön belül él: a **Mégse** visszahozza a szövegeket, az **Alkalmaz**
+véglegesíti a törlést.
 
 A beállítások a `.picasa.ini`-be kerülnek — a **betűtípus**, a
 **betűméret**, a **félkövér** állás, a **körvonal vastagsága** és a
@@ -415,8 +434,19 @@ szín), valamint az **Alapszínválasztás**: egy pipettával kijelölsz a
 képen egy semleges szürke pontot, és a program ahhoz igazítja a színeket.
 
 A pipetta csak ezen a fülön vesz mintát: más fülön a képre kattintás nem
-állítja a színeket. Amikor a **Finomhangolás** fülre lépsz, a pipetta
-kikapcsolt állapotban van; ha használni akarod, kapcsold be újra.
+állítja a színeket. Amikor a **Finomhangolás** fülre lépsz, vagy másik
+képre váltasz, a pipetta kikapcsolt állapotban van; ha használni akarod,
+kapcsold be újra. A pipetta a kép színét a fülön tett állítások
+**előtti** állapotból olvassa, és nem egyetlen képpontot néz, hanem a
+kattintott pont körüli kis terület átlagát. A semlegesítés színei
+ugyanazok, mint az eredeti Picasában.
+
+A csúszkák minden alkalommal **alaphelyzetből** indulnak: a fül
+megnyitásakor, fülváltás és képváltás után, és **Visszavonás** vagy
+**Újra** után is. A korábbi állítások közben a képen maradnak. Egy
+látogatás a fülön egyetlen új szerkesztési lépés, és egyetlen
+**Visszavonás** veszi le. Ha a fülön semmit nem változtattál (vagy
+mindent visszahúztál nullára), nem marad utána visszavonási lépés.
 
 Az itteni **Derítőfény** csúszka független a **Gyakori javítások** fül
 Derítőfény-csúszkájától.

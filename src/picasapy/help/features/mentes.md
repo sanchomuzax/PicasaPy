@@ -52,6 +52,12 @@ megmaradnak. Az üzenet ezt így mondja: „Az utolsó mentés visszavonásához
 és a szerkesztések megtartásához kattintson a »Mentés visszavonása«
 gombra." Csak a legutóbbi mentésre hat.
 
+Ha a kép a szerkesztőben van nyitva, a mentés után a szerkesztő
+**Visszavonás** gombjának felirata **Mentés visszavonása** lesz. Erre
+kattintva ugyanez történik: a fájl visszakapja a mentés előtti
+állapotát, a szerkesztések megmaradnak. Utána a **Visszavonás** és az
+**Újra** gomb is szürke.
+
 ## Mentés másként és Másolat mentése
 
 - **Fájl ▸ Mentés másként…** — a szerkesztett képet más néven, más helyre

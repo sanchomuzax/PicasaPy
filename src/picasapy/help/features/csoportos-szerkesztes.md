@@ -39,7 +39,10 @@ fülére, és a hatás azonnal rákerül a megnyitott képre. Egy
 **Visszavonás** leveszi. Az **Élesítés** a csempéjével azonos
 beállítópanelt nyitja meg; a kép csak az ottani **Alkalmaz** után
 változik. Ahol a csempe éppen nem használható (például nyitott vágás vagy
-Kiegyenesítés közben), ott a menüparancs sem csinál semmit.
+Kiegyenesítés közben), ott a menüparancs sem csinál semmit. Amíg a
+szerkesztőben egy effekt beállítópanelje nyitva van, a **Kép** menü
+tételei és a **Csoportos szerkesztés** almenü szürkék; a panel
+bezárása után újra választhatók.
 
 ### Szöveg megjelenítése és elrejtése
 

@@ -2,6 +2,43 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-24
+
+### Editor
+
+- After saving, the editor's **Undo** button becomes **Undo Save**: it
+  restores the file as it was before the save, and your edits remain.
+  See [Saving](features/mentes.md).
+- After **Clear All** in the **Text** tool, **Cancel** brings the text
+  back; the removal is final only after **Apply**.
+- The **Retouch** panel title is **Retouch blemishes**. The brush grows
+  evenly with the slider, changes with the zoom, and does not depend on
+  the picture's resolution. Before an applied retouch is undone, the
+  program asks (**Undo** / **No**), and **Redo** is disabled afterwards.
+  See [The editor](features/szerkeszto.md).
+- In the **Crop** panel, **Rotate**, **Preview**, and **Apply** are
+  disabled until there is a crop frame on the picture.
+- **Straighten** starts from 0 on a picture that is already straightened,
+  and each new apply is a separate step you can undo.
+- The **Fine Tuning** sliders start from their default position on every
+  visit; one visit is one undo step, and a visit without changes leaves
+  no step. The eyedropper samples the color from before this tab's
+  settings, averages a small area, and turns off when you change pictures.
+- While an effect settings panel is open, the **Picture** menu and the
+  **Batch Edit** submenu are disabled.
+- The **Soft Focus** sliders start in the middle, at 0, and the **Glow**
+  **Radius** slider starts at 3.0.
+- After an effect command, the editor's status bar switches to a shorter
+  form.
+
+### Library
+
+- `Ctrl+3` with nothing selected opens the first photo in the grid; with
+  several selected, the one that comes first in the grid. See
+  [Keyboard shortcuts](features/billentyuk.md).
+- Folder sorting by recent changes can be turned off by clicking it again
+  or by changing the sorting of the left pane.
+
 ## 2026-11-23
 
 ### Editor

@@ -196,6 +196,9 @@ vagy húzz a bal egérgombbal oda, ahová a középpontot szeretnéd: a
 jelölő odaugrik, és a panel **Középpont X** és **Középpont Y** csúszkája
 követi.
 
+A **Lágy fókusz** panelje a **Méret** és a **Mennyiség** csúszkát a sáv
+közepén, 0 értékkel nyitja, mint az eredeti Picasa.
+
 A **Színátmenet**nél a jelölőn egy rövid vonal is látszik: ez az átmenet
 irányát mutatja, és a pont vízszintes helyével együtt kissé el is fordul.
 
@@ -249,7 +252,9 @@ tehát látod, mit kapsz. Ezt az eredeti Picasa is így csinálta.
 | Régi effektek | Filmszemcse | Régi filmszemcse |
 
 A **Ragyogás (régi)** csúszkás panelt nyit, mint a többi effekt: az
-**Intenzitás** és a **Sugár** csúszkával állíthatod.
+**Intenzitás** és a **Sugár** csúszkával állíthatod. A **Sugár** a
+**Ragyogás** és a **Ragyogás (régi)** panelen is 3,0-ról indul, mint az
+eredetiben.
 
 A **Képpontnövelés** nem az egész képet bontja durva képpontokra, hanem
 **csak a kör körül** — a kép egy pontja körüli folt éles marad, kifelé

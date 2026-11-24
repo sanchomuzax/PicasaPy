@@ -75,7 +75,7 @@ select photos with a lasso.
 | `Ctrl+K` | Open the Tags panel, same as `Ctrl+T` |
 | `Ctrl+Shift+G` | Open the **Places** panel - see [Places and geotags](helyek.md). Library only. |
 | `Ctrl+0` | Show or hide the right-hand panel |
-| `Ctrl+3` | Open the selected photo in the viewer |
+| `Ctrl+3` | Open the selected photo in the viewer; with several selected, the one that comes first in the grid; with nothing selected, the first photo in the grid |
 | `Ctrl+F` | Move focus to the search field |
 | `F3` | Move focus to the search field, same as `Ctrl+F`; it does not work in the viewer |
 | `F4` | Add or remove a star on the selected photos, like the star button in the Photo Tray. It also works in the viewer, but not during a slideshow or while typing. |
@@ -90,7 +90,9 @@ select photos with a lasso.
 
 `Ctrl+3` does the same thing as **View** ▸ **Edit View** and
 **Picture** ▸ **View and Edit**: it opens the selected photo in the viewer.
-The two menu items are enabled only when a photo is selected.
+The two menu items are enabled only when a photo is selected, but
+`Ctrl+3` also works with nothing selected: it then opens the first photo
+in the grid.
 
 `Ctrl+0` closes whichever right-hand panel is open - Tags, Places,
 Properties, or People - and restores that same panel when you open the

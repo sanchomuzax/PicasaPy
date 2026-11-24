@@ -43,6 +43,11 @@ After saving, choose **Undo Save** in the confirmation message to
 restore the file to its state before that save. Your edits remain in
 PicasaPy. This affects only the most recent save.
 
+If the picture is open in the editor, after saving the editor's **Undo**
+button reads **Undo Save**. Clicking it does the same: the file gets back
+its state before the save, and your edits remain. Afterwards both
+**Undo** and **Redo** are disabled.
+
 ## Save As and Save a Copy
 
 - **File** ▸ **Save As...** writes the edited photo with a different
