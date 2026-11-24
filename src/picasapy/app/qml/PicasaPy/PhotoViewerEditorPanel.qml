@@ -213,7 +213,13 @@ EditorPanel {
         editController.applyRetouch()
         editorPanel.retouchActive = false
     }
-    onRetouchCancelRequested: editorPanel.retouchActive = false
+    onRetouchCancelRequested: {
+        if (editorPanel.retouchPatchPending) {
+            editController.cancelRetouchPatch()
+        } else {
+            editorPanel.retouchActive = false
+        }
+    }
     // #445: Vörösszem — a kézi régió-puffer és az automatika
     // találat-száma a kontrollerből
     redeyeRegionCount: editorPanel.hostEditCtl
