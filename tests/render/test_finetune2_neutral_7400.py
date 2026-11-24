@@ -45,11 +45,12 @@ class TestFinetune2Neutral7400:
         np.testing.assert_allclose(mean, [171.0, 160.0, 136.0], atol=3.0)
 
     def test_j5a_23_kocka_szinhomerseklet(self) -> None:
-        """Csak temp 1.0: a MAI kimenet rögzítése (d29766), NEM az eredeti egyezése.
+        """A p5=1.0 natív kimenetét őrzi (d29766), nem a 23. kocka ismeretlen állását.
 
-        Az eredeti 23. kocka `cf9c54`-et mutat; az eltérés nyitott kérdés, külön
-        jegy viszi. Ez a próba csak azt őrzi, hogy a #7400 a hőmérséklet-ághoz
-        nem nyúlt."""
+        A 23. kocka felvétele `cf9c54`-et mutat, de az akkor érvényes p5 nincs
+        rögzítve. A végső ini p5=1.0 értéke nem bizonyítja ezt a kockaállást;
+        a QEMU a p5=1.0 esetén `d29766`-ot ad. Az eredeti képernyőkép elvárását
+        csak a csúszkaérték megmérése után lehet beállítani."""
         image = _uniform_image((200, 151, 121))
         result = apply_color_temperature(image, 1.0)
         mean = result.mean(axis=(0, 1))
