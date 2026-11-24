@@ -17,6 +17,35 @@ from tests.app.qml_functional._editor_test_helpers import EditorTestHelpers
 from tests.app.qml_functional._racs_helyimenuk_5150_helpers import kattints
 
 
+def _gray_split_photos(library: Path) -> None:
+    """A korong áttetszőségét sötét/világos szürke képen rögzíti."""
+    from PIL import Image, ImageDraw
+
+    for name in ("a.jpg", "b.jpg"):
+        image = Image.new("RGB", (320, 160), (64, 64, 64))
+        draw = ImageDraw.Draw(image)
+        # The text pivot is at 0.316406 × 320 ≈ 101 px; splitting there makes
+        # the rendered comparison crop show dark left and light right halves.
+        draw.rectangle((101, 0, 319, 159), fill=(116, 116, 116))
+        image.save(library / name, "JPEG", quality=100, subsampling=0)
+
+
+@pytest.fixture
+def qml_app_gray(qt_app, tmp_path, request):
+    """A vizuális összevetéshez a referencia szürke, két tónusú háttere."""
+    from tests.app.qml_functional.conftest import _build_qml_app
+
+    yield from _build_qml_app(
+        qt_app,
+        tmp_path,
+        kepeket_keszit=_gray_split_photos,
+        keep_modul=request.module,
+        nezetek_elore_epit=(
+            request.node.get_closest_marker("halasztott_nezetek") is None
+        ),
+    )
+
+
 def _varj(qt_app, feltetel, masodperc=10.0):
     return var_feltetelre(qt_app, hibaturo_feltetel(feltetel), masodperc)
 
@@ -141,12 +170,14 @@ class TestTextRotation(EditorTestHelpers):
         assert edit.property("canUndo") is False
         assert edit.property("canRedo") is False
 
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
     def test_rendered_dial_is_fixed_and_handle_rotates_with_selected_text(
-        self, qml_app, qt_app
+        self, qml_app_gray, qt_app, height_delta
     ):
-        window, _controller, engine = qml_app
-        window.resize(window.width(), 1024)
-        assert _varj(qt_app, lambda: window.height() == 1024)
+        window, _controller, engine = qml_app_gray
+        target_height = window.height() + height_delta
+        window.resize(window.width(), target_height)
+        assert _varj(qt_app, lambda: window.height() == target_height)
 
         self._open_viewer(window, qt_app)
         edit = self._edit_controller(engine)
@@ -232,7 +263,7 @@ class TestTextRotation(EditorTestHelpers):
         tick_point = QPointF(dial_center.x(), dial_center.y() - 53)
         zero_tick_luma = _max_luma(zero_frame, tick_point, dpr)
         assert zero_tick_luma >= 150, (
-            "a függőleges felső osztás nem a mért 50–56 px-es sugaron látszik: "
+            "a függőleges felső osztás nem a mért 50-56 px-es sugaron látszik: "
             f"luma={zero_tick_luma}"
         )
 
@@ -259,6 +290,20 @@ class TestTextRotation(EditorTestHelpers):
             qt_app,
             lambda: edit.property("textOverlayItems")[0]["rotation"]
             == pytest.approx(math.radians(17.234), abs=1e-7),
+        )
+
+        inline_text = _find_visual(window, "textContentField")
+        pill_frame = _find_visual(window, "textBoxFrame")
+        assert inline_text is not None and inline_text.isVisible()
+        assert pill_frame is not None and pill_frame.isVisible()
+        assert _varj(
+            qt_app,
+            lambda: inline_text.rotation() == pytest.approx(17.234, abs=0.05)
+            and pill_frame.rotation() == pytest.approx(17.234, abs=0.05),
+        ), (
+            "a szerkesztett szöveg vagy a szürke pirulakeret nem fordult "
+            "együtt a blokkal: "
+            f"text={inline_text.rotation()}, frame={pill_frame.rotation()}"
         )
 
         assert _varj(
@@ -326,6 +371,13 @@ class TestTextRotation(EditorTestHelpers):
         )
 
         rotated_frame = window.grabWindow()
+        rendered_text_angle = _rendered_text_angle(
+            rotated_frame, inline_text, dpr
+        )
+        assert rendered_text_angle == pytest.approx(17.234, abs=5.0), (
+            "a renderelt betűk nem fordultak el 17,234°-kal: "
+            f"actual={rendered_text_angle:.3f}°"
+        )
         rotated_tick_point = QPointF(
             rotated_center.x(), rotated_center.y() - 53
         )
@@ -339,11 +391,22 @@ class TestTextRotation(EditorTestHelpers):
         )
         rotated_handle_color = _pixel_color(rotated_frame, expected_handle, dpr)
         assert (
-            rotated_handle_color.red() > 120
-            and rotated_handle_color.red() > rotated_handle_color.green() * 1.3
+            abs(rotated_handle_color.red() - 240) <= 20
+            and abs(rotated_handle_color.green() - 90) <= 20
+            and abs(rotated_handle_color.blue() - 30) <= 20
         ), (
-            "a forgatott piros fogantyúpont nem a mért helyen rajzolódott ki: "
+            "a fogantyú közepének a mért narancsszínnel kell megjelennie: "
             f"{rotated_handle_color.getRgb()}"
+        )
+        white_button_point = QPointF(
+            expected_handle.x() + 3.4 * math.cos(math.radians(17.234)),
+            expected_handle.y() + 3.4 * math.sin(math.radians(17.234)),
+        )
+        white_button_color = _pixel_color(rotated_frame, white_button_point, dpr)
+        assert min(white_button_color.red(), white_button_color.green(),
+                   white_button_color.blue()) >= 210, (
+            "a fogantyú narancsszínű középpontját fehér gombnak kell körülvennie: "
+            f"{white_button_color.getRgb()}"
         )
 
         render_dir = os.environ.get("PICASAPY_7457_RENDER_DIR")
@@ -383,6 +446,55 @@ def _pixel_color(image, point, device_pixel_ratio):
         round(point.x() * device_pixel_ratio),
         round(point.y() * device_pixel_ratio),
     )
+
+
+def _rendered_text_angle(image, text_item, device_pixel_ratio):
+    """A látható fehér betűképpontok főtengelyét méri, betűméret nélkül."""
+    corners = [
+        text_item.mapToScene(QPointF(0, 0)),
+        text_item.mapToScene(QPointF(text_item.width(), 0)),
+        text_item.mapToScene(QPointF(0, text_item.height())),
+        text_item.mapToScene(QPointF(text_item.width(), text_item.height())),
+    ]
+    x_min = max(
+        0,
+        math.floor(min(point.x() for point in corners) * device_pixel_ratio),
+    )
+    x_max = min(
+        image.width() - 1,
+        math.ceil(max(point.x() for point in corners) * device_pixel_ratio),
+    )
+    y_min = max(
+        0,
+        math.floor(min(point.y() for point in corners) * device_pixel_ratio),
+    )
+    y_max = min(
+        image.height() - 1,
+        math.ceil(max(point.y() for point in corners) * device_pixel_ratio),
+    )
+
+    glyph_pixels = []
+    for y in range(y_min, y_max + 1):
+        for x in range(x_min, x_max + 1):
+            scene_point = QPointF(x / device_pixel_ratio, y / device_pixel_ratio)
+            local_point = text_item.mapFromScene(scene_point)
+            if not (0 <= local_point.x() <= text_item.width()):
+                continue
+            if not (0 <= local_point.y() <= text_item.height()):
+                continue
+            color = image.pixelColor(x, y)
+            if min(color.red(), color.green(), color.blue()) >= 190:
+                glyph_pixels.append((x, y))
+
+    assert glyph_pixels, "nem találhatók a kirajzolt fehér betűképpontok"
+    mean_x = sum(x for x, _ in glyph_pixels) / len(glyph_pixels)
+    mean_y = sum(y for _, y in glyph_pixels) / len(glyph_pixels)
+    var_x = sum((x - mean_x) ** 2 for x, _ in glyph_pixels)
+    var_y = sum((y - mean_y) ** 2 for _, y in glyph_pixels)
+    cov_xy = sum(
+        (x - mean_x) * (y - mean_y) for x, y in glyph_pixels
+    )
+    return math.degrees(0.5 * math.atan2(2 * cov_xy, var_x - var_y))
 
 
 def _max_luma(image, point, device_pixel_ratio, radius=3):

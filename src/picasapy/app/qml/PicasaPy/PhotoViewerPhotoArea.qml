@@ -800,8 +800,8 @@ Item {
         }
     }
     // A fogantyú a szövegmező fölött marad, hogy az inline szerkesztő kerete
-    // ne takarja el a húzható pontot; a korong osztásai alatta, álló helyen
-    // maradnak.
+    // ne takarja el a húzható pontot; a korong és az osztások alatta, álló
+    // helyen maradnak.
     Repeater {
         parent: photoArea.fokuszKep
         model: textOverlaySelector.model
@@ -834,19 +834,35 @@ Item {
                     ctx.lineWidth = 1.5
                     ctx.strokeStyle = "#f5f7fa"
                     ctx.beginPath()
-                    ctx.moveTo(cx, cy)
-                    ctx.lineTo(cx + 79, cy)
-                    ctx.moveTo(cx + 73, cy - 5)
-                    ctx.lineTo(cx + 81, cy)
-                    ctx.lineTo(cx + 73, cy + 5)
+                    ctx.moveTo(cx + 66, cy)
+                    ctx.lineTo(cx + 76.5, cy)
                     ctx.stroke()
                     ctx.beginPath()
-                    ctx.arc(cx + 81, cy, 4.5, 0, Math.PI * 2)
-                    ctx.fillStyle = "#e53935"
+                    ctx.moveTo(cx + 58, cy)
+                    ctx.lineTo(cx + 66, cy - 6)
+                    ctx.lineTo(cx + 66, cy + 6)
+                    ctx.closePath()
+                    ctx.fillStyle = "#f5f7fa"
                     ctx.fill()
+                    ctx.beginPath()
+                    ctx.arc(cx + 81, cy, 4.75, 0, Math.PI * 2)
+                    ctx.shadowColor = "rgba(0, 0, 0, 0.38)"
+                    ctx.shadowBlur = 3
+                    ctx.shadowOffsetX = 1
+                    ctx.shadowOffsetY = 1
+                    ctx.fillStyle = "#f5f7fa"
+                    ctx.fill()
+                    ctx.shadowColor = "transparent"
+                    ctx.shadowBlur = 0
+                    ctx.shadowOffsetX = 0
+                    ctx.shadowOffsetY = 0
                     ctx.lineWidth = 1
                     ctx.strokeStyle = "#ffffff"
                     ctx.stroke()
+                    ctx.beginPath()
+                    ctx.arc(cx + 81, cy, 2.1, 0, Math.PI * 2)
+                    ctx.fillStyle = "#f05a1e"
+                    ctx.fill()
                 }
             }
 

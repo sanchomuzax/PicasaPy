@@ -1,6 +1,6 @@
 """`picasapy.render.text_overlay.apply_text_overlay` — determinisztikus
 pixel-tesztek. A pozíció normalizált képkoordináta; az elforgatott befoglaló
-doboz a képszél elé is kerülhet. A Hershey-betűkészlet közelítés — ld. a
+doboz a képszél elé is kerülhet. A Hershey-betűkészlet közelítés, ld. a
 modul docsztringjét: a Picasa tényleges betűtípus-renderelésével NEM
 hasonlítottuk össze (nincs golden)."""
 

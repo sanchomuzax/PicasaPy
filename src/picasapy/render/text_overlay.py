@@ -257,7 +257,7 @@ def apply_text_overlay(
 ) -> np.ndarray:
     """Szöveg ráírása a képre — kitöltés + opcionális körvonal (#450).
 
-    `x`, `y`: relatív képkoordináta — a szövegdoboz BAL FELSŐ sarka kerül
+    `x`, `y`: relatív képkoordináta: a szövegdoboz BAL FELSŐ sarka kerül
     ide (#7380: az eredeti Picasa `text=` pozíciója; a betűk a pont ALATT
     állnak, a bal szél a ponton). Üres `content`-nél no-op (a bemenet
     másolata). A `font_scale`/`thickness` nem lehet negatív.
