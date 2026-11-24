@@ -1,7 +1,9 @@
 """QML-modellek: mappa-lista és fotórács az SQLite indexből."""
 
+import calendar
 import os
 import time
+from datetime import datetime
 
 import pytest
 
@@ -14,6 +16,26 @@ def _fajlidot_allit(ut, mikor) -> None:
     """A fájl módosítási idejét adott naptári időpontra állítja."""
     masodperc = time.mktime((*mikor, 0, 0, -1))
     os.utime(ut, (masodperc, masodperc))
+
+
+def _utc_ns(*mikor) -> int:
+    """UTC-időpont ns-ban, platformfüggetlenül (#7430).
+
+    A `time.mktime` / `time.localtime` Windowson 1970 előtti értékre
+    `OverflowError`-t / `OSError`-t dob, a `calendar.timegm` tiszta
+    számtan, ezért az 1899-es teszt-időbélyeg is ezzel készül.
+    """
+    return calendar.timegm((*mikor, 0, 0, 0)) * 1_000_000_000
+
+
+class _WindowsosDatetime(datetime):
+    """A Windows `localtime`-ját utánozza: 1970 előtti értékre `OSError`."""
+
+    @classmethod
+    def fromtimestamp(cls, timestamp, tz=None):
+        if timestamp < 0:
+            raise OSError(22, "Invalid argument")
+        return super().fromtimestamp(timestamp, tz)
 
 
 @pytest.fixture
@@ -227,10 +249,7 @@ class TestFolderListModel:
 
         with open_index(tmp_path / "valtozasok.db") as changed_conn:
             sync_tree(changed_conn, root)
-            old_change_ns = int(
-                time.mktime((1899, 12, 31, 12, 0, 0, 0, 0, -1))
-                * 1_000_000_000
-            )
+            old_change_ns = _utc_ns(1899, 12, 31, 12, 0, 0)
             changed_conn.execute(
                 "UPDATE photos SET mtime_ns = ? WHERE folder_id = "
                 "(SELECT id FROM folders WHERE path = ?)",
@@ -252,6 +271,53 @@ class TestFolderListModel:
             ("folder", "november_2019_b"),
             ("folder", "november_2019_a"),
             ("folder", "1899_december"),
+        ]
+
+    def test_month_headers_survive_windows_negative_timestamp(
+        self, qt_app, monkeypatch
+    ):
+        # #7430: Windowson a `datetime.fromtimestamp` 1970 előtti értékre
+        # OSError-t dob. A fejléc ettől ne dőljön el, és a 1900 utáni,
+        # de 1970 előtti hónap is a helyes fejlécet kapja.
+        from picasapy.app import model_helpers
+
+        monkeypatch.setattr(model_helpers, "datetime", _WindowsosDatetime)
+        folders = (
+            ("a_2021", "/k/a", 1, "", _utc_ns(2021, 8, 10, 12, 0, 0), False, False),
+            ("b_1960", "/k/b", 1, "", _utc_ns(1960, 6, 15, 12, 0, 0), False, False),
+            ("c_1899", "/k/c", 1, "", _utc_ns(1899, 12, 31, 12, 0, 0), False, False),
+        )
+
+        rows = model_helpers._with_month_separators(folders)
+
+        assert [(kind, name) for kind, name, *_ in rows] == [
+            ("folder", "a_2021"),
+            ("year", "Updated June 1960"),
+            ("folder", "b_1960"),
+            ("folder", "c_1899"),
+        ]
+
+    def test_month_headers_skip_unrepresentable_timestamp(
+        self, qt_app, monkeypatch
+    ):
+        # Ha az érték semmilyen úton nem váltható dátummá, a sor fejléc
+        # nélkül, de megmarad (a rendezett lista nem veszíthet sort), és a
+        # mögötte álló, azonos hónapú sor nem kap külön fejlécet.
+        from picasapy.app import model_helpers
+
+        monkeypatch.setattr(model_helpers, "datetime", _WindowsosDatetime)
+        folders = (
+            ("a_2021", "/k/a", 1, "", _utc_ns(2021, 8, 10, 12, 0, 0), False, False),
+            ("romlott", "/k/r", 1, "", -(10**30), False, False),
+            ("b_2021", "/k/b", 1, "", _utc_ns(2021, 8, 2, 12, 0, 0), False, False),
+        )
+
+        rows = model_helpers._with_month_separators(folders)
+
+        assert [(kind, name) for kind, name, *_ in rows] == [
+            ("folder", "a_2021"),
+            ("folder", "romlott"),
+            ("folder", "b_2021"),
         ]
 
     def test_windows_path_folder_name(self, qt_app, conn):
