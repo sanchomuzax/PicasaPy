@@ -7,13 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- Kutatás: a szerkesztő Hangolás lapja az eredeti Picasával összevetve, a még mérendő pontok listájával (#7345) (#7345).
+- Kutatás: a szerkesztő Hangolás fülének teljes folyamata az eredetivel összevetve: a Gyakori javítások Derítőfény-csúszkája az eredetiben külön réteget ír, a pipetta fülváltáskor kikapcsol, az Alkalmaz és a Mégse nincs a fülön (#7345).
+- Kutatás: a Hangolás fül újabb eredeti Picasa-felvételei (job-895..906) kiértékelve: a pipetta területet átlagol, az ini-t fülváltás, visszavonás vagy kilépés írja ki (nem idő), két Hangolás-látogatás két réteg és két visszavonási lépés, a csupa nulla réteg a visszavonási lépésével együtt eltűnik, a betöltött Derítőfény-réteg mellé új réteg kerül; új fejlesztői jegytörzs a lapon, négy javított lépéssor a maradék kérdésekhez (#7345).
+- Kutatás: a Hangolás fül eredeti Picasa-felvételei (J0-J7) kiértékelve: az eredetiben a csúszkák mindig alaphelyzetben indulnak, egy látogatás összes húzása egyetlen visszavonási lépés és a betöltött réteg mellé új réteg kerül, a pipetta a forrásképből mintáz és képváltáskor kikapcsol, a Ctrl+3 kijelölés nélkül az 1. képet, két kijelölt képnél a rács szerinti elsőt nyitja; a három eltérés fejlesztésének jegytörzse a lapon van, a megmaradt hat kérdéshez javított lépéssorok készültek; fejlesztés: #7383, #7384, #7385 (#7345).
+- Kutatás: lezártam a Hangolás-paritás felmérését, rögzítettem a pipetta 5x5-ös mintáját és a többes kijelölés Enter/helyi menü eltérését (#7345).
+
 ## [1.0.178] - 2026-11-24
 
 ### Javítva
 - Kutatás: az eredeti Picasa Beállítások OK ága csak a javaslatküszöb (`FRSuggestionThreshold`, `FRSuggestionSingleThreshold`) változásakor egyezteti a személyalbumok címketagságát, ütemez háttérmunkát és állítja a panel frissítési jelzőjét; a #7325 "minden OK-n" állítása pontosítva, fejlesztői jegytörzzsel, a fejlesztés a #7373 jegyen (#7331).
 - Kutatás: a negyedik javított felvételkör (job-939..943) kimérte, hogy a Vágás kiegyenesített képen a téglalapot a forrásképen tárolja és az eredmény a kivágott ablakra újra alkalmazott kiegyenesítés (a mai render ugyanabból az ini-ből 501×180 helyett 371×167-es képet ad), hogy az Undo Save után az Undo-gomb a lánc szerint áll vissza (Kiegyenesítésnél „Undo Straighten” aktív), hogy a szöveg szerkesztése önmagában nem változtat a geometrián és a forgatás szöge nem szalad rá a 15°-ra, és hogy az 1:1 gomb a Retusálásban 100%-ra nagyít; két új fejlesztői jegytörzs a lapon, két javított lépéssor a megmaradt hiányokhoz (#7327).
 - Kutatás: a fájltípus-váltás utáni katalóguskezelés feltárása az eredeti Picasában (#7339).
-- Kutatás: lezártam a Hangolás-paritás felmérését, rögzítettem a pipetta 5x5-ös mintáját és a többes kijelölés Enter/helyi menü eltérését (#7345).
 - A Beállítások párbeszédpanelen a javaslatküszöb módosítása és az OK után azonnal frissülnek a Személyek panel névjavaslatai (#7373).
 - Kutatás: a Hangolás Színhőmérséklet-csúszkája pipetta nélkül bitre az eredeti képletét követi, az eredeti kód futtatásával igazolva (#7403).
 - Több kép kijelölésekor az Enter és a kép helyi menüje a rács szerinti első kijelölt képet nyitja meg (#7412).
@@ -41,7 +47,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [1.0.175] - 2026-11-23
 
 ### Javítva
-- Kutatás: a Hangolás fül eredeti Picasa-felvételei (J0-J7) kiértékelve: az eredetiben a csúszkák mindig alaphelyzetben indulnak, egy látogatás összes húzása egyetlen visszavonási lépés és a betöltött réteg mellé új réteg kerül, a pipetta a forrásképből mintáz és képváltáskor kikapcsol, a Ctrl+3 kijelölés nélkül az 1. képet, két kijelölt képnél a rács szerinti elsőt nyitja; a három eltérés fejlesztésének jegytörzse a lapon van, a megmaradt hat kérdéshez javított lépéssorok készültek; fejlesztés: #7383, #7384, #7385 (#7345).
 - A Hangolás fül pipettája a kép forrásából mintáz (a Hangolás-réteg előtti láncból), nem a már módosított előnézetből, és a kattintott pont körüli 5x5 képpontos területet átlagolja, mint az eredeti; így nem nulla Színhőmérséklet vagy korábbi semleges szín mellett is a forrás színét írja a `finetune2` p4 mezőjébe; a minta nem fagyasztja meg a felületet: a háttérben kész előnézetből azonnal jön, az ismételt kattintás nem renderel újra; képváltáskor a pipetta felengedett állapotba kerül (#7385).
 - A Lágy fókusz paraméterpaneljének Size és Amount csúszkája a sáv közepén, 0 értékkel indul, mint az eredeti Picasában (#7388).
 - A szerkesztő állapotsora effektparancs vagy panelzárás után mappa és számláló nélküli rövid alakra vált (#7390).
@@ -51,7 +56,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ### Javítva
 - Kutatás: az eredeti Picasa Kiegyenesítés, Vörösszem, Retusálás és Szöveg paneljének felvételei lezárták a panelek felépítését; a négy látható eltérés fejlesztése a #7378-#7381; a javított felvételek (job-907..913) megmérték a Retusálás ecsetkörének méretét (a kör sugara a csúszka bal végén 3, közepén 24, jobb végén 97 képpont, a kép rövidebb oldalától független, ezért sem a mai, sem a #7379-es leképezés nem egyezik), a Retusálás visszavonásának két ágát (utána az Újra letiltott), a Szöveg formázásának megjegyzését és a meglévő blokk szerkesztését, a Vágás figyelmeztetésének hiányát kiegyenesítés mellett és a Kiegyenesítés újranyitását; a megmaradt kérdésekhez új lépéssorok készültek (#7327).
-- Kutatás: a Hangolás fül újabb eredeti Picasa-felvételei (job-895..906) kiértékelve: a pipetta területet átlagol, az ini-t fülváltás, visszavonás vagy kilépés írja ki (nem idő), két Hangolás-látogatás két réteg és két visszavonási lépés, a csupa nulla réteg a visszavonási lépésével együtt eltűnik, a betöltött Derítőfény-réteg mellé új réteg kerül; új fejlesztői jegytörzs a lapon, négy javított lépéssor a maradék kérdésekhez (#7345).
 - Kutatás: az eredeti Picasa 35 futásmérése lezárta az effektfülek folyamatát: a Kép menü effektparancsai és a Ctrl+Shift+B szerkesztőben a csempekattintással egyezően hatnak, az ismétlés, a Mégse és az újranyitás viselkedése mért; négy új eltérés (az Undo felirat alakja angolul, a Soft Focus kezdőértéke, a Kép menü letiltása nyitott paneles állapotban, az állapotsor alakja) jegytörzzsel a lapon, három tétel javított lépéssorral blokkolt (#7346).
 - A Retusálás panel címe („Szennyeződések retusálása”, ikon és a kijelölt régiók számlálósora nélkül), a retusálás visszavonásának megerősítő ablaka (Confirm cím, Picasa-logó, fehér Undo és No gomb, a No-n pontozott fókuszkerettel, Cancel és „Do not ask again” nélkül) és a mentés utáni ini-sor (a fő .picasa.ini-ben megmarad a filters=retouch=1;) mostantól az eredeti Picasát követi; az ecsetméret leképezése változatlan, az átállása külön jegy (#7379).
 - A Hangolás fül csúszkái és az 1. fül Derítőfény-csúszkája újranyitáskor, fülváltáskor, képváltáskor és Undo/Redo után alaphelyzetben állnak, a kép a láncot mutatja; egy Hangolás-látogatás egyetlen új `finetune2` réteg és egyetlen visszavonási lépés, mint az eredetiben (#7383).
@@ -75,7 +79,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [1.0.171] - 2026-11-23
 
 - Kutatás: az újravágás szabályának helyesbítése: az eredeti Picasa a lánc végén álló vágást helyben frissíti (két egymás utáni vágást egy visszavonás vesz vissza), más művelet után viszont új vágást fűz hozzá; a látható visszavonás és újra állapot felvétele még hátra van (#7327).
-- Kutatás: a szerkesztő Hangolás fülének teljes folyamata az eredetivel összevetve: a Gyakori javítások Derítőfény-csúszkája az eredetiben külön réteget ír, a pipetta fülváltáskor kikapcsol, az Alkalmaz és a Mégse nincs a fülön (#7345).
 - Kutatás: az eredeti Picasa Csoportos szerkesztés parancsai szerkesztőben nyitott képnél a csempekattintással egyenértékű hatást adnak (nem csak fület váltanak), a Ctrl+Shift+B is a megnyitott képre hat, az effekt-paraméterpanelen pedig nincs Alaphelyzet gomb. Az írásvédett-kapu az eredetiben nem írásvédettséget vizsgál: csak az iPhoto- vagy Apple Photos-könyvtár alatti mappa képein kérdez a szerkesztés előtt ("Make a Copy" / "Cancel Edit"), sima írásvédett mappánál nem (#7346).
 - A szerkesztőben az újravágás most az eredeti Picasa módján működik: ha a szerkesztési lánc végén már vágás áll, az Alkalmaz azt írja át a hozzáfűzés helyett, így a lánc nem nő feleslegesen, és két egymás utáni vágást egyetlen Visszavonás vesz vissza (az Újra a második vágást hozza vissza); ha más művelet áll a végén, az új vágás a lánc végére kerül. Üres kijelöléssel az Alkalmaz kiveszi a lánc végén álló vágást, és ez visszavonható (#7367).
 - A Gyakori javítások fül Derítőfény-csúszkája mostantól a saját Derítőfény-réteget szerkeszti, nem a Finomhangolás fülét: a két csúszka egymástól független, az eredeti Picasában írt Derítőfény-érték megnyitáskor a csúszkán látszik, és a Visszavonás gomb felirata „Visszavonás: Derítőfény" (#7369).
@@ -95,7 +98,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - Kutatás: a nézet rendezésének nyitott kérdései eldöntve futtatott méréssel az eredeti Picasán (#7326).
 - Kutatás: a szerkesztő Alapjavítások lapjának futtatott mérései az eredeti Picasán (#7327) (#7327).
 - Kutatás: mit tesz az eredeti Picasa a fájltípus-váltás után a szkennerrel és a katalógussal (#7339).
-- Kutatás: a szerkesztő Hangolás lapja az eredeti Picasával összevetve, a még mérendő pontok listájával (#7345) (#7345).
 - Kutatás: a szerkesztő három Effektek lapja az eredeti Picasával összevetve (#7346) (#7346).
 - A bal oldali mappalista üres részén a jobb egérgomb már nem nyit menüt, mint az eredeti Picasában; a nézet- és rendezésmenü a ▾ gombról érhető el (#7349).
 - A Shortcuts almenüben a Desktop és a My Pictures tétel szürke, ha a könyvtárban nincs mappa alattuk, mint az eredetiben (#7350).
