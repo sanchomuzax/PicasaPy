@@ -33,6 +33,7 @@ import configparser
 import time
 from pathlib import Path
 
+import pytest
 from PySide6.QtCore import QMetaObject, QObject, Qt
 
 from support.halasztott_parbeszed import epitsd_fel
@@ -501,6 +502,32 @@ class TestHibaagakEsFolyamatjelzes:
         assert "disk error" in szoveg, szoveg
         assert "IMG_0007.jpg" in szoveg, szoveg
         assert "error(28)" in szoveg, szoveg
+
+    @pytest.mark.parametrize(
+        ("kind", "vart_cim"),
+        [
+            # #7443: a CFileSaveThread három hibaágának címe az
+            # `ytApp::ErrorTitle` („Error" / „Hiba"), nem a „Save".
+            ("collision", "Error"),
+            ("format", "Error"),
+            ("disk", "Error"),
+            # a többi ág címe nem ismert, marad a mostani
+            ("same", "Save"),
+            ("copy_disk", "Save"),
+            ("revert", "Revert"),
+        ],
+    )
+    def test_a_hibaablak_cime_agonkent(self, qml_app, qt_app, kind, vart_cim):
+        """#7443: a lemezhiba, a névütközés és a formátumhiba ablakának
+        címe `Error`; a Revert és a másolat-ágak címe változatlan."""
+        window, _controller, _engine = qml_app
+        parbeszed = _elem(window, "saveErrorDialog")
+        parbeszed.setProperty("kind", kind)
+        qt_app.processEvents()
+
+        assert parbeszed.property("title") == vart_cim, (
+            f"a(z) {kind!r} ág ablakcíme {parbeszed.property('title')!r}"
+        )
 
     def test_a_folyamatjelzes_egyes_es_tobbes_szamu_mondata(self, qml_app, qt_app):
         panel = None
