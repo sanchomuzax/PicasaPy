@@ -1,6 +1,8 @@
 """Retusálás eszközének QML- és vezérlő-összekötési próbái."""
 
-from PySide6.QtCore import QObject
+import pytest
+from PySide6.QtCore import QObject, QPoint, QPointF, Qt
+from PySide6.QtTest import QTest
 from tests.app.qml_functional._editor_test_helpers import EditorTestHelpers
 
 
@@ -84,6 +86,137 @@ class TestEditorRetouch(EditorTestHelpers):
         assert not ini_path.exists() or "retouch" not in ini_path.read_text(
             encoding="utf-8"
         )
+
+    def test_retouch_cancel_with_pending_target_keeps_tool_open_then_closes(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("retouchActive", True)
+        qt_app.processEvents()
+        edit = self._edit_controller(engine)
+        edit.setBrushSize(31)
+        edit.beginRetouchPatch(0.5, 0.5)
+        qt_app.processEvents()
+        assert panel.property("retouchPatchPending") is True
+
+        cancel_button = window.findChild(QObject, "retouchCancelButton")
+        QTest.mouseClick(
+            window,
+            Qt.MouseButton.LeftButton,
+            pos=QPoint(
+                round(cancel_button.mapToScene(cancel_button.boundingRect().center()).x()),
+                round(cancel_button.mapToScene(cancel_button.boundingRect().center()).y()),
+            ),
+        )
+        qt_app.processEvents()
+
+        assert panel.property("retouchPatchPending") is False
+        assert panel.property("retouchActive") is True
+        slider = window.findChild(QObject, "retouchBrushSizeSlider")
+        assert slider.property("value") == 31
+
+        # A függő állapot sora eltűnt, a gombsor feljebb csúszhatott: a
+        # második kattintás helyét újra a QML-geometriából számoljuk.
+        second = cancel_button.mapToScene(cancel_button.boundingRect().center())
+        QTest.mouseClick(
+            window,
+            Qt.MouseButton.LeftButton,
+            pos=QPoint(round(second.x()), round(second.y())),
+        )
+        qt_app.processEvents()
+        assert panel.property("retouchActive") is False
+
+        panel.setProperty("retouchActive", True)
+        qt_app.processEvents()
+        assert slider.property("value") == 31
+
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_retouch_neutral_panel_click_discards_pending_target(
+        self, qml_app, qt_app, height_delta
+    ):
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        window.resize(window.width(), window.height() + height_delta)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("retouchActive", True)
+        qt_app.processEvents()
+        edit = self._edit_controller(engine)
+        edit.beginRetouchPatch(0.5, 0.5)
+        qt_app.processEvents()
+        assert panel.property("retouchPatchPending") is True
+
+        scroll = window.findChild(QObject, "editorModeToolScroll")
+        cancel_button = window.findChild(QObject, "retouchCancelButton")
+        apply_button = window.findChild(QObject, "retouchApplyButton")
+        apply_center = apply_button.mapToScene(apply_button.boundingRect().center())
+        QTest.mouseClick(
+            window,
+            Qt.MouseButton.LeftButton,
+            pos=QPoint(round(apply_center.x()), round(apply_center.y())),
+        )
+        qt_app.processEvents()
+        assert panel.property("retouchPatchPending") is True
+
+        cancel_center = cancel_button.mapToItem(
+            scroll, cancel_button.boundingRect().center()
+        )
+        # A gombsor bal oldali, üres panelmargójára kattintunk. A pontot a
+        # tényleges QML-geometriából számoljuk, nem rögzített képernyőpontból.
+        neutral = scroll.mapToScene(QPointF(4, cancel_center.y()))
+        QTest.mouseClick(
+            window,
+            Qt.MouseButton.LeftButton,
+            pos=QPoint(round(neutral.x()), round(neutral.y())),
+        )
+        qt_app.processEvents()
+
+        assert panel.property("retouchPatchPending") is False
+        assert panel.property("retouchActive") is True
+
+        area = window.findChild(QObject, "retouchClickArea")
+        first_click = area.mapToScene(QPointF(area.width() * 0.30, area.height() * 0.45))
+        QTest.mouseClick(
+            window,
+            Qt.MouseButton.LeftButton,
+            pos=QPoint(round(first_click.x()), round(first_click.y())),
+        )
+        qt_app.processEvents()
+        assert panel.property("retouchPatchPending") is True
+
+    def test_retouch_click_below_buttons_discards_pending_target(
+        self, qml_app, qt_app
+    ):
+        """#7426: az eredetiben a gombsor alatti üres panelsávra kattintás
+        (job-949 __20, a (140, 600) pont) is eldobja a függő foltot."""
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("retouchActive", True)
+        qt_app.processEvents()
+        edit = self._edit_controller(engine)
+        edit.beginRetouchPatch(0.5, 0.5)
+        qt_app.processEvents()
+        assert panel.property("retouchPatchPending") is True
+
+        scroll = window.findChild(QObject, "editorModeToolScroll")
+        content_h = scroll.property("contentHeight")
+        assert content_h + 20 < scroll.height(), (
+            "a próba a tartalom alatti üres sávot méri; ilyen sáv nincs"
+        )
+        below = scroll.mapToScene(
+            QPointF(scroll.width() / 2, (content_h + scroll.height()) / 2)
+        )
+        QTest.mouseClick(
+            window,
+            Qt.MouseButton.LeftButton,
+            pos=QPoint(round(below.x()), round(below.y())),
+        )
+        qt_app.processEvents()
+
+        assert panel.property("retouchPatchPending") is False
+        assert panel.property("retouchActive") is True
 
     def test_retouch_undo_redo_reset_buttons(self, qml_app, qt_app, tmp_path):
         """#445: Undo Patch/Redo Patch/Reset — a retusálás pufferén, NEM a
