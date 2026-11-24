@@ -181,7 +181,15 @@ Item {
     Dialog {
         id: saveErrorDialog
         objectName: "saveErrorDialog"
-        title: kind === "revert" ? qsTr("Revert") : qsTr("Save")
+        title: {
+            if (kind === "revert")
+                return qsTr("Revert")
+            if (kind === "collision" || kind === "format" || kind === "disk")
+                //: ytApp::ErrorTitle - a CFileSaveThread három hibaágának
+                //: (lemezhiba, névütközés, formátumhiba) címe
+                return qsTr("Error")
+            return qsTr("Save")
+        }
         modal: true
         anchors.centerIn: parent
         standardButtons: Dialog.Ok
