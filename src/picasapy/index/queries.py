@@ -6,10 +6,12 @@ import re
 import sqlite3
 import sys
 import time
+from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 
 from .colors import paths_with_color
+from .filetype_scope import enabled_type_clause
 from .hidden_scope import visible_folder_sql
 from .search_color import parse_color_terms
 
@@ -332,17 +334,20 @@ def count_recently_updated_photos(
     conn: sqlite3.Connection,
     cutoff_ns: int | None = None,
     limit: int = 250,
+    enabled_filetypes: Collection[str] | None = None,
 ) -> int:
     """A Recently Updated album elemeinek száma (#6851), legfeljebb `limit`.
 
-    Ugyanazt a dátumkulcsot használja, mint a `recently_updated_photos` (#6884)."""
+    Ugyanazt a dátumkulcsot használja, mint a `recently_updated_photos` (#6884).
+    #7414: az `enabled_filetypes` szerint kikapcsolt típusú képek nem számítanak."""
     lathato = visible_folder_sql(conn, "f")
+    tipus_feltetel, tipus_parameterek = enabled_type_clause(enabled_filetypes)
     sor = conn.execute(
         f"SELECT COUNT(*) AS n FROM ("
         f"  SELECT p.id FROM photos p JOIN folders f ON f.id = p.folder_id AND {lathato}"
-        f"  WHERE {_RECENT_DATE_KEY_SQL} > ? ORDER BY p.id DESC LIMIT ?"
+        f"  WHERE {_RECENT_DATE_KEY_SQL} > ?{tipus_feltetel} ORDER BY p.id DESC LIMIT ?"
         f")",
-        (_recent_cutoff_ns(cutoff_ns), int(limit)),
+        (_recent_cutoff_ns(cutoff_ns), *tipus_parameterek, int(limit)),
     ).fetchone()
     return int(sor["n"]) if sor is not None else 0
 

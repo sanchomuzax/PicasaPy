@@ -122,6 +122,7 @@ class FolderScan:
     mtime_ns: int = 0
     ini_mtime_ns: int | None = None
     skipped: bool = False
+    all_media_names: tuple[str, ...] = ()
 
 
 def scan_tree(
@@ -481,6 +482,7 @@ def _scan_folder(
             mtime_ns = os.stat(path).st_mtime_ns
         except OSError:
             mtime_ns = 0
+    all_media_names = tuple(name for name, _kind in recognised_media)
     if with_state:
         ini_mtime_ns = _ini_mtime(by_name)
         if skip is not None and mtime_ns and skip(path, mtime_ns, ini_mtime_ns):
@@ -491,6 +493,7 @@ def _scan_folder(
                 mtime_ns=mtime_ns,
                 ini_mtime_ns=ini_mtime_ns,
                 skipped=True,
+                all_media_names=all_media_names,
             )
     files = []
     for name, kind in media:
@@ -516,6 +519,7 @@ def _scan_folder(
         files=tuple(files),
         mtime_ns=mtime_ns,
         ini_mtime_ns=ini_mtime_ns,
+        all_media_names=all_media_names,
     )
 
 

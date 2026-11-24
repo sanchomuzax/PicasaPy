@@ -18,13 +18,14 @@ mert az a mappa fotóit számolja, nem az ini sorait.
 from __future__ import annotations
 
 import sqlite3
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from dataclasses import dataclass
 
 from picasapy.ini import IniDocument, is_projects_category, read_folder_category
 
 from .folder_ini import sweep_folder_inis
 from .hidden_scope import excluded_folder_paths
+from .filetype_scope import enabled_type_clause
 
 
 @dataclass(frozen=True)
@@ -54,12 +55,21 @@ class ProjectFolderCollector:
 def project_folders_from_paths(
     conn: sqlite3.Connection, paths: Iterable[str]
 ) -> tuple[ProjectFolder, ...]:
+    """A begyűjtött projekt-útvonalakból a hasáb sorai, névre rendezve."""
+    return _project_folders_from_paths(conn, paths, enabled_filetypes=None)
+
+
+def _project_folders_from_paths(
+    conn: sqlite3.Connection,
+    paths: Iterable[str],
+    enabled_filetypes: Collection[str] | None,
+) -> tuple[ProjectFolder, ...]:
     """A begyűjtött projekt-útvonalakból a hasáb sorai, névre rendezve.
 
     Az ini-olvasás itt már megtörtént (`ProjectFolderCollector`); ez a
     függvény csak az index-beli darabszámot teszi mellé. A rejtett
     mappákat (#4887) a közös láthatósági kapu szűri ki."""
-    counts = _photo_counts(conn)
+    counts = _photo_counts(conn, enabled_filetypes)
     kizart = excluded_folder_paths(conn)
     folders = [
         ProjectFolder(
@@ -74,28 +84,41 @@ def project_folders_from_paths(
 
 
 def project_folders(conn: sqlite3.Connection) -> tuple[ProjectFolder, ...]:
-    """A Projektek gyűjtemény mappái — NÉV szerint rendezve (kis-nagybetű-
-    tűrően), a hasáb többi gyűjteményének mintájára.
+    """A Projektek gyűjtemény mappái, minden fájltípussal számolva.
 
     Olvashatatlan vagy időközben eltűnt ini-t csendben kihagy: a könyvtár
     másik folyamat általi éppen-írása ne omlassza össze a listát.
 
     #1601: aki az Emberek gyűjteményt IS betölti, ne ezt hívja, hanem a
     `index/side_pane.load_side_pane_collections`-t — az egyetlen söpréssel
-    állítja elő mindkettőt."""
+    állítja elő mindkettőt.
+    """
+    return _project_folders_for_filetypes(conn, enabled_filetypes=None)
+
+
+def _project_folders_for_filetypes(
+    conn: sqlite3.Connection, enabled_filetypes: Collection[str] | None
+) -> tuple[ProjectFolder, ...]:
+    """A Projektek gyűjtemény belső, fájltípus szerint szűrhető betöltése."""
     collector = ProjectFolderCollector()
     sweep_folder_inis(conn, (collector,))
-    return project_folders_from_paths(conn, collector.paths)
+    return _project_folders_from_paths(conn, collector.paths, enabled_filetypes)
 
 
-def _photo_counts(conn: sqlite3.Connection) -> dict[str, int]:
+def _photo_counts(
+    conn: sqlite3.Connection, enabled_filetypes: Collection[str] | None = None
+) -> dict[str, int]:
     """Mappánkénti fotószám — a fotó nélküli (frissen mentett) projekt-mappa
-    is szerepelhet a listán, ott a darabszám 0."""
+    is szerepelhet a listán, ott a darabszám 0. A beállítás miatt rejtett
+    típusok indexben megmaradt sorai nem számítanak a látható darabszámba."""
+    type_clause, parameters = enabled_type_clause(enabled_filetypes, alias="p")
     return {
         row["path"]: row["n"]
         for row in conn.execute(
             "SELECT f.path AS path, COUNT(p.id) AS n FROM folders f"
-            " LEFT JOIN photos p ON p.folder_id = f.id GROUP BY f.id"
+            " LEFT JOIN photos p ON p.folder_id = f.id"
+            f"{type_clause} GROUP BY f.id",
+            parameters,
         )
     }
 

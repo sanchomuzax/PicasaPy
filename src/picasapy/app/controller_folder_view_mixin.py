@@ -216,6 +216,8 @@ class FolderViewMixin:
                 ],
                 # #6751: a „Csak nagy képek” szűrő a bal sávot is szűri
                 kis_kepek_rejtve=self.showOnlyBigImages,
+                # #7414: a kikapcsolt fájltípusok levonása a számlálóból
+                enabled_filetypes=getattr(self, "_filetype_scan_snapshot", None),
             )
         self.statusChanged.emit()
 

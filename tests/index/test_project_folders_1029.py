@@ -107,6 +107,30 @@ class TestProjectFoldersListed:
             rows = {row.name: row.photo_count for row in project_folders(conn)}
             assert rows.get("Filmek") == 1
 
+    def test_photo_count_excludes_disabled_filetypes(self, tmp_path, library):
+        from picasapy.index.project_folders import _project_folders_for_filetypes
+        from picasapy.scanner.filetypes import FILETYPE_GROUPS
+
+        folder = library / "Kollázsok"
+        (folder / "film.mp4").write_bytes(b"movie-data")
+        with open_index(tmp_path / "filtered.db") as conn:
+            sync_tree(
+                conn,
+                library,
+                incremental=False,
+                enabled_filetypes=set(FILETYPE_GROUPS),
+            )
+
+            row = next(
+                item
+                for item in _project_folders_for_filetypes(
+                    conn, set(FILETYPE_GROUPS) - {"movies"}
+                )
+                if item.name == "Kollázsok"
+            )
+
+        assert row.photo_count == 2
+
 
 class TestFoldersViewIsNotBroken:
     """⚠️ A legvalószínűbb regresszió: a Projektek feltöltése ne vegyen el

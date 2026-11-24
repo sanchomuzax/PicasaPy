@@ -6,6 +6,7 @@ import logging
 
 from PySide6.QtCore import QLocale, QObject, Qt, Signal, Slot
 from picasapy.index import albums_in_index, count_recently_updated_photos, open_index
+from picasapy.scanner.filetypes import media_kind_if_enabled
 from . import formatting
 from .models import folder_order
 from .search_button_filter import AGE_KEEPING_MODES
@@ -131,7 +132,36 @@ class AppControllerPhotoListMixin:
             )
         )
 
+    def _without_disabled_filetypes(self, records) -> tuple:
+        """#7414: a kikapcsolt fájltípusok elemei nélküli lista.
+
+        A kikapcsolt típus sorai az indexben megmaradnak, a felületről viszont
+        azonnal el kell tűnniük (az eredeti `0x004fb9c0` a memóriabeli listából
+        veszi ki őket). Minden nézet és minden darabszám ezen át szűr."""
+        enabled_types = getattr(self, "_filetype_scan_snapshot", None)
+        if enabled_types is None:
+            return records
+        return tuple(
+            r
+            for r in records
+            if media_kind_if_enabled(r.name, enabled_types) is not None
+        )
+
+    def _refresh_after_filetype_change(self) -> None:
+        """#7414: egy fájltípus ki- vagy bekapcsolása után a felület azonnal
+        az új látható halmazt mutatja: rács, mappaszámláló, projektek,
+        Other Stuff, album- és Recently Updated számláló. Az indexet nem írja
+        és a lemezt nem olvassa."""
+        self._refresh_view()
+        with open_index(self._db_path) as conn:
+            if not self._refresh_side_pane_filetype_counts(conn):
+                self._reload_folders()
+            self._load_albums(conn)
+        if hasattr(self, "_refresh_auto_album_tokens"):
+            self._refresh_auto_album_tokens()
+
     def _show(self, records) -> None:
+        records = self._without_disabled_filetypes(records)
         # #4526: a kor-szűrő felirata és csúszkája csak a kor-nézethez
         # tartozik. Bármely más nézet betöltése törölje, így a szűrőgombok és
         # mappaváltások után sem maradhat régi kor-felirat. #7255: a keresés
@@ -217,15 +247,20 @@ class AppControllerPhotoListMixin:
         mappalistát: a `_reload()`-ban, a háttér-szinkron után is friss
         marad. A névtelen albumnak is van megjelenítendő neve, hogy ne
         maradjon üres sor a hasábon."""
+        # #7414: a kikapcsolt fájltípusok az indexben maradnak, a számlálókból
+        # viszont kimaradnak, hogy a bal hasáb a rács halmazát mutassa.
+        enabled_types = getattr(self, "_filetype_scan_snapshot", None)
         self._albums = [
             {
                 "token": album.token,
                 "name": album.name or self._album_placeholder_name(album.token),
                 "count": album.photo_count,
             }
-            for album in albums_in_index(conn)
+            for album in albums_in_index(conn, enabled_types)
         ]
-        self._recently_updated_count = count_recently_updated_photos(conn)
+        self._recently_updated_count = count_recently_updated_photos(
+            conn, enabled_filetypes=enabled_types
+        )
         self.albumsChanged.emit()
 
     def _album_placeholder_name(self, token: str) -> str:

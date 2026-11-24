@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+from collections.abc import Collection
 from concurrent.futures import ThreadPoolExecutor
 from typing import NamedTuple
 
@@ -183,12 +184,14 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResul
                 values = list(workers.map(read_values, upserts))
         conn.executemany(_PHOTO_UPSERT_SQL, values)
     nevek = [media.name for media in scan.files]
-    _prune_photos(conn, folder_id, nevek)
+    disk_names = getattr(scan, "all_media_names", None)
+    _prune_photos(conn, folder_id, nevek, disk_names=disk_names)
     # #2038: a származás-öröklés (`origin_keys`) útvonalra van kulcsolva, és a
     # takarítása eddig kimaradt. Ez a MINDEN utat lefedő pont: a fájl eltűnhet
     # kukába dobással, átnevezéssel vagy a felhasználó fájlkezelőjéből — a
     # mappa-szinkron mindegyiket itt látja meg.
-    forget_origin_keys_outside(conn, scan.path, nevek)
+    kept_origin = disk_names if disk_names is not None else nevek
+    forget_origin_keys_outside(conn, scan.path, kept_origin)
     _sync_albums(conn, folder_id, document)
     sync_folder_date(conn, folder_id, document)
     # #1644: „olvasatlan" jelölő — a mappába ÚJ kép került. A `new_count` a
@@ -200,7 +203,7 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResul
     # mappát) — a sync nem tudhatja, mit nézett már meg.
     if new_count:
         conn.execute("UPDATE folders SET unread = 1 WHERE id = ?", (folder_id,))
-    if not scan.files and not scan.has_ini:
+    if not scan.files and not scan.has_ini and not getattr(scan, "all_media_names", ()):
         # A beállítás által kiszűrt, `.picasa.ini` nélküli mappa ne maradjon
         # üres sorként a könyvtárban.
         legacy("_remove_folder")(conn, scan.path)
@@ -510,8 +513,18 @@ def _prune_albums(conn) -> None:
     )
 
 
-def _prune_photos(conn: sqlite3.Connection, folder_id: int, names: list[str]) -> None:
+def _prune_photos(
+    conn: sqlite3.Connection,
+    folder_id: int,
+    names: list[str],
+    disk_names: Collection[str] | None = None,
+) -> None:
     """A mappából eltűnt fotók (indexbeli sorai) törlése.
+
+    #7414: ha `disk_names` adott, a lemezen fizikailag létező, csupán a
+    fájltípus-beállítás miatt kihagyott médiafájlok indexsorai megmaradnak,
+    hogy a típus visszakapcsolásakor ne kelljen a metaadatokat újraolvasni.
+    Csak azok a sorok törlődnek, amelyek fizikailag már nincsenek a lemezen.
 
     #304: `names` egy nagy (32 766-nál — az SQLite `SQLITE_MAX_VARIABLE_
     NUMBER` alapértéke — több elemű) mappánál nem paraméterezhető közvetlenül
@@ -522,14 +535,19 @@ def _prune_photos(conn: sqlite3.Connection, folder_id: int, names: list[str]) ->
     de a `_sync_folder` ugyanazon a kapcsolaton mappánként újra hívja ezt a
     függvényt — ezért a hívás elején `DROP TABLE IF EXISTS`-szel takarítunk,
     a végén pedig explicit `DROP TABLE`-lel."""
-    if not names:
+    if disk_names is not None:
+        names_to_keep = list(set(names) | set(disk_names))
+    else:
+        names_to_keep = names
+
+    if not names_to_keep:
         conn.execute("DELETE FROM photos WHERE folder_id = ?", (folder_id,))
         return
     conn.execute(f"DROP TABLE IF EXISTS temp.{_PRUNE_TEMP_TABLE}")
     conn.execute(f"CREATE TEMP TABLE {_PRUNE_TEMP_TABLE} (name TEXT PRIMARY KEY)")
     conn.executemany(
         f"INSERT INTO {_PRUNE_TEMP_TABLE}(name) VALUES (?)",
-        [(name,) for name in names],
+        [(name,) for name in names_to_keep],
     )
     conn.execute(
         "DELETE FROM photos WHERE folder_id = ? AND name NOT IN"
