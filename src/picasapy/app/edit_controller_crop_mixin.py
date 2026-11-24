@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import threading
 
 from PySide6.QtCore import QMetaObject, Qt
@@ -29,6 +30,65 @@ from .edit_preview_source import _decode_source
 
 _CROP_RESULT_LOCK = threading.Lock()
 _log = logging.getLogger(__name__)
+
+
+def _crop_tilt_utani_visszavetitese(
+    rect: Rect64, width: int, height: int, tilt_ops: tuple[FilterOp, ...]
+) -> Rect64 | None:
+    """A kiegyenesített kijelölést a forrásképre vetíti (#7415).
+
+    A megjelenített kijelölés négy sarkán a kiegyenesítés cél→forrás
+    mátrixa fut. A forrásbeli kivágás magassága a vetített négyszög
+    befoglaló magassága; az arányt megtartó méretet felfelé kerekítjük,
+    a felső élhez és a befoglaló vízszintes közepéhez igazítva.
+    """
+    from picasapy.render.chain import _TILT_RADIANS_PER_UNIT
+    from picasapy.render.ops_geometry import tilt_matrix
+
+    matrices = []
+    for op in tilt_ops:
+        params = op.float_params()
+        if params:
+            matrices.append(
+                tilt_matrix(width, height, params[0] * _TILT_RADIANS_PER_UNIT)
+            )
+    if not matrices:
+        return None
+
+    x0, x1 = rect.left * width, rect.right * width
+    y0, y1 = rect.top * height, rect.bottom * height
+    drag_width, drag_height = x1 - x0, y1 - y0
+    if drag_width <= 0.0 or drag_height <= 0.0:
+        return None
+
+    pontok = [(x0, y0), (x1, y0), (x0, y1), (x1, y1)]
+    # A láncban az utolsó tilt van legközelebb a kijelölt célképhez.
+    for matrix in reversed(matrices):
+        m0, m1, m2, m3, m4, m5 = matrix
+        pontok = [
+            (m0 * x + m1 * y + m2, m3 * x + m4 * y + m5)
+            for x, y in pontok
+        ]
+
+    min_x = min(x for x, _ in pontok)
+    max_x = max(x for x, _ in pontok)
+    min_y = min(y for _, y in pontok)
+    max_y = max(y for _, y in pontok)
+    k = (max_y - min_y) / drag_height
+    crop_width = min(width, math.ceil(drag_width * k))
+    crop_height = min(height, math.ceil(drag_height * k))
+    left = (min_x + max_x - crop_width) / 2.0
+    top = min_y
+    # A teljes kép határán a méret maradjon egész, a kijelölés pedig férjen
+    # a forrásba; a mért minták egyik szélt sem érik el.
+    left = max(0.0, min(left, width - crop_width))
+    top = max(0.0, min(top, height - crop_height))
+    return Rect64(
+        left / width,
+        top / height,
+        (left + crop_width) / width,
+        (top + crop_height) / height,
+    )
 
 class EditControllerCropMixin:
     """A vágóeszköz tulajdonságai, javaslatai és parancsai."""
@@ -108,6 +168,16 @@ class EditControllerCropMixin:
                 f"A clampelt crop üres lenne: ({left}, {top}, {right}, {bottom})"
             )
         rect = Rect64(left=left, top=top, right=right, bottom=bottom)
+        tilt_ops = tuple(op for op in self._session.ops if op.matches("tilt"))
+        if tilt_ops and self._image_path is not None:
+            source_image = self._provider.source_image(self._kulcs, self._image_path)
+            if source_image is not None:
+                height, width = source_image.shape[:2]
+                visszavetitett = _crop_tilt_utani_visszavetitese(
+                    rect, width, height, tilt_ops
+                )
+                if visszavetitett is not None:
+                    rect = visszavetitett
         # #7367: az eredeti Picasa a lánc VÉGÉN álló `crop64`-et írja át
         # (`0x006b4300`), minden más végrekordnál új elemet fűz hozzá (#1553).
         # A helyben frissítés nem hoz új Visszavonás-lépést és nem ürít redót:
