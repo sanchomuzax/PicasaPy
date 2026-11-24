@@ -7,8 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.178] - 2026-11-24
+
 ### Javítva
 - Kutatás: az eredeti Picasa Beállítások OK ága csak a javaslatküszöb (`FRSuggestionThreshold`, `FRSuggestionSingleThreshold`) változásakor egyezteti a személyalbumok címketagságát, ütemez háttérmunkát és állítja a panel frissítési jelzőjét; a #7325 "minden OK-n" állítása pontosítva, fejlesztői jegytörzzsel, a fejlesztés a #7373 jegyen (#7331).
+- Kutatás: a negyedik javított felvételkör (job-939..943) kimérte, hogy a Vágás kiegyenesített képen a téglalapot a forrásképen tárolja és az eredmény a kivágott ablakra újra alkalmazott kiegyenesítés (a mai render ugyanabból az ini-ből 501×180 helyett 371×167-es képet ad), hogy az Undo Save után az Undo-gomb a lánc szerint áll vissza (Kiegyenesítésnél „Undo Straighten” aktív), hogy a szöveg szerkesztése önmagában nem változtat a geometrián és a forgatás szöge nem szalad rá a 15°-ra, és hogy az 1:1 gomb a Retusálásban 100%-ra nagyít; két új fejlesztői jegytörzs a lapon, két javított lépéssor a megmaradt hiányokhoz (#7327).
+- Kutatás: a fájltípus-váltás utáni katalóguskezelés feltárása az eredeti Picasában (#7339).
+- Kutatás: lezártam a Hangolás-paritás felmérését, rögzítettem a pipetta 5x5-ös mintáját és a többes kijelölés Enter/helyi menü eltérését (#7345).
+- A Beállítások párbeszédpanelen a javaslatküszöb módosítása és az OK után azonnal frissülnek a Személyek panel névjavaslatai (#7373).
+- Kutatás: a Hangolás Színhőmérséklet-csúszkája pipetta nélkül bitre az eredeti képletét követi, az eredeti kód futtatásával igazolva (#7403).
+- Több kép kijelölésekor az Enter és a kép helyi menüje a rács szerinti első kijelölt képet nyitja meg (#7412).
+- Kiegyenesített képen a Vágás a forráskép koordinátáiban vág, és a kivágott részre alkalmazza újra a kiegyenesítést, mint az eredetiben (#7415).
+- Az Undo Save után a szerkesztő Undo gombja a visszaállított szerkesztési láncból épül: Kiegyenesítés után „Undo Straighten" és aktív, a Redo tiltott; szövegszerkesztés után az Undo továbbra is tiltott és csupasz (#7416).
 
 ## [1.0.177] - 2026-11-23
 
