@@ -204,6 +204,10 @@ class FakeFaceScanController(QObject):
         self.setting_calls.append(("suggestionThreshold", value))
         self.suggestion_threshold = value
 
+    @Slot()
+    def recalculateSuggestions(self):
+        self.setting_calls.append(("recalculateSuggestions",))
+
     @Slot(result=int)
     def clusterThreshold(self):
         return self.cluster_threshold

@@ -157,6 +157,11 @@ Window {
                 }
             }
         }
+        // #7373: a javaslatküszöb mostani lépcsőjének rögzítése a commit előtt
+        var prevSuggestStep = (typeof faceScanController !== "undefined" && faceScanController
+            && typeof faceScanController.suggestionThreshold === "function")
+            ? faceScanController.suggestionThreshold() : -1
+
         // #7332: az eredeti OK utáni ág a kulcs AKTUÁLIS értékét nézi, tehát a
         // jelölő érintetlen, régebben mentett bejelölését is lekezeli. A
         // piszkozatba lépett jelölőt a General fül írója intézi a commitban.
@@ -167,6 +172,16 @@ Window {
             applySavedClearCacheFiles()
         if (fileTypesChanged && typeof controller.rescan === "function")
             controller.rescan()
+
+        // #7373: csak a faces/suggestStep változása váltson ki újraszámolást
+        if (prevSuggestStep !== -1 && typeof faceScanController !== "undefined" && faceScanController) {
+            var newSuggestStep = faceScanController.suggestionThreshold()
+            if (newSuggestStep !== prevSuggestStep
+                && typeof faceScanController.recalculateSuggestions === "function") {
+                faceScanController.recalculateSuggestions()
+            }
+        }
+
         optionsWindow.visible = false
     }
 
