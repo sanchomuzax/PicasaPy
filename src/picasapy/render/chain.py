@@ -35,6 +35,7 @@ from picasapy.render.chain_ops import (
     _apply_comicize_op,
     _apply_crop_op,
     _apply_crop_op_lekepezve,
+    _apply_crop_op_tilt_utani,
     _apply_desat_op,
     _apply_dir_brite_op,
     _apply_dir_sat_op,
@@ -615,6 +616,9 @@ def apply_filters(
     range_warnings: list[str] = []
     legacy_warnings: list[str] = []
     crop_op: FilterOp | None = None
+    tilt_crop_source: np.ndarray | None = None
+    tilt_crop_source_matrix: Matrix = AZONOSSAG
+    tilt_crop_ops: list[FilterOp] = []
     frame_ops: list[FilterOp] = []
     for op in ops:
         # #1141: a nem kanonikus írásmódú tag ISMERETLEN — a lánc
@@ -643,9 +647,27 @@ def apply_filters(
             crop_op = op  # csak az effektív (utolsó) crop64 számít
             if mert_sorrend and op is utolso_crop:
                 # a MÉRT sorrendben a vágás OTT fut, ahol áll — a téglalapot
-                # az addig felgyűlt leképezéssel számoljuk át
+                # az addig felgyűlt leképezéssel számoljuk át. Ha a crop előtt
+                # csak tilt-ek futottak, a Picasa forrásképi ablakot vág, majd
+                # azon, az ablak méretével számolt skálával tilt-el újra (#7415).
+                ujratilt = (
+                    tilt_crop_source is not None
+                    and bool(tilt_crop_ops)
+                    and tilt_crop_source.shape[:2] == (eredeti_h, eredeti_w)
+                    and tilt_crop_source_matrix == AZONOSSAG
+                )
                 try:
-                    result = _apply_crop_op_lekepezve(result, op, eredeti_w, eredeti_h, ered_matrix)
+                    if ujratilt:
+                        result = _apply_crop_op_tilt_utani(
+                            tilt_crop_source,
+                            op,
+                            tuple(tilt_crop_ops),
+                            _apply_tilt_op,
+                        )
+                    else:
+                        result = _apply_crop_op_lekepezve(
+                            result, op, eredeti_w, eredeti_h, ered_matrix
+                        )
                 except Exception:
                     _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
                     skipped.append(op.name)
@@ -654,11 +676,31 @@ def apply_filters(
                     crop_op = None
                 else:
                     crop_op = None  # már alkalmazva, a záró ág ne fussa újra
-                    # a placement innentől a VÁGOTT forrásból indul
-                    hely_h, hely_w = result.shape[:2]
-                    hely_matrix = AZONOSSAG
-                    lepes = op_geometria(op, eredeti_w, eredeti_h)
-                    ered_matrix = _szorzat(lepes.matrix, ered_matrix)
+                    if ujratilt:
+                        forras_h, forras_w = tilt_crop_source.shape[:2]
+                        crop_lepes = op_geometria(op, forras_w, forras_h)
+                        tilt_matrix_helyi = AZONOSSAG
+                        for tilt_op in tilt_crop_ops:
+                            tilt_lepes = op_geometria(
+                                tilt_op, crop_lepes.szelesseg, crop_lepes.magassag
+                            )
+                            tilt_matrix_helyi = _szorzat(
+                                tilt_lepes.matrix, tilt_matrix_helyi
+                            )
+                        ered_matrix = _szorzat(
+                            tilt_matrix_helyi,
+                            _szorzat(crop_lepes.matrix, tilt_crop_source_matrix),
+                        )
+                        hely_h, hely_w = crop_lepes.magassag, crop_lepes.szelesseg
+                        hely_matrix = tilt_matrix_helyi
+                    else:
+                        # a placement innentől a VÁGOTT forrásból indul
+                        hely_h, hely_w = result.shape[:2]
+                        hely_matrix = AZONOSSAG
+                        lepes = op_geometria(op, eredeti_w, eredeti_h)
+                        ered_matrix = _szorzat(lepes.matrix, ered_matrix)
+                    tilt_crop_source = None
+                    tilt_crop_ops.clear()
             continue
         if key in _FRAME_EFFECTS and not mert_sorrend:
             # a keret a vágás UTÁN kerül a képre (#330) — a lánc szerinti
@@ -697,6 +739,8 @@ def apply_filters(
                 skipped.append(op.name)
             else:
                 alpha_state = _alpha_after_worker(key, op, alpha_state)
+                tilt_crop_source = None
+                tilt_crop_ops.clear()
             continue
         if key in glimmer.PAINTABLE_MASK_OPS:
             # #3541: a Vámpírszem ecsetmaszk nélkül változatlan marad; a másik
@@ -707,6 +751,12 @@ def apply_filters(
         op, op_warnings = validate_and_clamp_op(op)
         range_warnings.extend(op_warnings)
         elotte_h, elotte_w = result.shape[:2]
+        tilt_crop_source_before = (
+            result.copy()
+            if mert_sorrend and key == "tilt" and not tilt_crop_ops
+            else None
+        )
+        tilt_crop_matrix_before = ered_matrix
         try:
             if key in {"grain", "grain2"}:
                 result = handler(result, op, grain_ordinal)
@@ -728,6 +778,17 @@ def apply_filters(
             if key in {"grain", "grain2"}:
                 grain_ordinal += 1
             if mert_sorrend:
+                if key == "tilt":
+                    if tilt_crop_source is None:
+                        tilt_crop_source = tilt_crop_source_before
+                        tilt_crop_source_matrix = tilt_crop_matrix_before
+                    tilt_crop_ops.append(op)
+                elif tilt_crop_source is not None:
+                    # A crop+tilt újrarenderelése csak a tilt-ek egymás utáni
+                    # szakaszára érvényes; más sikeres effektet már a teljes
+                    # képen futtattunk le, azt nem hagyhatjuk el.
+                    tilt_crop_source = None
+                    tilt_crop_ops.clear()
                 # #3229: a TÉNYLEGESEN lefutott op leképezését fűzzük a
                 # lánchoz — a hibára futott (kihagyott) op nem mozdít semmit
                 lepes = op_geometria(op, elotte_w, elotte_h)
