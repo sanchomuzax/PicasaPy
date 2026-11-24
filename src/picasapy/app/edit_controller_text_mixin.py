@@ -496,7 +496,7 @@ class EditControllerTextMixin:
         self.textOverlayItemsChanged.emit()
 
 
-    @Slot(float, float, float, float, float)
+    @Slot(float, float, float, float, float, float, float)
     def beginTextRotation(
         self,
         pointer_angle: float,
@@ -504,14 +504,16 @@ class EditControllerTextMixin:
         center_y: float,
         width: float,
         height: float,
+        scale_x: float,
+        scale_y: float,
     ) -> None:
-        """Rögzíti a húzás induló szöget és a szöveg forgáspontját."""
+        """Rögzíti a húzás szögét és a kép képpontméretű szöveggeometriáját."""
         self._require_active()
         index = self._text_selected_index
         overlay = self._text_overlay
         if index is None or overlay is None or not 0 <= index < len(overlay.blocks):
             return
-        if width <= 0 or height <= 0:
+        if width <= 0 or height <= 0 or scale_x <= 0 or scale_y <= 0:
             return
         self._text_rotation_drag = (
             index,
@@ -521,6 +523,8 @@ class EditControllerTextMixin:
             float(center_y),
             float(width),
             float(height),
+            float(scale_x),
+            float(scale_y),
         )
 
 
@@ -536,7 +540,17 @@ class EditControllerTextMixin:
             or not 0 <= drag[0] < len(overlay.blocks)
         ):
             return
-        index, start_angle, start_rotation, center_x, center_y, width, height = drag
+        (
+            index,
+            start_angle,
+            start_rotation,
+            center_x,
+            center_y,
+            width,
+            height,
+            scale_x,
+            scale_y,
+        ) = drag
         rotation = rotation_from_drag(start_angle, float(pointer_angle), start_rotation)
         x, y = rotated_top_left(
             center_x=center_x,
@@ -544,6 +558,8 @@ class EditControllerTextMixin:
             width=width,
             height=height,
             angle=rotation,
+            scale_x=scale_x,
+            scale_y=scale_y,
         )
         blocks = list(overlay.blocks)
         block = blocks[index]

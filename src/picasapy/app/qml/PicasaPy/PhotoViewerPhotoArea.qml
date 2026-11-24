@@ -681,6 +681,16 @@ Item {
             property real rotatedHeight:
                 textWidth * Math.abs(Math.sin(angleRadians))
                 + textHeight * Math.abs(Math.cos(angleRadians))
+            property real rotationCenterX: modelData.x
+                + rotatedWidth / (2 * photoArea.fokuszKep.paintedWidth)
+            property real rotationCenterY: modelData.y
+                + rotatedHeight / (2 * photoArea.fokuszKep.paintedHeight)
+            property real rotationWidthNormalized:
+                textWidth / photoArea.fokuszKep.paintedWidth
+            property real rotationHeightNormalized:
+                textHeight / photoArea.fokuszKep.paintedHeight
+            property real rotationScaleX: photoArea.fokuszKep.paintedWidth
+            property real rotationScaleY: photoArea.fokuszKep.paintedHeight
             width: Math.max(16, textWidth + 12)
             height: Math.max(16, textHeight + 12)
             x: (photoArea.fokuszKep.width
@@ -768,68 +778,115 @@ Item {
                         var cx = width / 2
                         var cy = height / 2
                         ctx.clearRect(0, 0, width, height)
+                        ctx.beginPath()
+                        ctx.arc(cx, cy, 66, 0, Math.PI * 2)
+                        ctx.fillStyle = "rgba(85, 90, 100, 0.75)"
+                        ctx.fill()
                         ctx.lineWidth = 1
                         ctx.strokeStyle = "#f5f7fa"
                         for (var i = 0; i < 24; ++i) {
                             var angle = i * Math.PI * 2 / 24
                             ctx.beginPath()
-                            ctx.moveTo(cx + Math.cos(angle) * 64,
-                                       cy + Math.sin(angle) * 64)
-                            ctx.lineTo(cx + Math.cos(angle) * 66,
-                                       cy + Math.sin(angle) * 66)
+                            ctx.moveTo(cx + Math.cos(angle) * 50,
+                                       cy + Math.sin(angle) * 50)
+                            ctx.lineTo(cx + Math.cos(angle) * 56,
+                                       cy + Math.sin(angle) * 56)
                             ctx.stroke()
                         }
-                        ctx.lineWidth = 1.5
-                        ctx.beginPath()
-                        ctx.moveTo(cx, cy)
-                        ctx.lineTo(cx + 79, cy)
-                        ctx.moveTo(cx + 73, cy - 5)
-                        ctx.lineTo(cx + 81, cy)
-                        ctx.lineTo(cx + 73, cy + 5)
-                        ctx.stroke()
-                        ctx.beginPath()
-                        ctx.arc(cx + 81, cy, 4.5, 0, Math.PI * 2)
-                        ctx.fillStyle = "#e53935"
-                        ctx.fill()
-                        ctx.lineWidth = 1
-                        ctx.strokeStyle = "#ffffff"
-                        ctx.stroke()
                     }
                 }
 
-                MouseArea {
-                    objectName: "textRotationHandle_" + modelData.index
-                    x: parent.width / 2 + 81 - width / 2
-                    y: parent.height / 2 - height / 2
-                    width: 24
-                    height: 24
-                    preventStealing: true
-                    onPressed: function(mouse) {
-                        if (!photoArea.hostEditCtl) return
-                        var p = mapToItem(textRotationKnob, mouse.x, mouse.y)
-                        photoArea.hostEditCtl.beginTextRotation(
-                            Math.atan2(p.y - textRotationKnob.height / 2,
-                                       p.x - textRotationKnob.width / 2),
-                            textRotationKnob.centerX,
-                            textRotationKnob.centerY,
-                            textRotationKnob.widthNormalized,
-                            textRotationKnob.heightNormalized)
-                    }
-                    onPositionChanged: function(mouse) {
-                        if (!pressed || !photoArea.hostEditCtl) return
-                        var p = mapToItem(textRotationKnob, mouse.x, mouse.y)
-                        photoArea.hostEditCtl.updateTextRotation(
-                            Math.atan2(p.y - textRotationKnob.height / 2,
-                                       p.x - textRotationKnob.width / 2))
-                    }
-                    onReleased: {
-                        if (photoArea.hostEditCtl)
-                            photoArea.hostEditCtl.endTextRotation()
-                    }
-                    onCanceled: {
-                        if (photoArea.hostEditCtl)
-                            photoArea.hostEditCtl.endTextRotation()
-                    }
+            }
+        }
+    }
+    // A fogantyú a szövegmező fölött marad, hogy az inline szerkesztő kerete
+    // ne takarja el a húzható pontot; a korong osztásai alatta, álló helyen
+    // maradnak.
+    Repeater {
+        parent: photoArea.fokuszKep
+        model: textOverlaySelector.model
+        delegate: Item {
+            id: rotatingHandleLayer
+            required property var modelData
+            required property int index
+            property var selection: textOverlaySelector.itemAt(index)
+            objectName: "textRotationHandleLayer_" + modelData.index
+            width: 180
+            height: 180
+            x: selection
+               ? selection.x + selection.width / 2 - width / 2 : -width
+            y: selection
+               ? selection.y + selection.height / 2 - height / 2 : -height
+            z: 4
+            rotation: modelData.rotation * 180 / Math.PI
+            transformOrigin: Item.Center
+            visible: !!photoArea.hostEditCtl && !!selection
+                     && modelData.index
+                        === photoArea.hostEditCtl.textSelectedIndex
+
+            Canvas {
+                anchors.fill: parent
+                onPaint: {
+                    var ctx = getContext("2d")
+                    var cx = width / 2
+                    var cy = height / 2
+                    ctx.clearRect(0, 0, width, height)
+                    ctx.lineWidth = 1.5
+                    ctx.strokeStyle = "#f5f7fa"
+                    ctx.beginPath()
+                    ctx.moveTo(cx, cy)
+                    ctx.lineTo(cx + 79, cy)
+                    ctx.moveTo(cx + 73, cy - 5)
+                    ctx.lineTo(cx + 81, cy)
+                    ctx.lineTo(cx + 73, cy + 5)
+                    ctx.stroke()
+                    ctx.beginPath()
+                    ctx.arc(cx + 81, cy, 4.5, 0, Math.PI * 2)
+                    ctx.fillStyle = "#e53935"
+                    ctx.fill()
+                    ctx.lineWidth = 1
+                    ctx.strokeStyle = "#ffffff"
+                    ctx.stroke()
+                }
+            }
+
+            MouseArea {
+                objectName: "textRotationHandle_" + modelData.index
+                x: parent.width / 2 + 81 - width / 2
+                y: parent.height / 2 - height / 2
+                width: 24
+                height: 24
+                preventStealing: true
+                onPressed: function(mouse) {
+                    if (!photoArea.hostEditCtl || !rotatingHandleLayer.selection) return
+                    var selector = rotatingHandleLayer.selection
+                    var p = mapToItem(selector, mouse.x, mouse.y)
+                    photoArea.hostEditCtl.beginTextRotation(
+                        Math.atan2(p.y - selector.height / 2,
+                                   p.x - selector.width / 2),
+                        selector.rotationCenterX,
+                        selector.rotationCenterY,
+                        selector.rotationWidthNormalized,
+                        selector.rotationHeightNormalized,
+                        selector.rotationScaleX,
+                        selector.rotationScaleY)
+                }
+                onPositionChanged: function(mouse) {
+                    if (!pressed || !photoArea.hostEditCtl
+                            || !rotatingHandleLayer.selection) return
+                    var selector = rotatingHandleLayer.selection
+                    var p = mapToItem(selector, mouse.x, mouse.y)
+                    photoArea.hostEditCtl.updateTextRotation(
+                        Math.atan2(p.y - selector.height / 2,
+                                   p.x - selector.width / 2))
+                }
+                onReleased: {
+                    if (photoArea.hostEditCtl)
+                        photoArea.hostEditCtl.endTextRotation()
+                }
+                onCanceled: {
+                    if (photoArea.hostEditCtl)
+                        photoArea.hostEditCtl.endTextRotation()
                 }
             }
         }

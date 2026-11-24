@@ -32,15 +32,29 @@ def rotation_from_drag(
     return math.radians(snap_text_rotation_degrees(raw_degrees))
 
 
-def rotated_bounds(width: float, height: float, angle: float) -> tuple[float, float]:
-    """A forgatott téglalap tengelyekkel párhuzamos befoglaló mérete."""
+def rotated_bounds(
+    width: float,
+    height: float,
+    angle: float,
+    scale_x: float = 1.0,
+    scale_y: float = 1.0,
+) -> tuple[float, float]:
+    """A forgatott befoglaló szélessége/magassága a normalizált tengelyeken."""
     width = float(width)
     height = float(height)
+    scale_x = float(scale_x)
+    scale_y = float(scale_y)
     if width < 0 or height < 0:
         raise ValueError("A szövegdoboz mérete nem lehet negatív")
+    if scale_x <= 0 or scale_y <= 0:
+        raise ValueError("A szövegkoordináta méretaránya legyen pozitív")
     cosine = abs(math.cos(float(angle)))
     sine = abs(math.sin(float(angle)))
-    return width * cosine + height * sine, width * sine + height * cosine
+    pixel_width = width * scale_x
+    pixel_height = height * scale_y
+    rotated_pixel_width = pixel_width * cosine + pixel_height * sine
+    rotated_pixel_height = pixel_width * sine + pixel_height * cosine
+    return rotated_pixel_width / scale_x, rotated_pixel_height / scale_y
 
 
 def rotated_top_left(
@@ -50,7 +64,11 @@ def rotated_top_left(
     width: float,
     height: float,
     angle: float,
+    scale_x: float = 1.0,
+    scale_y: float = 1.0,
 ) -> tuple[float, float]:
     """A forgáspont körüli elforgatás utáni befoglaló bal felső sarka."""
-    rotated_width, rotated_height = rotated_bounds(width, height, angle)
+    rotated_width, rotated_height = rotated_bounds(
+        width, height, angle, scale_x, scale_y
+    )
     return center_x - rotated_width / 2, center_y - rotated_height / 2

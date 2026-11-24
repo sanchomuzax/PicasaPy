@@ -94,7 +94,7 @@ def test_apply_persists_rotation_radians_and_rotated_top_left(qt_app, tmp_path):
     width, height = 0.2, 0.06
     start_angle = 0.0
     end_angle = math.radians(20)
-    edit.beginTextRotation(start_angle, *center, width, height)
+    edit.beginTextRotation(start_angle, *center, width, height, 320.0, 160.0)
     edit.updateTextRotation(end_angle)
     expected_rotation = rotation_from_drag(start_angle, end_angle, 0.0)
     assert edit._current_text_spec()[0].rotation == pytest.approx(
@@ -110,6 +110,8 @@ def test_apply_persists_rotation_radians_and_rotated_top_left(qt_app, tmp_path):
         width=width,
         height=height,
         angle=expected_rotation,
+        scale_x=320.0,
+        scale_y=160.0,
     )
     assert saved.rotation == pytest.approx(expected_rotation, abs=1e-6)
     assert saved.rotation > 0
