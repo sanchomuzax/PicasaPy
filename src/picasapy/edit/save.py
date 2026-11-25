@@ -201,6 +201,15 @@ def _load_function(module_name: str, function_name: str):
 def _kep_irasa(image_path: Path, payload: bytes) -> None:
     return _load_function('save_storage', '_kep_irasa')(image_path, payload)
 
+def _mentett_kep_irasa(
+    image_path: Path,
+    payload: bytes,
+    *,
+    uj_fajlok: tuple[Path, ...],
+    uj_mappak: tuple[Path, ...],
+) -> None:
+    return _load_function('save_storage', '_mentett_kep_irasa')(image_path, payload, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak)
+
 #: A rejtett almappa neve, ahová az ÚJ mentéseink érintetlen eredetije kerül
 #: (spec + UX #3). Írni MINDIG ide írunk.
 ORIGINALS_DIR_NAME = ".picasaoriginals"

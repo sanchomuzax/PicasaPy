@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
+import contextlib
+import os
+import stat
 from pathlib import Path
 import numpy as np
 import picasapy.edit.save as api
+
+#: A `.jpg.jpg` név átnevezésének fogantyúja (#1375): a teszt EZT cserélje.
+_atnevez = os.rename
+
+#: A célok, amelyeknél a kész kép `.jpg` utótaggal megmarad (#7462).
+_JPEG_KITERJESZTESEK = frozenset({".jpg", ".jpeg"})
 
 
 def _kep_irasa(image_path: Path, payload: bytes) -> None:
@@ -14,6 +23,73 @@ def _kep_irasa(image_path: Path, payload: bytes) -> None:
         lock_retries=api._ZAR_UJRA,
         lock_retry_delay=api._ZAR_KESLELTETES,
     )
+
+
+def _mentett_kep_irasa(
+    image_path: Path,
+    payload: bytes,
+    *,
+    uj_fajlok: tuple[Path, ...],
+    uj_mappak: tuple[Path, ...],
+) -> None:
+    """A Mentés képírása (#7462): a `_kep_irasa`, csere-hiba esetére bővítve.
+
+    Ha a kész képet nem sikerül a helyére tenni (pl. írásvédett a cél), az
+    eredeti Picasa szerint (`job-957`) a kész kép `<név>.<kit>.jpg` néven a
+    cél mellett marad, és `.picasaoriginals` mentés nincs: a mentés által
+    létrehozott `uj_fajlok` és `uj_mappak` eltűnnek. A hiba megy tovább.
+
+    Csak a `save_edited` hívja: a Visszavonás, a Visszaállítás és a
+    visszagörgetés a `_kep_irasa` úton marad.
+    """
+
+    def csere_hibaja(temp_nev: str) -> None:
+        # A `.jpg.jpg` a JPEG-író kiterjesztés-cseréje (#7428); nem JPEG
+        # célra az eredeti viselkedése nincs mérve, ott a temp törlődik.
+        if image_path.suffix.lower() in _JPEG_KITERJESZTESEK:
+            _kesz_kep_megtartasa(
+                Path(temp_nev), image_path.with_name(f"{image_path.name}.jpg")
+            )
+        _mentes_nyomanak_torlese(uj_fajlok, uj_mappak)
+
+    api.write_atomic(
+        image_path,
+        payload,
+        lock_retries=api._ZAR_UJRA,
+        lock_retry_delay=api._ZAR_KESLELTETES,
+        refuse_write_protected=True,
+        on_replace_failure=csere_hibaja,
+    )
+
+
+def _kesz_kep_megtartasa(temp: Path, cel: Path) -> None:
+    """A kész, de a helyére nem tett kép `cel` néven marad.
+
+    Meglévő fájlt nem írunk felül: az a felhasználó saját képe is lehet.
+    Best-effort: a hívóhoz a csere eredeti hibája jusson el.
+    """
+    with contextlib.suppress(OSError):
+        # Az ideiglenes fájl a cél jogait örökölte; az írásvédettséget ne
+        # vigye tovább (Windowson törölni sem lehetne).
+        temp.chmod(stat.S_IMODE(temp.stat().st_mode) | stat.S_IWRITE)
+        if not os.path.lexists(cel):
+            _atnevez(temp, cel)
+
+
+def _mentes_nyomanak_torlese(
+    fajlok: tuple[Path, ...], mappak: tuple[Path, ...]
+) -> None:
+    """A meghiúsult mentés által létrehozott fájlok és mappák törlése.
+
+    A `mappak` belülről kifelé halad; az `rmdir` csak üres mappát töröl.
+    """
+    for fajl in fajlok:
+        with contextlib.suppress(OSError):
+            fajl.unlink()
+    for mappa in mappak:
+        with contextlib.suppress(OSError):
+            mappa.rmdir()
+
 
 def find_original_backup(image_path: str | api.Path) -> api.Path | None:
     """A képhez megőrzött eredeti — MINDKÉT mappanevet megnézve (#1425).

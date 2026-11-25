@@ -7,6 +7,7 @@ eldobná).
 """
 
 from pathlib import Path
+import sys
 import threading
 import time
 from threading import Event
@@ -211,6 +212,34 @@ class TestSaveToDisk:
         originals = folder / ORIGINALS_DIR_NAME
         assert originals.is_dir()
         assert (originals / "IMG_0001.jpg").exists()
+
+    @pytest.mark.skipif(
+        sys.platform == "win32", reason="Windowson a chmod nem véd írás ellen (#7462)"
+    )
+    def test_irasvedett_fajlnal_hiba_11_es_a_kesz_kep_megmarad(
+        self, controller, qt_app, library
+    ):
+        _, folder, _db = library
+        _set_filters(controller, qt_app, library, "bw=1;")
+        photo = folder / "IMG_0001.jpg"
+        before = photo.read_bytes()
+        photo.chmod(0o444)
+        errors = []
+        controller.saveErrorOccurred.connect(
+            lambda kind, name, code: errors.append((kind, name, code))
+        )
+
+        result = _wait(
+            controller.saveFinished, qt_app, lambda: controller.saveRowsToDisk([0])
+        )
+
+        assert result == {"done": 0, "failed": 1}
+        assert errors == [("disk", "IMG_0001.jpg", 11)]
+        assert photo.read_bytes() == before
+        assert not (folder / ORIGINALS_DIR_NAME).exists()
+        kept = cv2.imread(str(folder / "IMG_0001.jpg.jpg"))
+        assert kept is not None
+        assert kept[0, 0, 0] == kept[0, 0, 1] == kept[0, 0, 2]
 
     def test_the_empty_selection_reports_nothing_done(self, controller, qt_app):
         seen = []
