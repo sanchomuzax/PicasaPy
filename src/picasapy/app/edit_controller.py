@@ -289,6 +289,9 @@ class EditController(
         # piszkozat (tartalom + kattintott pozíció).
         self._text_overlay: TextOverlay | None = None
         self._text_selected_index: int | None = None
+        self._text_rotation_drag: tuple[
+            int, float, float, float, float, float, float, float, float
+        ] | None = None
         self._text_active = False
         # A showtextcheckbox csak az előnézet rajzát kapcsolja; nem írja át
         # a mentett szöveget vagy a textactive mezőt.

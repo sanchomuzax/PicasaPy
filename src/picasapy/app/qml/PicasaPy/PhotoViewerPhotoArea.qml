@@ -672,50 +672,238 @@ Item {
             required property var modelData
             objectName: "textOverlaySelector_" + modelData.index
             z: 1
-            width: Math.max(16, hitText.implicitWidth + 12)
-            height: Math.max(16, hitText.implicitHeight + 12)
+            property real textWidth: Math.max(1, hitText.implicitWidth)
+            property real textHeight: Math.max(1, hitText.implicitHeight)
+            property real angleRadians: modelData.rotation
+            property real rotatedWidth:
+                textWidth * Math.abs(Math.cos(angleRadians))
+                + textHeight * Math.abs(Math.sin(angleRadians))
+            property real rotatedHeight:
+                textWidth * Math.abs(Math.sin(angleRadians))
+                + textHeight * Math.abs(Math.cos(angleRadians))
+            property real rotationCenterX: modelData.x
+                + rotatedWidth / (2 * photoArea.fokuszKep.paintedWidth)
+            property real rotationCenterY: modelData.y
+                + rotatedHeight / (2 * photoArea.fokuszKep.paintedHeight)
+            property real rotationWidthNormalized:
+                textWidth / photoArea.fokuszKep.paintedWidth
+            property real rotationHeightNormalized:
+                textHeight / photoArea.fokuszKep.paintedHeight
+            property real rotationScaleX: photoArea.fokuszKep.paintedWidth
+            property real rotationScaleY: photoArea.fokuszKep.paintedHeight
+            width: Math.max(16, textWidth + 12)
+            height: Math.max(16, textHeight + 12)
             x: (photoArea.fokuszKep.width
                 - photoArea.fokuszKep.paintedWidth) / 2
-               + photoArea.fokuszKep.paintedWidth * modelData.x - 6
+               + photoArea.fokuszKep.paintedWidth * modelData.x
+               + (rotatedWidth - textWidth) / 2 - 6
             //: #7380: a `text=` pozíciója a szövegdoboz BAL FELSŐ sarka
             //: (a rajzoló is így veszi), ezért a találati terület a pontról
             //: LEFELÉ nyúlik, nem fölé
             y: (photoArea.fokuszKep.height
                 - photoArea.fokuszKep.paintedHeight) / 2
-               + photoArea.fokuszKep.paintedHeight * modelData.y - 6
-            rotation: modelData.rotation * 180 / Math.PI
-            transformOrigin: Item.TopLeft
+               + photoArea.fokuszKep.paintedHeight * modelData.y
+               + (rotatedHeight - textHeight) / 2 - 6
 
-            Text {
-                id: hitText
-                anchors.centerIn: parent
-                text: modelData.content
-                font.family: modelData.font
-                font.pixelSize: Math.max(1, Math.round(
-                    modelData.size * photoArea.fokuszKep.paintedHeight
-                    / 360))
-                color: "transparent"
-            }
-            Rectangle {
+            Item {
+                id: rotatedText
                 anchors.fill: parent
-                color: "transparent"
-                border.color: "#4a90e2"
-                border.width: 1
+                rotation: modelData.rotation * 180 / Math.PI
+                transformOrigin: Item.Center
+
+                Text {
+                    id: hitText
+                    anchors.centerIn: parent
+                    text: modelData.content
+                    font.family: modelData.font
+                    font.pixelSize: Math.max(1, Math.round(
+                        modelData.size * photoArea.fokuszKep.paintedHeight
+                        / 360))
+                    font.bold: modelData.bold
+                    font.italic: modelData.italic
+                    font.underline: modelData.underline
+                    horizontalAlignment: modelData.align === "center"
+                                         ? Text.AlignHCenter
+                                         : modelData.align === "right"
+                                           ? Text.AlignRight : Text.AlignLeft
+                    color: "transparent"
+                }
+                Rectangle {
+                    anchors.fill: parent
+                    color: "transparent"
+                    border.color: "#4a90e2"
+                    border.width: 1
+                    visible: photoArea.hostEditCtl
+                             && modelData.index
+                                === photoArea.hostEditCtl.textSelectedIndex
+                }
+                MouseArea {
+                    objectName: "textOverlayHitTarget_" + modelData.index
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: containsMouse ? Qt.IBeamCursor : Qt.ArrowCursor
+                    onClicked: {
+                        if (photoArea.hostEditCtl)
+                            photoArea.hostEditCtl.selectTextOverlay(modelData.index)
+                    }
+
+                    PressFeedbackOverlay { pressSource: parent }
+                }
+            }
+
+            Item {
+                id: textRotationKnob
+                objectName: "textRotationKnob_" + modelData.index
+                property real centerX: modelData.x
+                    + rotatedWidth / (2 * photoArea.fokuszKep.paintedWidth)
+                property real centerY: modelData.y
+                    + rotatedHeight / (2 * photoArea.fokuszKep.paintedHeight)
+                property real widthNormalized:
+                    textWidth / photoArea.fokuszKep.paintedWidth
+                property real heightNormalized:
+                    textHeight / photoArea.fokuszKep.paintedHeight
+                width: 180
+                height: 180
+                x: parent.width / 2 - width / 2
+                y: parent.height / 2 - height / 2
+                z: 2
                 visible: photoArea.hostEditCtl
                          && modelData.index
                             === photoArea.hostEditCtl.textSelectedIndex
-            }
-            MouseArea {
-                objectName: "textOverlayHitTarget_" + modelData.index
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: containsMouse ? Qt.IBeamCursor : Qt.ArrowCursor
-                onClicked: {
-                    if (typeof editController !== "undefined" && editController)
-                        editController.selectTextOverlay(modelData.index)
+
+                Canvas {
+                    anchors.fill: parent
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        var cx = width / 2
+                        var cy = height / 2
+                        ctx.clearRect(0, 0, width, height)
+                        ctx.beginPath()
+                        ctx.arc(cx, cy, 66, 0, Math.PI * 2)
+                        ctx.fillStyle = "rgba(85, 90, 100, 0.75)"
+                        ctx.fill()
+                        ctx.lineWidth = 1
+                        ctx.strokeStyle = "#f5f7fa"
+                        for (var i = 0; i < 24; ++i) {
+                            var angle = i * Math.PI * 2 / 24
+                            ctx.beginPath()
+                            ctx.moveTo(cx + Math.cos(angle) * 50,
+                                       cy + Math.sin(angle) * 50)
+                            ctx.lineTo(cx + Math.cos(angle) * 56,
+                                       cy + Math.sin(angle) * 56)
+                            ctx.stroke()
+                        }
+                    }
                 }
 
-                PressFeedbackOverlay { pressSource: parent }
+            }
+        }
+    }
+    // A fogantyú a szövegmező fölött marad, hogy az inline szerkesztő kerete
+    // ne takarja el a húzható pontot; a korong és az osztások alatta, álló
+    // helyen maradnak.
+    Repeater {
+        parent: photoArea.fokuszKep
+        model: textOverlaySelector.model
+        delegate: Item {
+            id: rotatingHandleLayer
+            required property var modelData
+            required property int index
+            property var selection: textOverlaySelector.itemAt(index)
+            objectName: "textRotationHandleLayer_" + modelData.index
+            width: 180
+            height: 180
+            x: selection
+               ? selection.x + selection.width / 2 - width / 2 : -width
+            y: selection
+               ? selection.y + selection.height / 2 - height / 2 : -height
+            z: 4
+            rotation: modelData.rotation * 180 / Math.PI
+            transformOrigin: Item.Center
+            visible: !!photoArea.hostEditCtl && !!selection
+                     && modelData.index
+                        === photoArea.hostEditCtl.textSelectedIndex
+
+            Canvas {
+                anchors.fill: parent
+                onPaint: {
+                    var ctx = getContext("2d")
+                    var cx = width / 2
+                    var cy = height / 2
+                    ctx.clearRect(0, 0, width, height)
+                    ctx.lineWidth = 1.5
+                    ctx.strokeStyle = "#f5f7fa"
+                    ctx.beginPath()
+                    ctx.moveTo(cx + 66, cy)
+                    ctx.lineTo(cx + 76.5, cy)
+                    ctx.stroke()
+                    ctx.beginPath()
+                    ctx.moveTo(cx + 58, cy)
+                    ctx.lineTo(cx + 66, cy - 6)
+                    ctx.lineTo(cx + 66, cy + 6)
+                    ctx.closePath()
+                    ctx.fillStyle = "#f5f7fa"
+                    ctx.fill()
+                    ctx.beginPath()
+                    ctx.arc(cx + 81, cy, 4.75, 0, Math.PI * 2)
+                    ctx.shadowColor = "rgba(0, 0, 0, 0.38)"
+                    ctx.shadowBlur = 3
+                    ctx.shadowOffsetX = 1
+                    ctx.shadowOffsetY = 1
+                    ctx.fillStyle = "#f5f7fa"
+                    ctx.fill()
+                    ctx.shadowColor = "transparent"
+                    ctx.shadowBlur = 0
+                    ctx.shadowOffsetX = 0
+                    ctx.shadowOffsetY = 0
+                    ctx.lineWidth = 1
+                    ctx.strokeStyle = "#ffffff"
+                    ctx.stroke()
+                    ctx.beginPath()
+                    ctx.arc(cx + 81, cy, 2.1, 0, Math.PI * 2)
+                    ctx.fillStyle = "#f05a1e"
+                    ctx.fill()
+                }
+            }
+
+            MouseArea {
+                objectName: "textRotationHandle_" + modelData.index
+                x: parent.width / 2 + 81 - width / 2
+                y: parent.height / 2 - height / 2
+                width: 24
+                height: 24
+                preventStealing: true
+                onPressed: function(mouse) {
+                    if (!photoArea.hostEditCtl || !rotatingHandleLayer.selection) return
+                    var selector = rotatingHandleLayer.selection
+                    var p = mapToItem(selector, mouse.x, mouse.y)
+                    photoArea.hostEditCtl.beginTextRotation(
+                        Math.atan2(p.y - selector.height / 2,
+                                   p.x - selector.width / 2),
+                        selector.rotationCenterX,
+                        selector.rotationCenterY,
+                        selector.rotationWidthNormalized,
+                        selector.rotationHeightNormalized,
+                        selector.rotationScaleX,
+                        selector.rotationScaleY)
+                }
+                onPositionChanged: function(mouse) {
+                    if (!pressed || !photoArea.hostEditCtl
+                            || !rotatingHandleLayer.selection) return
+                    var selector = rotatingHandleLayer.selection
+                    var p = mapToItem(selector, mouse.x, mouse.y)
+                    photoArea.hostEditCtl.updateTextRotation(
+                        Math.atan2(p.y - selector.height / 2,
+                                   p.x - selector.width / 2))
+                }
+                onReleased: {
+                    if (photoArea.hostEditCtl)
+                        photoArea.hostEditCtl.endTextRotation()
+                }
+                onCanceled: {
+                    if (photoArea.hostEditCtl)
+                        photoArea.hostEditCtl.endTextRotation()
+                }
             }
         }
     }

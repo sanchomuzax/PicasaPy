@@ -7,6 +7,7 @@ import threading
 
 from PySide6.QtCore import QMetaObject, Qt
 from picasapy.ini.text_overlay import DEFAULT_FAMILY
+from picasapy.app.text_rotation import rotation_from_drag, rotated_top_left
 
 from .edit_controller_shared import (
     BETUMERETEK,
@@ -149,7 +150,26 @@ class EditControllerTextMixin:
                         if index == self._text_selected_index
                         else block.geometry.size * 360.0
                     ),
-                    "font": block.font,
+                    "font": (
+                        self._text_family if index == self._text_selected_index
+                        else block.font or DEFAULT_FAMILY
+                    ),
+                    "bold": (
+                        self._text_bold if index == self._text_selected_index
+                        else block.style.weight >= 700
+                    ),
+                    "italic": (
+                        self._text_italic if index == self._text_selected_index
+                        else block.style.italic
+                    ),
+                    "underline": (
+                        self._text_underline if index == self._text_selected_index
+                        else block.style.underline
+                    ),
+                    "align": (
+                        self._text_align if index == self._text_selected_index
+                        else alignment_name(block.style.alignment)
+                    ),
                     "rotation": block.geometry.rotation,
                 }
             )
@@ -373,6 +393,7 @@ class EditControllerTextMixin:
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.textOverlayItemsChanged.emit()
 
 
     @Slot(str)
@@ -442,6 +463,7 @@ class EditControllerTextMixin:
         self._text_cleared = False
         primary = self._text_overlay.primary if self._text_overlay else None
         self._text_selected_index = 0 if primary and primary.content else None
+        self._text_rotation_drag = None
         self._text_draft = primary.content if primary else ""
         self._text_pending_pos = None
         self._text_inline_editing = False
@@ -450,6 +472,8 @@ class EditControllerTextMixin:
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.textSelectedIndexChanged.emit()
+        self.textOverlayItemsChanged.emit()
         self.textClearedChanged.emit()
 
 
@@ -461,12 +485,99 @@ class EditControllerTextMixin:
             return
         block = self._text_overlay.blocks[index]
         self._text_selected_index = index
+        self._text_rotation_drag = None
         self._text_pending_pos = None
         self._text_draft = block.content
         self._load_text_settings_from_block(block)
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.textSelectedIndexChanged.emit()
+        self.textOverlayItemsChanged.emit()
+
+
+    @Slot(float, float, float, float, float, float, float)
+    def beginTextRotation(
+        self,
+        pointer_angle: float,
+        center_x: float,
+        center_y: float,
+        width: float,
+        height: float,
+        scale_x: float,
+        scale_y: float,
+    ) -> None:
+        """Rögzíti a húzás szögét és a kép képpontméretű szöveggeometriáját."""
+        self._require_active()
+        index = self._text_selected_index
+        overlay = self._text_overlay
+        if index is None or overlay is None or not 0 <= index < len(overlay.blocks):
+            return
+        if width <= 0 or height <= 0 or scale_x <= 0 or scale_y <= 0:
+            return
+        self._text_rotation_drag = (
+            index,
+            float(pointer_angle),
+            overlay.blocks[index].geometry.rotation,
+            float(center_x),
+            float(center_y),
+            float(width),
+            float(height),
+            float(scale_x),
+            float(scale_y),
+        )
+
+
+    @Slot(float)
+    def updateTextRotation(self, pointer_angle: float) -> None:
+        """A húzás végpontjából frissíti a forgatást és a befoglaló sarkát."""
+        drag = self._text_rotation_drag
+        overlay = self._text_overlay
+        if (
+            drag is None
+            or overlay is None
+            or drag[0] != self._text_selected_index
+            or not 0 <= drag[0] < len(overlay.blocks)
+        ):
+            return
+        (
+            index,
+            start_angle,
+            start_rotation,
+            center_x,
+            center_y,
+            width,
+            height,
+            scale_x,
+            scale_y,
+        ) = drag
+        rotation = rotation_from_drag(start_angle, float(pointer_angle), start_rotation)
+        x, y = rotated_top_left(
+            center_x=center_x,
+            center_y=center_y,
+            width=width,
+            height=height,
+            angle=rotation,
+            scale_x=scale_x,
+            scale_y=scale_y,
+        )
+        blocks = list(overlay.blocks)
+        block = blocks[index]
+        blocks[index] = replace(
+            block,
+            geometry=replace(block.geometry, x=x, y=y, rotation=rotation),
+        )
+        self._text_overlay = TextOverlay(blocks=tuple(blocks))
+        self._register_preview()
+        self._bump_revision()
+        self.toolsChanged.emit()
+        self.textOverlayItemsChanged.emit()
+
+
+    @Slot()
+    def endTextRotation(self) -> None:
+        """Lezárja a húzást; a piszkozat Apply-ig szerkesztetlenül marad."""
+        self._text_rotation_drag = None
 
 
     @Slot()
@@ -477,6 +588,7 @@ class EditControllerTextMixin:
         if hasattr(self, "_text_initial_overlay"):
             self._text_overlay = self._text_initial_overlay
             self._text_active = self._text_initial_active
+        self._text_rotation_drag = None
         self._text_cleared = False
         self._text_selected_index = None
         self._text_pending_pos = None
@@ -488,6 +600,7 @@ class EditControllerTextMixin:
         self.hasTextOverlayChanged.emit()
         self.textDraftChanged.emit()
         self.textSelectedIndexChanged.emit()
+        self.textOverlayItemsChanged.emit()
         self.textClearedChanged.emit()
 
 
@@ -500,6 +613,7 @@ class EditControllerTextMixin:
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.textOverlayItemsChanged.emit()
 
 
     def previewTextPlacement(self, x: float, y: float) -> None:
@@ -516,10 +630,13 @@ class EditControllerTextMixin:
         """Üres képpontra kattintva új szövegdoboz helyének előnézete."""
         self._require_active()
         self._text_selected_index = None
+        self._text_rotation_drag = None
         self._text_pending_pos = (_clamp01(x), _clamp01(y))
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.textSelectedIndexChanged.emit()
+        self.textOverlayItemsChanged.emit()
 
 
     def _load_text_settings_from_block(self, block: TextBlock) -> None:
@@ -571,6 +688,7 @@ class EditControllerTextMixin:
             self._text_initial_overlay = None
             self._text_initial_active = False
             self._text_selected_index = None
+            self._text_rotation_drag = None
             self._text_pending_pos = None
             self._text_draft = ""
             self._text_inline_editing = False
@@ -580,6 +698,7 @@ class EditControllerTextMixin:
             self.hasTextOverlayChanged.emit()
             self.textDraftChanged.emit()
             self.textSelectedIndexChanged.emit()
+            self.textOverlayItemsChanged.emit()
             self.textClearedChanged.emit()
             return
 
@@ -628,6 +747,7 @@ class EditControllerTextMixin:
 
         self._text_overlay = TextOverlay(blocks=tuple(blocks))
         self._text_selected_index = target_index
+        self._text_rotation_drag = None
         self._text_active = True
         self._text_pending_pos = None
         self._text_size_edited = False
@@ -637,6 +757,8 @@ class EditControllerTextMixin:
         self._save_text()
         self._bump_revision()
         self.toolsChanged.emit()
+        self.textSelectedIndexChanged.emit()
+        self.textOverlayItemsChanged.emit()
         self.hasTextOverlayChanged.emit()
         self.textClearedChanged.emit()
 
@@ -684,6 +806,7 @@ class EditControllerTextMixin:
         )
         self._text_overlay = None
         self._text_selected_index = None
+        self._text_rotation_drag = None
         self._text_pending_pos = None
         self._text_draft = ""
         self._text_inline_editing = False
@@ -694,6 +817,7 @@ class EditControllerTextMixin:
         self.hasTextOverlayChanged.emit()
         self.textDraftChanged.emit()
         self.textSelectedIndexChanged.emit()
+        self.textOverlayItemsChanged.emit()
         self.textClearedChanged.emit()
 
 
@@ -714,24 +838,27 @@ class EditControllerTextMixin:
                 )
                 if not content:
                     continue
-                x = _clamp01(
-                    self._text_pending_pos[0]
-                    if index == self._text_selected_index
+                if (
+                    index == self._text_selected_index
                     and self._text_pending_pos is not None
-                    else block.geometry.x
-                )
-                y = _clamp01(
-                    self._text_pending_pos[1]
-                    if index == self._text_selected_index
-                    and self._text_pending_pos is not None
-                    else block.geometry.y
-                )
+                ):
+                    x, y = self._text_pending_pos
+                else:
+                    x, y = block.geometry.x, block.geometry.y
                 style = (
                     self._text_style_kwargs()
                     if index == self._text_selected_index
                     else self._text_style_kwargs_for_block(block)
                 )
-                specs.append(TextOverlaySpec(content=content, x=x, y=y, **style))
+                specs.append(
+                    TextOverlaySpec(
+                        content=content,
+                        x=x,
+                        y=y,
+                        rotation=block.geometry.rotation,
+                        **style,
+                    )
+                )
         if (
             self._text_pending_pos is not None
             and self._text_selected_index is None
