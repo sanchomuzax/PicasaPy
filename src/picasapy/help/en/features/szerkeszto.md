@@ -233,6 +233,11 @@ blend in even when the source was lighter or darker. **Undo Patch** and
 **Redo Patch** move through individual repairs; **Reset** removes them
 all.
 
+If you have marked the area to repair but not yet chosen the source,
+**Cancel** (or a click on an empty part of the panel) discards only
+that unfinished patch, and Retouch stays open. The next **Cancel**
+closes the tool.
+
 If you remove an applied retouch with the editor's **Undo** button, the
 program first asks in a **Confirm** window: "Retouch fixes cannot be
 recovered with redo. Are you sure you want to undo?" The two buttons are
@@ -252,6 +257,12 @@ line, and for right-aligned text its right edge. A picture can
 have several text boxes: after applying one, click elsewhere to add
 another. Click an existing box to select it, then edit or move it or
 change its settings. **Apply** updates the selected box.
+
+A translucent rotation dial with tick marks appears around the selected
+text, as in the original Picasa. Drag the handle on the dial around to
+rotate the text. While you rotate, the angle gently snaps to multiples
+of 45 and 15 degrees, so it is easy to set the text exactly horizontal,
+vertical, or diagonal.
 
 You can set the font and size, bold, italic, or underline; align text
 left, center, or right; choose text and outline colors and outline

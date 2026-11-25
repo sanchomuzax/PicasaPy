@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 import numpy as np
 import picasapy.edit.save as api
-from picasapy.edit.save import _PhotoIniSnapshot
 from picasapy.edit.session import EditSession
 from picasapy.ini import IniDocument
 
@@ -40,7 +40,15 @@ def save_edited(
             (#297 — ekkor a kép és az ini nyilvántartása eltér).
         OSError | IniSaveError | IniConflictError: ha az ini-könyvelés nem
             sikerült. A képfájl ilyenkor VISSZAÁLL a mentés előtti
-            állapotra, hogy ne maradjon dupla-szerkesztés (#297).
+            állapotra, hogy ne maradjon dupla-szerkesztés (#297), és ebből a
+            mentésből sem megőrzött eredeti, sem pillanatkép nem marad
+            (#7469). Ha a visszaállítás is elbukik, a másolatok maradnak.
+        OSError: ha a képfájl cseréje nem sikerült (pl. írásvédett a cél).
+            A kép változatlan, a kész kimenet `<név>.<kit>.jpg` néven
+            mellette marad, megőrzött eredeti nem készül (#7462).
+        OSError: ha már az írás elbukott a csere előtt (pl. tele lemez). A
+            kép és az ini változatlan, ebből a mentésből sem megőrzött
+            eredeti, sem pillanatkép nem marad (#7466).
     """
     image_path = api.Path(image_path)
     # #1425: a „szent" eredeti bármelyik ismert mappanév alatt ott lehet —
@@ -59,8 +67,11 @@ def save_edited(
         section,
         (api._FILTERS_KEY, api._REDO_KEY, "backuphash", api._MODDATE_KEY),
     )
-    original_before = api._photo_ini_values(
-        original_ini_path, section, (api._FILTERS_KEY, api._MODDATE_KEY)
+    original_before = replace(
+        api._photo_ini_values(
+            original_ini_path, section, (api._FILTERS_KEY, api._MODDATE_KEY)
+        ),
+        touch=False,
     )
 
     # A (b) lépés ELŐTTI bájtok — ezekre kell visszaállni, ha a (c) elbukik
@@ -78,8 +89,14 @@ def save_edited(
     backup_mtime_ns = (
         original_mtime_ns if backup_created_now else backup_path.stat().st_mtime_ns
     )
-    if backup_created_now:
-        api.write_atomic(backup_path, bytes_before_write, make_parents=True)
+    # #7462: a még hiányzó mappák (belülről kifelé), hogy a képcsere hibájakor
+    # csak az tűnjön el, amit ez a mentés hozott létre.
+    snapshot_dir = api._snapshot_path(image_path, 1).parent
+    uj_mappak = tuple(
+        mappa
+        for mappa in (snapshot_dir, snapshot_dir.parent, backup_path.parent)
+        if not mappa.exists()
+    )
 
     # (a2) #444: MENTÉSENKÉNTI, sorszámozott pillanatkép a mentés ELŐTTI
     # bájtokról — ez teszi visszavonhatóvá az utolsó mentést a szerkesztések
@@ -104,19 +121,34 @@ def save_edited(
         or api._legacy_snapshot_path(image_path, next_number).exists()
     ):
         next_number += 1
-    api.write_atomic(
-        api._snapshot_path(image_path, next_number), bytes_before_write, make_parents=True
-    )
+    snapshot_path = api._snapshot_path(image_path, next_number)
+    uj_eredeti = (backup_path,) if backup_created_now else ()
+    uj_fajlok = (*uj_eredeti, snapshot_path)
 
-    # (b) A renderelt kép az eredeti HELYÉRE.
-    payload = api._encode_image(image_path.suffix, rendered_image, jpeg_quality)
-    api._kep_irasa(image_path, payload)
+    # #7466: ha a kép cseréje előtt bármelyik lépés elbukik (a három írás vagy
+    # a kódolás), az (a) és (a2) új fájljai eltűnnek.
+    with api._nyom_torlese_irasi_hibanal(
+        image_path, bytes_before_write, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak
+    ):
+        if backup_created_now:
+            api.write_atomic(backup_path, bytes_before_write, make_parents=True)
+        api.write_atomic(snapshot_path, bytes_before_write, make_parents=True)
+
+        # (b) A renderelt kép az eredeti HELYÉRE. Ha a csere hibázik, a kész
+        # kép `.jpg.jpg` néven marad (#7462).
+        payload = api._encode_image(image_path.suffix, rendered_image, jpeg_quality)
+        api._mentett_kep_irasa(
+            image_path, payload, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak
+        )
 
     # (c) A lánc és a mentés előtti fájlidő az eredeti-mappa ini-jébe kerül,
     # a #5810 szerinti backuphash pedig az aktuális mappa ini-jébe. Két ini
-    # frissítése nem atomikus, ezért a már sikeres írásokat visszagörgetjük,
-    # ha a következő lépés hibázik.
-    completed_ini_writes: list[tuple[api.Path, _PhotoIniSnapshot]] = []
+    # frissítése nem atomikus, ezért hibánál mindent visszagörgetünk, ami a
+    # lemezre került - azt az írást is, amelyik a csere UTÁN dobott (#7473).
+    ini_allapotok = (
+        (current_ini_path, current_before),
+        (original_ini_path, original_before),
+    )
     try:
         def _update_main_document(document: IniDocument) -> IniDocument:
             sec = api._section_name(image_path)
@@ -127,14 +159,13 @@ def save_edited(
                 doc = doc.with_removed(sec, api._FILTERS_KEY)
             return api.with_backuphash(doc, sec)
 
-        current_before.written_document = api._update_ini_document(
+        api._update_ini_document(
             image_path,
             _update_main_document,
             rollback_snapshot=current_before,
             section_name=section,
         )
-        completed_ini_writes.append((current_ini_path, current_before))
-        original_before.written_document = api._update_ini_path(
+        api._update_ini_path(
             original_ini_path,
             lambda document: (
                 document.with_value(
@@ -149,7 +180,6 @@ def save_edited(
             rollback_snapshot=original_before,
             section_name=section,
         )
-        completed_ini_writes.append((original_ini_path, original_before))
         # Az eredeti-mappa ini-frissítése a #643 szerint megérinti a
         # képfájlokat; a megőrzött eredeti másolatán ezt vissza kell állítani
         # az előzőleg rögzített mtime-ra. Első mentésnél ez a forrásé, későbbi
@@ -160,7 +190,7 @@ def save_edited(
         )
     except api._INI_WRITE_ERRORS as error:
         rollback_errors = []
-        for ini_path, previous_state in reversed(completed_ini_writes):
+        for ini_path, previous_state in reversed(ini_allapotok):
             try:
                 api._restore_photo_ini_values(
                     ini_path, section, previous_state
@@ -171,7 +201,13 @@ def save_edited(
         try:
             api._restore_image_or_raise(image_path, bytes_before_write, backup_path, error)
         except api.SaveError as restore_error:
+            # a hibaüzenet a másolatra mutat, ezért az marad
             image_restore_error = restore_error
+        else:
+            # #7469: a kép megint a régi, tehát a mentés nyoma is eltűnik
+            api._nyom_torlese_valtozatlan_kepnel(
+                image_path, bytes_before_write, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak
+            )
         if rollback_errors or image_restore_error:
             details = [str(item) for item in rollback_errors]
             if image_restore_error is not None:
@@ -234,10 +270,13 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
             api._TEXTACTIVE_KEY,
         ),
     )
-    original_before = api._photo_ini_values(
-        original_ini_path,
-        section,
-        (api._FILTERS_KEY, api._MODDATE_KEY, "text", api._TEXTACTIVE_KEY),
+    original_before = replace(
+        api._photo_ini_values(
+            original_ini_path,
+            section,
+            (api._FILTERS_KEY, api._MODDATE_KEY, "text", api._TEXTACTIVE_KEY),
+        ),
+        touch=False,
     )
     current_section = current_before.document.section(section)
     original_section = original_before.document.section(section)
@@ -259,7 +298,10 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
     backup_bytes = original_backup.read_bytes() if backup_stat is not None else None
     restore_original_copy = backup_bytes == snapshot_bytes and backup_stat is not None
     api._kep_irasa(image_path, snapshot_bytes)
-    completed_ini_writes: list[tuple[api.Path, _PhotoIniSnapshot]] = []
+    ini_allapotok = (
+        (current_ini_path, current_before),
+        (original_ini_path, original_before),
+    )
     try:
         def restore_current_metadata(document: IniDocument) -> IniDocument:
             # #643: a `redo=`-ból VISSZAforgatott lánc, átvitt tartalom.
@@ -284,13 +326,12 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
                         )
             return api.with_backuphash(updated, section)
 
-        current_before.written_document = api._update_ini_document(
+        api._update_ini_document(
             image_path,
             restore_current_metadata,
             rollback_snapshot=current_before,
             section_name=section,
         )
-        completed_ini_writes.append((current_ini_path, current_before))
         original_saved_values = (
             original_filters is not None
             or original_moddate is not None
@@ -300,7 +341,7 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
             ))
         )
         if original_saved_values:
-            original_before.written_document = api._update_ini_path(
+            api._update_ini_path(
                 original_ini_path,
                 lambda doc: (
                     doc.with_removed(section, api._FILTERS_KEY)
@@ -311,10 +352,9 @@ def undo_save(image_path: str | api.Path) -> api.UndoSaveResult:
                 rollback_snapshot=original_before,
                 section_name=section,
             )
-            completed_ini_writes.append((original_ini_path, original_before))
     except api._INI_WRITE_ERRORS as error:
         rollback_errors = []
-        for ini_path, previous_state in reversed(completed_ini_writes):
+        for ini_path, previous_state in reversed(ini_allapotok):
             try:
                 api._restore_photo_ini_values(ini_path, section, previous_state)
             except api._INI_WRITE_ERRORS as rollback_error:
@@ -401,8 +441,9 @@ def revert(image_path: str | api.Path) -> api.RevertResult:
     current_before = api._photo_ini_values(
         current_ini_path, section, api._EDIT_BOOKKEEPING_KEYS
     )
-    original_before = api._photo_ini_values(
-        original_ini_path, section, (api._FILTERS_KEY,)
+    original_before = replace(
+        api._photo_ini_values(original_ini_path, section, (api._FILTERS_KEY,)),
+        touch=False,
     )
     original_section = original_before.document.section(section)
     original_filters = (
@@ -420,27 +461,28 @@ def revert(image_path: str | api.Path) -> api.RevertResult:
     original_bytes = backup_path.read_bytes()
     api._kep_irasa(image_path, original_bytes)
 
-    completed_ini_writes: list[tuple[api.Path, _PhotoIniSnapshot]] = []
+    ini_allapotok = (
+        (current_ini_path, current_before),
+        (original_ini_path, original_before),
+    )
 
     try:
-        current_before.written_document = api._update_ini_document(
+        api._update_ini_document(
             image_path,
             lambda document: _without_edit_keys(document, section),
             rollback_snapshot=current_before,
             section_name=section,
         )
-        completed_ini_writes.append((current_ini_path, current_before))
         if original_filters is not None:
-            original_before.written_document = api._update_ini_path(
+            api._update_ini_path(
                 original_ini_path,
                 lambda document: document.with_removed(section, api._FILTERS_KEY),
                 rollback_snapshot=original_before,
                 section_name=section,
             )
-            completed_ini_writes.append((original_ini_path, original_before))
     except api._INI_WRITE_ERRORS as error:
         rollback_errors = []
-        for ini_path, previous_state in reversed(completed_ini_writes):
+        for ini_path, previous_state in reversed(ini_allapotok):
             try:
                 api._restore_photo_ini_values(ini_path, section, previous_state)
             except api._INI_WRITE_ERRORS as rollback_error:

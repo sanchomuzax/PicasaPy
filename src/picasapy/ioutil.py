@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import contextlib
 import ctypes
+import errno
 import hashlib
 import os
 import socket
@@ -27,6 +28,7 @@ import stat
 import sys
 import tempfile
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 #: Az atomikus írás standard lépéseinek MODULSZINTŰ fogantyúi (#1375) — a
@@ -57,6 +59,8 @@ def write_atomic(
     fallback_direct: bool = False,
     ignore_replace_race: bool = False,
     suffix: str = ".tmp",
+    refuse_write_protected: bool = False,
+    on_replace_failure: Callable[[str], None] | None = None,
 ) -> None:
     """`payload` atomikus írása a `target` helyére temp fájl + csere úton.
 
@@ -71,6 +75,13 @@ def write_atomic(
       de a közvetlen írás adatvesztési kockázata miatt figyelmen kívül hagyott.
     - ignore_replace_race: ha a csere hibája után a cél már létezik (egy
       párhuzamos író nyert), a hiba lenyelhető.
+    - refuse_write_protected: írásvédett meglévő célt nem cserél le, hanem
+      `PermissionError`-t ad (POSIX-on a csere a könyvtár jogán fut, ezért
+      az írásvédett fájlt némán felülírná).
+    - on_replace_failure: ha a tartalom már teljesen az ideiglenes fájlban
+      van, de a csere hibázik, ez megkapja a temp nevét, mielőtt törlődne;
+      amit elvisz (átnevez), az megmarad. A csere hibája ezután is tovább
+      megy. Írási hibánál (nincs kész tartalom) nem fut le.
     """
     target = Path(target)
     if make_parents:
@@ -96,13 +107,20 @@ def write_atomic(
                 _fsync(handle.fileno())
         if preserve_mode and target.exists():
             os.chmod(temp_name, stat.S_IMODE(target.stat().st_mode))
-        _replace_temp(
-            temp_name,
-            target,
-            lock_retries=lock_retries,
-            lock_retry_delay=lock_retry_delay,
-            ignore_replace_race=ignore_replace_race,
-        )
+        try:
+            if refuse_write_protected:
+                _refuse_write_protected(target)
+            _replace_temp(
+                temp_name,
+                target,
+                lock_retries=lock_retries,
+                lock_retry_delay=lock_retry_delay,
+                ignore_replace_race=ignore_replace_race,
+            )
+        except OSError:
+            if on_replace_failure is not None:
+                on_replace_failure(temp_name)
+            raise
     except BaseException:
         _remove_quietly(temp_name)
         raise
@@ -143,6 +161,20 @@ def _replace_temp(
                 _remove_quietly(temp_name)
                 return
             raise
+
+
+def _refuse_write_protected(target: Path) -> None:
+    """`PermissionError`, ha a meglévő cél írásvédett.
+
+    A mód-bitből ÉS a tényleges hozzáférésből is nézzük (mint a #7027
+    felirat-írás): az elsőt a Windows az írásvédett attribútumra képezi, a
+    másodikat a más felhasználó tulajdonában álló fájl is elkapja."""
+    try:
+        mode = target.stat().st_mode
+    except FileNotFoundError:
+        return
+    if not mode & stat.S_IWRITE or not os.access(target, os.W_OK):
+        raise PermissionError(errno.EACCES, "Write-protected file", str(target))
 
 
 def cleanup_orphaned_atomic_temps(directory: Path, entries) -> int:

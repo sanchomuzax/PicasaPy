@@ -2,6 +2,44 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-25
+
+### Editor
+
+- In the **Text** tool a rotation dial appears around the selected text:
+  drag its handle around to rotate the text; the angle gently snaps to
+  multiples of 45 and 15 degrees. See [The editor](features/szerkeszto.md).
+- In **Retouch**, **Cancel** discards only an unfinished patch, and the
+  tool stays open.
+- After **Undo Save**, the **Undo** button undoes the edits that remain.
+  See [Saving](features/mentes.md).
+- On a straightened picture, **Crop** cuts exactly the selected area.
+- The line spacing of the **Red Eye** panel text matches the original.
+- The **Polaroid** effect works without errors on very small pictures.
+
+### Saving
+
+- The title of the save disk error dialog is **Error**, and the
+  `error(...)` number is the original Picasa's error code (for example 11
+  when the file is read-only).
+- If the finished picture cannot be put in place, a JPEG photo's edited
+  version stays next to it with a name ending in `.jpg.jpg`, and the
+  original is unchanged.
+
+### Library and options
+
+- With several photos selected, `Enter` and the context menu's **View and
+  Edit** command open the one that comes first in the grid.
+- A format disabled on the file types tab is left out of the grid, the
+  counts, search, the slideshow, the left pane, and the picture tray;
+  enabling it again brings the photos back. See
+  [Options](features/beallitasok.md).
+- A new import destination folder is added to the watched folders.
+- After you move the **Suggestion threshold:** slider, **OK** recalculates the
+  name suggestions in the background.
+- On Windows, the monthly headers of photos from before 1970 show the
+  correct date.
+
 ## 2026-11-24
 
 ### Editor

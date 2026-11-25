@@ -201,6 +201,33 @@ def _load_function(module_name: str, function_name: str):
 def _kep_irasa(image_path: Path, payload: bytes) -> None:
     return _load_function('save_storage', '_kep_irasa')(image_path, payload)
 
+def _mentett_kep_irasa(
+    image_path: Path,
+    payload: bytes,
+    *,
+    uj_fajlok: tuple[Path, ...],
+    uj_mappak: tuple[Path, ...],
+) -> None:
+    return _load_function('save_storage', '_mentett_kep_irasa')(image_path, payload, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak)
+
+def _nyom_torlese_irasi_hibanal(
+    image_path: Path,
+    bytes_elotte: bytes,
+    *,
+    uj_fajlok: tuple[Path, ...],
+    uj_mappak: tuple[Path, ...],
+):
+    return _load_function('save_storage', '_nyom_torlese_irasi_hibanal')(image_path, bytes_elotte, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak)
+
+def _nyom_torlese_valtozatlan_kepnel(
+    image_path: Path,
+    bytes_elotte: bytes,
+    *,
+    uj_fajlok: tuple[Path, ...],
+    uj_mappak: tuple[Path, ...],
+) -> None:
+    return _load_function('save_storage', '_nyom_torlese_valtozatlan_kepnel')(image_path, bytes_elotte, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak)
+
 #: A rejtett almappa neve, ahová az ÚJ mentéseink érintetlen eredetije kerül
 #: (spec + UX #3). Írni MINDIG ide írunk.
 ORIGINALS_DIR_NAME = ".picasaoriginals"
@@ -298,12 +325,18 @@ class SaveResult:
 
 @dataclass
 class _PhotoIniSnapshot:
-    """A kompenzáló íráshoz szükséges ini-kulcsok és fájlállapot."""
+    """A kompenzáló íráshoz szükséges ini-kulcsok és fájlállapot.
+
+    A `written_document` csak akkor nem `None`, ha az írásunk a lemezre került.
+    A `touch=False` visszaírás nem érinti meg a szakasz képfájlját: az
+    eredeti-mappában az a megőrzött eredeti, amelynek az ideje számít (#7473).
+    """
 
     values: dict[str, str | None]
     document: IniDocument
     target_existed: bool
     written_document: IniDocument | None = None
+    touch: bool = True
 
 
 @dataclass(frozen=True)
@@ -345,7 +378,13 @@ def save_edited(
             (#297 — ekkor a kép és az ini nyilvántartása eltér).
         OSError | IniSaveError | IniConflictError: ha az ini-könyvelés nem
             sikerült. A képfájl ilyenkor VISSZAÁLL a mentés előtti
-            állapotra, hogy ne maradjon dupla-szerkesztés (#297).
+            állapotra, hogy ne maradjon dupla-szerkesztés (#297), a lemezre
+            került ini-írások is (#7473), és ebből a mentésből sem megőrzött
+            eredeti, sem pillanatkép nem marad (#7469). Ha a visszaállítás is
+            elbukik, a másolatok maradnak.
+        OSError: ha a kép írása vagy cseréje nem sikerült. A kép és az ini
+            változatlan, ebből a mentésből sem megőrzött eredeti, sem
+            pillanatkép nem marad (#7462, #7466).
     """
     return _load_function('save_operations', 'save_edited')(image_path, rendered_image, filters, jpeg_quality=jpeg_quality)
 
@@ -596,7 +635,8 @@ def _restore_photo_ini_values(
     """API-n át visszaállítja a kompenzáló írással felülírt kulcsértékeket.
 
     Csak azt a kulcsot állítja vissza, amely a kompenzáló írás óta is a mi
-    kiírt értékünkön áll. A közben érkezett külső változást megőrzi.
+    kiírt értékünkön áll. A közben érkezett külső változást megőrzi. Ha az
+    írásunk nem került a lemezre, nem tesz semmit.
     """
     return _load_function('save_ini', '_restore_photo_ini_values')(ini_path, section_name, snapshot)
 
