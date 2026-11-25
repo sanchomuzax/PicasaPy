@@ -205,10 +205,11 @@ def _mentett_kep_irasa(
     image_path: Path,
     payload: bytes,
     *,
+    bytes_elotte: bytes,
     uj_fajlok: tuple[Path, ...],
     uj_mappak: tuple[Path, ...],
 ) -> None:
-    return _load_function('save_storage', '_mentett_kep_irasa')(image_path, payload, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak)
+    return _load_function('save_storage', '_mentett_kep_irasa')(image_path, payload, bytes_elotte=bytes_elotte, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak)
 
 def _nyom_torlese_irasi_hibanal(
     image_path: Path,
@@ -384,7 +385,10 @@ def save_edited(
             elbukik, a másolatok maradnak.
         OSError: ha a kép írása vagy cseréje nem sikerült. A kép és az ini
             változatlan, ebből a mentésből sem megőrzött eredeti, sem
-            pillanatkép nem marad (#7462, #7466).
+            pillanatkép nem marad (#7462, #7466). Ha a hiba a megtörtént
+            csere UTÁN jött, a régi kép visszaíródik, és ugyanez igaz; ha a
+            visszaírás nem sikerül, a mentés befejeződik, és a függvény
+            rendesen tér vissza (#7476).
     """
     return _load_function('save_operations', 'save_edited')(image_path, rendered_image, filters, jpeg_quality=jpeg_quality)
 

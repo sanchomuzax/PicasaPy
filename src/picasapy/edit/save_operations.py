@@ -46,6 +46,9 @@ def save_edited(
         OSError: ha a képfájl cseréje nem sikerült (pl. írásvédett a cél).
             A kép változatlan, a kész kimenet `<név>.<kit>.jpg` néven
             mellette marad, megőrzött eredeti nem készül (#7462).
+        OSError: ha a hiba a megtörtént csere UTÁN jött. A régi kép
+            visszaíródik, az ini változatlan, nyom nem marad. Ha a
+            visszaírás nem sikerül, a mentés hiba nélkül befejeződik (#7476).
         OSError: ha már az írás elbukott a csere előtt (pl. tele lemez). A
             kép és az ini változatlan, ebből a mentésből sem megőrzött
             eredeti, sem pillanatkép nem marad (#7466).
@@ -135,10 +138,15 @@ def save_edited(
         api.write_atomic(snapshot_path, bytes_before_write, make_parents=True)
 
         # (b) A renderelt kép az eredeti HELYÉRE. Ha a csere hibázik, a kész
-        # kép `.jpg.jpg` néven marad (#7462).
+        # kép `.jpg.jpg` néven marad (#7462). Ha a hiba a csere után jön, a
+        # régi kép íródik vissza, vagy a mentés fejeződik be (#7476).
         payload = api._encode_image(image_path.suffix, rendered_image, jpeg_quality)
         api._mentett_kep_irasa(
-            image_path, payload, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak
+            image_path,
+            payload,
+            bytes_elotte=bytes_before_write,
+            uj_fajlok=uj_fajlok,
+            uj_mappak=uj_mappak,
         )
 
     # (c) A lánc és a mentés előtti fájlidő az eredeti-mappa ini-jébe kerül,
