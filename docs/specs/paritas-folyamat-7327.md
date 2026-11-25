@@ -1336,7 +1336,9 @@ A `job-964 __17` képéből mérve (képkoordináta, 800×800):
 
 **Amit ez nem dönt el:** a fekete kitöltés nem cáfolja a mai `min(G, B)` kimenetet, mert a tiszta vörösnél és a magentánál is `min(G, B) = 0`. Az, hogy a magenta jelölt és a doboz szélére kifutó vörös nem, a színfeltételre és a foltválasztásra utal, de a szabályt csak a bináris adja meg. Jelölt címek (a `RedEyeEdit` vtábla `0x00ca8384` metódusai, index szerint): `0x008054e0`, `0x00806aa0`, `0x00806c50`, `0x00806f60`, `0x00807840`, `0x00804d70`; ezek szerepe még nincs igazolva.
 
-**Következő lépés:** Ghidra-kör a fenti címekre (a Ghidra-sorba felvéve); fejlesztői jegytörzs csak a bináris szabály után.
+**Ghidra-forrás:** `2026-11-25-koteg-592-594.txt` (a hat jelölt cím dekompilációja: `0x00807840` 1-112., `0x00806c50` 113-297., `0x008054e0` 298-1218., `0x00806aa0` 1219-1281., `0x00806f60` 1282-1393., `0x00804d70` 1394-1702. sor). Első olvasat: a `0x00807840` képbetöltő (`ytImageMetadata`, `FUN_00a3d430`), nem a színszabály; a hívója a `0x008054e0` és a `0x00806c50`.
+
+**Következő lépés:** a színfeltétel, a foltválasztás és a maszk a `0x008054e0` (921 sor) és a `0x00806c50` olvasásával, két független úton (Ghidra-C és utasításszint); fejlesztői jegytörzs csak a bináris szabály után.
 
 ### Mért koordináták a további Colab-feladatokhoz
 
