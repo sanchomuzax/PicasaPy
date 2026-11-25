@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.182] - 2026-11-25
+
+- Ha a Mentés már a fájl kiírása közben hiúsul meg (például betelt a lemez), nem marad félbemaradt másolat a .picasaoriginals mappában, és utána az „Utolsó mentés visszavonása” sem törli a szerkesztéseket (#7466).
+
 ## [1.0.181] - 2026-11-25
 
 - Lezárult a szerkesztő Alapjavítások lapjának összevetése: az eredeti Picasa Vörösszem-javítása, az „Undo Red Eye” megerősítése és a mentés is mérve; a javított képpontok eltérése külön kutatási jegyre került (#7327).
