@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.181] - 2026-11-25
+
+- Lezárult a szerkesztő Alapjavítások lapjának összevetése: az eredeti Picasa Vörösszem-javítása, az „Undo Red Eye” megerősítése és a mentés is mérve; a javított képpontok eltérése külön kutatási jegyre került (#7327).
+- Kiderült, miért marad „.jpg.jpg” fájl írásvédett mentés után az eredeti Picasában: a JPEG-író az ideiglenes „.tmp” véget „.jpg”-re cseréli, és sikertelen csere után a kész kép megmarad (#7428).
+- Kiderült az eredeti Picasa Szöveg-forgatásának teljes szabálya: a szög a húzás végpontjától függ, és 45° és 15° körül lágyan tapad; a mért sort 0,15°-on belül visszaadja (#7435).
+- Az Opciókban Tallózással beállított új importcél az OK után a figyelt mappák közé kerül, mint az eredetiben (#7437).
+- A Szöveg eszközben a kijelölt blokk forgatókoronggal forgatható, mint az eredetiben: a szög 15° és 45° többszörösei körül lágyan tapad, és radiánban mentődik (#7457).
+- A Vörösszem kézi dobozának viselkedése az eredeti Picasában képpontra mérve; a pontos szabály binárisból még kutatás alatt (#7460).
+- Ha a Mentés nem tudja lecserélni a fájlt (például írásvédett), az eredeti változatlan marad, a kész kép pedig mellette .jpg.jpg végű néven megmarad, mint az eredetiben; tele lemeznél a hibaablak száma is az eredetit követi (#7462).
+
 ## [1.0.180] - 2026-11-24
 
 - A futásidő-tábla pótlása a hiányzó 160 app-tesztfájllal (#7454).
