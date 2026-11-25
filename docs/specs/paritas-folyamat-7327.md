@@ -1342,9 +1342,9 @@ A `job-964 __17` képéből mérve (képkoordináta, 800×800):
 
 #### #7460 második köre: a kézi doboz szabálya a binárisból
 
-**Eredmény:** a kézi dobozra két, egymástól független javító van. Előbb a `Red.dll` vörösszem-motorja próbálkozik (**A út**); ha nem ad találatot, a `Picasa3.exe` saját területnövelése fut (**B út**). A `job-964` 1. dobozát a B út, a 2. dobozát az A út javította. A B út teljes, az A út javítója feltárt, az A út érzékelője (melyik képpont jelölt) **NINCS MEG**.
+**Eredmény:** a kézi doboz javítása előtt az eredeti egy külső, harmadik féltől származó vörösszem-motort hív (**A út**, `Red.dll`). Ez licenckötelezett, ezért hatókörön kívül van: a működését nem kutatjuk, és a PicasaPy-ba sem kerül belőle semmi (tulajdonosi döntés, 2026-11-25, #7481). Ha a külső motor nem ad találatot, a `Picasa3.exe` saját területnövelése fut (**B út**); ennek a szabálya teljes. A `job-964` 1. dobozát a B út javította, a 2. dobozát a külső motor.
 
-**Források:** a `2026-11-25-koteg-592-594.txt` Ghidra-köteg (lent `K:sor`), a `Picasa3.exe` (SHA-256 `644b7bec...`) és a `plugins/Red.dll` (`da370693...`) utasításszintű olvasása, a `plugins/red.cfg` (`916d69fd...`), valamint a `job-964` `__14` és `__17` képpontjai. A tesztkép a Colab-generátor kódjával újra előállítva (800 x 800 JPEG, 100-as minőség, 4:4:4; 20557 bájt, ugyanannyi, mint a mentés előtti fájl). A `0x008728e0`, `0x008727c0`, `0x008720c0` és a `Red.dll` függvényei **nincsenek** a kötegben: ezeknél az egyik út az utasításszintű olvasás, a másik a képpontmérés, Ghidra-C még nincs.
+**Források:** a `2026-11-25-koteg-592-594.txt` Ghidra-köteg (lent `K:sor`), a `Picasa3.exe` (SHA-256 `644b7bec...`) utasításszintű olvasása, valamint a `job-964` `__14` és `__17` képpontjai. A tesztkép a Colab-generátor kódjával újra előállítva (800 x 800 JPEG, 100-as minőség, 4:4:4; 20557 bájt, ugyanannyi, mint a mentés előtti fájl). A `0x008727c0` és a `0x008720c0` **nincs** a kötegben: ezeknél az egyik út az utasításszintű olvasás, a másik a képpontmérés, Ghidra-C még nincs.
 
 **Mit ad ma a PicasaPy** (`src/picasapy/render/ops_redeye.py`, `apply_redeye`, kódolvasás): a kézi téglalapon belül minden `R > 1,67 * max(G, B)` képpont `min(G, B)` szürke lesz, kemény cserével. A 2. dobozban ezért a vörös negyedet festi, a magentát nem (első kör).
 
@@ -1354,7 +1354,7 @@ A `job-964 __17` képéből mérve (képkoordináta, 800×800):
 |---|---|---|
 | a kézi doboz ága (`param_5 == 0`) | `0x008059d5` | 681 |
 | a doboz 16-ra igazított másolata a javítás előtt | `0x00805f1f`-`0x00805f92` | 695-707 |
-| A út: `0x008728e0` (érzékelő objektum: `0x0045f2f0`, `CNevenVision`, vtábla `0x00ca8754`) | `0x00805fa8`-`0x00805fc1` | 709 |
+| A út: a külső motor hívása (hatókörön kívül) | `0x00805fa8`-`0x00805fc1` | 709 |
 | ha ez nem 0: B út, `0x008727c0` | `0x00806032`-`0x00806045` | 750 |
 | siker: a doboz a listába kerül; két hiba esetén nincs javítás | `0x00805fc3`-`0x00806103` | 710-773, 934-938 |
 | a doboz 16-ra igazított részét (`x0 & ~15`, `y0 & ~15`, `(x1 + 15) & ~15`, `(y1 + 15) & ~15`) a javított munkaképből bejegyzésbe menti és a képre teszi | `0x0080620f`-`0x00806768` | 960-1102 |
@@ -1371,46 +1371,24 @@ A `job-964 __17` képéből mérve (képkoordináta, 800×800):
 6. Minden elért képpont súlya `w = min(255, S * 255 / S_mag)` (`0x00872468`-`0x0087249a`). A folt egy képpontból **csak akkor** nő tovább, ha `|h - h_mag| <= 6` (8 bites, körbeforduló különbség) **és** `w >= 196` (`0x008724f5`-`0x00872516`). Az elutasított szegélyen lévő képpont megtartja a `w` súlyát: ez a B út egyetlen puhasága.
 7. Kitöltés (`0x008726a0`-`0x0087274e`): a cél `R' = (G + B) >> 1`, a `G` és a `B` változatlan; `R_új = R + floor((R' - R) * w / 256)`. Elmosás, sugár és kör nincs.
 
-##### A út: `Red.dll`
+##### A jegy négy kérdése (B út)
 
-Lánc: `0x008728e0` → `CNevenVision` `+0x4c` = `0x006cee70` → a `Red.dll` felületobjektumának (vtábla `0x101aadc4`) `+0x5c` eleme, `0x10001760` → `0x10004690`. Ha a `Red.dll` nincs betöltve (`+4` = `0x006cccd0`), a B út fut. A kép 24 bites RGB-ként megy át (`0x009a9fc0`). Siker esetén a `0x006cee70` a visszakapott **egy** téglalapra írja vissza a javított képfoltot a munkaképbe (`0x006cf08c`-`0x006cf1d3`), a húzott doboz határán túlra is.
-
-**Érzékelő (`vrd_RedEyeDetector`, `0x100c4fd0`): NINCS MEG.** Betanított modellekkel dolgozik (színkódkönyv, előtér- és háttérszín-modell, alak- és profilmodell; mezősorrend: `0x100c4930`). A `red.cfg` `0xdefed` helyén álló első értékek: `normalize = 1`, `norm width = 192`, `boundary metric weight = 0,707`, `max num blobs = 3`, `max num peaks = 50`. A javító minden érvényes foltot kezel (`0x100c02b0`), de a Picasa felé csak az **első** eredménypár (téglalap és képfolt) jut vissza (`0x10004690`, a 0. és 1. elem). Az érzékelő foltsorrendje: NINCS MEG.
-
-**Javító (`vrd_RedEyeCorrector`, `0x100bfb50`)**, a paraméterek a `red.cfg` `0xe0013` helyéről (mezősorrend: `0x100c01c0`): `margin = 5`, `fg sat prctile = 25`, `bg sat prctile = 50`, `black degree = 1,0`, `blend degree = 1,0`. Foltonként, ha az érzékelő jelzője (`+0x6c`) igaz:
-
-1. Telítettség: `s = |R - G| / max(R, G)`, 0, ha a maximum 0 (`0x100bed50`; a `B` nem számít).
-2. Háttérküszöb `T` (`0x100bf4e0`, `0x100bf280`): a folt `w x h` méretű téglalapja körüli négy sávban a **nem maszkolt** képpontok `s` mediánja. Sávok: fent `[x0, x1] x [y0 - 0,75h, y0 + 0,25h]`, lent `[x0, x1] x [y1 - 0,25h, y1 + 0,75h]`, balra `[x0 - 0,75w, x0 + 0,25w] x [y0, y1]`, jobbra `[x1 - 0,25w, x1 + 0,75w] x [y0, y1]`, egészre és a képre vágva. Egy sáv legalább 5 képpontnyi területtel és 5 mintával érvényes. `T` az érvényes sávok **maximuma**; ha egy sincs, 0,5.
-3. A téglalap minden oldalon `(max(w, h) / 20 + 1) * margin` képponttal bővül, a képre vágva (`0x100bfbba`-`0x100bfc43`, `0x100491b0`).
-4. Maszksúly az érzékelő maszkján: `M = min(1, s / P25)`, ahol `P25` a maszk képpontjainak 25. percentilise; a maszkon kívül 0 (`0x100bf0d0`). A percentilis a rendezett minta `(i - 0,5) / n` helyei között lineárisan közbeiktatott érték (`0x100c6550`).
-5. Elmosás: `sigma = max(w, h) / 15`, 1 és 3 közé szorítva, a **bővített** téglalap méretéből (`0x100bfd4a`-`0x100bfdda`; `0x101e9378` = 15, `0x101e9370` = 3). Szétválasztható, normált Gauss, fél-szélessége `trunc(6 * sigma + 0,5)` (`0x100c62f0`, `0x10085d90`; a magnál kisebb képfoltnál 3 `sigma`), a folton kívül 0 (`0x10097050`). `W` = az elmosott maszk osztva a saját maximumával (`0x100bfde9`-`0x100bfe05`).
-6. Képpontonként, ha `W >= 0,01` (`0x100bfe20`-`0x100bfe54`; `0x100bee70`, `0x100bee20`):
-   - ha `s > T`, `R > G` és `W > 0,05`: `R = trunc(G / (1 - T))` (`blend degree` = 1 esetén teljes csere);
-   - a cél `K = trunc(sqrt(G * B))` szürke (`black degree` = 1 esetén változatlan);
-   - `alfa = clamp(trunc(256 * blend degree * W), 0, 256)`, és mindhárom csatornán `új = c + floor((K - c) * alfa / 256)`.
-
-##### A jegy négy kérdése
-
-| Kérdés | B út | A út |
-|---|---|---|
-| (1) színfeltétel | `R > G`, `R > B`, `S >= 96`; növelés: színezet-eltérés legfeljebb 6, `w >= 196` | a betanított érzékelőé: NINCS MEG (`0x100c4fd0`). Itt dől el, miért jelölt a magenta, és miért nem a vörös |
-| (2) foltválasztás több jelöltnél | egyetlen mag (legnagyobb `2R - G - B`), egy összefüggő folt | a Picasa az érzékelő első foltját kapja (legfeljebb 3 közül); a sorrend NINCS MEG |
-| (3) maszk, sugár, perem | a növelt folt a dobozon belül; nincs sugár, nincs elmosás | az érzékelő maszkja (alakja NINCS MEG) `M` súllyal, Gauss `sigma` 1 és 3 között; sugár nincs |
-| (4) kitöltés | `R' = (G + B) >> 1` (nem fekete, nem `min(G, B)`) | `sqrt(G * B)` szürke (előtte esetleg az `R` visszavétele a háttér telítettségére) |
+| Kérdés | B út |
+|---|---|
+| (1) színfeltétel | `R > G`, `R > B`, `S >= 96`; növelés: színezet-eltérés legfeljebb 6, `w >= 196` |
+| (2) foltválasztás több jelöltnél | egyetlen mag (legnagyobb `2R - G - B`), egy összefüggő folt |
+| (3) maszk, sugár, perem | a növelt folt a dobozon belül; nincs sugár, nincs elmosás |
+| (4) kitöltés | `R' = (G + B) >> 1` (nem fekete, nem `min(G, B)`) |
 
 ##### Visszaellenőrzés a `job-964` `__17` képpontjain
 
 - **1. doboz, B út:** a két függvény átirata a `[39, 129) x [53, 143)` téglalapon (a téglalapot a felvételből vettem) a teljes 90 x 90 = 8100 képpontot feketíti kemény éllel, pontosan a felvétel módosult képpontjait. 8088 képpont eltérése legfeljebb 6 szint, 12 képponté a doboz két függőleges élén legfeljebb 19.
 - **2. doboz, nem a B út:** az átirat itt a vörös negyedből indulna, és azt festené feketére; a felvételen a vörös negyed a perem kivételével érintetlen.
-- **2. doboz, A út, színtörvény:** képpontonként szabad `alfa` mellett a `c + floor((K - c) * alfa / 256)` törvény `K = sqrt(G * B)` céllal mind a négy színben legfeljebb 2 szint medián és 3 szint 95. percentilis eltéréssel adja a felvételt. A `K = min(G, B)` a zöldön 7, a fekete cél a ciánon 107 szint a 95. percentilisen.
-- **2. doboz, A út, perem:** a `sigma = 3` értékkel számolt lépcső a cián-magenta határon (`y = 225`, `x = 191..208`) legfeljebb 5 szinttel tér el; az első módosult képpont `x = 193`, ahogy a `W >= 0,01` küszöbből következik. A `sigma` nem illesztés: a képlet 45 képpontos hosszabbik oldaltól 3-at ad, a módosult terület ennél nagyobb.
 - **16-ra igazítás:** az `x = 220` oszlopban `y = 255`-nél `R = 239`, `y = 256`-tól a képpont érintetlen: a puha perem a doboz 16-ra igazított alsó határán el van vágva.
-- **NINCS MEG:** a 2. doboz teljes képpontos újraszámolása (ehhez az érzékelő maszkja kell).
+- A 2. dobozt a külső motor javította; ezt nem számoljuk újra (hatókörön kívül).
 
 ##### Helyesbítés az első körhöz
 
-- A 2. doboz foltja nem kerek korong, hanem a doboz magenta része: a színhatárokon elmosott egyenes éllel, a jobb alsó oldalon íves határral.
-- A zöld, cián és vörös negyed **nem** 0 képpontban módosult: a perem oda is átér (6 szintnél nagyobb eltérés a ciánon 283, a zöldön 359, a vörösön 14 képpontban).
 - Az 1. doboz módosulása pontosan 8100 képpont, kemény éllel.
 - A kitöltés nem `min(G, B)`. A #720 mérése (`vorosszem-eszkoz-terve.md`) a szemeken, ahol `G` és `B` közel egyenlő, ettől alig tér el.
 
@@ -1420,15 +1398,12 @@ Lánc: `0x008728e0` → `CNevenVision` `+0x4c` = `0x006cee70` → a `Red.dll` fe
 |---|---|
 | útválasztás | megerősített (Ghidra-C és utasításszint) |
 | B út | megerősített (utasításszint és az 1. doboz képpontjai); Ghidra-C még nincs |
-| A út javítója | erős (utasításszint és képpontmérés); Ghidra-C nincs |
-| A út érzékelője | NINCS MEG |
+| A út (külső motor) | hatókörön kívül (harmadik fél, licenc) |
 | független újralevezetés (#140) | nem készült |
 
-**Következő Ghidra-kör:** `Picasa3.exe`: `0x008728e0`, `0x008727c0`, `0x008720c0`, `0x006cee70`. `Red.dll`: `0x100c4fd0` (érzékelő) és hívottjai, `0x10004690`, `0x100bfb50`, `0x100bee70`, `0x100bf4e0`.
+A #7460 a döntéssel lezárult (nem tervezett), további kutatás nem indul.
 
-**Fejlesztői jegytörzs még nem adható ki**, mert a szabály nem teljes. A B út egymagában a 2. dobozon a vörös negyedet festené, tehát nem pótolja az érzékelőt. A `red.cfg` beépítését a #2239 tulajdonosi döntése jelenleg kizárja (`picasa-arcfelismeres.md`, 16. szakasz), ezért az érzékelő helyére kerülő eljárásról külön dönteni kell.
-
-Mérleg: 4 tétel (útválasztás, B út, A út javítója, A út érzékelője): 3 lezárva · 1 továbbvitt megnevezett iránnyal (`Red.dll` `0x100c4fd0`) · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”.
+Mérleg: 3 tétel (útválasztás, B út, A út): 2 lezárva · 0 továbbvitt · 0 blokkolt · 1 hatókörön kívül · 0 „csak nyitva”.
 
 ### Mért koordináták a további Colab-feladatokhoz
 
