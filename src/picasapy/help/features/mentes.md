@@ -44,6 +44,23 @@ lévő friss fájlt és szerkesztéslistát olvassa újra, tehát azt látod, am
 most a fájlban van. Ha a művelet nem sikerül, **hibaablak** mondja meg az
 okot.
 
+Ha a mentés **lemezhiba** miatt nem sikerül (például írásvédett a fájl
+vagy a mappa, vagy megtelt a lemez), a hibaablak címe **Hiba**, mint az
+eredeti Picasában. Az üzenet alatt a fájl neve és egy `hiba(…)`
+szám áll. Ez a szám az eredeti Picasa saját hibakódja, nem a
+rendszeré: 11, ha nincs jogod írni a fájlt, 10, ha a fájl vagy a mappa
+nem található, minden más esetben (a megtelt lemezt is beleértve)
+többnyire 2. A **Hiba** címet kapja a névütközés és a nem menthető
+formátum hibaablaka is.
+
+Ha a kész képet nem sikerül az eredeti helyére tenni (például mert a
+fájl írásvédett), a képed változatlan marad. JPEG-képnél a már
+elkészült, szerkesztett változat ilyenkor nem vész el: a kép mellett
+`.jpg.jpg` végű néven megtalálod (például `nyaralas.jpg.jpg`), ahogy az
+eredeti Picasában is. Ha ilyen nevű fájl már van, a program nem írja
+felül. Biztonsági másolat ilyenkor nem készül, mert az eredeti fájl nem
+változott.
+
 ## Mentés visszavonása
 
 A mentés után megjelenő üzenetben a **Mentés visszavonása** gombbal
@@ -55,8 +72,10 @@ gombra." Csak a legutóbbi mentésre hat.
 Ha a kép a szerkesztőben van nyitva, a mentés után a szerkesztő
 **Visszavonás** gombjának felirata **Mentés visszavonása** lesz. Erre
 kattintva ugyanez történik: a fájl visszakapja a mentés előtti
-állapotát, a szerkesztések megmaradnak. Utána a **Visszavonás** és az
-**Újra** gomb is szürke.
+állapotát, a szerkesztések megmaradnak. Utána a **Visszavonás** gomb
+a megmaradt szerkesztéseket vonja vissza (például a kiegyenesítést); ha
+csak olyan változtatás maradt, ami nem szerkesztési lépés (például a
+képre írt szöveg), a gomb szürke. Az **Újra** gomb szürke.
 
 ## Mentés másként és Másolat mentése
 

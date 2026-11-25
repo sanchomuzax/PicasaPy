@@ -4,6 +4,44 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-25
+
+**Szerkesztő**
+
+- A **Szöveg** eszközben a kijelölt szöveg körül forgatókorong jelenik
+  meg: a fogantyúját körbehúzva a szöveg elforgatható, a szög enyhén
+  rátapad a 45 és a 15 fok többszöröseire. Lásd
+  [A szerkesztő](features/szerkeszto.md).
+- A **Retusálás** **Mégse** gombja félbehagyott foltnál csak a foltot
+  dobja el, az eszköz nyitva marad.
+- A **Mentés visszavonása** után a **Visszavonás** gomb a megmaradt
+  szerkesztéseket vonja vissza. Lásd [Mentés](features/mentes.md).
+- Kiegyenesített képen a **Vágás** pontosan a kijelölt részt vágja ki.
+- A **Vörösszem** panel szövegének sorköze az eredetiéhez igazodott.
+- A **Polaroid** effekt nagyon kicsi képen is hiba nélkül működik.
+
+**Mentés**
+
+- A mentés lemezhiba-ablakának címe **Hiba**, és a `hiba(…)` szám az
+  eredeti Picasa hibakódja (például 11, ha a fájl írásvédett).
+- Ha a kész képet nem lehet a helyére tenni, JPEG-képnél a szerkesztett
+  változat `.jpg.jpg` végű néven a kép mellett marad, az eredeti
+  változatlan.
+
+**Könyvtár és beállítások**
+
+- Több kijelölt képnél az **Enter** és a helyi menü **Megjelenítés és
+  szerkesztés** parancsa a rácsban elöl álló képet nyitja meg.
+- A **Fájltípusok** fülön kikapcsolt formátum a rácsból, a
+  darabszámokból, a keresésből, a diavetítésből, a bal hasábból és a
+  képtálcáról is kimarad; visszakapcsolva a képek újra megjelennek. Lásd
+  [Beállítások](features/beallitasok.md).
+- Az **Importált képek mentési helye** új mappája a figyelt mappák közé
+  kerül.
+- A **Javaslati küszöb** megváltoztatása után az **OK** a háttérben
+  újraszámolja a névjavaslatokat.
+- Windowson az 1970 előtti képek havi fejlécei is helyes dátumot mutatnak.
+
 ## 2026-11-24
 
 **Szerkesztő**

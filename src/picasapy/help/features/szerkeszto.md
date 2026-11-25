@@ -295,6 +295,11 @@ sötétebb részről vetted.
 **Folt visszavonása** és **Folt újra** léptet a foltok között, az
 **Alaphelyzet** mindet törli.
 
+Ha már kijelölted a javítandó területet, de a forrást még nem, a
+**Mégse** (vagy egy kattintás a panel üres részén) csak ezt a
+félbehagyott foltot dobja el, a Retusálás nyitva marad. A következő
+**Mégse** zárja be az eszközt.
+
 Ha az alkalmazott retusálást a szerkesztő **Visszavonás** gombjával
 veszed le, a program előbb rákérdez egy **Jóváhagyás** ablakban: „A
 retusálási javítások nem állíthatók helyre ismételt alkalmazással.
@@ -315,7 +320,13 @@ széle. Egy képre
 **több szövegdoboz** is felvehető: az **Alkalmaz** után kattints egy másik
 helyre, és írd be a következőt. Egy meglévő szövegre kattintva kijelölöd
 (kék keret jelzi), és átírhatod, áthelyezheted vagy a beállításait
-módosíthatod; az **Alkalmaz** a kijelölt dobozt frissíti. Beállítható:
+módosíthatod; az **Alkalmaz** a kijelölt dobozt frissíti.
+
+A kijelölt szöveg körül egy áttetsző **forgatókorong** jelenik meg,
+körben osztásokkal, mint az eredeti Picasában. A korongon lévő
+fogantyút körbehúzva a szöveget elforgatod. Forgatás közben a szög
+enyhén rátapad a 45 és a 15 fok többszöröseire, így könnyű pontosan
+vízszintesre, függőlegesre vagy átlósra állítani. Beállítható:
 
 - **Betűtípus** és **betűméret**, valamint **félkövér**, **dőlt** és
   **aláhúzott** stílus. A betűtípus listája a gépre telepített

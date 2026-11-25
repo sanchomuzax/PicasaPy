@@ -37,6 +37,23 @@ refresh automatically. The editor reloads the file and edit list from
 disk, so it shows the current file contents. If an operation fails, an
 error dialog explains why.
 
+If saving fails because of a disk problem (for example the file or
+folder is read-only, or the disk is full), the error dialog's title is
+**Error**, as in the original Picasa. Below the message you see the
+file name and an `error(...)` number. This number is the original
+Picasa's own error code, not the system's: 11 when you are not allowed
+to write the file, 10 when the file or folder cannot be found, and
+usually 2 in every other case, including a full disk. The name
+collision and unsupported format dialogs also use the **Error** title.
+
+If the finished picture cannot be put in place of the original (for
+example because the file is read-only), your photo stays unchanged.
+For a JPEG photo the finished, edited version is not lost: you find it
+next to the photo with a name ending in `.jpg.jpg` (for example
+`holiday.jpg.jpg`), as in the original Picasa. If a file with that name
+already exists, it is not overwritten. No backup copy is made in this
+case, because the original file did not change.
+
 ## Undo Save
 
 After saving, choose **Undo Save** in the confirmation message to
@@ -45,8 +62,10 @@ PicasaPy. This affects only the most recent save.
 
 If the picture is open in the editor, after saving the editor's **Undo**
 button reads **Undo Save**. Clicking it does the same: the file gets back
-its state before the save, and your edits remain. Afterwards both
-**Undo** and **Redo** are disabled.
+its state before the save, and your edits remain. Afterwards **Undo**
+undoes the edits that remain (for example a straightening); if the only
+change left is not an edit step (for example text on the picture), the
+button is disabled. **Redo** is disabled.
 
 ## Save As and Save a Copy
 
