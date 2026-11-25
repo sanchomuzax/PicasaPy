@@ -124,13 +124,26 @@ class TestHibakod:
         assert save_error_code(_winhiba(winerror)) == 10
         assert save_error_code(_winhiba(winerror, errno_=errno.ENOENT)) == 10
 
-    def test_a_tele_lemez_kodja_valtozatlan_errno(self):
-        """A tele lemez belső státusza NINCS MEG (#7428): a régi érték marad."""
-        assert save_error_code(OSError(errno.ENOSPC, "tele")) == errno.ENOSPC
+    def test_a_HANDLE_DISK_FULL_12(self):
+        """#7462: Windows `ERROR_HANDLE_DISK_FULL` (39) a bináris mindkét
+        leképezőjében (`0x0099cd30`, `0x00991330`) 12."""
+        assert save_error_code(_winhiba(39)) == 12
+        assert save_error_code(_winhiba(39, errno_=errno.ENOSPC)) == 12
+        assert save_error_code(_winhiba(39, errno_=errno.EINVAL)) == 12
 
-    def test_a_tele_lemez_windowson_is_ugyanaz(self):
-        assert save_error_code(_winhiba(112, errno_=errno.ENOSPC)) == errno.ENOSPC
-        assert save_error_code(_winhiba(112)) == errno.ENOSPC
+    @pytest.mark.parametrize(
+        "hiba",
+        [
+            OSError(errno.ENOSPC, "tele"),
+            _winhiba(112),
+            _winhiba(112, errno_=errno.ENOSPC),
+        ],
+        ids=["ENOSPC", "winerror-112", "winerror-112-ENOSPC"],
+    )
+    def test_minden_mas_tele_lemez_2(self, hiba):
+        """#7462: az írási út leképezője (`0x0099cd30`) a 112-t az alapágra, 2-re
+        viszi; az `errno` (28) nem jelenhet meg a hibaablakban."""
+        assert save_error_code(hiba) == 2
 
     @pytest.mark.parametrize(
         "hiba",

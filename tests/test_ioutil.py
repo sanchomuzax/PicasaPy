@@ -439,3 +439,71 @@ def test_sigkill_at_write_fsync_replace_keeps_whole_target(tmp_path, stage, expe
     assert list(tmp_path.iterdir()) == [target], (
         "az új indulás mappabejárása eltakarítja a megszakadt írás tempfájlját"
     )
+
+
+class TestCsereHibaHorog:
+    """#7462: a képmentés a kész ideiglenes fájlt a csere hibájakor megkaphatja;
+    horog nélkül (ini, index, cache) a takarítás változatlan."""
+
+    @staticmethod
+    def _csere_elbukik(monkeypatch):
+        def csere(forras, cel):
+            raise PermissionError(errno.EACCES, "Access is denied")
+
+        monkeypatch.setattr(ioutil, "_replace", csere)
+
+    def test_horog_nelkul_az_ideiglenes_fajl_torlodik(self, tmp_path, monkeypatch):
+        target = tmp_path / "a.bin"
+        target.write_bytes(b"regi")
+        self._csere_elbukik(monkeypatch)
+
+        with pytest.raises(PermissionError):
+            write_atomic(target, b"uj")
+
+        assert [p.name for p in tmp_path.iterdir()] == ["a.bin"]
+
+    def test_a_horog_a_kesz_tartalmu_ideiglenes_fajlt_kapja(self, tmp_path, monkeypatch):
+        target = tmp_path / "a.bin"
+        target.write_bytes(b"regi")
+        self._csere_elbukik(monkeypatch)
+        kapott: list[bytes] = []
+
+        with pytest.raises(PermissionError):
+            write_atomic(
+                target,
+                b"uj",
+                on_replace_failure=lambda temp: kapott.append(Path(temp).read_bytes()),
+            )
+
+        assert kapott == [b"uj"]
+        # amit a horog nem vitt el, az törlődik
+        assert [p.name for p in tmp_path.iterdir()] == ["a.bin"]
+
+    def test_irasi_hibanal_a_horog_nem_fut(self, tmp_path, monkeypatch):
+        def fsync(fd):
+            raise OSError(errno.ENOSPC, "No space left on device")
+
+        monkeypatch.setattr(ioutil, "_fsync", fsync)
+        hivasok: list[str] = []
+
+        with pytest.raises(OSError):
+            write_atomic(tmp_path / "a.bin", b"x", on_replace_failure=hivasok.append)
+
+        assert hivasok == []
+        assert list(tmp_path.iterdir()) == []
+
+    @pytest.mark.skipif(
+        sys.platform == "win32", reason="Windowson a chmod nem véd írás ellen (#7462)"
+    )
+    def test_irasvedett_cel_csak_keresre_utasitando_el(self, tmp_path):
+        target = tmp_path / "a.bin"
+        target.write_bytes(b"regi")
+        target.chmod(0o444)
+
+        with pytest.raises(PermissionError):
+            write_atomic(target, b"uj", refuse_write_protected=True)
+        assert target.read_bytes() == b"regi"
+        assert [p.name for p in tmp_path.iterdir()] == ["a.bin"]
+
+        write_atomic(target, b"uj")  # alapértelmezés: mint eddig
+        assert target.read_bytes() == b"uj"

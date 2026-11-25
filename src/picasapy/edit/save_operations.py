@@ -41,6 +41,9 @@ def save_edited(
         OSError | IniSaveError | IniConflictError: ha az ini-könyvelés nem
             sikerült. A képfájl ilyenkor VISSZAÁLL a mentés előtti
             állapotra, hogy ne maradjon dupla-szerkesztés (#297).
+        OSError: ha a képfájl cseréje nem sikerült (pl. írásvédett a cél).
+            A kép változatlan, a kész kimenet `<név>.<kit>.jpg` néven
+            mellette marad, megőrzött eredeti nem készül (#7462).
     """
     image_path = api.Path(image_path)
     # #1425: a „szent" eredeti bármelyik ismert mappanév alatt ott lehet —
@@ -78,6 +81,14 @@ def save_edited(
     backup_mtime_ns = (
         original_mtime_ns if backup_created_now else backup_path.stat().st_mtime_ns
     )
+    # #7462: a még hiányzó mappák (belülről kifelé), hogy a képcsere hibájakor
+    # csak az tűnjön el, amit ez a mentés hozott létre.
+    snapshot_dir = api._snapshot_path(image_path, 1).parent
+    uj_mappak = tuple(
+        mappa
+        for mappa in (snapshot_dir, snapshot_dir.parent, backup_path.parent)
+        if not mappa.exists()
+    )
     if backup_created_now:
         api.write_atomic(backup_path, bytes_before_write, make_parents=True)
 
@@ -104,13 +115,19 @@ def save_edited(
         or api._legacy_snapshot_path(image_path, next_number).exists()
     ):
         next_number += 1
-    api.write_atomic(
-        api._snapshot_path(image_path, next_number), bytes_before_write, make_parents=True
-    )
+    snapshot_path = api._snapshot_path(image_path, next_number)
+    api.write_atomic(snapshot_path, bytes_before_write, make_parents=True)
 
-    # (b) A renderelt kép az eredeti HELYÉRE.
+    # (b) A renderelt kép az eredeti HELYÉRE. Ha a csere hibázik, a kész kép
+    # `.jpg.jpg` néven marad, az (a) és (a2) új fájljai pedig eltűnnek (#7462).
     payload = api._encode_image(image_path.suffix, rendered_image, jpeg_quality)
-    api._kep_irasa(image_path, payload)
+    uj_eredeti = (backup_path,) if backup_created_now else ()
+    api._mentett_kep_irasa(
+        image_path,
+        payload,
+        uj_fajlok=(*uj_eredeti, snapshot_path),
+        uj_mappak=uj_mappak,
+    )
 
     # (c) A lánc és a mentés előtti fájlidő az eredeti-mappa ini-jébe kerül,
     # a #5810 szerinti backuphash pedig az aktuális mappa ini-jébe. Két ini

@@ -67,6 +67,8 @@ def save_error_kind(error: BaseException, *, is_copy: bool = False) -> str:
 #: írásvédett cél mentési hibája `error(11)` (`job-957`).
 STATUS_ACCESS_DENIED = 11
 STATUS_NOT_FOUND = 10
+#: `ERROR_HANDLE_DISK_FULL`
+STATUS_HANDLE_DISK_FULL = 12
 #: minden le nem képezett hibakód (az eredeti alapága)
 STATUS_OTHER = 2
 
@@ -76,15 +78,8 @@ _ACCESS_ERRNOS = frozenset({_errno.EACCES, _errno.EPERM, _errno.EROFS})
 _ACCESS_WINERRORS = frozenset({5, 32})
 #: ERROR_FILE_NOT_FOUND, ERROR_PATH_NOT_FOUND
 _NOT_FOUND_WINERRORS = frozenset({2, 3})
-#: ERROR_DISK_FULL
-_DISK_FULL_WINERROR = 112
-
-
-def _is_disk_full(error: OSError) -> bool:
-    return (
-        getattr(error, "errno", None) == _errno.ENOSPC
-        or getattr(error, "winerror", None) == _DISK_FULL_WINERROR
-    )
+#: ERROR_HANDLE_DISK_FULL
+_HANDLE_DISK_FULL_WINERROR = 39
 
 
 def _is_access_denied(error: OSError) -> bool:
@@ -109,12 +104,14 @@ def save_error_code(error: BaseException) -> int:
     Az eredeti Picasa itt NEM a rendszer `errno`-ját írja ki, hanem a saját
     belső státuszát: hozzáférés-hiba (`PermissionError`, `EACCES`, `EPERM`,
     `EROFS`, Windowson `winerror` 5 vagy 32) -> 11; hiányzó fájl vagy út
-    (`FileNotFoundError`, `ENOENT`, `winerror` 2 vagy 3) -> 10; minden más
-    le nem képezett `OSError` -> 2.
+    (`FileNotFoundError`, `ENOENT`, `winerror` 2 vagy 3) -> 10; Windows
+    `ERROR_HANDLE_DISK_FULL` (`winerror` 39) -> 12; minden más le nem
+    képezett `OSError` -> 2.
 
-    A tele lemez (`ENOSPC`, `winerror` 112) belső státusza NINCS MEG (#7428:
-    12 vagy 2, attól függ, melyik úton fogy el a hely), ezért az továbbra is
-    az `errno` marad, amíg a mérés el nem dönti.
+    A többi tele lemez (`ENOSPC`, `ERROR_DISK_FULL` 112) is az alapág, 2
+    (#7462): az írási út leképezője (`0x0099cd30`) ezt adja. A másolás és
+    csere leképezője (`0x00991330`) a 112-t 12-re vinné; nálunk a hely a
+    tartalom írásakor fogy el.
 
     Nem `OSError`-nál (ini-hibák, formátumhiba) 0 - a hivatalos üzenet ezt
     a mezőt csak a lemezhiba-ágon jeleníti meg, és ott sem TALÁLGATUNK
@@ -122,8 +119,8 @@ def save_error_code(error: BaseException) -> int:
     """
     if not isinstance(error, OSError):
         return 0
-    if _is_disk_full(error):
-        return _errno.ENOSPC
+    if getattr(error, "winerror", None) == _HANDLE_DISK_FULL_WINERROR:
+        return STATUS_HANDLE_DISK_FULL
     if _is_access_denied(error):
         return STATUS_ACCESS_DENIED
     if _is_not_found(error):
