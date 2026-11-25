@@ -433,7 +433,14 @@ ColumnLayout {
             root.stage("general.importDestination",
                 fileOpsController.toLocalPath(selectedFolder.toString()),
                 function(value) {
+                    // #7437: az OK-kor futó író; az új importcél a figyelt
+                    // mappák közé kerül, mint az eredetiben (`0x005cf772`)
+                    var prev = importSourceController.defaultDestination
                     importSourceController.setDefaultDestination(value)
+                    var target = importSourceController.defaultDestination
+                    if (target && target !== prev
+                            && typeof controller !== "undefined" && controller)
+                        controller.watchImportDestination(target)
                 })
     }
 

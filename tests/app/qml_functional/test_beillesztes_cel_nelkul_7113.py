@@ -96,8 +96,20 @@ def _info_ablak(window, qt_app) -> tuple[QObject, str]:
     return ablak, _gyerek(window, "operationInfoText").property("text")
 
 
+_SQLITE_KISERO = ("-shm", "-wal", "-journal")
+
+
 def _fa(gyoker: Path) -> list[str]:
-    return sorted(str(p.relative_to(gyoker)) for p in gyoker.rglob("*"))
+    """A mappafa, az SQLite átmeneti kísérőfájljai nélkül.
+
+    Az ``index.db-shm``/``-wal`` a kapcsolat és a checkpoint ütemétől függően
+    jelenik meg vagy tűnik el; a beillesztés nem fájlművelete.
+    """
+    return sorted(
+        str(p.relative_to(gyoker))
+        for p in gyoker.rglob("*")
+        if not p.name.endswith(_SQLITE_KISERO)
+    )
 
 
 class _Hivasok:
