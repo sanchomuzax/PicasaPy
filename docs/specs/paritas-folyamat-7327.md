@@ -1325,6 +1325,19 @@ Tesztkép: a mintakészlet `color_patches.jpg`-je (800×800, a nézőben 1:1, a 
 
 **Következtetés:** a (13) lezárva; a képpont-szintű eltérés a #7460 kutatási jegyre ment.
 
+#### #7460 első köre: a `job-964` képpontjai (a bináris szabály még NINCS MEG)
+
+A `job-964 __17` képéből mérve (képkoordináta, 800×800):
+
+| Doboz | Módosult képpont | Alak | Kitöltés |
+|---|---|---|---|
+| 1. (38,52)-(128,142), csupa vörös | 7928 / 8100 (97,9%), ebből 7128 tiszta `[0,0,0]` | a doboz egésze, 1-2 képpontos puha széllel | fekete |
+| 2. (158,152)-(258,252), négy mező sarka | csak a magenta negyedben: 1865 képpont; a vörös, zöld és cián negyed 0 | kerek folt, súlypontja (228,5; 225,5); tiszta fekete mag kb. 14 px sugárig, puha átmenet kb. 28-30 px-ig | a magban fekete, a peremen az eredeti szín felé átmenet |
+
+**Amit ez nem dönt el:** a fekete kitöltés nem cáfolja a mai `min(G, B)` kimenetet, mert a tiszta vörösnél és a magentánál is `min(G, B) = 0`. Az, hogy a magenta jelölt és a doboz szélére kifutó vörös nem, a színfeltételre és a foltválasztásra utal, de a szabályt csak a bináris adja meg. Jelölt címek (a `RedEyeEdit` vtábla `0x00ca8384` metódusai, index szerint): `0x008054e0`, `0x00806aa0`, `0x00806c50`, `0x00806f60`, `0x00807840`, `0x00804d70`; ezek szerepe még nincs igazolva.
+
+**Következő lépés:** Ghidra-kör a fenti címekre (a Ghidra-sorba felvéve); fejlesztői jegytörzs csak a bináris szabály után.
+
 ### Mért koordináták a további Colab-feladatokhoz
 
 A #798 `kepernyo__23.png` képe 1280 × 1024 felbontású. A gombképek középpontját képpontban mértem; a Crop panelben nincs csúszka.
