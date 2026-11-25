@@ -40,7 +40,9 @@ def save_edited(
             (#297 — ekkor a kép és az ini nyilvántartása eltér).
         OSError | IniSaveError | IniConflictError: ha az ini-könyvelés nem
             sikerült. A képfájl ilyenkor VISSZAÁLL a mentés előtti
-            állapotra, hogy ne maradjon dupla-szerkesztés (#297).
+            állapotra, hogy ne maradjon dupla-szerkesztés (#297), és ebből a
+            mentésből sem megőrzött eredeti, sem pillanatkép nem marad
+            (#7469). Ha a visszaállítás is elbukik, a másolatok maradnak.
         OSError: ha a képfájl cseréje nem sikerült (pl. írásvédett a cél).
             A kép változatlan, a kész kimenet `<név>.<kit>.jpg` néven
             mellette marad, megőrzött eredeti nem készül (#7462).
@@ -195,7 +197,13 @@ def save_edited(
         try:
             api._restore_image_or_raise(image_path, bytes_before_write, backup_path, error)
         except api.SaveError as restore_error:
+            # a hibaüzenet a másolatra mutat, ezért az marad
             image_restore_error = restore_error
+        else:
+            # #7469: a kép megint a régi, tehát a mentés nyoma is eltűnik
+            api._nyom_torlese_valtozatlan_kepnel(
+                image_path, bytes_before_write, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak
+            )
         if rollback_errors or image_restore_error:
             details = [str(item) for item in rollback_errors]
             if image_restore_error is not None:
