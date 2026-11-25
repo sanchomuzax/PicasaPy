@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.184] - 2026-11-25
+
+- Kutatás: nagyrészt kiderült, hogyan javítja az eredeti Picasa a kézzel bekeretezett vörösszemet (azt még nem tudjuk, mely képpontokat tekinti szemnek); a programban még nem változott semmi (#7460).
+- Ha a Mentés, a visszavonás vagy a Visszaállítás közben egy .picasa.ini már átíródott, és csak utána jön hiba, az is visszaáll az előző tartalmára, így a szerkesztések nem vesznek el (#7473).
+- Ha Mentéskor a kép cseréje már megtörtént, és csak utána jön hiba, a program visszaírja a mentés előtti képet (ha ez nem sikerül, befejezi a mentést), így a szerkesztés nem kerülhet rá kétszer a képre, és a megőrzött eredeti sem törlődik (#7476).
+
 ## [1.0.183] - 2026-11-25
 
 - Ha a Mentés a .picasa.ini írásakor hiúsul meg, a kép és az ini a mentés előtti marad, nem marad félbemaradt másolat a .picasaoriginals mappában, és az „Utolsó mentés visszavonása” sem törli a szerkesztéseket (#7469).
