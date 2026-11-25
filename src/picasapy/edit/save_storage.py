@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import contextlib
+import logging
 import os
 import stat
 from collections.abc import Iterator
 from pathlib import Path
 import numpy as np
 import picasapy.edit.save as api
+
+_log = logging.getLogger(__name__)
 
 #: A `.jpg.jpg` név átnevezésének fogantyúja (#1375): a teszt EZT cserélje.
 _atnevez = os.rename
@@ -30,6 +33,7 @@ def _mentett_kep_irasa(
     image_path: Path,
     payload: bytes,
     *,
+    bytes_elotte: bytes,
     uj_fajlok: tuple[Path, ...],
     uj_mappak: tuple[Path, ...],
 ) -> None:
@@ -40,11 +44,22 @@ def _mentett_kep_irasa(
     cél mellett marad, és `.picasaoriginals` mentés nincs: a mentés által
     létrehozott `uj_fajlok` és `uj_mappak` eltűnnek. A hiba megy tovább.
 
+    #7476: ha a hiba ellenére a kép bájtjai szerint a csere megtörtént, a
+    `bytes_elotte` íródik vissza, és a hiba megy tovább. Ha a visszaírás nem
+    sikerül, a függvény hiba nélkül tér vissza: a szerkesztett kép a helyén
+    van, tehát a hívónak be kell fejeznie a mentést.
+
     Csak a `save_edited` hívja: a Visszavonás, a Visszaállítás és a
     visszagörgetés a `_kep_irasa` úton marad.
     """
 
     def csere_hibaja(temp_nev: str) -> None:
+        # #7476: ha a csere a hiba ellenére megtörténhetett, a megőrzött
+        # eredetihez nem nyúlunk, a lenti ág dönt a kép bájtjai alapján.
+        if not os.path.lexists(temp_nev) or _a_csere_megtortent(
+            image_path, bytes_elotte, payload
+        ):
+            return
         # A `.jpg.jpg` a JPEG-író kiterjesztés-cseréje (#7428); nem JPEG
         # célra az eredeti viselkedése nincs mérve, ott a temp törlődik.
         if image_path.suffix.lower() in _JPEG_KITERJESZTESEK:
@@ -53,14 +68,43 @@ def _mentett_kep_irasa(
             )
         _mentes_nyomanak_torlese(uj_fajlok, uj_mappak)
 
-    api.write_atomic(
-        image_path,
-        payload,
-        lock_retries=api._ZAR_UJRA,
-        lock_retry_delay=api._ZAR_KESLELTETES,
-        refuse_write_protected=True,
-        on_replace_failure=csere_hibaja,
-    )
+    try:
+        api.write_atomic(
+            image_path,
+            payload,
+            lock_retries=api._ZAR_UJRA,
+            lock_retry_delay=api._ZAR_KESLELTETES,
+            refuse_write_protected=True,
+            on_replace_failure=csere_hibaja,
+        )
+    except OSError as hiba:
+        if not _a_csere_megtortent(image_path, bytes_elotte, payload):
+            raise
+        # A visszaírás is jelezhet hibát a csere után, ezért megint a bájtok
+        # döntenek.
+        with contextlib.suppress(OSError):
+            _kep_irasa(image_path, bytes_elotte)
+        if not _a_csere_megtortent(image_path, bytes_elotte, payload):
+            raise
+        _log.warning(
+            "A képcsere után hiba jött (%s), és a régi kép nem írható vissza: "
+            "a mentés befejeződik (%s)",
+            hiba,
+            image_path,
+        )
+
+
+def _a_csere_megtortent(image_path: Path, bytes_elotte: bytes, payload: bytes) -> bool:
+    """A lemezen bizonyíthatóan az új kép áll-e (#7476). Nem dob.
+
+    Olvashatatlan képnél, és ha az új tartalom azonos a régivel, `False`.
+    """
+    if payload == bytes_elotte:
+        return False
+    try:
+        return image_path.read_bytes() == payload
+    except OSError:
+        return False
 
 
 @contextlib.contextmanager
@@ -76,8 +120,9 @@ def _nyom_torlese_irasi_hibanal(
     A törlés feltételét a `_nyom_torlese_valtozatlan_kepnel` mondja ki. A
     hiba változatlanul megy tovább.
 
-    A csere hibájánál a `_mentett_kep_irasa` olvasás nélkül is takarít (ott a
-    kép biztosan változatlan, akkor is, ha épp zárolt).
+    A csere hibájánál a `_mentett_kep_irasa` akkor is takarít, ha a kép épp
+    zárolt és nem olvasható, de a kész kép még az ideiglenes fájlban van (a
+    csere tehát nem történt meg).
     """
     try:
         yield

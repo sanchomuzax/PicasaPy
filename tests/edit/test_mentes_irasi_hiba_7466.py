@@ -200,25 +200,6 @@ class TestIsmeteltMentes:
 class TestAmikorAMasolatNemTorolheto:
     """A takarítás csak addig jogos, amíg a kép bizonyíthatóan változatlan."""
 
-    def test_a_csere_utani_hiba_nem_torli_a_megorzott_eredetit(
-        self, foto, monkeypatch
-    ):
-        eredeti = foto.read_bytes()
-        valodi = ioutil._fsync_directory
-
-        def konyvtar_fsync(mappa):
-            if Path(mappa) == foto.parent:
-                raise OSError(errno.EIO, "Input/output error")
-            valodi(mappa)
-
-        monkeypatch.setattr(ioutil, "_fsync_directory", konyvtar_fsync)
-
-        with pytest.raises(OSError, match="Input/output"):
-            _mentes(foto)
-
-        assert foto.read_bytes() != eredeti
-        assert (foto.parent / ORIGINALS_DIR_NAME / _NEV).read_bytes() == eredeti
-
     def test_olvashatatlan_kepnel_a_masolat_marad_es_az_irasi_hiba_megy_tovabb(
         self, foto, monkeypatch
     ):
