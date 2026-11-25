@@ -44,6 +44,9 @@ def save_edited(
         OSError: ha a képfájl cseréje nem sikerült (pl. írásvédett a cél).
             A kép változatlan, a kész kimenet `<név>.<kit>.jpg` néven
             mellette marad, megőrzött eredeti nem készül (#7462).
+        OSError: ha már az írás elbukott a csere előtt (pl. tele lemez). A
+            kép és az ini változatlan, ebből a mentésből sem megőrzött
+            eredeti, sem pillanatkép nem marad (#7466).
     """
     image_path = api.Path(image_path)
     # #1425: a „szent" eredeti bármelyik ismert mappanév alatt ott lehet —
@@ -89,8 +92,6 @@ def save_edited(
         for mappa in (snapshot_dir, snapshot_dir.parent, backup_path.parent)
         if not mappa.exists()
     )
-    if backup_created_now:
-        api.write_atomic(backup_path, bytes_before_write, make_parents=True)
 
     # (a2) #444: MENTÉSENKÉNTI, sorszámozott pillanatkép a mentés ELŐTTI
     # bájtokról — ez teszi visszavonhatóvá az utolsó mentést a szerkesztések
@@ -116,18 +117,24 @@ def save_edited(
     ):
         next_number += 1
     snapshot_path = api._snapshot_path(image_path, next_number)
-    api.write_atomic(snapshot_path, bytes_before_write, make_parents=True)
-
-    # (b) A renderelt kép az eredeti HELYÉRE. Ha a csere hibázik, a kész kép
-    # `.jpg.jpg` néven marad, az (a) és (a2) új fájljai pedig eltűnnek (#7462).
-    payload = api._encode_image(image_path.suffix, rendered_image, jpeg_quality)
     uj_eredeti = (backup_path,) if backup_created_now else ()
-    api._mentett_kep_irasa(
-        image_path,
-        payload,
-        uj_fajlok=(*uj_eredeti, snapshot_path),
-        uj_mappak=uj_mappak,
-    )
+    uj_fajlok = (*uj_eredeti, snapshot_path)
+
+    # #7466: ha a kép cseréje előtt bármelyik lépés elbukik (a három írás vagy
+    # a kódolás), az (a) és (a2) új fájljai eltűnnek.
+    with api._nyom_torlese_irasi_hibanal(
+        image_path, bytes_before_write, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak
+    ):
+        if backup_created_now:
+            api.write_atomic(backup_path, bytes_before_write, make_parents=True)
+        api.write_atomic(snapshot_path, bytes_before_write, make_parents=True)
+
+        # (b) A renderelt kép az eredeti HELYÉRE. Ha a csere hibázik, a kész
+        # kép `.jpg.jpg` néven marad (#7462).
+        payload = api._encode_image(image_path.suffix, rendered_image, jpeg_quality)
+        api._mentett_kep_irasa(
+            image_path, payload, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak
+        )
 
     # (c) A lánc és a mentés előtti fájlidő az eredeti-mappa ini-jébe kerül,
     # a #5810 szerinti backuphash pedig az aktuális mappa ini-jébe. Két ini

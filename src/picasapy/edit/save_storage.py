@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import os
 import stat
+from collections.abc import Iterator
 from pathlib import Path
 import numpy as np
 import picasapy.edit.save as api
@@ -60,6 +61,35 @@ def _mentett_kep_irasa(
         refuse_write_protected=True,
         on_replace_failure=csere_hibaja,
     )
+
+
+@contextlib.contextmanager
+def _nyom_torlese_irasi_hibanal(
+    image_path: Path,
+    bytes_elotte: bytes,
+    *,
+    uj_fajlok: tuple[Path, ...],
+    uj_mappak: tuple[Path, ...],
+) -> Iterator[None]:
+    """A Mentés csere előtti hibájánál eltünteti a mentés nyomát (#7466).
+
+    Az ott maradt pillanatképre az „Utolsó mentés visszavonása” ráfutna, és
+    törölné az ini `filters=` sorát, pedig mentés nem történt.
+
+    A törlés feltétele, hogy a kép bájtra a mentés előtti legyen: ha a hiba
+    a csere UTÁN jött, vagy a kép nem olvasható, a másolat lehet az eredeti
+    egyetlen példánya. A hiba változatlanul megy tovább.
+
+    A csere hibájánál a `_mentett_kep_irasa` olvasás nélkül is takarít (ott a
+    kép biztosan változatlan, akkor is, ha épp zárolt).
+    """
+    try:
+        yield
+    except BaseException:
+        with contextlib.suppress(OSError):
+            if image_path.read_bytes() == bytes_elotte:
+                _mentes_nyomanak_torlese(uj_fajlok, uj_mappak)
+        raise
 
 
 def _kesz_kep_megtartasa(temp: Path, cel: Path) -> None:

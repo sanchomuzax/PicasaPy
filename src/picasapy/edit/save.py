@@ -210,6 +210,15 @@ def _mentett_kep_irasa(
 ) -> None:
     return _load_function('save_storage', '_mentett_kep_irasa')(image_path, payload, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak)
 
+def _nyom_torlese_irasi_hibanal(
+    image_path: Path,
+    bytes_elotte: bytes,
+    *,
+    uj_fajlok: tuple[Path, ...],
+    uj_mappak: tuple[Path, ...],
+):
+    return _load_function('save_storage', '_nyom_torlese_irasi_hibanal')(image_path, bytes_elotte, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak)
+
 #: A rejtett almappa neve, ahová az ÚJ mentéseink érintetlen eredetije kerül
 #: (spec + UX #3). Írni MINDIG ide írunk.
 ORIGINALS_DIR_NAME = ".picasaoriginals"
@@ -355,6 +364,9 @@ def save_edited(
         OSError | IniSaveError | IniConflictError: ha az ini-könyvelés nem
             sikerült. A képfájl ilyenkor VISSZAÁLL a mentés előtti
             állapotra, hogy ne maradjon dupla-szerkesztés (#297).
+        OSError: ha a kép írása vagy cseréje nem sikerült. A kép és az ini
+            változatlan, ebből a mentésből sem megőrzött eredeti, sem
+            pillanatkép nem marad (#7462, #7466).
     """
     return _load_function('save_operations', 'save_edited')(image_path, rendered_image, filters, jpeg_quality=jpeg_quality)
 
