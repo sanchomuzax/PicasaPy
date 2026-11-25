@@ -701,6 +701,8 @@ Következmények. **Zárolt fájl:** `SHARING_VIOLATION` (32) → 11, `LOCK_VIOL
 
 **Következtetés és fok.** A B7 teljes állapota továbbra is **nyitott**, de már csak két kérdés maradt. Lezárva: a hibaablak címe (két független út), a `%2$d` jelentése (belső státusz, a leképezők megerősítettek; `11` = Windows 5 vagy 32), a státusz útja a mentőszáltól az ablakig, a hiba utáni Undo-gomb állapota, és hogy a csere hibaága nem töröl ideiglenes fájlt. Nyitott: (a) a `.jpg.jpg` név eredete (a kód a `.tmp` és a típusfüggő `.jpg` utótagot ismeri, egyik sem ad `color_patches.jpg.jpg`-t egy `.jpg` forrásból), (b) a tele lemez és a zárolt fájl valódi Windows-kódja (a táblák ismertek, a mérés nincs).
 
+**Ghidra-forrás:** a `0x00539020` és a `0x00467ca0` dekompilációja: `2026-11-24-koteg-586-590.txt:1323-6744`.
+
 **A Colab-kontroll eredménye (`job-963`).** Ugyanaz a lépéssor (`job-957`) írható `color_patches.jpg`-n: a mentés hibaablak nélkül lefut, a fájl új tartalmat kap (20557 bájtról 95733 bájtra), az eredeti a `.picasaoriginals/color_patches.jpg`-be kerül (20557 bájt, mellé `.picasaoriginals/.picasa.ini`), és **`.jpg.jpg` nem keletkezik** (`kepmappa__lista.json`; a `mentes_elott` és a `mentes_utan` pillanat). A `job-957` írásvédett esetében viszont `.picasaoriginals` mentés sem készült, a `color_patches.jpg.jpg` (95483 bájt) pedig nagyságrendben a sikeres mentés kimenete. Következtetés: a `.jpg.jpg` a sikertelen csere után hátramaradt új kimenet (a hibaág nem törli, lásd fent), nem a sikeres mentés része. A név képzésének pontos módja (miért `.jpg.jpg`, és nem `.tmp`) továbbra is a 2. pont Ghidra-köre.
 
 **Nyitott, a következő konkrét út.**
