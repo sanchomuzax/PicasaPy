@@ -45,6 +45,28 @@ Item {
     width: kep.paintedWidth
     height: kep.paintedHeight
 
+    // Ezt az inline szerkesztő rajzolja, miközben a preview kihagyja a
+    // kiválasztott szöveget. A tárolt x/y a forgatott befoglaló bal felső
+    // sarka, ezért a szövegmezőt a befoglaló közepéhez igazítjuk.
+    QtObject {
+        id: forgatas
+        readonly property real radians: {
+            if (!gyoker.ctl || !gyoker.szerkeszt) return 0
+            var selectedIndex = gyoker.ctl.textSelectedIndex
+            var items = gyoker.ctl.textOverlayItems
+            for (var i = 0; i < items.length; ++i) {
+                if (items[i].index === selectedIndex)
+                    return items[i].rotation
+            }
+            return 0
+        }
+        readonly property real degrees: radians * 180 / Math.PI
+        readonly property real width: bevitel.width * Math.abs(Math.cos(radians))
+                                     + bevitel.height * Math.abs(Math.sin(radians))
+        readonly property real height: bevitel.width * Math.abs(Math.sin(radians))
+                                      + bevitel.height * Math.abs(Math.cos(radians))
+    }
+
     function helyErtek() {
         return (typeof editController !== "undefined" && editController)
             ? editController.textEditPlacement : ({})
@@ -76,6 +98,8 @@ Item {
         y: bevitel.y - gyoker.keretKivul
         width: bevitel.width + 2 * gyoker.keretKivul
         height: bevitel.height + 2 * gyoker.keretKivul
+        rotation: forgatas.degrees
+        transformOrigin: Item.Center
 
         Rectangle {
             anchors.fill: parent
@@ -115,9 +139,13 @@ Item {
         x: (gyoker.hely.x === undefined ? 0 : gyoker.hely.x * gyoker.width)
            - (gyoker.panel && gyoker.panel.textAlign === "center" ? width / 2
               : gyoker.panel && gyoker.panel.textAlign === "right" ? width : 0)
-        y: gyoker.hely.y === undefined ? 0 : gyoker.hely.y * gyoker.height
+           + (forgatas.width - width) / 2
+        y: (gyoker.hely.y === undefined ? 0 : gyoker.hely.y * gyoker.height)
+           + (forgatas.height - height) / 2
         width: Math.max(2, contentWidth + 2)
         height: contentHeight
+        rotation: forgatas.degrees
+        transformOrigin: Item.Center
         topPadding: 0
         bottomPadding: 0
         leftPadding: 0

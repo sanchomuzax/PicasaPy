@@ -346,6 +346,23 @@ class _LibraryFoldersMixin:
             return
         self._accept_watched_folder(path)
 
+    @Slot(str)
+    def watchImportDestination(self, path_or_url: str) -> None:
+        """#7437: az Opciókban (OK-val) beállított új importcél figyelése.
+
+        Az eredeti (`0x005cf772`-`0x005cfaf1`) a megváltozott importcélt
+        felveszi a figyelt mappák közé; ha már figyelt, vagy egy figyelt
+        mappa alatt van, nem veszi fel újra, és hibát üzenet nélkül nyel el.
+        Ezért itt nincs `watchedFolderRejected` jelzés (az az `addWatchedFolder`
+        kézi útjáé). Hálózati útvonalat nem vesz fel: annak ellenőrzése
+        aszinkron, és elutasításkor jelezne."""
+        path = normalize_path(to_local_path(path_or_url))
+        if not path or self._root_for_folder(path) is not None:
+            return
+        if is_network_path(path) or not _is_directory(path):
+            return
+        self._accept_watched_folder(path)
+
     def _accept_watched_folder(self, path: str) -> None:
         """Egy már validált mappa figyelése és háttér-indexelése."""
         # #1249: az újra felvett mappa (és alfái) sírkövei feloldódnak —

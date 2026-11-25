@@ -1,9 +1,12 @@
 """`picasapy.render.text_overlay.apply_text_overlay` — determinisztikus
-pixel-tesztek. A pozíció-konvenció (relatív [0..1], PicasaPy-saját) és a
-Hershey-betűkészlet közelítés — ld. a modul docsztringjét: a Picasa
-tényleges betűtípus-renderelésével NEM hasonlítottuk össze (nincs golden)."""
+pixel-tesztek. A pozíció normalizált képkoordináta; az elforgatott befoglaló
+doboz a képszél elé is kerülhet. A Hershey-betűkészlet közelítés, ld. a
+modul docsztringjét: a Picasa tényleges betűtípus-renderelésével NEM
+hasonlítottuk össze (nincs golden)."""
 
 from __future__ import annotations
+
+import math
 
 import numpy as np
 import pytest
@@ -39,10 +42,17 @@ class TestApplyTextOverlay:
         result = apply_text_overlay(image, "Szia", x=0.1, y=0.5)
         assert result.shape == image.shape
 
-    def test_ervenytelen_pozicio_value_error(self) -> None:
+    def test_forgatott_szakasz_befoglaloja_a_kepen_kivul_is_lehet(self) -> None:
+        image = _blank_image()
+        result = apply_text_overlay(
+            image, "Szia", x=-0.02, y=0.5, rotation=math.radians(15)
+        )
+        assert result.shape == image.shape
+
+    def test_nem_veges_pozicio_value_error(self) -> None:
         image = _blank_image()
         with pytest.raises(ValueError):
-            apply_text_overlay(image, "Szia", x=1.5, y=0.5)
+            apply_text_overlay(image, "Szia", x=math.nan, y=0.5)
 
     def test_nem_pozitiv_font_scale_value_error(self) -> None:
         image = _blank_image()
