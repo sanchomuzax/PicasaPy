@@ -61,7 +61,12 @@ see the sections below.
 **Import destination folder:** the default folder for imported photos. It
 is your Pictures folder by default. Choose **Browse...** to select another
 folder; that folder is then used when you open the Import window. See
-[Import](importalas.md).
+[Import](importalas.md). When you set a new folder and choose **OK**,
+PicasaPy adds it to the watched folders, as the original Picasa does,
+so photos imported there appear in the library automatically (see
+[Folder manager and watched folders](mappakezelo.md)). If the folder is
+already watched, or lies inside a watched folder, nothing happens.
+Network folders are not added this way.
 
 The original Picasa's anonymous usage statistics row and the link to
 Google's privacy page are not on this tab: PicasaPy does not collect usage
@@ -199,8 +204,12 @@ original Picasa disabled those three by default; PicasaPy does not, so an
 update will not make existing photos disappear. If you have already
 changed a checkbox, PicasaPy keeps your choice. When you change the file
 types and choose **OK**, PicasaPy rescans the library at once: newly
-enabled formats appear, and disabled ones disappear from view. The files
-remain on disk.
+enabled formats appear, and disabled ones disappear from view. Photos
+in a disabled format are left out of the grid, the folder and album
+counts, search, the slideshow, the left pane, and the picture tray. The
+files remain on disk, and PicasaPy does not remove them from its
+records either, as in the original Picasa: when you enable the format
+again, the photos reappear.
 
 ### Slideshow tab
 
@@ -273,6 +282,8 @@ grows in that case, so check it if the download fails. See
   they do in the original Picasa. If you had already changed the clustering
   threshold, grouping continues to behave as before, even if the slider
   now displays a different number.
+  When you move the **Suggestion threshold:** slider, PicasaPy recalculates
+  the name suggestions in the background after you choose **OK**.
 - **Store name tags in photo** writes face information to an XMP sidecar
   file beside the photo when you name a face. It is on by default.
 

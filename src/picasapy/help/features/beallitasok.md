@@ -69,7 +69,12 @@ lásd lentebb.
 **Importált képek mentési helye:** az importálás alapértelmezett
 célmappája. Alapból a **Képek** mappád. A **Tallózás…** gombbal másik
 mappát választasz; ezzel nyílik meg ezután az **Importálás** ablak
-([Importálás](importalas.md)).
+([Importálás](importalas.md)). Ha az **OK**-val új mappát állítottál be,
+a program azt felveszi a **figyelt mappák** közé, mint az eredeti Picasa,
+így az oda importált képek magától megjelennek a könyvtárban (lásd
+[Mappakezelő és figyelt mappák](mappakezelo.md)). Ha a mappát már
+figyeli, vagy egy figyelt mappán belül van, nem történik semmi. Hálózati
+mappát így nem vesz fel.
 
 Az eredeti Picasa névtelen használati statisztikáról szóló sora és a
 Google adatvédelmi oldalára mutató hivatkozás ezen a fülön nincs meg: a
@@ -217,7 +222,11 @@ a meglévő képeid.) Ha korábban már átállítottál egy jelölőt, a progra
 te választásodat tartja meg. Ha az **OK**-val megváltoztatod a
 fájltípusokat, a program azonnal újraolvassa a könyvtárat: a frissen
 bekapcsolt formátumok megjelennek, a kikapcsoltak eltűnnek a nézetből. A
-fájlok a lemezen maradnak.
+kikapcsolt formátum képei a rácsból, a mappák és albumok darabszámaiból,
+a keresésből, a diavetítésből, a bal oldali hasábból és a képtálcáról is
+kimaradnak. A fájlok a lemezen maradnak, és a program a nyilvántartásából
+sem törli őket, mint az eredeti Picasa: ha a formátumot visszakapcsolod,
+a képek újra megjelennek.
 
 ### Diavetítés fül
 
@@ -296,6 +305,9 @@ akkor érdemes elővenni, ha ez a letöltés nem sikerül.
   áll, mint az eredeti Picasában. Ha korábban átállítottad a
   csoportküszöböt, a csoportosítás ugyanúgy viselkedik, mint addig, csak a
   csúszka most más számot mutathat.
+  Ha a **Javaslati küszöb** értékét megváltoztatod, az **OK** után a
+  program a háttérben újraszámolja a névjavaslatokat az új küszöb
+  szerint.
 - **Névcímkék tárolása a fotón** — ha be van kapcsolva (alapból be van),
   egy arc elnevezésekor a program az arc adatait a kép mellé egy XMP
   kísérőfájlba is kiírja.
