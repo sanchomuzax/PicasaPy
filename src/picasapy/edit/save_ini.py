@@ -91,8 +91,11 @@ def _restore_photo_ini_values(
 ) -> None:
     """API-n át visszaállítja a kompenzáló írással felülírt kulcsértékeket.
 
-    Csak azt a kulcsot állítja vissza, amely a kompenzáló írás óta is a mi
-    kiírt értékünkön áll. A közben érkezett külső változást megőrzi.
+    Ha a meglévő ini a mi írásunk óta nem változott, a művelet előtti
+    dokumentum megy vissza egészben, így a kulcsok sorrendje (a bájtok) is a
+    régi (#7469). Egyébként csak azt a kulcsot állítja vissza, amely a
+    kompenzáló írás óta is a mi kiírt értékünkön áll: a közben érkezett külső
+    változást megőrzi.
     """
 
     written_section = (
@@ -123,8 +126,14 @@ def _restore_photo_ini_values(
                 )
         return document
 
+    def egeszben_vagy_kulcsonkent(document):
+        written = snapshot.written_document
+        if written is not None and document.serialize() == written.serialize():
+            return snapshot.document
+        return mutate(document)
+
     if snapshot.target_existed:
-        api.update_document(ini_path, mutate, backup=False)
+        api.update_document(ini_path, egeszben_vagy_kulcsonkent, backup=False)
         return
 
     # A mentés hozhatta létre a cél `.picasa.ini`-t (esetleg egy régi

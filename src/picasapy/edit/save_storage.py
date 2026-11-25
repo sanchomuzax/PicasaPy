@@ -73,12 +73,8 @@ def _nyom_torlese_irasi_hibanal(
 ) -> Iterator[None]:
     """A Mentés csere előtti hibájánál eltünteti a mentés nyomát (#7466).
 
-    Az ott maradt pillanatképre az „Utolsó mentés visszavonása” ráfutna, és
-    törölné az ini `filters=` sorát, pedig mentés nem történt.
-
-    A törlés feltétele, hogy a kép bájtra a mentés előtti legyen: ha a hiba
-    a csere UTÁN jött, vagy a kép nem olvasható, a másolat lehet az eredeti
-    egyetlen példánya. A hiba változatlanul megy tovább.
+    A törlés feltételét a `_nyom_torlese_valtozatlan_kepnel` mondja ki. A
+    hiba változatlanul megy tovább.
 
     A csere hibájánál a `_mentett_kep_irasa` olvasás nélkül is takarít (ott a
     kép biztosan változatlan, akkor is, ha épp zárolt).
@@ -86,10 +82,31 @@ def _nyom_torlese_irasi_hibanal(
     try:
         yield
     except BaseException:
-        with contextlib.suppress(OSError):
-            if image_path.read_bytes() == bytes_elotte:
-                _mentes_nyomanak_torlese(uj_fajlok, uj_mappak)
+        _nyom_torlese_valtozatlan_kepnel(
+            image_path, bytes_elotte, uj_fajlok=uj_fajlok, uj_mappak=uj_mappak
+        )
         raise
+
+
+def _nyom_torlese_valtozatlan_kepnel(
+    image_path: Path,
+    bytes_elotte: bytes,
+    *,
+    uj_fajlok: tuple[Path, ...],
+    uj_mappak: tuple[Path, ...],
+) -> None:
+    """A meghiúsult mentés nyomának törlése, ha a kép bájtra a régi.
+
+    Az ott maradt pillanatképre az „Utolsó mentés visszavonása” ráfutna, és
+    törölné az ini `filters=` sorát, pedig mentés nem történt (#7466, #7469).
+
+    Ha a kép eltér a mentés előttitől, vagy nem olvasható, a másolat lehet az
+    eredeti egyetlen példánya, ezért marad. Best-effort: nem dob, hogy a
+    hívóhoz a mentés eredeti hibája jusson el.
+    """
+    with contextlib.suppress(OSError):
+        if image_path.read_bytes() == bytes_elotte:
+            _mentes_nyomanak_torlese(uj_fajlok, uj_mappak)
 
 
 def _kesz_kep_megtartasa(temp: Path, cel: Path) -> None:
