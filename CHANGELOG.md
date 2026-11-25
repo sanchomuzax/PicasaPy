@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.183] - 2026-11-25
+
+- Ha a Mentés a .picasa.ini írásakor hiúsul meg, a kép és az ini a mentés előtti marad, nem marad félbemaradt másolat a .picasaoriginals mappában, és az „Utolsó mentés visszavonása” sem törli a szerkesztéseket (#7469).
+
 ## [1.0.182] - 2026-11-25
 
 - Ha a Mentés már a fájl kiírása közben hiúsul meg (például betelt a lemez), nem marad félbemaradt másolat a .picasaoriginals mappában, és utána az „Utolsó mentés visszavonása” sem törli a szerkesztéseket (#7466).
