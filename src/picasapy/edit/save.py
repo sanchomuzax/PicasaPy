@@ -325,12 +325,18 @@ class SaveResult:
 
 @dataclass
 class _PhotoIniSnapshot:
-    """A kompenzáló íráshoz szükséges ini-kulcsok és fájlállapot."""
+    """A kompenzáló íráshoz szükséges ini-kulcsok és fájlállapot.
+
+    A `written_document` csak akkor nem `None`, ha az írásunk a lemezre került.
+    A `touch=False` visszaírás nem érinti meg a szakasz képfájlját: az
+    eredeti-mappában az a megőrzött eredeti, amelynek az ideje számít (#7473).
+    """
 
     values: dict[str, str | None]
     document: IniDocument
     target_existed: bool
     written_document: IniDocument | None = None
+    touch: bool = True
 
 
 @dataclass(frozen=True)
@@ -372,9 +378,10 @@ def save_edited(
             (#297 — ekkor a kép és az ini nyilvántartása eltér).
         OSError | IniSaveError | IniConflictError: ha az ini-könyvelés nem
             sikerült. A képfájl ilyenkor VISSZAÁLL a mentés előtti
-            állapotra, hogy ne maradjon dupla-szerkesztés (#297), és ebből a
-            mentésből sem megőrzött eredeti, sem pillanatkép nem marad
-            (#7469). Ha a visszaállítás is elbukik, a másolatok maradnak.
+            állapotra, hogy ne maradjon dupla-szerkesztés (#297), a lemezre
+            került ini-írások is (#7473), és ebből a mentésből sem megőrzött
+            eredeti, sem pillanatkép nem marad (#7469). Ha a visszaállítás is
+            elbukik, a másolatok maradnak.
         OSError: ha a kép írása vagy cseréje nem sikerült. A kép és az ini
             változatlan, ebből a mentésből sem megőrzött eredeti, sem
             pillanatkép nem marad (#7462, #7466).
@@ -628,7 +635,8 @@ def _restore_photo_ini_values(
     """API-n át visszaállítja a kompenzáló írással felülírt kulcsértékeket.
 
     Csak azt a kulcsot állítja vissza, amely a kompenzáló írás óta is a mi
-    kiírt értékünkön áll. A közben érkezett külső változást megőrzi.
+    kiírt értékünkön áll. A közben érkezett külső változást megőrzi. Ha az
+    írásunk nem került a lemezre, nem tesz semmit.
     """
     return _load_function('save_ini', '_restore_photo_ini_values')(ini_path, section_name, snapshot)
 
