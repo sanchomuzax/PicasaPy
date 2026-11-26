@@ -54,6 +54,13 @@ next to the photo with a name ending in `.jpg.jpg` (for example
 already exists, it is not overwritten. No backup copy is made in this
 case, because the original file did not change.
 
+If saving stops with an error at any other point (for example the disk
+fills up during the save, or the list of edits cannot be written), the
+program returns to the state before the save: the photo and its edits
+stay unchanged, and this save leaves no preserved original or copy in
+the hidden `.picasaoriginals` folder. Your edits remain, and you can
+try saving again later.
+
 ## Undo Save
 
 After saving, choose **Undo Save** in the confirmation message to

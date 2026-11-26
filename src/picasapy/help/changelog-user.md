@@ -4,6 +4,15 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-26
+
+**Mentés**
+
+- Ha a mentés közben hiba jön (például megtelik a lemez, vagy a
+  szerkesztéslistát nem sikerül kiírni), a kép és a szerkesztései a
+  mentés előtti állapotban maradnak, és a `.picasaoriginals` mappában
+  sem marad nyoma ennek a mentésnek. Lásd [Mentés](features/mentes.md).
+
 ## 2026-11-25
 
 **Szerkesztő**
