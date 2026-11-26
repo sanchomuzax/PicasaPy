@@ -2,6 +2,15 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-26
+
+### Saving
+
+- If an error occurs while saving (for example the disk fills up, or the
+  list of edits cannot be written), the photo and its edits stay as they
+  were before the save, and this save leaves no trace in the
+  `.picasaoriginals` folder. See [Saving](features/mentes.md).
+
 ## 2026-11-25
 
 ### Editor

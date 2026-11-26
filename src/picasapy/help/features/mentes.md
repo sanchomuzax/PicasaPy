@@ -61,6 +61,13 @@ eredeti Picasában is. Ha ilyen nevű fájl már van, a program nem írja
 felül. Biztonsági másolat ilyenkor nem készül, mert az eredeti fájl nem
 változott.
 
+Ha a mentés bármely más ponton hibával áll le (például megtelik közben a
+lemez, vagy a szerkesztéslistát nem sikerül kiírni), a program
+visszaáll a mentés előtti állapotra: a kép és a szerkesztései
+változatlanok, és ebből a mentésből nem marad megőrzött eredeti vagy
+másolat a rejtett `.picasaoriginals` mappában. A szerkesztéseid
+megmaradnak, a mentést később újra megpróbálhatod.
+
 ## Mentés visszavonása
 
 A mentés után megjelenő üzenetben a **Mentés visszavonása** gombbal
