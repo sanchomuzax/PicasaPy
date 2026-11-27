@@ -10,6 +10,9 @@ mintáját követi (a `controller.py`-beli bekötés az integrátor dolga)."""
 
 from __future__ import annotations
 
+import threading
+import time
+
 import pytest
 from PySide6.QtCore import QSettings, Qt
 
@@ -54,6 +57,35 @@ class _FakeEmbedder:
     def compute(self, image, detection):
         self.calls.append((image, detection))
         return self._vector
+
+
+class _LazyEmbedder(_FakeEmbedder):
+    """Lusta modellbetöltésű dupla a betöltési szál méréséhez."""
+
+    def __init__(self, delay=0.0):
+        import numpy as np
+
+        self._available = False
+        self._initialized = False
+        self._initialize_lock = threading.Lock()
+        self._initialize_delay = delay
+        self.initialize_threads = []
+        self._vector = np.array((1.0, 0.0, 0.0), dtype="float32")
+        self.calls = []
+
+    @property
+    def available(self):
+        self._initialize()
+        return self._available
+
+    def _initialize(self):
+        with self._initialize_lock:
+            if self._initialized:
+                return
+            self.initialize_threads.append(threading.get_ident())
+            time.sleep(self._initialize_delay)
+            self._available = True
+            self._initialized = True
 
 
 class _FakeDetector:
@@ -110,6 +142,33 @@ def _make_controller(
         face_detection_enabled=face_detection_enabled,
     )
     return ctl
+
+
+def test_compute_embeddings_initializes_model_off_main_thread_only_once(
+    qt_app, tmp_path
+):
+    root = tmp_path / "kepek"
+    root.mkdir()
+    make_jpeg(root / "a.jpg")
+    embedder = _LazyEmbedder(delay=0.5)
+    ctl = _make_controller(qt_app, tmp_path, root, embedder=embedder)
+    main_thread = threading.get_ident()
+    call_durations = []
+
+    for _ in range(2):
+        def start_embedding():
+            started = time.perf_counter()
+            ctl.computeEmbeddings()
+            call_durations.append(time.perf_counter() - started)
+
+        arrived, _args = _run(ctl.embeddingFinished, start_embedding)
+        assert arrived is True
+
+    assert call_durations[0] < 0.1
+    assert embedder.initialize_threads
+    assert all(thread_id != main_thread for thread_id in embedder.initialize_threads)
+    assert len(embedder.initialize_threads) == 1
+    assert ctl.waitForBackgroundWorkers(5.0)
 
 
 def _make_controller_with_faces_helper(
@@ -739,12 +798,24 @@ class TestComputeEmbeddings:
         assert ctl.isEmbeddingAvailable() is False
         letoltesek = []
         elerhetetlensegek = []
-        monkeypatch.setattr(ctl, "downloadModels", lambda: letoltesek.append(True))
+        download_started = threading.Event()
+
+        def download_models():
+            letoltesek.append(threading.get_ident())
+            download_started.set()
+
         ctl.embeddingModelUnavailable.connect(lambda: elerhetetlensegek.append(True))
+        monkeypatch.setattr(ctl, "downloadModels", download_models)
 
         ctl.computeEmbeddings()
 
-        assert letoltesek == [True]
+        hatarido = time.monotonic() + 5.0
+        while not download_started.is_set() and time.monotonic() < hatarido:
+            qt_app.processEvents()
+            time.sleep(0.01)
+        assert download_started.is_set()
+        # #7486: a letöltés a GUI-szálon indul, a háttérmunkás csak jelez
+        assert letoltesek == [threading.get_ident()]
         assert elerhetetlensegek == []
         assert ctl.waitForBackgroundWorkers(5.0)
 

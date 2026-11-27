@@ -45,16 +45,6 @@ class FaceScanControllerEmbeddingMixin:
         felhasználói modellmappából is hiányzik, elindítja a
         háttér-letöltést, majd automatikusan folytatja a csoportosítást."""
         grouping_options = self._csoportositasi_beallitasok()
-        if not self._embedder.available:
-            if any(
-                spec.key == "embedder" for spec in model_download.missing_specs()
-            ):
-                self._embedding_after_download = True
-                self._embedding_options_after_download = grouping_options
-                self.downloadModels()
-            else:
-                self.embeddingModelUnavailable.emit()
-            return
         self._start_embedding_worker(*grouping_options)
 
 
@@ -67,10 +57,23 @@ class FaceScanControllerEmbeddingMixin:
         )
 
 
+    def _on_embedding_model_missing(
+        self, suggestions_enabled: bool, suggest_step: int, cluster_step: int
+    ) -> None:
+        """A GUI-szálon: a hiányzó SFace letöltése, utána a csoportosítás folytatása."""
+        self._embedding_after_download = True
+        self._embedding_options_after_download = (
+            suggestions_enabled,
+            suggest_step,
+            cluster_step,
+        )
+        self.downloadModels()
+
+
     def _start_embedding_worker(
         self, suggestions_enabled: bool, suggest_step: int, cluster_step: int
     ) -> None:
-        """A betöltött SFace-szel, rögzített beállításokkal indítja a munkát."""
+        """Az SFace betöltését és a csoportosítást a meglévő háttérmunkásra teszi."""
         self.cancelEmbedding()
         stop_event = threading.Event()
         self._embedding_stop_event = stop_event
@@ -100,6 +103,17 @@ class FaceScanControllerEmbeddingMixin:
         elozo_szalszam: int | None = None
         try:
             elozo_szalszam = arckeres_szal_elokeszitese()
+            if not self._embedder.available:
+                if any(
+                    spec.key == "embedder"
+                    for spec in model_download.missing_specs()
+                ):
+                    self._embeddingModelMissing.emit(
+                        suggestions_enabled, suggest_step, cluster_step
+                    )
+                else:
+                    self.embeddingModelUnavailable.emit()
+                return
             with open_index(self._db_path) as conn:
                 pending = faces_missing_embedding(conn)
                 total = len(pending)

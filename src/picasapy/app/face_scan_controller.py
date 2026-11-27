@@ -247,3 +247,6 @@ class FaceScanController(
         self.scanFinished.connect(
             self._auto_group_after_scan, Qt.ConnectionType.QueuedConnection
         )
+        self._embeddingModelMissing.connect(
+            self._on_embedding_model_missing, Qt.ConnectionType.QueuedConnection
+        )
