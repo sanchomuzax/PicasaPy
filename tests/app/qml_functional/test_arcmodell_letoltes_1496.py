@@ -236,7 +236,12 @@ class TestAutomatikusSfaceFolyamatjelzes:
         monkeypatch.setattr(model_download, "download_missing", hamis_letoltes)
         try:
             _kattint(_elem(parbeszed, "faceScanGroupButton"), qt_app)
-            assert megkezdodott.wait(2.0), "az automatikus SFace-letöltés nem indult"
+            _var(
+                qt_app,
+                megkezdodott.is_set,
+                masodperc=10.0,
+                uzenet="az automatikus SFace-letöltés nem indult",
+            )
             qt_app.processEvents()
 
             assert parbeszed.property("downloading") is True

@@ -27,6 +27,8 @@ class FaceScanControllerSignalsMixin:
     modelUnavailable = Signal()
 
     _scanWorkerStopped = Signal()
+    # #7486: a lenyomat-munkás jelzi, hogy az SFace hiányzik; a letöltés a GUI-szálon indul
+    _embeddingModelMissing = Signal(bool, int, int)
 
 
     # #26 (2. lépcső): lenyomat-számítás + csoportosítás — a detektálásnál
