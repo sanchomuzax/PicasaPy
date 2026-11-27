@@ -39,7 +39,12 @@ if TYPE_CHECKING:
     from picasapy.render.chain_geometry import TartalomHely
     from picasapy.render.op_geometry import LancHelyzet
 
-from .edit_preview_cache import EditPreviewCacheMixin, _LRU_CAPACITY, gyors_elonezet_aktiv
+from .edit_preview_cache import (
+    EditPreviewCacheMixin,
+    _LRU_CAPACITY,
+    _SourceDecode,
+    gyors_elonezet_aktiv,
+)
 from .edit_preview_redeye import (
     EditPreviewRedeyeMixin,
     _OUTLINE_MAX_PX as _OUTLINE_MAX_PX,
@@ -155,9 +160,13 @@ class EditPreviewProvider(
         # a register() gyakran hívódik ugyanarra a fotóra, csak a szűrő-
         # lánc változik — a lemezes dekódot nem kell minden alkalommal
         # megismételni, csak a filter-lánc újraszámolását.
-        self._sources: OrderedDict[str, tuple[Path, float | None, np.ndarray | None]] = (
-            OrderedDict()
-        )
+        self._sources: OrderedDict[
+            str, tuple[Path, float | None, np.ndarray | None, bool, bool]
+        ] = OrderedDict()
+        # Az előnézet, a crop és a Vörösszem ugyanazt a két elemű forrás-LRU-t
+        # használja. Az in-flight jelző összevonja az azonos háttérdekódokat;
+        # a zárat csak a cache gyors műveletei tartják, dekódolás közben nem.
+        self._source_inflight: dict[tuple, _SourceDecode] = {}
         # lánc-prefix gyorsítótár (#140): élő csúszka-húzásnál csak az UTOLSÓ
         # op paramétere változik — az utolsó op ELŐTTI köztes eredményt
         # egyetlen rekeszben tároljuk (kulcs, prefix-lánc, forrás-referencia,
@@ -207,12 +216,9 @@ class EditPreviewProvider(
         # `EditPreviewSampleMixin`. Ugyanazzal az LRU-életciklussal, mint
         # `_images`, és a `_lock` védi.
         self._sample_prefixes: OrderedDict[str, tuple] = OrderedDict()
-        # #546: EGYETLEN zár, és csak a (rövid) kép-/hisztogram-tárolásra.
-        # A dekód-/prefix-gyorsítótárakat (`_sources`, `_prefix_cache`,
-        # `_gpu_prefix_cache`) KIZÁRÓLAG a GUI-szál írja: a háttérszálas
-        # render (`shared_cache=False`) lokálisan dekódol és renderel.
-        # Így nincs olyan zár, amin a GUI-szál render-hosszan állhatna —
-        # a #514 első változata épp ezt hozta vissza egy másik ajtón.
+        # #546: EGYETLEN zár védi a rövid kép-/hisztogram- és forrás-cache
+        # műveleteket. A háttérdekódolás ezen kívül fut, ezért a GUI nem áll
+        # a képfeldolgozás idejére a zár mögött.
         self._lock = threading.Lock()
         # Megjelenítési mód (#1576): KÉPERNYŐRE ható átalakító, a `Nézet ▸
         # Megjelenítési mód` almenüből (#1575). SZÁNDÉKOSAN nem a
@@ -386,7 +392,14 @@ class EditPreviewProvider(
             self._sample_signature(path, meret, ops, paint_strokes) if a_lanc_a_minta else None
         )
         render = self._render_at_preview_scale(
-            key, path, mtime, ops, shared_cache, shared_cache, paint_strokes
+            key,
+            path,
+            mtime,
+            ops,
+            shared_cache,
+            shared_cache,
+            paint_strokes,
+            is_current=is_current,
         )
         source_array, result_array, elhelyezes = render.source, render.image, render.placement
         teljes_felbontas = render.full_res
@@ -474,6 +487,7 @@ class EditPreviewProvider(
         shared_source: bool,
         shared_prefix: bool,
         paint_strokes: tuple,
+        is_current: Callable[[], bool] | None = None,
     ) -> PreviewRender:
         """A lánc az ELŐNÉZET léptékében: dekód, arány, lánc (#7385).
 
@@ -487,7 +501,12 @@ class EditPreviewProvider(
         #: felbontáson helyesek, ezért náluk a dekód korlátja elmarad.
         teljes_felbontas, _lassu, _ujrameretez = chain_flags([op.name for op in ops])
         source_array = self._resolve_source(
-            key, path, mtime, shared_source, full_res=teljes_felbontas
+            key,
+            path,
+            mtime,
+            shared_source,
+            full_res=teljes_felbontas,
+            is_current=is_current,
         )
         # #3377: a lánc a kicsinyítés arányával fut - a keret vastagsága így
         # a mentett képpel arányos marad (az eredeti `imageWidth /
@@ -535,12 +554,12 @@ class EditPreviewProvider(
         arról, hogy a futó háttér-render ne regisztrálhassa vissza a
         lezárt fotót."""
         key = str(photo_id)
-        self._sources.pop(key, None)
         if self._prefix_cache is not None and self._prefix_cache[0] == key:
             self._prefix_cache = None
         if self._gpu_prefix_cache is not None and self._gpu_prefix_cache[0] == key:
             self._gpu_prefix_cache = None
         with self._lock:
+            self._sources.pop(key, None)
             self._images.pop(key, None)
             self._histograms.pop(key, None)
             self._placements.pop(key, None)

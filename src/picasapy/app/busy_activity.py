@@ -50,6 +50,8 @@ MUNKANEVEK: dict[str, str] = {
     "picasapy-importsource-scanfiles": QT_TRANSLATE_NOOP(KONTEXTUS, "Scanning import source"),
     "picasapy-importsource-run": QT_TRANSLATE_NOOP(KONTEXTUS, "Importing photos"),
     "picasapy-editpreview": QT_TRANSLATE_NOOP(KONTEXTUS, "Rendering edit preview"),
+    "picasapy-local-crop-suggestions": QT_TRANSLATE_NOOP(KONTEXTUS, "Rendering edit preview"),
+    "picasapy-redeye-auto": QT_TRANSLATE_NOOP(KONTEXTUS, "Rendering edit preview"),
     "picasapy-similarity": QT_TRANSLATE_NOOP(KONTEXTUS, "Finding similar photos"),
     "picasapy-passport": QT_TRANSLATE_NOOP(KONTEXTUS, "Preparing passport photo"),
     "picasapy-batcheffect": QT_TRANSLATE_NOOP(KONTEXTUS, "Applying effects to photos"),

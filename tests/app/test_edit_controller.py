@@ -2,9 +2,11 @@
 
 import os
 import sys
+import time
 from pathlib import Path
 
 import pytest
+from PySide6.QtCore import QCoreApplication
 
 from picasapy.ini.rect64 import encode_rect64
 from picasapy.app.histogram_helper import EMPTY_HISTOGRAM
@@ -43,6 +45,32 @@ def _wait_preview(controller, qt_app=None):
     assert controller.waitForBackgroundWorkers(10.0), "az előnézeti worker nem állt le"
     if qt_app is not None:
         qt_app.processEvents()
+
+
+def _wait_redeye(controller):
+    """Megvárja a Vörösszem worker GUI-szálas eredményátvételét."""
+    app = QCoreApplication.instance()
+    deadline = time.monotonic() + 10.0
+    while controller._redeye_auto_worker_active and time.monotonic() < deadline:
+        app.processEvents()
+        controller.waitForBackgroundWorkers(0.02)
+        app.processEvents()
+        time.sleep(0.01)
+    assert not controller._redeye_auto_worker_active, "a Vörösszem worker nem fejeződött be"
+
+
+def _crop_suggestions(controller):
+    """A helyi crop-javaslatok aszinkron eredményét kéri le."""
+    app = QCoreApplication.instance()
+    _ = controller.cropSuggestions
+    deadline = time.monotonic() + 10.0
+    while controller._local_crop_suggestions_worker_active and time.monotonic() < deadline:
+        app.processEvents()
+        controller.waitForBackgroundWorkers(0.02)
+        app.processEvents()
+        time.sleep(0.01)
+    assert not controller._local_crop_suggestions_worker_active, "a crop worker nem fejeződött be"
+    return controller.cropSuggestions
 
 
 class TestBeginEdit:
@@ -186,9 +214,9 @@ class TestPagingMemory:
         _wait_preview(controller)
         controller.beginEdit("1", str(first))  # visszalapozás: nincs újradekód
         _wait_preview(controller)
-        # A #546-os workerút nem írja a GUI-szál közös dekód-cache-ét;
-        # háttérben mindhárom kérés külön dekódol.
-        assert len(calls) == 3
+        # A háttér-előnézet és a crop/Vörösszem ugyanazt a két elemű
+        # forrás-LRU-t használja; visszalapozáskor nincs harmadik dekód.
+        assert len(calls) == 2
 
 
 class TestToggleTool:
@@ -2147,6 +2175,7 @@ class TestRedeyeTool:
     def test_enter_runs_auto_without_writing_ini(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         ini = photo.parent / ".picasa.ini"
         assert not ini.exists() or "redeye" not in ini.read_text(encoding="utf-8")
         # az automatika lefutott (a találat-szám már nem a -1 kezdőérték)
@@ -2156,6 +2185,7 @@ class TestRedeyeTool:
     def test_add_region_buffers_without_writing_ini(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
         ini = photo.parent / ".picasa.ini"
         assert not ini.exists() or "redeye" not in ini.read_text(encoding="utf-8")
@@ -2166,6 +2196,7 @@ class TestRedeyeTool:
         """Puszta kattintás (nem húzás) nem vesz fel régiót."""
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.addRedeyeRegion(0.5, 0.5, 0.0, 0.0)
         assert controller.redeyeRegionCount == 0
 
@@ -2173,6 +2204,7 @@ class TestRedeyeTool:
         """Jobbról balra húzás is érvényes téglalap."""
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.addRedeyeRegion(0.5, 0.5, -0.2, -0.2)
         assert controller.redeyeRegionCount == 1
         region = controller.redeyeRegions[0]
@@ -2182,6 +2214,7 @@ class TestRedeyeTool:
     def test_undo_region_removes_last(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
         controller.addRedeyeRegion(0.5, 0.5, 0.1, 0.1)
         assert controller.canUndoRedeyeRegion is True
@@ -2191,6 +2224,7 @@ class TestRedeyeTool:
     def test_reset_clears_regions_and_is_undoable(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
         controller.resetRedeyeRegions()
         assert controller.redeyeRegionCount == 0
@@ -2200,6 +2234,7 @@ class TestRedeyeTool:
     def test_cancel_discards_buffer(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
         controller.exitRedeyeTool()
         ini = photo.parent / ".picasa.ini"
@@ -2209,6 +2244,7 @@ class TestRedeyeTool:
     def test_apply_writes_regions(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
         controller.applyRedeye()
         text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
@@ -2255,6 +2291,7 @@ class TestRedeyeTool:
         path = make_jpeg(tmp_path / "IMG_0001.jpg", size=(1, 1))
         controller.beginEdit("1", str(path))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.applyRedeye()
 
         text = (path.parent / ".picasa.ini").read_text(encoding="utf-8")
@@ -2266,7 +2303,7 @@ class TestRedeyeTool:
         controller.beginEdit("1", str(photo))
         monkeypatch.setattr(
             controller._provider,
-            "redeye_auto_result_with_size",
+            "_redeye_auto_result_for_worker",
             lambda *_args: (
                 1,
                 ((0.5, 0.5, 0.1),),
@@ -2276,6 +2313,7 @@ class TestRedeyeTool:
             ),
         )
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.applyRedeye()
         text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert "filters=redeye=1,eye64(80008000199a);" in text
@@ -2283,14 +2321,17 @@ class TestRedeyeTool:
     def test_reenter_loads_saved_regions(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
         controller.applyRedeye()
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         assert controller.redeyeRegionCount == 1
 
     def test_apply_is_undoable(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
         controller.applyRedeye()
         controller.undo()
@@ -2312,6 +2353,7 @@ class TestRedeyeTool:
         Image.fromarray(array).save(path, quality=100)
         controller.beginEdit("2", str(path))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         assert controller.redeyeFoundCount == 2
 
     def test_auto_reports_zero_on_clean_photo(self, controller, tmp_path):
@@ -2324,6 +2366,7 @@ class TestRedeyeTool:
         Image.fromarray(np.full((40, 40, 3), 120, dtype=np.uint8)).save(path)
         controller.beginEdit("3", str(path))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         assert controller.redeyeFoundCount == 0
 
 
@@ -2347,7 +2390,7 @@ class TestCropSuggestions:
 
     def test_three_suggestions_on_a_plain_photo(self, controller, photo):
         controller.beginEdit("1", str(photo))
-        suggestions = controller.cropSuggestions
+        suggestions = _crop_suggestions(controller)
         assert len(suggestions) == 3
         assert [s["key"] for s in suggestions] == [
             "variance", "horizon", "red_green"
@@ -2356,12 +2399,12 @@ class TestCropSuggestions:
     def test_face_suggestions_when_the_ini_has_faces(self, controller, tmp_path):
         path = self._photo_with_faces(tmp_path)
         controller.beginEdit("2", str(path))
-        keys = [s["key"] for s in controller.cropSuggestions]
+        keys = [s["key"] for s in _crop_suggestions(controller)]
         assert keys[:2] == ["faces_tight", "faces_compose"]
 
     def test_suggestions_are_inside_the_picture(self, controller, photo):
         controller.beginEdit("1", str(photo))
-        for suggestion in controller.cropSuggestions:
+        for suggestion in _crop_suggestions(controller):
             assert 0.0 <= suggestion["x"] <= 1.0
             assert 0.0 <= suggestion["y"] <= 1.0
             assert 0.0 < suggestion["w"] <= 1.0
@@ -2374,7 +2417,7 @@ class TestCropSuggestions:
         controller.beginEdit("1", str(photo))
         controller.setCropAspect(1.0)
         width, height = controller._image_size
-        for suggestion in controller.cropSuggestions:
+        for suggestion in _crop_suggestions(controller):
             ratio = (suggestion["w"] * width) / (suggestion["h"] * height)
             assert ratio == pytest.approx(1.0, rel=0.03), suggestion["key"]
 

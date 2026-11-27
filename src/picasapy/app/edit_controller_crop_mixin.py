@@ -251,21 +251,130 @@ class EditControllerCropMixin:
                 return list(self._network_crop_suggestions)
             self._queue_network_crop_suggestions(key)
             return []
-        image = self._provider.source_image(self._kulcs, self._image_path)
-        if image is None:
-            return []
-        faces = self._saved_face_rects()
-        suggestions = suggest_crops(image, faces=faces, aspect=self._crop_aspect)
-        return [
-            {
-                "key": suggestion.key,
-                "x": suggestion.rect.left,
-                "y": suggestion.rect.top,
-                "w": suggestion.rect.right - suggestion.rect.left,
-                "h": suggestion.rect.bottom - suggestion.rect.top,
-            }
-            for suggestion in suggestions
-        ]
+        key = (
+            getattr(self, "_network_edit_generation", 0),
+            str(self._image_path),
+            self._crop_aspect,
+        )
+        if getattr(self, "_local_crop_suggestions_key", None) == key:
+            return list(self._local_crop_suggestions)
+        self._queue_local_crop_suggestions(key)
+        return []
+
+
+    def _queue_local_crop_suggestions(self, key: tuple) -> None:
+        """A helyi forrás dekódolása és a javaslatok számítása workerben fut."""
+        path = Path(key[1])
+        request = (
+            key,
+            self._saved_face_rects(),
+            self._provider._cached_source_image(
+                self._kulcs, path, color_managed=self._provider.color_management
+            ),
+            self._provider.color_management,
+        )
+        active = getattr(self, "_local_crop_suggestions_worker_active", False)
+        active_key = getattr(self, "_local_crop_suggestions_worker_key", None)
+        pending = getattr(self, "_local_crop_suggestions_pending_request", None)
+        if active:
+            if key == active_key or (pending is not None and key == pending[0]):
+                return
+            # Egy futó munka mellett csak a legutóbbi kérés marad sorban.
+            self._local_crop_suggestions_pending_request = request
+            return
+        self._start_local_crop_suggestions(request)
+
+
+    def _start_local_crop_suggestions(self, request: tuple) -> None:
+        key, faces, cached_source, color_managed = request
+        path = Path(key[1])
+        self._local_crop_suggestions_worker_active = True
+        self._local_crop_suggestions_worker_key = key
+
+        def worker() -> None:
+            source_array = cached_source
+            try:
+                from .edit_controller_preview_mixin import _preview_gil_fairness
+
+                with _preview_gil_fairness():
+                    if source_array is None:
+                        source_array = self._provider._source_image_for_worker(
+                            self._kulcs, path, color_managed=color_managed
+                        )
+                    suggestions = (
+                        suggest_crops(source_array, faces=faces, aspect=key[2])
+                        if source_array is not None
+                        else ()
+                    )
+                    results = [
+                        {
+                            "key": suggestion.key,
+                            "x": suggestion.rect.left,
+                            "y": suggestion.rect.top,
+                            "w": suggestion.rect.right - suggestion.rect.left,
+                            "h": suggestion.rect.bottom - suggestion.rect.top,
+                        }
+                        for suggestion in suggestions
+                    ]
+            except Exception as error:  # noqa: BLE001 - sérült helyi kép üres listát ad
+                _log.warning("A helyi vágási javaslat nem számítható ki (%s): %s", path, error)
+                results = []
+            with _CROP_RESULT_LOCK:
+                self._local_crop_suggestions_worker_result = (
+                    key,
+                    results,
+                    color_managed,
+                )
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_local_crop_suggestions",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        try:
+            self._start_background(
+                worker, name="picasapy-local-crop-suggestions", busy=False
+            )
+        except BaseException:
+            self._local_crop_suggestions_worker_active = False
+            self._local_crop_suggestions_worker_key = None
+            raise
+
+
+    @Slot()
+    def _apply_local_crop_suggestions(self) -> None:
+        """Az aktuális helyi crop-javaslatok GUI-szálas átvétele."""
+        with _CROP_RESULT_LOCK:
+            result = getattr(self, "_local_crop_suggestions_worker_result", None)
+            self._local_crop_suggestions_worker_result = None
+        if result is not None:
+            key, suggestions, color_managed = result
+            current_key = (
+                getattr(self, "_network_edit_generation", 0),
+                str(getattr(self, "_image_path", "")),
+                getattr(self, "_crop_aspect", None),
+            )
+            if (
+                key == current_key
+                and key == self._local_crop_suggestions_worker_key
+                and color_managed == self._provider.color_management
+            ):
+                self._local_crop_suggestions_key = key
+                self._local_crop_suggestions = suggestions
+                self.cropSuggestionsChanged.emit()
+
+        pending = getattr(self, "_local_crop_suggestions_pending_request", None)
+        self._local_crop_suggestions_pending_request = None
+        self._local_crop_suggestions_worker_active = False
+        self._local_crop_suggestions_worker_key = None
+        if pending is not None:
+            current_key = (
+                getattr(self, "_network_edit_generation", 0),
+                str(getattr(self, "_image_path", "")),
+                getattr(self, "_crop_aspect", None),
+            )
+            if pending[0] == current_key:
+                self._start_local_crop_suggestions(pending)
 
 
     def _queue_network_crop_suggestions(self, key: tuple) -> None:

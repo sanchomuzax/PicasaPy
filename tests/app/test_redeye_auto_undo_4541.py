@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import time
+
 import numpy as np
 import pytest
+from PySide6.QtCore import QCoreApplication
 
 from picasapy.app.edit_controller import EditController
 from picasapy.app.edit_preview import EditPreviewProvider
@@ -17,6 +20,17 @@ _AUTO_EYES = ((0.25, 0.4, 0.1), (0.7, 0.6, 0.05))
 _IDENTITY = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
 
 
+def _wait_redeye(controller):
+    app = QCoreApplication.instance()
+    deadline = time.monotonic() + 10.0
+    while controller._redeye_auto_worker_active and time.monotonic() < deadline:
+        app.processEvents()
+        controller.waitForBackgroundWorkers(0.02)
+        app.processEvents()
+        time.sleep(0.01)
+    assert not controller._redeye_auto_worker_active, "a Vörösszem worker nem fejeződött be"
+
+
 @pytest.fixture
 def redeye_controller(qt_app, tmp_path, monkeypatch):
     provider = EditPreviewProvider()
@@ -25,10 +39,11 @@ def redeye_controller(qt_app, tmp_path, monkeypatch):
     controller.beginEdit("auto-redeye", str(photo))
     monkeypatch.setattr(
         provider,
-        "redeye_auto_result_with_size",
+        "_redeye_auto_result_for_worker",
         lambda *_args: (2, _AUTO_EYES, (400, 200), (400, 200), _IDENTITY),
     )
     controller.enterRedeyeTool()
+    _wait_redeye(controller)
     return controller
 
 
@@ -63,7 +78,7 @@ def test_automatikus_keret_a_felismeresi_kep_meretet_hasznalja(
     controller.beginEdit("cropped-auto-redeye", str(photo))
     monkeypatch.setattr(
         provider,
-        "redeye_auto_result_with_size",
+        "_redeye_auto_result_for_worker",
         lambda *_args: (
             1,
             ((0.5, 0.5, 0.1),),
@@ -74,6 +89,7 @@ def test_automatikus_keret_a_felismeresi_kep_meretet_hasznalja(
     )
 
     controller.enterRedeyeTool()
+    _wait_redeye(controller)
 
     rectangle = controller.redeyeRegions[0]
     assert rectangle["w"] == pytest.approx(0.2)
@@ -100,6 +116,7 @@ def test_automatikus_keret_a_voros_szem_utani_vagashoz_igazodik(
     )
 
     controller.enterRedeyeTool()
+    _wait_redeye(controller)
 
     rectangle = controller.redeyeRegions[0]
     assert rectangle["x"] == pytest.approx(0.05)
@@ -203,11 +220,12 @@ def test_kezzel_huzott_regio_a_voros_szem_reteg_kepkoordinatajat_tarolja(
     controller._session = EditSession().set_redeye_regions(()).append_crop(crop)
     monkeypatch.setattr(
         provider,
-        "redeye_auto_result_with_size",
+        "_redeye_auto_result_for_worker",
         lambda *_args: (0, (), (400, 200), (200, 100), ((1.0, 0.0, -100.0), (0.0, 1.0, -50.0))),
     )
 
     controller.enterRedeyeTool()
+    _wait_redeye(controller)
     controller.addRedeyeRegion(0.1, 0.2, 0.1, 0.2)
 
     operation = next(op for op in controller._session_with_redeye_pending().ops if op.name == "redeye")
@@ -252,6 +270,7 @@ def test_auto_ujrafuttatasa_eltunteti_a_reset_utani_allapotot(redeye_controller)
     redeye_controller.resetRedeyeRegions()
 
     redeye_controller.runRedeyeAuto()
+    _wait_redeye(redeye_controller)
 
     assert redeye_controller.redeyeRegionCount == 2
     assert redeye_controller.canReapplyRedeyeAuto is False
