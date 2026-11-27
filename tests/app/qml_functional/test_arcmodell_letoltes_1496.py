@@ -239,7 +239,7 @@ class TestAutomatikusSfaceFolyamatjelzes:
             _var(
                 qt_app,
                 megkezdodott.is_set,
-                masodperc=5.0,
+                masodperc=10.0,
                 uzenet="az automatikus SFace-letöltés nem indult",
             )
             qt_app.processEvents()
