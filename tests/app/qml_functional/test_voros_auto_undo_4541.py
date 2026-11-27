@@ -81,7 +81,7 @@ def test_auto_keretek_kirajzolasa_kattintas_reset_es_ujrafuttatas(
         return 2, _AUTO_EYES, (320, 160), (320, 160), ((1, 0, 0), (0, 1, 0))
 
     monkeypatch.setattr(
-        controller._provider, "redeye_auto_result_with_size", talalatok
+        controller._provider, "_redeye_auto_result_for_worker", talalatok
     )
     panel = window.findChild(QObject, "viewerEditorPanel")
     panel.setProperty("redeyeActive", True)
@@ -194,7 +194,11 @@ def test_auto_keretek_kirajzolasa_kattintas_reset_es_ujrafuttatas(
     assert redo_message is not None and redo_message.property("visible") is True
     assert auto_button.property("buttonEnabled") is True
     _kattints(qt_app, window, auto_button)
-    assert _varj_feltetelre(qt_app, lambda: len(automatikus_futasok) == 2)
+    assert _varj_feltetelre(
+        qt_app,
+        lambda: len(automatikus_futasok) == 2
+        and not controller._redeye_auto_worker_active,
+    )
     assert controller.redeyeRegionCount == 2
     assert auto_button.property("buttonEnabled") is False
     assert redo_message.property("visible") is False

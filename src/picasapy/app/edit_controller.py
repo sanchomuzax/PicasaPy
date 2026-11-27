@@ -200,6 +200,21 @@ class EditController(
         self._preview_worker_active = False
         self._preview_pending = None
         self._previewRendered.connect(self._on_preview_rendered)
+        # #7485: a helyi crop- és vörösszem-kérések külön, legutóbbi-kérés
+        # sorokat használnak; a futó munka eredménye nem írhat másik képre.
+        self._local_crop_suggestions_key = None
+        self._local_crop_suggestions = []
+        self._local_crop_suggestions_worker_active = False
+        self._local_crop_suggestions_worker_key = None
+        self._local_crop_suggestions_pending_request = None
+        self._local_crop_suggestions_worker_result = None
+        self._redeye_tool_open = False
+        self._redeye_auto_request_serial = 0
+        self._redeye_auto_worker_active = False
+        self._redeye_auto_worker_request = None
+        self._redeye_auto_pending_request = None
+        self._redeye_auto_worker_result = None
+        self._redeye_auto_result_lock = Lock()
         self.toolsChanged.connect(self._emit_all_tool_property_changes)
         # #798: a Shift élő követése. Az eseményszűrő az ALKALMAZÁSRA megy,
         # mert a billentyű-esemény a fókuszált elemhez érkezik, nem a

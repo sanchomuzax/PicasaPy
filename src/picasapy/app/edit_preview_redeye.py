@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from picasapy.faces.redeye import detect_eye_circles
 from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import FilterOp
@@ -122,6 +124,77 @@ def _post_ops_geometry(
 
 class EditPreviewRedeyeMixin:
     """Az automatikus vörösszem-eredmények előnézeti kezelése."""
+
+    def _redeye_auto_result_for_worker(
+        self,
+        photo_id: str,
+        path: Path,
+        ops: tuple[FilterOp, ...],
+        post_ops: tuple[FilterOp, ...],
+        crop: str | None,
+        crop_ini_readable: bool | None,
+        source_array: np.ndarray | None,
+    ) -> tuple[
+        int,
+        tuple[tuple[float, float, float], ...] | None,
+        tuple[int, int] | None,
+        tuple[int, int] | None,
+        Matrix,
+    ]:
+        """A megosztott provider-cache érintése nélkül futó vörösszem-számítás."""
+        from picasapy.render.chain_geometry import AZONOSSAG
+        from picasapy.render.op_geometry import LancHelyzet
+
+        path = Path(path)
+        detection_ops, post_ops = _normalize_redeye_ops(
+            self._crop_reader,
+            path,
+            tuple(ops),
+            tuple(post_ops),
+            crop,
+            crop_ini_readable,
+        )
+        if source_array is None:
+            return 0, (), None, None, AZONOSSAG
+
+        if detection_ops:
+            # A GUI-szálas prefix-cache helyett a teljes lánc egyszer fut le.
+            # Ez a kettévágott preview-renderrel képpontosan azonos, és nem
+            # olvas/ír semmilyen megosztott cache-rekeszt a workerből.
+            from . import edit_preview_cache
+
+            report = edit_preview_cache.apply_filters(source_array, detection_ops)
+            rendered = report.image
+            input_position = report.helyzet
+        else:
+            rendered = source_array
+            height, width = source_array.shape[:2]
+            input_position = LancHelyzet.kezdo(width, height)
+        if rendered is None:
+            return 0, (), None, None, AZONOSSAG
+
+        height, width = rendered.shape[:2]
+        image_size = (int(width), int(height))
+        display_width, display_height, eye_to_display = _post_ops_geometry(
+            post_ops, width, height, input_position
+        )
+        display_size = (display_width, display_height)
+        detected = detect_eye_circles(rendered)
+        pixel_circles = (
+            None
+            if detected is None
+            else tuple((circle.x, circle.y, circle.radius) for circle in detected)
+        )
+        count = count_redeye_spots(rendered, eye_circles=pixel_circles)
+        if detected is None:
+            return count, None, image_size, display_size, eye_to_display
+        scale = float(min(width, height))
+        normalized = tuple(
+            (circle.x / width, circle.y / height, circle.radius / scale)
+            for circle in detected
+            if circle.radius > 0
+        )
+        return count, normalized, image_size, display_size, eye_to_display
 
     def redeye_auto_result(
         self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]

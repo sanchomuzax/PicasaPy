@@ -21,10 +21,12 @@ felület a találat-vizsgálathoz kötötte.
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import picasapy.app
 import pytest
+from PySide6.QtCore import QCoreApplication
 from support.jpeg_factory import make_jpeg
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
@@ -56,6 +58,17 @@ def photo(tmp_path):
     return make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
 
 
+def _wait_redeye(controller):
+    app = QCoreApplication.instance()
+    deadline = time.monotonic() + 10.0
+    while controller._redeye_auto_worker_active and time.monotonic() < deadline:
+        app.processEvents()
+        controller.waitForBackgroundWorkers(0.02)
+        app.processEvents()
+        time.sleep(0.01)
+    assert not controller._redeye_auto_worker_active, "a Vörösszem worker nem fejeződött be"
+
+
 class TestAKeretTorlese:
     """A vezérlő-oldal: melyik keret esik ki, és mi történik a pufferrel."""
 
@@ -63,6 +76,7 @@ class TestAKeretTorlese:
     def eszkoz(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         return controller
 
     def test_a_keretre_kattintas_TORLI_azt_az_egyet(self, eszkoz):
@@ -115,6 +129,7 @@ class TestATalalatVizsgalat:
     def eszkoz(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRedeyeTool()
+        _wait_redeye(controller)
         controller.addRedeyeRegion(0.2, 0.2, 0.2, 0.2)
         return controller
 

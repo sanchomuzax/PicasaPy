@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import threading
+from collections.abc import Callable
+from dataclasses import dataclass, field
 
 from typing import TYPE_CHECKING
 
@@ -27,8 +30,152 @@ gyors_elonezet_aktiv = lazy_callable(
 _LRU_CAPACITY = 2
 
 
+@dataclass(slots=True)
+class _SourceDecode:
+    """Egy háttér-dekód eredménye és a rá váró workerek jelzése."""
+
+    ready: threading.Event = field(default_factory=threading.Event)
+    source_array: np.ndarray | None = None
+
+
 class EditPreviewCacheMixin:
     """A forrás-, renderlánc- és GPU-prefix gyorsítótár műveletei."""
+
+    def _cached_source_image(
+        self,
+        key: str,
+        path: Path,
+        *,
+        color_managed: bool | None = None,
+        full_res: bool = False,
+    ) -> np.ndarray | None:
+        """A GUI-szálon elérhető dekódolt forrás cache-hivatkozása.
+
+        A rövid lekérdezést a provider közös lockja védi; képfeldolgozás nem
+        fut ezen a záron.
+        """
+        path = Path(path)
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            mtime = None
+        if color_managed is None:
+            color_managed = self.color_management
+        with self._lock:
+            cached = self._sources.get(str(key))
+            if (
+                cached is not None
+                and cached[0] == path
+                and cached[1] == mtime
+                and cached[3] == full_res
+                and cached[4] == color_managed
+            ):
+                self._sources.move_to_end(str(key))
+                return cached[2]
+            return None
+
+    def _source_image_for_worker(
+        self,
+        key: str,
+        path: Path,
+        *,
+        color_managed: bool,
+        full_res: bool = False,
+        is_current: Callable[[], bool] | None = None,
+    ) -> np.ndarray | None:
+        """A közös forrás-LRU-t használó dekódolás; azonos worker-kérések összevonva."""
+        path = Path(path)
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            mtime = None
+        cache_key = (str(key), str(path), mtime, full_res, bool(color_managed))
+        while True:
+            with self._lock:
+                cached = self._sources.get(str(key))
+                if (
+                    cached is not None
+                    and cached[0] == path
+                    and cached[1] == mtime
+                    and cached[3] == full_res
+                    and cached[4] == color_managed
+                ):
+                    self._sources.move_to_end(str(key))
+                    return cached[2]
+                inflight = self._source_inflight.get(cache_key)
+                if inflight is None:
+                    inflight = _SourceDecode()
+                    self._source_inflight[cache_key] = inflight
+                    owner = True
+                else:
+                    owner = False
+            if not owner:
+                inflight.ready.wait()
+                source_array = inflight.source_array
+                if source_array is None:
+                    return None
+                should_cache = is_current is None or is_current()
+                with self._lock:
+                    cached = self._sources.get(str(key))
+                    if (
+                        cached is not None
+                        and cached[0] == path
+                        and cached[1] == mtime
+                        and cached[3] == full_res
+                        and cached[4] == color_managed
+                    ):
+                        self._sources.move_to_end(str(key))
+                        return cached[2]
+                    if should_cache:
+                        self._sources[str(key)] = (
+                            path,
+                            mtime,
+                            source_array,
+                            full_res,
+                            color_managed,
+                        )
+                        self._sources.move_to_end(str(key))
+                        while len(self._sources) > _LRU_CAPACITY:
+                            self._sources.popitem(last=False)
+                return source_array
+
+            try:
+                source_array = edit_preview_source._decode_source(
+                    path, full_res=full_res, color_managed=color_managed
+                )
+            except BaseException:
+                with self._lock:
+                    self._source_inflight.pop(cache_key, None)
+                    inflight.ready.set()
+                raise
+
+            should_cache = is_current is None or is_current()
+            with self._lock:
+                current = self._sources.get(str(key))
+                if (
+                    current is not None
+                    and current[0] == path
+                    and current[1] == mtime
+                    and current[3] == full_res
+                    and current[4] == color_managed
+                ):
+                    source_array = current[2]
+                    self._sources.move_to_end(str(key))
+                elif should_cache and source_array is not None:
+                    self._sources[str(key)] = (
+                        path,
+                        mtime,
+                        source_array,
+                        full_res,
+                        color_managed,
+                    )
+                    self._sources.move_to_end(str(key))
+                    while len(self._sources) > _LRU_CAPACITY:
+                        self._sources.popitem(last=False)
+                inflight.source_array = source_array
+                self._source_inflight.pop(cache_key, None)
+                inflight.ready.set()
+                return source_array
 
     def _futtasd_a_lancot(
         self,
@@ -83,40 +230,65 @@ class EditPreviewCacheMixin:
         mtime: float | None,
         shared_cache: bool,
         full_res: bool = False,
+        is_current: Callable[[], bool] | None = None,
     ) -> np.ndarray | None:
-        """A dekódolt forráskép - a GUI-úton gyorsítótárazva, háttéren nem.
+        """A dekódolt forráskép a közös LRU-ból, vagy szükség esetén dekódolva.
 
-        #546: a `_sources` LRU-t KIZÁRÓLAG a GUI-szál írja. A háttér-render
-        inkább újra dekódol (ez a lassú effektek mellett elhanyagolható),
-        cserébe a két szál között nincs megosztott, zárral védendő állapot.
+        #546: a háttér-render is a közös forrás-LRU-t használja; a dekódolás
+        az LRU-záron kívül fut, az azonos háttérkéréseket az in-flight
+        jelző egyetlen dekódolásra vonja össze.
         """
+        color_managed = self.color_management
         if not shared_cache:
-            return edit_preview_source._decode_source(
-                path, full_res=full_res, color_managed=self.color_management
+            return self._source_image_for_worker(
+                key,
+                path,
+                full_res=full_res,
+                color_managed=color_managed,
+                is_current=is_current,
             )
-        cached = self._sources.get(key)
+        with self._lock:
+            cached = self._sources.get(key)
         #: #819: a kicsinyített és a teljes felbontású forrás NEM cserélhető
         #: fel - a negyedik mező mondja meg, melyik van a gyorsítótárban.
         if (
             cached is not None
             and cached[0] == path
             and cached[1] == mtime
-            and (len(cached) < 4 or cached[3] == full_res)
+            and cached[3] == full_res
+            and cached[4] == color_managed
         ):
             source_array = cached[2]
         else:
             source_array = edit_preview_source._decode_source(
-                path, full_res=full_res, color_managed=self.color_management
+                path, full_res=full_res, color_managed=color_managed
             )
         # LRU-frissítés (#128): az aktuális kulcs a sor végére kerül, és a
         # kapacitáson túli legrégebbi bejegyzések felszabadulnak - az
         # előző kép még bent marad (gyors visszalapozás), a régebbiek nem.
         # A forrás-referencia (source_array) azonossága megmarad, így a
         # lánc-prefix gyorsítótár (#140) találata a re-store után is érvényes.
-        self._sources[key] = (path, mtime, source_array, full_res)
-        self._sources.move_to_end(key)
-        while len(self._sources) > _LRU_CAPACITY:
-            self._sources.popitem(last=False)
+        with self._lock:
+            cached = self._sources.get(key)
+            if (
+                cached is not None
+                and cached[0] == path
+                and cached[1] == mtime
+                and cached[3] == full_res
+                and cached[4] == color_managed
+            ):
+                source_array = cached[2]
+            else:
+                self._sources[key] = (
+                    path,
+                    mtime,
+                    source_array,
+                    full_res,
+                    color_managed,
+                )
+            self._sources.move_to_end(key)
+            while len(self._sources) > _LRU_CAPACITY:
+                self._sources.popitem(last=False)
         return source_array
 
     def _render_cached_jelentes(

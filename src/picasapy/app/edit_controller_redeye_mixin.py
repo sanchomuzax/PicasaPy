@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import logging
+
+from PySide6.QtCore import QMetaObject, Qt
+
 from .edit_controller_shared import (
     AZONOSSAG,
     EditSession,
@@ -16,6 +20,9 @@ from .edit_controller_shared import (
 )
 
 from .edit_controller_signals import EditControllerSignalsMixin as _Signals
+
+
+_log = logging.getLogger(__name__)
 
 class EditControllerRedeyeMixin:
     """A vörösszem-automatikus és kézi régióinak kezelése."""
@@ -238,30 +245,124 @@ class EditControllerRedeyeMixin:
         """
         self._require_active()
         crop, crop_ini_readable = self._crop_value_for_session(self._session)
-        (
-            self._redeye_found,
-            eye_circles,
-            self._redeye_eye_image_size,
-            self._redeye_eye_overlay_size,
-            self._redeye_eye_to_overlay,
-        ) = self._provider.redeye_auto_result_with_size(
-            self._kulcs,
-            self._image_path,
-            self._session.redeye_detection_ops(),
-            self._session.redeye_post_detection_ops(),
-            crop,
-            crop_ini_readable,
+        path = self._image_path
+        request = {
+            "serial": self._redeye_auto_request_serial + 1,
+            "generation": getattr(self, "_network_edit_generation", 0),
+            "photo_id": self._photo_id,
+            "path": path,
+            "provider_key": self._kulcs,
+            "ops": self._session.redeye_detection_ops(),
+            "post_ops": self._session.redeye_post_detection_ops(),
+            "crop": crop,
+            "crop_ini_readable": crop_ini_readable,
+            "cached_source": self._provider._cached_source_image(
+                self._kulcs, path, color_managed=self._provider.color_management
+            ),
+            "color_managed": self._provider.color_management,
+        }
+        self._redeye_auto_request_serial = request["serial"]
+        if self._redeye_auto_worker_active:
+            # Az aktív számítás befejeződik; közben csak a legfrissebb kérés marad.
+            self._redeye_auto_pending_request = request
+            return
+        self._start_redeye_auto_worker(request)
+
+
+    def _start_redeye_auto_worker(self, request: dict) -> None:
+        self._redeye_auto_worker_active = True
+        self._redeye_auto_worker_request = request
+
+        def worker() -> None:
+            source_array = request["cached_source"]
+            try:
+                from .edit_controller_preview_mixin import _preview_gil_fairness
+
+                with _preview_gil_fairness():
+                    if source_array is None:
+                        source_array = self._provider._source_image_for_worker(
+                            request["provider_key"],
+                            request["path"],
+                            color_managed=request["color_managed"],
+                        )
+                    result = self._provider._redeye_auto_result_for_worker(
+                        request["photo_id"],
+                        request["path"],
+                        request["ops"],
+                        request["post_ops"],
+                        request["crop"],
+                        request["crop_ini_readable"],
+                        source_array,
+                    )
+            except Exception:  # noqa: BLE001 - a hibás kép ne zárja be az eszközt
+                _log.exception("A vörösszem-automatika háttérben elbukott")
+                from picasapy.render.chain_geometry import AZONOSSAG as _AZONOSSAG
+
+                result = (0, (), None, None, _AZONOSSAG)
+            with self._redeye_auto_result_lock:
+                self._redeye_auto_worker_result = (request, result)
+            QMetaObject.invokeMethod(
+                self,
+                "_apply_redeye_auto_result",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        try:
+            self._start_background(worker, name="picasapy-redeye-auto", busy=False)
+        except BaseException:
+            self._redeye_auto_worker_active = False
+            self._redeye_auto_worker_request = None
+            raise
+
+
+    def _redeye_auto_request_is_current(self, request: dict) -> bool:
+        return bool(
+            request["serial"] == self._redeye_auto_request_serial
+            and request["generation"]
+            == getattr(self, "_network_edit_generation", 0)
+            and request["photo_id"] == self._photo_id
+            and request["path"] == self._image_path
+            and request["ops"] == self._session.redeye_detection_ops()
+            and request["post_ops"] == self._session.redeye_post_detection_ops()
+            and request["color_managed"] == self._provider.color_management
+            and self._redeye_tool_open
         )
-        if self._redeye_eye_image_size is None:
-            self._redeye_eye_image_size = self._image_size
-        if self._redeye_eye_overlay_size is None:
-            self._redeye_eye_overlay_size = self._image_size
-        self._redeye_eye_circles = eye_circles or ()
-        self._redeye_full_image_fallback = eye_circles is None
-        self._redeye_can_reapply_auto = False
-        self._redeye_reset_message = False
-        self._register_preview(self._session_with_redeye_pending())
-        self._bump_revision()
+
+
+    @Slot()
+    def _apply_redeye_auto_result(self) -> None:
+        """A worker eredményét csak az aktuális, nyitott eszköz kapja meg."""
+        with self._redeye_auto_result_lock:
+            completed = self._redeye_auto_worker_result
+            self._redeye_auto_worker_result = None
+        if completed is not None:
+            request, result = completed
+            if self._redeye_auto_request_is_current(request):
+                (
+                    found,
+                    eye_circles,
+                    eye_image_size,
+                    eye_overlay_size,
+                    eye_to_overlay,
+                ) = result
+                self._redeye_found = found
+                self._redeye_eye_image_size = eye_image_size or self._image_size
+                self._redeye_eye_overlay_size = eye_overlay_size or self._image_size
+                self._redeye_eye_to_overlay = eye_to_overlay
+                self._redeye_eye_circles = eye_circles or ()
+                self._redeye_full_image_fallback = eye_circles is None
+                self._redeye_can_reapply_auto = False
+                self._redeye_reset_message = False
+                self._register_preview(self._session_with_redeye_pending())
+                self._bump_revision()
+
+        pending = self._redeye_auto_pending_request
+        self._redeye_auto_pending_request = None
+        self._redeye_auto_worker_request = None
+        if pending is not None and self._redeye_auto_request_is_current(pending):
+            self._start_redeye_auto_worker(pending)
+        else:
+            self._redeye_auto_worker_active = False
 
 
     @Slot()
@@ -271,6 +372,7 @@ class EditControllerRedeyeMixin:
         eltávolítás is (akkor is, ha eddig nem volt `redeye` a láncban) —
         nem ír inibe, nem tol undo-lépést."""
         self._require_active()
+        self._redeye_tool_open = True
         self._redeye_regions = self._session.redeye_regions()
         self._redeye_region_undo = []
         self.runRedeyeAuto()
@@ -281,6 +383,9 @@ class EditControllerRedeyeMixin:
         """A Vörösszem eszköz bezárása (Mégse): a puffer eldobása, visszaáll
         a ténylegesen mentett előnézet — a mentett állapot érintetlen."""
         self._require_active()
+        self._redeye_tool_open = False
+        self._redeye_auto_request_serial += 1
+        self._redeye_auto_pending_request = None
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_eye_circles = ()

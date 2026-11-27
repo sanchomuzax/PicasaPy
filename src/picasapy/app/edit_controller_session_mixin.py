@@ -57,6 +57,11 @@ class EditControllerSessionMixin:
         # #546: a képváltás érvényteleníti a futó háttér-rendert — az az
         # ELŐZŐ fotó képét tárolná el (és emitálna rá revíziót)
         self._preview_job += 1
+        # #7485: képváltáskor a korábbi Vörösszem-eredmény érvénytelen; a
+        # már futó worker befejezhet, de az új munkamenetbe nem írhat.
+        self._redeye_auto_request_serial += 1
+        self._redeye_tool_open = False
+        self._redeye_auto_pending_request = None
         # #3773: MÁSIK fotóra nyitva a régi RENDERELT kép elengedése. A
         # szolgáltató képtára két helyes, és a kettős nézetben két vezérlő
         # tölti: bent hagyva a régi kép a MÁSIK vezérlő élő képét
@@ -90,6 +95,9 @@ class EditControllerSessionMixin:
         self._network_crop_suggestions = []
         self._network_crop_suggestions_pending = set()
         self._network_crop_suggestion_results = {}
+        self._local_crop_suggestions_key = None
+        self._local_crop_suggestions = []
+        self._local_crop_suggestions_pending_request = None
         self._image_size = None if network_path else self._read_image_size(path)
         self._ini_path = path.parent / PICASA_INI_NAME
         self._section_name = path.name

@@ -16,7 +16,10 @@ eredeti mit tesz, ha a retusálás UTÁN még egy lépést visszavontunk (azaz v
 
 from __future__ import annotations
 
+import time
+
 import pytest
+from PySide6.QtCore import QCoreApplication
 from PySide6.QtTest import QSignalSpy
 
 from support.jpeg_factory import make_jpeg
@@ -39,6 +42,17 @@ def _retusalast_alkalmaz(ctl) -> None:
     ctl.commitRetouchPatch(0.2, 0.2)
     ctl.applyRetouch()
     ctl.exitRetouchTool()
+
+
+def _wait_redeye(ctl) -> None:
+    app = QCoreApplication.instance()
+    deadline = time.monotonic() + 10.0
+    while ctl._redeye_auto_worker_active and time.monotonic() < deadline:
+        app.processEvents()
+        ctl.waitForBackgroundWorkers(0.02)
+        app.processEvents()
+        time.sleep(0.01)
+    assert not ctl._redeye_auto_worker_active, "a Vörösszem worker nem fejeződött be"
 
 
 def test_megerositett_retusalas_visszavonas_utan_nincs_ujra(controller) -> None:
@@ -82,6 +96,7 @@ def test_mas_muvelet_visszavonasa_utan_az_ujra_aktiv_marad(controller) -> None:
 def test_a_voroszem_visszavonasa_valtozatlanul_az_ujra_verembe_kerul(controller) -> None:
     """A Vörösszem eredeti viselkedése nincs mérve (7327-10), ezért a régi marad."""
     controller.enterRedeyeTool()
+    _wait_redeye(controller)
     controller.addRedeyeRegion(0.40, 0.40, 0.10, 0.10)
     controller.applyRedeye()
     assert controller.undoAction == "redeye"
