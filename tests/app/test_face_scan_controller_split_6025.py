@@ -15,7 +15,8 @@ _QML = {
         uncheckedFiles unnamedCount
     """.split()),
     "signal": frozenset("""
-        _scanWorkerStopped embeddingCancelled embeddingFailed embeddingFinished
+        _embeddingModelMissing _scanWorkerStopped embeddingCancelled embeddingFailed
+        embeddingFinished
         embeddingModelUnavailable embeddingProgress embeddingStarted
         faceResetConfirmationRequested faceSuggestionsChanged facesStored
         modelDownloadFinished modelDownloadPercentChanged modelUnavailable
