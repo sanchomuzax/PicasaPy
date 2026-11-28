@@ -73,6 +73,29 @@ ColumnLayout {
         Layout.topMargin: 2
         Layout.preferredWidth: 242
         Layout.preferredHeight: 129
+        FontMetrics {
+            id: redeyeFontMetrics
+            objectName: "redeyeFontMetrics"
+            font.pixelSize: Theme.fontSize - 1
+        }
+        // A két látható szöveg egyetlen folyó bekezdésnek felel meg az
+        // eredeti `redeyetext` mezőben. Ez a rejtett próba a közös betűméretet
+        // az egész fordításra választja ki, a látható sorok között így nem
+        // keletkezik üres rés.
+        Text {
+            id: redeyeLayoutFit
+            visible: false
+            anchors.fill: parent
+            wrapMode: Text.WordWrap
+            text: redeyeGuide.text + (redeyeFrameHint.visible
+                ? "\n" + redeyeFrameHint.text
+                : "")
+            font.pixelSize: Theme.fontSize - 1
+            fontSizeMode: Text.Fit
+            minimumPixelSize: 8
+            lineHeightMode: Text.ProportionalHeight
+            lineHeight: redeyePanel.sorkoz / redeyeFontMetrics.height
+        }
         Text {
             id: redeyeGuide
             objectName: "redeyeGuideText"
@@ -85,19 +108,20 @@ ColumnLayout {
                        + "to select it. A selection box appears over the area. "
                        + "Release the mouse to complete your selection. The Photo is "
                        + "displayed with the red-eye removed.")
-            font.pixelSize: Theme.fontSize - 1
-            // #7431: rögzített, az eredetiben mért 14 képpontos sorköz
-            // (`job-837 __10`: a sorok kezdete 14 képpontonként); így a
-            // windowsos betűmetrika sem nyújtja meg a szöveget, és nem lóg
-            // ki a dobozból 260 és 280 képpontos panelszélességnél sem
-            lineHeightMode: Text.FixedHeight
-            lineHeight: redeyePanel.sorkoz
+            // A közös próbaszöveg az egész fordítás alapján illeszti.
+            font.pixelSize: redeyeLayoutFit.fontInfo.pixelSize
+            // #7431: teljes betűméretnél az eredetiben mért 14 px-es
+            // sorköz (`job-837 __10`). A `Text.Fit` zsugorításával arányos
+            // sorköz tartja a hosszabb fordításokat is a rögzített keretben.
+            lineHeightMode: Text.ProportionalHeight
+            lineHeight: redeyePanel.sorkoz / redeyeFontMetrics.height
             color: Theme.textGray
         }
 
         // A keretenkénti visszavonás mondata a hivatalos
         // `RedEye::DragToSelectMessage` erőforrásból.
         Text {
+            id: redeyeFrameHint
             objectName: "redeyeFrameHintLabel"
             visible: !panel.redeyeAutoReset && !(panel.redeyeFoundCount > 0)
             anchors.top: redeyeGuide.bottom
@@ -107,9 +131,9 @@ ColumnLayout {
             //: picasapy-origin: picasa
             //: picasapy-origin-key: stringres:RedEye::DragToSelectMessage
             text: qsTr("Note: You can click on a box to delete a change.")
-            font.pixelSize: Theme.fontSize - 1
-            lineHeightMode: Text.FixedHeight
-            lineHeight: redeyePanel.sorkoz
+            font.pixelSize: redeyeLayoutFit.fontInfo.pixelSize
+            lineHeightMode: Text.ProportionalHeight
+            lineHeight: redeyePanel.sorkoz / redeyeFontMetrics.height
             color: Theme.textGray
         }
     }

@@ -77,27 +77,15 @@ _PANEL_QML = """
 @pytest.mark.parametrize("nev", ["redeyeGuideText", "redeyeFrameHintLabel"])
 def test_a_sorkoz_az_eredetiben_mert_14_kepont(qt_app, nev: str):
     """A renderelt szöveg sorköze 14 képpont, mint az eredetiben (`job-837 __10`),
-    a betűtípus saját sormagasságától függetlenül (#7431)."""
+    teljes betűméretnél, a betűtípus saját metrikájától függetlenül (#7431)."""
     root = _render(qt_app, _PANEL_QML, 280, 900)
     szoveg = root.findChild(QObject, nev)
+    metrics = root.findChild(QObject, "redeyeFontMetrics")
     assert szoveg is not None
-    sorok = szoveg.property("lineCount")
-    if sorok < 2:
-        pytest.skip(f"{nev}: egy sor, a sorköz nem mérhető")
-    # FixedHeight módban az utolsó sor a betű saját magasságával számít, a
-    # többi sor pontosan a rögzített sorközzel: két szélesség különbsége
-    # tehát a sorköz többszöröse
-    szuk = _render(qt_app, _PANEL_QML, 260, 900).findChild(QObject, nev)
-    kulonbseg_sor = szuk.property("lineCount") - sorok
-    if kulonbseg_sor == 0:
-        utolso = szoveg.height() - 14 * (sorok - 1)
-        assert 10 <= utolso <= 18, (
-            f"{nev}: {sorok} sor, {szoveg.height():.1f} képpont; a sorköz nem 14"
-        )
-    else:
-        assert szuk.height() - szoveg.height() == pytest.approx(
-            14 * kulonbseg_sor, abs=0.5
-        ), f"{nev}: a sorköz nem 14 képpont"
+    assert metrics is not None
+    assert szoveg.property("lineHeight") * metrics.property("height") == pytest.approx(
+        14, abs=0.01
+    ), f"{nev}: teljes betűméretnél a sorköz nem 14 képpont"
 
 
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])
