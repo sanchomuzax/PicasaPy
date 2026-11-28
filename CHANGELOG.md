@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.185] - 2026-11-27
+
+- A Vörösszem kutatási leírásából kikerült a harmadik féltől származó, licenckötelezett Red.dll motor működése; csak a Picasa saját javító útja marad (#7481).
+- A helyi képek vágásjavaslatai és a Vörösszem-keresés a háttérben futnak, így a szerkesztő kezelése közben a felület nem áll meg (#7485).
+- Az automatikus arc-csoportosítás modellbetöltése háttérben fut, így az arckeresés nem akasztja meg a felületet. (#7486).
+
 ## [1.0.184] - 2026-11-25
 
 - Kutatás: nagyrészt kiderült, hogyan javítja az eredeti Picasa a kézzel bekeretezett vörösszemet (azt még nem tudjuk, mely képpontokat tekinti szemnek); a programban még nem változott semmi (#7460).
