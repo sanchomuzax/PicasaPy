@@ -1,7 +1,7 @@
 """#901 — a panelen BELÜLI útmutató-szövegek és az egységes súgó-késleltetés.
 
 A `respack`-ben „tip"-nek nevezett elemek egy része **nem** lebegő buborék,
-hanem a panel része, fix dobozzal:
+hanem a panel része; az eredeti mért alapméretük:
 
 | elem | MÉRT doboz | hol |
 |---|---|---|
@@ -44,7 +44,7 @@ UTMUTATOK = {
         "the portion of the image you wish to crop.",
     ),
     "redeyeGuideText": (
-        # A 242×129-as doboz a Guide és a közvetlen Note közös layoutja.
+        # A 242×129-as mért alapméret a Guide és a közvetlen Note közös layoutja.
         "EditorRedeyePanel.qml", "redeyeInstructionBlock", 242, 129,
         "The Photo is displayed with the red-eye removed.",
     ),
@@ -73,9 +73,17 @@ class TestAMertDoboz:
         fajl, doboz_elemnev, szel, mag, _ = UTMUTATOK[elemnev]
         forras = _forras(fajl)
         i = forras.index(f'objectName: "{doboz_elemnev}"')
-        blokk = forras[i : i + 600]
+        blokk = forras[i : i + 1200]
         assert f"Layout.preferredWidth: {szel}" in blokk, elemnev
-        assert f"Layout.preferredHeight: {mag}" in blokk, elemnev
+        if elemnev == "redeyeGuideText":
+            assert f"Layout.minimumHeight: {mag}" in blokk, elemnev
+            assert "implicitHeight: Math.max(" in blokk, elemnev
+            assert f"\n            {mag}," in blokk, elemnev
+            assert "redeyeGuide.implicitHeight" in blokk, elemnev
+            assert "redeyeFrameHint.implicitHeight" in blokk, elemnev
+            assert "Layout.preferredHeight: implicitHeight" in blokk, elemnev
+        else:
+            assert f"Layout.preferredHeight: {mag}" in blokk, elemnev
 
 
 class TestAMertSzoveg:

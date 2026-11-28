@@ -72,7 +72,19 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.topMargin: 2
         Layout.preferredWidth: 242
-        Layout.preferredHeight: 129
+        Layout.maximumWidth: 242
+        Layout.alignment: Qt.AlignHCenter
+        Layout.minimumHeight: 129
+        // Az eredeti mező 242 × 129 px (`szerkeszto-panel-meretek.md`, 6.2).
+        // A fordítások a rögzített betűvel és sorközzel törnek; csak a 129 px
+        // fölé nyúló tényleges szövegmagasság növeli a mezőt, a ColumnLayout
+        // pedig természetesen lejjebb teszi a gombsorokat.
+        implicitHeight: Math.max(
+            129,
+            redeyeGuide.implicitHeight
+                + (redeyeFrameHint.visible ? redeyeFrameHint.implicitHeight : 0)
+        )
+        Layout.preferredHeight: implicitHeight
         Text {
             id: redeyeGuide
             objectName: "redeyeGuideText"
@@ -86,10 +98,7 @@ ColumnLayout {
                        + "Release the mouse to complete your selection. The Photo is "
                        + "displayed with the red-eye removed.")
             font.pixelSize: Theme.fontSize - 1
-            // #7431: rögzített, az eredetiben mért 14 képpontos sorköz
-            // (`job-837 __10`: a sorok kezdete 14 képpontonként); így a
-            // windowsos betűmetrika sem nyújtja meg a szöveget, és nem lóg
-            // ki a dobozból 260 és 280 képpontos panelszélességnél sem
+            // #7431: az eredetiben mért 14 px-es sorköz (`job-837 __10`).
             lineHeightMode: Text.FixedHeight
             lineHeight: redeyePanel.sorkoz
             color: Theme.textGray
@@ -98,6 +107,7 @@ ColumnLayout {
         // A keretenkénti visszavonás mondata a hivatalos
         // `RedEye::DragToSelectMessage` erőforrásból.
         Text {
+            id: redeyeFrameHint
             objectName: "redeyeFrameHintLabel"
             visible: !panel.redeyeAutoReset && !(panel.redeyeFoundCount > 0)
             anchors.top: redeyeGuide.bottom

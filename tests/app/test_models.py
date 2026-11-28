@@ -245,11 +245,14 @@ class TestFolderListModel:
             folder.mkdir(parents=True)
             photo = folder / "kep.jpg"
             make_jpeg(photo)
-            _fajlidot_allit(photo, when)
+            if when[0] > 1900:
+                _fajlidot_allit(photo, when)
 
         with open_index(tmp_path / "valtozasok.db") as changed_conn:
             sync_tree(changed_conn, root)
             old_change_ns = _utc_ns(1899, 12, 31, 12, 0, 0)
+            # A 1900 előtti időbélyeg a modell SQLite-bemenete, nem
+            # fájlrendszer-idő: Windowson a `mktime` nem tudja előállítani.
             changed_conn.execute(
                 "UPDATE photos SET mtime_ns = ? WHERE folder_id = "
                 "(SELECT id FROM folders WHERE path = ?)",
